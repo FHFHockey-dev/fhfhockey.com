@@ -1,0 +1,22 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/executionAdapter.test.ts hooks/useRosterPlanning.test.tsx __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web
+
+(node:44776) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts (11 tests) 209ms
+(node:44776) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/executionAdapter.test.ts (32 tests) 71ms
+(node:44776) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ hooks/useRosterPlanning.test.tsx (4 tests) 15ms
+
+ Test Files  3 passed (3)
+      Tests  47 passed (47)
+   Start at  12:05:01
+   Duration  1.44s (transform 297ms, setup 15ms, collect 465ms, tests 295ms, environment 411ms, prepare 84ms)
+

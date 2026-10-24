@@ -1,0 +1,215 @@
+diff --git a/web/components/LineCombinations/LineCombinationsGrid.tsx b/web/components/LineCombinations/LineCombinationsGrid.tsx
+index 2732603..27b1c11 100644
+--- a/web/components/LineCombinations/LineCombinationsGrid.tsx
++++ b/web/components/LineCombinations/LineCombinationsGrid.tsx
+@@ -17,16 +17,13 @@ export function LineCombinationsGrid({
+   playerMap,
+   cardClassName = ""
+ }: LineCombinationsGridProps) {
+-  // Dressed skaters beyond 12F/6D fill the other group's open slots, e.g.
+-  // 11F/7D puts D7 in C4 and 13F/5D puts F13 in E3, so nobody is dropped.
+-  const displayForwards = [
+-    ...forwards.slice(0, 12),
+-    ...defensemen.slice(6)
+-  ].slice(0, 12);
+-  const displayDefensemen = [
+-    ...defensemen.slice(0, 6),
+-    ...forwards.slice(12)
+-  ].slice(0, 6);
++  // Four forward lines, three pairs and two goalies fill the grid. Anyone
++  // beyond that (13F/5D, 11F/7D, 19+ skaters) stays in their own group in a
++  // labelled extras row: the source has no line or pair for them, so they
++  // never take another group's slot and nobody is dropped.
++  const shape = `${forwards.length}F/${defensemen.length}D`;
++  const displayForwards = forwards.slice(0, 12);
++  const displayDefensemen = defensemen.slice(0, 6);
+   const displayGoalies = goalies.slice(0, 2);
+ 
+   // Helper to assign LW/C/RW for a line of 3 forwards
+@@ -143,6 +140,30 @@ export function LineCombinationsGrid({
+     return cells;
+   }
+ 
++  function renderExtras(label: string, players: string[], columns: number) {
++    if (players.length === 0) return null;
++    return (
++      <div
++        role="group"
++        aria-label={label}
++        title="Dressed beyond the regular lines; no line or pair in the source"
++      >
++        <div className={styles.lineCombinationsSectionLabel}>{label}</div>
++        <div
++          className={styles.lineCombinationsSectionGrid}
++          style={{ gridTemplateColumns: `repeat(${columns}, 1fr)` }}
++        >
++          {renderGrid(
++            players,
++            columns,
++            Math.ceil(players.length / columns),
++            cardClassName
++          )}
++        </div>
++      </div>
++    );
++  }
++
+   return (
+     <div className={styles.lineCombinationsFlexContainer}>
+       {/* Forwards Section: 3x4 grid (A1–C4) */}
+@@ -150,6 +171,8 @@ export function LineCombinationsGrid({
+         className={
+           styles.lineCombinationsSection + " " + styles.forwardsSection
+         }
++        role="group"
++        aria-label="Forwards"
+       >
+         <div className={styles.lineCombinationsSectionLabel}>Forwards</div>
+         <div
+@@ -159,6 +182,7 @@ export function LineCombinationsGrid({
+         >
+           {renderGrid(displayForwards, 3, 4, cardClassName)}
+         </div>
++        {renderExtras(`Extra F · ${shape}`, forwards.slice(12), 3)}
+       </div>
+       {/* Stack Defense and Goalies vertically */}
+       <div className={styles.defenseGoaliesStack}>
+@@ -167,6 +191,8 @@ export function LineCombinationsGrid({
+           className={
+             styles.lineCombinationsSection + " " + styles.defenseSection
+           }
++          role="group"
++          aria-label="Defense"
+         >
+           <div className={styles.lineCombinationsSectionLabel}>Defense</div>
+           <div
+@@ -176,12 +202,15 @@ export function LineCombinationsGrid({
+           >
+             {renderGrid(displayDefensemen, 2, 3, cardClassName)}
+           </div>
++          {renderExtras(`Extra D · ${shape}`, defensemen.slice(6), 2)}
+         </div>
+         {/* Goalies Section: 2x1 grid (D4, E4) */}
+         <div
+           className={
+             styles.lineCombinationsSection + " " + styles.goaliesSection
+           }
++          role="group"
++          aria-label="Goalies"
+         >
+           <div className={styles.lineCombinationsSectionLabel}>Goalies</div>
+           <div
+@@ -191,6 +220,7 @@ export function LineCombinationsGrid({
+           >
+             {renderGrid(displayGoalies, 2, 1, cardClassName)}
+           </div>
++          {renderExtras("Extra G", goalies.slice(2), 2)}
+         </div>
+       </div>
+     </div>
+diff --git a/web/components/TeamTabNavigation/TeamTabNavigation.test.tsx b/web/components/TeamTabNavigation/TeamTabNavigation.test.tsx
+index 1708244..9990e67 100644
+--- a/web/components/TeamTabNavigation/TeamTabNavigation.test.tsx
++++ b/web/components/TeamTabNavigation/TeamTabNavigation.test.tsx
+@@ -4,6 +4,7 @@ import {
+   fireEvent,
+   render,
+   screen,
++  within,
+ } from "@testing-library/react";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ 
+@@ -430,31 +431,73 @@ describe("LineCombinationsGrid mixed line shapes", () => {
+ 
+   const ids = (prefix: number, count: number) =>
+     Array.from({ length: count }, (_, i) => String(prefix + i));
++  const cardsIn = (group: HTMLElement) =>
++    within(group)
++      .queryAllByRole("link")
++      .map((link) => link.textContent);
++  const regularCardsIn = (name: string) => {
++    const section = screen.getByRole("group", { name });
++    const extras = within(section).queryAllByRole("group");
++    return cardsIn(section).filter(
++      (id) => !extras.some((group) => cardsIn(group).includes(id)),
++    );
++  };
+ 
+   it.each([
+     ["12F/6D", 12, 6],
+-    ["11F/7D", 11, 7],
+     ["13F/5D", 13, 5],
++    ["14F/4D", 14, 4],
++    ["11F/7D", 11, 7],
+     ["10F/8D", 10, 8],
+-  ])("shows every dressed skater for %s", async (_shape, forwardCount, defenseCount) => {
+-    const { LineCombinationsGrid } = await vi.importActual<
+-      typeof import("../LineCombinations/LineCombinationsGrid")
+-    >("../LineCombinations/LineCombinationsGrid");
+-    const forwards = ids(100, forwardCount);
+-    const defensemen = ids(200, defenseCount);
+-    render(
+-      <LineCombinationsGrid
+-        forwards={forwards}
+-        defensemen={defensemen}
+-        goalies={["300", "301"]}
+-        playerMap={{}}
+-      />,
+-    );
+-    for (const id of [...forwards, ...defensemen, "300", "301"]) {
+-      expect(screen.getByText(id)).toBeTruthy();
+-    }
+-    expect(screen.getAllByRole("link")).toHaveLength(forwardCount + defenseCount + 2);
+-  });
++    ["13F/6D", 13, 6],
++    ["12F/7D", 12, 7],
++  ])(
++    "keeps every %s skater in their own group with labelled extras",
++    async (shape, forwardCount, defenseCount) => {
++      const { LineCombinationsGrid } = await vi.importActual<
++        typeof import("../LineCombinations/LineCombinationsGrid")
++      >("../LineCombinations/LineCombinationsGrid");
++      const forwards = ids(100, forwardCount);
++      const defensemen = ids(200, defenseCount);
++      render(
++        <LineCombinationsGrid
++          forwards={forwards}
++          defensemen={defensemen}
++          goalies={["300", "301", "302"]}
++          playerMap={{}}
++        />,
++      );
++
++      // Nobody is dropped, and nobody fills another group's line or pair.
++      expect(screen.getAllByRole("link")).toHaveLength(
++        forwardCount + defenseCount + 3,
++      );
++      expect(regularCardsIn("Forwards")).toEqual(forwards.slice(0, 12));
++      expect(regularCardsIn("Defense")).toEqual(defensemen.slice(0, 6));
++      expect(cardsIn(screen.getByRole("group", { name: "Forwards" }))).toEqual(
++        forwards,
++      );
++      expect(cardsIn(screen.getByRole("group", { name: "Defense" }))).toEqual(
++        defensemen,
++      );
++
++      const extraForwards = screen.queryByRole("group", {
++        name: `Extra F · ${shape}`,
++      });
++      const extraDefense = screen.queryByRole("group", {
++        name: `Extra D · ${shape}`,
++      });
++      expect(extraForwards ? cardsIn(extraForwards) : []).toEqual(
++        forwards.slice(12),
++      );
++      expect(extraDefense ? cardsIn(extraDefense) : []).toEqual(
++        defensemen.slice(6),
++      );
++      expect(
++        cardsIn(screen.getByRole("group", { name: "Extra G" })),
++      ).toEqual(["302"]);
++    },
++  );
+ });
+ 
+ describe("ShotVisualization filters", () => {

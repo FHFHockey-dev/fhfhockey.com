@@ -1,0 +1,156 @@
+{
+  "at": "2026-10-24T16:33:33.997678+00:00",
+  "scope": "Same sole documentary worker; full unique task-bearing reads, chronology/supersession and preserved closures. No new workers/app edits/tests/Git/production/API/provider/cron/database actions.",
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "11cdb7f985621231a80b803429a34d0aa8a111db66c8f697581b7f7601361fea",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "01e4e3b089a79424f919a9b5cb8259c77bd682bc7ed5964531250a642f54c4de",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "09f13408bdf961f813c3680de4d3fa89a7a7df4ab13b1035665e6657fd4dcda3"
+  },
+  "library_version": 6,
+  "ids": 206,
+  "evidence": 925,
+  "selected": [
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/burn-down-plan.md",
+      "bytes": 11196,
+      "lines": 209,
+      "sha256": "a4333e26f591dd2f068dd20b31fed45b16067bfe575220c36ab810fb7b0b9464",
+      "chunks": [
+        [
+          1,
+          209,
+          11161
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/drm-local-gates-checkpoint-2026-08-01.md",
+      "bytes": 2353,
+      "lines": 51,
+      "sha256": "24e99a46251b9c02360003cbfa291718ce98bd7fe765077c4de03c5c531237fe",
+      "chunks": [
+        [
+          1,
+          51,
+          2339
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/hidden-product-surface-ownership-matrix.md",
+      "bytes": 6577,
+      "lines": 33,
+      "sha256": "836c5df358c30308a789141fc0568d6aec782fe65ab5b848a87763f8a49dc432",
+      "chunks": [
+        [
+          1,
+          33,
+          6573
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md",
+      "bytes": 54450,
+      "lines": 196,
+      "sha256": "537f88afae9ba557298bf2ef403aeb8f58d93478a4e575a06886683eb2abb642",
+      "chunks": [
+        [
+          1,
+          94,
+          16977
+        ],
+        [
+          95,
+          128,
+          17020
+        ],
+        [
+          129,
+          183,
+          17394
+        ],
+        [
+          184,
+          196,
+          2972
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "bytes": 36468,
+      "lines": 287,
+      "sha256": "6f0969a99cb341f534807383ddf6268cbc6707c60177c44c7a6fdbd17f878131",
+      "chunks": [
+        [
+          1,
+          149,
+          17493
+        ],
+        [
+          150,
+          278,
+          17248
+        ],
+        [
+          279,
+          287,
+          1715
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/prd-drm-refactor.md",
+      "bytes": 50891,
+      "lines": 232,
+      "sha256": "2985e89d54448ccd66987c653b80d7a1e32f7a497af06c7e316d2d2aaaa2b36d",
+      "chunks": [
+        [
+          1,
+          111,
+          16979
+        ],
+        [
+          112,
+          143,
+          17160
+        ],
+        [
+          144,
+          232,
+          16674
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+      "bytes": 80369,
+      "lines": 1927,
+      "sha256": "0b0a198c946c4eb01fbcc9169d5d46a92db61a813937d95da0d45717c855708c",
+      "chunks": [
+        [
+          1,
+          565,
+          17475
+        ],
+        [
+          566,
+          1133,
+          17453
+        ],
+        [
+          1134,
+          1507,
+          17478
+        ],
+        [
+          1508,
+          1927,
+          15889
+        ]
+      ]
+    }
+  ],
+  "owner_steers": "Parent confirms card task generation/new Sol implementation approved; exact premium/default proposals open. WiGO owner two approved production SELECTs68rows/no writes completed, local code fixes now approved, refresh/backfill held. Auditor has no execution or app authority."
+}

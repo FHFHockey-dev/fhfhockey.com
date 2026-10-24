@@ -1,0 +1,1081 @@
+{
+  "C01": {
+    "fetchError": "OFFLINE_LUNA_TEST_NETWORK_DENIED"
+  },
+  "C02": {
+    "status": "disabled",
+    "holds": [],
+    "attempts": 0,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": null,
+    "ledgerCreated": false,
+    "lockCreated": false
+  },
+  "C03 string true": {
+    "status": "disabled",
+    "holds": [],
+    "attempts": 0,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C03 1": {
+    "status": "disabled",
+    "holds": [],
+    "attempts": 0,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C03 truthy object": {
+    "status": "disabled",
+    "holds": [],
+    "attempts": 0,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C04": {
+    "status": "held",
+    "holds": [
+      "explicit_transport_required"
+    ],
+    "attempts": 0,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "ledger": null
+  },
+  "C05": {
+    "status": "held",
+    "holds": [
+      "luna_dispatch_disabled"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C06": {
+    "status": "review_only",
+    "holds": [
+      "decisions_unresolved",
+      "human_review_required",
+      "no_publication_authority"
+    ],
+    "attempts": 2,
+    "requestIds": [
+      "request-responses"
+    ],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 38500,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C07": {
+    "status": "review_only",
+    "holds": [
+      "decisions_unresolved",
+      "human_review_required",
+      "no_publication_authority"
+    ],
+    "attempts": 2,
+    "requestIds": [
+      "request-responses"
+    ],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 2,
+    "keyCalls": 2,
+    "ledger": {
+      "blockedReason": "unknown_billed_outcome",
+      "attempts": [
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 38500,
+          "requestId": null
+        },
+        {
+          "state": "uncertain",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C07 rerun": {
+    "status": "held",
+    "holds": [
+      "luna_budget_stopped"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 2,
+    "keyCalls": 2,
+    "ledger": {
+      "blockedReason": "unknown_billed_outcome",
+      "attempts": [
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 38500,
+          "requestId": null
+        },
+        {
+          "state": "uncertain",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C08": {
+    "status": "held",
+    "holds": [
+      "luna_attempt_held_no_retry"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": "unknown_billed_outcome",
+      "attempts": [
+        {
+          "state": "uncertain",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C09 reserved": {
+    "status": "held",
+    "holds": [
+      "luna_unsettled_attempt"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "reserved",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C09 uncertain": {
+    "status": "held",
+    "holds": [
+      "luna_unsettled_attempt"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "uncertain",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C10": {
+    "status": "held",
+    "holds": [
+      "invalid_or_unavailable_review"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    },
+    "lockStillPresent": true,
+    "ledgerUnchanged": true
+  },
+  "C11 expired": {
+    "status": "held",
+    "holds": [
+      "luna_budget_stopped"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C11 disabled ledger": {
+    "status": "held",
+    "holds": [
+      "luna_budget_stopped"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C11 maxCalls zero": {
+    "status": "held",
+    "holds": [
+      "luna_budget_exhausted"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C11 cap below one reservation": {
+    "status": "held",
+    "holds": [
+      "luna_budget_exhausted"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C12": {
+    "status": "held",
+    "holds": [
+      "luna_budget_exhausted"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 50000000,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C13": {
+    "status": "held",
+    "holds": [
+      "invalid_or_unavailable_review"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "reserved",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": null
+        }
+      ]
+    },
+    "rowsAfterFirst": [
+      "reserved"
+    ],
+    "rerunStatus": "held",
+    "rerunHolds": [
+      "luna_unsettled_attempt"
+    ]
+  },
+  "C14 cached tokens": {
+    "status": "held",
+    "holds": [
+      "luna_attempt_held_no_retry"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": "unknown_billed_outcome",
+      "attempts": [
+        {
+          "state": "uncertain",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": "request-responses"
+        }
+      ]
+    }
+  },
+  "C14 priority tier": {
+    "status": "held",
+    "holds": [
+      "luna_attempt_held_no_retry"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": "unknown_billed_outcome",
+      "attempts": [
+        {
+          "state": "uncertain",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": "request-responses"
+        }
+      ]
+    }
+  },
+  "C14 dated model alias": {
+    "status": "held",
+    "holds": [
+      "luna_attempt_held_no_retry"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": "unknown_billed_outcome",
+      "attempts": [
+        {
+          "state": "uncertain",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": "request-responses"
+        }
+      ]
+    }
+  },
+  "C14 missing usage": {
+    "status": "held",
+    "holds": [
+      "luna_attempt_held_no_retry"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": "unknown_billed_outcome",
+      "attempts": [
+        {
+          "state": "uncertain",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": "request-responses"
+        }
+      ]
+    }
+  },
+  "C14 output over cap": {
+    "status": "held",
+    "holds": [
+      "luna_attempt_held_no_retry"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": "unknown_billed_outcome",
+      "attempts": [
+        {
+          "state": "uncertain",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": "request-responses"
+        }
+      ]
+    }
+  },
+  "C14 negative input": {
+    "status": "held",
+    "holds": [
+      "luna_attempt_held_no_retry"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": "unknown_billed_outcome",
+      "attempts": [
+        {
+          "state": "uncertain",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": "request-responses"
+        }
+      ]
+    }
+  },
+  "C15 oversize": {
+    "status": "held",
+    "holds": [
+      "luna_attempt_held_no_retry"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": "unknown_billed_outcome",
+      "attempts": [
+        {
+          "state": "uncertain",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": "request-responses"
+        }
+      ]
+    }
+  },
+  "C15 http500": {
+    "status": "held",
+    "holds": [
+      "luna_attempt_held_no_retry"
+    ],
+    "attempts": 1,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": "unknown_billed_outcome",
+      "attempts": [
+        {
+          "state": "uncertain",
+          "reservedNanoUsd": 233000000,
+          "charge": null,
+          "requestId": "request-responses"
+        }
+      ]
+    }
+  },
+  "C16": {
+    "wireKeys": [
+      "input",
+      "max_output_tokens",
+      "model",
+      "prompt_cache_options",
+      "reasoning",
+      "service_tier",
+      "store",
+      "tools"
+    ],
+    "tools": [],
+    "store": false,
+    "max": 2048,
+    "tier": "default",
+    "redirect": "error"
+  },
+  "C17": {
+    "status": "held",
+    "holds": [
+      "luna_attempt_held_no_retry"
+    ],
+    "leaksKey": false,
+    "leaksUpstream": false
+  },
+  "C18": {
+    "responsesMaxNano": 232689601,
+    "decisionsMaxNano": 231000001,
+    "reservation": 233000000
+  },
+  "C19 same-instant": {
+    "status": "review_only",
+    "holds": [
+      "human_review_required",
+      "no_publication_authority"
+    ],
+    "attempts": 2,
+    "requestIds": [
+      "request-responses",
+      "request-decisions"
+    ],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 2,
+    "keyCalls": 2,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 38500,
+          "requestId": null
+        },
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 11000,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C19 +1ms": {
+    "status": "held",
+    "holds": [
+      "identity_source_clock_mismatch"
+    ],
+    "attempts": 0,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C20 asOf before publish": {
+    "status": "held",
+    "holds": [
+      "invalid_or_unavailable_review"
+    ],
+    "attempts": 0,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C20 asOf after now": {
+    "status": "held",
+    "holds": [
+      "identity_source_clock_mismatch"
+    ],
+    "attempts": 0,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C21": {
+    "status": "held",
+    "holds": [
+      "review_clock_invalid"
+    ],
+    "attempts": 0,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C22 causal late": {
+    "status": "held",
+    "holds": [
+      "dated_identity_evidence_unavailable"
+    ],
+    "attempts": 0,
+    "requestIds": [],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 0,
+    "keyCalls": 0,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": []
+    }
+  },
+  "C22 retrospective": {
+    "status": "review_only",
+    "holds": [
+      "retrospective_development_evidence",
+      "human_review_required",
+      "no_publication_authority"
+    ],
+    "attempts": 1,
+    "requestIds": [
+      "request-responses"
+    ],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 38500,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C23": {
+    "status": "held",
+    "holds": [
+      "goalie_subject_binding_invalid"
+    ],
+    "attempts": 1,
+    "requestIds": [
+      "request-responses"
+    ],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 38500,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C24": {
+    "status": "held",
+    "holds": [
+      "goalie_subject_binding_invalid"
+    ],
+    "attempts": 1,
+    "requestIds": [
+      "request-responses"
+    ],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 38500,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C25 mismatch": {
+    "status": "held",
+    "holds": [
+      "goalie_subject_binding_invalid"
+    ],
+    "attempts": 1,
+    "requestIds": [
+      "request-responses"
+    ],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 38500,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C25 duplicate": {
+    "status": "held",
+    "holds": [
+      "invalid_or_unavailable_review"
+    ],
+    "attempts": 1,
+    "requestIds": [
+      "request-responses"
+    ],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 38500,
+          "requestId": null
+        }
+      ]
+    }
+  },
+  "C26 likely on not-starting wording": {
+    "status": "review_only",
+    "holds": [
+      "human_review_required",
+      "no_publication_authority"
+    ],
+    "attempts": 1,
+    "requestIds": [
+      "request-responses"
+    ],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 38500,
+          "requestId": null
+        }
+      ]
+    },
+    "goalieStatuses": [
+      {
+        "status": "likely",
+        "verified": false,
+        "floor": 0.8,
+        "appliedOverride": null,
+        "holds": [
+          "human_review_required",
+          "game_and_source_time_binding_required",
+          "conflict_retraction_check_required"
+        ]
+      }
+    ]
+  },
+  "C26 projected on ruled-out wording": {
+    "status": "review_only",
+    "holds": [
+      "human_review_required",
+      "no_publication_authority"
+    ],
+    "attempts": 1,
+    "requestIds": [
+      "request-responses"
+    ],
+    "flags": {
+      "canPublish": false,
+      "canWriteAliases": false,
+      "canChangeStatus": false,
+      "canExecuteReplacement": false
+    },
+    "fetchCalls": 1,
+    "keyCalls": 1,
+    "ledger": {
+      "blockedReason": null,
+      "attempts": [
+        {
+          "state": "settled",
+          "reservedNanoUsd": 233000000,
+          "charge": 38500,
+          "requestId": null
+        }
+      ]
+    },
+    "goalieStatuses": [
+      {
+        "status": "projected",
+        "verified": false,
+        "floor": 0.65,
+        "appliedOverride": null,
+        "holds": [
+          "human_review_required",
+          "game_and_source_time_binding_required",
+          "conflict_retraction_check_required"
+        ]
+      }
+    ]
+  },
+  "C27": {
+    "identical": true,
+    "decisionsWireKeys": [
+      "input",
+      "model",
+      "prompt_cache_options",
+      "questions"
+    ]
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "web/contexts/AuthProviderContext/index.tsx": {
+    "baseline_sha256": "ba911142eb7c7e52c880df27a4b7236e95dd2345012a32078df9671073ff4be8",
+    "candidate_sha256": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+    "bytes": 7472
+  },
+  "web/__tests__/contexts/AuthProviderContext.test.tsx": {
+    "baseline_sha256": "7e9bb5e5f6370b1e8ffb69eca11dbcc4385fab0aa441facceb62de66758d8074",
+    "candidate_sha256": "4b37b6d250e41a48c0f9e8a0ee102c833974a60a0efda324608a86b8f0d628c5",
+    "bytes": 19518
+  },
+  "web/pages/social-share/[format].tsx": {
+    "baseline_sha256": "64d936a223b7e6004b75254ccbd17c3014220e4214759d2d7a1746a6d762aec6",
+    "candidate_sha256": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+    "bytes": 1173
+  },
+  "web/pages/api/v1/social-share/[format].ts": {
+    "baseline_sha256": "61b20fb5109ce472f112998306f1f0ee690a34528f00e96d9d61400cd55ecdfd",
+    "candidate_sha256": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+    "bytes": 1715
+  },
+  "web/lib/socialShare/editionFetch.ts": {
+    "baseline_sha256": "61ec8a161d5bc18f7aad89f1603da993f7e9dfa703cbe8df06296a58cb511625",
+    "candidate_sha256": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+    "bytes": 2007
+  },
+  "web/lib/socialShare/editionFetch.test.ts": {
+    "baseline_sha256": "c497a850e536cc02f95de8fd586c03b55fb77eb02833e4840659bc1d507f8c75",
+    "candidate_sha256": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236",
+    "bytes": 6040
+  },
+  "web/lib/socialShare/schedule.test.ts": {
+    "baseline_sha256": "26084030490c50df46bd19a5d8b898b6c44da1f629e97ff8f44e6ae515757185",
+    "candidate_sha256": "29a8d4f8e176ac0c6d530eda71f7ee0f27b68cab6f88692c39a713105de3b052",
+    "bytes": 34329
+  },
+  "web/components/SocialShare/SocialShare.test.tsx": {
+    "baseline_sha256": "b68a0655a51fc1bb85cda7a3d64134fc294f4d7ebea797559081e1a6fac08aa2",
+    "candidate_sha256": "e9b2e6e3b7f0265790029577601c86c26bf4860565a5defcd3fccaf79adc11f3",
+    "bytes": 2044
+  },
+  "web/lib/socialShare/access.ts": {
+    "baseline_sha256": null,
+    "candidate_sha256": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+    "bytes": 1871
+  },
+  "web/lib/socialShare/access.test.ts": {
+    "baseline_sha256": null,
+    "candidate_sha256": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+    "bytes": 6435
+  },
+  "web/components/SocialShare/SocialShareAccessGate.tsx": {
+    "baseline_sha256": null,
+    "candidate_sha256": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+    "bytes": 946
+  },
+  "web/components/SocialShare/SocialShareAccessGate.test.tsx": {
+    "baseline_sha256": null,
+    "candidate_sha256": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+    "bytes": 4301
+  }
+}

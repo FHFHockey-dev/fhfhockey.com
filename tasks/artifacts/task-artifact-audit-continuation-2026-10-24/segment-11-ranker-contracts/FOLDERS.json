@@ -1,0 +1,25 @@
+{
+  "at": "2026-10-24T18:01:31.635897+00:00",
+  "scope": "Original saved queue overlay, not current recursive inventory",
+  "folders": [
+    {
+      "path": "tasks/TASKS/draft-ranker/",
+      "original_unique_text_records": 18,
+      "covered_this_segment": 12,
+      "direct_full": 11,
+      "complete_common_text_and_delta_variant": 1,
+      "remaining_by_original_kind": {},
+      "new_current_files_not_reinventoried": true,
+      "limitation": "All original unique task-text candidates in this folder are covered across segments10–11. No application/source/hosted/pixel acceptance; historical noncanonical variant retained, not an exact duplicate."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/",
+      "next_cursor": "tasks/TASKS/forge-projections/command-center/prd-forge-command-center-rebuild.md",
+      "status": "Next saved unique-document batch; metadata discovery is not content acceptance"
+    }
+  ],
+  "known_support_metadata_dispositions_carried": 39,
+  "selected_unique_reports_pending": 8,
+  "original_duplicate_map_untouched": true,
+  "new_exact_duplicate_scope_resolutions": 0
+}

@@ -1,0 +1,50 @@
+{
+  "at": "2026-10-24T17:11:13.406485+00:00",
+  "verdict": "ACCEPT WITH LIMITS",
+  "finding": "S05-R1 resolved locally",
+  "scope": "Exact two-file hidden-token-refresh lifecycle correction",
+  "candidate_pins": [
+    {
+      "path": "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.tsx",
+      "expected": "3bcd1c56aae644f7ea7f0caaaf7053d38feb03a33d5ed4412dc54592b8dc5f4c"
+    },
+    {
+      "path": "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx",
+      "expected": "ad376e0cb335723bed1a741a24a418e2d88012f539260405a48b8848f34c4eee"
+    }
+  ],
+  "owner_pins_matched": 148,
+  "evidence_receipt_matched": true,
+  "incremental_patch_exact": true,
+  "original_reproducer_sha256": "a8ad74b144108e085fcc497a7d32698b3264c0662e8403b688c95ff3aadd3f42",
+  "original_failure_log_sha256": "a1af9aa32ad3185b3db355c9f8e5a4f3427dc717147f1b6595fe5dc91f646d0a",
+  "checks": {
+    "passed": 11,
+    "intentionally_skipped": 8,
+    "independent_new_cases": 2,
+    "scoped_types": "passed",
+    "scoped_lint": "passed",
+    "initial_heavy_lock_refusal_preserved": true,
+    "remaining_blocked_review_checks": []
+  },
+  "commands": "COMMANDS.json",
+  "activation": {
+    "approved_reads_used": 0,
+    "approved_reads_limit": 1,
+    "status": "independently blocked; not attempted by reviewer",
+    "configuration_changed": false,
+    "reload": false
+  },
+  "limits": [
+    "Synthetic lifecycle correction only",
+    "No native BFCache/browser execution",
+    "No live authentication or session validity acceptance",
+    "Original read-adapter/sealed-payload/inactive-runner limits unchanged",
+    "No single-use live request budget or shared auth write containment implemented"
+  ],
+  "application_edits": 0,
+  "live_requests": 0,
+  "server_or_browser_actions": 0,
+  "git_operations": 0,
+  "new_workers": 0
+}

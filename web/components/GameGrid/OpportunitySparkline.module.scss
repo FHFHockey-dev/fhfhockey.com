@@ -93,13 +93,19 @@ $matchup-colors: (
   }
 }
 
-// Quick-look card: glass panel with a solid top rail.
-.card {
+// Include the visual gap in hit testing so the pointer never reaches a row underneath.
+.cardRegion {
   position: fixed;
   z-index: v.$mobile-z-index-modal;
   box-sizing: border-box;
   width: 236px;
   max-width: calc(100vw - 16px);
+  padding-block: 6px;
+}
+
+// Quick-look card: glass panel with a solid top rail.
+.card {
+  position: relative;
   padding: 12px 12px 8px;
   overflow: hidden;
   border: 1px solid rgba(v.$color-white, 0.12);
@@ -110,7 +116,6 @@ $matchup-colors: (
   font-family: v.$font-family-primary, sans-serif;
   font-size: 0.72rem;
   line-height: 1.3;
-  pointer-events: none;
 
   &::before {
     content: "";

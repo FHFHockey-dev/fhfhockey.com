@@ -1,0 +1,6 @@
+{
+  "action": "Pin named inventory family",
+  "initial_action_target": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-native-zoom-200.png",
+  "reason": "Initial helper assumed every named family entry was UTF8; binary image decode failed. No source/canonical write or pending process.",
+  "outcome": "Read-only failure resolved by recording binary metadata separately; no binary content or visual review claimed."
+}

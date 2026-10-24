@@ -1,0 +1,20 @@
+{
+  "results": [
+    {
+      "name": "types",
+      "exitCode": -6,
+      "started": "2026-10-23T15:13:08.133989+00:00",
+      "finished": "2026-10-23T15:13:33.057350+00:00"
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "started": "2026-10-23T15:13:33.057394+00:00",
+      "finished": "2026-10-23T15:13:35.754493+00:00"
+    }
+  ],
+  "snapshotDrift": [],
+  "canonicalOverlayDrift": [],
+  "files": 3468,
+  "finished": "2026-10-23T15:13:35.943664+00:00"
+}

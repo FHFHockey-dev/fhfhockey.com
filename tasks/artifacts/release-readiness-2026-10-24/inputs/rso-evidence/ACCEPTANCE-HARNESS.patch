@@ -1,0 +1,118 @@
+--- original-Claude-harness
++++ harness-v2/rso-p07-acceptance.spec.ts
+@@ -4,6 +4,7 @@
+ // the candidate's own code.
+ import { expect, test, type Page, type TestInfo } from "@playwright/test";
+ import { randomUUID } from "node:crypto";
++import { writeFile } from "node:fs/promises";
+ import { installDraftProAuthenticatedFixtures } from "../draft-pro-fixtures";
+ import type { GameForecast, LeagueRules, PlanningPlayer, PlanningSnapshot, PlanningWorkspace } from "../../lib/rosterScheduleOptimizer/planningTypes";
+ import { currentRsoUsePolicy } from "../../lib/player-forecasts/rsoUsePolicy";
+@@ -13,7 +14,8 @@
+ const DAY = "2026-10-05";
+ const EVALUATED_AT = "2026-10-05T18:00:00.000Z";
+ const REVISION = "forge-daily-bridge-v1:acceptance-run";
+-const policy = process.env.RSO_GOALIE_POLICY ?? "badge-only";
++const policy = process.env.RSO_GOALIE_POLICY ?? "server-confirmed";
++const PRINCIPAL = "00000000-0000-4000-8000-000000000001";
+ 
+ type Member = PlanningPlayer;
+ const member = (id: number, name: string, team: string, positions: string[], playerClass: "skater" | "goalie" = "skater"): Member => ({
+@@ -46,13 +48,25 @@
+   weights: Record<string, number>;
+   bridge: GameForecast[];
+   serialized?: GameForecast[];
++  privateBridge?: GameForecast[];
++  privateFailure?: boolean;
++  expiresAt?: string;
+   nonce?: "echo" | "mismatch";
+ };
+ 
+ async function openScenario(page: Page, scenario: Scenario) {
+   await page.route(url => !["127.0.0.1", "localhost"].includes(url.hostname), route => route.abort());
+   await page.route("**/api/**", route => route.fulfill({ status: 503, json: { error: "fixture: not mocked" } }));
+-  await page.clock.install({ time: new Date(EVALUATED_AT) });
++  // Set the planning day without replacing performance.timeOrigin or timers. Both
++  // Playwright clock APIs virtualize the window's origin but leave actual Workers
++  // on the real origin, which would manufacture a cross-realm expiry mismatch.
++  await page.addInitScript(at => {
++    const NativeDate = Date, fixed = NativeDate.parse(at);
++    window.Date = class extends NativeDate {
++      constructor(...args: any[]) { super(...(args.length ? args : [fixed]) as [any]); }
++      static now() { return fixed; }
++    } as DateConstructor;
++  }, EVALUATED_AT);
+   const games = scenario.players.map(gameOf);
+   const rules: LeagueRules = { lineupMode: "daily", rosterSlots: scenario.slots, acquisitionTiming: "same_day", acquisitionCost: 1, periods: [],
+     lineupPeriods: [], scoring: { mode: "points", weights: scenario.weights, categories: [] },
+@@ -76,22 +90,29 @@
+   const reads: { route: string; nonce: string | undefined; echoed: string | undefined }[] = [];
+   const currentRead = (route: import("@playwright/test").Route, kind: "data" | "yahoo-current-data") => {
+     const request = route.request();
++    if (kind === "yahoo-current-data" && scenario.privateFailure) return route.fulfill({ status: 503, json: { success: false, error: "synthetic current evidence unavailable" } });
+     const body = kind === "yahoo-current-data" ? request.postDataJSON() ?? {} : {};
+     const nonce: string | undefined = kind === "data" ? request.headers()["x-rso-read-nonce"] : body.nonce;
+     const echoed = nonce && scenario.nonce === "mismatch" ? randomUUID() : nonce;
+     reads.push({ route: kind, nonce, echoed });
+     const bearer = (request.headers().authorization ?? "").split(" ")[1] ?? "";
+     const principalId = kind === "yahoo-current-data" ? JSON.parse(Buffer.from(bearer.split(".")[1] ?? "", "base64url").toString() || "{}").sub : undefined;
+-    const scope = kind === "yahoo-current-data" ? { expiresAt: null, principalId, teamId: body.teamId, leagueId: body.leagueId,
++    if (kind === "yahoo-current-data") {
++      expect(request.method()).toBe("POST"); expect(principalId).toBe(PRINCIPAL);
++      expect(request.headers().authorization).toMatch(/^Bearer .+\.fixture$/);
++      expect(body).toMatchObject({ teamId: "team", leagueId: "league", seasonId: SEASON, startDate: DAY, endDate: "2026-10-06", timeZone: "UTC" });
++    }
++    const privateRows = kind === "yahoo-current-data" ? scenario.privateBridge : undefined;
++    const scope = kind === "yahoo-current-data" ? { expiresAt: scenario.expiresAt ?? null, principalId, teamId: body.teamId, leagueId: body.leagueId,
+       seasonId: body.seasonId, startDate: body.startDate, endDate: body.endDate, timeZone: body.timeZone } : {};
+     return route.fulfill({ json: { success: true,
+-      data: { players: scenario.players, games, forecasts: scenario.serialized ?? [], baselineSources: [], participationSources: [],
++      data: { players: scenario.players, games, forecasts: [...(scenario.serialized ?? []), ...(privateRows ?? [])], baselineSources: [], participationSources: [],
+         evidence: { schedule: { source: "fixture", asOf: EVALUATED_AT, seasonId: SEASON, completeness: "complete", limitations: [] } },
+         forecastManifest: { version: "planning-forecasts-v1", id: "current-read", seasonId: SEASON, asOf: EVALUATED_AT,
+           scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: [REVISION], baselineChecksum: null,
+           requiredOpportunities: games.length, forecastedOpportunities: scenario.bridge.length, exclusionCounts: {},
+           rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: [REVISION] } } },
+-      bridgeForecasts: wire, ...(nonce ? { read: { nonce: echoed, evaluatedAt: EVALUATED_AT, ...scope } } : {}) } });
++      bridgeForecasts: privateRows ? null : wire, ...(nonce ? { read: { nonce: echoed, evaluatedAt: EVALUATED_AT, ...scope } } : {}) } });
+   };
+   await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => currentRead(route, "data"));
+   await page.route("**/api/v1/roster-schedule-optimizer/yahoo-current-data", route => currentRead(route, "yahoo-current-data"));
+@@ -205,7 +226,33 @@
+   await shoot(page, testInfo, grid, `goalie-marks-${policy}`);
+ });
+ 
+-test("Yahoo goalie marks from the trusted server read set start chance (server-confirmed policy only)", async () => {
+-  test.skip(policy === "badge-only", "Release owner policy is badge-only: no trusted server mark path to accept.");
+-  throw new Error("server-confirmed policy selected: extend this harness with the candidate's trusted Yahoo read contract before accepting.");
+-});
++test("trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks", async ({ page }, testInfo) => {
++  expect(policy).toBe("server-confirmed");
++  await page.addInitScript(() => {
++    const NativeWorker = Worker; (window as any).__expiryClocks = [];
++    window.Worker = class extends NativeWorker { constructor(url: string | URL, options?: WorkerOptions) {
++      super(url, options); this.addEventListener("message", event => { if (event.data.result) (window as any).__expiryClocks.push({ expiresAt: event.data.expiresAt,
++        expiresAtMonotonic: event.data.expiresAtMonotonic, windowWall: Date.now(), windowMono: performance.timeOrigin + performance.now() }); });
++    } };
++  });
++  const starters = [member(31, "Verified Starter", "DAL", ["G"], "goalie"), member(32, "Verified Nonstarter", "VGK", ["G"], "goalie"), member(33, "Unknown Goalie", "MIN", ["G"], "goalie")];
++  const marked = starters.map((player, i) => ({ ...player, startingStatus: { source: "yahoo" as const, date: DAY, isStarting: i !== 0, observedAt: "2010-01-01T00:00:00Z" } }));
++  const row = (player: Member, probability: number) => forecastRow(player, { SAVES_GOALIE: 25 * probability }, { startProbability: probability, confirmedStart: probability === 1, conditionalStats: { SAVES_GOALIE: 25 } });
++  const scenario: Scenario = { players: marked, slots: { G: 3 }, weights: { SAVES_GOALIE: .2 }, nonce: "echo",
++    bridge: starters.map((player, i) => row(player, [.6, .7, .4][i])),
++    privateBridge: starters.map((player, i) => row(player, [1, 0, .4][i])), expiresAt: "2026-10-05T18:00:10.000Z" };
++  const { grid, reads } = await openScenario(page, scenario);
++  await expectPoints(cell(grid, "Verified Starter", "G"), "5.0", "5.0");
++  await expectPoints(cell(grid, "Verified Nonstarter", "G"), "0.0", "5.0");
++  await expectPoints(cell(grid, "Unknown Goalie", "G"), "2.0", "5.0");
++  expect(reads.some(read => read.route === "yahoo-current-data" && read.nonce === read.echoed)).toBe(true);
++  await shoot(page, testInfo, grid, "trusted-yahoo-positive");
++  scenario.privateFailure = true;
++  // Let the real 10-second publication deadline expire; no fabricated worker/window clock jump.
++  await writeFile(testInfo.outputPath("expiry-clocks.json"), JSON.stringify(await page.evaluate(() => ({ receipts: (window as any).__expiryClocks,
++    wall: Date.now(), mono: performance.timeOrigin + performance.now() })), null, 2));
++  await expectPoints(cell(grid, "Verified Starter", "G"), "—", "—");
++  await expectPoints(cell(grid, "Verified Nonstarter", "G"), "—", "—");
++  await expectPoints(cell(grid, "Unknown Goalie", "G"), "—", "—");
++  await shoot(page, testInfo, grid, "trusted-yahoo-expired");
++});

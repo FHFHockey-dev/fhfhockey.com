@@ -1,0 +1,41 @@
+--- a/confirmedStartReview.test.ts
++++ b/confirmedStartReview.test.ts
+@@ -67,14 +67,14 @@
+     observed_at: "2026-10-22T11:59:00Z", available_at: "2026-10-22T11:59:01Z", created_at: "2026-10-22T11:59:02Z",
+     expires_at: "2026-10-23T20:00:00Z", accepted: true, source_key: "synthetic-accepted-news", observation_status: status };
+ }
+-function fromServerObservation(observation: BoardGoalieEvidence | null) {
++function fromServerObservation(observation: BoardGoalieEvidence | null, prior = 0.3) {
+   const result = goalieFixture(true), { snapshot, body } = result;
+   const second = { ...snapshot.players[0], id: "8", nhlId: 78, name: "Synthetic teammate", availability: "free_agent" as const, startingStatus: undefined };
+   snapshot.players.push(second); body.data.players.push(structuredClone(second));
+   const goalieNews = resolveDailyBoardEvidence({ cutoff: now, lineups: [], goalies: observation ? [observation] : [], conflicts: [] });
+   const emitted = buildForgeDailyBridgeForecasts({ runs: [{ run_id: "trusted-run", as_of_date: "2026-10-22", created_at: now, git_sha: "synthetic-sha" }],
+     skaters: [], goalies: [{ run_id: "trusted-run", as_of_date: "2026-10-22", horizon_games: 1, game_id: 30, goalie_id: 77, team_id: 1,
+-      starter_probability: 0.3, proj_saves: 25, proj_goals_allowed: 2.5, proj_shots_against: 27.5, proj_win_prob: 0.5, proj_shutout_prob: 0.05 }],
++      starter_probability: prior, proj_saves: 25, proj_goals_allowed: 2.5, proj_shots_against: 27.5, proj_win_prob: 0.5, proj_shutout_prob: 0.05 }],
+     goalieShares: [{ player_id: 77, game_id: 30, game_date: "2026-10-23", l10_start_pct: 0.3, season_start_pct: 0.3, updated_at: now },
+       { player_id: 78, game_id: 30, game_date: "2026-10-23", l10_start_pct: 0.7, season_start_pct: 0.7, updated_at: now }], goalieNews,
+   }, body.data.players, body.data.games, new Date(now), 20262027, forecastCalendarPolicy(14));
+@@ -107,11 +107,19 @@
+     expect(worker.postMessage).toHaveBeenCalledWith(result);
+   }
+ });
+-it.each(["likely", "projected", "unknown", "unconfirmed"])("does not override the modeled prior for unconfirmed server status %s", async status => {
++// TJ selected these floors on October23; they are product policy, not calibrated probabilities.
++it.each([["likely", 0.8], ["projected", 0.65], ["unknown", 0.3], ["unconfirmed", 0.3]] as const)
++("applies chosen policy without claiming confirmation for server status %s", async (status, probability) => {
+   const { snapshot, body, intent } = fromServerObservation(acceptedObservation(status)); mockRead(body);
+   const result = await executeRosterPlanning(snapshot, intent);
+   expect(result.displaySnapshot.forecasts.find(row => row.playerId === "7")).toMatchObject({
+-    startProbability: 0.3, confirmedStart: false, stats: { SAVES_GOALIE: 7.5 } });
++    startProbability: probability, confirmedStart: false, stats: { SAVES_GOALIE: 25 * probability } });
++});
++it.each(["likely", "projected"])("keeps a higher modeled prior above the chosen %s floor", async status => {
++  const { snapshot, body, intent } = fromServerObservation(acceptedObservation(status), 0.9); mockRead(body);
++  const result = await executeRosterPlanning(snapshot, intent);
++  expect(result.displaySnapshot.forecasts.find(row => row.playerId === "7")).toMatchObject({
++    startProbability: 0.9, confirmedStart: false, stats: { SAVES_GOALIE: 22.5 } });
+ });
+ it.each(["not_accepted", "expired", "future_published", "future_available", "future_created", "wrong_game", "wrong_team", "wrong_player", "absent"])
+ ("does not override for %s server observation", async kind => {

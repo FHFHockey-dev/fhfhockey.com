@@ -1,0 +1,1521 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/planning.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web
+
+(node:10922) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts (143 tests | 77 failed) 1020ms
+   ✓ planning engine > hypothetical schedule-only full-roster swaps > returns a legal AGP swap with unknown points as an explicitly hypothetical schedule comparison 17ms
+   ✓ planning engine > hypothetical schedule-only full-roster swaps > preserves protected gates with missing points 2ms
+   ✓ planning engine > hypothetical schedule-only full-roster swaps > preserves cannot_drop gates with missing points 2ms
+   ✓ planning engine > hypothetical schedule-only full-roster swaps > preserves unavailable gates with missing points 1ms
+   ✓ planning engine > hypothetical schedule-only full-roster swaps > preserves excluded gates with missing points 0ms
+   ✓ planning engine > hypothetical schedule-only full-roster swaps > preserves timing gates with missing points 2ms
+   ✓ planning engine > hypothetical schedule-only full-roster swaps > preserves budget gates with missing points 2ms
+   ✓ planning engine > hypothetical schedule-only full-roster swaps > preserves owned_team gates with missing points 1ms
+   ✓ planning engine > hypothetical schedule-only full-roster swaps > preserves candidate_team gates with missing points 0ms
+   ✓ planning engine > hypothetical schedule-only full-roster swaps > preserves schedule gates with missing points 1ms
+   × planning engine > hypothetical schedule-only full-roster swaps > still excludes a scheduled-game gain with a known points loss 7ms
+     → expected false to be true // Object.is equality
+   × planning engine > crowded daily acceptance checkpoint > reassigns the flexible player to maximize supported value without exceeding legal capacity 3ms
+     → expected { assignmentValue: null, …(18) } to match object { legal: true, activeGames: 2, …(5) }
+(31 matching properties omitted from actual)
+   × planning engine > crowded daily acceptance checkpoint > withholds crowded-day quality when a competing forecast is absent 1ms
+     → expected { assignmentValue: null, …(18) } to match object { legal: true, activeGames: 2, …(3) }
+(27 matching properties omitted from actual)
+   × planning engine > crowded daily acceptance checkpoint > withholds crowded-day quality when a competing forecast is null 1ms
+     → expected { assignmentValue: null, …(18) } to match object { legal: true, activeGames: 2, …(3) }
+(27 matching properties omitted from actual)
+   × planning engine > crowded daily acceptance checkpoint > withholds crowded-day quality when a competing forecast is conditional 1ms
+     → expected { assignmentValue: null, …(18) } to match object { legal: true, activeGames: 2, …(3) }
+(27 matching properties omitted from actual)
+   ✓ planning engine > crowded daily acceptance checkpoint > preserves the selected legal lineup after rejecting a capacity change 1ms
+   ✓ planning engine > crowded daily acceptance checkpoint > preserves the selected legal lineup after rejecting a protected drop change 1ms
+   × planning engine > unranked category decision policy > does not use a margin-only tradeoff or descriptive win count to displace the capacity seed 1ms
+     → expected [ null, null ] to deeply equal [ 103, 11 ]
+   ✓ planning engine > unranked category decision policy > keeps the neutral seed invariant to unlike category-unit magnitudes 2ms
+   × planning engine > unranked category decision policy > accepts a supported componentwise improvement without certifying a global scalar winner 1ms
+     → expected [ 'a' ] to deeply equal [ 'b' ]
+   × planning engine > unranked category decision policy > retains supported incomparable acquisitions and preserves manager-selected moves 1ms
+     → expected undefined to match object { comparisonEligible: true, …(1) }
+   ✓ planning engine > unranked category decision policy > keeps exact-equivalent outcomes on the no-acquisition plan without a significance margin 1ms
+   × planning engine > unranked category decision policy > retains a cheaper category improvement when a stronger plan spends an additional acquisition 5ms
+     → expected false to be true // Object.is equality
+   ✓ planning engine > unranked category decision policy > withholds missing category and zero-exposure comparisons without treating them as dominant zeros 0ms
+   × planning engine > unranked category decision policy > respects explicit goalie coverage separately from category utility with penalty=none 1ms
+     → expected [ { date: '2026-10-05', …(4) } ] to deeply equal []
+   × planning engine > unranked category decision policy > respects explicit goalie coverage separately from category utility with penalty=lose_goalie_categories 1ms
+     → expected [ { date: '2026-10-05', …(4) } ] to deeply equal []
+   ✓ planning engine > uses league-local 'same_day' effective time across DST at '2026-11-01T20:00:00Z' 0ms
+   ✓ planning engine > uses league-local 'next_day' effective time across DST at '2026-11-01T20:00:00Z' 0ms
+   ✓ planning engine > uses league-local 'next_day' effective time across DST at '2026-03-08T06:00:00Z' 0ms
+   ✓ planning engine > uses league-local 'unknown' effective time across DST at '2026-11-01T20:00:00Z' 0ms
+   × planning engine > retains computed zero AGP for a quality replacement, without inventing invalid eligibility scores 1ms
+     → expected null to be 16 // Object.is equality
+   × planning engine > evaluates the entire 1000-player population across 2 days with exact full-plan gains 92ms
+     → expected [] to have a length of 998 but got +0
+   × planning engine > evaluates the entire 1000-player population across 13 days with exact full-plan gains 409ms
+     → expected [] to have a length of 998 but got +0
+   × planning engine > values points gained on usable games above extra low-value games, including displaced roster points 1ms
+     → expected null to be 2 // Object.is equality
+   × planning engine > retains an improving full-roster drop/add alternative despite fewer-starts 1ms
+     → expected { assignmentValue: null, …(18) } to match object { activeGames: 2, …(3) }
+(29 matching properties omitted from actual)
+   × planning engine > retains an improving full-roster drop/add alternative despite lower-hold-value 1ms
+     → expected { assignmentValue: null, …(18) } to match object { activeGames: 2, …(3) }
+(29 matching properties omitted from actual)
+   × planning engine > ranks candidate horizon points only from complete permitted forecast coverage 0ms
+     → expected null to be 4 // Object.is equality
+   × planning engine > keeps absent, category and unverified-eligibility candidate points unavailable, preserving real zero 0ms
+     → expected null to be +0 // Object.is equality
+   ✓ planning engine > retains manual legacy workspaces without granting unproven forecast recommendations 4ms
+   ✓ planning engine > retains yahoo legacy workspaces without granting unproven forecast recommendations 1ms
+   × planning engine > keeps missing and mixed Kaprizov/Knies/Batherson coverage schedule-only 2ms
+     → expected false to be true // Object.is equality
+   × planning engine > explains the best legal LW/RW and UTIL reassignment without name or input-order exceptions 1ms
+     → expected undefined to match object { reason: 'lower_lineup_value', …(1) }
+   × planning engine > withholds quality certification when a checked legal placement improves the selected lineup at scale 1 0ms
+     → expected { date: '2026-10-05', …(5) } to match object { reason: 'decision_unresolved', …(1) }
+(5 matching properties omitted from actual)
+   × planning engine > withholds quality certification when a checked legal placement improves the selected lineup at scale 1e-9 0ms
+     → expected { date: '2026-10-05', …(5) } to match object { reason: 'decision_unresolved', …(1) }
+(5 matching properties omitted from actual)
+   × planning engine > counts competing bench targets and explains missing discovery by opportunity 0ms
+     → expected { requiredCount: 2, …(4) } to match object { requiredCount: 2, …(3) }
+(1 matching property omitted from actual)
+   × planning engine > deduplicates identical forecast rows and rejects conflicting duplicates in either order 0ms
+     → expected false to be true // Object.is equality
+   ✓ planning engine > rejects conflicting resolved target identities without a last-wins coverage result 1ms
+   ✓ planning engine > allows an independently usable baseline after rejecting conflicting detailed rows 1ms
+   × planning engine > propagates missing quality through LW/RW and UTIL but preserves other components 0ms
+     → expected [ 'a', 'b', 'd' ] to deeply equal [ 'a', 'b' ]
+   ✓ planning engine > does not infer complete category totals from partial active targets or bench coverage 1ms
+   × planning engine > keeps false eligibility verification unresolved until explicitly verified 0ms
+     → expected false to be true // Object.is equality
+   × planning engine > keeps undefined eligibility verification unresolved until explicitly verified 0ms
+     → expected false to be true // Object.is equality
+   ✓ planning engine > preserves locked assignments and realized results without certifying absent eligibility 0ms
+   × planning engine > honors assignment-only and totals-only permissions independently 1ms
+     → expected 'agp' to be 'outcome' // Object.is equality
+   × planning engine > does not grant legacy forecasts unapproved uses or quality acquisition comparisons 3ms
+     → expected null not to be null
+   × planning engine > retains exact resolved forecast values and manifest with completed assignments 1ms
+     → expected 2 to be null // Object.is equality
+   × planning engine > uses conditional ability only for a fully comparable schedule tie 0ms
+     → expected false to be true // Object.is equality
+   ✓ planning engine > rejects expired quality evidence without changing realized results 0ms
+   × planning engine > keeps a coherent no-move baseline and finds an acquisition with a legal drop 3ms
+     → expected false to be true // Object.is equality
+   × planning engine > enforces capacity, dependencies, protections, and period budget 1ms
+     → expected null to be 3 // Object.is equality
+   ✓ planning engine > uses independent weekly lock windows and excludes additions after lock 1ms
+   ✓ planning engine > honors a midpoint weekly lock from the start of its window and rejects conflicting locks 2ms
+   ✓ planning engine > includes the last local day of a weekly window in UTC+14 1ms
+   ✓ planning engine > unlocks a bench player at the next New York midnight after DST ends 0ms
+   ✓ planning engine > holds a daily slot lock past puck drop until the next league-local midnight 1ms
+   ✓ planning engine > holds a daily slot lock until the New York midnight after DST ends 0ms
+   × planning engine > combines ratio components and reports missing forecasts without zeros 0ms
+     → expected null to be 0.7 // Object.is equality
+   × planning engine > aggregates GAA from goalie minutes without requiring minutes from skaters 0ms
+     → expected null to be close to 1.2, received difference is 1.2, but expected 0.005
+   ✓ planning engine > uses local calendar dates for next-day acquisition and charges actual cost 1ms
+   ✓ planning engine > does not let a drop invalidate an already locked future assignment 0ms
+   ✓ planning engine > preserves a locked bench player without promoting them 0ms
+   ✓ planning engine > does not treat an unknown start earlier today as a future opportunity 0ms
+   ✓ planning engine > preserves the custom '2026-10-05' horizon while including its last actionable day 0ms
+   ✓ planning engine > preserves the custom '2026-10-06' horizon while including its last actionable day 0ms
+   × planning engine > maximizes weekly games rather than a player's single-game score 1ms
+     → expected false to be true // Object.is equality
+   × planning engine > uses lock-time ownership and retained weekly opportunities: 'retains the pre-drop game' 1ms
+     → expected { assignmentValue: null, …(18) } to match object { legal: true, …(5) }
+(27 matching properties omitted from actual)
+   × planning engine > uses lock-time ownership and retained weekly opportunities: 'retains the pre-reserve game' 1ms
+     → expected { assignmentValue: null, …(18) } to match object { legal: true, …(5) }
+(27 matching properties omitted from actual)
+   × planning engine > uses lock-time ownership and retained weekly opportunities: 'excludes games lost after a planned d…' 1ms
+     → expected { assignmentValue: null, …(18) } to match object { legal: true, …(5) }
+(27 matching properties omitted from actual)
+   × planning engine > uses lock-time ownership and retained weekly opportunities: 'admits the replacement only at the ne…' 1ms
+     → expected { assignmentValue: null, …(18) } to match object { legal: true, …(5) }
+(27 matching properties omitted from actual)
+   ✓ planning engine > reports unavailable outcome with no usable forecasts and retains AGP baseline 0ms
+   × planning engine > scores skater and goalie fields only where their class applies 0ms
+     → expected null to be 5 // Object.is equality
+   × planning engine > lets outcome-first assignment sit a harmful ratio appearance 0ms
+     → expected 1 to be +0 // Object.is equality
+   × planning engine > supports successive occupants and keeps each acquisition in its period 0ms
+     → expected [ 'a', 'a' ] to deeply equal [ 'c', 'd' ]
+   × planning engine > finds the tiny exhaustive two-add oracle while reporting search coverage 16ms
+     → Cannot read properties of undefined (reading 'projectedValue')
+   ✓ planning engine > rejects a dependent action placed before its prerequisite action 0ms
+   ✓ planning engine > requires conditional future availability and does not infer appearance odds from starts 0ms
+   × planning engine > ignores zero-weight fields and does not assume unknown opponent remaining is zero 0ms
+     → expected null to be 4 // Object.is equality
+   ✓ planning engine > keeps the successful prefix if a later conditional claim fails 1ms
+   × planning engine > retains the roster prefix when a conditional suffix fails missing-period validation 0ms
+     → expected [ 'a', 'a' ] to deeply equal [ 'c', 'c' ]
+   × planning engine > retains the roster prefix when a conditional suffix fails exhausted-budget validation 1ms
+     → expected [ 'a', 'a' ] to deeply equal [ 'c', 'c' ]
+   × planning engine > retains the roster prefix when a conditional suffix fails roster-capacity validation 1ms
+     → expected [ 'a', 'a' ] to deeply equal [ 'c', 'c' ]
+   ✓ planning engine > does not let a rejected reserve prerequisite create capacity for its dependent add 0ms
+   ✓ planning engine > does not spend waiver budget for a rejected move before evaluating an independent claim 0ms
+   ✓ planning engine > rejects invalid timestamps and locked bench occupancy changes 0ms
+   ✓ planning engine > does not certify acquisition timing when the league rule is unknown 0ms
+   × planning engine > keeps surplus-goal versus hit gains descriptive without a category-win utility 0ms
+     → expected [ { key: 'g', own: null, …(2) }, …(1) ] to match object [ { key: 'g', own: 200, …(1) }, …(1) ]
+(2 matching properties omitted from actual)
+   × planning engine > sits a ratio appearance that gains surplus saves but loses a second category 0ms
+     → expected 1 to be +0 // Object.is equality
+   ✓ planning engine > keeps a neutral weekly category occupant fixed when alternatives trade category gains 1ms
+   ✓ planning engine > does not recommend a costed tie move 2ms
+   ✓ planning engine > requires verified waiver budget evidence without inventing a bid 1ms
+   × planning engine > finds the two-slot two-step exhaustive sequence winner deterministically 9ms
+     → expected -Infinity to be 7 // Object.is equality
+   × planning engine > plans a Sunday action for a Monday next-day acquisition 3ms
+     → expected undefined to be '2026-10-04' // Object.is equality
+   ✓ planning engine > keeps AGP lexicographic when a two-game player has very negative projected value 0ms
+   × planning engine > reaches multiple acquisitions within the bounded 25/300/7/4 workload 316ms
+     → expected false to be true // Object.is equality
+   × planning engine > keeps a credited goalie minimum satisfied when future start odds are missing 0ms
+     → expected null to be 1 // Object.is equality
+   ✓ planning engine > treats Thursday as early for Mon–Thu and late for Mon–Wed 1ms
+   ✓ planning engine > reports an impossible preferred window without spending an exhausted acquisition budget 1ms
+   ✓ planning engine > withholds overfull goalie competition rather than capping it into readiness 1ms
+   × planning engine > does not auto-reserve for accepted goalie risk with negative outcome 1ms
+     → expected false to be true // Object.is equality
+   × planning engine > preserves distinct goalie lineup gains at a league points scale of 1 1ms
+     → expected [ '2026-10-05:a', '2026-10-06:a' ] to deeply equal [ '2026-10-05:b', '2026-10-06:a' ]
+   × planning engine > preserves distinct goalie lineup gains at a league points scale of 1e-9 1ms
+     → expected [ '2026-10-05:a', '2026-10-06:a' ] to deeply equal [ '2026-10-05:b', '2026-10-06:a' ]
+   × planning engine > preserves distinct goalie lineup gains at a league points scale of 1e-15 1ms
+     → expected [ '2026-10-05:a', '2026-10-06:a' ] to deeply equal [ '2026-10-05:b', '2026-10-06:a' ]
+   × planning engine > distinguishes tiny bench outcomes from exact ties: 'lower_lineup_value' (1, 2) 0ms
+     → expected false to be true // Object.is equality
+   × planning engine > distinguishes tiny bench outcomes from exact ties: 'lower_lineup_value' (+0, 1) 0ms
+     → expected false to be true // Object.is equality
+   × planning engine > distinguishes tiny bench outcomes from exact ties: 'negative_value' (-1, +0) 0ms
+     → expected false to be true // Object.is equality
+   × planning engine > distinguishes tiny bench outcomes from exact ties: 'equal_lineup_value' (1, 1) 0ms
+     → expected false to be true // Object.is equality
+   × planning engine > prioritizes projected goalie-minimum coverage before points without crediting future starts 0ms
+     → expected false to be true // Object.is equality
+   ✓ planning engine > bypasses goalie-minimum checks for a league without a minimum and reports expected starts 0ms
+   × planning engine > sits harmful goalie points and ratio starts after the minimum is credited 0ms
+     → expected 1 to be +0 // Object.is equality
+   × planning engine > prefers equivalent vacant or reserve capacity before drops in points 2ms
+     → expected undefined to match object { legal: true, …(5) }
+   × planning engine > prefers equivalent vacant or reserve capacity before drops in categories 3ms
+     → expected undefined to match object { legal: true, …(5) }
+   × planning engine > checks legal reserve capacity before spending a narrow search quota on drops 2ms
+     → expected false to be true // Object.is equality
+   × planning engine > counts acquisitions rather than reserve transfers for exactly equal point outcomes 28ms
+     → expected false to be true // Object.is equality
+   × planning engine > does not promote a lower-value reserve alternative ahead of meaningful gains 3ms
+     → expected undefined to match object { projectedValue: 16, …(2) }
+   × planning engine > finds an IR prerequisite with default search budget when all drops are protected 3ms
+     → expected false to be true // Object.is equality
+   ✓ schedule-first targets > moves a flexible winger and shares UTIL capacity without recommending an unverified drop 1ms
+   ✓ schedule-first targets > does not move a locked flexible player to manufacture an opening 0ms
+   × lineup goal > plans for the manager's chosen goal, defaulting to projected points when they qualify 1ms
+     → expected false to be true // Object.is equality
+   ✓ lineup goal > falls back to most starts, and says so, when points are asked for without qualifying projections 0ms
+   × injured players > doesn't line up a player the provider lists as out, and says who was held out 1ms
+     → expected false to be true // Object.is equality
+   ✓ injured players > never proposes dropping an injured or IR-slotted player, or a move into a full IR+ slot 1ms
+   × injured players > keeps a provider-locked injured starter in his slot without valuing or counting the start 0ms
+     → expected null to be 1 // Object.is equality
+   ✓ games already under way > keeps a started player in his pre-start slot and closes it to later games 0ms
+   ✓ games already under way > follows the provider's lock for a started game instead of failing the plan 0ms
+   ✓ games already under way > still shows today's locked lineup once every game today has started 0ms
+   ✓ one retention ordering across drop surfaces (R7) > suggests nobody on the chip without forecasts, while schedule-only plans rank drops by active games, not ownership or id 3ms
+   ✓ one retention ordering across drop surfaces (R7) > never proposes a player with neither points nor a legal active-game count as a drop 0ms
+   × one retention ordering across drop surfaces (R7) > keeps and shows the less-rostered drop among exactly equivalent plans, whatever the ids 2ms
+     → expected 'a' to be 'b' // Object.is equality
+   × whole-swap category gains and sacrifices (R8) > splits the whole swap into the added player's gain and the dropped player's sacrifice, without an opponent 1ms
+     → expected { key: 'GOALS', …(12) } to match object { before: 1, after: 2, delta: 1, …(5) }
+(5 matching properties omitted from actual)
+   ✓ whole-swap category gains and sacrifices (R8) > marks categories incomplete with the reason instead of zero-filling a missing projection 0ms
+   ✓ whole-swap category gains and sacrifices (R8) > is unavailable when the plans can't be compared (different manifests or an illegal plan) 0ms
+   × whole-swap category gains and sacrifices (R8) > carries the same breakdown on the Best Fit plan 1ms
+     → expected { key: 'GOALS', …(12) } to match object { gain: 2, sacrifice: 1, delta: 1 }
+(10 matching properties omitted from actual)
+   ✓ ownership provenance in saved snapshots (R7 W2) > round-trips last-known ownership evidence and still parses saves without it 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 77 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > hypothetical schedule-only full-roster swaps > still excludes a scheduled-game gain with a known points loss
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:99:96
+     97|       data.forecasts = data.games.map(game => issuedForecast(data, gam…
+     98|         { stats: { pts: game.teamAbbreviation === "A" ? 10 : 1 } }));
+     99|       expect(planRoster(data, intent, options).alternatives.every(plan…
+       |                                                                                                ^
+    100|     });
+    101|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > crowded daily acceptance checkpoint > reassigns the flexible player to maximize supported value without exceeding legal capacity
+AssertionError: expected { assignmentValue: null, …(18) } to match object { legal: true, activeGames: 2, …(5) }
+(31 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[2m    "activeGames": 2,[22m
+[32m-   "assignmentValue": 15,[39m
+[31m+   "assignmentValue": null,[39m
+[2m    "benchGames": 2,[22m
+[32m-   "comparisonEligible": true,[39m
+[31m+   "comparisonEligible": false,[39m
+[2m    "legal": true,[22m
+[32m-   "projectedValue": 19,[39m
+[31m+   "projectedValue": null,[39m
+[2m    "recommendation": {[22m
+[32m-     "eligible": true,[39m
+[31m+     "eligible": false,[39m
+[2m    },[22m
+[2m  }[22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:127:24
+    125|       const original = JSON.stringify(data);
+    126|       const selected = evaluatePlan(data, intent, "outcome");
+    127|       expect(selected).toMatchObject({ legal: true, activeGames: 2, be…
+       |                        ^
+    128|         projectedValue: 19, comparisonEligible: true, recommendation: …
+    129|       expect(selected.assignments.map(row => [row.playerId, row.slotId…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > crowded daily acceptance checkpoint > withholds crowded-day quality when a competing forecast is absent
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > crowded daily acceptance checkpoint > withholds crowded-day quality when a competing forecast is null
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > crowded daily acceptance checkpoint > withholds crowded-day quality when a competing forecast is conditional
+AssertionError: expected { assignmentValue: null, …(18) } to match object { legal: true, activeGames: 2, …(3) }
+(27 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[33m@@ -3,14 +3,14 @@[39m
+[2m    "comparisonEligible": false,[22m
+[2m    "legal": true,[22m
+[2m    "projectedValue": null,[22m
+[2m    "recommendation": {[22m
+[2m      "coverage": {[22m
+[32m-       "assignmentEligibleCount": 3,[39m
+[32m-       "comparisonEligibleCount": 3,[39m
+[31m+       "assignmentEligibleCount": 0,[39m
+[31m+       "comparisonEligibleCount": 0,[39m
+[2m        "requiredCount": 4,[22m
+[32m-       "totalsEligibleCount": 3,[39m
+[31m+       "totalsEligibleCount": 0,[39m
+[2m      },[22m
+[2m      "eligible": false,[22m
+[2m      "mode": "schedule_capacity",[22m
+[2m    },[22m
+[2m  }[22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:156:22
+    154|       const original = JSON.stringify(data);
+    155|       const result = evaluatePlan(data, intent, "outcome");
+    156|       expect(result).toMatchObject({ legal: true, activeGames: 2, proj…
+       |                      ^
+    157|         recommendation: { eligible: false, mode: "schedule_capacity", …
+    158|           assignmentEligibleCount: 3, totalsEligibleCount: 3, comparis…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > unranked category decision policy > does not use a margin-only tradeoff or descriptive win count to displace the capacity seed
+AssertionError: expected [ null, null ] to deeply equal [ 103, 11 ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[32m-   103,[39m
+[32m-   11,[39m
+[31m+   null,[39m
+[31m+   null,[39m
+[2m  ][22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:214:59
+    212|       const seed = evaluatePlan(data, intent, "agp"), outcome = evalua…
+    213|       expect(outcome.assignments).toEqual(seed.assignments);
+    214|       expect(outcome.categoryResults.map(row => row.own)).toEqual([103…
+       |                                                           ^
+    215|       expect(outcome.comparisonEligible).toBe(true);
+    216|       expect(outcome.recommendation?.eligible).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > unranked category decision policy > accepts a supported componentwise improvement without certifying a global scalar winner
+AssertionError: expected [ 'a' ] to deeply equal [ 'b' ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[32m-   "b",[39m
+[31m+   "a",[39m
+[2m  ][22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:230:59
+    228|       const data = categoryData({ a: { g: 100, h: 10 }, b: { g: 101, h…
+    229|       const result = evaluatePlan(data, intent, "outcome");
+    230|       expect(result.assignments.map(row => row.playerId)).toEqual(["b"…
+       |                                                           ^
+    231|       expect(result.categoryResults.map(row => row.own)).toEqual([101,…
+    232|       expect(result.comparisonEligible).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > unranked category decision policy > retains supported incomparable acquisitions and preserves manager-selected moves
+AssertionError: expected undefined to match object { comparisonEligible: true, …(1) }
+
+[32m- Expected:[39m 
+{
+  "comparisonEligible": true,
+  "projectedStats": {
+    "g": 102,
+    "h": 12,
+  },
+}
+
+[31m+ Received:[39m 
+undefined
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:243:27
+    241|       const result = planRoster(data, intent, { maxSteps: 1, maxCandid…
+    242|       const alternative = result.alternatives.find(plan => plan.steps.…
+    243|       expect(alternative).toMatchObject({ comparisonEligible: true, pr…
+       |                           ^
+    244|       expect(alternative?.steps[0].dropPlayerId).toBe("a");
+    245|       const selectedIntent = { ...intent, steps: alternative!.steps };
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > unranked category decision policy > retains a cheaper category improvement when a stronger plan spends an additional acquisition
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:270:140
+    268|           h: member.id === "a" ? 1 : member.id === "c" ? 2 : 3 } })));
+    269|       const result = planRoster(data, { ...intent, alternativeCount: 2…
+    270|       expect(result.alternatives.some(plan => plan.steps.filter(step =…
+       |                                                                                                                                            ^
+    271|       expect(result.alternatives.some(plan => plan.steps.filter(step =…
+    272|       expect(result.search.complete).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > unranked category decision policy > respects explicit goalie coverage separately from category utility with penalty=none
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > unranked category decision policy > respects explicit goalie coverage separately from category utility with penalty=lose_goalie_categories
+AssertionError: expected [ { date: '2026-10-05', …(4) } ] to deeply equal []
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [][39m
+[31m+ [[39m
+[31m+   {[39m
+[31m+     "date": "2026-10-05",[39m
+[31m+     "gameId": "A0",[39m
+[31m+     "locked": false,[39m
+[31m+     "playerId": "a",[39m
+[31m+     "slotId": "G#1",[39m
+[31m+   },[39m
+[31m+ ][39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:297:36
+    295|         .map(member => issuedForecast(data, member.id, game.id, { stat…
+    296|       const accepted = evaluatePlan(data, intent, "outcome"), covered …
+    297|       expect(accepted.assignments).toEqual([]);
+       |                                    ^
+    298|       expect(covered.assignments.map(row => row.playerId)).toEqual(["b…
+    299|       expect(covered.categoryResults[0].own).toBeGreaterThan(accepted.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > retains computed zero AGP for a quality replacement, without inventing invalid eligibility scores
+AssertionError: expected null to be 16 // Object.is equality
+
+[32m- Expected:[39m 
+16
+
+[31m+ Received:[39m 
+null
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:335:52
+    333|     const metrics = candidateMetrics(data, intent);
+    334|     expect(new Map(metrics.activeGames).get("c")).toBe(0);
+    335|     expect(new Map(metrics.activePoints).get("c")).toBe(16);
+       |                                                    ^
+    336|     data.players.find(row => row.id === "c")!.eligiblePositions = ["UN…
+    337|     expect(new Map(candidateMetrics(data, intent).activeGames).has("c"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > evaluates the entire 1000-player population across 2 days with exact full-plan gains
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > evaluates the entire 1000-player population across 13 days with exact full-plan gains
+AssertionError: expected [] to have a length of 998 but got +0
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 998[39m
+[31m+ 0[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:353:72
+    351|     const metrics = candidateMetrics(data, intent);
+    352|     const elapsedMs = performance.now() - started;
+    353|     expect(metrics.activePoints.filter(([, value]) => value !== null))…
+       |                                                                        ^
+    354|     expect(metrics.activeGames).toHaveLength(998);
+    355|     const gains = new Map(metrics.activePoints);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > values points gained on usable games above extra low-value games, including displaced roster points
+AssertionError: expected null to be 2 // Object.is equality
+
+[32m- Expected:[39m 
+2
+
+[31m+ Received:[39m 
+null
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:379:28
+    377|     expect(capacity.find(row => row.playerIds.includes("d"))?.addedGam…
+    378|     const gains = candidateActivePoints(data, intent);
+    379|     expect(gains.get("c")).toBe(2);
+       |                            ^
+    380|     expect(gains.get("d")).toBe(26);
+    381|     expect(candidateHorizonPoints(data).get("d")).toBe(30);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > retains an improving full-roster drop/add alternative despite fewer-starts
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > retains an improving full-roster drop/add alternative despite lower-hold-value
+AssertionError: expected { assignmentValue: null, …(18) } to match object { activeGames: 2, …(3) }
+(29 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[2m    "activeGames": 2,[22m
+[32m-   "comparisonEligible": true,[39m
+[32m-   "projectedValue": 2,[39m
+[31m+   "comparisonEligible": false,[39m
+[31m+   "projectedValue": null,[39m
+[2m    "steps": [],[22m
+[2m  }[22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:397:29
+    395|     const before = structuredClone(data);
+    396|     const result = planRoster(data, intent, { maxSteps: 1, maxCandidat…
+    397|     expect(result.baseline).toMatchObject({ activeGames: 2, projectedV…
+       |                             ^
+    398|     expect(result.noMoveAgp).toMatchObject({ activeGames: 2, projected…
+    399|     expect(result.noMoveOutcome).toMatchObject({ activeGames: 2, proje…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > ranks candidate horizon points only from complete permitted forecast coverage
+AssertionError: expected null to be 4 // Object.is equality
+
+[32m- Expected:[39m 
+4
+
+[31m+ Received:[39m 
+null
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:414:51
+    412|   it("ranks candidate horizon points only from complete permitted fore…
+    413|     const data = snapshot();
+    414|     expect(candidateHorizonPoints(data).get("c")).toBe(4);
+       |                                                   ^
+    415|     const changed = (forecast: GameForecast) => { data.forecasts = dat…
+    416|     const original = data.forecasts.find(row => row.playerId === "c" &…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > keeps absent, category and unverified-eligibility candidate points unavailable, preserving real zero
+AssertionError: expected null to be +0 // Object.is equality
+
+[32m- Expected:[39m 
+0
+
+[31m+ Received:[39m 
+null
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:433:51
+    431|     const data = snapshot();
+    432|     data.forecasts = data.forecasts.map(row => row.playerId === "c" ? …
+    433|     expect(candidateHorizonPoints(data).get("c")).toBe(0);
+       |                                                   ^
+    434|     data.players.find(row => row.id === "c")!.eligibilityVerified = fa…
+    435|     expect(candidateHorizonPoints(data).get("c")).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > keeps missing and mixed Kaprizov/Knies/Batherson coverage schedule-only
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:488:56
+    486|     const complete = planRoster(data, intent, { maxSteps: 0 });
+    487|     expect(complete.baseline.assignments.map(a => a.playerId).sort()).…
+    488|     expect(complete.baseline.recommendation?.eligible).toBe(true);
+       |                                                        ^
+    489|     expect(complete.baseline.recommendation?.exclusions?.find(row => r…
+    490|       reason: "lower_lineup_value", evidence: { scoreBasis: "points_as…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > explains the best legal LW/RW and UTIL reassignment without name or input-order exceptions
+AssertionError: expected undefined to match object { reason: 'lower_lineup_value', …(1) }
+
+[32m- Expected:[39m 
+{
+  "evidence": {
+    "selectedScore": 27,
+    "withPlayerScore": 26,
+  },
+  "reason": "lower_lineup_value",
+}
+
+[31m+ Received:[39m 
+undefined
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:524:25
+    522|     const result = planRoster(data, intent, { maxSteps: 0 });
+    523|     const explanation = result.selected.recommendation?.exclusions?.fi…
+    524|     expect(explanation).toMatchObject({ reason: "lower_lineup_value", …
+       |                         ^
+    525|     expect(explanation?.evidence?.slotChanges).toEqual([
+    526|       { date: data.context.startDate, slotId: "LW#1", selectedPlayerId…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > withholds quality certification when a checked legal placement improves the selected lineup at scale 1
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > withholds quality certification when a checked legal placement improves the selected lineup at scale 1e-9
+AssertionError: expected { date: '2026-10-05', …(5) } to match object { reason: 'decision_unresolved', …(1) }
+(5 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "evidence": {[39m
+[32m-     "selectedScore": 1,[39m
+[32m-     "withPlayerScore": 2,[39m
+[32m-   },[39m
+[32m-   "reason": "decision_unresolved",[39m
+[31m+   "reason": "locked_capacity",[39m
+[2m  }[22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:546:52
+    544|     expect(result.recommendation).toMatchObject({ eligible: false, mod…
+    545|     expect(result.comparisonEligible).toBe(false);
+    546|     expect(result.recommendation?.exclusions?.[0]).toMatchObject({ rea…
+       |                                                    ^
+    547|       evidence: { selectedScore: weight, withPlayerScore: 2 * weight }…
+    548|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > counts competing bench targets and explains missing discovery by opportunity
+AssertionError: expected { requiredCount: 2, …(4) } to match object { requiredCount: 2, …(3) }
+(1 matching property omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "assignmentEligibleCount": 1,[39m
+[32m-   "comparisonEligibleCount": 1,[39m
+[31m+   "assignmentEligibleCount": 0,[39m
+[31m+   "comparisonEligibleCount": 0,[39m
+[2m    "requiredCount": 2,[22m
+[32m-   "totalsEligibleCount": 1,[39m
+[31m+   "totalsEligibleCount": 0,[39m
+[2m  }[22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:559:45
+    557|       exclusions: [{ gameId: "B0", reasons: ["discovery_failed"] }] };
+    558|     const result = evaluatePlan(data, intent, "outcome");
+    559|     expect(result.recommendation?.coverage).toMatchObject({ requiredCo…
+       |                                             ^
+    560|       assignmentEligibleCount: 1, totalsEligibleCount: 1, comparisonEl…
+    561|     expect(result.recommendation?.coverage?.exclusions).toEqual([{ pla…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > deduplicates identical forecast rows and rejects conflicting duplicates in either order
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:577:76
+    575|     const original = data.forecasts.find(row => row.playerId === "b" &…
+    576|     data.forecasts.push({ ...original, stats: { ...original.stats } });
+    577|     expect(evaluatePlan(data, intent, "outcome").recommendation?.eligi…
+       |                                                                            ^
+    578|     data.forecasts[data.forecasts.length - 1] = { ...original, revisio…
+    579|     const forward = planRoster(data, intent, { maxSteps: 0 });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > propagates missing quality through LW/RW and UTIL but preserves other components
+AssertionError: expected [ 'a', 'b', 'd' ] to deeply equal [ 'a', 'b' ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    "a",[22m
+[2m    "b",[22m
+[31m+   "d",[39m
+[2m  ][22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:651:66
+    649|     data.rules.rosterSlots = { LW: 1, RW: 1, D: 1, BN: 3 };
+    650|     const disconnected = evaluatePlan(data, intent, "outcome");
+    651|     expect(disconnected.assignments.map(a => a.playerId).sort()).toEqu…
+       |                                                                  ^
+    652|     data.rules.rosterSlots.UTIL = 1;
+    653|     const bridged = evaluatePlan(data, intent, "outcome");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > keeps false eligibility verification unresolved until explicitly verified
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > keeps undefined eligibility verification unresolved until explicitly verified
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:677:76
+    675|     expect(result.limitations.some(value => value.includes("positional…
+    676|     data.players[0].eligibilityVerified = true;
+    677|     expect(evaluatePlan(data, intent, "outcome").recommendation?.eligi…
+       |                                                                            ^
+    678|   });
+    679|   it("preserves locked assignments and realized results without certif…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > honors assignment-only and totals-only permissions independently
+AssertionError: expected 'agp' to be 'outcome' // Object.is equality
+
+Expected: [32m"outcome"[39m
+Received: [31m"agp"[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:695:41
+    693|     data.forecasts = data.forecasts.map(row => ({ ...row, allowedUses:…
+    694|     const assigned = planRoster(data, intent, { maxSteps: 0 });
+    695|     expect(assigned.baseline.objective).toBe("outcome");
+       |                                         ^
+    696|     expect(assigned.baseline.assignments.every(row => row.playerId ===…
+    697|     expect(assigned.baseline.recommendation?.eligible).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > does not grant legacy forecasts unapproved uses or quality acquisition comparisons
+AssertionError: expected null not to be null
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:716:48
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > retains exact resolved forecast values and manifest with completed assignments
+AssertionError: expected 2 to be null // Object.is equality
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+2
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:725:97
+    723|     expect(result.baseline.forecastManifestId).toBe(data.id);
+    724|     expect(result.baseline.forecastInputs?.map(row => `${row.playerId}…
+    725|     expect(result.baseline.forecastInputs?.reduce((sum, row) => sum + …
+       |                                                                                                 ^
+    726|   });
+    727|   it("uses conditional ability only for a fully comparable schedule ti…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > uses conditional ability only for a fully comparable schedule tie
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:734:88
+    732|     expect(result.projectedValue).toBeNull();
+    733|     expect(result.recommendation?.eligible).toBe(false);
+    734|     expect(result.limitations.some(value => value.includes("assuming p…
+       |                                                                                        ^
+    735|     expect(result.recommendation?.exclusions?.every(row => row.evidenc…
+    736|     data.forecasts = data.forecasts.filter(row => row.playerId !== "b"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > keeps a coherent no-move baseline and finds an acquisition with a legal drop
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:756:115
+    754|     expect(result.noMoveAgp.activeGames).toBe(2);
+    755|     expect(result.alternatives[0].steps).toEqual([]);
+    756|     expect(result.alternatives.some(item => item.steps.some(step => st…
+       |                                                                                                                   ^
+    757|   });
+    758|   it("enforces capacity, dependencies, protections, and period budget"…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > enforces capacity, dependencies, protections, and period budget
+AssertionError: expected null to be 3 // Object.is equality
+
+[32m- Expected:[39m 
+3
+
+[31m+ Received:[39m 
+null
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:768:37
+    766|     const before = JSON.stringify({ intent: selectedIntent, locks: dat…
+    767|     const original = evaluatePlan(data, selectedIntent, "outcome", sel…
+    768|     expect(original.projectedValue).toBe(3);
+       |                                     ^
+    769|     data.rules.scoring.weights.pts = 2;
+    770|     const recalculated = evaluatePlan(data, selectedIntent, "outcome",…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > combines ratio components and reports missing forecasts without zeros
+AssertionError: expected null to be 0.7 // Object.is equality
+
+[32m- Expected:[39m 
+0.7
+
+[31m+ Received:[39m 
+null
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:860:43
+    858|     data.opponent = { roster: [], realized: { made: 1, attempts: 2 }, …
+    859|     const result = evaluatePlan(data, intent, "agp");
+    860|     expect(result.categoryResults[0].own).toBe(0.7);
+       |                                           ^
+    861|     data.forecasts = data.forecasts.filter(item => item.gameId !== "B1…
+    862|     const missing = evaluatePlan(data, intent, "agp");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > aggregates GAA from goalie minutes without requiring minutes from skaters
+AssertionError: expected null to be close to 1.2, received difference is 1.2, but expected 0.005
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:880:43
+    878|       remaining: { GOALS_AGAINST_GOALIE: 0, GOALIE_MINUTES: 0 } };
+    879|     const result = evaluatePlan(data, intent, "agp");
+    880|     expect(result.categoryResults[0].own).toBeCloseTo(3 / 150 * 60);
+       |                                           ^
+    881|     expect(result.recommendation?.unresolved).toEqual([]);
+    882|     data.forecasts = data.forecasts.map(row => row.playerId === "b"
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > maximizes weekly games rather than a player's single-game score
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:945:46
+    943|     data.forecasts = data.forecasts.map(row => ({ ...row, stats: { pts…
+    944|     const quality = evaluatePlan(data, intent, "outcome");
+    945|     expect(quality.recommendation?.eligible).toBe(true);
+       |                                              ^
+    946|     expect(quality.recommendation?.exclusions?.[0]).toMatchObject({ pl…
+    947|       evidence: { lineupMode: "weekly", startDate: "2026-10-05", endDa…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > uses lock-time ownership and retained weekly opportunities: 'retains the pre-drop game'
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > uses lock-time ownership and retained weekly opportunities: 'retains the pre-reserve game'
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > uses lock-time ownership and retained weekly opportunities: 'excludes games lost after a planned d…'
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > uses lock-time ownership and retained weekly opportunities: 'admits the replacement only at the ne…'
+AssertionError: expected { assignmentValue: null, …(18) } to match object { legal: true, …(5) }
+(27 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[2m    "acquisitions": {[22m
+[2m      "p": 1,[22m
+[2m    },[22m
+[32m-   "activeGames": 1,[39m
+[31m+   "activeGames": 2,[39m
+[2m    "budgetVerified": true,[22m
+[32m-   "comparisonEligible": true,[39m
+[31m+   "comparisonEligible": false,[39m
+[2m    "legal": true,[22m
+[32m-   "projectedValue": 10,[39m
+[31m+   "projectedValue": null,[39m
+[2m  }[22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:981:20
+    979|     const before = structuredClone(data);
+    980|     const result = evaluatePlan(data, selectedIntent, "outcome", undef…
+    981|     expect(result).toMatchObject({ legal: true, comparisonEligible: tr…
+       |                    ^
+    982|       projectedValue: scenario.value, activeGames: scenario.selected.l…
+    983|     expect(result.assignments.map(row => row.playerId)).toEqual(scenar…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[31/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > scores skater and goalie fields only where their class applies
+AssertionError: expected null to be 5 // Object.is equality
+
+[32m- Expected:[39m 
+5
+
+[31m+ Received:[39m 
+null
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1030:35
+    1028|     const result = evaluatePlan(data, intent, "outcome");
+    1029|     expect(result.activeGames).toBe(2);
+    1030|     expect(result.projectedValue).toBe(5);
+       |                                   ^
+    1031|   });
+    1032|   it("lets outcome-first assignment sit a harmful ratio appearance", (…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[32/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > lets outcome-first assignment sit a harmful ratio appearance
+AssertionError: expected 1 to be +0 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0[39m
+[31m+ 1[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1044:63
+    1042|     data.opponent = { roster: [], realized: { goalsAgainst: 1, minutes…
+    1043|     expect(evaluatePlan(data, intent, "agp").activeGames).toBe(1);
+    1044|     expect(evaluatePlan(data, intent, "outcome").activeGames).toBe(0);
+       |                                                               ^
+    1045|   });
+    1046|   it("supports successive occupants and keeps each acquisition in its …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[33/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > supports successive occupants and keeps each acquisition in its period
+AssertionError: expected [ 'a', 'a' ] to deeply equal [ 'c', 'd' ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[32m-   "c",[39m
+[32m-   "d",[39m
+[31m+   "a",[39m
+[31m+   "a",[39m
+[2m  ][22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1060:57
+    1058|     expect(result.legal).toBe(true);
+    1059|     expect(result.acquisitions).toEqual({ first: 1, second: 1 });
+    1060|     expect(result.assignments.map(row => row.playerId)).toEqual(["c", …
+       |                                                         ^
+    1061|   });
+    1062|   it("finds the tiny exhaustive two-add oracle while reporting search …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[34/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > finds the tiny exhaustive two-add oracle while reporting search coverage
+TypeError: Cannot read properties of undefined (reading 'projectedValue')
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1072:35
+    1070|     const result = planRoster(data, intent, { maxEvaluations: 500, bea…
+    1071|     expect(result.search.evaluated).toBeGreaterThan(3);
+    1072|     expect(result.alternatives[1].projectedValue).toBe(oracle);
+       |                                   ^
+    1073|   });
+    1074|   it("rejects a dependent action placed before its prerequisite action…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[35/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > ignores zero-weight fields and does not assume unknown opponent remaining is zero
+AssertionError: expected null to be 4 // Object.is equality
+
+[32m- Expected:[39m 
+4
+
+[31m+ Received:[39m 
+null
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1096:66
+    1094|     const data = snapshot();
+    1095|     data.rules.scoring.weights = { pts: 1, unused: 0 };
+    1096|     expect(evaluatePlan(data, intent, "outcome").projectedValue).toBe(…
+       |                                                                  ^
+    1097|     data.rules.scoring = { mode: "categories", weights: {}, categories…
+    1098|     data.opponent = { roster: [], realized: { pts: 1 }, remaining: nul…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[36/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > retains the roster prefix when a conditional suffix fails missing-period validation
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > retains the roster prefix when a conditional suffix fails exhausted-budget validation
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > retains the roster prefix when a conditional suffix fails roster-capacity validation
+AssertionError: expected [ 'a', 'a' ] to deeply equal [ 'c', 'c' ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[32m-   "c",[39m
+[32m-   "c",[39m
+[31m+   "a",[39m
+[31m+   "a",[39m
+[2m  ][22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1126:61
+    1124|     expect(timeline.acquisitions).toEqual({ p: 1 });
+    1125|     const evaluation = evaluatePlan(data, selected, "outcome");
+    1126|     expect(evaluation.assignments.map(row => row.playerId)).toEqual(["…
+       |                                                             ^
+    1127|     expect(evaluation.legal).toBe(false);
+    1128|     expect(evaluation.recommendation?.eligible).toBe(false);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[37/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > keeps surplus-goal versus hit gains descriptive without a category-win utility
+AssertionError: expected [ { key: 'g', own: null, …(2) }, …(1) ] to match object [ { key: 'g', own: 200, …(1) }, …(1) ]
+(2 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    {[22m
+[2m      "key": "g",[22m
+[32m-     "own": 200,[39m
+[32m-     "result": "win",[39m
+[31m+     "own": null,[39m
+[31m+     "result": "unknown",[39m
+[2m    },[22m
+[2m    {[22m
+[2m      "key": "h",[22m
+[32m-     "own": 0,[39m
+[32m-     "result": "loss",[39m
+[31m+     "own": null,[39m
+[31m+     "result": "unknown",[39m
+[2m    },[22m
+[2m  ][22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1186:36
+    1184|     const result = evaluatePlan(data, intent, "outcome");
+    1185|     expect(result.assignments.map(row => row.playerId)).toEqual(["a"]);
+    1186|     expect(result.categoryResults).toMatchObject([{ key: "g", own: 200…
+       |                                    ^
+    1187|     expect(result.recommendation?.eligible).toBe(false);
+    1188|     expect(result.recommendation?.exclusions?.[0]).toMatchObject({ pla…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[38/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > sits a ratio appearance that gains surplus saves but loses a second category
+AssertionError: expected 1 to be +0 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0[39m
+[31m+ 1[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1206:32
+    1204|     expect(evaluatePlan(data, intent, "agp").activeGames).toBe(1);
+    1205|     const result = evaluatePlan(data, intent, "outcome");
+    1206|     expect(result.activeGames).toBe(0);
+       |                                ^
+    1207|     expect(result.categoryResults.map(row => row.result)).toEqual(["wi…
+    1208|     expect(result.categoryResults.map(row => row.own)).toEqual([0.9, 0…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > finds the two-slot two-step exhaustive sequence winner deterministically
+AssertionError: expected -Infinity to be 7 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 7[39m
+[31m+ -Infinity[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1270:20
+    1268|     const options = { maxEvaluations: 1000, maxCandidates: 2, beamWidt…
+    1269|     const first = planRoster(data, intent, options), second = planRost…
+    1270|     expect(oracle).toBe(7);
+       |                    ^
+    1271|     expect(Math.max(...first.alternatives.map(item => item.projectedVa…
+    1272|     expect(first.alternatives.map(item => item.steps.map(step => step.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[40/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > plans a Sunday action for a Monday next-day acquisition
+AssertionError: expected undefined to be '2026-10-04' // Object.is equality
+
+[32m- Expected:[39m 
+"2026-10-04"
+
+[31m+ Received:[39m 
+undefined
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1284:34
+    1282|     const result = planRoster(data, intent, { maxEvaluations: 100, max…
+    1283|     const add = result.alternatives.flatMap(item => item.steps).find(s…
+    1284|     expect(add?.at.slice(0, 10)).toBe("2026-10-04");
+       |                                  ^
+    1285|     expect(add?.effectiveAt.slice(0, 10)).toBe("2026-10-05");
+    1286|     const selected = evaluatePlan(data, intent, "agp", [add!]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[41/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > reaches multiple acquisitions within the bounded 25/300/7/4 workload
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1329:62
+    1327|     ];
+    1328|     const noAcquisitions = planRoster(data, intent, { maxSteps: 0 });
+    1329|     expect(noAcquisitions.selected.recommendation?.eligible).toBe(true…
+       |                                                              ^
+    1330|     expect(noAcquisitions.selected.recommendation?.explanationStatus).…
+    1331|     expect(noAcquisitions.search.benchEvidence?.complete).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[42/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > keeps a credited goalie minimum satisfied when future start odds are missing
+AssertionError: expected null to be 1 // Object.is equality
+
+[32m- Expected:[39m 
+1
+
+[31m+ Received:[39m 
+null
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1351:35
+    1349|     expect(result.goalie.projected).toBe(1);
+    1350|     expect(result.goalie.risk).toBe(false);
+    1351|     expect(result.projectedValue).toBe(1);
+       |                                   ^
+    1352|     data.rules.goalieMinimum.counts = "appearances";
+    1353|     const appearance = evaluatePlan(data, intent, "agp");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[43/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > does not auto-reserve for accepted goalie risk with negative outcome
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1422:72
+    1420|     data.rules.goalieMinimum = { required: 1, credited: 0, counts: "st…
+    1421|     const result = planRoster(data, { ...intent, protectedPlayerIds: […
+    1422|     expect(result.alternatives.every(item => item.steps.length === 0))…
+       |                                                                        ^
+    1423|     expect(result.baseline.goalie.risk).toBe(true);
+    1424|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[44/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > preserves distinct goalie lineup gains at a league points scale of 1
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > preserves distinct goalie lineup gains at a league points scale of 1e-9
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > preserves distinct goalie lineup gains at a league points scale of 1e-15
+AssertionError: expected [ '2026-10-05:a', '2026-10-06:a' ] to deeply equal [ '2026-10-05:b', '2026-10-06:a' ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[32m-   "2026-10-05:b",[39m
+[31m+   "2026-10-05:a",[39m
+[2m    "2026-10-06:a",[22m
+[2m  ][22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1441:83
+    1439|     const manager = { ...intent, goalieCoverage: "cover" as const };
+    1440|     for (const result of [evaluatePlan(data, manager, "outcome"), plan…
+    1441|       expect(result.assignments.map(row => `${row.date}:${row.playerId…
+       |                                                                                   ^
+    1442|       expect(result.projectedValue).toBe(4 * weight);
+    1443|       expect(result.goalie).toMatchObject({ credited: 0, projected: 1.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[45/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > distinguishes tiny bench outcomes from exact ties: 'lower_lineup_value' (1, 2)
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > distinguishes tiny bench outcomes from exact ties: 'lower_lineup_value' (+0, 1)
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > distinguishes tiny bench outcomes from exact ties: 'negative_value' (-1, +0)
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > distinguishes tiny bench outcomes from exact ties: 'equal_lineup_value' (1, 1)
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1464:45
+    1462|       .map(row => ({ ...row, stats: { pts: row.playerId === "a" ? a : …
+    1463|     const result = evaluatePlan(data, intent, "outcome");
+    1464|     expect(result.recommendation?.eligible).toBe(true);
+       |                                             ^
+    1465|     expect(result.recommendation?.exclusions).toContainEqual(expect.ob…
+    1466|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[46/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > prioritizes projected goalie-minimum coverage before points without crediting future starts
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1481:45
+    1479|     const points = evaluatePlan(data, cover, "outcome");
+    1480|     expect(points.assignments.map(row => row.playerId)).toEqual(["a"]);
+    1481|     expect(points.recommendation?.eligible).toBe(true);
+       |                                             ^
+    1482|     expect(points.goalie.minimumSatisfied).toBe(false);
+    1483|     expect(points.recommendation?.exclusions?.[0]).toMatchObject({ rea…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[47/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > sits harmful goalie points and ratio starts after the minimum is credited
+AssertionError: expected 1 to be +0 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0[39m
+[31m+ 1[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1574:32
+    1572|     data.rules.goalieMinimum = { required: 1, credited: 1, counts: "st…
+    1573|     const points = evaluatePlan(data, intent, "outcome");
+    1574|     expect(points.activeGames).toBe(0);
+       |                                ^
+    1575|     expect(points.goalie.risk).toBe(false);
+    1576|     expect(points.recommendation?.exclusions?.[0]).toMatchObject({ rea…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[48/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > prefers equivalent vacant or reserve capacity before drops in points
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > prefers equivalent vacant or reserve capacity before drops in categories
+AssertionError: expected undefined to match object { legal: true, …(5) }
+
+[32m- Expected:[39m 
+{
+  "acquisitions": {
+    "p": 1,
+  },
+  "activeGames": 2,
+  "budgetVerified": true,
+  "comparisonEligible": true,
+  "legal": true,
+  "projectedStats": {
+    "pts": 6,
+  },
+}
+
+[31m+ Received:[39m 
+undefined
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1600:20
+    1598|       const result = planRoster(data, intent, { maxSteps: 1, maxCandid…
+    1599|       const best = result.alternatives.find(plan => plan.steps.some(st…
+    1600|       expect(best).toMatchObject({ legal: true, budgetVerified: true, …
+       |                    ^
+    1601|         projectedStats: { pts: 6 }, acquisitions: { p: 1 } });
+    1602|       expect(best?.steps.some(step => step.type === "drop" || step.dro…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[49/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > checks legal reserve capacity before spending a narrow search quota on drops
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1619:104
+    1617|     const result = planRoster(data, intent, { maxSteps: 1, maxCandidat…
+    1618|     expect(result.alternatives.some(plan => plan.steps.some(step => st…
+    1619|       && plan.steps.some(step => step.type === "add") && !plan.steps.s…
+       |                                                                                                        ^
+    1620|     expect(result.search.complete).toBe(false);
+    1621|     data.lockedAssignments = [{ date: "2026-10-05", slotId: "C#0", pla…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[50/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > counts acquisitions rather than reserve transfers for exactly equal point outcomes
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1640:98
+    1638|       { maxSteps: 2, maxCandidates: 3, maxEvaluations: 1000, beamWidth…
+    1639|     const equivalent = result.alternatives.filter(plan => plan.objecti…
+    1640|     expect(equivalent.some(plan => plan.steps.filter(step => step.type…
+       |                                                                                                  ^
+    1641|     expect(equivalent[0].steps.map(step => step.type)).toEqual(["reser…
+    1642|     expect(equivalent[0].acquisitions).toEqual({ p: 1 });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[51/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > does not promote a lower-value reserve alternative ahead of meaningful gains
+AssertionError: expected undefined to match object { projectedValue: 16, …(2) }
+
+[32m- Expected:[39m 
+{
+  "acquisitions": {
+    "p": 1,
+  },
+  "activeGames": 2,
+  "projectedValue": 16,
+}
+
+[31m+ Received:[39m 
+undefined
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1652:18
+    1650|     const result = planRoster(data, { ...intent, alternativeCount: 20 …
+    1651|     const best = result.alternatives.find(plan => plan.steps.length);
+    1652|     expect(best).toMatchObject({ projectedValue: 16, activeGames: 2, a…
+       |                  ^
+    1653|     expect(result.alternatives.some(plan => plan.projectedValue === 16…
+    1654|     expect(result.alternatives.some(plan => plan.projectedValue === 12…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[52/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > planning engine > finds an IR prerequisite with default search budget when all drops are protected
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1664:82
+    1662|     const result = planRoster(data, protectedIntent, { maxCandidates: …
+    1663|     expect(result.alternatives.some(item => item.steps.some(step => st…
+    1664|       && item.steps.some(step => step.type === "add" && step.playerId …
+       |                                                                                  ^
+    1665|   });
+    1666| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[53/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > lineup goal > plans for the manager's chosen goal, defaulting to projected points when they qualify
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1706:57
+    1704|     const data = snapshot();
+    1705|     const auto = planRoster(data, intent, { maxSteps: 0 });
+    1706|     expect(auto.noMoveOutcome.recommendation?.eligible).toBe(true);
+       |                                                         ^
+    1707|     expect(auto.selected.objective).toBe("outcome");
+    1708|     expect(planRoster(data, { ...intent, objective: "outcome" }, { max…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[54/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > injured players > doesn't line up a player the provider lists as out, and says who was held out
+AssertionError: expected false to be true // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1730:110
+    1728|     // Day-to-day is still a lineup option.
+    1729|     data.players = data.players.map(row => row.id === "b" ? { ...row, …
+    1730|     expect(planRoster(data, intent, { maxSteps: 0 }).selected.assignme…
+       |                                                                                                              ^
+    1731|   });
+    1732| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[55/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > injured players > keeps a provider-locked injured starter in his slot without valuing or counting the start
+AssertionError: expected null to be 1 // Object.is equality
+
+[32m- Expected:[39m 
+1
+
+[31m+ Received:[39m 
+null
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1761:35
+    1759|     // Only a's 10-06 game is a remaining start; b's projection adds n…
+    1760|     expect(result.activeGames).toBe(1);
+    1761|     expect(result.projectedValue).toBe(1);
+       |                                   ^
+    1762|     expect(result.forecastInputs?.some(row => row.playerId === "b")).t…
+    1763|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[56/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > one retention ordering across drop surfaces (R7) > keeps and shows the less-rostered drop among exactly equivalent plans, whatever the ids
+AssertionError: expected 'a' to be 'b' // Object.is equality
+
+Expected: [32m"b"[39m
+Received: [31m"a"[39m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1855:72
+    1853|       const plans = candidatePlanMetrics(data, intent).candidates.find…
+    1854|       const best = candidatePlanForSort(plans, "points")!;
+    1855|       expect(best.steps.find(step => step.dropPlayerId)?.dropPlayerId)…
+       |                                                                        ^
+    1856|       expect(ownershipBrokeTie(plans, best)).toBe(true);
+    1857|       expect(lineupGapReport(data, intent, evaluatePlan(data, intent, …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[57/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > whole-swap category gains and sacrifices (R8) > splits the whole swap into the added player's gain and the dropped player's sacrifice, without an opponent
+AssertionError: expected { key: 'GOALS', …(12) } to match object { before: 1, after: 2, delta: 1, …(5) }
+(5 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "after": 2,[39m
+[32m-   "before": 1,[39m
+[32m-   "coverage": "known",[39m
+[32m-   "delta": 1,[39m
+[32m-   "gain": 2,[39m
+[31m+   "after": null,[39m
+[31m+   "before": null,[39m
+[31m+   "coverage": "incomplete",[39m
+[31m+   "delta": null,[39m
+[31m+   "gain": null,[39m
+[2m    "opponent": null,[22m
+[2m    "ratio": false,[22m
+[32m-   "sacrifice": 1,[39m
+[31m+   "sacrifice": null,[39m
+[2m  }[22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1890:32
+    1888|     expect(plan).toMatchObject({ legal: true, budgetVerified: true });
+    1889|     const rows = swapCategoryBreakdown(data, baseline, plan);
+    1890|     expect(row(rows, "GOALS")).toMatchObject({ before: 1, after: 2, de…
+       |                                ^
+    1891|     expect(row(rows, "SHOTS")).toMatchObject({ before: 13, after: 10, …
+    1892|     // Custom multiplier scales the category, its gain and its sacrifi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[58/77]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planning.test.ts > whole-swap category gains and sacrifices (R8) > carries the same breakdown on the Best Fit plan
+AssertionError: expected { key: 'GOALS', …(12) } to match object { gain: 2, sacrifice: 1, delta: 1 }
+(10 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "delta": 1,[39m
+[32m-   "gain": 2,[39m
+[32m-   "sacrifice": 1,[39m
+[31m+   "delta": null,[39m
+[31m+   "gain": null,[39m
+[31m+   "sacrifice": null,[39m
+[2m  }[22m
+
+ ❯ lib/rosterScheduleOptimizer/planning.test.ts:1924:73
+    1922|     const plans = candidatePlanMetrics(data, intent).candidates.find(i…
+    1923|     const dropA = plans.find(plan => plan.steps.some(step => step.drop…
+    1924|     expect(dropA.categoryBreakdown?.find(item => item.key === "GOALS")…
+       |                                                                         ^
+    1925|   });
+    1926| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[59/77]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  77 failed | 66 passed (143)
+   Start at  10:20:02
+   Duration  1.62s (transform 169ms, setup 9ms, collect 186ms, tests 1.02s, environment 271ms, prepare 31ms)
+

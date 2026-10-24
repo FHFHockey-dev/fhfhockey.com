@@ -1,0 +1,354 @@
+@use "styles/vars" as v;
+@use "styles/panel" as p;
+
+// The original fixed-square tokens stay local to this isolated social variant.
+$share-square-size: 1080px;
+$share-preview-max: 540px;
+$share-square-padding: 48px;
+$share-title-size: 64px;
+$share-team-size: 46px;
+$share-value-size: 46px;
+$share-caption-size: 24px;
+$share-label-size: 26px;
+$share-rail-size: 8px;
+
+@font-face { font-family: "Share Roboto Condensed"; src: url("/fonts/social-share/RobotoCondensed-Variable.ttf") format("truetype"); font-weight: 100 900; font-display: block; }
+@font-face { font-family: "Share Train One"; src: url("/fonts/social-share/TrainOne-Regular.ttf") format("truetype"); font-weight: 400; font-display: block; }
+@font-face { font-family: "Share Martian Mono"; src: url("/fonts/social-share/MartianMono-Variable.ttf") format("truetype"); font-weight: 100 800; font-display: block; }
+
+.page {
+  width: 100%; min-width: 0; max-width: 1440px; margin: 0 auto;
+  padding: v.$space-md; color: v.$text-primary; font-family: "Share Roboto Condensed", v.$font-family-primary;
+  -webkit-font-smoothing: antialiased;
+  *, *::before, *::after { box-sizing: border-box; }
+  h1, h2, h3, p { margin: 0; }
+  h1 { font-size: v.$font-size-xxl; color: v.$color-white; text-wrap: balance; }
+  h2 { font-size: v.$font-size-lg; color: v.$color-white; }
+  a { color: v.$color-blue-300; }
+  button {
+    @include v.button-style;
+    min-height: v.$touch-target-min; font-weight: 700; font-size: v.$font-size-sm;
+    background: v.$background-dark; border-color: v.$border-soft; color: v.$text-primary;
+    &:hover:not(:disabled) { background: v.$surface-2; border-color: v.$primary-color; }
+    &[aria-pressed="true"] { background: v.$draft-action; border-color: v.$primary-color; color: v.$color-white; }
+    &:active:not(:disabled) { transform: scale(0.96); }
+  }
+  input, select {
+    min-height: v.$touch-target-min; max-width: 100%; min-width: 0; border: v.$border-subtle;
+    border-radius: v.$radius-control; background: v.$background-dark; color: v.$text-primary;
+    font: inherit; padding: v.$space-xs v.$space-sm; color-scheme: dark;
+    &:focus-visible { outline: 2px solid v.$primary-color; outline-offset: 2px; box-shadow: v.$focus-ring; }
+  }
+}
+.heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: v.$space-sm; margin-bottom: v.$space-md; }
+.eyebrow { color: v.$color-blue-300; text-transform: uppercase; letter-spacing: v.$mobile-letter-spacing-wide; font-size: v.$font-size-xs; }
+.scope { color: v.$text-secondary; font-size: v.$font-size-sm; }
+.panel { @include p.panel-shell($padding: v.$space-md, $overflow: visible); min-width: 0; }
+.controls { display: flex; flex-wrap: wrap; gap: v.$space-sm; align-items: flex-end; label { display: grid; gap: v.$space-xs; min-width: 0; max-width: 100%; } }
+.days { margin: v.$space-md 0 0; padding: 0; border: 0; display: flex; flex-wrap: wrap; gap: v.$space-xs;
+  legend { margin-bottom: v.$space-xs; font-size: v.$font-size-sm; color: v.$text-secondary; }
+  button { flex: 1 0 90px; padding: v.$space-xs; display: grid; gap: v.$space-xxs; text-align: center; font-variant-numeric: tabular-nums; }
+  strong { color: v.$color-white; } span, small { font-size: v.$font-size-xs; }
+}
+.status { padding: v.$space-sm 0; font-size: v.$font-size-sm; p + p { margin-top: v.$space-xs; } }
+.workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: v.$space-md; }
+.panelHeader { @include p.panel-header($padding-y: v.$space-xs, $padding-x: 0); margin-bottom: v.$space-sm; flex-wrap: wrap; span { font-size: v.$font-size-sm; color: v.$text-secondary; } }
+.previewFrame { max-width: $share-preview-max; width: 100%; position: relative; overflow: hidden; margin: 0 auto; min-height: v.$control-height-md; }
+.actions { display: flex; flex-wrap: wrap; gap: v.$space-xs; margin-top: v.$space-sm; button:first-child { border-color: v.$primary-color; } }
+.explanation { color: v.$text-secondary; font-size: v.$font-size-sm; margin-bottom: v.$space-sm !important; }
+.teamList { list-style: none; padding: 0; margin: 0; max-height: 880px; overflow-y: auto;
+  li { padding: v.$space-sm 0; border-bottom: 1px solid v.$border-soft; }
+  li > div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: v.$space-xs; }
+  strong { color: v.$color-white; } span { color: v.$color-blue-300; font-variant-numeric: tabular-nums; }
+  p { font-size: v.$font-size-xs; color: v.$text-secondary; margin-top: v.$space-xs; overflow-wrap: anywhere; }
+}
+
+// The captured node has a fixed editorial layout. Only its outer preview scales.
+.square {
+  width: $share-square-size; height: $share-square-size; padding: $share-square-padding;
+  transform-origin: top left; position: absolute; inset: 0 auto auto 0; display: flex; flex-direction: column;
+  background: v.$background-dark; color: v.$color-white; font-family: "Share Roboto Condensed", sans-serif;
+  border: 1px solid v.$border-soft; font-variant-numeric: tabular-nums;
+  &::before { content: ""; position: absolute; inset: 0 0 auto; height: $share-rail-size; background: v.$primary-color; }
+}
+.squareBrand { display: flex; align-items: center; justify-content: space-between; gap: v.$space-md;
+  strong { font: 400 $share-team-size "Share Train One", sans-serif; color: v.$primary-color; }
+  span { font-size: $share-caption-size; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; }
+  img { display: block; }
+}
+.squareTitle { margin: v.$space-sm 0;
+  h2 { font-size: $share-title-size; line-height: 1.05; font-weight: 900; white-space: pre-line; margin: v.$space-sm 0; color: v.$color-white; }
+  p { font-size: $share-label-size; color: v.$text-secondary; }
+  p:first-child { color: v.$color-blue-300; text-transform: uppercase; letter-spacing: v.$mobile-letter-spacing-wide; font-weight: 700; }
+}
+.leaders { flex: 1; display: flex; flex-direction: column; gap: v.$space-sm; min-height: 0; }
+.leader { display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; background: rgba(v.$color-white, 0.05); border: 2px solid rgba(v.$color-white, 0.12); min-height: 0; }
+.leaderWeek { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; padding: 18px 14px 6px; }
+.leaderDay { display: grid; justify-items: center; gap: 4px; border-radius: 8px; padding: 6px 0 8px;
+  > small { font-size: 14px; font-weight: 800; color: v.$text-secondary; letter-spacing: 0.04em; }
+  .cell { width: 56px; height: 56px; }
+  .cell img { width: 40px; height: 40px; }
+}
+.leaderMeta { padding: 4px 16px 10px; font-size: 16px; color: v.$text-secondary; letter-spacing: 0.03em; b { color: v.$color-white; } }
+.teamIdentity { min-width: 0;
+  h3 { font-size: $share-team-size; font-weight: 800; line-height: 1.02; text-wrap: balance; overflow-wrap: normal; margin-top: v.$space-xs; }
+}
+.rank { font-size: $share-caption-size; color: v.$color-blue-300; font-weight: 700; }
+.metrics { display: grid; grid-template-columns: 1fr 1fr 1.3fr; align-items: center; gap: v.$space-sm;
+  div { display: grid; gap: v.$space-sm; text-align: center; }
+  strong { font: 600 $share-value-size "Share Martian Mono", monospace; color: v.$color-white; }
+  span { font-size: $share-caption-size; color: v.$text-secondary; line-height: 1.1; }
+}
+.noGames { font-size: $share-team-size; color: v.$text-secondary; padding-top: v.$space-xxl; }
+.itinerary { margin-top: v.$space-sm;
+  h3 { font-size: $share-label-size; color: v.$color-blue-300; margin-bottom: v.$space-sm; }
+  > p { font-size: $share-caption-size; margin-top: v.$space-xs; }
+}
+.itineraryGames { display: grid; grid-template-columns: 1fr 1fr; gap: v.$space-sm v.$space-lg;
+  > div { padding: v.$space-sm 0; border-top: 1px solid v.$border-soft; display: grid; gap: v.$space-xs; }
+  strong { font-size: $share-label-size; color: v.$color-white; }
+  span { font-size: $share-caption-size; color: v.$text-secondary; }
+}
+.squareFooter { margin-top: v.$space-md; padding-top: v.$space-xs; border-top: 1px solid v.$border-soft; font-size: $share-caption-size; line-height: 1.25; color: v.$text-secondary;
+  p + p { margin-top: v.$space-xs; }
+  p strong { color: v.$color-blue-300; }
+}
+.watermark { display: block; margin-top: v.$space-sm; color: v.$color-blue-300; letter-spacing: v.$mobile-letter-spacing-wide; }
+// Monday best-schedules grid: two 16-team panels of square 44px day cells.
+$grid-padding: 36px;
+$grid-cell: 44px;
+$grid-gap: 4px;
+.gridSquare { padding: $grid-padding; gap: 14px; }
+.gridHeader { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: v.$space-md; height: 96px; }
+.gridBrand { display: grid; gap: v.$space-xxs; justify-items: start;
+  strong { font: 400 40px "Share Train One", sans-serif; color: v.$primary-color; }
+  span { font-size: 18px; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; }
+  img { display: block; }
+}
+.gridTitle { text-align: center;
+  p { font-size: 20px; font-weight: 700; color: v.$color-blue-300; text-transform: uppercase; letter-spacing: v.$mobile-letter-spacing-wide; }
+  h2 { font-size: 60px; line-height: 1; font-weight: 900; color: v.$color-white; letter-spacing: 0.01em; margin-top: v.$space-xxs; }
+}
+.gridWeek { display: grid; justify-items: end; gap: v.$space-xxs;
+  span { font-size: 16px; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; }
+  strong { font: 600 24px "Share Martian Mono", monospace; color: v.$color-white; }
+}
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; min-height: 0; }
+.gridPanel { display: grid; grid-auto-rows: $grid-cell; row-gap: $grid-gap; align-content: start; }
+.gridRow { display: grid; grid-template-columns: 26px $grid-cell repeat(7, $grid-cell) 1fr; column-gap: 4px; align-items: center; position: relative; }
+.gridDays { height: 40px; align-self: end;
+  > span { display: grid; justify-items: center; gap: 1px; font-size: 13px; font-weight: 700; color: v.$text-secondary; letter-spacing: 0.04em; }
+  strong { font-size: 16px; color: v.$color-white; }
+  small { font: 500 12px "Share Martian Mono", monospace; }
+  .offNightDay { background: rgba(v.$success-color, 0.16); border-radius: 6px 6px 0 0; height: 40px; align-content: center;
+    strong, small { color: v.$success-color; }
+  }
+}
+.topRow::before { content: ""; position: absolute; inset: 4px auto 4px -10px; width: 4px; border-radius: 2px; background: v.$primary-color; }
+.gridRank { font: 600 18px "Share Martian Mono", monospace; color: v.$color-blue-300; text-align: right; padding-right: 2px; }
+.gridTeam { display: grid; place-items: center; width: $grid-cell; height: $grid-cell; img { display: block; } }
+.cell { position: relative; display: grid; place-items: center; width: $grid-cell; height: $grid-cell; border-radius: 6px; border: 2px solid transparent;
+  img { display: block; }
+}
+// Off-nights are a highlighted column (no per-cell borders, TJ ticket 10).
+.offNightColumn { background: rgba(v.$success-color, 0.13); }
+.offNightColumn.homeCell { background: rgba(v.$success-color, 0.3); }
+.offNightColumn.awayCell { background: rgba(v.$success-color, 0.13); }
+.homeCell { background: rgba(v.$color-white, 0.12); }
+.awayCell { border-color: rgba(v.$color-white, 0.16); }
+.offNightGame { border-color: v.$success-color; }
+.dimmed { opacity: 0.35; }
+.awayMark, .doubleMark { position: absolute; font-style: normal; font-weight: 800; line-height: 1; border-radius: 3px; background: v.$background-dark; }
+.awayMark { top: -3px; left: -3px; font-size: 13px; padding: 1px 2px; color: v.$color-blue-300; }
+.doubleMark { bottom: -3px; right: -3px; font-size: 11px; padding: 1px 2px; color: v.$color-white; }
+.logoFallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: 13px; font-weight: 800; color: v.$color-white; letter-spacing: 0.02em; }
+.gridGames { display: grid; justify-items: center; line-height: 1;
+  strong { font: 600 21px "Share Martian Mono", monospace; color: v.$color-white; }
+  small { font-size: 10px; font-weight: 700; color: v.$text-secondary; margin-top: 3px; letter-spacing: 0.03em; white-space: nowrap; b { font-size: 12px; } }
+  .noOff { color: v.$text-secondary !important; }
+}
+// Week Score tiers by rank: green / yellow / white / orange / red.
+$tier-best: v.$success-color; $tier-good: #ffd43b; $tier-average: #ffffff; $tier-below: #ff9f43; $tier-worst: #ff5c5c;
+.tierRail::before { content: ""; position: absolute; inset: 4px auto 4px -9px; width: 4px; border-radius: 2px; background: var(--tier); }
+.tierBest { --tier: #{$tier-best}; } .tierGood { --tier: #{$tier-good}; } .tierAverage { --tier: #{$tier-average}; } .tierBelow { --tier: #{$tier-below}; } .tierWorst { --tier: #{$tier-worst}; }
+.gridScore { color: var(--tier) !important; }
+// GP and off-night counts coloured per column: most = green, 2nd = white, between = yellow, least = red (TJ, ticket 12).
+.countHigh { --count: #{$tier-best}; } .countSecond { --count: #ffffff; } .countBetween { --count: #{$tier-good}; } .countLow { --count: #{$tier-worst}; } .countNeutral { --count: #ffffff; }
+b.countHigh, b.countSecond, b.countBetween, b.countLow, b.countNeutral { color: var(--count) !important; font-weight: 800; }
+.countLegend { gap: 4px !important;
+  i { width: 12px !important; height: 12px !important; border-radius: 50% !important; border: 0 !important; background: var(--count); }
+}
+.tierLegend { gap: 4px !important;
+  i { width: 18px !important; height: 10px !important; border-radius: 3px !important; border: 0 !important; background: var(--tier); }
+}
+// Cherry-picked streaming games: a gentle gold border shared with the Streaming Matchups tiles.
+$cherry: rgba(#ffc857, 0.75);
+.cherryPick { border-color: $cherry !important; }
+.legendOffColumn { background: rgba(v.$success-color, 0.13); }
+.legendCherry { border-color: $cherry !important; }
+.gridFooter { border-top: 1px solid v.$border-soft; padding-top: v.$space-xs; display: grid; gap: 6px; font-size: 15px; color: v.$text-secondary; line-height: 1.25;
+  p { display: flex; justify-content: space-between; gap: v.$space-md; align-items: baseline; }
+}
+.legend { display: flex; flex-wrap: wrap; gap: v.$space-xs v.$space-lg; color: v.$color-white; font-size: 17px;
+  span { display: inline-flex; align-items: center; gap: 6px; }
+  i { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; font-style: normal; font-weight: 800; font-size: 14px; border: 2px solid transparent; }
+  b { color: v.$color-blue-300; }
+}
+.legendAway { color: v.$color-blue-300; border-color: rgba(v.$color-white, 0.16) !important; }
+.legendHome { background: rgba(v.$color-white, 0.12); }
+.legendOff { border-color: v.$success-color !important; }
+.gridWatermark { flex: none; color: v.$color-blue-300; letter-spacing: v.$mobile-letter-spacing-wide; }
+// Matchup cards (easiest schedules, streaming matchups) share the grid card's header and footer.
+$easy-row: 84px;
+.compactHeader { grid-template-columns: auto 1fr auto;
+  h2 { font-size: 52px; }
+  strong { white-space: nowrap; }
+}
+.matchupEmpty { flex: 1; display: grid; align-content: center; justify-items: center; gap: v.$space-md; text-align: center; padding: 0 v.$space-xxl;
+  strong { font-size: 56px; font-weight: 900; color: v.$color-white; }
+  p { font-size: 26px; color: v.$text-secondary; line-height: 1.3; }
+}
+.matchupNone { font-size: 32px; color: v.$text-secondary; padding-top: v.$space-xxl; text-align: center; grid-column: 1 / -1; }
+.easyList { flex: 1; display: grid; grid-template-rows: 30px; grid-auto-rows: $easy-row; row-gap: 8px; align-content: start; min-height: 0; }
+.easyRow { display: grid; grid-template-columns: 52px 300px 1fr 56px 170px; column-gap: 16px; align-items: center; position: relative; padding: 0 v.$space-sm;
+  border-radius: 10px; background: rgba(v.$color-white, 0.04);
+}
+.easyHead { height: 30px; align-self: end; background: none; font-size: 15px; font-weight: 700; letter-spacing: 0.06em; color: v.$text-secondary;
+  span:nth-child(4) { text-align: center; }
+}
+.easyRank { font: 600 34px "Share Martian Mono", monospace; color: v.$color-blue-300; text-align: right; }
+// The team cell is a small striped banner (TJ ticket 10).
+.easyTeam { display: block; min-width: 0; }
+.easyOpps { display: flex; gap: 8px; align-items: center; }
+.oppChip { position: relative; display: grid; justify-items: center; gap: 2px; width: 54px; padding: 4px 0 3px; border-radius: 8px; border: 2px solid rgba(v.$color-white, 0.16);
+  img, > b { display: block; width: 38px; height: 38px; }
+  small { font-size: 12px; font-weight: 700; color: v.$text-secondary; letter-spacing: 0.04em; }
+}
+.opp_soft { border-color: v.$success-color; background: rgba(v.$success-color, 0.08); }
+.opp_average { border-color: rgba(v.$warning-color, 0.7); }
+.opp_strong { border-color: v.$color-pink-red; background: rgba(v.$color-pink-red, 0.08); }
+.easyGp { font: 600 30px "Share Martian Mono", monospace; color: v.$color-white; text-align: center; }
+.defMeter { display: grid; grid-template-columns: 58px 1fr; align-items: center; gap: v.$space-sm;
+  strong { font: 600 34px "Share Martian Mono", monospace; color: v.$success-color; text-align: right; }
+  i { display: block; height: 10px; border-radius: 5px; background: rgba(v.$color-white, 0.1); overflow: hidden; }
+  b { display: block; height: 100%; border-radius: 5px; background: v.$success-color; }
+}
+.legendSoft { border-color: v.$success-color !important; background: rgba(v.$success-color, 0.08); }
+.legendAverage { border-color: rgba(v.$warning-color, 0.7) !important; }
+.legendStrong { border-color: v.$color-pink-red !important; background: rgba(v.$color-pink-red, 0.08); }
+.streamGrid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 252px; gap: 14px 24px; align-content: start; min-height: 0; }
+.streamTile { display: grid; grid-template-rows: auto 1fr auto; padding: v.$space-sm v.$space-md; border-radius: 12px; background: rgba(v.$color-white, 0.05); border: 2px solid rgba(v.$color-white, 0.12); }
+.cherryTile { display: flex; flex-direction: column; padding: 0; overflow: hidden; border-color: $cherry; }
+.streamOpponent { display: grid; justify-items: center; gap: 2px; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+  img, > b { display: block; }
+  small { font-size: 11px; font-weight: 800; letter-spacing: 0.05em; }
+}
+.streamBody { flex: 1; display: grid; align-content: start; gap: 6px; padding: 16px 14px 8px; min-height: 0; }
+.streamFlags { display: flex; flex-wrap: wrap; gap: 5px; align-items: center;
+  b { font-size: 15px; font-weight: 900; color: v.$color-white; letter-spacing: 0.04em; margin-right: 4px; }
+  i { font-style: normal; font-size: 11px; font-weight: 800; letter-spacing: 0.05em; padding: 2px 6px; border-radius: 4px; background: rgba(v.$success-color, 0.16); color: v.$success-color; }
+  .streamBusy { background: rgba(v.$color-white, 0.08); color: v.$text-secondary; }
+}
+.streamEvidence { margin: 0; display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 3px 8px; font-size: 13.5px; line-height: 1.25;
+  dt { font-weight: 800; color: v.$text-secondary; letter-spacing: 0.04em; text-transform: uppercase; font-size: 11.5px; padding-top: 1px; }
+  dd { margin: 0; color: v.$color-white; overflow-wrap: anywhere; }
+  .storm { color: v.$success-color; font-weight: 700; }
+}
+.streamOff { border-color: v.$success-color; }
+.streamDay { display: flex; justify-content: space-between; align-items: baseline;
+  strong { font-size: 24px; font-weight: 800; color: v.$color-white; }
+  span { font-size: 15px; font-weight: 700; letter-spacing: 0.05em; color: v.$text-secondary; }
+}
+.streamOff .streamDay span { color: v.$success-color; }
+.streamMatch { display: flex; align-items: center; gap: v.$space-sm;
+  img, > b { flex: none; display: block; }
+  > b { width: 72px; height: 60px; font-size: 22px; }
+}
+.streamVs { font-size: 22px; font-weight: 800; color: v.$color-blue-300; }
+.streamDef { margin-left: auto; display: grid; justify-items: end; line-height: 1;
+  strong { font: 600 44px "Share Martian Mono", monospace; color: v.$success-color; }
+  small { font-size: 13px; font-weight: 700; letter-spacing: 0.06em; color: v.$text-secondary; margin-top: 4px; }
+}
+.streamMeta { font-size: 17px; color: v.$text-secondary; }
+// Player cards (pickups by tier, category specialists): three columns of three tiles.
+$player-tile: 236px;
+.playerColumns { flex: 1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; min-height: 0; }
+.playerColumn { display: grid; grid-template-rows: 32px; grid-auto-rows: $player-tile; row-gap: 10px; align-content: start; min-width: 0;
+  h3 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 0.08em; color: v.$color-blue-300; border-bottom: 2px solid rgba(v.$color-blue-300, 0.4); }
+}
+.playerTile { display: flex; flex-direction: column; border-radius: 12px; overflow: hidden; background: rgba(v.$color-white, 0.05); border: 2px solid rgba(v.$color-white, 0.12); min-width: 0; }
+.playerBody { flex: 1; display: grid; grid-template-rows: auto auto auto; align-content: space-evenly; gap: 6px; padding: 16px 14px 8px; min-height: 0; }
+.playerRecent { display: flex; gap: 6px; align-items: baseline; font-size: 15px; font-weight: 600; color: v.$color-white; min-width: 0; padding: 5px 7px; border-radius: 6px; background: rgba(v.$color-white, 0.05);
+  b { flex: none; font-size: 10.5px; font-weight: 800; letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px; background: rgba(v.$color-blue-300, 0.18); color: v.$color-blue-300; }
+  span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+.widened { font-style: normal; margin-left: 6px; font-size: 10px; font-weight: 800; letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px; background: rgba(#ff9f43, 0.18); color: #ff9f43; }
+.playerTop { display: flex; justify-content: space-between; align-items: center;
+  img, > b { display: block; width: 44px; height: 44px; }
+}
+.playerOwn { display: grid; justify-items: end; line-height: 1;
+  strong { font: 700 24px "Share Martian Mono", monospace; color: inherit; }
+  small { font-size: 10px; font-weight: 800; letter-spacing: 0.06em; color: inherit; opacity: 0.85; margin-top: 3px; }
+}
+.playerName { font-size: 25px; font-weight: 800; color: v.$color-white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.playerMeta { font-size: 16px; color: v.$text-secondary; }
+.playerStat { display: flex; align-items: baseline; gap: v.$space-xs; align-self: center;
+  strong { font: 600 34px "Share Martian Mono", monospace; color: v.$success-color; }
+  small { font-size: 14px; font-weight: 700; letter-spacing: 0.04em; color: v.$text-secondary; }
+}
+.playerSchedule { font-size: 13.5px; color: v.$color-blue-300; white-space: nowrap; }
+.playerShort { font-size: 18px; color: v.$text-secondary; text-align: center; align-self: center; }
+// Tuesday trend cards: two columns of up to five rows, or three columns of stacked tiles.
+$trend-row: 140px;
+.trendColumns { flex: 1; display: grid; gap: 24px; min-height: 0; }
+.trendColumn { display: grid; grid-template-rows: 32px; grid-auto-rows: $trend-row; row-gap: 10px; align-content: start; min-width: 0;
+  h3 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 0.08em; color: v.$color-blue-300; border-bottom: 2px solid rgba(v.$color-blue-300, 0.4); }
+}
+.trendRow { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; column-gap: 12px; padding: 10px 14px; border-radius: 12px;
+  background: rgba(v.$color-white, 0.05); border: 2px solid rgba(v.$color-white, 0.12); min-width: 0;
+  img, > b { display: block; width: 44px; height: 44px; }
+}
+.trendRowStacked { grid-template-columns: 44px minmax(0, 1fr); row-gap: 4px;
+  .trendValue { grid-column: 1 / -1; display: flex; align-items: baseline; gap: v.$space-xs; justify-items: start; }
+}
+.trendWho { display: grid; gap: 3px; min-width: 0;
+  strong { font-size: 23px; font-weight: 800; color: v.$color-white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  small { font-size: 15px; color: v.$text-secondary; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  small + small { font-size: 14px; color: v.$color-blue-300; }
+}
+.trendBadges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px;
+  i { font-style: normal; font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(v.$color-blue-300, 0.14); color: v.$color-blue-300; }
+}
+.trendValue { display: grid; justify-items: end; line-height: 1;
+  strong { font: 600 34px "Share Martian Mono", monospace; color: v.$success-color; }
+  small { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: v.$text-secondary; margin-top: 4px; }
+}
+.trendDown strong { color: v.$color-pink-red; }
+@media (max-width: v.$breakpoint-tablet) {
+  .page { padding: v.$space-xs; }
+  .workspace { grid-template-columns: minmax(0, 1fr); }
+  .panel { padding: v.$space-sm; }
+  .controls { label { width: 100%; } input, select { width: 100%; } }
+  .teamList { max-height: none; }
+}
+
+// Team banner: primary band over sporty stripes (dark / light / mid / dark), logo over the stripes.
+.teamBanner { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 10px;
+  padding: 7px 12px 20px; background: var(--team-bg); color: var(--team-ink); min-width: 0;
+  &::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 14px;
+    background: linear-gradient(to bottom, var(--team-dark) 0 5px, var(--team-light) 5px 8px, var(--team-mid) 8px 10px, var(--team-dark) 10px 14px); }
+}
+.teamBanner[data-size="sm"] { padding: 6px 10px 16px; border-radius: 8px; overflow: hidden;
+  &::after { height: 11px; background: linear-gradient(to bottom, var(--team-dark) 0 4px, var(--team-light) 4px 6px, var(--team-mid) 6px 8px, var(--team-dark) 8px 11px); }
+}
+.teamBannerLogo { position: relative; z-index: 1; display: grid; place-items: center; margin-bottom: -16px; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+  img, > b { display: block; }
+  > b { color: var(--team-ink); }
+}
+.teamBanner[data-size="sm"] .teamBannerLogo { margin-bottom: -12px; }
+.teamBannerText { display: grid; gap: 1px; min-width: 0;
+  strong { font-size: 22px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.01em; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  small { font-size: 12.5px; font-weight: 700; opacity: 0.88; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+.teamBanner[data-size="sm"] .teamBannerText strong { font-size: 19px; }
+.teamBannerRight { position: relative; z-index: 1; display: grid; justify-items: end; }

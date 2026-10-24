@@ -1,0 +1,11 @@
+{
+  "canonical_mismatches": {},
+  "all_39_pins_match_tested_source": true,
+  "fixed_snapshot_other_3375_files_preserved": true,
+  "execution_only_difference": "web/audit.vitest.config.mts private cache path; otherwise identical to reviewer config",
+  "reviewer_fixtures_unchanged": {
+    "web/components/RosterScheduleOptimizer/p07Task10Independent.test.tsx": true,
+    "web/lib/rosterScheduleOptimizer/p07Task10Serialization.test.ts": true
+  },
+  "own_operations_finished": true
+}

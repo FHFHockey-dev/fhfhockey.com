@@ -1,0 +1,27 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c1-c4-navigation-release-gmyae6br/web
+
+(node:23785) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/TeamTabNavigation/TeamTabNavigation.test.tsx (22 tests) 667ms
+(node:23790) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ hooks/useShotData.test.tsx (16 tests) 23ms
+(node:23792) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/GoalieShareChart/GoalieShareChart.pagination.test.tsx (16 tests) 144ms
+(node:23794) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/wigoCharts.test.tsx (6 tests) 137ms
+(node:23796) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/stats/team/teamAbbreviation.test.tsx (4 tests) 20ms
+(node:23798) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/GoalieShareChart/GoalieShareChart.test.ts (4 tests) 7ms
+
+ Test Files  6 passed (6)
+      Tests  68 passed (68)
+   Start at  17:12:42
+   Duration  3.37s (transform 257ms, setup 16ms, collect 662ms, tests 999ms, environment 934ms, prepare 192ms)
+

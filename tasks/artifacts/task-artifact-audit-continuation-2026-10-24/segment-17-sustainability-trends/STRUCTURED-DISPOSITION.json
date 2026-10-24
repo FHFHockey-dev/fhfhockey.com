@@ -1,0 +1,602 @@
+{
+  "at": "2026-10-24T19:31:51.088275+00:00",
+  "coverage": "partially-inspected",
+  "role": "Historical generated static inventory and dependency snapshots",
+  "deep_read_required": false,
+  "method": "Complete JSON parse, all-entry key/type/ID uniqueness, inventory-map identity links and independently recomputed summary totals; full semantic inspection of seven relevant inventory/surface records and five named output-object records only. No underlying file existence/import/runtime/ownership refresh or generator execution.",
+  "inventory_summary_recomputed": {
+    "total": 1052,
+    "byRuntimeStatus": {
+      "adjacent_dependency": 815,
+      "legacy": 78,
+      "unclear": 147,
+      "current_production": 5,
+      "active_experiment": 7
+    },
+    "bySurfaceKind": {
+      "helper_or_data_contract": 323,
+      "documentation": 2,
+      "sql_or_migration": 89,
+      "test": 308,
+      "api_or_job": 73,
+      "style": 53,
+      "component": 117,
+      "page": 27,
+      "script": 59,
+      "story": 1
+    },
+    "byFamilyMembership": {
+      "trends_skater_metrics": 99,
+      "sustainability_baselines": 230,
+      "start_chart_rolling_legacy": 102,
+      "forge_projections_accuracy": 191,
+      "legacy_adjacent": 412,
+      "team_power_underlying_matchup": 38
+    }
+  },
+  "map_summary_recomputed": {
+    "mappedSurfaces": 753,
+    "apiReferenceEdges": 263,
+    "localDependencyEdges": 1872,
+    "dynamicDataReferences": 52,
+    "dataObjects": 395,
+    "dataObjectsByClassification": {
+      "unknown_mixed": 233,
+      "snapshot": 33,
+      "presentation_output": 10,
+      "raw_source": 107,
+      "derived_aggregate": 11,
+      "cached_output": 1
+    }
+  },
+  "selected_inventory_records": [
+    {
+      "auditId": "INV-0666",
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "families": [
+        "start_chart_rolling_legacy"
+      ],
+      "surfaceKind": "helper_or_data_contract",
+      "runtimeStatus": "adjacent_dependency",
+      "inclusionEvidence": [
+        "imported_by:web/lib/supabase/Upserts/fetchRollingPlayerAverages.test.ts",
+        "imported_by:web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+        "imported_by:web/pages/api/v1/db/update-rolling-player-averages.ts",
+        "imported_by:web/scripts/check-rolling-player-disputed-metrics.ts",
+        "imported_by:web/scripts/check-rolling-player-family-reconstruction.ts",
+        "imported_by:web/scripts/check-rolling-player-optional-additions.ts",
+        "imported_by:web/scripts/check-rolling-player-runtime-budget.ts",
+        "path_scope_match",
+        "prd_explicit_seed"
+      ]
+    },
+    {
+      "auditId": "INV-0790",
+      "path": "web/lib/sustainability/score.ts",
+      "families": [
+        "sustainability_baselines"
+      ],
+      "surfaceKind": "helper_or_data_contract",
+      "runtimeStatus": "adjacent_dependency",
+      "inclusionEvidence": [
+        "imported_by:web/lib/sustainability/score.test.ts",
+        "imported_by:web/pages/api/v1/sustainability/rebuild-score.ts",
+        "path_scope_match"
+      ]
+    },
+    {
+      "auditId": "INV-0803",
+      "path": "web/lib/trends/playerTrendCalculator.ts",
+      "families": [
+        "trends_skater_metrics"
+      ],
+      "surfaceKind": "helper_or_data_contract",
+      "runtimeStatus": "adjacent_dependency",
+      "inclusionEvidence": [
+        "imported_by:web/lib/trends/playerTrendCalculator.test.ts",
+        "imported_by:web/pages/api/v1/trends/player-trends.ts",
+        "imported_by:web/pages/trendsTestingGrounds.tsx",
+        "path_scope_match"
+      ]
+    },
+    {
+      "auditId": "INV-0856",
+      "path": "web/pages/api/v1/db/run-projection-accuracy.ts",
+      "families": [
+        "forge_projections_accuracy"
+      ],
+      "surfaceKind": "api_or_job",
+      "runtimeStatus": "unclear",
+      "inclusionEvidence": [
+        "imported_by:web/__tests__/pages/api/v1/db/run-projection-accuracy.test.ts",
+        "imported_by:web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+        "path_scope_match",
+        "prd_explicit_seed"
+      ]
+    },
+    {
+      "auditId": "INV-0879",
+      "path": "web/pages/api/v1/db/update-team-power-ratings.ts",
+      "families": [
+        "team_power_underlying_matchup"
+      ],
+      "surfaceKind": "api_or_job",
+      "runtimeStatus": "unclear",
+      "inclusionEvidence": [
+        "imported_by:web/__tests__/pages/api/v1/db/update-team-power-ratings.test.ts",
+        "path_scope_match",
+        "prd_explicit_seed"
+      ]
+    },
+    {
+      "auditId": "INV-0912",
+      "path": "web/pages/api/v1/trends/player-trends.ts",
+      "families": [
+        "trends_skater_metrics"
+      ],
+      "surfaceKind": "api_or_job",
+      "runtimeStatus": "unclear",
+      "inclusionEvidence": [
+        "imported_by:web/__tests__/pages/api/v1/trends/player-trends.test.ts",
+        "imported_by:web/pages/api/v1/db/update-player-trend-metrics.ts",
+        "path_scope_match",
+        "prd_explicit_seed"
+      ]
+    },
+    {
+      "auditId": "INV-0930",
+      "path": "web/pages/trends/index.tsx",
+      "families": [
+        "trends_skater_metrics"
+      ],
+      "surfaceKind": "page",
+      "runtimeStatus": "unclear",
+      "inclusionEvidence": [
+        "imported_by:web/__tests__/pages/trends/index.test.tsx",
+        "path_scope_match",
+        "prd_explicit_seed"
+      ]
+    }
+  ],
+  "selected_surface_records": [
+    {
+      "auditId": "INV-0666",
+      "path": "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+      "surfaceKind": "helper_or_data_contract",
+      "runtimeStatus": "adjacent_dependency",
+      "directLocalDependencies": [
+        "web/lib/predictions/rollingWindows.ts",
+        "web/lib/rankings/rollingRankingSelectFields.ts",
+        "web/lib/supabase/Upserts/rollingHistoricalAverages.ts",
+        "web/lib/supabase/Upserts/rollingMetricAggregation.ts",
+        "web/lib/supabase/Upserts/rollingPlayerAvailabilityContract.ts",
+        "web/lib/supabase/Upserts/rollingPlayerLineContextContract.ts",
+        "web/lib/supabase/Upserts/rollingPlayerMetricMath.ts",
+        "web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts",
+        "web/lib/supabase/Upserts/rollingPlayerPpShareContract.ts",
+        "web/lib/supabase/Upserts/rollingPlayerPpUnitContract.ts",
+        "web/lib/supabase/Upserts/rollingPlayerSourceSelection.ts",
+        "web/lib/supabase/Upserts/rollingPlayerSupportPayload.ts",
+        "web/lib/supabase/Upserts/rollingPlayerToiContract.ts",
+        "web/lib/supabase/Upserts/rollingWindowContract.ts",
+        "web/lib/teamsInfo.ts"
+      ],
+      "apiReferences": [],
+      "dataObjects": [
+        {
+          "name": "games",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "lineCombinations",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "players",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "powerPlayCombinations",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "rolling_player_game_metrics",
+          "modes": [
+            "read",
+            "write"
+          ]
+        },
+        {
+          "name": "rpc:truncate_rolling_player_game_metrics",
+          "modes": [
+            "invoke"
+          ]
+        },
+        {
+          "name": "wgo_skater_stats",
+          "modes": [
+            "read"
+          ]
+        }
+      ],
+      "dynamicDataReferences": 4
+    },
+    {
+      "auditId": "INV-0790",
+      "path": "web/lib/sustainability/score.ts",
+      "surfaceKind": "helper_or_data_contract",
+      "runtimeStatus": "adjacent_dependency",
+      "directLocalDependencies": [
+        "web/lib/supabase/pagination.ts",
+        "web/lib/supabase/server.ts",
+        "web/lib/sustainability/guardrails.ts",
+        "web/lib/sustainability/persist.ts",
+        "web/lib/sustainability/priors.ts",
+        "web/lib/sustainability/runtimeContract.ts",
+        "web/lib/sustainability/windows.ts"
+      ],
+      "apiReferences": [],
+      "dataObjects": [
+        {
+          "name": "player_stats_unified",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "player_totals_unified",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "sustainability_scores",
+          "modes": [
+            "write"
+          ]
+        },
+        {
+          "name": "sustainability_window_z",
+          "modes": [
+            "read"
+          ]
+        }
+      ],
+      "dynamicDataReferences": 0
+    },
+    {
+      "auditId": "INV-0803",
+      "path": "web/lib/trends/playerTrendCalculator.ts",
+      "surfaceKind": "helper_or_data_contract",
+      "runtimeStatus": "adjacent_dependency",
+      "directLocalDependencies": [
+        "web/lib/supabase/database-generated.types.ts"
+      ],
+      "apiReferences": [],
+      "dataObjects": [],
+      "dynamicDataReferences": 0
+    },
+    {
+      "auditId": "INV-0856",
+      "path": "web/pages/api/v1/db/run-projection-accuracy.ts",
+      "surfaceKind": "api_or_job",
+      "runtimeStatus": "unclear",
+      "directLocalDependencies": [
+        "web/lib/api/scanSummary.ts",
+        "web/lib/cron/normalizeDependencyError.ts",
+        "web/lib/cron/withCronJobAudit.ts",
+        "web/lib/formatDurationMmSs.ts",
+        "web/lib/projections/accuracy/fantasyPoints.ts",
+        "web/lib/projections/promotionGates.ts",
+        "web/lib/projectionsConfig/fantasyPointsConfig.ts",
+        "web/lib/supabase/server.ts",
+        "web/pages/api/v1/db/run-projection-v2.ts",
+        "web/pages/api/v1/projections/_helpers.ts"
+      ],
+      "apiReferences": [],
+      "dataObjects": [
+        {
+          "name": "forge_goalie_game",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "forge_goalie_projections",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "forge_player_projections",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "forge_projection_accuracy_daily",
+          "modes": [
+            "read",
+            "write"
+          ]
+        },
+        {
+          "name": "forge_projection_accuracy_player",
+          "modes": [
+            "write"
+          ]
+        },
+        {
+          "name": "forge_projection_accuracy_stat_daily",
+          "modes": [
+            "read",
+            "write"
+          ]
+        },
+        {
+          "name": "forge_projection_calibration_daily",
+          "modes": [
+            "write"
+          ]
+        },
+        {
+          "name": "forge_projection_results",
+          "modes": [
+            "write"
+          ]
+        },
+        {
+          "name": "forge_runs",
+          "modes": [
+            "read",
+            "write"
+          ]
+        },
+        {
+          "name": "games",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "goalie_stats_unified",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "wgo_skater_stats",
+          "modes": [
+            "read"
+          ]
+        }
+      ],
+      "dynamicDataReferences": 0
+    },
+    {
+      "auditId": "INV-0879",
+      "path": "web/pages/api/v1/db/update-team-power-ratings.ts",
+      "surfaceKind": "api_or_job",
+      "runtimeStatus": "unclear",
+      "directLocalDependencies": [
+        "web/lib/cron/withCronJobAudit.ts",
+        "web/lib/power-ratings.ts",
+        "web/lib/supabase/server.ts",
+        "web/lib/teamRatingsTrend.ts",
+        "web/utils/fetchCurrentSeason.ts"
+      ],
+      "apiReferences": [],
+      "dataObjects": [
+        {
+          "name": "team_power_ratings_daily",
+          "modes": [
+            "read",
+            "write"
+          ]
+        }
+      ],
+      "dynamicDataReferences": 0
+    },
+    {
+      "auditId": "INV-0912",
+      "path": "web/pages/api/v1/trends/player-trends.ts",
+      "surfaceKind": "api_or_job",
+      "runtimeStatus": "unclear",
+      "directLocalDependencies": [
+        "web/lib/supabase/database-generated.types.ts",
+        "web/lib/supabase/server.ts",
+        "web/lib/trends/playerTrendCalculator.ts"
+      ],
+      "apiReferences": [],
+      "dataObjects": [
+        {
+          "name": "goalie_stats_unified",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "player_stats_unified",
+          "modes": [
+            "read"
+          ]
+        },
+        {
+          "name": "player_trend_metrics",
+          "modes": [
+            "read",
+            "write"
+          ]
+        },
+        {
+          "name": "wgo_skater_stats_playoffs",
+          "modes": [
+            "read"
+          ]
+        }
+      ],
+      "dynamicDataReferences": 0
+    },
+    {
+      "auditId": "INV-0930",
+      "path": "web/pages/trends/index.tsx",
+      "surfaceKind": "page",
+      "runtimeStatus": "unclear",
+      "directLocalDependencies": [
+        "web/components/GoalieShareChart/index.tsx",
+        "web/components/TopMovers/TopMovers.tsx",
+        "web/components/dashboard/DashboardPillarHero.tsx",
+        "web/hooks/useDashboardData.ts",
+        "web/lib/dashboard/teamMetadata.ts",
+        "web/lib/images.ts",
+        "web/lib/navigation/siteSurfaceLinks.ts",
+        "web/lib/supabase/index.ts",
+        "web/lib/teamsInfo.ts",
+        "web/lib/trends/goalieMetricConfig.ts",
+        "web/lib/trends/skaterMetricConfig.ts",
+        "web/lib/trends/teamMetricConfig.ts",
+        "web/lib/trends/trendsSurface.ts",
+        "web/pages/trends/dashboard.module.scss"
+      ],
+      "apiReferences": [],
+      "dataObjects": [
+        {
+          "name": "players",
+          "modes": [
+            "read"
+          ]
+        }
+      ],
+      "dynamicDataReferences": 0
+    }
+  ],
+  "selected_objects": [
+    {
+      "name": "forge_projection_results",
+      "classification": "presentation_output",
+      "evidence": "Projection/result object is consumed as a published product output; family audit must verify writer authority.",
+      "readBy": [],
+      "writtenBy": [
+        "web/pages/api/v1/db/run-projection-accuracy.ts"
+      ],
+      "declaredBy": [
+        "supabase/migrations/20260716112908_production_schema_baseline.sql"
+      ],
+      "invokedBy": [],
+      "origins": [
+        "sql_create_literal",
+        "supabase_from_literal"
+      ]
+    },
+    {
+      "name": "player_trend_metrics",
+      "classification": "derived_aggregate",
+      "evidence": "Object name and audited scope identify computed aggregate/baseline ownership; formulas remain family-audit work.",
+      "readBy": [
+        "web/pages/api/v1/trends/goalie-power.ts",
+        "web/pages/api/v1/trends/player-trends.ts",
+        "web/pages/api/v1/trends/skater-power.ts"
+      ],
+      "writtenBy": [
+        "web/pages/api/v1/trends/player-trends.ts"
+      ],
+      "declaredBy": [
+        "supabase/migrations/20260716112908_production_schema_baseline.sql"
+      ],
+      "invokedBy": [],
+      "origins": [
+        "sql_create_literal",
+        "supabase_from_literal"
+      ]
+    },
+    {
+      "name": "rolling_player_game_metrics",
+      "classification": "derived_aggregate",
+      "evidence": "Object name and audited scope identify computed aggregate/baseline ownership; formulas remain family-audit work.",
+      "readBy": [
+        "web/lib/projections/queries/skater-queries.ts",
+        "web/lib/projections/run-forge-projections.ts",
+        "web/lib/rankings/rankingQueries.ts",
+        "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts",
+        "web/lib/supabase/Upserts/rollingPlayerValidationPayload.ts",
+        "web/pages/trends/player/[playerId].tsx"
+      ],
+      "writtenBy": [
+        "web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts"
+      ],
+      "declaredBy": [
+        "supabase/migrations/20260716112908_production_schema_baseline.sql"
+      ],
+      "invokedBy": [],
+      "origins": [
+        "sql_create_literal",
+        "supabase_from_literal"
+      ]
+    },
+    {
+      "name": "sustainability_scores",
+      "classification": "snapshot",
+      "evidence": "Object stores date/version-keyed computed state; family audit must verify immutability and fallback policy.",
+      "readBy": [
+        "web/lib/sustainability/entitySurfaceServer.ts",
+        "web/lib/sustainability/read.ts",
+        "web/lib/sustainability/trendsIdentity.ts",
+        "web/pages/api/v1/sustainability/trends.ts"
+      ],
+      "writtenBy": [
+        "web/lib/sustainability/score.ts"
+      ],
+      "declaredBy": [
+        "supabase/migrations/20260716112908_production_schema_baseline.sql"
+      ],
+      "invokedBy": [],
+      "origins": [
+        "sql_create_literal",
+        "supabase_from_literal"
+      ]
+    },
+    {
+      "name": "team_power_ratings_daily",
+      "classification": "snapshot",
+      "evidence": "Object stores date/version-keyed computed state; family audit must verify immutability and fallback policy.",
+      "readBy": [
+        "web/lib/game-predictions/featureBuilder.ts",
+        "web/lib/rankings/teamMatrix.ts",
+        "web/lib/sustainability/data.ts",
+        "web/lib/teamRatingsService.ts",
+        "web/lib/underlying-stats/availableSnapshotDates.ts",
+        "web/lib/underlying-stats/teamLandingRatings.ts",
+        "web/pages/api/v1/db/update-team-power-ratings.ts"
+      ],
+      "writtenBy": [
+        "web/pages/api/v1/db/update-team-power-ratings.ts"
+      ],
+      "declaredBy": [
+        "supabase/migrations/20260716112908_production_schema_baseline.sql"
+      ],
+      "invokedBy": [],
+      "origins": [
+        "sql_create_literal",
+        "supabase_from_literal"
+      ]
+    }
+  ],
+  "dynamic_file_count": 31,
+  "source_hashes": {
+    "sustainability-trends-inventory.json": "dc7fa2f3a95444a04f2a30b9fefc8b228257d80f54824c8ca138da7e7bb859b4",
+    "sustainability-trends-dependency-map.json": "3614e6e55913b6f12b9f7a4f4f9a4401742eb0e627bd4e64b5b067bd68da5375"
+  },
+  "limitations": [
+    "No per-row semantic acceptance beyond selected records.",
+    "Unclear/unknown_mixed/dynamic entries remain limitations of historical static snapshots, not automatically new open tasks.",
+    "Paths/classifications may be stale. Later documentary closures/current canonical contracts take precedence; no app or live state checked."
+  ]
+}

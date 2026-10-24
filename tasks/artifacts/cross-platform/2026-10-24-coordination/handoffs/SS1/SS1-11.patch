@@ -1,0 +1,242 @@
+--- a/web/lib/socialShare/schedule.test.ts
++++ b/web/lib/socialShare/schedule.test.ts
+@@ -352,6 +352,29 @@
+     expect(missing.body.players).toMatchObject({ state: "missing", players: [] });
+     expect(JSON.stringify(missing.body)).not.toContain("1000-row");
+   });
++  it("tells a failed last-five-games read apart from an empty one, and keeps the cache short on failure (C7 SS1-10-F1)", async () => {
++    upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockReset(); playerSource.loadSharePlayerSources.mockReset(); playerSource.loadSharePlayerRecent.mockReset();
++    upstream.getSchedule.mockResolvedValue(fictionalLeagueWeek(weekStart, now));
++    opponentSource.loadShareTeamRates.mockResolvedValue(fictionalTeamStats(20252026, "2026-01-05T08:00:00Z") as never);
++    playerSource.loadSharePlayerSources.mockResolvedValue(fictionalPlayerSources(20252026, "2026-01-05", "2026-01-05T08:00:00Z"));
++    // Empty but successful: the source answered with no rows, so "no recent game" is true.
++    playerSource.loadSharePlayerRecent.mockResolvedValueOnce({ rolling: [], goalieGames: [] });
++    const empty = await request({ format: "game-grid", weekStart });
++    expect(empty.body.players).toMatchObject({ state: "ready", recentState: "ready" });
++    expect(empty.body.players.players.every((player: { recent: unknown }) => player.recent === null)).toBe(true);
++    expect(empty.headers["Cache-Control"]).toBe("public, max-age=0, s-maxage=300, stale-while-revalidate=300");
++    // Rejected (network or dependency error) and over-limit reads are "unavailable", never "no game".
++    for (const failure of [new Error("offline"), new Error("Skater recent games response was incomplete or over its 420-row limit.")]) {
++      playerSource.loadSharePlayerRecent.mockRejectedValueOnce(failure);
++      const failed = await request({ format: "game-grid", weekStart });
++      expect(failed.body.state).toBe("ready");
++      expect(failed.body.players).toMatchObject({ state: "ready", recentState: "unavailable" });
++      expect(failed.body.players.players.length).toBeGreaterThan(0);
++      expect(failed.body.players.players.every((player: { recent: unknown }) => player.recent === null)).toBe(true);
++      expect(JSON.stringify(failed.body)).not.toMatch(/offline|420-row/);
++      expect(failed.headers["Cache-Control"]).toBe("public, max-age=0, s-maxage=60");
++    }
++  });
+   it("never reads players after a failed or partial schedule", async () => {
+     upstream.getSchedule.mockReset(); playerSource.loadSharePlayerSources.mockReset();
+     upstream.getSchedule.mockRejectedValue(new Error("down"));
+--- a/web/lib/socialShare/server.ts
++++ b/web/lib/socialShare/server.ts
+@@ -73,8 +73,9 @@
+   if (snapshot.state !== "ready" || snapshot.source.state !== "ready" || !snapshot.expiresAt) return "no-store";
+   const usable = Math.floor((Date.parse(snapshot.expiresAt) - now) / 1000) - SHARE_CACHE_EXPIRY_MARGIN_SECONDS;
+   if (!Number.isFinite(usable) || usable < 60) return "no-store";
+-  // Any attached layer that is not ready (opponents required; players when present) keeps the cache short.
+-  const layersReady = snapshot.opponents?.state === "ready" && (!snapshot.players || snapshot.players.state === "ready");
++  // Any attached layer that is not ready (opponents required; players when present, including a failed
++  // last-five-games read) keeps the cache short.
++  const layersReady = snapshot.opponents?.state === "ready" && (!snapshot.players || (snapshot.players.state === "ready" && snapshot.players.recentState !== "unavailable"));
+   const ceiling = layersReady ? SHARE_CACHE_MAX_SECONDS : SHARE_CACHE_UNREADY_OPPONENTS_SECONDS;
+   const sMaxAge = Math.min(ceiling, usable);
+   const stale = layersReady ? Math.min(SHARE_CACHE_MAX_SECONDS, usable - sMaxAge) : 0;
+--- a/web/lib/socialShare/types.ts
++++ b/web/lib/socialShare/types.ts
+@@ -117,6 +117,12 @@
+    * selection needs a refresh. Absent (fixtures) means the rows are not trimmed to one selection.
+    */
+   selectedDates?: string[] | null;
++  /**
++   * Last-five-games read outcome (C7 SS1-10-F1): "ready" when the source answered, even with no rows
++   * (a player's `recent: null` then means no game in two weeks); "unavailable" when the read failed or
++   * exceeded its limit, so no tile may claim the player has not played. Absent: no read was attempted.
++   */
++  recentState?: "ready" | "unavailable";
+ };
+ 
+ /** One skater's last-5 vs season windows from rolling_player_game_metrics (strength "all"). */
+--- a/web/components/SocialShare/SocialShare.tsx
++++ b/web/components/SocialShare/SocialShare.tsx
+@@ -1,6 +1,6 @@
+ /* eslint-disable @next/next/no-img-element -- Native owned SVG is decoded and embedded by html-to-image for exact PNG exports. */
+ import { useCallback, useEffect, useRef, useState } from "react";
+-import { SCHEDULE_FORMATS, type SocialShareFormat, type SocialShareSnapshot, type ShareTeam, type ShareTeamRow } from "lib/socialShare/types";
++import { SCHEDULE_FORMATS, type SharePlayerLayer, type SocialShareFormat, type SocialShareSnapshot, type ShareTeam, type ShareTeamRow } from "lib/socialShare/types";
+ import { calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
+ import { bounded, downloadSharePng, readyShareFonts, SHARE_SIZE, teamLogoDataUrl } from "lib/socialShare/export";
+ import { mondayGridRows } from "lib/socialShare/mondayGrid";
+@@ -224,20 +224,22 @@
+   const head = `FHFH ${card.kind === "pickups" ? `Pickups ${bandLabel(card.max).toLowerCase()} rostered` : "Hits, shots and blocks specialists"}, ${yearDateLabel(snapshot.weekStart)} through ${yearDateLabel(snapshot.weekEnd)}.`;
+   const tail = `Yahoo rostered percent as of ${dayDate(snapshot.players?.ownershipAsOf ?? null)}. NHL.com season totals updated ${timeLabel(snapshot.players?.statsUpdatedAt ?? null)}. Season rates, not projections.`;
+   if (!trusted || !playersReady(snapshot)) return `${head} Unranked preview; ranking unavailable because ${playerUnreadyReason(snapshot, trusted)}. ${tail}`;
+-  const describe = (player: RankedPlayer, stat: string) => `${player.name} (${player.team}, ${player.positions}), ${stat}, ${rosteredLabel(player.ownership)} rostered, number ${player.weekRank} Week Score team with ${player.remainingGames} games`;
++  const describe = (player: RankedPlayer, stat: string) => `${player.name} (${player.team}, ${player.positions}), ${stat}, ${rosteredLabel(player.ownership)} rostered, number ${player.weekRank} Week Score team with ${player.remainingGames} games${player.widened ? ", wider pool" : ""}`;
++  const pool = `Top-${PLAYER_TEAM_RANK_MAX} Week Score teams first; a list short of three fills from teams ranked ${PLAYER_TEAM_RANK_MAX + 1} and lower, marked wider pool`;
+   if (card.kind === "pickups") {
+     const tier = pickupTiers(snapshot, true).find(item => item.max === card.max)!;
+-    return `${head} Players on top-${PLAYER_TEAM_RANK_MAX} Week Score teams, ranked by points per game for skaters and quality-start percent for goalies, then team schedule rank; separate bands of 30 to 49, 20 to 29 and under 20 percent rostered, each player in one band. ${(["F", "D", "G"] as const).map(group => `${groupTitles[group]}: ${tier.groups[group].map(player => describe(player, `${pickupStat(player)[0]} ${pickupStat(player)[1]}`)).join("; ") || "none qualify"}`).join(". ")}. ${tail}`;
++    return `${head} ${pool}. Players ranked by points per game for skaters and quality-start percent for goalies, then team schedule rank; separate bands of 30 to 49, 20 to 29 and under 20 percent rostered, each player in one band. ${(["F", "D", "G"] as const).map(group => `${groupTitles[group]}: ${tier.groups[group].map(player => describe(player, `${pickupStat(player)[0]} ${pickupStat(player)[1]}`)).join("; ") || "none qualify"}`).join(". ")}. ${tail}`;
+   }
+   const board = specialists(snapshot, true);
+-  return `${head} Skaters under 50% rostered on top-${PLAYER_TEAM_RANK_MAX} Week Score teams, minimum ${MIN_SKATER_GAMES} games, by season total per game played. ${(Object.keys(specialistTitles) as SpecialistCategory[]).map(category => `${specialistTitles[category][0]}: ${board[category].map(player => describe(player, `${player.perGame.toFixed(1)} ${specialistTitles[category][1]}`)).join("; ") || "none qualify"}`).join(". ")}. ${tail}`;
++  return `${head} ${pool}. Skaters under 50% rostered, minimum ${MIN_SKATER_GAMES} games, by season total per game played. ${(Object.keys(specialistTitles) as SpecialistCategory[]).map(category => `${specialistTitles[category][0]}: ${board[category].map(player => describe(player, `${player.perGame.toFixed(1)} ${specialistTitles[category][1]}`)).join("; ") || "none qualify"}`).join(". ")}. ${tail}`;
+ }
+ 
+ type RecentFocus = "pickup" | SpecialistCategory;
+ /** The player's last five games, focused on the stat that justifies the pick. */
+-function recentLine(player: RankedPlayer, focus: RecentFocus) {
++function recentLine(player: RankedPlayer, focus: RecentFocus, recentState: SharePlayerLayer["recentState"]) {
+   const recent = player.recent;
+-  if (!recent) return "No game in the last two weeks";
++  // Only claim "no recent game" when the recent-form source actually answered (C7 SS1-10-F1).
++  if (!recent) return recentState === "ready" ? "No game in the last two weeks" : "Recent form unavailable";
+   if (recent.kind === "goalie") {
+     const pct = recent.shotsAgainst > 0 ? (recent.saves / recent.shotsAgainst).toFixed(3).replace(/^0/, "") : "—";
+     return `${recent.wins}-${recent.games - recent.wins} · ${pct} SV% · ${recent.goalsAgainst} GA · ${recent.qualityStarts} QS`;
+@@ -250,13 +252,13 @@
+   return `${n(recent.goals)}G ${n(recent.assists)}A ${n(recent.points)}P · ${n(recent.shots)} SOG · ${n(recent.ppPoints)} PPP · ${toi}`;
+ }
+ 
+-function PlayerTile({ player, stat, label, focus, logos }: { player: RankedPlayer; stat: string; label: string; focus: RecentFocus; snapshot: SocialShareSnapshot; logos: Record<string, string | null> }) {
++function PlayerTile({ player, stat, label, focus, snapshot, logos }: { player: RankedPlayer; stat: string; label: string; focus: RecentFocus; snapshot: SocialShareSnapshot; logos: Record<string, string | null> }) {
+   return <div data-player={player.nhlId} data-team={player.team} data-widened={player.widened || undefined} className={styles.playerTile}>
+     <TeamBanner team={{ abbreviation: player.team }} logo={logos[player.team]} title={player.name} subtitle={`${player.team} · ${player.positions}`}
+       right={<span className={styles.playerOwn}><strong>{rosteredLabel(player.ownership)}</strong><small>ROSTERED</small></span>} />
+     <div className={styles.playerBody}>
+       <div className={styles.playerStat}><strong>{stat}</strong><small>{label}</small></div>
+-      <p className={styles.playerRecent}><b>L5 GP</b><span>{recentLine(player, focus)}</span></p>
++      <p className={styles.playerRecent}><b>L5 GP</b><span>{recentLine(player, focus, snapshot.players?.recentState)}</span></p>
+       <small className={styles.playerSchedule}>#{player.weekRank} Week Score · {player.remainingGames} GP · {player.offNightGames} off-night{player.widened && <i className={styles.widened}>WIDER POOL</i>}</small>
+     </div>
+   </div>;
+@@ -268,7 +270,7 @@
+     ? (["F", "D", "G"] as const).map(group => ({ key: group, title: groupTitles[group], players: pickupTiers(snapshot, true).find(tier => tier.max === card.max)!.groups[group].map(player => { const [stat, label] = pickupStat(player); return { player, stat, label, focus: "pickup" as const }; }) }))
+     : (Object.entries(specialists(snapshot, true)) as [SpecialistCategory, ReturnType<typeof specialists>["hits"]][]).map(([category, list]) => ({ key: category, title: specialistTitles[category][0], players: list.map(player => ({ player, stat: player.perGame.toFixed(1), label: specialistTitles[category][1], focus: category })) }));
+   return <>
+-    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `${editionDay(snapshot)} · ${card.kind === "pickups" ? `Pickups on top-${PLAYER_TEAM_RANK_MAX} schedules` : "Under 50% rostered"}` : "Unranked preview"} title={card.kind === "pickups" ? `${bandLabel(card.max).toUpperCase()} ROSTERED` : "CATEGORY SPECIALISTS"} compact />
++    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `${editionDay(snapshot)} · ${card.kind === "pickups" ? `Pickups · top-${PLAYER_TEAM_RANK_MAX} schedules first` : "Under 50% rostered"}` : "Unranked preview"} title={card.kind === "pickups" ? `${bandLabel(card.max).toUpperCase()} ROSTERED` : "CATEGORY SPECIALISTS"} compact />
+     {!ready ? <div className={styles.matchupEmpty}><strong>Ranking unavailable</strong><p>Player cards need a ready schedule and current Yahoo ownership plus NHL.com season totals; {playerUnreadyReason(snapshot, trusted)}.</p></div>
+       : <div className={styles.playerColumns}>{columns.map(column => <div key={column.key} className={styles.playerColumn}>
+         <h3>{column.title}</h3>
+--- a/web/e2e/social-share.spec.ts
++++ b/web/e2e/social-share.spec.ts
+@@ -21,7 +21,9 @@
+ // Fictional public schedule mechanics, deliberately separate from live NHL evidence.
+ type Rates = "ready" | "stale" | "missing";
+ type PlayerMode = Rates | "thin";
+-function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinnedAt?: string, rates: Rates = "ready", players: PlayerMode = "ready", trends: Rates = "ready"): SocialShareSnapshot {
++/** Last-five-games read outcome: rows, an answered-but-empty read, or a failed read. */
++type RecentRead = "ready" | "empty" | "failed";
++function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinnedAt?: string, rates: Rates = "ready", players: PlayerMode = "ready", trends: Rates = "ready", recentRead: RecentRead = "ready"): SocialShareSnapshot {
+   const dates = weekDates(weekStart), generatedAt = pinnedAt ?? new Date().toISOString();
+   const year = Number(weekStart.slice(0, 4)) - (Number(weekStart.slice(5, 7)) < 8 ? 1 : 0);
+   const pairs = [[0, 1, 2], [0, 10, 8], [1, 3, 1], [2, 2, 4], [3, 1, 2], [4, 1, 3], [6, 2, 3]];
+@@ -37,7 +39,7 @@
+     snapshot.players = buildPlayerLayer(sources, { season, teams: snapshot.teams.map(team => team.abbreviation), fetchedAt: generatedAt, generatedAt });
+     // Fictional last-five-games evidence for every joined player, as the live server attaches for shown ones.
+     const recent = fictionalPlayerRecent(snapshot.players.players, season, localDate(generatedAt, "America/New_York"));
+-    snapshot.players = attachRecent(snapshot.players, { rolling: recent.rolling as ShareRecentRollingRow[], goalieGames: recent.goalieGames as ShareGoalieGameRow[] }, generatedAt);
++    snapshot.players = attachRecent(snapshot.players, recentRead === "failed" ? null : recentRead === "empty" ? { rolling: [], goalieGames: [] } : { rolling: recent.rolling as ShareRecentRollingRow[], goalieGames: recent.goalieGames as ShareGoalieGameRow[] }, generatedAt);
+     // Fictional rolling metrics (4 h old, or 80 h when stale) and seven-day ownership timelines.
+     const trendSources = trends === "missing" ? null : fictionalTrendSources(season, localDate(generatedAt, "America/New_York"), new Date(Date.parse(generatedAt) - (trends === "stale" ? 80 : 4) * 3600000).toISOString());
+     snapshot.trends = buildTrendLayer(trendSources, { season, teams: snapshot.teams, fetchedAt: generatedAt, generatedAt });
+@@ -62,7 +64,7 @@
+ }
+ 
+ async function install(page: Page) {
+-  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, liveTuesday: false, latest: null as SocialShareSnapshot | null };
++  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTuesday: false, latest: null as SocialShareSnapshot | null };
+   await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
+   await page.route("**/api/v1/social-share/**", async route => {
+     controller.requests++;
+@@ -74,7 +76,7 @@
+       controller.latest = buildBlockedSnapshot({ format: "tuesday-trends", weekStart: url.searchParams.get("weekStart")!, generatedAt: new Date().toISOString(), selectedDates: selected === null ? undefined : selected.split(",").filter(Boolean), ...TUESDAY_NOT_CONNECTED });
+       return route.fulfill({ json: controller.latest, headers: { "Cache-Control": "no-store" } });
+     }
+-    let next = fixture(url.pathname.split("/").pop() as SocialShareFormat, url.searchParams.get("weekStart")!, controller.mode, controller.pinnedAt, controller.rates, controller.players, controller.trends);
++    let next = fixture(url.pathname.split("/").pop() as SocialShareFormat, url.searchParams.get("weekStart")!, controller.mode, controller.pinnedAt, controller.rates, controller.players, controller.trends, controller.recentRead);
+     if (url.searchParams.has("selectedDates")) next = selectScheduleDates(next, url.searchParams.get("selectedDates")?.split(",").filter(Boolean) || []);
+     if (controller.longName) {
+       for (const row of next.rows) if (row.team.id === 1) row.team.name = "New Jersey Extremely Long Fantasy Hockey Team Name";
+@@ -716,7 +718,7 @@
+   expect(label).toBe("Week ahead");
+   await expect(square).toContainText(`${label} · Streamer grid`, { ignoreCase: true });
+   await page.getByRole("combobox", { name: /^Graphic/ }).selectOption("pickups-20");
+-  await expect(square).toContainText(`${label} · Pickups on top-10 schedules`, { ignoreCase: true });
++  await expect(square).toContainText(`${label} · Pickups · top-10 schedules first`, { ignoreCase: true });
+ });
+ 
+ test("ticket 10 flair: striped player banners with L5 evidence, three per list, tiered grid scores and cherry picks", async ({ page }) => {
+@@ -769,3 +771,20 @@
+   await downloadedPng(page, "flair-leaders");
+   expect(errors).toEqual([]);
+ });
++
++test("player tiles never claim 'no recent game' when the last-five-games read failed", async ({ page }) => {
++  const source = await install(page);
++  source.mode = "league"; source.recentRead = "failed";
++  await open(page);
++  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square");
++  await expect(square.locator("[data-team][data-tier]")).toHaveCount(32);
++  await graphic.selectOption("pickups-20");
++  const tiles = square.locator("[data-player]");
++  await expect(tiles).toHaveCount(9);
++  for (let i = 0; i < 9; i++) await expect(tiles.nth(i)).toContainText("Recent form unavailable");
++  await expect(square).not.toContainText("No game in the last two weeks");
++  source.recentRead = "empty";
++  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
++  await expect(tiles.first()).toContainText("No game in the last two weeks");
++  await expect(square).not.toContainText("Recent form unavailable");
++});
+--- a/web/lib/socialShare/players.ts
++++ b/web/lib/socialShare/players.ts
+@@ -200,8 +200,9 @@
+  */
+ export function attachRecent(layer: SharePlayerLayer, sources: { rolling: ShareRecentRollingRow[]; goalieGames: ShareGoalieGameRow[] } | null, generatedAt: string): SharePlayerLayer {
+   const today = localDate(generatedAt, SHARE_TIME_ZONE), oldest = new Date(Date.parse(`${today}T00:00:00Z`) - RECENT_MAX_AGE_DAYS * 86400000).toISOString().slice(0, 10);
++  // A failed read is "unavailable", never "no recent game".
++  if (!sources) return { ...layer, recentState: "unavailable", players: layer.players.map(player => ({ ...player, recent: null })) };
+   const players = layer.players.map(player => {
+-    if (!sources) return { ...player, recent: null };
+     if (player.group !== "G") {
+       const latest = sources.rolling.filter(row => row.player_id === player.nhlId && row.season === layer.season && row.strength_state === "all" && isDate(row.game_date) && row.game_date <= today)
+         .sort((a, b) => b.game_date.localeCompare(a.game_date))[0];
+@@ -215,5 +216,5 @@
+     const sum = (key: "wins" | "saves" | "shots_against" | "goals_against" | "quality_start") => games.reduce((total, row) => total + (count(row[key]) ? row[key]! : 0), 0);
+     return { ...player, recent: { kind: "goalie" as const, games: games.length, through: games[0].date, wins: sum("wins"), saves: sum("saves"), shotsAgainst: sum("shots_against"), goalsAgainst: sum("goals_against"), qualityStarts: sum("quality_start") } };
+   });
+-  return { ...layer, players };
++  return { ...layer, recentState: "ready", players };
+ }
+--- a/web/lib/socialShare/players.test.ts
++++ b/web/lib/socialShare/players.test.ts
+@@ -152,7 +152,11 @@
+     expect(withRecent.players.find(player => player.nhlId === skater.nhlId)!.recent).toEqual({ kind: "skater", games: 5, through: "2026-10-24", goals: 3, assists: 2, points: 5, shots: 14, hitsPerGame: 1.2, blocksPerGame: 0.6, toiSeconds: 1100, ppPoints: 2 });
+     // Seven dated rows: the 0-GP row is skipped, then the five latest games (Oct 22, 20, 18, 16, 14).
+     expect(withRecent.players.find(player => player.nhlId === goalie.nhlId)!.recent).toEqual({ kind: "goalie", games: 5, through: "2026-10-22", wins: 3, saves: 26 + 27 + 28 + 29 + 30, shotsAgainst: 29 + 30 + 31 + 32 + 33, goalsAgainst: 15, qualityStarts: 3 });
++    // A failed read is "unavailable"; an answered read is "ready" even when a player has no rows.
++    expect(attachRecent(layer, null, now)).toMatchObject({ recentState: "unavailable" });
+     expect(attachRecent(layer, null, now).players.every(player => player.recent === null)).toBe(true);
++    expect(withRecent.recentState).toBe("ready");
++    expect(attachRecent(layer, { rolling: [], goalieGames: [] }, now)).toMatchObject({ recentState: "ready" });
+     const old = attachRecent(layer, { rolling: rolling.map(row => ({ ...row, game_date: "2026-10-01" })), goalieGames: [] }, now);
+     expect(old.players.find(player => player.nhlId === skater.nhlId)!.recent).toBeNull();
+   });
+--- a/web/lib/socialShare/playerSources.test.ts
++++ b/web/lib/socialShare/playerSources.test.ts
+@@ -72,6 +72,11 @@
+     expect(source.calls).toHaveLength(0);
+   });
+ 
++  it("fails closed when recent-form rows exceed the per-player limit", async () => {
++    source.rows = { rolling_player_game_metrics: Array.from({ length: 2 * RECENT_LIMITS.skaterRowsPerPlayer + 1 }, () => ({ player_id: 1 })), wgo_goalie_stats: [] };
++    await expect(loadSharePlayerRecent(20262027, [1, 3], [], "2026-10-05")).rejects.toThrow(`over its ${2 * RECENT_LIMITS.skaterRowsPerPlayer}-row limit`);
++  });
++
+   it("makes no read without teams", async () => {
+     expect(await loadSharePlayerSources(20262027, [])).toEqual({ yahoo: [], map: [], skaters: [], goalies: [] });
+     expect(source.calls).toHaveLength(0);

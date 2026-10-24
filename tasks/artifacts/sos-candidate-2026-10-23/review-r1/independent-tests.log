@@ -1,0 +1,12 @@
+test_corrected_stability_by_exact_independent_solve (test_independent_review.IndependentReview.test_corrected_stability_by_exact_independent_solve) ... ok
+test_cutoff_boundaries_and_late_correction_are_excluded (test_independent_review.IndependentReview.test_cutoff_boundaries_and_late_correction_are_excluded) ... ok
+test_exact_oracles_on_heterogeneous_multigraphs (test_independent_review.IndependentReview.test_exact_oracles_on_heterogeneous_multigraphs) ... ok
+test_outer_fixture_weights_and_no_missing_renormalization (test_independent_review.IndependentReview.test_outer_fixture_weights_and_no_missing_renormalization) ... ok
+test_partial_schedule_and_history_withhold_metrics (test_independent_review.IndependentReview.test_partial_schedule_and_history_withhold_metrics) ... ok
+test_retrospective_and_faced_then_do_not_share_later_evidence (test_independent_review.IndependentReview.test_retrospective_and_faced_then_do_not_share_later_evidence) ... ok
+test_self_results_and_future_list_do_not_refit_quality (test_independent_review.IndependentReview.test_self_results_and_future_list_do_not_refit_quality) ... ok
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.112s
+
+OK

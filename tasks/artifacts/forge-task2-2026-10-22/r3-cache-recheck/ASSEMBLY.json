@@ -1,0 +1,17 @@
+{
+  "canonicalHead": "a7d346cbde37992c8c232076561912c3e7c1f8cb",
+  "fixCommit": "59daabf005bb2a762af43e649dc6acf6d117a26e",
+  "snapshot": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-cache-recheck-cp6x37_2",
+  "baselineArchiveSha256": "416c54bda8b28e48611fbdd3f9499d82b610aa6d1794d96b0283f89693eacd85",
+  "overlayPaths": [
+    "web/lib/projections/goalie/leagueSavePct.test.ts",
+    "web/lib/projections/goalie/leagueSavePct.ts",
+    "web/lib/projections/goaliePipeline.test.ts",
+    "web/lib/projections/run-forge-projections.ts",
+    "web/lib/projections/stages/goalie-stage.ts"
+  ],
+  "sourceFiles": 1976,
+  "sourceArchiveSha256": "ade275bda0196837baad6d767decbdcde2c81d55f12866d5bc9051a18e2877a1",
+  "sourceManifestSha256": "5a6d1abbbf0f699e4bf61c92aedef9424f94660d508aee6ee0a355db22541b56",
+  "meaning": "Exact R2 frozen source plus only cache commit five files; four originals byte-identical to commit parent; no unrelated current-tree edits."
+}

@@ -1,0 +1,24 @@
+{
+  "owner": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "releaseBaseline": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "selection": "TJ: revert active HOLD features, defer hybrid k re-fit, preserve experiments separately",
+  "before": {
+    "web/lib/projections/stages/skater-stage.ts": "f0f60f99700bffe048391039275652431bfd6399d8cfa29b8ae66ea3b351d9c6",
+    "web/lib/projections/run-forge-projections.ts": "d6960701668237b5da503bc3b16953f8106644d5d03f90c6907531f88c17f866",
+    "web/lib/projections/apiHelpers.ts": "9e2edec0a42369f0198bf2d1f91d195288e198660879cbb0c4a7ec1ed14c1972",
+    "web/pages/api/v1/forge/players.ts": "e1b977ec3b31ae5c11ac909ba33cf2bb85dc6eea867694e65f0c2eacb5beb8f9",
+    "web/pages/api/v1/forge/goalies.ts": "68e6308b775a18d4619cce2d14be42e428d23d5f272fb8b9558445b8db69c20e",
+    "web/pages/api/v1/projections/players.ts": "4a4118e984d3c8179ccd34d2b873bdbff89f2d7ee4e08cfb87a8f4b9fcfb31dd",
+    "web/pages/api/v1/projections/goalies.ts": "062dbe50f7f77bb7849d4f9b59c83e392ace53888a10acabc8cc02b3f475df83",
+    "web/pages/api/v1/projections/teams.ts": "1c9f118fcbed0732dea41a8bebbe6b8411184b1051ab65af64379903d9351dcc",
+    "web/lib/projections/constants/projection-weights.ts": "730a69d78662bfce6eac221f6ccf8a071c9611665c33452938ec4c6fd96e59e1",
+    "web/lib/projections/runProjectionV2.test.ts": "947cd9a505ea220c58e13ec7a7ae5f8aba21f5f3b1163e999775920168919346",
+    "web/lib/projections/apiHelpers.runAdmission.test.ts": "b2b6c500c067b968365c23e23f46cbf0de28e938ad9a1c980ea88d73698c0bf3",
+    "web/lib/projections/nativeInputEligibility.test.ts": "1093a650ba05f4911c3792e30ff39b8493ce21e66a65eab8956269b4096427c6",
+    "web/__tests__/pages/api/v1/forge/players.test.ts": "f6feb00c5518279faa762be386e33c46cc14b760113a93d8311d5a684d775f20",
+    "web/__tests__/pages/api/v1/forge/goalies.test.ts": "9fed94a4c751b6bee3457d54d0d137652d7cea11a9c519b9502c39645f7aeda1",
+    "web/scripts/qualify-native-players-offline.test.ts": "cf99e337551c94231b7d0df81a045dcf1a0c497f2a093c16d80e8be526d1dfbc"
+  },
+  "testContractReconciliation": "Selected Release C public legacy contract; native consumer must still reject legacy producer; no approvals/catalog changes."
+}

@@ -1,0 +1,161 @@
+{
+  "project": {
+    "id": "fyhftlxokyjtpndbkfse",
+    "name": "fhfhockey.com",
+    "status": "ACTIVE_HEALTHY",
+    "api_host": "fyhftlxokyjtpndbkfse.supabase.co",
+    "verified_against": [
+      "supabase/.temp/project-ref",
+      "web/.env.production NEXT_PUBLIC_SUPABASE_URL hostname only",
+      "Supabase get_project and get_project_url"
+    ]
+  },
+  "player": {
+    "id": 8476453,
+    "name": "Nikita Kucherov"
+  },
+  "queries": [
+    {
+      "number": 1,
+      "start_utc": "2026-10-24T16:25:33.354Z",
+      "tool_wall_ms": 6243,
+      "returned_rows": 8,
+      "max_rows": 9,
+      "statement_timeout_ms": 5000,
+      "lock_timeout_ms": 1000,
+      "transaction": "BEGIN READ ONLY; ... ROLLBACK;",
+      "is_error": false
+    },
+    {
+      "number": 2,
+      "start_utc": "2026-10-24T16:26:03.736Z",
+      "tool_wall_ms": 5054,
+      "returned_rows": 60,
+      "max_rows": 60,
+      "statement_timeout_ms": 5000,
+      "lock_timeout_ms": 1000,
+      "transaction": "BEGIN READ ONLY; ... ROLLBACK;",
+      "is_error": false
+    }
+  ],
+  "returned_rows_total": 68,
+  "third_query": {
+    "status": "never_run",
+    "reason": "Stopped once the recent-window failure sources were separated; no additional STD/percentile diagnosis required."
+  },
+  "aggregate_last_updated": "2026-10-24T08:52:04.25+00:00",
+  "wigo_rates_row_present": false,
+  "windows": [
+    {
+      "window": 5,
+      "actual_nhl_games": 5,
+      "season_counts": {
+        "20262027": 5
+      },
+      "matched_individual": 5,
+      "matched_on_ice": 5,
+      "unmatched": []
+    },
+    {
+      "window": 10,
+      "actual_nhl_games": 10,
+      "season_counts": {
+        "20262027": 10
+      },
+      "matched_individual": 9,
+      "matched_on_ice": 9,
+      "unmatched": [
+        {
+          "date": "2026-10-05",
+          "season": 20262027,
+          "individual": false,
+          "on_ice": false
+        }
+      ]
+    },
+    {
+      "window": 20,
+      "actual_nhl_games": 20,
+      "season_counts": {
+        "20252026": 10,
+        "20262027": 10
+      },
+      "matched_individual": 13,
+      "matched_on_ice": 13,
+      "unmatched": [
+        {
+          "date": "2026-10-05",
+          "season": 20262027,
+          "individual": false,
+          "on_ice": false
+        },
+        {
+          "date": "2026-04-07",
+          "season": 20252026,
+          "individual": false,
+          "on_ice": false
+        },
+        {
+          "date": "2026-04-06",
+          "season": 20252026,
+          "individual": false,
+          "on_ice": false
+        },
+        {
+          "date": "2026-04-04",
+          "season": 20252026,
+          "individual": false,
+          "on_ice": false
+        },
+        {
+          "date": "2026-04-02",
+          "season": 20252026,
+          "individual": false,
+          "on_ice": false
+        },
+        {
+          "date": "2026-03-31",
+          "season": 20252026,
+          "individual": false,
+          "on_ice": false
+        },
+        {
+          "date": "2026-03-26",
+          "season": 20252026,
+          "individual": false,
+          "on_ice": false
+        }
+      ]
+    }
+  ],
+  "current_l5_arithmetic": {
+    "explanation": "Arithmetic over the captured current rows, not a production recompute, write, or browser verification.",
+    "gp": 5,
+    "toi_seconds": 6313,
+    "atoi_seconds": 1262.6,
+    "points": 5,
+    "sog": 21,
+    "ixg": 1.82,
+    "icf": 35,
+    "sog_per60": 11.975289086012989,
+    "pts_per60": 2.851259306193569,
+    "ixg_per60": 1.0378583874544591,
+    "icf_per60": 19.958815143354983,
+    "ipp_pct": 62.5,
+    "oi_sh_pct": 13.793103448275861,
+    "xgf_per60": 4.658957706320291,
+    "xgf_pct": 58.608321377331414
+  },
+  "l5_stored": {
+    "atoi": null,
+    "ixg": null,
+    "icf": null,
+    "pts_per60": null,
+    "sog_per60": null
+  },
+  "limits": [
+    "No source row observation/update timestamps were selected; chronology of aggregate computation versus source arrival remains unknown.",
+    "No browser or deployment was contacted; conclusions refer to current production records and inspected source.",
+    "No production write, application endpoint, refresh, cron, backfill or deployment occurred."
+  ]
+}

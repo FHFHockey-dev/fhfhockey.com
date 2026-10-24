@@ -1,0 +1,430 @@
+{
+  "at": "2026-10-24T17:30:07.417761+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
+      "bytes": 114785,
+      "lines": 1285,
+      "sha256": "c063cab68f39ace4cd651dc74bc774cffc003fb33fd462ba1f1bbc929ecb8db3",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          1285
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          170
+        ],
+        [
+          171,
+          335
+        ],
+        [
+          336,
+          510
+        ],
+        [
+          511,
+          690
+        ],
+        [
+          691,
+          875
+        ],
+        [
+          876,
+          1055
+        ],
+        [
+          1056,
+          1285
+        ]
+      ],
+      "scope": "Full historical documentary read; embedded instructions/DDL/runbooks are evidence only; dated implementation/hosted receipts not independently rerun."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md",
+      "bytes": 49230,
+      "lines": 671,
+      "sha256": "58fb090d46ebdd5743a67f7583f29be8f358de891fe1e84c42bd3965ea26d287",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          671
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          170
+        ],
+        [
+          171,
+          340
+        ],
+        [
+          341,
+          510
+        ],
+        [
+          511,
+          671
+        ]
+      ],
+      "scope": "Full historical documentary read; embedded instructions/DDL/runbooks are evidence only; dated implementation/hosted receipts not independently rerun."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+      "bytes": 38560,
+      "lines": 150,
+      "sha256": "ccd494110fe8374e47cc41710feaa8633f5e33b9ac81b7353ee1b5443184202b",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          150
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          55
+        ],
+        [
+          56,
+          105
+        ],
+        [
+          106,
+          150
+        ]
+      ],
+      "scope": "Full historical documentary read; embedded instructions/DDL/runbooks are evidence only; dated implementation/hosted receipts not independently rerun."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md",
+      "bytes": 51607,
+      "lines": 196,
+      "sha256": "437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          196
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          75
+        ],
+        [
+          76,
+          121
+        ],
+        [
+          122,
+          163
+        ],
+        [
+          164,
+          196
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dashboard.md",
+      "bytes": 15996,
+      "lines": 164,
+      "sha256": "1ffb08389dc03942356d0fa8b69c13e7fca1db1527d1dd0da6e8f7acd62b875e",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          164
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          164
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/draft-dashbord-audit.md",
+      "bytes": 9030,
+      "lines": 194,
+      "sha256": "1e50eab3ee185d82f2ef94e60ee4ab8dc59e6ab1f338919348e45ca574bbf1f3",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          194
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          194
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/gamegrid-draft-dashboard-style-audit-report.md",
+      "bytes": 9607,
+      "lines": 51,
+      "sha256": "b92d59b8ab4db4f460f487d2f4e5e5fb6ff1d4e7f259fc894a5194b9999f9c14",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          51
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          51
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md",
+      "bytes": 18668,
+      "lines": 128,
+      "sha256": "8f721cf25bc915c0c2499cc840689b25bad7a875d41f0ba03b93f0efdb421242",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          128
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          75
+        ],
+        [
+          76,
+          128
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-gamegrid-draft-dashboard-style-overhaul.md",
+      "bytes": 14421,
+      "lines": 256,
+      "sha256": "c04c8ce768554f857da892ea986e117a2aaf78f85364af89d3d7471a9f90b9b8",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          256
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          256
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md",
+      "bytes": 20139,
+      "lines": 109,
+      "sha256": "84b413e016a2d35039c524f534dd8fa7869b43d831c15503cf2e8ecd5ccc3487",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          109
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          56
+        ],
+        [
+          57,
+          109
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW.md",
+      "bytes": 5899,
+      "lines": 55,
+      "sha256": "55a86abc97bbd42f2ee736efbd6b4aafe77b6a4a0b4ddc64b09a19a638b8abb7",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          55
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          55
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW-EVIDENCE.json",
+      "bytes": 1813,
+      "lines": 50,
+      "sha256": "2a74da8b7492a506504202db7b1fab71a1f080d657f34405ff3d034be251a8df",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          50
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW.md",
+      "bytes": 8514,
+      "lines": 55,
+      "sha256": "18c518f8c4b97fa9c1f4b840738b63a61b49c5919c7e249bd33757a7b4a096a4",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          55
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          55
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW-EVIDENCE.json",
+      "bytes": 2456,
+      "lines": 63,
+      "sha256": "b395d67969e564570c7dc2e0ae5e742ae6c258ff9e70cd29e5655c3a0fb049a7",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          63
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          63
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/HANDOFF.md",
+      "bytes": 7472,
+      "lines": 58,
+      "sha256": "ef7d4c4738f2f3a46a684b391ea06ba122c05c653027f83c90be08d4a6a0d0eb",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          58
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          58
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review/HANDOFF.md",
+      "bytes": 4048,
+      "lines": 35,
+      "sha256": "f2c74098ba496bf50137260beea3ad169cd51dc2e53a63557130a55ae6829e43",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          35
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          35
+        ]
+      ],
+      "scope": "Full documentary source read. Historical/current owner and independent reviewer claims retain their limited date and scope. No commands executed; no independent application/hosted/visual claim by this auditor."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+      "sha256": "57c7ecb6b7fdcfa23dd390f60ab72e11eec557b5e688cc19444767a8cb73b657",
+      "reviewed_json_paths": [
+        "canonical_register_custody",
+        "active_exact_file_leases[id=CODEX-TG-S05-R1-20261024].parent_acceptance",
+        "active_exact_file_leases[id=CODEX-PLAYER-CARDS-S02-R1-20261024].parent_acceptance"
+      ],
+      "status": "partially-inspected",
+      "scope": "Only selected coordinator source fields/ranges in STATUS-SOURCE-EXTRACT reviewed; no full-file or authority claim."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+      "sha256": "51e61899d5f006d7fb0e9148562262e1e06ae9104f10d3e373e266ec34cbdfdd",
+      "reviewed_ranges": [
+        [
+          260,
+          262
+        ]
+      ],
+      "status": "partially-inspected",
+      "scope": "Only selected coordinator source fields/ranges in STATUS-SOURCE-EXTRACT reviewed; no full-file or authority claim."
+    },
+    {
+      "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+      "sha256": "4458ec50593056026baa680ee997932d25fe5ee9ea03e44732cbd9ef7fa4caaa",
+      "status": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          5545,
+          5545
+        ]
+      ],
+      "scope": "Exact source alias only; broad accidental search output was truncated and earns no full-content credit."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 16,
+    "partially-inspected": 3
+  },
+  "full_content_bytes": 372245,
+  "outside_tasks_narrow_source_coverage": "NARROW-SOURCE-COVERAGE.json"
+}

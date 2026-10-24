@@ -1,0 +1,199 @@
+{
+  "snapshot": {
+    "id": "synthetic-player-card-v0-curated",
+    "renderVersion": "player-card-v0",
+    "registryVersion": "proposed-nst-v0",
+    "source": "synthetic",
+    "capturedAt": "2026-10-24T12:00:00Z",
+    "sourceVersion": "fabricated-design-fixture-v0",
+    "poolId": "synthetic-cohort-v0",
+    "settings": {
+      "season": 20262027,
+      "gameType": "regular",
+      "strength": "all",
+      "cutoff": "2026-10-23T23:59:59Z",
+      "period": {
+        "mode": "appearances",
+        "count": 10
+      },
+      "seasonPolicy": "season-only-proposed",
+      "shortSamplePolicy": "allow-known-short-proposed",
+      "rankPolicy": "competition-midrank-proposed"
+    },
+    "player": {
+      "id": "example-alex-morgan",
+      "name": "Alex Morgan",
+      "team": "Example Hockey Club",
+      "position": "RW"
+    },
+    "sample": {
+      "gp": 10,
+      "requested": 10,
+      "toiSeconds": 12810,
+      "firstDate": "2026-10-03",
+      "lastDate": "2026-10-23",
+      "gameIds": [
+        "synthetic-game-1",
+        "synthetic-game-2",
+        "synthetic-game-3",
+        "synthetic-game-4",
+        "synthetic-game-5",
+        "synthetic-game-6",
+        "synthetic-game-7",
+        "synthetic-game-8",
+        "synthetic-game-9",
+        "synthetic-game-10"
+      ]
+    },
+    "readings": [
+      {
+        "id": "atoi",
+        "value": 21.35,
+        "state": "valid",
+        "rank": {
+          "ordinal": 161,
+          "population": 812,
+          "percentile": 79.74137931034483,
+          "tied": true
+        }
+      },
+      {
+        "id": "sog60",
+        "value": 11.8,
+        "state": "valid",
+        "rank": {
+          "ordinal": 161,
+          "population": 809,
+          "percentile": 79.66625463535229,
+          "tied": true
+        }
+      },
+      {
+        "id": "icf60",
+        "value": 19.1,
+        "state": "valid",
+        "rank": {
+          "ordinal": 160,
+          "population": 806,
+          "percentile": 79.71464019851116,
+          "tied": true
+        }
+      },
+      {
+        "id": "iscf60",
+        "value": 9.4,
+        "state": "valid",
+        "rank": {
+          "ordinal": 160,
+          "population": 803,
+          "percentile": 79.63885429638854,
+          "tied": true
+        }
+      },
+      {
+        "id": "ixg60",
+        "value": 1.24,
+        "state": "valid",
+        "rank": {
+          "ordinal": 160,
+          "population": 800,
+          "percentile": 79.5625,
+          "tied": true
+        }
+      },
+      {
+        "id": "cf60",
+        "value": 67.2,
+        "state": "valid",
+        "rank": {
+          "ordinal": 158,
+          "population": 797,
+          "percentile": 79.73651191969887,
+          "tied": true
+        }
+      },
+      {
+        "id": "scf60",
+        "value": 31.4,
+        "state": "valid",
+        "rank": {
+          "ordinal": 159,
+          "population": 794,
+          "percentile": 79.53400503778337,
+          "tied": true
+        }
+      },
+      {
+        "id": "xgf60",
+        "value": 3.62,
+        "state": "valid",
+        "rank": {
+          "ordinal": 157,
+          "population": 791,
+          "percentile": 79.70922882427307,
+          "tied": true
+        }
+      },
+      {
+        "id": "xgPct",
+        "value": 58.7,
+        "state": "valid",
+        "rank": {
+          "ordinal": 157,
+          "population": 788,
+          "percentile": 79.63197969543147,
+          "tied": true
+        }
+      },
+      {
+        "id": "ipp",
+        "value": 76.9,
+        "state": "valid",
+        "rank": {
+          "ordinal": 157,
+          "population": 785,
+          "percentile": 79.61783439490446,
+          "tied": true
+        }
+      },
+      {
+        "id": "shPct",
+        "value": 14.6,
+        "state": "valid",
+        "rank": {
+          "ordinal": 155,
+          "population": 782,
+          "percentile": 79.79539641943734,
+          "tied": true
+        }
+      },
+      {
+        "id": "oiShPct",
+        "value": 10.8,
+        "state": "valid",
+        "rank": {
+          "ordinal": 155,
+          "population": 779,
+          "percentile": 79.71758664955071,
+          "tied": true
+        }
+      }
+    ]
+  },
+  "selectedMetrics": [
+    "atoi",
+    "sog60",
+    "iscf60",
+    "ixg60",
+    "xgf60",
+    "xgPct",
+    "shPct",
+    "ipp"
+  ],
+  "capabilities": {
+    "liveData": false,
+    "premiumMetrics": false,
+    "comparison": false,
+    "comparisonExport": false
+  }
+}

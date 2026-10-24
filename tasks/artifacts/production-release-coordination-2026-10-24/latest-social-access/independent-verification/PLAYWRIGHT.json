@@ -1,0 +1,300 @@
+{
+  "config": {
+    "configFile": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/latest-social-access/independent-verification/playwright.local.config.ts",
+    "rootDir": "/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/latest-social-access/independent-verification/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "social-share.spec.ts"
+        ],
+        "timeout": 90000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/latest-social-access/independent-verification/PLAYWRIGHT.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "social-share.spec.ts",
+      "file": "social-share.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "default summary, recalculated dates and actual PNG match one frozen edition",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2048,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "social_editor_fixture_summary {\"role\":\"social_editor\",\"roleReads\":2,\"profileReads\":3,\"settingsReads\":1,\"blockedLocalApis\":[],\"abortedExternal\":[\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://img.buymeacoffee.com/button-api/\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://cdn.vercel-insights.com/v1/script.debug.js\",\"https://va.vercel-scripts.com/v1/speed-insights/script.debug.js\"],\"rejectedBootstrap\":[],\"syntheticWriteAttempts\":[]}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T22:12:15.541Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-fa3b24ab600b8522f017",
+          "file": "../../../../private/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e/social-share.spec.ts",
+          "line": 116,
+          "column": 5
+        },
+        {
+          "title": "schedule-aware tier list shows only tier teams' players as list rows, strict and widened",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1502,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 2\u001b[39m\n\u001b[31m+ Received  + 2\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[2m    \"brokenImages\": 0,\u001b[22m\n\u001b[32m-   \"fits\": true,\u001b[39m\n\u001b[32m-   \"rowsInside\": true,\u001b[39m\n\u001b[31m+   \"fits\": false,\u001b[39m\n\u001b[31m+   \"rowsInside\": false,\u001b[39m\n\u001b[2m  }\u001b[22m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 2\u001b[39m\n\u001b[31m+ Received  + 2\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[2m    \"brokenImages\": 0,\u001b[22m\n\u001b[32m-   \"fits\": true,\u001b[39m\n\u001b[32m-   \"rowsInside\": true,\u001b[39m\n\u001b[31m+   \"fits\": false,\u001b[39m\n\u001b[31m+   \"rowsInside\": false,\u001b[39m\n\u001b[2m  }\u001b[22m\n    at /private/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e/social-share.spec.ts:842:41",
+                    "location": {
+                      "file": "/private/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e/social-share.spec.ts",
+                      "column": 41,
+                      "line": 842
+                    },
+                    "snippet": "  840 |       await expect(block.locator(\"[data-player]\").first()).toContainText(\"L5 GP\");\n  841 |     }\n> 842 |     expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });\n      |                                         ^\n  843 |     await expect(download).toBeEnabled();\n  844 |     await downloadedPng(page, `streaming-tiers-${mode}`);\n  845 |   }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/private/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e/social-share.spec.ts",
+                        "column": 41,
+                        "line": 842
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // deep equality\u001b[22m\n\n\u001b[32m- Expected  - 2\u001b[39m\n\u001b[31m+ Received  + 2\u001b[39m\n\n\u001b[2m  Object {\u001b[22m\n\u001b[2m    \"brokenImages\": 0,\u001b[22m\n\u001b[32m-   \"fits\": true,\u001b[39m\n\u001b[32m-   \"rowsInside\": true,\u001b[39m\n\u001b[31m+   \"fits\": false,\u001b[39m\n\u001b[31m+   \"rowsInside\": false,\u001b[39m\n\u001b[2m  }\u001b[22m\n\n  840 |       await expect(block.locator(\"[data-player]\").first()).toContainText(\"L5 GP\");\n  841 |     }\n> 842 |     expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });\n      |                                         ^\n  843 |     await expect(download).toBeEnabled();\n  844 |     await downloadedPng(page, `streaming-tiers-${mode}`);\n  845 |   }\n    at /private/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e/social-share.spec.ts:842:41"
+                    }
+                  ],
+                  "stdout": [
+                    {
+                      "text": "social_editor_fixture_summary {\"role\":\"social_editor\",\"roleReads\":2,\"profileReads\":3,\"settingsReads\":1,\"blockedLocalApis\":[],\"abortedExternal\":[\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://img.buymeacoffee.com/button-api/\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://cdn.vercel-insights.com/v1/script.debug.js\",\"https://va.vercel-scripts.com/v1/speed-insights/script.debug.js\"],\"rejectedBootstrap\":[],\"syntheticWriteAttempts\":[]}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T22:12:17.782Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/latest-social-access/independent-verification/test-results/social-share-schedule-awar-af104-ist-rows-strict-and-widened/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/latest-social-access/independent-verification/test-results/social-share-schedule-awar-af104-ist-rows-strict-and-widened/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/private/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e/social-share.spec.ts",
+                    "column": 41,
+                    "line": 842
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-d4806826d849c6b2a6f3",
+          "file": "../../../../private/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e/social-share.spec.ts",
+          "line": 823,
+          "column": 5
+        },
+        {
+          "title": "social access fixture denies a signed-out page without workspace or edition reads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 721,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "social_editor_fixture_summary {\"role\":\"signed-out\",\"roleReads\":0,\"profileReads\":0,\"settingsReads\":0,\"blockedLocalApis\":[],\"abortedExternal\":[\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://img.buymeacoffee.com/button-api/\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://cdn.vercel-insights.com/v1/script.debug.js\",\"https://va.vercel-scripts.com/v1/speed-insights/script.debug.js\"],\"rejectedBootstrap\":[],\"syntheticWriteAttempts\":[]}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T22:12:19.606Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-dcb8e0376b1f9d24c6ef",
+          "file": "../../../../private/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e/social-share.spec.ts",
+          "line": 851,
+          "column": 5
+        },
+        {
+          "title": "social access fixture denies a basic role without workspace or edition reads",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 693,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "social_editor_fixture_summary {\"role\":\"basic\",\"roleReads\":2,\"profileReads\":3,\"settingsReads\":1,\"blockedLocalApis\":[],\"abortedExternal\":[\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://img.buymeacoffee.com/button-api/\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://cdn.vercel-insights.com/v1/script.debug.js\",\"https://va.vercel-scripts.com/v1/speed-insights/script.debug.js\"],\"rejectedBootstrap\":[],\"syntheticWriteAttempts\":[]}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T22:12:20.434Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-9b2f7d470e87b6c0db9d",
+          "file": "../../../../private/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e/social-share.spec.ts",
+          "line": 861,
+          "column": 5
+        },
+        {
+          "title": "actual credential-free edition API denies before source work and stays private no-store",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 344,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T22:12:21.132Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-1e2746b315379e197bc9",
+          "file": "../../../../private/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e/social-share.spec.ts",
+          "line": 871,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-24T22:12:14.935Z",
+    "duration": 6600.632,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

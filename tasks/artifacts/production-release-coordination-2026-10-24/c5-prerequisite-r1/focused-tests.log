@@ -1,0 +1,34 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c5-auth-order-r1-gf0v1n3n/web
+
+(node:28531) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts (41 tests) 81ms
+(node:28533) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/cron/withCronJobAudit.test.ts (27 tests) 61ms
+(node:28542) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | __tests__/pages/api/internal/yahoo-live-draft.test.ts > Yahoo production scheduler > runs bounded batches across the minute boundary
+yahoo_live_draft_scheduled_cycle { cycles: 65, attempted: 65, succeeded: 65, failed: 0 }
+
+stdout | __tests__/pages/api/internal/yahoo-live-draft.test.ts > Yahoo production scheduler > records a partial batch as a failed run with its true counters
+yahoo_live_draft_scheduled_cycle { cycles: 65, attempted: 195, succeeded: 130, failed: 65 }
+
+ ✓ __tests__/pages/api/internal/yahoo-live-draft.test.ts (17 tests) 12ms
+(node:28544) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | lib/cron/nhlOffSeason.test.ts > withNhlOffSeasonSkip > runs the handler when the window is 'unknown'
+[nhl-off-season] season window unavailable; running job { reason: 'lookup failed' }
+
+stderr | lib/cron/nhlOffSeason.test.ts > withNhlOffSeasonSkip > marks the response as seasonal game data on skip, ignore and run paths alone
+[nhl-off-season] season window unavailable; running job { reason: 'lookup failed' }
+
+ ✓ lib/cron/nhlOffSeason.test.ts (11 tests) 13ms
+ ✓ __tests__/pages/api/v1/db/update-drafted-prospects.test.ts (14 tests) 7ms
+
+ Test Files  5 passed (5)
+      Tests  110 passed (110)
+   Start at  17:41:16
+   Duration  1.92s (transform 151ms, setup 14ms, collect 526ms, tests 175ms, environment 605ms, prepare 157ms)
+

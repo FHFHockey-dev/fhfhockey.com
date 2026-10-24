@@ -1,0 +1,46 @@
+test_balanced_round_robin (test_sos_candidate.ContractTests.test_balanced_round_robin) ... ok
+test_cancelled_excluded (test_sos_candidate.ContractTests.test_cancelled_excluded) ... ok
+test_colley_is_unbounded_index_not_probability (test_sos_candidate.ContractTests.test_colley_is_unbounded_index_not_probability) ... ok
+test_colley_published_one_game_oracle (test_sos_candidate.ContractTests.test_colley_published_one_game_oracle) ... ok
+test_colley_published_unbalanced_oracle (test_sos_candidate.ContractTests.test_colley_published_unbalanced_oracle) ... ok
+test_cutoff_and_timezone_contract (test_sos_candidate.ContractTests.test_cutoff_and_timezone_contract) ... ok
+test_disconnected_components_not_hidden (test_sos_candidate.ContractTests.test_disconnected_components_not_hidden) ... ok
+test_duplicate_ids (test_sos_candidate.ContractTests.test_duplicate_ids) ... ok
+test_empty_horizon (test_sos_candidate.ContractTests.test_empty_horizon) ... ok
+test_exclusive_end_and_timezone_equivalence (test_sos_candidate.ContractTests.test_exclusive_end_and_timezone_equivalence) ... ok
+test_explicit_points_ledger_and_unsupported_system (test_sos_candidate.ContractTests.test_explicit_points_ledger_and_unsupported_system) ... ok
+test_faced_then_separate_from_retrospective (test_sos_candidate.ContractTests.test_faced_then_separate_from_retrospective) ... ok
+test_focal_self_influence_excluded_all_modes (test_sos_candidate.ContractTests.test_focal_self_influence_excluded_all_modes) ... ok
+test_full_rpi_is_not_schedule_only (test_sos_candidate.ContractTests.test_full_rpi_is_not_schedule_only) ... ok
+test_future_outer_weights_only (test_sos_candidate.ContractTests.test_future_outer_weights_only) ... ok
+test_incomplete_history_withholds_cohort (test_sos_candidate.ContractTests.test_incomplete_history_withholds_cohort) ... ok
+test_incomplete_schedule_no_subset_average (test_sos_candidate.ContractTests.test_incomplete_schedule_no_subset_average) ... ok
+test_kickoff_at_cutoff_is_not_future (test_sos_candidate.ContractTests.test_kickoff_at_cutoff_is_not_future) ... ok
+test_later_results_and_corrections_no_leakage (test_sos_candidate.ContractTests.test_later_results_and_corrections_no_leakage) ... ok
+test_later_schedule_snapshot_rejected (test_sos_candidate.ContractTests.test_later_schedule_snapshot_rejected) ... ok
+test_naive_owp_negative_control_does_leak (test_sos_candidate.ContractTests.test_naive_owp_negative_control_does_leak) ... ok
+test_no_volume_bonus_in_difficulty (test_sos_candidate.ContractTests.test_no_volume_bonus_in_difficulty) ... ok
+test_one_result_perturbation_exposes_rank_churn (test_sos_candidate.ContractTests.test_one_result_perturbation_exposes_rank_churn) ... ok
+test_order_invariance (test_sos_candidate.ContractTests.test_order_invariance) ... ok
+test_past_retrospective_selected_horizon (test_sos_candidate.ContractTests.test_past_retrospective_selected_horizon) ... ok
+test_playoffs_excluded (test_sos_candidate.ContractTests.test_playoffs_excluded) ... ok
+test_points_ot_noncomplementary_and_no_colley (test_sos_candidate.ContractTests.test_points_ot_noncomplementary_and_no_colley) ... ok
+test_postponed_unknown_blocks (test_sos_candidate.ContractTests.test_postponed_unknown_blocks) ... ok
+test_pure_no_input_mutation (test_sos_candidate.ContractTests.test_pure_no_input_mutation) ... ok
+test_rank_ties_and_missing (test_sos_candidate.ContractTests.test_rank_ties_and_missing) ... ok
+test_regulation_tie_credit (test_sos_candidate.ContractTests.test_regulation_tie_credit) ... ok
+test_relabel_equivariance (test_sos_candidate.ContractTests.test_relabel_equivariance) ... ok
+test_repeated_opponents_distinct_fixtures (test_sos_candidate.ContractTests.test_repeated_opponents_distinct_fixtures) ... ok
+test_schedule_confounding_example (test_sos_candidate.ContractTests.test_schedule_confounding_example) ... ok
+test_season_crossing_and_historic_tie_rejected (test_sos_candidate.ContractTests.test_season_crossing_and_historic_tie_rejected) ... ok
+test_timeline_and_prior_validation (test_sos_candidate.ContractTests.test_timeline_and_prior_validation) ... ok
+test_unknown_team_and_self_game (test_sos_candidate.ContractTests.test_unknown_team_and_self_game) ... ok
+test_valid_zero (test_sos_candidate.ContractTests.test_valid_zero) ... ok
+test_weighting_reuses_exact_checkpoint_oracle (test_sos_candidate.ContractTests.test_weighting_reuses_exact_checkpoint_oracle) ... ok
+test_zero_gp_known_prior_only (test_sos_candidate.ContractTests.test_zero_gp_known_prior_only) ... ok
+test_zero_gp_no_shrink_unavailable (test_sos_candidate.ContractTests.test_zero_gp_no_shrink_unavailable) ... ok
+
+----------------------------------------------------------------------
+Ran 41 tests in 0.104s
+
+OK

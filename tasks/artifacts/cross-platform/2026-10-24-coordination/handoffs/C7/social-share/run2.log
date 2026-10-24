@@ -1,0 +1,18 @@
+start 2026-10-24T15:20:38Z pre-listen 3110: 0
+server npm pid=26199 pgid=26199
+ready=1 after ~4s; listeners: node/26227  3000=0
+
+Running 7 tests using 1 worker
+
+  ✓  1 [chromium] › e2e/social-share.spec.ts:70:5 › default summary, recalculated dates and actual PNG match one frozen edition (1.8s)
+  ✓  2 [chromium] › e2e/social-share.spec.ts:141:5 › Wednesday excludes Wednesday; mobile controls and detail PNG preserve selected games (1.5s)
+  ✓  3 [chromium] › e2e/social-share.spec.ts:177:5 › long text and missing logo stay inside the square and export with a branded fallback (1.2s)
+  ✓  4 [chromium] › e2e/social-share.spec.ts:189:5 › failed refresh preserves only a nonexportable preview and retries the same selection (1.2s)
+  ✓  5 [chromium] › e2e/social-share.spec.ts:219:5 › partial, stale and valid zero-game sources do not publish rankings (1.1s)
+  ✓  6 [chromium] › e2e/social-share.spec.ts:238:5 › export font failures are explicit and retry without refetching schedule data (1.2s)
+  ✓  7 [chromium] › e2e/social-share.spec.ts:252:5 › edition expiry disables export and unsupported formats stay explicitly gated (4.1s)
+
+  7 passed (13.5s)
+playwright exit=0 2026-10-24T15:20:57Z
+/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/social-share/run2-skip-webserver.sh: line 23: 26199 Terminated: 15          env -u CI -u GIT_DIR PLAYWRIGHT_ISOLATED_NEXT=1 NEXT_TELEMETRY_DISABLED=1 C7_NET_LOG=$H/node-network-run2.jsonl NODE_OPTIONS="$G" npm run dev:stable -- -p 3110 > $H/server-run2.log 2>&1
+post-listen 3110: 0 3000: 0 server-pgid-procs: 0

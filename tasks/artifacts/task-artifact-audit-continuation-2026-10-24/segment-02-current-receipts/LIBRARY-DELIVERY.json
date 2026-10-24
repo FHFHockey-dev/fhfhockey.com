@@ -1,0 +1,32 @@
+{
+  "at": "2026-10-24T15:39:00.908Z",
+  "expected_previous_version": 3,
+  "local_path": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+  "local_sha256": "cce603df004b4056eea3a65585e2f087545a2f1334e91e44938505573d13560d",
+  "result": {
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/MASTER-TASKLIST-2026-10-20(1).md",
+    "file_id": "file_000000000ec0823093bd798439e6262c",
+    "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "file_name": "MASTER-TASKLIST-2026-10-20(1).md",
+    "current_version_number": 4,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "4"
+      }
+    ],
+    "directory_id": "libdir_12e102d729fc8191a3c2398e5b03ee6f",
+    "mime_type": "text/markdown",
+    "library_artifact_type": "report",
+    "file_size_bytes": 452660,
+    "external_connectors_accessed": false
+  },
+  "helper": {
+    "exit_code": 0,
+    "output": "/Users/tim/Code/fhfhockey.com/tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md\n"
+  },
+  "no_pending_replacement": true
+}

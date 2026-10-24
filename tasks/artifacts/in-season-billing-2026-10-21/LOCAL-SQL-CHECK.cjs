@@ -48,7 +48,7 @@ const json = (value) => JSON.stringify(value);
     create function public.update_updated_at_column() returns trigger language plpgsql as $$ begin new.updated_at=now(); return new; end $$;
     grant usage on schema public,auth to anon,authenticated,service_role;`);
   await query(fs.readFileSync(path.join(repo, 'supabase/migrations/20260927104934_in_season_access_workspace.sql'), 'utf8'));
-  await query(fs.readFileSync(path.join(repo, 'supabase/migrations/20261021210000_in_season_sandbox_billing.sql'), 'utf8'));
+  await query(fs.readFileSync(path.join(repo, 'tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql'), 'utf8'));
   pass('prerequisite and billing draft SQL executed successfully in disposable cluster');
   const a = randomUUID(), b = randomUUID();
   await query('insert into auth.users(id,email) values($1,$2),($3,$4)', [a,'billing-a@example.invalid',b,'billing-b@example.invalid']);

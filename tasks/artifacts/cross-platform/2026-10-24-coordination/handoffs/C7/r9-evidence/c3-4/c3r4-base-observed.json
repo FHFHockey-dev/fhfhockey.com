@@ -1,0 +1,60 @@
+{
+  "S1": {
+    "leaks": [
+      "301",
+      "400",
+      "401",
+      "402",
+      "403",
+      "404",
+      "405",
+      "409",
+      "410",
+      "418",
+      "422",
+      "429",
+      "500",
+      "502",
+      "503"
+    ],
+    "copies": [
+      "200: Your request was submitted for case-by-case review.",
+      "201: Your request was submitted for case-by-case review.",
+      "204: Your request was submitted for case-by-case review.",
+      "301: undefined",
+      "400: undefined",
+      "401: undefined",
+      "402: undefined",
+      "403: undefined",
+      "404: undefined",
+      "405: undefined",
+      "409: undefined",
+      "410: undefined",
+      "418: undefined",
+      "422: undefined",
+      "429: undefined",
+      "500: undefined",
+      "502: undefined",
+      "503: undefined"
+    ]
+  },
+  "S3": {
+    "infra 404 HTML": "other",
+    "409 with unrelated code": "other",
+    "422 with unrelated code": "other"
+  },
+  "S4": {
+    "calls": 2,
+    "url": "/api/v1/account/draft-pro/refund-requests",
+    "method": "POST",
+    "headers": {
+      "Authorization": "Bearer token",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "purchaseId": "purchase-1",
+      "reason": "other",
+      "explanation": "The draft board was unavailable."
+    }
+  }
+}

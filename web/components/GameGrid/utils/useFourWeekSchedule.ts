@@ -80,6 +80,7 @@ export default function useFourWeekSchedule(start: string): [ScheduleArray, numb
 
   useEffect(() => {
     let ignore = false;
+    const controller = new AbortController();
     setLoading(true);
     (async () => {
       try {
@@ -92,7 +93,8 @@ export default function useFourWeekSchedule(start: string): [ScheduleArray, numb
         const gameDates = new Map<number, string>();
 
         // Fetch the set of season-active teams once (avoid retired teams)
-        const seasonTeams = await getTeams();
+        const seasonTeams = await getTeams(undefined, { signal: controller.signal });
+        if (ignore) return;
         // Safety: prefer highest id per abbreviation (e.g., UTA 68 over 59)
         const preferredByAbbr = new Map<string, number>();
         seasonTeams.forEach((t) => {
@@ -100,9 +102,16 @@ export default function useFourWeekSchedule(start: string): [ScheduleArray, numb
           if (prev === undefined || t.id > prev) preferredByAbbr.set(t.abbreviation, t.id);
         });
 
+        let batch: ScheduleData[] = [];
         for (let week = 1; week <= weeksToFetch; week++) {
+          if (ignore) return;
           // Opportunity needs fixtures, not the additional win-odds database lookup.
-          const schedule = await getSchedule(currentStart, { includeOdds: false });
+          if (week % 2 === 1) {
+            batch = await Promise.all([currentStart, format(addDays(parseISO(currentStart), 7), "yyyy-MM-dd")]
+              .map(date => getSchedule(date, { includeOdds: false, signal: controller.signal })));
+          }
+          if (ignore) return;
+          const schedule = batch[(week - 1) % 2];
           if (
             !schedule ||
             !schedule.data ||
@@ -174,8 +183,9 @@ export default function useFourWeekSchedule(start: string): [ScheduleArray, numb
           setLoadedStart(start);
         }
       } catch (error) {
-        console.error("Error fetching schedules:", error);
         if (!ignore) {
+          controller.abort();
+          console.error("Error fetching schedules:", error);
           setScheduleArray([]);
           setNumGamesPerDay([]);
           setLoading(false);
@@ -187,7 +197,7 @@ export default function useFourWeekSchedule(start: string): [ScheduleArray, numb
 
     return () => {
       ignore = true;
-      setLoading(false);
+      controller.abort();
     };
   }, [start]);
 

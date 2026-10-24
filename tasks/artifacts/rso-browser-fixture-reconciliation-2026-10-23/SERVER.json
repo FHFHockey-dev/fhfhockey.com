@@ -1,0 +1,14 @@
+{
+  "pid": 11732,
+  "cwd": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web",
+  "port": 3139,
+  "argv": [
+    "/usr/local/bin/node",
+    "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/node_modules/next/dist/bin/next",
+    "dev",
+    "-H",
+    "127.0.0.1",
+    "-p",
+    "3139"
+  ]
+}

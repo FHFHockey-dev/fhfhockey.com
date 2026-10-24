@@ -1,0 +1,65 @@
+{
+  "cutoff": "2026-10-24T17:45:04.782732+00:00",
+  "sources": {
+    "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md",
+      "sha256": "574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece",
+      "original_path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+      "observed_at": "2026-10-24T17:45:04.782732+00:00"
+    },
+    "tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/f1260c0ce673-tasks-prd-draft-ranker.md",
+      "sha256": "f1260c0ce67310c274cbff4271546bc3a45f0ae3383b67e057b2f12b74ffca6a",
+      "original_path": "tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md",
+      "observed_at": "2026-10-24T17:45:04.782732+00:00"
+    },
+    "tasks/TASKS/draft-ranker/release-manifest.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/a144b0293406-release-manifest.md",
+      "sha256": "a144b02934061d943919cfc72e506f639c86edc86a0400ec3b183f5822122047",
+      "original_path": "tasks/TASKS/draft-ranker/release-manifest.md",
+      "observed_at": "2026-10-24T17:45:04.782732+00:00"
+    },
+    "tasks/TASKS/draft-ranker/launch-runbook.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/075f467912a6-launch-runbook.md",
+      "sha256": "075f467912a6362724fee5f10ab553ac677fe0778d141b820faa9231c86495dd",
+      "original_path": "tasks/TASKS/draft-ranker/launch-runbook.md",
+      "observed_at": "2026-10-24T17:45:04.782732+00:00"
+    },
+    "tasks/TASKS/draft-ranker/decision-record.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/eae78c5a2a96-decision-record.md",
+      "sha256": "eae78c5a2a96826c5e52d63432157ca6ffb25e74701d0a8dc2ea450cc8cde9cf",
+      "original_path": "tasks/TASKS/draft-ranker/decision-record.md",
+      "observed_at": "2026-10-24T17:45:04.782732+00:00"
+    },
+    "tasks/TASKS/draft-ranker/community-ranking-runbook.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/fb71ca92648e-community-ranking-runbook.md",
+      "sha256": "fb71ca92648ebdbe15f01a16d8359e790dfd2e53522d13ec67f9d64b2348beb0",
+      "original_path": "tasks/TASKS/draft-ranker/community-ranking-runbook.md",
+      "observed_at": "2026-10-24T17:45:04.782732+00:00"
+    },
+    "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/PARENT-STEER.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/b4ccd670b9ff-PARENT-STEER.json",
+      "sha256": "b4ccd670b9ff61bafb96562b0c88250970644391f87f0bb0f6de57b0e7d145a6",
+      "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/PARENT-STEER.json",
+      "observed_at": "2026-10-24T17:45:04.782732+00:00"
+    },
+    "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/c063cab68f39-DraftDashboard_Audit.md",
+      "sha256": "c063cab68f39ace4cd651dc74bc774cffc003fb33fd462ba1f1bbc929ecb8db3",
+      "original_path": "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
+      "observed_at": "2026-10-24T17:45:04.782732+00:00"
+    },
+    "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/SOURCE-NARROW.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/5f743a1bea52-SOURCE-NARROW.md",
+      "sha256": "5f743a1bea52d809f935b67de011cbad4fd2959f7fc37a989894ebdf893145b5",
+      "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/SOURCE-NARROW.md",
+      "observed_at": "2026-10-24T17:45:04.782732+00:00"
+    },
+    "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/8a1e4cb7e816-tasks-draft-dashboard-interface-polish.md",
+      "sha256": "8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49",
+      "original_path": "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md",
+      "observed_at": "2026-10-24T17:45:04.782732+00:00"
+    }
+  }
+}

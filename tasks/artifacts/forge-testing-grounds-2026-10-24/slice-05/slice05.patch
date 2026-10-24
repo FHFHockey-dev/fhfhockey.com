@@ -1,0 +1,616 @@
+--- /dev/null
++++ b/web/lib/forge-testing-grounds/serverOwnerBoundary.ts
+@@ -0,0 +1,45 @@
++import type { NextApiRequest, NextApiResponse } from "next";
++import { createTestingGroundsOwnerPolicy } from "./ownerPolicy";
++
++export function privateTestingGroundsResponse(res: NextApiResponse) {
++  res.setHeader("Cache-Control", "private, no-store, max-age=0");
++  res.setHeader("Vary", "Authorization");
++  res.setHeader("X-Robots-Tag", "noindex, nofollow");
++}
++
++/** Server configuration only. Never populate these values from a request. */
++export type OwnerBoundaryConfig = { ownerUserId: unknown };
++
++export async function authorizeTestingGroundsOwner(
++  req: NextApiRequest,
++  res: NextApiResponse,
++  config: OwnerBoundaryConfig = { ownerUserId: process.env.FORGE_TESTING_GROUNDS_OWNER_USER_ID },
++) {
++  privateTestingGroundsResponse(res);
++  const policy = createTestingGroundsOwnerPolicy({
++    configuredOwnerUserId: config.ownerUserId,
++    resolveServerPrincipal: async () => {
++      // Reject ambiguous/normalized duplicate credentials before the shared helper.
++      const authorization = req.headers.authorization;
++      const raw = req.rawHeaders ?? [];
++      let headerCount = 0;
++      for (let i = 0; i < raw.length; i += 2) {
++        if (raw[i].toLowerCase() === "authorization") headerCount++;
++      }
++      if (headerCount > 1 || typeof authorization !== "string"
++        || !/^Bearer [A-Za-z0-9._~+/-]+=*$/.test(authorization)) return null;
++
++      // Missing/invalid owner configuration never initializes a provider client.
++      // This helper verifies getUser(token), not decoded claims or getSession.
++      const { requireApiUser } = await import("../api/requireApiUser");
++      const user = await requireApiUser(req, res, { onUnauthorized: () => undefined });
++      return user ? { userId: user.id } : null;
++    },
++  });
++  const authorization = await policy.authorizeOwner();
++  if (!authorization.allowed) {
++    res.status(authorization.status).json({ error: authorization.code });
++    return null;
++  }
++  return authorization;
++}
+--- /dev/null
++++ b/web/lib/forge-testing-grounds/serverOwnerBoundary.test.ts
+@@ -0,0 +1,72 @@
++// @vitest-environment node
++import type { NextApiRequest, NextApiResponse } from "next";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { authorizeTestingGroundsOwner } from "./serverOwnerBoundary";
++
++const auth = vi.hoisted(() => ({ getUser: vi.fn(), createClientWithToken: vi.fn() }));
++vi.mock("lib/supabase", () => ({ createClientWithToken: auth.createClientWithToken }));
++const owner = "11111111-1111-4111-8111-111111111111";
++const other = "22222222-2222-4222-8222-222222222222";
++function request(authorization: unknown = "Bearer fixture-token") {
++  return { headers: { authorization, host: "localhost:3000" }, rawHeaders: [],
++    body: { userId: owner, role: "admin" }, query: { ownerUserId: owner, role: "admin" } } as unknown as NextApiRequest;
++}
++function response() {
++  return { setHeader: vi.fn(), status: vi.fn().mockReturnThis(), json: vi.fn() } as unknown as NextApiResponse;
++}
++beforeEach(() => {
++  vi.clearAllMocks();
++  vi.stubGlobal("fetch", vi.fn(() => { throw new Error("Unexpected external request"); }));
++  auth.createClientWithToken.mockReturnValue({ auth: { getUser: auth.getUser } });
++  auth.getUser.mockResolvedValue({ data: { user: { id: owner, email: "private-marker" } }, error: null });
++});
++afterEach(() => { expect(fetch).not.toHaveBeenCalled(); vi.unstubAllGlobals(); });
++
++describe("verified Testing Grounds owner boundary", () => {
++  it.each([undefined, null, "", "not-a-uuid", ` ${owner}`, "00000000-0000-0000-0000-000000000000"])("denies invalid owner configuration %s before the provider", async configured => {
++    const res = response();
++    expect(await authorizeTestingGroundsOwner(request(), res, { ownerUserId: configured })).toBeNull();
++    expect(res.status).toHaveBeenCalledWith(503);
++    expect(auth.createClientWithToken).not.toHaveBeenCalled();
++  });
++  it.each([undefined, "", "fixture-token", "Bearer ", "Bearer fixture-token ", "Bearer a,b", "Bearer a\nb", ["Bearer a", "Bearer b"]])("rejects malformed bearer %s without verifying claims", async header => {
++    const req = request(); req.headers.authorization = header as string;
++    const res = response();
++    expect(await authorizeTestingGroundsOwner(req, res, { ownerUserId: owner })).toBeNull();
++    expect(res.status).toHaveBeenCalledWith(401);
++    expect(auth.createClientWithToken).not.toHaveBeenCalled();
++  });
++  it("rejects duplicate raw authorization headers", async () => {
++    const req = request(); req.rawHeaders = ["Authorization", "Bearer a", "authorization", "Bearer b"];
++    const res = response(); await authorizeTestingGroundsOwner(req, res, { ownerUserId: owner });
++    expect(res.status).toHaveBeenCalledWith(401); expect(auth.getUser).not.toHaveBeenCalled();
++  });
++  it("calls the existing real helper with the token and keeps only verified owner identity", async () => {
++    const req = request(); const res = response();
++    expect(await authorizeTestingGroundsOwner(req, res, { ownerUserId: owner })).toEqual({ allowed: true, ownerUserId: owner });
++    expect(auth.createClientWithToken).toHaveBeenCalledWith("fixture-token");
++    expect(auth.getUser).toHaveBeenCalledWith("fixture-token");
++    expect(res.json).not.toHaveBeenCalled();
++    expect(res.setHeader).toHaveBeenCalledWith("Cache-Control", "private, no-store, max-age=0");
++  });
++  it("does not grant another verified admin, forged fields, cron or localhost authority", async () => {
++    auth.getUser.mockResolvedValue({ data: { user: { id: other, role: "admin" } }, error: null });
++    const req = request("Bearer cron-secret"); req.headers["x-forwarded-host"] = "localhost";
++    const res = response(); expect(await authorizeTestingGroundsOwner(req, res, { ownerUserId: owner })).toBeNull();
++    expect(res.status).toHaveBeenCalledWith(403);
++    expect(res.json).toHaveBeenCalledWith({ error: "forbidden" });
++  });
++  it("re-verifies each request; an expired or revoked token does not retain previous access", async () => {
++    await authorizeTestingGroundsOwner(request(), response(), { ownerUserId: owner });
++    auth.getUser.mockResolvedValue({ data: { user: null }, error: new Error("private-token-marker") });
++    const res = response(); expect(await authorizeTestingGroundsOwner(request(), res, { ownerUserId: owner })).toBeNull();
++    expect(auth.getUser).toHaveBeenCalledTimes(2); expect(res.status).toHaveBeenCalledWith(401);
++    expect(res.json).toHaveBeenCalledWith({ error: "unauthenticated" });
++  });
++  it("redacts thrown provider failures", async () => {
++    auth.getUser.mockRejectedValue(new Error("private-token-marker"));
++    const res = response(); await authorizeTestingGroundsOwner(request(), res, { ownerUserId: owner });
++    expect(res.status).toHaveBeenCalledWith(503);
++    expect(res.json).toHaveBeenCalledWith({ error: "verification_unavailable" });
++  });
++});
+--- /dev/null
++++ b/web/lib/forge-testing-grounds/ownerRoutes.ts
+@@ -0,0 +1,115 @@
++import type { NextApiRequest, NextApiResponse } from "next";
++import { authorizeTestingGroundsOwner, privateTestingGroundsResponse } from "./serverOwnerBoundary";
++
++const operationalReads = ["progress", "health", "manifest"] as const;
++const sealedReads = ["logs", "results", "export"] as const;
++const actions = ["cancel", "retry", "reveal"] as const;
++type OperationalRead = typeof operationalReads[number];
++type SealedRead = typeof sealedReads[number];
++type Action = typeof actions[number];
++type Operation = OperationalRead | SealedRead | Action;
++
++/**
++ * Server-only adapter seam, deliberately unwired in the exported route wrappers.
++ * Future adapters must validate their operational projections and independently
++ * enforce the approved reveal policy; a run state or client flag is not authority.
++ * No worker checkpoint/claim/finish API is exposed here.
++ */
++export type OwnerReadStore = {
++  listOwned: (ownerId: string) => Promise<unknown>;
++  findOwned: (ownerId: string, runId: string) => Promise<{ ownerUserId: string; runId: string } | null>;
++  readOperational: (ownerId: string, runId: string, operation: OperationalRead) => Promise<unknown>;
++  authorizeSealedRead: (ownerId: string, runId: string) => Promise<boolean>;
++  readSealed: (ownerId: string, runId: string, operation: SealedRead) => Promise<unknown>;
++};
++
++type Options = {
++  authorize?: typeof authorizeTestingGroundsOwner;
++  store?: OwnerReadStore;
++  trustedOrigin?: string;
++};
++
++function validOrigin(value: unknown): value is string {
++  if (typeof value !== "string") return false;
++  try {
++    const url = new URL(value);
++    return (url.protocol === "https:" || url.protocol === "http:") && url.origin === value;
++  } catch { return false; }
++}
++
++function allowMutation(req: NextApiRequest, res: NextApiResponse, trustedOrigin: unknown) {
++  if (!validOrigin(trustedOrigin)) {
++    res.status(503).json({ error: "mutation_not_configured" }); return false;
++  }
++  if (req.headers.origin !== trustedOrigin || req.headers["sec-fetch-site"] === "cross-site") {
++    res.status(403).json({ error: "forbidden_origin" }); return false;
++  }
++  if (typeof req.headers["content-type"] !== "string"
++    || !/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(req.headers["content-type"])) {
++    res.status(415).json({ error: "json_required" }); return false;
++  }
++  return true;
++}
++
++/** Every handler re-verifies owner access before any storage or action boundary. */
++export function createTestingGroundsRoutes(options: Options = {}) {
++  const authorize = options.authorize ?? authorizeTestingGroundsOwner;
++  const unavailable = (res: NextApiResponse) => res.status(503).json({ error: "runner_not_connected" });
++
++  function route(kind: "access" | "collection" | "run") {
++    return async (req: NextApiRequest, res: NextApiResponse) => {
++      privateTestingGroundsResponse(res);
++      try {
++        const owner = await authorize(req, res);
++        if (!owner) return;
++        const operation = req.query.operation;
++        const knownOperation = typeof operation === "string"
++          && [...operationalReads, ...sealedReads, ...actions].includes(operation as Operation);
++        if (kind === "run" && !knownOperation) {
++          res.status(404).json({ error: "not_found" }); return;
++        }
++        const mutation = kind === "collection" ? req.method === "POST"
++          : kind === "run" && actions.includes(operation as Action);
++        const methods = kind === "collection" ? ["GET", "POST"] : [mutation ? "POST" : "GET"];
++        if (!methods.includes(req.method ?? "")) {
++          res.setHeader("Allow", methods.join(", "));
++          res.status(405).json({ error: "method_not_allowed" }); return;
++        }
++        if (kind === "access") {
++          res.status(200).json({ access: "owner", workspace: "synthetic_preview", execution: "disabled" }); return;
++        }
++        if (mutation && !allowMutation(req, res, options.trustedOrigin)) return;
++        // Even valid owner mutations remain inactive: no launch, cancellation,
++        // retry, or reveal provider is installed by this local integration slice.
++        if (mutation) { unavailable(res); return; }
++        if (!options.store) { unavailable(res); return; }
++        const store = options.store;
++        if (kind === "collection") {
++          res.status(200).json(await store.listOwned(owner.ownerUserId)); return;
++        }
++        const runId = req.query.runId;
++        if (typeof runId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,127}$/.test(runId)) {
++          res.status(404).json({ error: "not_found" }); return;
++        }
++        const resource = await store.findOwned(owner.ownerUserId, runId);
++        if (!resource || resource.ownerUserId !== owner.ownerUserId || resource.runId !== runId) {
++          res.status(404).json({ error: "not_found" }); return;
++        }
++        if (sealedReads.includes(operation as SealedRead)) {
++          if (await store.authorizeSealedRead(owner.ownerUserId, runId) !== true) {
++            res.status(403).json({ error: "results_sealed" }); return;
++          }
++          res.status(200).json(await store.readSealed(owner.ownerUserId, runId, operation as SealedRead)); return;
++        }
++        res.status(200).json(await store.readOperational(owner.ownerUserId, runId, operation as OperationalRead));
++      } catch {
++        // Never reflect provider errors, request values, stack traces or payloads.
++        res.status(503).json({ error: "testing_grounds_unavailable" });
++      }
++    };
++  }
++  return { access: route("access"), collection: route("collection"), run: route("run") };
++}
++
++// No store, scheduler or mutation origin is configured. These routes cannot run jobs.
++export const testingGroundsRoutes = createTestingGroundsRoutes();
+--- /dev/null
++++ b/web/lib/forge-testing-grounds/ownerRoutes.test.ts
+@@ -0,0 +1,127 @@
++// @vitest-environment node
++import type { NextApiRequest, NextApiResponse } from "next";
++import { beforeEach, describe, expect, it, vi } from "vitest";
++import { createTestingGroundsRoutes, type OwnerReadStore } from "./ownerRoutes";
++import accessRoute from "../../pages/api/v1/forge/testing-grounds/access";
++import collectionRoute from "../../pages/api/v1/forge/testing-grounds/runs";
++import runRoute from "../../pages/api/v1/forge/testing-grounds/runs/[runId]/[operation]";
++const ownerId = "11111111-1111-4111-8111-111111111111";
++const origin = "http://localhost:3000";
++const operations = ["progress", "health", "manifest", "logs", "results", "export", "cancel", "retry", "reveal"];
++const store = {
++  listOwned: vi.fn(), findOwned: vi.fn(), readOperational: vi.fn(), authorizeSealedRead: vi.fn(), readSealed: vi.fn(),
++} satisfies OwnerReadStore;
++function request(operation?: string, method = "GET") {
++  return { method, headers: { origin, "content-type": "application/json" },
++    query: { runId: "run-1", operation, ownerUserId: "forged", revealed: "true" },
++    body: { revealed: true, role: "admin" } } as unknown as NextApiRequest;
++}
++function response() {
++  return { setHeader: vi.fn(), status: vi.fn().mockReturnThis(), json: vi.fn() } as unknown as NextApiResponse;
++}
++const granted = vi.fn(async () => ({ allowed: true as const, ownerUserId: ownerId }));
++beforeEach(() => {
++  vi.clearAllMocks();
++  store.findOwned.mockResolvedValue({ ownerUserId: ownerId, runId: "run-1" });
++  store.authorizeSealedRead.mockResolvedValue(false);
++  store.readOperational.mockResolvedValue({ sample: "operational" });
++  store.readSealed.mockResolvedValue({ sample: "revealed" });
++  store.listOwned.mockResolvedValue([]);
++});
++
++describe("inactive owner routes and artifact boundaries", () => {
++  it.each(["access", "list", "launch", ...operations])("denied %s cannot touch any store", async operation => {
++    const deny = vi.fn(async (_req: NextApiRequest, res: NextApiResponse) => { res.status(403).json({ error: "forbidden" }); return null; });
++    const routes = createTestingGroundsRoutes({ authorize: deny, store, trustedOrigin: origin });
++    const method = ["launch", "cancel", "retry", "reveal"].includes(operation) ? "POST" : "GET";
++    const handler = operation === "access" ? routes.access : ["list", "launch"].includes(operation) ? routes.collection : routes.run;
++    const res = response(); await handler(request(operation, method), res);
++    expect(deny).toHaveBeenCalledTimes(1);
++    expect(res.status).toHaveBeenCalledWith(403);
++    for (const call of Object.values(store)) expect(call).not.toHaveBeenCalled();
++    expect(res.setHeader).toHaveBeenCalledWith("Cache-Control", "private, no-store, max-age=0");
++    expect(res.setHeader).not.toHaveBeenCalledWith("Access-Control-Allow-Origin", expect.anything());
++  });
++  it("exports only real fail-closed wrappers with no default store", async () => {
++    // Missing owner configuration is scoped to this test; no actual identity is read.
++    vi.stubEnv("FORGE_TESTING_GROUNDS_OWNER_USER_ID", "");
++    try {
++      for (const handler of [accessRoute, collectionRoute, runRoute]) {
++        const res = response(); await handler(request("progress"), res);
++        expect(res.status).toHaveBeenCalledWith(503);
++        expect(res.json).toHaveBeenCalledWith({ error: "owner_not_configured" });
++      }
++    } finally { vi.unstubAllEnvs(); }
++  });
++  it("returns the minimal access capability and keeps collection/artifact execution unavailable", async () => {
++    const routes = createTestingGroundsRoutes({ authorize: granted });
++    const res = response(); await routes.access(request(), res);
++    expect(res.json).toHaveBeenCalledWith({ access: "owner", workspace: "synthetic_preview", execution: "disabled" });
++    for (const handler of [routes.collection, routes.run]) {
++      const denied = response(); await handler(request("progress"), denied);
++      expect(denied.json).toHaveBeenCalledWith({ error: "runner_not_connected" });
++    }
++  });
++  it.each([null, { ownerUserId: "another-owner", runId: "run-1" }, { ownerUserId: ownerId, runId: "other-run" }])("withholds absent or mismatched resources: %j", async resource => {
++    store.findOwned.mockResolvedValue(resource);
++    const res = response(); await createTestingGroundsRoutes({ authorize: granted, store }).run(request("results"), res);
++    expect(store.findOwned).toHaveBeenCalledWith(ownerId, "run-1");
++    expect(res.json).toHaveBeenCalledWith({ error: "not_found" });
++    expect(store.readSealed).not.toHaveBeenCalled(); expect(store.authorizeSealedRead).not.toHaveBeenCalled();
++  });
++  it.each(["running", "pending_outcomes", "cancelled", "failed", "completed_awaiting_reveal"])("seals all payload channels in %s despite client reveal flags", async state => {
++    const routes = createTestingGroundsRoutes({ authorize: granted, store });
++    for (const operation of ["logs", "results", "export"]) {
++      const req = request(operation); req.body.state = state;
++      const res = response(); await routes.run(req, res);
++      expect(res.json).toHaveBeenCalledWith({ error: "results_sealed" });
++    }
++    expect(store.readSealed).not.toHaveBeenCalled(); expect(store.readOperational).not.toHaveBeenCalled();
++  });
++  it("requires separate trusted reveal authority for each sealed read", async () => {
++    store.authorizeSealedRead.mockResolvedValue(true);
++    const routes = createTestingGroundsRoutes({ authorize: granted, store });
++    await routes.run(request("export"), response());
++    expect(store.readSealed).toHaveBeenCalledWith(ownerId, "run-1", "export");
++    store.authorizeSealedRead.mockResolvedValue(false);
++    await routes.run(request("export"), response());
++    expect(store.readSealed).toHaveBeenCalledTimes(1);
++  });
++  it("scopes history and operational reads to the verified owner", async () => {
++    const routes = createTestingGroundsRoutes({ authorize: granted, store });
++    await routes.collection(request(), response());
++    expect(store.listOwned).toHaveBeenCalledWith(ownerId);
++    for (const operation of ["progress", "health", "manifest"]) await routes.run(request(operation), response());
++    expect(store.readOperational.mock.calls.map(args => args.slice(0, 2))).toEqual(Array(3).fill([ownerId, "run-1"]));
++    expect(store.readSealed).not.toHaveBeenCalled();
++  });
++  it.each(["claim", "finish", "checkpoint", "toString", "", ["results", "export"]])("rejects unknown/ambiguous operation %s", async operation => {
++    const req = request(); req.query.operation = operation;
++    const res = response(); await createTestingGroundsRoutes({ authorize: granted, store }).run(req, res);
++    expect(res.status).toHaveBeenCalledWith(404); expect(store.findOwned).not.toHaveBeenCalled();
++  });
++  it("rejects wrong methods and unsafe mutation requests, and never activates valid ones", async () => {
++    const routes = createTestingGroundsRoutes({ authorize: granted, store, trustedOrigin: origin });
++    for (const op of ["cancel", "retry", "reveal"]) {
++      const get = response(); await routes.run(request(op), get); expect(get.status).toHaveBeenCalledWith(405);
++      const post = response(); await routes.run(request(op, "POST"), post); expect(post.json).toHaveBeenCalledWith({ error: "runner_not_connected" });
++    }
++    for (const headers of [{ origin: "https://other.invalid" }, { origin: undefined }, { "sec-fetch-site": "cross-site" }, { "content-type": "text/plain" }]) {
++      const req = request(undefined, "POST"); Object.assign(req.headers, headers);
++      const res = response(); await routes.collection(req, res);
++      expect(res.status).toHaveBeenCalledWith("content-type" in headers ? 415 : 403);
++    }
++    for (const trustedOrigin of [undefined, `${origin}/`, "null", "file:///tmp"]) {
++      const res = response(); await createTestingGroundsRoutes({ authorize: granted, store, trustedOrigin }).collection(request(undefined, "POST"), res);
++      expect(res.json).toHaveBeenCalledWith({ error: "mutation_not_configured" });
++    }
++    const res = response(); await routes.collection(request(undefined, "POST"), res);
++    expect(res.json).toHaveBeenCalledWith({ error: "runner_not_connected" });
++    for (const call of Object.values(store)) expect(call).not.toHaveBeenCalled();
++  });
++  it("redacts storage failures", async () => {
++    store.findOwned.mockRejectedValueOnce(new Error("private-outcome-marker"));
++    const res = response(); await createTestingGroundsRoutes({ authorize: granted, store }).run(request("progress"), res);
++    expect(res.json).toHaveBeenCalledWith({ error: "testing_grounds_unavailable" });
++  });
++});
+--- /dev/null
++++ b/web/lib/forge-testing-grounds/TestingGroundsOwnerGate.tsx
+@@ -0,0 +1,89 @@
++import { lazy, Suspense, useEffect, useState } from "react";
++
++const Preview = lazy(() => import("./preview/TestingGroundsPreview"));
++type GateState = "locked" | "checking" | "granted" | "denied" | "unavailable";
++
++export default function TestingGroundsOwnerGate() {
++  const [state, setState] = useState<GateState>("locked");
++  useEffect(() => {
++    let alive = true;
++    let generation = 0;
++    let request: AbortController | undefined;
++    let unsubscribe: (() => void) | undefined;
++    let refreshSession: (() => void) | undefined;
++
++    const withdraw = () => {
++      generation++;
++      request?.abort();
++      if (alive) setState("locked");
++    };
++    const verify = async (token: string | undefined, current: number) => {
++      if (!alive || current !== generation) return;
++      if (!token) { setState("locked"); return; }
++      setState("checking");
++      request = new AbortController();
++      try {
++        const response = await fetch("/api/v1/forge/testing-grounds/access", {
++          headers: { Authorization: `Bearer ${token}` },
++          credentials: "omit", cache: "no-store", signal: request.signal,
++        });
++        const body: unknown = response.ok ? await response.json() : null;
++        if (!alive || current !== generation) return;
++        const granted = response.ok && typeof body === "object" && body !== null
++          && "access" in body && body.access === "owner"
++          && "workspace" in body && body.workspace === "synthetic_preview"
++          && "execution" in body && body.execution === "disabled";
++        setState(granted ? "granted" : response.status === 401 || response.status === 403 ? "denied" : "unavailable");
++      } catch {
++        if (alive && current === generation) setState("unavailable");
++      }
++    };
++
++    // Existing browser session is only token transport. It grants no role/owner
++    // authority; the dedicated endpoint verifies the user on every handshake.
++    void import("../supabase/client").then(({ default: client }) => {
++      if (!alive) return;
++      const subscription = client.auth.onAuthStateChange((_event, session) => {
++        withdraw();
++        const current = generation;
++        // Do not await Supabase work inside its auth callback/lock.
++        queueMicrotask(() => { void verify(session?.access_token, current); });
++      });
++      unsubscribe = () => subscription.data.subscription.unsubscribe();
++      refreshSession = () => {
++        withdraw();
++        const current = generation;
++        void client.auth.getSession().then(({ data, error }) => {
++          if (!alive || current !== generation) return;
++          if (error) { setState("unavailable"); return; }
++          void verify(data.session?.access_token, current);
++        }).catch(() => {
++          if (alive && current === generation) setState("unavailable");
++        });
++      };
++      refreshSession();
++    }).catch(() => { if (alive) setState("unavailable"); });
++
++    const visibility = () => {
++      if (document.visibilityState === "hidden") withdraw();
++      else refreshSession?.();
++    };
++    document.addEventListener("visibilitychange", visibility);
++    window.addEventListener("pagehide", withdraw);
++    return () => {
++      alive = false; withdraw(); unsubscribe?.();
++      document.removeEventListener("visibilitychange", visibility);
++      window.removeEventListener("pagehide", withdraw);
++    };
++  }, []);
++
++  if (state === "granted") return <Suspense fallback={<p role="status">Opening sample workspace…</p>}><Preview /></Suspense>;
++  return <section aria-labelledby="testing-grounds-access" style={{ maxWidth: 960, margin: "3rem auto", padding: "0 1.5rem" }}>
++    <h1 id="testing-grounds-access">Testing Grounds</h1>
++    <p role="status">{state === "checking" ? "Checking owner access…"
++      : state === "denied" ? "This workspace is restricted to its configured owner."
++      : state === "unavailable" ? "Owner access is unavailable. The workspace remains locked."
++      : "Owner sign-in is required. The workspace is locked."}</p>
++    <p>The local sample workspace has no connected runner. Launch is disabled.</p>
++  </section>;
++}
+--- /dev/null
++++ b/web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx
+@@ -0,0 +1,110 @@
++import React from "react";
++import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
++import { renderToString } from "react-dom/server";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import type { GetServerSidePropsContext } from "next";
++import TestingGroundsOwnerGate from "./TestingGroundsOwnerGate";
++import TestingGroundsPage, { getServerSideProps } from "../../pages/forge/testing-grounds";
++
++const auth = vi.hoisted(() => ({ getSession: vi.fn(), onAuthStateChange: vi.fn(), unsubscribe: vi.fn() }));
++vi.mock("../supabase/client", () => ({ default: { auth } }));
++let change: (event: string, session: { access_token: string } | null) => void;
++function deferred<T>() {
++  let resolve!: (value: T) => void;
++  const promise = new Promise<T>(done => { resolve = done; });
++  return { promise, resolve };
++}
++const grant = () => ({ ok: true, status: 200, json: async () => ({ access: "owner", workspace: "synthetic_preview", execution: "disabled" }) });
++const session = (token?: string) => ({ data: { session: token ? { access_token: token } : null }, error: null });
++beforeEach(() => {
++  vi.clearAllMocks();
++  auth.getSession.mockResolvedValue(session());
++  auth.onAuthStateChange.mockImplementation(callback => { change = callback; return { data: { subscription: { unsubscribe: auth.unsubscribe } } }; });
++  vi.stubGlobal("fetch", vi.fn());
++});
++afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
++
++describe("owner workspace lifecycle", () => {
++  it("renders only a generic locked SSR frame with no private props or data hooks", async () => {
++    const html = renderToString(<TestingGroundsPage />);
++    expect(html).toContain("The workspace is locked");
++    expect(html).not.toMatch(/Synthetic preview|432|720|run-1|api\/v1|ownerUserId/);
++    expect(auth.getSession).not.toHaveBeenCalled(); expect(fetch).not.toHaveBeenCalled();
++    const res = { setHeader: vi.fn() };
++    expect(await getServerSideProps({ res } as unknown as GetServerSidePropsContext)).toEqual({ props: {} });
++    expect(res.setHeader).toHaveBeenCalledWith("Cache-Control", "private, no-store, max-age=0");
++    expect(res.setHeader).toHaveBeenCalledWith("X-Robots-Tag", "noindex, nofollow");
++  });
++  it("signed-out sessions never request workspace access", async () => {
++    render(<TestingGroundsOwnerGate />);
++    await waitFor(() => expect(auth.getSession).toHaveBeenCalledTimes(1));
++    expect(screen.queryByText("Synthetic preview")).toBeNull(); expect(fetch).not.toHaveBeenCalled();
++  });
++  it("mounts the real synthetic preview only after the verified endpoint response", async () => {
++    const pending = deferred<ReturnType<typeof grant>>();
++    auth.getSession.mockResolvedValue(session("token-a")); vi.mocked(fetch).mockReturnValue(pending.promise as Promise<Response>);
++    render(<TestingGroundsOwnerGate />);
++    await screen.findByText("Checking owner access…");
++    expect(screen.queryByText("Synthetic preview")).toBeNull();
++    expect(fetch).toHaveBeenCalledWith("/api/v1/forge/testing-grounds/access", expect.objectContaining({
++      headers: { Authorization: "Bearer token-a" }, credentials: "omit", cache: "no-store",
++    }));
++    await act(async () => pending.resolve(grant()));
++    await screen.findByText("Synthetic preview");
++    expect((screen.getByRole("button", { name: "Launch unavailable" }) as HTMLButtonElement).disabled).toBe(true);
++    await act(async () => change("SIGNED_OUT", null));
++    expect(screen.queryByText("Synthetic preview")).toBeNull();
++    expect(screen.getByText(/workspace is locked/)).toBeTruthy();
++  });
++  it.each([401, 403, 503])("server status %s cannot mount the workspace", async status => {
++    auth.getSession.mockResolvedValue(session("client-admin-claim"));
++    vi.mocked(fetch).mockResolvedValue({ ok: false, status } as Response);
++    render(<TestingGroundsOwnerGate />);
++    await screen.findByText(status === 503 ? /Owner access is unavailable/ : /restricted to its configured owner/);
++    expect(screen.queryByText("Synthetic preview")).toBeNull();
++  });
++  it("invalid success bodies and rejected requests fail closed", async () => {
++    auth.getSession.mockResolvedValue(session("token"));
++    vi.mocked(fetch).mockResolvedValue({ ok: true, status: 200, json: async () => ({ role: "admin", access: true }) } as Response);
++    render(<TestingGroundsOwnerGate />);
++    await screen.findByText(/Owner access is unavailable/);
++    vi.mocked(fetch).mockRejectedValueOnce(new Error("private-token-marker"));
++    await act(async () => change("TOKEN_REFRESHED", { access_token: "new-token" }));
++    await screen.findByText(/Owner access is unavailable/);
++    expect(document.body.textContent).not.toContain("private-token-marker");
++  });
++  it("ignores a late successful response after sign-out", async () => {
++    const pending = deferred<ReturnType<typeof grant>>();
++    auth.getSession.mockResolvedValue(session("old-token")); vi.mocked(fetch).mockReturnValue(pending.promise as Promise<Response>);
++    render(<TestingGroundsOwnerGate />); await screen.findByText("Checking owner access…");
++    const signal = vi.mocked(fetch).mock.calls[0][1]!.signal!;
++    await act(async () => change("SIGNED_OUT", null));
++    expect(signal.aborted).toBe(true);
++    await act(async () => pending.resolve(grant()));
++    expect(screen.queryByText("Synthetic preview")).toBeNull();
++    expect(screen.getByText(/workspace is locked/)).toBeTruthy();
++  });
++  it("withdraws access on account switch and rejects old-account success after new denial", async () => {
++    const pending = deferred<ReturnType<typeof grant>>();
++    auth.getSession.mockResolvedValue(session("old-token"));
++    vi.mocked(fetch).mockResolvedValueOnce(grant() as Response).mockReturnValueOnce(pending.promise as Promise<Response>)
++      .mockResolvedValueOnce({ ok: false, status: 403 } as Response);
++    render(<TestingGroundsOwnerGate />); await screen.findByText("Synthetic preview");
++    await act(async () => change("TOKEN_REFRESHED", { access_token: "old-refreshed-token" }));
++    expect(screen.queryByText("Synthetic preview")).toBeNull();
++    await act(async () => change("SIGNED_IN", { access_token: "new-account-token" }));
++    await screen.findByText(/restricted to its configured owner/);
++    await act(async () => pending.resolve(grant()));
++    expect(screen.queryByText("Synthetic preview")).toBeNull();
++  });
++  it("ignores late initial getSession data after an auth event and cleans up on unmount", async () => {
++    const pending = deferred<ReturnType<typeof session>>();
++    auth.getSession.mockReturnValue(pending.promise);
++    const view = render(<TestingGroundsOwnerGate />);
++    await waitFor(() => expect(auth.getSession).toHaveBeenCalledTimes(1));
++    await act(async () => change("SIGNED_OUT", null));
++    await act(async () => pending.resolve(session("stale-token")));
++    expect(fetch).not.toHaveBeenCalled();
++    view.unmount(); expect(auth.unsubscribe).toHaveBeenCalledTimes(1);
++  });
++});
+--- /dev/null
++++ b/web/pages/forge/testing-grounds.tsx
+@@ -0,0 +1,22 @@
++import Head from "next/head";
++import type { GetServerSideProps } from "next";
++import TestingGroundsOwnerGate from "../../lib/forge-testing-grounds/TestingGroundsOwnerGate";
++
++// The initial frame contains no private props or owner identity. Browser session
++// transport is verified by the dedicated server boundary before workspace mount.
++export const getServerSideProps: GetServerSideProps = async ({ res }) => {
++  res.setHeader("Cache-Control", "private, no-store, max-age=0");
++  res.setHeader("X-Robots-Tag", "noindex, nofollow");
++  return { props: {} };
++};
++
++export default function TestingGroundsPage() {
++  return <>
++    <Head>
++      <title>Testing Grounds · FORGE</title>
++      <meta name="robots" content="noindex,nofollow" key="robots" />
++      <meta name="googlebot" content="noindex,nofollow" key="googlebot" />
++    </Head>
++    <TestingGroundsOwnerGate />
++  </>;
++}
+--- /dev/null
++++ b/web/pages/api/v1/forge/testing-grounds/access.ts
+@@ -0,0 +1,2 @@
++import { testingGroundsRoutes } from "../../../../../lib/forge-testing-grounds/ownerRoutes";
++export default testingGroundsRoutes.access;
+--- /dev/null
++++ b/web/pages/api/v1/forge/testing-grounds/runs/index.ts
+@@ -0,0 +1,2 @@
++import { testingGroundsRoutes } from "../../../../../../lib/forge-testing-grounds/ownerRoutes";
++export default testingGroundsRoutes.collection;
+--- /dev/null
++++ b/web/pages/api/v1/forge/testing-grounds/runs/[runId]/[operation].ts
+@@ -0,0 +1,2 @@
++import { testingGroundsRoutes } from "../../../../../../../lib/forge-testing-grounds/ownerRoutes";
++export default testingGroundsRoutes.run;

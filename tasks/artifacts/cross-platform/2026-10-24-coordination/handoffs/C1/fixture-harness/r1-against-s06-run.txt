@@ -1,0 +1,24 @@
+   ↓ TeamTabNavigation schedule identity > forwards the synchronous Arizona source identity for canonical Utah's 2023-24 schedule
+   ↓ TeamTabNavigation schedule identity > preserves an ordinary current-team schedule identity
+   ↓ TeamTabNavigation schedule identity > does not mount the calendar before a validated schedule identity exists
+   ↓ TeamTabNavigation Season Stats line combinations > reads nothing while other tabs are shown and reuses the result when the tab returns
+   ↓ TeamTabNavigation Season Stats line combinations > discards a late response for the previous team after A → B
+   ↓ TeamTabNavigation Season Stats line combinations > shows the line read error instead of a grid
+   ↓ TeamTabNavigation Season Stats line combinations > shows the player map error instead of a grid
+   ↓ TeamTabNavigation Season Stats line combinations > shows the no persisted lines instead of a grid
+   ↓ TeamTabNavigation Season Stats line combinations > drops null and blank IDs and flattens nested line rows
+   ↓ TeamTabNavigation Shot Map error > hands the read error to the visualization instead of a detached banner
+   × LineCombinationsGrid mixed line shapes > keeps every 12F/6D skater in their own group with labelled extras 63ms
+   × LineCombinationsGrid mixed line shapes > keeps every 13F/5D skater in their own group with labelled extras 16ms
+   × LineCombinationsGrid mixed line shapes > keeps every 14F/4D skater in their own group with labelled extras 16ms
+   × LineCombinationsGrid mixed line shapes > keeps every 11F/7D skater in their own group with labelled extras 15ms
+   × LineCombinationsGrid mixed line shapes > keeps every 10F/8D skater in their own group with labelled extras 16ms
+   × LineCombinationsGrid mixed line shapes > keeps every 13F/6D skater in their own group with labelled extras 15ms
+   × LineCombinationsGrid mixed line shapes > keeps every 12F/7D skater in their own group with labelled extras 14ms
+   ↓ ShotVisualization filters > keeps the filters usable in the loading state
+   ↓ ShotVisualization filters > keeps the filters usable in the empty state
+   ↓ ShotVisualization filters > keeps the filters usable in the error state
+   ↓ ShotVisualization filters > keeps the filters usable in the no selection state
+   ↓ ShotVisualization filters > changes and resets filters from an empty result
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  7 failed | 15 skipped (22)

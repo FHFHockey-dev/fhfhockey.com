@@ -1,0 +1,35 @@
+{
+  "pid": 81978,
+  "execSession": null,
+  "url": "http://127.0.0.1:3125/player-cards",
+  "bind": "127.0.0.1:3125",
+  "script": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/serve-preview.mjs",
+  "sourceArtifact": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+  "bytes": 318626,
+  "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5",
+  "previousListenerAbsent": true,
+  "processesStopped": 0,
+  "exactReviewedR1Served": true,
+  "syntheticOnly": true,
+  "reviewedPinsUnchanged": 161,
+  "processWorkflow": "subprocess.Popen(start_new_session=True), stdinDEVNULL, stdout/stderrserver.log",
+  "launcherExited": true,
+  "parentPid": 1,
+  "processGroup": 81978,
+  "tty": "??",
+  "handoffHistory": [
+    {
+      "event": "Portabsent; exactR1foregroundstarted",
+      "pid": 81671,
+      "execSession": 93754
+    },
+    {
+      "event": "Parentpersistentlifecycleinstruction; onlyverifiedown81671replaced",
+      "pid": 81978,
+      "execSession": null
+    }
+  ],
+  "automaticRestart": false,
+  "systemStartupChanges": false,
+  "lifecycleLimit": "Separatepost-launchchecks passed. Post-turn survival notyetobserved; coordinator requested onecheckafterfinal. Host/environmenttermination stopsprocess."
+}

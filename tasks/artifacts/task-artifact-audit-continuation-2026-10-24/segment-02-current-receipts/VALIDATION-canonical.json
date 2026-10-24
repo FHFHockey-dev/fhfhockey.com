@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-24T15:38:24.671027+00:00",
+  "mode": "canonical",
+  "unique_ids": 206,
+  "prior205_ids_scopes_preserved": true,
+  "original188_ids_retained_via_prior_checkpoint": true,
+  "legacy_blocks_byte_identical_in_both_markdown_files": 32,
+  "prior_evidence_entries_preserved": 828,
+  "evidence_entries_after": 892,
+  "new_evidence_hash_line_checks": 64,
+  "unchanged_rows_identical": 194,
+  "changed_existing_rows": 11,
+  "new_ids": [
+    "AUTH-PATREON-TRANSACTION"
+  ],
+  "markdown_id_order_and_parity": true,
+  "all_changed_fields_present_in_both_markdown_files": true,
+  "archive_and_sprint_control_preserved": true,
+  "coverage_current_hash_checks": 20,
+  "hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "cce603df004b4056eea3a65585e2f087545a2f1334e91e44938505573d13560d",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "dec4ec33657385d83cb60e0ee06e5bb5715ab7b58b2377be7d98bb777dfb16b0",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "996eb0ee519ab8ea142f815fd31e9042189800a46c8238e9f087c8c633ff94fc"
+  },
+  "application_test_runs": 0,
+  "production_requests": 0,
+  "git_mutations": 0
+}

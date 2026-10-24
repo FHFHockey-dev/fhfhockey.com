@@ -214,3 +214,55 @@ it("does not advance the clock for equivalent newly allocated empty inputs", () 
     expect(result.current).toBe(previous);
   } finally { now.mockRestore(); }
 });
+
+
+describe("request cancellation", () => {
+  it("starts no more four-week windows after unmount", async () => {
+    let finish!: (value: ScheduleData) => void;
+    vi.mocked(getSchedule).mockImplementation(async start => start === "2026-10-05" ? new Promise(resolve => { finish = resolve; }) : payload(start));
+    const view = renderHook(() => useFourWeekSchedule("2026-10-05"));
+    await waitFor(() => expect(getSchedule).toHaveBeenCalledTimes(2));
+    view.unmount();
+    await act(async () => finish(payload("2026-10-05")));
+    expect(getSchedule).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not continue an obsolete four-week chain after changing dates", async () => {
+    let finish!: (value: ScheduleData) => void;
+    vi.mocked(getSchedule).mockImplementation(async start => start === "2026-10-05"
+      ? new Promise(resolve => { finish = resolve; }) : payload(start));
+    const view = renderHook(({ start }) => useFourWeekSchedule(start), { initialProps: { start: "2026-10-05" } });
+    await waitFor(() => expect(getSchedule).toHaveBeenCalledTimes(2));
+    view.rerender({ start: "2026-11-02" });
+    await waitFor(() => expect(view.result.current[2]).toBe(false));
+    const count = vi.mocked(getSchedule).mock.calls.length;
+    await act(async () => finish(payload("2026-10-05")));
+    expect(getSchedule).toHaveBeenCalledTimes(count);
+    expect(view.result.current[3].start).toBe("2026-11-02");
+  });
+});
+
+
+it("loads four independent windows in two bounded waves", async () => {
+  vi.useFakeTimers();
+  let active = 0;
+  let maxActive = 0;
+  vi.mocked(getSchedule).mockImplementation(async start => {
+    maxActive = Math.max(maxActive, ++active);
+    await new Promise(resolve => setTimeout(resolve, 75));
+    active--;
+    return payload(start);
+  });
+  try {
+    const { result } = renderHook(() => useFourWeekSchedule("2026-10-05"));
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    expect(getSchedule).toHaveBeenCalledTimes(2);
+    await act(async () => { await vi.advanceTimersByTimeAsync(75); });
+    expect(result.current[2]).toBe(true);
+    expect(getSchedule).toHaveBeenCalledTimes(4);
+    await act(async () => { await vi.advanceTimersByTimeAsync(75); });
+    expect(result.current[2]).toBe(false);
+    expect(result.current[3].knownDays).toBe(28);
+    expect(maxActive).toBe(2);
+  } finally { vi.useRealTimers(); }
+});

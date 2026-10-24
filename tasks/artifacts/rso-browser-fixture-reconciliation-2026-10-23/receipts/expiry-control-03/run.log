@@ -1,0 +1,6 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [desktop] › e2e/acceptance/rso-p07-acceptance.spec.ts:229:5 › trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks
+[1A[2K[2/2] [mobile] › e2e/acceptance/rso-p07-acceptance.spec.ts:229:5 › trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks
+[1A[2K  2 passed (24.0s)

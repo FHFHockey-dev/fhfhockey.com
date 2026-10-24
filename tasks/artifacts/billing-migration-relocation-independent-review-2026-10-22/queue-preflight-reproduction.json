@@ -1,0 +1,20 @@
+{
+  "node": "v22.11.0",
+  "extractedFrom": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs",
+  "sourceSha256": "ce68ce9a2e137e6d6769a61994fa163f2f1da2a08334473d4ae26f1121669b14",
+  "executedOnly": "const hashes = JSON.parse(fs.readFileSync(path.join(__dirname, 'SOURCE-HASHES-BEFORE.json'), 'utf8'));\nconst hash = file => createHash('sha256').update(fs.readFileSync(path.join(repo, file))).digest('hex');\nfor (const [file, digest] of Object.entries(hashes)) assert.equal(hash(file), digest, file);\n",
+  "preflightFailure": {
+    "name": "AssertionError",
+    "code": "ERR_ASSERTION",
+    "message": "web/lib/in-season/monthlyIntegration.test.ts\n+ actual - expected\n\n+ '778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025'\n- 'cb87e47d4d2b1050577a62cba6bebccb12101df57709dbcb6773d95abb3594b5'",
+    "actual": "778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025",
+    "expected": "cb87e47d4d2b1050577a62cba6bebccb12101df57709dbcb6773d95abb3594b5"
+  },
+  "relocatedPathFailure": {
+    "code": "ENOENT",
+    "path": "/Users/tim/Code/fhfhockey.com/supabase/migrations/20261021210000_in_season_sandbox_billing.sql"
+  },
+  "fullHarnessLoaded": false,
+  "sqlExecuted": false,
+  "networkCalls": 0
+}

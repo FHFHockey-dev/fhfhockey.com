@@ -1,0 +1,16 @@
+[
+  {
+    "title": "compact day and bench controls preserve saved intent and keyboard selection",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText('\u00b7 Local simulated Bench, not Yahoo placement. 6 players / 0 configured places \u00b7 6 over capacity; all retained.', { exact: true })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('\u00b7 Local simulated Bench, not Yahoo placement. 6 players / 0 configured places \u00b7 6 over capacity; all retained.', { exact: true })\u001b[22m\n\n\n  1966 |     expect(note.x + note.width).toBeLessThanOrEqual(page.viewportSize()!.width);\n  1967 |   };\n> 1968 |   await expect(capacityDisclosure).toBeVisible();\n       |                                    ^\n  1969 |   await expect(bench).toHaveAccessibleDescription(await capacityDisclosure.innerText());\n  1970 |   await expectCapacityAboveSchedule();\n  1971 |   await bench.focus(); await page.keyboard.press(\"Space\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1968:36"
+    ]
+  },
+  {
+    "title": "compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  }
+]

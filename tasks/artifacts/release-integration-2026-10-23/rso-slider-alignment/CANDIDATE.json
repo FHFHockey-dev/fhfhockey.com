@@ -1,0 +1,11 @@
+{
+  "status": "implemented; original browser geometry reproduced by independent fixture owner; affected <=1px cases pending",
+  "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss",
+  "beforeSha256": "ee4dcb45b83366ad35ed2a34a5165ae059790ff232d02af6f9482297c3f7d75d",
+  "afterSha256": "4e40feb952963ba192e4bb7d0568983e8d1cc3d0bcaa292b8c79627355be22a2",
+  "patchSha256": "4c1b17b4f95b18341488693ea07c98beaca8d7e7e4fac0c677b06a746447e8c1",
+  "geometrySha256": "b6fd7eb4ae6b3b33f7970a9f1f056d046f35e28ccd172569905af05964b63cae",
+  "priorCommandBarPacket": "../rso-command-bar/CANDIDATE.json",
+  "changedRules": 1,
+  "oracle": "Existing <=1px slider/header bound unchanged; no forced interaction or formula changes"
+}

@@ -1,0 +1,46 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts -t synthetic positive native review
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-p07-r1-review-3mw_5nd7/web
+
+(node:39053) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts (6 tests | 1 failed | 5 skipped) 23ms
+   ↓ accepts a real current response when browser clock differs by -5000ms
+   ↓ accepts a real current response when browser clock differs by 5000ms
+   ↓ binds authority to actual current immutable rows, not transplanted IDs/means/lineage
+   ↓ ends authority before asynchronous continuation even if a callback returns a promise
+   ↓ clears results if source expiry passes during synchronous search
+   × does not publish a synthetic positive native review that expires during computation 23ms
+     → expected false to be true // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts > does not publish a synthetic positive native review that expires during computation
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts:86:98
+     84|   const result = await executeRosterPlanning(snapshot, intent);
+     85|   expect(policyModule.resolveRsoTargetUse(binding, new Date().toISOStr…
+     86|   expect(result.displaySnapshot.forecasts.every(row => !forecastAllows…
+       |                                                                                                  ^
+     87|   expect(result.result.selected.projectedValue).toBeNull();
+     88| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 skipped (6)
+   Start at  11:52:20
+   Duration  442ms (transform 126ms, setup 9ms, collect 139ms, tests 23ms, environment 161ms, prepare 31ms)
+
+

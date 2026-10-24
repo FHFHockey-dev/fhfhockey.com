@@ -1,0 +1,135 @@
+
+Running 28 tests using 1 worker
+
+  ✓   1 [chromium] › e2e/social-share.spec.ts:150:5 › default summary, recalculated dates and actual PNG match one frozen edition (2.1s)
+  ✓   2 [chromium] › e2e/social-share.spec.ts:221:5 › Wednesday excludes Wednesday; mobile controls and detail PNG preserve selected games (1.5s)
+  ✓   3 [chromium] › e2e/social-share.spec.ts:257:5 › long text and missing logo stay inside the square and export with a branded fallback (1.3s)
+  ✓   4 [chromium] › e2e/social-share.spec.ts:270:5 › failed refresh preserves only a nonexportable preview and retries the same selection (1.3s)
+  ✓   5 [chromium] › e2e/social-share.spec.ts:300:5 › partial, stale and valid zero-game sources do not publish rankings (1.1s)
+  ✓   6 [chromium] › e2e/social-share.spec.ts:319:5 › export font failures are explicit and retry without refetching schedule data (1.6s)
+  ✓   7 [chromium] › e2e/social-share.spec.ts:333:5 › edition expiry disables export and unsupported formats stay explicitly gated (2.8s)
+  ✓   8 [chromium] › e2e/social-share.spec.ts:350:5 › Monday default grid ranks every team by Game Grid weekScore in square day cells and exports (2.0s)
+  ✓   9 [chromium] › e2e/social-share.spec.ts:383:5 › Monday grid falls back to abbreviation tiles and never ranks an untrusted edition (2.0s)
+  ✓  10 [chromium] › e2e/social-share.spec.ts:402:5 › pinned Monday grid edition exports the same PNG bytes every run (6.2s)
+  ✓  11 [chromium] › e2e/social-share.spec.ts:460:5 › Easiest schedules and streaming matchup cards rank by Game Grid opponent DEF and export (2.1s)
+  ✓  12 [chromium] › e2e/social-share.spec.ts:492:5 › matchup cards never rank or export without current, complete opponent ratings (1.5s)
+  ✘  13 [chromium] › e2e/social-share.spec.ts:524:5 › Pickup tier and specialist cards list ranked players from top Week Score teams and export (16.5s)
+  ✓  14 [chromium] › e2e/social-share.spec.ts:558:5 › player cards never rank or export without current player sources or a ready schedule (1.5s)
+  ✓  15 [chromium] › e2e/social-share.spec.ts:585:5 › short pickup columns say how many qualify and the card still exports (1.5s)
+  ✓  16 [chromium] › e2e/social-share.spec.ts:620:5 › pinned Wednesday and Tuesday editions export the same PNG bytes every run (7.9s)
+  ✓  17 [chromium] › e2e/social-share.spec.ts:639:5 › Wednesday edition recomputes every card for Thursday to Sunday and names the covered dates (3.4s)
+  ✓  18 [chromium] › e2e/social-share.spec.ts:674:5 › Tuesday trend cards rank real rolling windows and ownership movers and export (2.4s)
+  ✓  19 [chromium] › e2e/social-share.spec.ts:704:5 › Tuesday cards never rank stale or missing sources, and stale metrics do not block movers (1.3s)
+  ✓  20 [chromium] › e2e/social-share.spec.ts:725:5 › live Tuesday answer is an honest not-connected edition with Download disabled (1.0s)
+  ✓  21 [chromium] › e2e/social-share.spec.ts:743:5 › a page load makes exactly one edition API call even under the dev strict-mode double mount (2.8s)
+  ✓  22 [chromium] › e2e/social-share.spec.ts:757:5 › the eyebrow names the real date context, not the format's posting day (1.2s)
+  ✓  23 [chromium] › e2e/social-share.spec.ts:771:5 › ticket 10 flair: striped player banners with L5 evidence, three per list, tiered grid scores and cherry picks (4.7s)
+  ✓  24 [chromium] › e2e/social-share.spec.ts:822:5 › player tiles never claim 'no recent game' when the last-five-games read failed (1.3s)
+  ✓  25 [chromium] › e2e/social-share.spec.ts:839:5 › GP and off-night counts are coloured per column on Monday and Wednesday editions (3.6s)
+  ✘  26 [chromium] › e2e/social-share.spec.ts:865:5 › schedule-aware tier list shows only tier teams' players as list rows, strict and widened (1.7s)
+  ✓  27 [chromium] › e2e/social-share.spec.ts:903:5 › share studio stays closed without a social editor role, and the edition is never requested (1.1s)
+  ✘  28 [chromium] › e2e/social-share.spec.ts:917:5 › returning to the tab keeps the week, days and card: the gate's re-check remounts the studio without a reset (ticket 15) (16.5s)
+
+
+  1) [chromium] › e2e/social-share.spec.ts:524:5 › Pickup tier and specialist cards list ranked players from top Week Score teams and export 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByTestId('share-square')
+    Expected substring: [32m"Season rates, not projections"[39m
+    Received string:    [31m"FHFHOCKEY.COMWeek ahead · Pickups · top-10 schedules first30–49% ROSTEREDWEEK OFOct 26 – Nov 12026FORWARDSFixture FLA-1FLA · C35%ROSTERED6.11L5 SCOREL4PP2L5 GP3G 4A 7P · 17 SOG · 2 PPP · 21:55 (+5:02)#8 Week Score · 4 GP · 2 off-nightFixture VGK-4VGK · RW32%ROSTERED5.28L5 SCOREL3PP1L5 GP2G 4A 6P · 16 SOG · 1 PPP · 19:50 (+3:12)#6 Week Score · 4 GP · 2 off-nightFixture STL-3STL · LW33%ROSTERED4.97L5 SCOREL4PP2L5 GP3G 3A 6P · 17 SOG · 2 PPP · 15:55 (−0:46)#4 Week Score · 4 GP · 2 off-nightDEFENSEFixture PIT-7PIT · D33%ROSTERED4.63L5 SCOREP2PP1L5 GP2G 3A 5P · 16 SOG · 1 PPP · 23:04 (+3:22)#10 Week Score · 4 GP · 1 off-nightFixture VGK-8VGK · D38%ROSTERED4.37L5 SCOREP3PP1L5 GP2G 1A 3P · 8 SOG · 2 PPP · 24:08 (+2:34)#6 Week Score · 4 GP · 2 off-nightFixture NYR-8NYR · D43%ROSTERED4.09L5 SCOREP2PP2L5 GP3G 1A 4P · 13 SOG · 1 PPP · 20:28 (−0:01)#9 Week Score · 4 GP · 1 off-nightGOALIESFixture NYR-9NYR · G45%ROSTERED8.80L5 SCOREL5 GP4-1 · .959 SV% · 6 GA · 4 QS#9 Week Score · 4 GP · 1 off-nightFixture PIT-9PIT · G43%ROSTERED8.64L5 SCOREL5 GP4-1 · .958 SV% · 6 GA · 4 QS#10 Week Score · 4 GP · 1 off-nightFixture MTL-10MTL · G36%ROSTERED8.64L5 SCOREL5 GP4-1 · .958 SV% · 6 GA · 4 QS#3 Week Score · 4 GP · 3 off-nightL5 SCORE fantasy pts/GP × opportunityL5 GP last 5 games playedWider pool = team ranked 11+ filling a short listMin 5 GP · goalies 3 GSScore = L5 fantasy pts/GP (G 3 · A 2 · PPP 1 · SOG 0.2 · HIT 0.2 · BLK 0.25; goalies W 4 · SV 0.2 · GA −1 · SO 3) × opportunity (L1 +15% · L2 +10% · L3 +5% · D P1 +10% · P2 +5% · PP1 +10% · PP2 +5% · ±2% per L5 TOI min vs 16:00 F / 20:00 D, max ±10%); season rate breaks tiesTop-10 Week Score teams first, wider pool fills to three · bands 30–49% · 20–29% · under 20%, ranked by L5 score · Not projections · Yahoo rostered % as of Oct 24 · NHL.com season totals updated Oct 24, 3:01 PM EDTSCHEDULE + PLAYER RATES"[39m
+    Timeout: 15000ms
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 15000ms[22m
+    [2m  - waiting for getByTestId('share-square')[22m
+    [2m    34 × locator resolved to <div role="img" data-testid="share-square" class="SocialShare_square__bd5N9 SocialShare_gridSquare__E9ovP" aria-label="FHFH Pickups 30–49% rostered, Oct 26, 2026 through Nov 1, 2026. Top-10 Week Score teams first; a list short of three fills from teams ranked 11 and lower, marked wider pool. Players ranked by last-five-games fantasy score times opportunity (line, power-play unit, ice time), season rate breaking ties; separate bands of 30 to 49, 20 to 29 and under 20 percent rostered, each player in…>…</div>[22m
+    [2m       - unexpected value "FHFHOCKEY.COMWeek ahead · Pickups · top-10 schedules first30–49% ROSTEREDWEEK OFOct 26 – Nov 12026FORWARDSFixture FLA-1FLA · C35%ROSTERED6.11L5 SCOREL4PP2L5 GP3G 4A 7P · 17 SOG · 2 PPP · 21:55 (+5:02)#8 Week Score · 4 GP · 2 off-nightFixture VGK-4VGK · RW32%ROSTERED5.28L5 SCOREL3PP1L5 GP2G 4A 6P · 16 SOG · 1 PPP · 19:50 (+3:12)#6 Week Score · 4 GP · 2 off-nightFixture STL-3STL · LW33%ROSTERED4.97L5 SCOREL4PP2L5 GP3G 3A 6P · 17 SOG · 2 PPP · 15:55 (−0:46)#4 Week Score · 4 GP · 2 off-nightDEFENSEFixture PIT-7PIT · D33%ROSTERED4.63L5 SCOREP2PP1L5 GP2G 3A 5P · 16 SOG · 1 PPP · 23:04 (+3:22)#10 Week Score · 4 GP · 1 off-nightFixture VGK-8VGK · D38%ROSTERED4.37L5 SCOREP3PP1L5 GP2G 1A 3P · 8 SOG · 2 PPP · 24:08 (+2:34)#6 Week Score · 4 GP · 2 off-nightFixture NYR-8NYR · D43%ROSTERED4.09L5 SCOREP2PP2L5 GP3G 1A 4P · 13 SOG · 1 PPP · 20:28 (−0:01)#9 Week Score · 4 GP · 1 off-nightGOALIESFixture NYR-9NYR · G45%ROSTERED8.80L5 SCOREL5 GP4-1 · .959 SV% · 6 GA · 4 QS#9 Week Score · 4 GP · 1 off-nightFixture PIT-9PIT · G43%ROSTERED8.64L5 SCOREL5 GP4-1 · .958 SV% · 6 GA · 4 QS#10 Week Score · 4 GP · 1 off-nightFixture MTL-10MTL · G36%ROSTERED8.64L5 SCOREL5 GP4-1 · .958 SV% · 6 GA · 4 QS#3 Week Score · 4 GP · 3 off-nightL5 SCORE fantasy pts/GP × opportunityL5 GP last 5 games playedWider pool = team ranked 11+ filling a short listMin 5 GP · goalies 3 GSScore = L5 fantasy pts/GP (G 3 · A 2 · PPP 1 · SOG 0.2 · HIT 0.2 · BLK 0.25; goalies W 4 · SV 0.2 · GA −1 · SO 3) × opportunity (L1 +15% · L2 +10% · L3 +5% · D P1 +10% · P2 +5% · PP1 +10% · PP2 +5% · ±2% per L5 TOI min vs 16:00 F / 20:00 D, max ±10%); season rate breaks tiesTop-10 Week Score teams first, wider pool fills to three · bands 30–49% · 20–29% · under 20%, ranked by L5 score · Not projections · Yahoo rostered % as of Oct 24 · NHL.com season totals updated Oct 24, 3:01 PM EDTSCHEDULE + PLAYER RATES"[22m
+
+
+      539 |     expect(await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-player")))).toEqual(expected);
+      540 |     await expect(square).toContainText("Yahoo rostered % as of");
+    > 541 |     await expect(square).toContainText("Season rates, not projections");
+          |                          ^
+      542 |     expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
+      543 |     await expect(download).toBeEnabled();
+      544 |     await downloadedPng(page, `monday-pickups-under-${tier.max}`);
+        at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:541:26
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t15/test-results/social-share-Pickup-tier-a-d8343-Week-Score-teams-and-export-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t15/test-results/social-share-Pickup-tier-a-d8343-Week-Score-teams-and-export-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t15/test-results/social-share-Pickup-tier-a-d8343-Week-Score-teams-and-export-chromium/error-context.md
+
+  2) [chromium] › e2e/social-share.spec.ts:865:5 › schedule-aware tier list shows only tier teams' players as list rows, strict and widened 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  - 1[39m
+    [31m+ Received  + 1[39m
+
+    [2m  Object {[22m
+    [2m    "brokenImages": 0,[22m
+    [32m-   "fits": true,[39m
+    [31m+   "fits": false,[39m
+    [2m    "rowsInside": true,[22m
+    [2m  }[22m
+
+      882 |       await expect(block.locator("[data-player]").first()).toContainText("L5 GP");
+      883 |     }
+    > 884 |     expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
+          |                                         ^
+      885 |     await expect(download).toBeEnabled();
+      886 |     await downloadedPng(page, `streaming-tiers-${mode}`);
+      887 |     expected[mode] = tiers.flatMap(tier => tier.shown.map(player => String(player.nhlId)));
+        at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:884:41
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t15/test-results/social-share-schedule-awar-af104-ist-rows-strict-and-widened-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t15/test-results/social-share-schedule-awar-af104-ist-rows-strict-and-widened-chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t15/test-results/social-share-schedule-awar-af104-ist-rows-strict-and-widened-chromium/error-context.md
+
+  3) [chromium] › e2e/social-share.spec.ts:917:5 › returning to the tab keeps the week, days and card: the gate's re-check remounts the studio without a reset (ticket 15) 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: > [32m2[39m
+    Received:   [31m2[39m
+
+    Call Log:
+    - Timeout 15000ms exceeded while waiting on the predicate
+
+      931 |   // Supabase re-announces the session when the tab becomes visible again; the gate re-reads the role.
+      932 |   await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+    > 933 |   await expect.poll(() => access.roleReads).toBeGreaterThan(reads);
+          |                                             ^
+      934 |   await expect(square).toContainText("STREAMING OPTIONS");
+      935 |   await expect(graphic).toHaveValue("tiers");
+      936 |   await expect(page.getByLabel("Week of (Monday)")).toHaveValue(upcomingWeek);
+        at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:933:45
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t15/test-results/social-share-returning-to--0bde8--without-a-reset-ticket-15--chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    attachment #2: video (video/webm) ──────────────────────────────────────────────────────────────
+    ../tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t15/test-results/social-share-returning-to--0bde8--without-a-reset-ticket-15--chromium/video.webm
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t15/test-results/social-share-returning-to--0bde8--without-a-reset-ticket-15--chromium/error-context.md
+
+  3 failed
+    [chromium] › e2e/social-share.spec.ts:524:5 › Pickup tier and specialist cards list ranked players from top Week Score teams and export 
+    [chromium] › e2e/social-share.spec.ts:865:5 › schedule-aware tier list shows only tier teams' players as list rows, strict and widened 
+    [chromium] › e2e/social-share.spec.ts:917:5 › returning to the tab keeps the week, days and card: the gate's re-check remounts the studio without a reset (ticket 15) 
+  25 passed (1.6m)

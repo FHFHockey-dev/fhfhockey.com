@@ -1,0 +1,88 @@
+{
+  "first": {
+    "resultHash": "af79349485a6e2e6ef26fa3db59a1eca352b2a1d5c08db818058902c1b22ce4a",
+    "outputHash": "c9d19c2a1e6b227d492bf2cdb23a8c84af23c0a7c5f0ae3378f3359e4208caf1",
+    "codeHash": "c8fcf08d3d5ef8664918f305e7c78999fde4903b779c1c9dbc1748cf6403956f",
+    "inMemoryReads": 100
+  },
+  "second": {
+    "resultHash": "566790293cb9b577555fdf4206e13d50861b1ee22b9bd03cc027cfea5dc15e30",
+    "outputHash": "c9d19c2a1e6b227d492bf2cdb23a8c84af23c0a7c5f0ae3378f3359e4208caf1",
+    "codeHash": "c8fcf08d3d5ef8664918f305e7c78999fde4903b779c1c9dbc1748cf6403956f",
+    "inMemoryReads": 99
+  },
+  "third": {
+    "resultHash": "566790293cb9b577555fdf4206e13d50861b1ee22b9bd03cc027cfea5dc15e30",
+    "inMemoryReads": 99
+  },
+  "singleMissingRead": [
+    {
+      "method": "from",
+      "args": [
+        "forge_goalie_game"
+      ]
+    },
+    {
+      "method": "select",
+      "args": [
+        "game_date,shots_against,goals_allowed"
+      ]
+    },
+    {
+      "method": "gte",
+      "args": [
+        "game_date",
+        "2025-07-01"
+      ]
+    },
+    {
+      "method": "lt",
+      "args": [
+        "game_date",
+        "2026-10-12"
+      ]
+    },
+    {
+      "method": "order",
+      "args": [
+        "game_date",
+        {
+          "ascending": true
+        }
+      ]
+    },
+    {
+      "method": "order",
+      "args": [
+        "game_id",
+        {
+          "ascending": true
+        }
+      ]
+    },
+    {
+      "method": "order",
+      "args": [
+        "goalie_id",
+        {
+          "ascending": true
+        }
+      ]
+    },
+    {
+      "method": "range",
+      "args": [
+        0,
+        999
+      ]
+    },
+    {
+      "method": "abortSignal",
+      "args": [
+        {}
+      ]
+    }
+  ],
+  "allOtherReceiptResultFieldsIdentical": true,
+  "sourceBytesChanged": false
+}

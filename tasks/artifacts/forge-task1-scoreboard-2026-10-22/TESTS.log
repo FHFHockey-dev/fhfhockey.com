@@ -1,0 +1,25 @@
+
+> web@0.1.0 test
+> vitest --run --config /tmp/fhfh-task1-scoreboard/vitest.config.mts lib/player-forecasts/servedForecastLedger.test.ts tests/api/forge-scoreboard.test.ts __tests__/pages/api/v1/db/forge-served-forecast-snapshot.test.ts __tests__/pages/api/v1/db/forge-served-forecast-settle.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:51658) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tests/api/forge-scoreboard.test.ts (4 tests) 16ms
+(node:51658) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/servedForecastLedger.test.ts (21 tests) 9ms
+(node:51658) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/db/forge-served-forecast-settle.test.ts (4 tests) 6ms
+(node:51658) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/db/forge-served-forecast-snapshot.test.ts (3 tests) 5ms
+
+ Test Files  4 passed (4)
+      Tests  32 passed (32)
+   Start at  12:15:49
+   Duration  1.22s (transform 128ms, setup 7ms, collect 172ms, tests 35ms, environment 599ms, prepare 117ms)
+

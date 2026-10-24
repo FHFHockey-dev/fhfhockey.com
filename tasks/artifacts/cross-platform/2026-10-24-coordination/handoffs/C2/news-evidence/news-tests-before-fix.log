@@ -1,0 +1,175 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c2-isolated/web
+
+(node:49106) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/homepageNewsCompatibility.test.tsx (50 tests | 4 failed) 86ms
+   ✓ review-only homepage compatibility proposal > preserves all eleven distinct projections and both Marner posts 7ms
+   ✓ review-only homepage compatibility proposal > classifies EDM from the lineup passage and Marner as availability without injury inference 1ms
+   ✓ review-only homepage compatibility proposal > does not invent an injury from the truncated Rust prefix 0ms
+   ✓ review-only homepage compatibility proposal > labels the passage topic without asserting completion: Player has a lower-body injury. 0ms
+   ✓ review-only homepage compatibility proposal > labels the passage topic without asserting completion: No injury was reported. 0ms
+   ✓ review-only homepage compatibility proposal > labels the passage topic without asserting completion: A trade is being discussed, nothing completed. 0ms
+   ✓ review-only homepage compatibility proposal > labels the passage topic without asserting completion: The goal is to get him signed, if cap space permits. 0ms
+   ✓ review-only homepage compatibility proposal > labels the passage topic without asserting completion: Player was recalled. 0ms
+   ✓ review-only homepage compatibility proposal > labels the passage topic without asserting completion: New practice lines today. 0ms
+   ✓ review-only homepage compatibility proposal > labels the passage topic without asserting completion: Player will not play tonight. 0ms
+   ✓ review-only homepage compatibility proposal > labels the passage topic without asserting completion: Player injured; a trade remains possible. 0ms
+   ✓ review-only homepage compatibility proposal > labels the passage topic without asserting completion: Note from @Injury https://example.invalid/trade 0ms
+   ✓ review-only homepage compatibility proposal > labels the passage topic without asserting completion: A sign of improvement after practice. 0ms
+   ✓ review-only homepage compatibility proposal > labels the passage topic without asserting completion: The team released an interview. 0ms
+   ✓ review-only homepage compatibility proposal > recovers explicit reporter handles from every receipt sibling without fabricating original links 2ms
+   ✓ review-only homepage compatibility proposal > requires explicit unambiguous attribution: According to @Reporter: the player is out. 0ms
+   ✓ review-only homepage compatibility proposal > requires explicit unambiguous attribution: Per @Reporter, the player is out. 0ms
+   ✓ review-only homepage compatibility proposal > requires explicit unambiguous attribution: The player is out (via @Reporter) 0ms
+   ✓ review-only homepage compatibility proposal > requires explicit unambiguous attribution: The player spoke with @Reporter after practice. 0ms
+   ✓ review-only homepage compatibility proposal > requires explicit unambiguous attribution: RT @Reporter: the player is out. via @OtherReporter 0ms
+   ✓ review-only homepage compatibility proposal > requires explicit unambiguous attribution: RT @GameDayLines: the player is out. 0ms
+   ✓ review-only homepage compatibility proposal > accepts an original link matching the explicit byline but never rewrites the wrapper ID 0ms
+   ✓ review-only homepage compatibility proposal > retains linkless quoted-author evidence through repeated serialization without promoting claims 0ms
+   ✓ review-only homepage compatibility proposal > renders the original reporter visibly and keeps the unresolved meaning accessible 53ms
+   ✓ review-only homepage compatibility proposal > review writer rejects non-author URL evidence: https://twitter.com/i/web/status/123 1ms
+   ✓ review-only homepage compatibility proposal > review writer rejects non-author URL evidence: https://twitter.com.evil.invalid/FalseAuthor/status/123 0ms
+   ✓ review-only homepage compatibility proposal > review writer rejects non-author URL evidence: https://evilx.com/FalseAuthor/status/123 0ms
+   ✓ review-only homepage compatibility proposal > review writer rejects non-author URL evidence: https://x.com@evil.invalid/FalseAuthor/status/123 0ms
+   ✓ review-only homepage compatibility proposal > review writer rejects non-author URL evidence: javascript:alert(1) 0ms
+   ✓ review-only homepage compatibility proposal > review writer retains an actual direct author URL 0ms
+   ✓ retained quote author evidence > rejects conflicting authors for one retained post, URL https://x.com/i/web/status/123 0ms
+   ✓ retained quote author evidence > rejects conflicting authors for one retained post, URL null 0ms
+   ✓ retained quote author evidence > accepts consistent authors after trimming @ and normalizing case 0ms
+   ✓ retained quote author evidence > rejects conflicting retained post IDs 999 / 123 even with consistent authors 0ms
+   ✓ retained quote author evidence > rejects conflicting retained post IDs 123 / 999 even with consistent authors 0ms
+   ✓ retained quote author evidence > rejects a conflicting author-bearing URL retained in provenance metadata 0ms
+   ✓ retained quote author evidence > rejects a conflicting author-bearing URL retained in item metadata 0ms
+   ✓ loader to serialized homepage attribution > keeps a rejected quoted author unresolved despite a matching RT fallback after serialization 1ms
+   ✓ loader to serialized homepage attribution > retains valid linkless attribution supplied only by provenance through the actual homepage path 0ms
+   ✓ loader to serialized homepage attribution > does not revive a quote rejected for mismatched post IDs 0ms
+   ✓ loader to serialized homepage attribution > preserves resolved attribution and original-link evidence: RT @ReporterA: Player is out tonight. 0ms
+   ✓ loader to serialized homepage attribution > preserves resolved attribution and original-link evidence: A quoted source passage. 0ms
+   ✓ loader to serialized homepage attribution > does not accept an attribution marker in raw metadata or turn it into claim authority 0ms
+   ✓ loader to serialized homepage attribution > recomputes raw loader records instead of accepting a previously supplied display decision 0ms
+   ✓ loader to serialized homepage attribution > fails closed for an unsupported or unsafe serialized display decision 0ms
+   ✓ loader to serialized homepage attribution > fails closed for an unsupported or unsafe serialized display decision 0ms
+   × retained interpretation through sync writer, loader and serialized homepage > keeps only the retained lines_ccc interpretation, which the existing validator then admits 10ms
+     → expected [] to match object [ { playerId: 8475167, …(2) } ]
+   × retained interpretation through sync writer, loader and serialized homepage > keeps only the retained line_source_snapshots interpretation, which the existing validator then admits 5ms
+     → expected [] to match object [ { playerId: 8475167, …(2) } ]
+   × retained interpretation through sync writer, loader and serialized homepage > keeps the strict validator in charge: unresolved or unbound retained events stay source-only 1ms
+     → expected undefined to deeply equal { version: '2026-10-13.1', …(3) }
+   × retained interpretation through sync writer, loader and serialized homepage > does not keep an earlier interpretation after the retained source no longer has one 0ms
+     → expected undefined to deeply equal { version: '2026-10-13.1', …(3) }
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/homepageNewsCompatibility.test.tsx > retained interpretation through sync writer, loader and serialized homepage > keeps only the retained lines_ccc interpretation, which the existing validator then admits
+ FAIL  lib/homepageNewsCompatibility.test.tsx > retained interpretation through sync writer, loader and serialized homepage > keeps only the retained line_source_snapshots interpretation, which the existing validator then admits
+AssertionError: expected [] to match object [ { playerId: 8475167, …(2) } ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [[39m
+[32m-   {[39m
+[32m-     "availability": "out",[39m
+[32m-     "playerId": 8475167,[39m
+[32m-     "playerName": "Victor Hedman",[39m
+[32m-   },[39m
+[32m- ][39m
+[31m+ [][39m
+
+ ❯ lib/homepageNewsCompatibility.test.tsx:277:59
+    275|     const f = fakeDb([source({interpretation})],table);
+    276|     const {review,loaded,withoutInterpretation} = await project(f);
+    277|     expect(getPublicNewsClaimPresentation(loaded).claims).toMatchObjec…
+       |                                                           ^
+    278|     expect(f.selects[table]).toContain('interpretation:metadata->inter…
+    279|     expect(review.metadata.interpretation).toEqual(interpretation);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  lib/homepageNewsCompatibility.test.tsx > retained interpretation through sync writer, loader and serialized homepage > keeps the strict validator in charge: unresolved or unbound retained events stay source-only
+AssertionError: expected undefined to deeply equal { version: '2026-10-13.1', …(3) }
+
+[32m- Expected:[39m 
+{
+  "events": [
+    {
+      "availability": "out",
+      "evidence": {
+        "end": 36,
+        "start": 0,
+        "text": "Victor Hedman will not play tonight.",
+      },
+      "kind": "injury",
+      "modality": "affirmative",
+      "playerId": 8475167,
+      "playerName": "Victor Hedman",
+      "state": "unknown",
+    },
+  ],
+  "units": [],
+  "unresolved": [
+    {
+      "reason": "ambiguous",
+    },
+  ],
+  "version": "2026-10-13.1",
+}
+
+[31m+ Received:[39m 
+undefined
+
+ ❯ lib/homepageNewsCompatibility.test.tsx:288:46
+    286|     for (const held of [{...interpretation,unresolved:[{reason:'ambigu…
+    287|       const {review,loaded} = await project(fakeDb([source({interpreta…
+    288|       expect(review.metadata.interpretation).toEqual(held);
+       |                                              ^
+    289|       expect(getPublicNewsClaimPresentation(loaded).claims).toEqual([]…
+    290|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  lib/homepageNewsCompatibility.test.tsx > retained interpretation through sync writer, loader and serialized homepage > does not keep an earlier interpretation after the retained source no longer has one
+AssertionError: expected undefined to deeply equal { version: '2026-10-13.1', …(3) }
+
+[32m- Expected:[39m 
+{
+  "events": [
+    {
+      "availability": "out",
+      "evidence": {
+        "end": 36,
+        "start": 0,
+        "text": "Victor Hedman will not play tonight.",
+      },
+      "kind": "injury",
+      "modality": "affirmative",
+      "playerId": 8475167,
+      "playerName": "Victor Hedman",
+      "state": "unknown",
+    },
+  ],
+  "units": [],
+  "unresolved": [],
+  "version": "2026-10-13.1",
+}
+
+[31m+ Received:[39m 
+undefined
+
+ ❯ lib/homepageNewsCompatibility.test.tsx:294:55
+    292|   it('does not keep an earlier interpretation after the retained sourc…
+    293|     const earlier = fakeDb([source({interpretation})]); await syncTwee…
+    294|     expect(earlier.writes[0].metadata.interpretation).toEqual(interpre…
+       |                                                       ^
+    295|     const {review,loaded} = await project(fakeDb([source({})],'lines_c…
+    296|     expect(review.metadata.interpretation).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 46 passed (50)
+   Start at  12:25:55
+   Duration  755ms (transform 233ms, setup 3ms, collect 368ms, tests 86ms, environment 175ms, prepare 30ms)
+

@@ -1,0 +1,48 @@
+{
+  "N1": {
+    "retainedFlags": 0,
+    "interpretationFlags": 1
+  },
+  "N2 lines_ccc": {
+    "reviewHasRetained": true,
+    "candidateMetaKeys": [
+      "primaryTextSource",
+      "originalPrimaryTextSource",
+      "preferredQuotedAttribution",
+      "tweetPostedLabel",
+      "sourceRowStatus",
+      "wrapperAuthorName",
+      "wrapperAuthorHandle",
+      "quotedAuthorName",
+      "quotedAuthorHandle",
+      "quotedTweetId",
+      "quotedTweetUrl",
+      "retainedInterpretation",
+      "automation"
+    ],
+    "flags": 0,
+    "publicHasRetained": false,
+    "publicHasHedmanClaim": false
+  },
+  "N2 line_source_snapshots": {
+    "reviewHasRetained": true,
+    "candidateMetaKeys": [
+      "primaryTextSource",
+      "originalPrimaryTextSource",
+      "preferredQuotedAttribution",
+      "tweetPostedLabel",
+      "sourceRowStatus",
+      "wrapperAuthorName",
+      "wrapperAuthorHandle",
+      "quotedAuthorName",
+      "quotedAuthorHandle",
+      "quotedTweetId",
+      "quotedTweetUrl",
+      "retainedInterpretation",
+      "automation"
+    ],
+    "flags": 0,
+    "publicHasRetained": false,
+    "publicHasHedmanClaim": false
+  }
+}

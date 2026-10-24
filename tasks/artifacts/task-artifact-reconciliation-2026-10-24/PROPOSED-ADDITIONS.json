@@ -1,0 +1,727 @@
+{
+  "as_of": "2026-10-24T15:01:49.630478+00:00",
+  "method": "Existing-source obligations absent from canonical row scopes; proposed/held carry-forwards, not newly confirmed production defects or dispatch.",
+  "tasks": [
+    {
+      "taskID": "SITE-PRIVACY-POLICY",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Finalize the existing sitewide privacy draft from verified owner facts",
+      "user_impact": "Users need an accurate explanation of account, league, payment and tracking data handling.",
+      "implementation": "September25 audit delivered an explicitly unfinished noindex draft. Operator/contact, retention/deletion/request process and actual tracking/provider facts remain owner-dependent; no later completion receipt found in inspected sources.",
+      "acceptance": "Proposed carry-forward; current completion unverified",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Owner factual decisions; existing Draft Pro notice and approved provider credential-lifetime policy.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Owner review of facts/copy; separately authorized publication/indexing. No secret/account inspection or production tracking probe.",
+      "next_action": "Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code.",
+      "evidence": [
+        {
+          "path": "tasks/seo-audit-2026-09-25.md",
+          "line": 43,
+          "sha256": "6022c3eddbea50d452cf9f4aab6057d92b65ea0cfa887575c240bf6c6bc8f05c",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/master-scope-index.json",
+          "line": 1,
+          "sha256": "0725d73b7d70ca02902b8af2f05d4dafb71d2e9a541effbcd57b30f56d66060f",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "MS41-074",
+        "SEO audit privacy inventory"
+      ]
+    },
+    {
+      "taskID": "AUTH-PKCE-COMPLETION",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Retain Google PKCE completion before retiring fragment compatibility",
+      "user_impact": "Authentication compatibility must survive until the full supported Google flow is accepted.",
+      "implementation": "Auth NEW46 retains local35-test and hosted confirmation/reset credit; reaching Google identifier entry alone did not establish full PKCE completion. Existing fragment compatibility remains.",
+      "acceptance": "Proposed carry-forward; current completion unverified",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Auth NEW46; authorized account/provider lifecycle and cleanup contract.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Separate provider/session/production authority; no login, session manipulation or compatibility removal from this audit.",
+      "next_action": "Reconcile any newer value-free completion receipt first. If absent, obtain exact bounded owner authorization for one supported provider lifecycle before proposing compatibility retirement.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 344,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 245,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "REFINE-GOOGLE-PKCE",
+        "MS41-075"
+      ]
+    },
+    {
+      "taskID": "AUTH-LEGACY-CONTAINMENT",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Reconcile remaining historical credential-retirement and owner-map gates",
+      "user_impact": "A value-free ownership/retirement record is needed without repeating accepted containment or exposing historical material.",
+      "implementation": "Auth NEW17/51 remain unresolved umbrellas. Later Yahoo and FHFH containment are accepted and must be subtracted. Remaining system/owner/retirement mapping is held; no current compromise inferred.",
+      "acceptance": "Held owner evidence; no containment, rotation or deletion dispatch",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Owner-supplied redacted map; completed Yahoo NEW29 and FHFH NEW48 receipts.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Credential changes, provider access and any source/recoverable-message deletion need separate exact owner approval. No mailbox/body/link/value reads.",
+      "next_action": "Request the owner-supplied redacted system/owner/retirement map; identify only scopes still lacking a receipt. Keep mailbox contents and all credential values outside the task.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 199,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 351,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 357,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 19,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "ADD-02",
+        "ADD-03",
+        "MS41-075"
+      ]
+    },
+    {
+      "taskID": "SECURITY-RESIDUAL-ACL",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Reconcile the two-table browser-grant remainder and destructive-RPC receipt",
+      "user_impact": "Account preference writes must remain usable while unnecessary browser privileges and destructive routine access receive an exact disposition.",
+      "implementation": "October19 four-table provider-linkage migration/readback is retained as complete. Source Auth NEW55 still excludes user_entitlements/user_provider_preferences; AUDIT-TASK-002.4 lacks a linked final catalog-only receipt. D4 reviews a separate object set, not blanket closure.",
+      "acceptance": "Proposed carry-forward; current completion unverified",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Auth NEW55; AUDIT-TASK-002.4; current D4 migration chain/owner; independent consumer inventory.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Separate reviewed migration/apply and bounded hosted catalog authority. Never invoke truncate or perform a destructive functional probe.",
+      "next_action": "Reconcile newer migration/receipt identities for these exact scopes first; if still absent, prepare separate minimum-grant and catalog-only verification proposals preserving owner preference DML.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 362,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-RECEIPTS.md",
+          "line": 19,
+          "sha256": "4bd572d4d018581c95ce5f5dcf3b2a01cd85a8bd0aca52e804d3e02d4a39d405",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 186,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/artifacts/d4-grants-2026-10-20/README.md",
+          "line": 125,
+          "sha256": "7df94ba358423e81bb8e9aaf957ef6fb327ef78c124052b4b94a4ef2b24338e5",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "Auth NEW55",
+        "AUDIT-TASK-002.4",
+        "MS41-074"
+      ]
+    },
+    {
+      "taskID": "REPO-ADVISORY-CI",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Retain the approved bounded advisory PR/push validation follow-through",
+      "user_impact": "Relevant changes need credential-free automated type/lint/unit feedback without triggering deployment or live data work.",
+      "implementation": "AUDIT-TASK-028 owner selected one advisory sequential Node22.11.0 job with20-minute timeout and concurrency cancellation. Local command-matrix evidence exists; wiring/hosted proof remain blocked on AUDIT-TASK-004.",
+      "acceptance": "Proposed carry-forward; current completion unverified",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "AUDIT-TASK-004; completed006/011/local matrix; current Node/npm commands.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Separate exact hosted Actions/push and any required-status authority; exclude live E2E, servers, builds, CMS/functions and deployment.",
+      "next_action": "Reconcile AUDIT-TASK-004 hosted inheritance evidence, then present the exact no-secret advisory workflow and cost/trigger scope; required status remains a later decision.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 1805,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 1831,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 1857,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 47,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "ADD-04",
+        "AUDIT-TASK-028",
+        "MS41-085"
+      ]
+    },
+    {
+      "taskID": "REPO-IMPORT-SAFETY",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Resolve the legacy WGO updater owner decision before guarded or inert treatment",
+      "user_impact": "Diagnostic imports must not unexpectedly initiate data work.",
+      "implementation": "AUDIT-TASK-026 remains Needs owner decision: retained legacy JS updater self-execution/configuration concern is source-reported. No updater was imported or executed in this audit.",
+      "acceptance": "Proposed carry-forward; current completion unverified",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "AUDIT-TASK-026.1; pipeline owner and exact updater/caller lease.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "No imports, secrets or I/O before the owner decision; credential-free mocked verification and separate review before integration.",
+      "next_action": "Owner classifies active versus superseded using static references and retained evidence; then assign only the selected guarded-entrypoint or inert-compatibility branch.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 1693,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 1703,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 1724,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "AUDIT-TASK-026",
+        "MS41-074"
+      ]
+    },
+    {
+      "taskID": "PIPE-DRM-NATURAL",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Retain exact DRM writer-retirement, cursor and natural-order evidence",
+      "user_impact": "Incomplete or stale normalized/relationship inputs can affect downstream analytics and forecasts.",
+      "implementation": "Local transaction/CAS/normalization and newer bounded repairs retain their credit. Historical NEW20/23\u201329/32/33/37\u201339 natural cursor, input-version ownership and legacy caller/backfill gates have no whole-scope closure in inspected evidence. Completed NEW49/50 scheduling/duration gates are not reopened.",
+      "acceptance": "Proposed carry-forward; current completion unverified",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Canonical input\u2192relationship\u2192derived owners; source NEW20/27/29/38/39; PIPE-NATURAL; separately held history.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Distinct deployment/schedule/backfill/provider/production authority with exact date/game/write limits. No job104 or games=all invocation.",
+      "next_action": "Reconcile the exact remaining source clauses against newer normalization/ingest receipts, separating already-closed games. Propose one bounded owner receipt gap; do not launch a historical repair.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          "line": 113,
+          "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          "line": 120,
+          "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          "line": 125,
+          "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 175,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "MISS-DRM-NATURAL",
+        "MS41-041",
+        "MS41-042",
+        "MS41-047"
+      ]
+    },
+    {
+      "taskID": "YAHOO-HISTORY-RETIREMENT",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Retain Yahoo historical equivalence, legacy-owner retirement and durable backfill gates",
+      "user_impact": "Unsupported historical ownership must remain honestly unavailable rather than inherit a guessed league identity.",
+      "implementation": "Yahoo lifecycle/RPC/security/local Python guards have completed narrower evidence. Source6.0/8.3\u20138.5/NEW9.5 retains controlled provider runtime, historical league equivalence, legacy Python retirement and resumable historical-backfill proof.",
+      "acceptance": "Proposed carry-forward; current completion unverified",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Yahoo canonical lifecycle owner; per-season equivalence evidence; PAID-SYNC and MASTER-R7 remain separate contracts.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Separate provider/account/backfill and production authority. Historical completeness is not a new Start Chart launch prerequisite.",
+      "next_action": "Reconcile any newer value-free lifecycle evidence; identify the required equivalence/retirement receipt before proposing a bounded historical slice. Do not guess a global league from connected accounts.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+          "line": 105,
+          "sha256": "ccd494110fe8374e47cc41710feaa8633f5e33b9ac81b7353ee1b5443184202b",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+          "line": 139,
+          "sha256": "ccd494110fe8374e47cc41710feaa8633f5e33b9ac81b7353ee1b5443184202b",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 191,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "MISS-YAHOO-HISTORY",
+        "Yahoo NEW9.5",
+        "MS41-054",
+        "MS41-063"
+      ]
+    },
+    {
+      "taskID": "SITE-PARLAY-PROPS",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Retain the exact player-prop source/identity acceptance gate",
+      "user_impact": "Prop-derived context requires a genuine attributable market and correct canonical player identity.",
+      "implementation": "Three Pillars13.1 key provision and13.2 featured-market ingestion are checked.13.3 actual prop_market_prices_daily/player matching remains distinct from featured markets, ESPN access and team O/U research.",
+      "acceptance": "Held provider acceptance; no new market/research dispatch",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Source13.3; provider rights/access and exact canonical player mapping.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Separate provider/paid-call/production-write approval with request/slate limits; no odds fetch or market publication from audit.",
+      "next_action": "Inspect retained source/matching receipts first; if insufficient, prepare one bounded slate/market/provider acceptance proposal for owner decision.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md",
+          "line": 156,
+          "sha256": "8e08a6572aac1c261a329eef7c279b3d297d5fb96011c4ee27066e5f62aa9e24",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 233,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "MISS-PARLAY-PROPS",
+        "MS41-036",
+        "MS41-076"
+      ]
+    },
+    {
+      "taskID": "SUSTAINABILITY-MATURED-EVIDENCE",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Preserve paused Sustainability matured-cohort qualification",
+      "user_impact": "Accuracy/calibration and baseline-win claims need genuine versioned forecast/outcome pairs.",
+      "implementation": "Harness/unit work retains completed credit. Source5.2/NEW7 still requires genuine matured projection/actual coverage. Dated absent cohorts are not a current outage and research remains parked.",
+      "acceptance": "Intentionally parked qualification gate; retain without dispatch",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Source5.2/NEW7; immutable forecast provenance and owner-selected evaluation; distinct SUSTAINABILITY-NATURAL operation.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Separate research/capture/evaluation/model-promotion authority; no reopening, fitting or replacement implied.",
+      "next_action": "Keep parked. If the owner later selects this work, first reconcile a retained version/cutoff-qualified cohort and predeclared evaluation policy; do not fit or capture now.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+          "line": 173,
+          "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+          "line": 194,
+          "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 219,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "REFINE-SUST-MATURED",
+        "MS41-077"
+      ]
+    },
+    {
+      "taskID": "SITE-HOMEPAGE-PLAN",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Reconcile the retained plan-only Slate links and compact division selector",
+      "user_impact": "Homepage navigation and team selection need an exact agreed scope before a later UI change.",
+      "implementation": "Retained owner brief requests Stats\u2192Lines\u2192News\u2192Shift Chart bottom links, existing right Quick Links, and compact four-division selection. It explicitly authorizes planning only. Newer homepage news/billing/layout changes are separate; current rendered completion is unverified.",
+      "acceptance": "Proposed carry-forward; current completion unverified",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Homepage/navigation sole-owner allocation; preserve NEWS-SOURCE-PRESENTATION and billing release packet.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Planning only; later implementation/browser/release requires separate assigned scope. No restoration or redesign from historical screenshots.",
+      "next_action": "Reconcile web/prep-chef/home.md with newer homepage ownership and either record exact supersession or produce only its bounded plan and acceptance criteria.",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/FINDINGS.md",
+          "line": 59,
+          "sha256": "d26c441cce903fc724c2773c0a8585767343cf94fdea31ec22e1427a858bca31",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "web/prep-chef/home.md",
+          "line": 47,
+          "sha256": "3cfd2f7ad522d86212471b738af117d055ec2547dd362c065bd643fb288d9fbf",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "FRESH-05",
+        "MS41-078"
+      ]
+    },
+    {
+      "taskID": "TRENDS-HISTORICAL-REPAIRS",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Retain separate historical Trends, team-rating and source-cutoff repair gates",
+      "user_impact": "Historical displays and freshness claims must preserve source units, observed cutoffs and exact correction scope.",
+      "implementation": "Source NEW2/6/7/8/9 records implemented forward formulas and dated non-writing manifests for expected shooting, observed PDO, playoff seconds/minutes, Sustainability cutoff and team carry-forward. Those are not applied-history or live-reader proof.",
+      "acceptance": "Proposed carry-forward; current completion unverified",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Shared source migration20260828162000; exact before/candidate identities; source availability and reader owners.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Each migration/repair needs its own exact approval, idempotency/rollback and reader proof. No broad recompute, model change or source capture.",
+      "next_action": "Reconcile latest migration/manifests and superseding repair receipts for each named cohort; present only the smallest still-open per-cohort decision. Keep existing-row correction separate from missing-history fill.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 174,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 178,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 179,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 180,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 181,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "Trends NEW2",
+        "Trends NEW6",
+        "Trends NEW7",
+        "Trends NEW8",
+        "Trends NEW9",
+        "MS41-076"
+      ]
+    },
+    {
+      "taskID": "PIPE-ROLLING-HISTORY-REPAIR",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Retain full-history rolling repair and source-tail blockers",
+      "user_impact": "Cumulative and last-N forecast inputs must not be reconstructed from truncated date slices.",
+      "implementation": "Trends NEW10 retains the forward full-selected-history contract and non-writing primary/support preview, with source-tail blockers and distinct missing/changed row classes. This is separate from the shipped column-drop/storage parity scope.",
+      "acceptance": "Proposed carry-forward; current completion unverified",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Trends NEW10; raw source freshness; PIPE-ROLLING-DROP, MASTER-F5 and eligible new FORGE runs.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Separate source refresh and grouped primary/support write/replay authority; raw\u2192rolling\u2192new eligible FORGE proof; historical forecasts immutable.",
+      "next_action": "Reconcile latest deterministic player-sweep and source-tail receipts; preserve missingness and propose one exact blocked cohort, without rewriting rows or historical forecasts.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 182,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "Trends NEW10",
+        "MS41-047"
+      ]
+    },
+    {
+      "taskID": "FORGE-RESULTS-COVERAGE",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Retain run-version-aware result/accuracy migration and coverage proof",
+      "user_impact": "Forecast evaluation must use eligible runs and distinguish missing outcomes from settled results.",
+      "implementation": "Trends NEW13 retains repaired rolling-input eligibility, a local atomic exact-replacement RPC and dated missing-result counts. Migration application and bounded eligible-run backfill/idempotency/readback are unverified here.",
+      "acceptance": "Proposed carry-forward; current completion unverified",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Trends NEW13; PIPE-ROLLING-HISTORY-REPAIR; authoritative finality/completeness; preserve original projections.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Separate migration and non-dry-run backfill authority; no evaluation cohort opening, retrospective forecast mutation or publication from audit.",
+      "next_action": "Reconcile newer migration/coverage receipts first, then propose only the still-open eligible-run dry-run scope with exact run/date limits.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 185,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "Trends NEW13",
+        "MS41-048"
+      ]
+    },
+    {
+      "taskID": "CRON-SCHEDULE-DISPOSITION",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Reconcile retained schedule-floor, report and inventory owner gates",
+      "user_impact": "Daily batch timing and health reporting need one explicit current scope while essential freshness work is preserved.",
+      "implementation": "October19 owner policy chose3AMlocal America/New_York for the daily batch, excluding recurring freshness jobs. Exact13fixed-entry dispositions remain pending; source NEW7/8 and report NEW12 retain hosted inventory/schedule parity gates. Local Vercel/source-wrapper acceptance is narrower.",
+      "acceptance": "Proposed carry-forward; current completion unverified",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Source NEW7/8; report NEW12; CRON-AUDIT-COVERAGE route-owner work; preserved natural cadence and actual duration/freshness needs.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Separate exact scheduler/config/hosted-read authority; no blanket schedule shutdown, no assumption that fixed08UTC equals3AMyear-round.",
+      "next_action": "Reconcile the current owner disposition for only the13enumerated fixed daily schedules and retained report/inventory receipts. Prepare the smallest outstanding decision without moving or disabling any job.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+          "line": 138,
+          "sha256": "6991c42129c8c9c2375dddf34fe335eb7f6d5d23a93a1bd9e70ccf3151b6e925",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+          "line": 139,
+          "sha256": "6991c42129c8c9c2375dddf34fe335eb7f6d5d23a93a1bd9e70ccf3151b6e925",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+          "line": 208,
+          "sha256": "97e857115518a7c92dde1922f398cf2b3cee1838c1fbc3234c1a975959489572",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CRON-FLOOR-PROPOSAL.md",
+          "line": 1,
+          "sha256": "9bceec2d49b83ce96de30a28991504a1d3ee3e9d5695f1327e4aff8501ad4279",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "Cron NEW7",
+        "Cron NEW8",
+        "Report NEW12",
+        "C0044",
+        "C0045"
+      ]
+    },
+    {
+      "taskID": "XG-SERVING-DISPOSITION",
+      "group": "October24 artifact audit carry-forwards",
+      "scope": "Preserve xG champion and daily-operation decisions after the local leakage gate",
+      "user_impact": "Rescoring and model-serving availability must follow a clean artifact and an explicit operational decision.",
+      "implementation": "S18 already implements forbidden-feature checks in both approval and artifact audit;275local checks retain credit. The retained pre-fix champion versus corrected inactive candidate and daily-feature/scoring scheduling decision are still owner-dependent. No current registry or scheduler state observed.",
+      "acceptance": "Held serving/operations decision; no model or schedule dispatch",
+      "release": "No new release, production observation or execution authorized by this audit.",
+      "owner": "UNASSIGNED",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Source29/30; S18 release options; clean artifact audit and exact model/version/feature identity; separate paid/research rights.",
+      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+      "acceptance_release_gate": "Separate registry read, artifact promotion, model execution, schedule/deployment and historical publication authority. Parked model work stays parked.",
+      "next_action": "Reconcile the retained serving/champion and daily-operation disposition against newer release receipts; retain a hold or approved manual cadence unless the owner selects an exact new scope. Do not reimplement the completed local gate or promote/fit a model.",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/xg-gate-lane-2026-10-18/S-18-report.md",
+          "line": 32,
+          "sha256": "db655d602c960af782c8595ce1f0a64f63bf3fa1d2b3c631d3bfd4c71fa5f2fc",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-OPEN-LOCAL-PARTS.md",
+          "line": 61,
+          "sha256": "192ef4e0e5e29ddf62eed98fd90ee7fbc03d836c33932b8a4600e27160c23f51",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md",
+          "line": 535,
+          "sha256": "e2a75a530dbe575ad12590a415aa5901a67848316f975c730caa228b9282d406",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        },
+        {
+          "path": "tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md",
+          "line": 536,
+          "sha256": "e2a75a530dbe575ad12590a415aa5901a67848316f975c730caa228b9282d406",
+          "observed_at": "2026-10-24T15:01:49.630478+00:00"
+        }
+      ],
+      "as_of": "2026-10-24T15:01:49.630478+00:00",
+      "evidence_level": "source gate inventoried; current outcome unverified",
+      "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+      "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+      "dispatch_class": "Proposed/held; no dispatch or implementation from audit",
+      "source_inputs": [
+        "xG NEW29",
+        "xG NEW30",
+        "C0172",
+        "MS41-088"
+      ]
+    }
+  ]
+}

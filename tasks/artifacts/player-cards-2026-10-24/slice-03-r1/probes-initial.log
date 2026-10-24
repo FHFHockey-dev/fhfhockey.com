@@ -1,0 +1,40 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/player-cards-2026-10-24/slice-03-r1/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+(node:76563) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ web/components/player-cards/PlayerCardFlow.test.tsx (10 tests) 289ms
+(node:76568) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tasks/artifacts/player-cards-2026-10-24/slice-03-r1/interaction-controls.test.tsx [ tasks/artifacts/player-cards-2026-10-24/slice-03-r1/interaction-controls.test.tsx ]
+Error: Failed to resolve import "@testing-library/react" from "../tasks/artifacts/player-cards-2026-10-24/slice-03-r1/interaction-controls.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-r1/interaction-controls.test.tsx:2:65
+  1  |  import { jsxDEV } from "react/jsx-dev-runtime";
+  2  |  import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+     |                                                                    ^
+  3  |  import { afterEach, expect, it, vi } from "vitest";
+  4  |  import PlayerCardFlow from "../../../../web/components/player-cards/PlayerCardFlow";
+ ❯ TransformPluginContext._formatLog web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41
+ ❯ TransformPluginContext.error web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16
+ ❯ normalizeUrl web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23
+ ❯ web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+ ❯ TransformPluginContext.transform web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7
+ ❯ EnvironmentPluginContainer.transform web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18
+ ❯ loadAndTransform web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  10 passed (10)
+   Start at  13:59:02
+   Duration  998ms (transform 156ms, setup 12ms, collect 217ms, tests 289ms, environment 270ms, prepare 57ms)
+

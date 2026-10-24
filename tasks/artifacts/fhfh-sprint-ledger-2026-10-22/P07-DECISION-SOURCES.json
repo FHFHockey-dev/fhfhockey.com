@@ -1,0 +1,261 @@
+{
+  "as_of": "2026-10-22T13:40:43+00:00",
+  "head": "a6e9f8b61903ed4bb2bba6b21bf8597f51ac85d0",
+  "matrix_introduced_commit": "26f04ef88f83d868d6066e34949f55a804cf4b43",
+  "matrix_status": "Proposed, awaiting owner decision; no explicit option selection found within bounded inspected records",
+  "sources": [
+    {
+      "path": "tasks/tasks-prd-roster-schedule-optimizer.md",
+      "line": 162,
+      "sha256": "ced28e5f557e3d17cd3a0adb56164cac0f0f79ad6494d72bf3fea0ad942b49f8",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          159,
+          188
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "tasks/sprint-2026-10-18/CHEF-REGISTER-2026-10-19.md",
+      "line": 359,
+      "sha256": "21cd27576dc057528c9ad4a40ff733072cf5379793b871ade0fd8b40b5277b90",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          359,
+          360
+        ],
+        [
+          482,
+          485
+        ],
+        [
+          554,
+          554
+        ],
+        [
+          583,
+          583
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "tasks/artifacts/r6-s1-serving-source-2026-10-19/README.md",
+      "line": 3,
+      "sha256": "680f70a7b89c5fc69ca8dbc1fd7e01e14f169343d38fa51e69870b5a40b21e7d",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          1,
+          57
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-native-serving-plan-2026-10-19/PLAN.md",
+      "line": 244,
+      "sha256": "c08faa71b80f4d8b090ab2cd3cf8d883384f5a8e19984c1bb7a79863cf700841",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          244,
+          263
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "tasks/prd-forge-daily-pipeline.md",
+      "line": 29,
+      "sha256": "3ecf8c1df3f132ec8e87095ade7300b5acab889dfedb75dfc811861167e38ba3",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          25,
+          39
+        ],
+        [
+          45,
+          84
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-target-scope-fix-2026-10-19/README.md",
+      "line": 9,
+      "sha256": "467ae282db2958a87ece0a9c83bba0bb73da8dc9c8fbcb2acd03a840dc0751e4",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          1,
+          13
+        ],
+        [
+          45,
+          87
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "tasks/rso-goal-handoff.md",
+      "line": 191,
+      "sha256": "78838e5377ba8523bf8651dd23034130790c0f433ca64b6941344bb270703971",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          191,
+          197
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "tasks/handoff-2026-10-20/HANDOFF-2026-10-20.md",
+      "line": 115,
+      "sha256": "506f474120a8c4ded6be1015dcfe69ec4c08b75d2f4a3f3227f873e62fedf091",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          115,
+          128
+        ],
+        [
+          749,
+          751
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "web/lib/projections/consumerRevisionAdmission.ts",
+      "line": 121,
+      "sha256": "303a0c9896f6277e8ad8f5f018a7220a61d92e586f4e0610506e782e00ea3f4a",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          88,
+          157
+        ],
+        [
+          210,
+          243
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planning.ts",
+      "line": 176,
+      "sha256": "a3cba77737afee79fdea0a971f37350b613daca1f36f52f8c7e6132b74a4ff84",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          49,
+          73
+        ],
+        [
+          128,
+          216
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "web/lib/rosterScheduleData/forgeDailyBridge.ts",
+      "line": 350,
+      "sha256": "57f21bc5214a37d3ef5aff985ba62f0c5d30ae5f3925693f7d61f55a240abc6a",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          318,
+          355
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "web/pages/api/v1/start-chart.ts",
+      "line": 974,
+      "sha256": "37b34456ed5f02a05b6fe61edee46d7b153217fd886ecdca8b13ab9a3aaad4a8",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          955,
+          1007
+        ],
+        [
+          1160,
+          1185
+        ],
+        [
+          1193,
+          1218
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "web/lib/player-forecasts/gameExpectationReader.ts",
+      "line": 31,
+      "sha256": "08e40d57f885db0ef41fecf928590c577c79f9ffc415ffa5dd4b6c4214d810bd",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "coverage": "exact call site/symbol trace only"
+    },
+    {
+      "path": "web/lib/player-forecasts/forecastServingSource.ts",
+      "line": 21,
+      "sha256": "6a1b2b3c05a088c51305b5113a256d986d201a45f941746a16244a05b114833a",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "inspected_ranges": [
+        [
+          11,
+          30
+        ],
+        [
+          60,
+          79
+        ]
+      ],
+      "coverage": "named ranges inspected"
+    },
+    {
+      "path": "web/pages/api/v1/roster-schedule-optimizer/data.ts",
+      "line": 18,
+      "sha256": "fa9e46ddb4dcf2714e97b67011a80a9f57258c645d4f4e2ee72c5cb3a2edd03b",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "coverage": "exact call site/symbol trace only"
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+      "line": 322,
+      "sha256": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+      "observed_at": "2026-10-22T13:40:43+00:00",
+      "coverage": "exact call site/symbol trace only"
+    }
+  ],
+  "search_scope": [
+    "Repository tasks Markdown exact FE-02c / retained provisional numeric / retained-component policy / target-use matrix terms; only canonical matrix and current audit mirrors found",
+    "Current canonical handoff/master task list and release inventory; relevant Chef register S-1/bridge approvals",
+    "Named S-1/native serving plan, daily PRD/standing approval, target-scope decision, RSO accepted policy boundaries",
+    "Local git log -S target/use decision matrix for canonical checklist"
+  ],
+  "not_searched": [
+    "Raw session stores",
+    "Private league/account exports",
+    "Original historical chat transcripts",
+    "Live policy/config/DB/provider records"
+  ],
+  "interpretation": "Retained explicit TJ decisions for adjacent serving/bridge/native scopes do not choose FE-02c detailed target/use options. Absence conclusion is bounded; no policy selected by auditor.",
+  "new_source_findings": [
+    "Start Chart published path shares admittedSources; native board path shares loadPlanningData",
+    "Legacy RSO empty admission triggers approved bridge; permission-denied must remain distinct from source-absent"
+  ],
+  "new_behavior_tests": 0,
+  "remote_calls": 0
+}

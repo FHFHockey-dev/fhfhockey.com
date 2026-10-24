@@ -1,0 +1,148 @@
+{
+  "checkedAt": "2026-10-22T16:26:30.693955+00:00",
+  "branch": "octoberBranch",
+  "head": "84cb1229cd1c1cdd037c43e660d2a181304ada51",
+  "files": [
+    {
+      "path": "web/lib/player-forecasts/servedForecastLedger.ts",
+      "expected": "464c108f990e5e9e5cfdd2f618cf41d2771f5ae14eacd90223ad83e4f8727e80",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/projections/accuracy/fantasyPoints.ts",
+      "expected": "4873b7cc00c55ce5c1c58eaa70fea4bf31c54cf877168298097df0edaeab8636",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/projectionsConfig/fantasyPointsConfig.ts",
+      "expected": "dfe1ae8426a7b9ae3469216ad8e48944cbd7dda6cea6952cdd6bdf6f41deb50b",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/player-forecasts/servedForecastLedger.test.ts",
+      "expected": "4e1d8198f86439e4aa9a26d2011f30da8513933cd8ec32fb22ba3bed83ccc22e",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/pages/api/v1/forge/scoreboard.ts",
+      "expected": "126b8eeada95e8a497feb3a7567eb4a5af1fa46430052b88c226322c7b1961cc",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/supabase/server.ts",
+      "expected": "fe4c82f9fd5dc0566eb6a5717c445cbb24f5e5b018061cfb1d1b224b57b4a0bc",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/formatDurationMmSs.ts",
+      "expected": "6c8fcb483c9b39cffe483e26df2ecfa58166e696e8259a393ff8a46aa2a20a92",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/cron/formatDuration.ts",
+      "expected": "b65c8b63d988ab1662d76d22669be7c3663fa368eda7b9a5c06545096aa29e43",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/projections/apiHelpers.ts",
+      "expected": "9e2edec0a42369f0198bf2d1f91d195288e198660879cbb0c4a7ec1ed14c1972",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/projections/calibrationEligibility.ts",
+      "expected": "9b93cc5cf9a80b0c695bd54f6bd6a6e232bd90170b8efdedd1e7106e3aa6e852",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/projections/releasedRunFence.ts",
+      "expected": "a6ff6213f724bcd0bf716ea570bfa72dc040b8bb3a311c435f9b3593ee0fdd7f",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planningInputs.ts",
+      "expected": "8193aa5d1bd22349b729e0a135f2060e847c5569312f83a84b23d2cbee498313",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/player-forecasts/sourceSnapshot.ts",
+      "expected": "7ec78dcefc5dd0d64de52ae6e03172594cf2c8c9232b1d20a0c34e8833de1c82",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "expected": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/lib/rosterScheduleData/normalize.ts",
+      "expected": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/tests/api/forge-scoreboard.test.ts",
+      "expected": "2104bb8cb215b6752b9adc0925c5b1706dc718355693985a01e6abacf541e541",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/pages/api/v1/db/forge-served-forecast-snapshot.ts",
+      "expected": "f77f22aabf9cfe3d5246354e5d0dd068a3286fb15e1d55c570a3b58e1f76a275",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/pages/api/v1/db/forge-served-forecast-settle.ts",
+      "expected": "699cb851dc0bd7b8635ce8f61c156fbf30f5451241e24720f3c9623a0e76db22",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/forge-served-forecast-snapshot.test.ts",
+      "expected": "a0c3ff11d86dea075b77439f6b1e5b608b53f1f76a18c6ae8416624dba41f0f0",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/forge-served-forecast-settle.test.ts",
+      "expected": "6885092c259430091efa2e07ce8aa3afc0cf03b747f137a69e2940c7b80f0d81",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/__tests__/vitest.setup.js",
+      "expected": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/tsconfig.json",
+      "expected": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    },
+    {
+      "path": "web/.nvmrc",
+      "expected": "6f7ebb0460b61089c4413e5740b5e2fa196a19281886e50ab1f99b15e0aeeb21",
+      "snapshotMatches": true,
+      "canonicalMatches": true
+    }
+  ],
+  "allSnapshotMatch": true,
+  "allCanonicalMatch": true,
+  "ownLockReleased": true
+}

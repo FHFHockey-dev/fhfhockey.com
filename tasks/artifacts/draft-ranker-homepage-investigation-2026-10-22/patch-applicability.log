@@ -1,0 +1,42 @@
+Initial content-only snapshot checks passed for both refs; fixture file mode caused harmless 100644/100755 warnings. This final check preserves Git modes.
+Scratch directory: /tmp/draft-ranker-patch-check.8mfkajzt (deleted after verification)
+
+Ref: master; exact source SHA: 457435eb3010c5b3dd92d2e1a46d9c75d851780a
+Before SHA256 693b28a378935426864a01af658b306902b79bfd66d5cd7e96af2e34240dd4ef mode 100755 web/pages/index.tsx
+Before SHA256 ed13e9e6be723daa7c160faa9636553fac8318133cc0cb13f576ade76176774b mode 100644 web/__tests__/index.test.tsx
+git apply --check --verbose hide-ranker.patch: exit 0
+Checking patch web/__tests__/index.test.tsx...
+Checking patch web/pages/index.tsx...
+Hunk #1 succeeded at 194 (offset 1 line).
+
+git apply --verbose hide-ranker.patch: exit 0
+Checking patch web/__tests__/index.test.tsx...
+Checking patch web/pages/index.tsx...
+Hunk #1 succeeded at 194 (offset 1 line).
+Applied patch web/__tests__/index.test.tsx cleanly.
+Applied patch web/pages/index.tsx cleanly.
+
+After SHA256 0ac8ed7d845ffc49772438c40bb53a06713a68e1316fc66a54f89394181137b8 web/pages/index.tsx
+After SHA256 4b47b2e2be501110685fdd9ddd85bb10294bb0e7b346ea3e4e912904e1bee741 web/__tests__/index.test.tsx
+PASS: seasonal gate present; release moment-timezone import retained; regression test exactly matches canonical test.
+
+Ref: origin/master; exact source SHA: 6d5664f761132ab479a7febec60548d0fa9ee6ff
+Before SHA256 693b28a378935426864a01af658b306902b79bfd66d5cd7e96af2e34240dd4ef mode 100755 web/pages/index.tsx
+Before SHA256 ed13e9e6be723daa7c160faa9636553fac8318133cc0cb13f576ade76176774b mode 100644 web/__tests__/index.test.tsx
+git apply --check --verbose hide-ranker.patch: exit 0
+Checking patch web/__tests__/index.test.tsx...
+Checking patch web/pages/index.tsx...
+Hunk #1 succeeded at 194 (offset 1 line).
+
+git apply --verbose hide-ranker.patch: exit 0
+Checking patch web/__tests__/index.test.tsx...
+Checking patch web/pages/index.tsx...
+Hunk #1 succeeded at 194 (offset 1 line).
+Applied patch web/__tests__/index.test.tsx cleanly.
+Applied patch web/pages/index.tsx cleanly.
+
+After SHA256 0ac8ed7d845ffc49772438c40bb53a06713a68e1316fc66a54f89394181137b8 web/pages/index.tsx
+After SHA256 4b47b2e2be501110685fdd9ddd85bb10294bb0e7b346ea3e4e912904e1bee741 web/__tests__/index.test.tsx
+PASS: seasonal gate present; release moment-timezone import retained; regression test exactly matches canonical test.
+
+Canonical application files and Git state were not modified. No network or repository checkout operation occurred.

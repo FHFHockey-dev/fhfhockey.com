@@ -76,4 +76,73 @@ describe("BuyLowSellHighPreview", () => {
     expect(within(after).getByText("Market reference unavailable")).toBeTruthy();
     expect(within(after).getByText("horizon mismatch")).toBeTruthy();
   });
+
+  it("opens a candidate detail with passed-through opportunity, duration, variability and source clocks", () => {
+    render(<BuyLowSellHighPreview storage={memory()} />);
+    const toggle = screen.getByRole("button", { name: "Details for Fixture Forward Three" });
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(toggle.getAttribute("aria-controls")).toBe("blsh-player-detail");
+    const detail = screen.getByRole("region", { name: "Fixture Forward Three" });
+    expect(document.activeElement).toBe(within(detail).getByRole("heading", { name: "Fixture Forward Three" }));
+    expect(within(detail).getByText(/Observed duration: 10 appearances .*History only; not a forecast of how long it lasts\./)).toBeTruthy();
+    expect(within(detail).getByText(/Observed game-to-game SD \(Points\): \d+\.\d{2}\. Recent history, not forecast volatility\./)).toBeTruthy();
+    expect(within(detail).getByText("Predictive spread: Unavailable (not supplied by forge v1).")).toBeTruthy();
+    expect(within(detail).getByText(/Confidence: not supplied/)).toBeTruthy();
+    expect(within(detail).getByText(/Fixture record \(synthetic\) as of 2026-10-18T15:00:00.000Z; contract sko-interpretation-v0.1/)).toBeTruthy();
+    expect(within(detail).getByText(/Horizon: 10 of 10 requested team games scheduled/)).toBeTruthy();
+    expect(within(detail).getByRole("heading", { name: "Limitations" })).toBeTruthy();
+    expect(within(detail).queryByText(/\b(buy|sell) now\b/i)).toBeNull();
+  });
+
+  it("closes with Escape or Close and returns focus to the row toggle", () => {
+    render(<BuyLowSellHighPreview storage={memory()} />);
+    const toggle = screen.getByRole("button", { name: "Details for Fixture Defense Two" });
+    fireEvent.click(toggle);
+    const detail = screen.getByRole("region", { name: "Fixture Defense Two" });
+    expect(within(detail).getByText(/sparse sample/)).toBeTruthy();
+    fireEvent.keyDown(within(detail).getByRole("heading", { name: "Fixture Defense Two" }), { key: "Escape" });
+    expect(screen.queryByRole("region", { name: "Fixture Defense Two" })).toBeNull();
+    expect(document.activeElement).toBe(toggle);
+    fireEvent.click(toggle);
+    fireEvent.click(within(screen.getByRole("region", { name: "Fixture Defense Two" })).getByRole("button", { name: /Close details for Fixture Defense Two/ }));
+    expect(screen.queryByRole("region", { name: "Fixture Defense Two" })).toBeNull();
+    expect(document.activeElement).toBe(toggle);
+  });
+
+  it("keeps the detail honest when the horizon leaves the player unranked", () => {
+    render(<BuyLowSellHighPreview storage={memory()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Details for Fixture Forward Three" }));
+    fireEvent.change(screen.getByLabelText(/^Horizon \(scheduled/), { target: { value: "20" } });
+    const detail = screen.getByRole("region", { name: "Fixture Forward Three" });
+    expect(within(detail).getByText(/Not in the current list/)).toBeTruthy();
+    expect(within(detail).getByText(/Horizon: 14 of 20 requested team games scheduled/)).toBeTruthy();
+    expect(within(detail).getByText(/^Unavailable \(expected incomplete horizon\) · Gap unavailable$/)).toBeTruthy();
+  });
+
+  it("reaches stale, conflicting and goalie records from the unranked list without inventing values", () => {
+    render(<BuyLowSellHighPreview storage={memory()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Details for Fixture Defense Three" }));
+    expect(within(screen.getByRole("region", { name: "Fixture Defense Three" })).getByText(/\(stale\)/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Details for Fixture Forward Nine" }));
+    expect(screen.queryByRole("region", { name: "Fixture Defense Three" })).toBeNull();
+    expect(within(screen.getByRole("region", { name: "Fixture Forward Nine" })).getByText(/1 conflicting games/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Details for Fixture Goalie One" }));
+    const goalie = screen.getByRole("region", { name: "Fixture Goalie One" });
+    expect(within(goalie).getByText("Opportunity unavailable for this record.")).toBeTruthy();
+    expect(within(goalie).getByText("Observed game-to-game SD: unavailable for this record.")).toBeTruthy();
+    expect(within(goalie).getAllByText(/Unavailable \(pending goalie adapter\)/).length).toBeGreaterThan(0);
+  });
+
+  it("lists per-category observed SD for weighted league points instead of deriving one", () => {
+    render(<BuyLowSellHighPreview storage={memory()} />);
+    fireEvent.change(screen.getByLabelText("Ranked by"), { target: { value: "LEAGUE_POINTS" } });
+    const toggle = screen.getAllByRole("button", { name: /^Details for Fixture Forward/ })[0];
+    const name = toggle.textContent!.replace(/^Details for /, "");
+    fireEvent.click(toggle);
+    const detail = screen.getByRole("region", { name });
+    expect(within(detail).getByText(/Observed game-to-game SD \(per category\): Points \d/)).toBeTruthy();
+    expect(within(detail).getByRole("heading", { name: /Gap \(fixture league points, next 10\)/ })).toBeTruthy();
+  });
 });

@@ -1,0 +1,6 @@
+{
+  "web/e2e/roster-schedule-optimizer.spec.ts": "48d68eeedcced893df2a90c123eb3b510b4cec74b457ab1f7125b688dc9031e4",
+  "web/e2e/draft-pro-fixtures.ts": "cd4a65ad3c9f6638ca42d61eb9e3c80041d12706620195fa708b98082e9a7e9a",
+  "tasks/artifacts/rso-browser-acceptance-2026-10-23/harness/rso-p07-acceptance.spec.ts": "589476950b5617e473e080c5b4e499d79a563bd6fb3604e5e3f0d32d1a61c8a1",
+  "tasks/artifacts/rso-browser-acceptance-2026-10-23/harness-validation/RECEIPT-2a5092d37cb8.json": "8f21b3df238ed0a6a627aaf2b6d2ad7343f05a8be0ec318478b013ba141bfc11"
+}

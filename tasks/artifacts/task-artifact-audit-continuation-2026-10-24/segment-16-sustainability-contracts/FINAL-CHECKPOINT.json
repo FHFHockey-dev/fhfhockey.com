@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-24T19:26:46.461395+00:00",
+  "status": "Verified bounded Sustainability checkpoint; whole audit unfinished",
+  "canonical_ids": 213,
+  "canonical_evidence": 1149,
+  "readable_children": 36,
+  "added_parent_ids": [],
+  "changed_existing_ids": [
+    "SUSTAINABILITY-NATURAL",
+    "SUSTAINABILITY-MATURED-EVIDENCE",
+    "REPO-DOCUMENTATION"
+  ],
+  "readable_children_added": 6,
+  "evidence_added": 26,
+  "all_prior_213_ids_scopes_evidence_preserved": true,
+  "legacy_blocks_byte_identical": 32,
+  "unchanged_existing_rows_identical": 210,
+  "prior_children_preserved": true,
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "f7fcef85d38a396204b8919ee3763251cef6fe03865b297d167bbb341f3f1040",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "2d2858f86f18387077a1061959dfdb1b70a28dd3b7371871a36f79b6d454cfcd",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "a0054edbb0f92bf395f764914b4c8eeba7c72b297e8c4de92c869b7f0ce1ae02"
+  },
+  "library": {
+    "at": "2026-10-24T19:26:46.461395+00:00",
+    "status": "succeeded",
+    "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "version_before": 14,
+    "version_after": 15,
+    "same_identity": true,
+    "replacement_attempts": 1,
+    "raw_response": "LIBRARY-REPLACE-RAW.json",
+    "parsed_receipt": "LIBRARY-REPLACE-RECEIPT.json",
+    "helper_exit_code": 0,
+    "native_returned_xattrs_matched": [
+      "user.library-file-version"
+    ],
+    "local_master_sha256": "f7fcef85d38a396204b8919ee3763251cef6fe03865b297d167bbb341f3f1040",
+    "file_size_bytes": 633160,
+    "no_remote_download_checksum_claim": true,
+    "download_url": "https://chatgpt.com/api/library/files/libfile_9987e7d9d1b8819181b366a318cc9a9c/download",
+    "no_pending_or_uncertain_operation": true
+  },
+  "segment_coverage": {
+    "content-reviewed": 8,
+    "full_text_bytes": 140412,
+    "underlying_app_test_data_current_runtime_independently_verified": false
+  },
+  "remaining_unique_text_candidates": 1646,
+  "not_all_candidates_deep_read_obligations": true,
+  "remaining_sustainability_unique_text_candidates": 6,
+  "remaining_sustainability_structured_entries": 2,
+  "remaining_base_queue_items": 12074,
+  "next_cursor": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+  "pending_or_uncertain_operations": [],
+  "audit_blockers": [],
+  "application_tests_git_production_provider_new_workers": 0
+}

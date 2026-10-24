@@ -1,0 +1,28 @@
+{
+  "baseHead": "84cb1229cd1c1cdd037c43e660d2a181304ada51",
+  "branch": "octoberBranch",
+  "ownedFiles": {
+    "web/lib/projections/research/skater-candidates/accounting.test.ts": "6722730a185d97abc8026319fedd0d3b17d56253f91f6ff0b208c6e9327479d6",
+    "web/lib/projections/research/skater-candidates/accounting.ts": "aa28320f5696a85bcdc18e8d9f08593720cee6dfcd356b6293784facbaede390",
+    "web/lib/projections/research/skater-candidates/context.test.ts": "94cabee98752c3805db8b4b9ae32a22be13687a7b48bf63ea2dbb5f92895ac99",
+    "web/lib/projections/research/skater-candidates/context.ts": "88683c176378204709080f22779729a8ec38c10a47f2fdcdc63d22a44afefdff",
+    "web/lib/projections/research/skater-candidates/priors.test.ts": "34e524451770ea2d4a86419b3d6d876e2f7e9e8b624702e641c58ce5468ddd4d",
+    "web/lib/projections/research/skater-candidates/priors.ts": "0fec69e252418950d4aeae8ffbdf83eaefdb6e4b5e6d81a74655424684267fa8",
+    "web/scripts/forge-skater-candidate-ablation.ts": "7a03e88797c37e49c8e7316205e10faf6bdf3928416c6bea79226b6b3092adc9",
+    "web/scripts/forge-skater-candidate-ablation.test.ts": "cf6e664e7d0a4fb98c3fa99ff6f13ec7428426ad9ce85e31db7b1eba1b14cb68"
+  },
+  "scorerDependenciesAtPackaging": {
+    "web/scripts/forge-counterfactual-backtest.ts": "eafc4bc8b7d49853858b0e68695d195a5f2d0c627bbf1682bce65963f0a95dad",
+    "web/lib/projections/calculators/skater-adjustments.ts": "39b0c8ed9745902fd387b3db01da72c3ac411adeb185bab82259053116dc7636",
+    "web/lib/projections/utils/number-utils.ts": "46a78073bdc6336c44dfe0ffb5e33370c5c1730ab74c4fc23a7fe6937e858222",
+    "web/lib/projections/constants/projection-weights.ts": "1200d9379191de7e569bed14f680777e307829df2d92520b2ed67609ea14792e",
+    "web/lib/rollingPlayerCountSupport.ts": "c16d7a4a1b8667aae6646c8eb1f06b689c57eef8f78425e04cca381afc224efc",
+    "web/lib/rollingPlayerMetricCompatibility.ts": "1c6de9c8a74efa5e2eee5ce8b78c1d7951c91426e496566d3666a0c817b9ce22"
+  },
+  "sharedStageEdited": false,
+  "sharedCalculatorEdited": false,
+  "task2R1PhysicalHelperReservedToOtherOwner": true,
+  "releaseQualified": false,
+  "archiveSha256": "2422a69cfe565f5ae812362b7bc452db957666c34affce785b15bc1c8f2c980b",
+  "patchSha256": "f4d7109e880431fa4dbf34c19b064d6b4b5adcfcac8c94834aa578c2de8b6a85"
+}

@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-23T15:35:39.516127+00:00",
+  "candidate": "/Users/tim/Documents/Codex/2026-10-23/task-4/evidence/attribution-serialization/CANDIDATE.json",
+  "candidateSha256": "0e2fa0c25dcd08791c7367c794226d96feddb5ee70a9ea50d774d3d947f8f8c6",
+  "sourcePins": {
+    "web/components/HomePage/HomepageStandingsInjuriesSection.test.tsx": "17e6f87b89d521e24a41950017e118d91eb8fb3a5c0e95589db5c8694bd93ace",
+    "web/components/HomePage/HomepageStandingsInjuriesSection.tsx": "8f1916979730fe35cd9bb1c2b5d905390d158a3a230510bf44d1395c0cb69f9f",
+    "web/lib/newsFeed.ts": "de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d",
+    "web/pages/api/v1/db/tweet-pattern-review.ts": "0145984ba46c82bc09698b047b00a395018b0e9488acd52cb5f1d9c616083445",
+    "web/lib/homepageNewsCompatibility.test.tsx": "48321a8a5add55a9e9f4534cfd751dcf2e68d62b8576b696860a70288fde7ca7",
+    "web/lib/sources/fixtures/homepageNewsReceipt.json": "ac3e9711a02275749990f9020611e560ae8c07b6f06daa476f587bb14467a0a1"
+  },
+  "drift": [],
+  "reviewStatus": "Qualified independent local ACCEPT relayed by parent 01a15411-3560-7632-8d31-1dd2447ba00e",
+  "independentChecks": {
+    "original": 9,
+    "actualLoaderJsonHomepage": 10
+  },
+  "reviewScope": "Fresh evidence overrides saved display decisions; malformed markers fail closed; distinct rows preserved; claim validator unchanged.",
+  "remaining": [
+    "metadata sync loss",
+    "accepted-public-claim producer/loader contract",
+    "duplicate original-source identity"
+  ],
+  "ownReview": "Read complete serialization source correction and owner handoff; verified six canonical hashes and both patch hashes. No test rerun."
+}

@@ -34,16 +34,18 @@ function visit(node: ts.Node, check: (node: ts.Node) => void) {
 describe("FORGE native input boundary", () => {
   beforeEach(() => { database.history = []; database.tables = []; });
 
-  it.each(["stages/skater-stage.ts", "stages/goalie-stage.ts"])(
-    "%s disables external fantasy inputs at every season-bootstrap call",
-    file => {
+  it.each([["stages/skater-stage.ts", ts.SyntaxKind.TrueKeyword], ["stages/goalie-stage.ts", ts.SyntaxKind.FalseKeyword]] as const)(
+    "%s preserves the selected Release C bootstrap policy",
+    (file, expectedPolicy) => {
       let calls = 0;
       visit(sourceFile(file), node => {
         if (!ts.isCallExpression(node) || !ts.isIdentifier(node.expression)
           || node.expression.text !== "loadSeasonBootstrap") return;
         calls += 1;
         expect(node.arguments.length).toBe(5);
-        expect(node.arguments[4].kind).toBe(ts.SyntaxKind.FalseKeyword);
+        // Release C skaters retain legacy inputs and must not claim native exclusion.
+        // The actual producer-to-native-consumer rejection is checked by the offline qualification suite.
+        expect(node.arguments[4].kind).toBe(expectedPolicy);
       });
       expect(calls).toBe(file.includes("skater") ? 2 : 1);
     },

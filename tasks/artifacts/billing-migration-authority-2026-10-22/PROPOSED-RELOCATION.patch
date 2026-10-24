@@ -1,0 +1,67 @@
+diff --git a/supabase/migrations/20261021210000_in_season_sandbox_billing.sql b/tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql
+similarity index 100%
+rename from supabase/migrations/20261021210000_in_season_sandbox_billing.sql
+rename to tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql
+diff --git a/web/lib/in-season/monthlyIntegration.test.ts b/web/lib/in-season/monthlyIntegration.test.ts
+--- a/web/lib/in-season/monthlyIntegration.test.ts
++++ b/web/lib/in-season/monthlyIntegration.test.ts
+@@ -362,7 +362,7 @@
+     expect(f.stripe.invoices.pay).not.toHaveBeenCalled();
+   });
+   it("keeps urgent cleanup reachable beyond one batch of failed stop jobs and an older retry backlog", async () => {
+-    const sql = readFileSync("../supabase/migrations/20261021210000_in_season_sandbox_billing.sql", "utf8")
++    const sql = readFileSync("../tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql", "utf8")
+       .split("create function public.list_in_season_sandbox_monthly_jobs")[1].split("end $$;")[0].replace(/\s+/g, " ");
+     expect(sql).toContain("order by case when kind in ('stop','cutoff') then 0 else 1 end,lease_until asc nulls first,due_at,id limit p_limit");
+     // Model this SQL selection/claim contract with advancing time; no SQL is applied.
+diff --git a/tasks/artifacts/in-season-billing-2026-10-21/LOCAL-SQL-CHECK.cjs b/tasks/artifacts/in-season-billing-2026-10-21/LOCAL-SQL-CHECK.cjs
+--- a/tasks/artifacts/in-season-billing-2026-10-21/LOCAL-SQL-CHECK.cjs
++++ b/tasks/artifacts/in-season-billing-2026-10-21/LOCAL-SQL-CHECK.cjs
+@@ -48,7 +48,7 @@
+     create function public.update_updated_at_column() returns trigger language plpgsql as $$ begin new.updated_at=now(); return new; end $$;
+     grant usage on schema public,auth to anon,authenticated,service_role;`);
+   await query(fs.readFileSync(path.join(repo, 'supabase/migrations/20260927104934_in_season_access_workspace.sql'), 'utf8'));
+-  await query(fs.readFileSync(path.join(repo, 'supabase/migrations/20261021210000_in_season_sandbox_billing.sql'), 'utf8'));
++  await query(fs.readFileSync(path.join(repo, 'tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql'), 'utf8'));
+   pass('prerequisite and billing draft SQL executed successfully in disposable cluster');
+   const a = randomUUID(), b = randomUUID();
+   await query('insert into auth.users(id,email) values($1,$2),($3,$4)', [a,'billing-a@example.invalid',b,'billing-b@example.invalid']);
+diff --git a/tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs b/tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs
+--- a/tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs
++++ b/tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs
+@@ -50,7 +50,7 @@
+     create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+     create function public.update_updated_at_column() returns trigger language plpgsql as $$begin new.updated_at=now();return new;end$$;
+     grant usage on schema public,auth to anon,authenticated,service_role;`);
+-  const migrations = ['supabase/migrations/20260927104934_in_season_access_workspace.sql', 'supabase/migrations/20261021210000_in_season_sandbox_billing.sql'];
++  const migrations = ['supabase/migrations/20260927104934_in_season_access_workspace.sql', 'tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql'];
+   for (const file of migrations) await query(owner, fs.readFileSync(path.join(repo, file), 'utf8'));
+   pass('unchanged prerequisite and complete frozen billing migration applied only to new database', migrations.map(file => ({ file, sha256: hash(file) })));
+   service = await connect(target.database);
+diff --git a/tasks/artifacts/in-season-billing-2026-10-21/LOCAL-AUTH-CHECK.cjs b/tasks/artifacts/in-season-billing-2026-10-21/LOCAL-AUTH-CHECK.cjs
+--- a/tasks/artifacts/in-season-billing-2026-10-21/LOCAL-AUTH-CHECK.cjs
++++ b/tasks/artifacts/in-season-billing-2026-10-21/LOCAL-AUTH-CHECK.cjs
+@@ -46,7 +46,7 @@
+     revoke all on public.user_entitlements from anon,authenticated;
+     grant select,insert,update,delete on public.user_entitlements to service_role;`);
+   // Legacy table above is an empty, minimal read-contract fixture; no provider is connected.
+-  for (const file of ['20260927104934_in_season_access_workspace.sql', '20261021210000_in_season_sandbox_billing.sql']) await query(fs.readFileSync(path.join(repo, 'supabase/migrations', file), 'utf8'));
++  for (const file of ['supabase/migrations/20260927104934_in_season_access_workspace.sql', 'tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql']) await query(fs.readFileSync(path.join(repo, file), 'utf8'));
+   await query("notify pgrst,'reload schema'");
+   pass('required billing SQL applied only to the fresh disposable Supabase database');
+   const users = [];
+diff --git a/tasks/artifacts/in-season-billing-2026-10-21/REPORT.md b/tasks/artifacts/in-season-billing-2026-10-21/REPORT.md
+--- a/tasks/artifacts/in-season-billing-2026-10-21/REPORT.md
++++ b/tasks/artifacts/in-season-billing-2026-10-21/REPORT.md
+@@ -1,4 +1,11 @@
+ # In-season sandbox billing handoff — 2026-10-21
++
++**Draft location correction (2026-10-22):** the unchanged sandbox billing SQL is retained at
++[drafts/20261021210000_in_season_sandbox_billing.sql](drafts/20261021210000_in_season_sandbox_billing.sql),
++outside the active migration chain. Its SHA-256 remains `d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12`.
++Historical receipts/manifests retain the former `supabase/migrations/` path as evidence of what
++was tested; resolve that path to this draft for current file-hash checks. This relocation grants
++no canonical-source, hosted-apply or deployment authority.
+ 
+ **Latest local correction:** [same-owner cancellation continuity](cancellation-owner-refresh-2026-10-22/HANDOFF.md) preserves unresolved cancellation request IDs across token refresh for the same owner, clearing them on owner change/sign-out. It changes only the account panel and its test; other entrypoint/core files remain hash-identical. The new pinned correction needs independent re-review; activation and service gates remain held.
+ 

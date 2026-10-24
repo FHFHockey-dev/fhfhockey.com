@@ -1,0 +1,36 @@
+{
+  "candidateVersion": "R1",
+  "applicationFilesChanged": [
+    "web/lib/projections/calculators/skater-adjustments.ts",
+    "web/lib/projections/runProjectionV2.test.ts"
+  ],
+  "functionLease": "computeSkaterPhysicalEventRates",
+  "calculatorOutsideFunctionUnchanged": true,
+  "historicalPacketAndEvidenceUnchanged": true,
+  "independentOracleUnchanged": true,
+  "isolatedSourceMatchesLiveTwoFileDelta": true,
+  "tests": {
+    "regressionBeforeRepair": {
+      "failed": 4,
+      "skipped": 108
+    },
+    "liveHelperQueryIndependent": {
+      "passed": 233
+    },
+    "liveNative": {
+      "passed": 92,
+      "failed": 1,
+      "failure": "deterministic resultHash equality; cause not established"
+    },
+    "frozenR1": {
+      "passed": 326,
+      "failed": 0
+    },
+    "lint": "passed",
+    "fullTypecheck": "not rerun"
+  },
+  "releaseQualified": false,
+  "productionImpact": "not established; exact helper absent from local master 457435eb3010c5b3dd92d2e1a46d9c75d851780a",
+  "patchSha256": "b75b26430bb4559eeb7470160b01fd90cc39a0d8bd9e0a8474a9cfdf79543aae",
+  "sourceArchiveSha256": "d745aad6252dcb1f054610b8915497d633517c86582057e7fb6295521944c907"
+}

@@ -1,0 +1,51 @@
+{
+  "at": "2026-10-24T18:01:31.635897+00:00",
+  "findings": [
+    {
+      "id": "S11-F01",
+      "register": "REPO-DOCUMENTATION",
+      "status": "Documentary precedence; no implementation reopening",
+      "finding": "Technical-contract client-execute/raw-write and per-ranking/player placement text conflicts with later applied service-only mutation/SELECT-only/per-ranking-session receipts.",
+      "evidence": "technical-contract215,246; implementation151,173; DR01236–44; progress89–90",
+      "next": "Correct documentation under existing documentary scope; preserve applied hardening and exact migration identity."
+    },
+    {
+      "id": "S11-F02",
+      "register": "YAHOO-HISTORY-RETIREMENT",
+      "status": "Intentionally held review, narrower closure credited",
+      "finding": "DR011 approved manifest, verified positive seed and ten source-dated unresolved items supersede old broad usable-ADP/noncanonical counts. No automatic promotion/backfill or current-count inference.",
+      "evidence": "dr-011-yahoo-mapping-review32,41; progress45–47; repository-record43"
+    },
+    {
+      "id": "S11-F03",
+      "register": "SITE-DRAFTRANKER-HOMEPAGE",
+      "status": "Historical rollout closed; later guard provenance separate",
+      "finding": "Old test journey excluded/reset; early HTTP replay lacked storage evidence. Later genuine owner/durable audit/idempotent storage evidence and final approved July17 stage-only rollout close that historical gate, not latercc3guard release.",
+      "evidence": "progress170–189"
+    },
+    {
+      "id": "S11-F04",
+      "register": "SECURITY-RESIDUAL-ACL",
+      "status": "Exact object scope only; current residual remains unverified",
+      "finding": "July29 Ranker21table/18service-invoker-function closure cannot close unrelated ACL object sets or replace destructive-RPC catalog receipt. July14 execute_sql warning is not fresh compromise proof.",
+      "evidence": "prd113; DR01236–44; DR01052"
+    },
+    {
+      "id": "S11-F05",
+      "register": "Existing Ranker/REPO scope",
+      "status": "Retired/held; do not reopen",
+      "finding": "Product blueprint XLSX, advanced confidence/segmentation/news/ML and direct-edit community weighting are narrowed by pinned launch decisions and explicit Phase8 retirement. Fail-closed empty discovery is deliberate.",
+      "evidence": "implementation350–402; canonicalPRD9,62–73,114; discovery133–142"
+    },
+    {
+      "id": "S11-F06",
+      "register": "YAHOO-HISTORY-RETIREMENT and SITE-DRAFT-CSV-RESOLVER",
+      "status": "Readability correction; no new top-level IDs",
+      "finding": "Ten independent closure gates were buried in parent prose; render explicit source-linked children with status/owner/dependencies/approval/credit.",
+      "evidence": "COUNTS-EXPLANATION.json; PROPOSED-CHANGES.json children"
+    }
+  ],
+  "new_parent_ids": [],
+  "visible_children_added": 10,
+  "retired_scope_revived": false
+}

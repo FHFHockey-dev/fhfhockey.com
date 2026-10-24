@@ -1,0 +1,382 @@
+{
+  "candidate_and_dependency_checks": {
+    "web/contexts/AuthProviderContext/index.tsx": {
+      "expected_sha256": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "actual_sha256": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "matches": true
+    },
+    "web/__tests__/contexts/AuthProviderContext.test.tsx": {
+      "expected_sha256": "4b37b6d250e41a48c0f9e8a0ee102c833974a60a0efda324608a86b8f0d628c5",
+      "actual_sha256": "4b37b6d250e41a48c0f9e8a0ee102c833974a60a0efda324608a86b8f0d628c5",
+      "matches": true
+    },
+    "web/pages/social-share/[format].tsx": {
+      "expected_sha256": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "actual_sha256": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "matches": true
+    },
+    "web/pages/api/v1/social-share/[format].ts": {
+      "expected_sha256": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+      "actual_sha256": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+      "matches": true
+    },
+    "web/lib/socialShare/editionFetch.ts": {
+      "expected_sha256": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "actual_sha256": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "matches": true
+    },
+    "web/lib/socialShare/editionFetch.test.ts": {
+      "expected_sha256": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236",
+      "actual_sha256": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236",
+      "matches": true
+    },
+    "web/lib/socialShare/schedule.test.ts": {
+      "expected_sha256": "29a8d4f8e176ac0c6d530eda71f7ee0f27b68cab6f88692c39a713105de3b052",
+      "actual_sha256": "29a8d4f8e176ac0c6d530eda71f7ee0f27b68cab6f88692c39a713105de3b052",
+      "matches": true
+    },
+    "web/components/SocialShare/SocialShare.test.tsx": {
+      "expected_sha256": "e9b2e6e3b7f0265790029577601c86c26bf4860565a5defcd3fccaf79adc11f3",
+      "actual_sha256": "e9b2e6e3b7f0265790029577601c86c26bf4860565a5defcd3fccaf79adc11f3",
+      "matches": true
+    },
+    "web/lib/socialShare/access.ts": {
+      "expected_sha256": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "actual_sha256": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "matches": true
+    },
+    "web/lib/socialShare/access.test.ts": {
+      "expected_sha256": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+      "actual_sha256": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+      "matches": true
+    },
+    "web/components/SocialShare/SocialShareAccessGate.tsx": {
+      "expected_sha256": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "actual_sha256": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "matches": true
+    },
+    "web/components/SocialShare/SocialShareAccessGate.test.tsx": {
+      "expected_sha256": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+      "actual_sha256": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+      "matches": true
+    },
+    "web/lib/socialShare/types.ts": {
+      "expected_sha256": "bc5c27b34ae52a4e2b66025a92f9525eb28d5d5604e8de24c038f8aae2890d26",
+      "actual_sha256": "bc5c27b34ae52a4e2b66025a92f9525eb28d5d5604e8de24c038f8aae2890d26",
+      "matches": true
+    },
+    "web/lib/supabase/index.ts": {
+      "expected_sha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+      "actual_sha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+      "matches": true
+    },
+    "web/lib/supabase/browser-auth.ts": {
+      "expected_sha256": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+      "actual_sha256": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+      "matches": true
+    },
+    "web/components/SocialShare/SocialShare.tsx": {
+      "expected_sha256": "e15e95c131dc0b4d377c6d3356ad4f7d30606fabed64e0fd7e3db9cbb348fe77",
+      "actual_sha256": "c16e1b3adbeebca741a883b845e295be1cbc5106aa54012acc46728032c8ed92",
+      "matches": false
+    },
+    "web/lib/socialShare/server.ts": {
+      "expected_sha256": "49744f6f25e1cba1c6125718825bcb392be0f1397a32d8806ba7a71729c1c110",
+      "actual_sha256": "49744f6f25e1cba1c6125718825bcb392be0f1397a32d8806ba7a71729c1c110",
+      "matches": true
+    },
+    "web/e2e/social-share.spec.ts": {
+      "expected_sha256": "6e2d42d5ce5a554b59e8e57331cc8bea7cf8f99009abdad0cbbb5a67c7fc8edf",
+      "actual_sha256": "83230d539d6bcac430fc4167f318087db302f6c00e6171e23011b1d20678f904",
+      "matches": false
+    },
+    "web/utils/adminOnlyMiddleware.ts": {
+      "expected_sha256": "de749fa9e811aacbbd1c85a080140f380fd8c3d3794ad378caa9dd4025f444c5",
+      "actual_sha256": "de749fa9e811aacbbd1c85a080140f380fd8c3d3794ad378caa9dd4025f444c5",
+      "matches": true
+    },
+    "web/components/Admin/AdminPageGate.tsx": {
+      "expected_sha256": "eba9494e2df0e8e47f56b38250a6a572e1051efe109018d37f143da714bc17eb",
+      "actual_sha256": "eba9494e2df0e8e47f56b38250a6a572e1051efe109018d37f143da714bc17eb",
+      "matches": true
+    },
+    "web/package-lock.json": {
+      "expected_sha256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+      "actual_sha256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+      "matches": true
+    },
+    "web/package.json": {
+      "expected_sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "actual_sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "matches": true
+    },
+    "web/lib/supabase/client.ts": {
+      "expected_sha256": "818aab6190e6a3eed1f8e9b5190ba1da6db6874a05160632c6befa2d5eaf21b2",
+      "actual_sha256": "818aab6190e6a3eed1f8e9b5190ba1da6db6874a05160632c6befa2d5eaf21b2",
+      "matches": true
+    },
+    "web/lib/user-settings/ensureUserRecords.ts": {
+      "expected_sha256": "2ab6d5d51b7029d33f832f4f2124e4aa83772d7845c04b0ad55d56cd7db1a4f5",
+      "actual_sha256": "2ab6d5d51b7029d33f832f4f2124e4aa83772d7845c04b0ad55d56cd7db1a4f5",
+      "matches": true
+    },
+    "web/components/Admin/AdminPageGate.test.tsx": {
+      "expected_sha256": "d4279fbb07f84d17b1d4fb513eaa14defe0d667b998bd8dcd23826de940beb7e",
+      "actual_sha256": "d4279fbb07f84d17b1d4fb513eaa14defe0d667b998bd8dcd23826de940beb7e",
+      "matches": true
+    },
+    "web/__tests__/utils/adminOnlyMiddleware.test.ts": {
+      "expected_sha256": "9add4fd857bf56ae6e7b7a2a3b8d16fc84e174264c2c3420ce1a3b0f60065fcb",
+      "actual_sha256": "9add4fd857bf56ae6e7b7a2a3b8d16fc84e174264c2c3420ce1a3b0f60065fcb",
+      "matches": true
+    }
+  },
+  "original_bundle_dependency_checks": {
+    "web/node_modules/react/cjs/react.production.min.js": {
+      "expected_sha256": "4b35e378f469c4f492c7514bb106b5833746dbbae80496bd4aa9acc6e9ac4b42",
+      "actual_sha256": "4b35e378f469c4f492c7514bb106b5833746dbbae80496bd4aa9acc6e9ac4b42",
+      "matches": true
+    },
+    "web/node_modules/react/index.js": {
+      "expected_sha256": "a216c390bf956cbb906c66d29fdb2e2ad6999464a5ca83e476533a6f25ad0ef3",
+      "actual_sha256": "a216c390bf956cbb906c66d29fdb2e2ad6999464a5ca83e476533a6f25ad0ef3",
+      "matches": true
+    },
+    "web/node_modules/scheduler/cjs/scheduler.production.min.js": {
+      "expected_sha256": "f6cb8cf42696980c702f6b879417ab8bd489660485eb012b46f67e92e18a78ee",
+      "actual_sha256": "f6cb8cf42696980c702f6b879417ab8bd489660485eb012b46f67e92e18a78ee",
+      "matches": true
+    },
+    "web/node_modules/scheduler/index.js": {
+      "expected_sha256": "b413b3aac7bd209fd82cbe2241fda1467558daaef830744f45ed8396fac9185e",
+      "actual_sha256": "b413b3aac7bd209fd82cbe2241fda1467558daaef830744f45ed8396fac9185e",
+      "matches": true
+    },
+    "web/node_modules/react-dom/cjs/react-dom.production.min.js": {
+      "expected_sha256": "cbf7fe6b9726ee65f8bcd5715289cc5161c8dacf74d0b8aaa0d29412516f5f47",
+      "actual_sha256": "cbf7fe6b9726ee65f8bcd5715289cc5161c8dacf74d0b8aaa0d29412516f5f47",
+      "matches": true
+    },
+    "web/node_modules/react-dom/index.js": {
+      "expected_sha256": "f26fcb81b5d1dc32c6edea34645c75b60d259916293d3208c8be48ac33e882e4",
+      "actual_sha256": "f26fcb81b5d1dc32c6edea34645c75b60d259916293d3208c8be48ac33e882e4",
+      "matches": true
+    },
+    "web/node_modules/react-dom/client.js": {
+      "expected_sha256": "a510041dfc40d69b3aa574e5e111864186c711fbeb3db41aa2f27196b27c429f",
+      "actual_sha256": "a510041dfc40d69b3aa574e5e111864186c711fbeb3db41aa2f27196b27c429f",
+      "matches": true
+    },
+    "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser/auth.ts": {
+      "expected_sha256": "4209745ec14573bc6efc4738c85e531252fde006e149a27fa384c5552b84f3d1",
+      "actual_sha256": "4209745ec14573bc6efc4738c85e531252fde006e149a27fa384c5552b84f3d1",
+      "matches": true
+    },
+    "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/lib/supabase/browser-auth.ts": {
+      "expected_sha256": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+      "actual_sha256": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+      "matches": true
+    },
+    "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser/ensure.ts": {
+      "expected_sha256": "ce14382bee2a86152bf6e505d611fd5015589973c8bd5d81c05c61af91fd0a0a",
+      "actual_sha256": "ce14382bee2a86152bf6e505d611fd5015589973c8bd5d81c05c61af91fd0a0a",
+      "matches": true
+    },
+    "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser/server-auth.ts": {
+      "expected_sha256": "2cbc50bd94595f74e999834119ebe868456a9e31ac8e5105a1ee7aae4b5442f4",
+      "actual_sha256": "2cbc50bd94595f74e999834119ebe868456a9e31ac8e5105a1ee7aae4b5442f4",
+      "matches": true
+    },
+    "web/lib/socialShare/access.ts": {
+      "expected_sha256": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "actual_sha256": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "matches": true
+    },
+    "web/node_modules/react/cjs/react-jsx-runtime.production.min.js": {
+      "expected_sha256": "76e3364c46895ed2c4a8d5cc332e5e4ef31d6f732d35b1e56826dc5895245452",
+      "actual_sha256": "76e3364c46895ed2c4a8d5cc332e5e4ef31d6f732d35b1e56826dc5895245452",
+      "matches": true
+    },
+    "web/node_modules/react/jsx-runtime.js": {
+      "expected_sha256": "28170e60f2ff0bc045bc7d175f5849e86f68dd02d76d7255369420718b30295a",
+      "actual_sha256": "28170e60f2ff0bc045bc7d175f5849e86f68dd02d76d7255369420718b30295a",
+      "matches": true
+    },
+    "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/contexts/AuthProviderContext/index.tsx": {
+      "expected_sha256": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "actual_sha256": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "matches": true
+    },
+    "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser/link.tsx": {
+      "expected_sha256": "2f6efe775a4eee49b9bcc5c9ee57ac32b937795c62520a4f9e32861de7d01d1c",
+      "actual_sha256": "2f6efe775a4eee49b9bcc5c9ee57ac32b937795c62520a4f9e32861de7d01d1c",
+      "matches": true
+    },
+    "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/components/SocialShare/SocialShareAccessGate.tsx": {
+      "expected_sha256": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "actual_sha256": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "matches": true
+    },
+    "web/lib/socialShare/types.ts": {
+      "expected_sha256": "bc5c27b34ae52a4e2b66025a92f9525eb28d5d5604e8de24c038f8aae2890d26",
+      "actual_sha256": "bc5c27b34ae52a4e2b66025a92f9525eb28d5d5604e8de24c038f8aae2890d26",
+      "matches": true
+    },
+    "web/lib/NHL/types.ts": {
+      "expected_sha256": "805b62b040a2e46b18e863815eeccaa175a01b9c4e770f679f2e483fb09c1fce",
+      "actual_sha256": "805b62b040a2e46b18e863815eeccaa175a01b9c4e770f679f2e483fb09c1fce",
+      "matches": true
+    },
+    "web/lib/teamsInfo.ts": {
+      "expected_sha256": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584",
+      "actual_sha256": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584",
+      "matches": true
+    },
+    "web/lib/rosterScheduleData/normalize.ts": {
+      "expected_sha256": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6",
+      "actual_sha256": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6",
+      "matches": true
+    },
+    "web/lib/rosterScheduleOptimizer/planningDates.ts": {
+      "expected_sha256": "b1d7454aad1238671be337b64120e33f2331ef2f8261e390d52b5ac17d9dd4c8",
+      "actual_sha256": "b1d7454aad1238671be337b64120e33f2331ef2f8261e390d52b5ac17d9dd4c8",
+      "matches": true
+    },
+    "web/components/GameGrid/utils/calcWeekScore.ts": {
+      "expected_sha256": "0f544a126c5e16baf08febb7c7e89aa759883b20f203ad8ae3a8ac05ff619ca8",
+      "actual_sha256": "0f544a126c5e16baf08febb7c7e89aa759883b20f203ad8ae3a8ac05ff619ca8",
+      "matches": true
+    },
+    "web/components/GameGrid/utils/helper.ts": {
+      "expected_sha256": "ebf2348fb67d87cb16579a2bac06d22825829fcfa3ca8e2c148f2987ea6c2708",
+      "actual_sha256": "ebf2348fb67d87cb16579a2bac06d22825829fcfa3ca8e2c148f2987ea6c2708",
+      "matches": true
+    },
+    "web/lib/socialShare/schedule.ts": {
+      "expected_sha256": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73",
+      "actual_sha256": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73",
+      "matches": true
+    },
+    "web/node_modules/html-to-image/es/util.js": {
+      "expected_sha256": "dca823d47be217c74cc660184030f78ee1b1f9a790e2c9d073524786f2e5de2a",
+      "actual_sha256": "dca823d47be217c74cc660184030f78ee1b1f9a790e2c9d073524786f2e5de2a",
+      "matches": true
+    },
+    "web/node_modules/html-to-image/es/clone-pseudos.js": {
+      "expected_sha256": "ecde62e8800870485732d15b5f035ac0f434f81ff671150e86dc61dd21c59f22",
+      "actual_sha256": "ecde62e8800870485732d15b5f035ac0f434f81ff671150e86dc61dd21c59f22",
+      "matches": true
+    },
+    "web/node_modules/html-to-image/es/mimes.js": {
+      "expected_sha256": "8d6a4a9d628422ff83c661444a27ab7f72de9f2cecc23a330be2289ff2198659",
+      "actual_sha256": "8d6a4a9d628422ff83c661444a27ab7f72de9f2cecc23a330be2289ff2198659",
+      "matches": true
+    },
+    "web/node_modules/html-to-image/es/dataurl.js": {
+      "expected_sha256": "56604a681031b5e1be40f9b273bce304bad94ebba3946a20327cdb54fd2cc8f6",
+      "actual_sha256": "56604a681031b5e1be40f9b273bce304bad94ebba3946a20327cdb54fd2cc8f6",
+      "matches": true
+    },
+    "web/node_modules/html-to-image/es/clone-node.js": {
+      "expected_sha256": "c7d5a5b734c87856cccd6c7804b33db00ccf2e856e4a2e6289db557c20546f7c",
+      "actual_sha256": "c7d5a5b734c87856cccd6c7804b33db00ccf2e856e4a2e6289db557c20546f7c",
+      "matches": true
+    },
+    "web/node_modules/html-to-image/es/embed-resources.js": {
+      "expected_sha256": "ead3747fefac7927d5cf5ae47273c11916cfd0c53dfad8c30dadb6c365121372",
+      "actual_sha256": "ead3747fefac7927d5cf5ae47273c11916cfd0c53dfad8c30dadb6c365121372",
+      "matches": true
+    },
+    "web/node_modules/html-to-image/es/embed-images.js": {
+      "expected_sha256": "2cdd7d96b558df8390b167cdf49cb0a5500caa52fdae7340aacb16836da9bb81",
+      "actual_sha256": "2cdd7d96b558df8390b167cdf49cb0a5500caa52fdae7340aacb16836da9bb81",
+      "matches": true
+    },
+    "web/node_modules/html-to-image/es/apply-style.js": {
+      "expected_sha256": "4196b6fe5671ab03b215a3c2e2e9bd5679d2277ba5baf34ad35830581d3aa78b",
+      "actual_sha256": "4196b6fe5671ab03b215a3c2e2e9bd5679d2277ba5baf34ad35830581d3aa78b",
+      "matches": true
+    },
+    "web/node_modules/html-to-image/es/embed-webfonts.js": {
+      "expected_sha256": "e69c955e86d4e9b2d551e58148190e4d2e384a11e6a8b633fdae3b08abe91cc8",
+      "actual_sha256": "e69c955e86d4e9b2d551e58148190e4d2e384a11e6a8b633fdae3b08abe91cc8",
+      "matches": true
+    },
+    "web/node_modules/html-to-image/es/index.js": {
+      "expected_sha256": "196047f6d85e0c48dcdeb3aa3af73ba82d27a3ef5c6950d569b7fd7ac0807f28",
+      "actual_sha256": "196047f6d85e0c48dcdeb3aa3af73ba82d27a3ef5c6950d569b7fd7ac0807f28",
+      "matches": true
+    },
+    "web/lib/socialShare/export.ts": {
+      "expected_sha256": "8dc961de8b11c6c79dc34b78c991fc51ce38eaf2cc2bbdd1a073a72bc034cabd",
+      "actual_sha256": "8dc961de8b11c6c79dc34b78c991fc51ce38eaf2cc2bbdd1a073a72bc034cabd",
+      "matches": true
+    },
+    "web/lib/socialShare/mondayGrid.ts": {
+      "expected_sha256": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960",
+      "actual_sha256": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960",
+      "matches": true
+    },
+    "web/lib/socialShare/editionFetch.ts": {
+      "expected_sha256": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "actual_sha256": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "matches": true
+    },
+    "web/lib/socialShare/edition.ts": {
+      "expected_sha256": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0",
+      "actual_sha256": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0",
+      "matches": true
+    },
+    "web/components/GameGrid/utils/fourWeekMetricBands.ts": {
+      "expected_sha256": "030066d649d9b952bf9cdd29ac654d7fa57727f0779aceb4725dbbd5ccdbf702",
+      "actual_sha256": "030066d649d9b952bf9cdd29ac654d7fa57727f0779aceb4725dbbd5ccdbf702",
+      "matches": true
+    },
+    "web/components/GameGrid/utils/scheduleOpportunity.ts": {
+      "expected_sha256": "02198b9a732bc7b25e14e0ef285bae73b348ce5f645a26efe177ae52e773380c",
+      "actual_sha256": "02198b9a732bc7b25e14e0ef285bae73b348ce5f645a26efe177ae52e773380c",
+      "matches": true
+    },
+    "web/lib/socialShare/matchups.ts": {
+      "expected_sha256": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba",
+      "actual_sha256": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba",
+      "matches": true
+    },
+    "web/lib/socialShare/pickupsFixture.ts": {
+      "expected_sha256": "8817752128236da00dfd16beaadad2cf71688b07e3f0388e1bcdd39b20a38dbf",
+      "actual_sha256": "8817752128236da00dfd16beaadad2cf71688b07e3f0388e1bcdd39b20a38dbf",
+      "matches": true
+    },
+    "web/lib/socialShare/players.ts": {
+      "expected_sha256": "2f1e55d6344c3fe43791ccf69ab16606c058a2ef476a3e00f91fa4c9180fdcf7",
+      "actual_sha256": "2f1e55d6344c3fe43791ccf69ab16606c058a2ef476a3e00f91fa4c9180fdcf7",
+      "matches": true
+    },
+    "web/lib/socialShare/trends.ts": {
+      "expected_sha256": "03ffc190244f6657069dcaa402b5fddfe462d80029fba5e9fe0285bc6b71f943",
+      "actual_sha256": "03ffc190244f6657069dcaa402b5fddfe462d80029fba5e9fe0285bc6b71f943",
+      "matches": true
+    },
+    "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/components/SocialShare/SocialShare.module.scss": {
+      "expected_sha256": "4a6f425b7e670a97c8821d9aa857d3514f62e20e93a7e9095212f808c63645d8",
+      "actual_sha256": "4a6f425b7e670a97c8821d9aa857d3514f62e20e93a7e9095212f808c63645d8",
+      "matches": true
+    },
+    "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/components/SocialShare/TeamBanner.tsx": {
+      "expected_sha256": "f0aff1ab3d0139742c834d65893445ae18fb477600dc13dcfecb54901730867f",
+      "actual_sha256": "f0aff1ab3d0139742c834d65893445ae18fb477600dc13dcfecb54901730867f",
+      "matches": true
+    },
+    "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/components/SocialShare/SocialShare.tsx": {
+      "expected_sha256": "e15e95c131dc0b4d377c6d3356ad4f7d30606fabed64e0fd7e3db9cbb348fe77",
+      "actual_sha256": "e15e95c131dc0b4d377c6d3356ad4f7d30606fabed64e0fd7e3db9cbb348fe77",
+      "matches": true
+    },
+    "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser/entry.tsx": {
+      "expected_sha256": "6565552fd6a507fdc0ebae1e8b571885507355d897c93afc41caff6d83d47ec2",
+      "actual_sha256": "6565552fd6a507fdc0ebae1e8b571885507355d897c93afc41caff6d83d47ec2",
+      "matches": true
+    }
+  },
+  "all_match": false
+}

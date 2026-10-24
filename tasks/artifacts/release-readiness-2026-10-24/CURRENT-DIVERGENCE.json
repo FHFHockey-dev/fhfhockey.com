@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-24T14:28:38.356010+00:00",
+  "differences": [
+    {
+      "path": "web/next-env.d.ts",
+      "frozen": "ced3cb1bdbb8082cae388902481ba6a8a1e454ec7daed6125b368118f06e4a77",
+      "current": "95c5e6b31f13db907e9fe5d7cd72edd186321a0c7a8fb2d89129029fb289c276"
+    }
+  ],
+  "note": "Moving canonical source is not imported; frozen candidate remains unchanged."
+}

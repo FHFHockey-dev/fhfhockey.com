@@ -1,4 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { MessageChannel } from "node:worker_threads";
+const yahooAuth = vi.hoisted(() => ({ session: vi.fn(), onAuth: vi.fn() }));
+vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession: yahooAuth.session, onAuthStateChange: yahooAuth.onAuth } } }));
 import { requestRosterPlanning } from "../../hooks/rosterPlanningExecution";
 import { executeRosterPlanning } from "./executionAdapter";
 import { currentPlanningTime, planningMonotonicNow, withCurrentPlanningRead } from "./currentPlanningRead";
@@ -49,6 +52,31 @@ beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date(now)); });
 afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 describe("fresh RSO execution authority", () => {
+  it.each([
+    ["no mark", null, now],
+    ["client-created starting mark", true, now],
+    ["old serialized nonstarting mark", false, "2010-01-01T00:00:00Z"],
+  ] as const)("preserves current server bridge values for a Yahoo snapshot with %s", async (_label, mark, observedAt) => {
+    const { snapshot, body } = fixture();
+    snapshot.context.provider = "yahoo";
+    snapshot.players[0].playerClass = "goalie";
+    snapshot.players[0].eligiblePositions = ["G"];
+    body.data.players = snapshot.players.map(player => ({ ...player }));
+    if (mark !== null) snapshot.players[0].startingStatus = {
+      source: "yahoo", date: snapshot.games[0].date, isStarting: mark, observedAt,
+    };
+    body.bridgeForecasts.rows = [];
+    body.data.forecasts = [{ ...snapshot.forecasts[0], stats: { SAVES_GOALIE: 7.5 },
+      conditionalStats: { SAVES_GOALIE: 25 }, startProbability: 0.3, confirmedStart: false }];
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respond(body)));
+    const result = await withCurrentPlanningRead(JSON.parse(JSON.stringify(snapshot)), {}, currentRsoUsePolicy().revision,
+      new AbortController().signal, (_input, data, readError) => {
+        expect(readError).toBeNull(); expect(data).not.toBeNull();
+        const row = restrictRsoForecast(data!.forecasts[0], data!.forecastManifest, now);
+        return { probability: row.startProbability, saves: row.stats.SAVES_GOALIE, totals: row.allowedUses?.totals };
+      });
+    expect(result).toEqual({ probability: 0.3, saves: 7.5, totals: true });
+  });
   it("uses one current GET for planning, candidates and display, and ends authority before serialization", async () => {
     const { snapshot, body, intent } = fixture();
     const fetcher = vi.fn().mockResolvedValue(respond(body)); vi.stubGlobal("fetch", fetcher);
@@ -262,4 +290,95 @@ describe("fresh RSO execution authority", () => {
     expect(nonces[0]["X-RSO-Read-Nonce"]).not.toBe(nonces[1]["X-RSO-Read-Nonce"]);
   });
 
+});
+
+describe("authenticated Yahoo generation through the real adapter", () => {
+  function privateFixture(probability = 1) {
+    const f = fixture(); f.snapshot.context.provider = "yahoo";
+    f.snapshot.players[0].playerClass = "goalie"; f.snapshot.players[0].eligiblePositions = ["G"];
+    f.snapshot.players[0].startingStatus = { source: "yahoo", date: f.snapshot.context.startDate, isStarting: probability === 0, observedAt: "2010-01-01T00:00:00Z" };
+    f.body.data.players = structuredClone(f.snapshot.players); delete f.body.data.players[0].startingStatus;
+    f.snapshot.rules.rosterSlots = { G: 1 }; f.snapshot.rules.scoring = { mode: "points", weights: { SAVES_GOALIE: 1 }, categories: [] };
+    f.snapshot.realized = {}; f.snapshot.opponent = null; f.snapshot.lockedAssignments = [];
+    f.body.bridgeForecasts.rows = [];
+    f.body.data.forecasts = [{ ...f.snapshot.forecasts[0], stats: { SAVES_GOALIE: 25 * probability },
+      conditionalStats: { SAVES_GOALIE: 25 }, startProbability: probability, confirmedStart: probability === 1 }];
+    vi.stubGlobal("MessageChannel", MessageChannel); vi.stubGlobal("Worker", undefined);
+    yahooAuth.session.mockResolvedValue({ data: { session: { access_token: "synthetic-only", user: { id: "owner" } } } });
+    yahooAuth.onAuth.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
+    const reply = (init: RequestInit) => ({ ...structuredClone(f.body), read: { ...JSON.parse(init.body as string),
+      principalId: "owner", evaluatedAt: now, expiresAt: "2026-10-22T12:02:00Z" } });
+    const fetcher = vi.fn(async (_url: unknown, init?: RequestInit) => ({ ok: true, json: async () => reply(init!) } as Response));
+    vi.stubGlobal("fetch", fetcher);
+    return { ...f, fetcher, reply, options: { yahooPrincipalId: "owner" } };
+  }
+  it.each([1, 0, .3])("uses verified current probability %s through both actual worker and no-worker fallback, ignoring contradictory saved labels", async probability => {
+    const f = privateFixture(probability);
+    const fallback = requestRosterPlanning(f.snapshot, f.intent, f.options);
+    const same = requestRosterPlanning(f.snapshot, f.intent, f.options);
+    const result = await fallback.promise;
+    expect(await same.promise).toBe(result); expect(f.fetcher).toHaveBeenCalledOnce();
+    expect(result.result.selected.projectedValue).toBe(25 * probability);
+    expect(result.displaySnapshot.forecasts[0]).toMatchObject({ startProbability: probability,
+      confirmedStart: probability === 1, stats: { SAVES_GOALIE: 25 * probability }, conditionalStats: { SAVES_GOALIE: 25 } });
+    expect(result.expiresAtMonotonic! - planningMonotonicNow()).toBe(120000);
+    expect(JSON.stringify(result)).not.toContain("synthetic-only");
+    fallback.release(); same.release();
+    const { runWorkerRequest } = await import("../../hooks/rosterPlanning.worker");
+    let instance: { onmessage: ((event: { data: unknown }) => void) | null };
+    const outgoing = vi.fn((data: unknown) => instance.onmessage?.({ data }));
+    vi.stubGlobal("self", { postMessage: outgoing });
+    class WorkerHarness {
+      onmessage = null as ((event: { data: unknown }) => void) | null;
+      onerror = null; terminate() {}
+      constructor() { instance = this; }
+      postMessage(data: Parameters<typeof runWorkerRequest>[0]["data"], ports: MessagePort[]) {
+        void runWorkerRequest(new MessageEvent("message", { data, ports }));
+      }
+    }
+    // Vite rewrites the worker URL to an origin-relative development URL. The
+    // in-process harness has no worker document; resolve that URL locally only.
+    const BrowserURL = URL;
+    vi.stubGlobal("URL", class extends BrowserURL { constructor(url: string | URL, base?: string | URL) { super(url, base ?? "http://localhost"); } });
+    vi.stubGlobal("Worker", WorkerHarness);
+    const worker = requestRosterPlanning(f.snapshot, f.intent, f.options);
+    const worked = await worker.promise; worker.release();
+    expect(worked.result.selected.projectedValue).toBe(result.result.selected.projectedValue);
+    expect(worked.displaySnapshot).toEqual(result.displaySnapshot); expect(f.fetcher).toHaveBeenCalledTimes(2);
+    expect(outgoing).toHaveBeenCalledOnce();
+    expect(restrictRsoForecast(JSON.parse(JSON.stringify(worked.displaySnapshot.forecasts[0])), worked.displaySnapshot.forecastManifest, now).allowedUses?.totals).toBe(false);
+  });
+  it.each(["principal", "team", "league", "season", "range", "nonce", "expired", "failure", "revoked"])("withdraws numeric forecasts for %s private receipts without public or old-provider fallback", async kind => {
+    const f = privateFixture();
+    f.fetcher.mockImplementation(async (_url, init) => {
+      const body = f.reply(init!);
+      if (kind === "principal") body.read.principalId = "other";
+      if (kind === "team") body.read.teamId = "other";
+      if (kind === "league") body.read.leagueId = "other";
+      if (kind === "season") body.read.seasonId = 20252026;
+      if (kind === "range") body.read.startDate = "2026-10-24";
+      if (kind === "nonce") body.read.nonce = "replayed";
+      if (kind === "expired") body.read.expiresAt = now;
+      if (kind === "revoked") body.data.forecastManifest!.rsoUsePolicy!.revision = "revoked";
+      return { ok: kind !== "failure", json: async () => body } as Response;
+    });
+    const request = requestRosterPlanning(f.snapshot, f.intent, f.options), result = await request.promise; request.release();
+    expect(result.result.selected.projectedValue).toBeNull(); expect(result.displaySnapshot.forecasts).toEqual([]);
+    expect(result.displaySnapshot.rules).toEqual(f.snapshot.rules); expect(result.displaySnapshot.roster).toEqual(f.snapshot.roster);
+    expect(f.fetcher).toHaveBeenCalledOnce();
+  });
+  it("cannot mint private authority from options/worker request JSON without a runtime channel", async () => {
+    const f = privateFixture();
+    const result = await executeRosterPlanning(f.snapshot, f.intent, { ...f.options, response: f.body, privatePort: {}, trusted: true } as never);
+    expect(result.result.selected.projectedValue).toBeNull(); expect(f.fetcher).not.toHaveBeenCalled();
+  });
+  it("withdraws confirmation authority if its deadline expires during candidate computation", async () => {
+    const f = privateFixture(), original = candidates.candidatePlanMetrics;
+    vi.spyOn(candidates, "candidatePlanMetrics").mockImplementation((...args) => {
+      const result = original(...args); vi.spyOn(performance, "now").mockReturnValue(120001); return result;
+    });
+    const request = requestRosterPlanning(f.snapshot, f.intent, f.options), result = await request.promise; request.release();
+    expect(result.result.selected.projectedValue).toBeNull(); expect(result.displaySnapshot.forecasts).toEqual([]);
+    expect(result.expiresAtMonotonic).toBeNull();
+  });
 });

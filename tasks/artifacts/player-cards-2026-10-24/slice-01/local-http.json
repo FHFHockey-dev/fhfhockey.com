@@ -1,0 +1,9 @@
+{
+  "route": "http://127.0.0.1:3125/player-cards",
+  "status": 200,
+  "bytes": 290437,
+  "sha256": "12ea13e78fb64cfc136292f1d9c1babb8189ad034da2151b4473a6b030d7c2bf",
+  "equalsFrozenHtml": true,
+  "applicationRequests": 1,
+  "externalRequests": 0
+}

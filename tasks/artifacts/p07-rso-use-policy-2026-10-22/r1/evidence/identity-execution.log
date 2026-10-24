@@ -1,0 +1,62 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/executionAdapter.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web
+
+(node:35168) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/rosterScheduleOptimizer/executionAdapter.test.ts (23 tests | 1 failed) 69ms
+   ✓ fresh RSO execution authority > uses one current GET for planning, candidates and display, and ends authority before serialization 18ms
+   ✓ fresh RSO execution authority > replaces the entire mean saved forecast graph 2ms
+   ✓ fresh RSO execution authority > replaces the entire participation saved forecast graph 2ms
+   ✓ fresh RSO execution authority > replaces the entire bridge_claim saved forecast graph 2ms
+   ✓ fresh RSO execution authority > replaces the entire binding saved forecast graph 3ms
+   ✓ fresh RSO execution authority > replaces the entire retained saved forecast graph 1ms
+   ✓ fresh RSO execution authority > replaces the entire packed saved forecast graph 2ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on failure read 1ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on suspended read 2ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on old read 1ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on future read 1ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on season read 1ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on policy read 1ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on range read 1ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on oversize read 11ms
+   ✓ fresh RSO execution authority > does not relabel retained game identity to make fresh evidence fit 2ms
+   ✓ fresh RSO execution authority > rechecks revocation on the next generation with unchanged source counts 4ms
+   ✓ fresh RSO execution authority > aborts obsolete reads and never publishes their result 1ms
+   ✓ fresh RSO execution authority > runs the actual worker through the same mocked GET boundary as fallback 5ms
+   ✓ fresh RSO execution authority > coalesces the actual no-worker fallback and keeps public capacity after a later failure 2ms
+   ✓ fresh RSO execution authority > retains unknown provider ownership while applying the current stored-position receipt 1ms
+   ✓ fresh RSO execution authority > bootstraps public identity only for a matching manual player/team (mismatch false) 2ms
+   × fresh RSO execution authority > bootstraps public identity only for a matching manual player/team (mismatch true) 4ms
+     → expected 5 to be null // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleOptimizer/executionAdapter.test.ts > fresh RSO execution authority > bootstraps public identity only for a matching manual player/team (mismatch true)
+AssertionError: expected 5 to be null // Object.is equality
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+5
+
+ ❯ lib/rosterScheduleOptimizer/executionAdapter.test.ts:171:51
+    169|     expect(result.displaySnapshot.players[0].nhlTeamId).toBe(mismatch …
+    170|     expect(result.displaySnapshot.players[0].rosterRevision).toBe(mism…
+    171|     expect(result.result.selected.projectedValue).toBe(mismatch ? null…
+       |                                                   ^
+    172|     expect(snapshot.players[0].rosterRevision).toBeUndefined();
+    173|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 22 passed (23)
+   Start at  11:33:52
+   Duration  559ms (transform 127ms, setup 9ms, collect 136ms, tests 69ms, environment 244ms, prepare 33ms)
+

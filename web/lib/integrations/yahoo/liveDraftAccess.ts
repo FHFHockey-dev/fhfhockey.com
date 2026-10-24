@@ -1,4 +1,5 @@
 import type { DraftProAccess } from "lib/draft-pro/contracts";
+import type { ProviderSyncAccess } from "lib/integrations/providerSyncAccess";
 import { loadProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 
 import {
@@ -34,7 +35,7 @@ export function isConfirmedYahooLiveDraftAccessLoss(error: unknown) {
 }
 
 export function assertYahooLiveDraftServerAccess(args: {
-  access: Pick<DraftProAccess, "eligible" | "reason">;
+  access: Pick<ProviderSyncAccess | DraftProAccess, "eligible" | "reason">;
   environment?: YahooLiveDraftEnvironment;
   userId: string;
 }) {

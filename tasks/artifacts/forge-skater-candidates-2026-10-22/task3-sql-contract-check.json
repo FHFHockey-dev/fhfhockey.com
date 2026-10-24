@@ -1,0 +1,74 @@
+{
+  "schemaSource": "supabase/migrations/20260716112908_production_schema_baseline.sql",
+  "schemaSha256": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d",
+  "sqlSha256": "363ce0994cf92c31719169e4df6083b8e15012b9e8d6583db2fb36a1773b7cc2",
+  "selectedColumns": {
+    "wgo_skater_stats": [
+      "id",
+      "player_id",
+      "game_id",
+      "date",
+      "season_id",
+      "position_code",
+      "games_played"
+    ],
+    "games": [
+      "id",
+      "date",
+      "seasonId",
+      "type",
+      "startTime"
+    ],
+    "nst_gamelog_es_counts": [
+      "id",
+      "player_id",
+      "season",
+      "date_scraped",
+      "gp",
+      "toi",
+      "goals",
+      "total_assists",
+      "total_points"
+    ],
+    "nst_gamelog_es_counts_oi": [
+      "id",
+      "player_id",
+      "season",
+      "date_scraped",
+      "gp",
+      "toi",
+      "gf"
+    ],
+    "nst_gamelog_pp_counts": [
+      "id",
+      "player_id",
+      "season",
+      "date_scraped",
+      "gp",
+      "toi",
+      "goals",
+      "total_assists",
+      "total_points"
+    ],
+    "nst_gamelog_pp_counts_oi": [
+      "id",
+      "player_id",
+      "season",
+      "date_scraped",
+      "gp",
+      "toi",
+      "gf"
+    ]
+  },
+  "missingColumns": {
+    "wgo_skater_stats": [],
+    "games": [],
+    "nst_gamelog_es_counts": [],
+    "nst_gamelog_es_counts_oi": [],
+    "nst_gamelog_pp_counts": [],
+    "nst_gamelog_pp_counts_oi": []
+  },
+  "staticReadScopeAndBoundsCheck": "passed",
+  "hostedSchemaPlanSyntaxExecution": "not_run",
+  "liveQueriesExecuted": 0
+}

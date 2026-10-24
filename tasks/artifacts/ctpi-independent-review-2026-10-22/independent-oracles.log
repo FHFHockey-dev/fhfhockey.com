@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/pages/api/v1/db/auditCtpiIndependent.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-ctpi-independent-review-mskfkylx/isolation/snapshot/web
+
+ ✓ __tests__/pages/api/v1/db/auditCtpiIndependent.test.ts (13 tests) 21ms
+
+ Test Files  1 passed (1)
+      Tests  13 passed (13)
+   Start at  09:32:55
+   Duration  141ms (transform 42ms, setup 8ms, collect 37ms, tests 21ms, environment 0ms, prepare 29ms)
+

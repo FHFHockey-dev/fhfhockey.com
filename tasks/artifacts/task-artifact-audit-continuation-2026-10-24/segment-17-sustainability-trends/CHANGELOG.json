@@ -1,0 +1,490 @@
+{
+  "at": "2026-10-24T19:34:20.493480+00:00",
+  "changes": {
+    "TRENDS-HISTORICAL-REPAIRS": {
+      "fields": {
+        "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test. Segment17 full task/PRD/report/manifest review resolves NEW15: the exact August2 season-identity operation and zero-change physical replay are reported complete. Old pre-repair/authorization paragraphs are superseded. NEW2/6/7/8/9 remain separately scoped in six readable children; their dated forward/non-writing previews do not establish current applied-history or reader closure. No fresh runtime/data check.",
+        "children": [
+          {
+            "child_id": "TRENDS-HISTORICAL-REPAIRS/NEW2-expected-shooting",
+            "title": "Reconcile expected-shooting version/application and reader proof",
+            "status": "Forward formula and dated eight-identity preview retained; later application unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "First locate later migration/repair receipts. If still open, retain only the exact metric/date/player update cohort with version, before/candidate hashes, physical replay and reader proof. Do not recompute the already implemented ixG/unblocked-attempt formula.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+              "line": 174
+            },
+            "approval_gate": "Reconciliation-first only. No migration, hosted read/write, refresh, replay, backfill, fitting, publication or deployment by audit. Any later operation requires its own exact retained scope and authority; preserve completed and quarantined work.",
+            "existing_work_credit": "Canonical nst_ixg / nst_iff ×100 formula and focused regression remain complete; legacy key is retained for compatibility."
+          },
+          {
+            "child_id": "TRENDS-HISTORICAL-REPAIRS/NEW6-missing-PDO",
+            "title": "Reconcile neutral missing-PDO deployment evidence",
+            "status": "Neutral policy implemented locally; real missing-source branch unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile formula/source-through migration and actual deployment/reader receipts. The dated 14-team preview has observed PDO only; preserve synthetic missing-source acceptance and wait for a legitimate natural missing-source case rather than fabricating one.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+              "line": 178
+            },
+            "approval_gate": "Reconciliation-first only. No migration, hosted read/write, refresh, replay, backfill, fitting, publication or deployment by audit. Any later operation requires its own exact retained scope and authority; preserve completed and quarantined work.",
+            "existing_work_credit": "Observed-only moments, explicit missing flag/count and neutral pdo_z=0 remain implemented. Historical variance changes are a separate application gate."
+          },
+          {
+            "child_id": "TRENDS-HISTORICAL-REPAIRS/NEW7-existing-playoff-repair",
+            "title": "Reconcile existing playoff trend-row correction",
+            "status": "Forward seconds/minutes adapter complete; existing-row application unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Locate later exact versioned repair receipts for already-persisted corrupt rows, retaining full season-to-date accumulator inputs and bounded output identities. The dated 2025–26 preview identifies 55,233 changed rows and 1,472 exactly 60×-low rates; do not infer that a local adapter rewrote history.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+              "line": 179
+            },
+            "approval_gate": "Reconciliation-first only. No migration, hosted read/write, refresh, replay, backfill, fitting, publication or deployment by audit. Any later operation requires its own exact retained scope and authority; preserve completed and quarantined work.",
+            "existing_work_credit": "Mixed regular/playoff rate regression and shared source adapter retain acceptance; WGO NEW15 season-identity repair is already closed."
+          },
+          {
+            "child_id": "TRENDS-HISTORICAL-REPAIRS/NEW7-missing-history-fill",
+            "title": "Keep missing playoff-history fill separate from corrupt-row repair",
+            "status": "Held separate decision; no automatic history fill",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile later explicit dispositions for the dated 24,300 missing 2025–26 identities and 83,592 absent 2024–25 candidates. Each missing-history cohort needs its own exact scope/approval and replay/reader proof; repair of existing rows grants no fill authority.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+              "line": 179
+            },
+            "approval_gate": "Reconciliation-first only. No migration, hosted read/write, refresh, replay, backfill, fitting, publication or deployment by audit. Any later operation requires its own exact retained scope and authority; preserve completed and quarantined work.",
+            "existing_work_credit": "Existing-row correction and closed upstream season-identity operation remain separate; source-backed candidate counts are not completed writes."
+          },
+          {
+            "child_id": "TRENDS-HISTORICAL-REPAIRS/NEW8-score-provenance",
+            "title": "Reconcile legacy Sustainability provenance disposition",
+            "status": "Forward provenance v2 complete; historical application unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Locate later season-wide application/replay/reader receipts. Preserve proven v2 payloads byte-for-byte, label unprovable observed cutoffs/age unknown, and retain exact embedded model/config identities only. Never reconstruct historical as-of evidence from current sources.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+              "line": 180
+            },
+            "approval_gate": "Reconciliation-first only. No migration, hosted read/write, refresh, replay, backfill, fitting, publication or deployment by audit. Any later operation requires its own exact retained scope and authority; preserve completed and quarantined work.",
+            "existing_work_credit": "Dated July22/23 non-writing previews retain score/model/config equality and mixed-version preservation; no score recalibration requested."
+          },
+          {
+            "child_id": "TRENDS-HISTORICAL-REPAIRS/NEW9-team-final-source",
+            "title": "Reconcile default team-rating carry-forward and historical scope",
+            "status": "Source ordering already correct; later version/application/natural proof unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile later migration/default-caller and natural receipts. Preserve explicit-date/backfill scope, completed NST 09:55→ratings 10:15 ordering, and prior-date recompute-before-carry semantics. Keep full-calendar missing identities, exact-source updates and justified carried rows distinct.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+              "line": 181
+            },
+            "approval_gate": "Reconciliation-first only. No migration, hosted read/write, refresh, replay, backfill, fitting, publication or deployment by audit. Any later operation requires its own exact retained scope and authority; preserve completed and quarantined work.",
+            "existing_work_credit": "Local two-day default-call regression and dated 14exact-source/18 carry preview remain accepted; do not dispatch another scheduler reorder."
+          }
+        ]
+      },
+      "before_fields": {
+        "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/f6081d284c47-tasks-prd-sustainability-trends-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 174,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/f6081d284c47-tasks-prd-sustainability-trends-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 178,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/f6081d284c47-tasks-prd-sustainability-trends-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 179,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/f6081d284c47-tasks-prd-sustainability-trends-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 180,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/f6081d284c47-tasks-prd-sustainability-trends-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 181,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/f6081d284c47-tasks-prd-sustainability-trends-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 187,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/87d80f2f085d-sustainability-forge-bounded-repair-manifest.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+          "line": 8,
+          "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/87d80f2f085d-sustainability-forge-bounded-repair-manifest.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+          "line": 75,
+          "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/87d80f2f085d-sustainability-forge-bounded-repair-manifest.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+          "line": 114,
+          "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/87d80f2f085d-sustainability-forge-bounded-repair-manifest.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+          "line": 170,
+          "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/87d80f2f085d-sustainability-forge-bounded-repair-manifest.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+          "line": 196,
+          "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/397987998667-sustainability-trends-audit-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+          "line": 255,
+          "sha256": "397987998667390b8161f6d268e99dba9c206ce66391e98dc4df97f636b8faac",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        }
+      ]
+    },
+    "PIPE-ROLLING-HISTORY-REPAIR": {
+      "fields": {
+        "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test. Segment17 source report/manifest retains a dated four-player 1,045-primary/support preview, seven source freshness blockers and the separate all-player/grouped-publication gates. This does not reopen accepted full-history forward code or post-drop parity. Later source/sweep/application receipts remain unverified here.",
+        "children": [
+          {
+            "child_id": "PIPE-ROLLING-HISTORY-REPAIR/NEW10-source-and-full-sweep",
+            "title": "Reconcile source-tail and complete rolling dry-run evidence",
+            "status": "Dated representative preview blocked; later full-sweep closure unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Locate later zero-blocker source-tail and deterministic all-player cursor receipts, with exact primary/support identity parity, payload hashes and missing/changed row classes. The old four-player 1,045-row preview and seven freshness blockers are diagnostic evidence, not current full-season completion.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+              "line": 182
+            },
+            "approval_gate": "Reconciliation-first only. No migration, hosted read/write, refresh, replay, backfill, fitting, publication or deployment by audit. Any later operation requires its own exact retained scope and authority; preserve completed and quarantined work.",
+            "existing_work_credit": "Forward full-selected-history contract, dry-run observer and separate shipped column-drop/parity scope retain credit."
+          },
+          {
+            "child_id": "PIPE-ROLLING-HISTORY-REPAIR/NEW10-grouped-repair-proof",
+            "title": "Reconcile grouped rolling history application and downstream proof",
+            "status": "Held after source/full-sweep gate; no historical forecast rewrite",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "PIPE-ROLLING-HISTORY-REPAIR/NEW10-source-and-full-sweep"
+            ],
+            "next_action": "After retained source/sweep closure, reconcile exact grouped primary/support mutation/replay/reader receipts and raw→rolling→new eligible FORGE proof. Preserve old forecast rows and no-backfill quarantine; do not treat support parity or an input contract label as applied-history evidence.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+              "line": 182
+            },
+            "approval_gate": "Reconciliation-first only. No migration, hosted read/write, refresh, replay, backfill, fitting, publication or deployment by audit. Any later operation requires its own exact retained scope and authority; preserve completed and quarantined work.",
+            "existing_work_credit": "Existing guarded forward builder remains; no repeated local repair or old forecast reconstruction is authorized."
+          }
+        ]
+      },
+      "before_fields": {
+        "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/f6081d284c47-tasks-prd-sustainability-trends-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 182,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/87d80f2f085d-sustainability-forge-bounded-repair-manifest.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+          "line": 245,
+          "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/87d80f2f085d-sustainability-forge-bounded-repair-manifest.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+          "line": 261,
+          "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/87d80f2f085d-sustainability-forge-bounded-repair-manifest.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+          "line": 273,
+          "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/397987998667-sustainability-trends-audit-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+          "line": 267,
+          "sha256": "397987998667390b8161f6d268e99dba9c206ce66391e98dc4df97f636b8faac",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        }
+      ]
+    },
+    "FORGE-RESULTS-COVERAGE": {
+      "fields": {
+        "implementation": "Trends NEW13 retains repaired rolling-input eligibility, a local atomic exact-replacement RPC and dated missing-result counts. Migration application and bounded eligible-run backfill/idempotency/readback are unverified here. Closed NEW14/16 exclude all 21contaminated historical runs and their 1,344missing results terminally. NEW13 is only the surviving future/otherwise eligible result scope.",
+        "acceptance_release_gate": "Reconcile later exact migration and eligible-run receipts first. Separate bounded operation approval, replay/coverage/readback and rollback evidence remain required. No mutation request may include the 21 contaminated runs/projections/result scopes, retrospective provenance stamping, parallel history class, evaluation-cohort opening or model publication.",
+        "children": [
+          {
+            "child_id": "FORGE-RESULTS-COVERAGE/NEW13-eligible-only-proof",
+            "title": "Reconcile eligible-run result migration and exact coverage proof",
+            "status": "Held/unverified later application; 21contaminated scopes terminally excluded",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "PIPE-ROLLING-HISTORY-REPAIR"
+            ],
+            "next_action": "First reconcile later atomic-RPC migration and eligible-run receipts. Any future result scope must carry repaired rolling-history provenance and latest-succeeded-run authority, handle eligible empty scopes, and prove replay/coverage. Exclude all 21legacy runs and their 1,344missing results; no alternate history class or retroactive stamp.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+              "line": 185
+            },
+            "approval_gate": "Reconciliation-first only. No migration, hosted read/write, refresh, replay, backfill, fitting, publication or deployment by audit. Any later operation requires its own exact retained scope and authority; preserve completed and quarantined work.",
+            "existing_work_credit": "Closed NEW14/16 no-backfill disposition and accepted local latest-run/empty-scope controls remain unchanged."
+          }
+        ]
+      },
+      "before_fields": {
+        "implementation": "Trends NEW13 retains repaired rolling-input eligibility, a local atomic exact-replacement RPC and dated missing-result counts. Migration application and bounded eligible-run backfill/idempotency/readback are unverified here.",
+        "acceptance_release_gate": "Separate migration and non-dry-run backfill authority; no evaluation cohort opening, retrospective forecast mutation or publication from audit.",
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/f6081d284c47-tasks-prd-sustainability-trends-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 185,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/f6081d284c47-tasks-prd-sustainability-trends-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 186,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/f6081d284c47-tasks-prd-sustainability-trends-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 188,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/87d80f2f085d-sustainability-forge-bounded-repair-manifest.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+          "line": 325,
+          "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/397987998667-sustainability-trends-audit-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+          "line": 253,
+          "sha256": "397987998667390b8161f6d268e99dba9c206ce66391e98dc4df97f636b8faac",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/397987998667-sustainability-trends-audit-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+          "line": 254,
+          "sha256": "397987998667390b8161f6d268e99dba9c206ce66391e98dc4df97f636b8faac",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        }
+      ]
+    },
+    "REPO-DOCUMENTATION": {
+      "fields": {
+        "verification": "Current source and retained receipts inspected; no application tests rerun. Segment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority. Segment15 distinguishes completed 36/36 modularization and approved scalar epsilon 0.005 from still-tracked PP-ACC-001–005 accuracy proposals. Meta A–K checkmarks do not close granular Sustainability or OCT14 requirements. Latest V1 tail supersedes earlier missing-identity, unresolved 73-slot and exact-cap-blocker statements; do not repeat those resolved decisions. Current canonical admission/reconciliation test packets remain authoritative over old NEW6/NEW7 issue wording. Segment16 full Sustainability sources retain later Option A, score-v2, canonical windows, applied provenance migration, local route/health acceptance and named-player UI closure over old draft/step4 instructions. The broad checked stat/probability rows need a documented scope disposition against the runbook; no current API defect was reproduced. NEW17/18 supersede old all-complete orchestration/drift language, not accepted unrelated fixes. Segment17 finishes Sustainability documentary sources at captured hashes. July/August inline pre-repair and unapplied-migration sections yield to later exact NEW15, provenance and ownership receipts; source recommendation does not revive consolidation/deletion authority. The volatility/elasticity plan is completed 19/19, so its older incomplete progress/suggested-next-steps paragraphs are not new work. Research citations remain opaque/unverified and age/goalie/context ideas do not dispatch parked modeling. Generated inventory/map summaries are structurally coherent historical snapshots, not current app existence, ownership or all-row semantic acceptance."
+      },
+      "before_fields": {
+        "verification": "Current source and retained receipts inspected; no application tests rerun. Segment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority. Segment15 distinguishes completed 36/36 modularization and approved scalar epsilon 0.005 from still-tracked PP-ACC-001–005 accuracy proposals. Meta A–K checkmarks do not close granular Sustainability or OCT14 requirements. Latest V1 tail supersedes earlier missing-identity, unresolved 73-slot and exact-cap-blocker statements; do not repeat those resolved decisions. Current canonical admission/reconciliation test packets remain authoritative over old NEW6/NEW7 issue wording. Segment16 full Sustainability sources retain later Option A, score-v2, canonical windows, applied provenance migration, local route/health acceptance and named-player UI closure over old draft/step4 instructions. The broad checked stat/probability rows need a documented scope disposition against the runbook; no current API defect was reproduced. NEW17/18 supersede old all-complete orchestration/drift language, not accepted unrelated fixes."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/397987998667-sustainability-trends-audit-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+          "line": 4,
+          "sha256": "397987998667390b8161f6d268e99dba9c206ce66391e98dc4df97f636b8faac",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/397987998667-sustainability-trends-audit-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+          "line": 168,
+          "sha256": "397987998667390b8161f6d268e99dba9c206ce66391e98dc4df97f636b8faac",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/397987998667-sustainability-trends-audit-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+          "line": 314,
+          "sha256": "397987998667390b8161f6d268e99dba9c206ce66391e98dc4df97f636b8faac",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/397987998667-sustainability-trends-audit-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+          "line": 344,
+          "sha256": "397987998667390b8161f6d268e99dba9c206ce66391e98dc4df97f636b8faac",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/de5c10b7b2db-sustainability-trends-plan.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md",
+          "line": 32,
+          "sha256": "de5c10b7b2dbce6e3a692da9e25914d6884bbc0b58b5277a951ea787ba6e5b2e",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/de5c10b7b2db-sustainability-trends-plan.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md",
+          "line": 64,
+          "sha256": "de5c10b7b2dbce6e3a692da9e25914d6884bbc0b58b5277a951ea787ba6e5b2e",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/2cdba9dab7de-deep-research-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/deep-research-report.md",
+          "line": 47,
+          "sha256": "2cdba9dab7def7bd101e78b4c54fc6ea9195ac732fb983f88803931b46297573",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/dc7fa2f3a954-sustainability-trends-inventory.json",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-inventory.json",
+          "line": 1,
+          "sha256": "dc7fa2f3a95444a04f2a30b9fefc8b228257d80f54824c8ca138da7e7bb859b4",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Entire JSON structurally parsed and all-entry schema/ID/count/cross-link summaries checked. Seven selected surface/inventory records and five output-object records semantically read; other row semantics and underlying current app/path/runtime state unreviewed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/3614e6e55913-sustainability-trends-dependency-map.json",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-dependency-map.json",
+          "line": 1,
+          "sha256": "3614e6e55913b6f12b9f7a4f4f9a4401742eb0e627bd4e64b5b067bd68da5375",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Entire JSON structurally parsed and all-entry schema/ID/count/cross-link summaries checked. Seven selected surface/inventory records and five output-object records semantically read; other row semantics and underlying current app/path/runtime state unreviewed."
+        }
+      ]
+    },
+    "SITE-FORGE-TESTING-GROUNDS": {
+      "fields": {
+        "acceptance": "S05-R1 locally accepted only: unchanged original reproducer passes; independent11focused passes/eight intentional skips, scoped TypeScript/lint and148owner pins plus receipt matched. Native BFCache/browser, live session/server authorization, trusted payload/sealing/runner and scientific/model gates are not closed. Parent now reports TJ directly confirmed that Testing Grounds opens in his browser. This is user-observed viewing success; it is not independent authenticated/session verification or live runner activation.",
+        "verification": "Full local-owner-configuration HANDOFF read and declared hash matched. Worker reports private readback, ten unchanged source pins, one credential-free local GET at 17:25:58 UTC and hot reload without restart. No env contents, UUID, token, local request or app-source check by audit; 0 of 1 approved hosted Auth reads used per receipt. The newly cross-mapped OCT14-COMP6 accountability requirements need report/evidence-stage alignment with this existing UI/runner scope. An operational preview or configured owner gate does not establish matched numeric target support, proper-score reporting or full comparison-program acceptance. No new implementation, auth/runtime observation or second dashboard owner is inferred. Latest viewing milestone is attributed solely to the parent-reported user observation; audit made no browser/Auth/runner request."
+      },
+      "before_fields": {
+        "acceptance": "S05-R1 locally accepted only: unchanged original reproducer passes; independent11focused passes/eight intentional skips, scoped TypeScript/lint and148owner pins plus receipt matched. Native BFCache/browser, live session/server authorization, trusted payload/sealing/runner and scientific/model gates are not closed.",
+        "verification": "Full local-owner-configuration HANDOFF read and declared hash matched. Worker reports private readback, ten unchanged source pins, one credential-free local GET at 17:25:58 UTC and hot reload without restart. No env contents, UUID, token, local request or app-source check by audit; 0 of 1 approved hosted Auth reads used per receipt. The newly cross-mapped OCT14-COMP6 accountability requirements need report/evidence-stage alignment with this existing UI/runner scope. An operational preview or configured owner gate does not establish matched numeric target support, proper-score reporting or full comparison-program acceptance. No new implementation, auth/runtime observation or second dashboard owner is inferred."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/112a7112c7af-PARENT-CONTEXT.md",
+          "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/PARENT-CONTEXT.md",
+          "line": 5,
+          "sha256": "112a7112c7affe81b59bf1055670f4b484e6088b43b3ca59182323def90e4ac6",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Parent-reported user viewing/prototype milestone only; no independent Auth, browser, runner or final design acceptance. Audit-owned receipt excluded from original tree queue."
+        }
+      ]
+    },
+    "SITE-PLAYER-CARDS": {
+      "fields": {
+        "acceptance": "Independent S03-R1 review reports the original three failures pass unchanged, eight focused passes/nine intentional skips, four offline browser groups and 161 unchanged pins. Audit read the receipt without rerunning checks or inspecting pixels. Parent reports TJ approved the visual prototype toward the shared references, with a first visual checkpoint before broader rollout. Final design and phone/share readability acceptance remain unresolved.",
+        "verification": "Full independent REVIEW, later preview HANDOFF and structured runtime/readback reviewed, plus actual CODEX-045/047 blocks in a frozen coordination snapshot. Initial one-GET readback, later two-GET handoff, and subsequent process-only observation are distinct phases. Underlying source/pixel/pin checks retain reviewer/owner attribution; no app, browser, process or request action by audit. Latest visual-direction approval is parent-reported user context; no new pixel/browser/technical acceptance is inferred."
+      },
+      "before_fields": {
+        "acceptance": "Independent S03-R1 review reports the original three failures pass unchanged, eight focused passes/nine intentional skips, four offline browser groups and 161 unchanged pins. Audit read the receipt without rerunning checks or inspecting pixels. TJ design direction and phone/share readability remain unresolved.",
+        "verification": "Full independent REVIEW, later preview HANDOFF and structured runtime/readback reviewed, plus actual CODEX-045/047 blocks in a frozen coordination snapshot. Initial one-GET readback, later two-GET handoff, and subsequent process-only observation are distinct phases. Underlying source/pixel/pin checks retain reviewer/owner attribution; no app, browser, process or request action by audit."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/112a7112c7af-PARENT-CONTEXT.md",
+          "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/PARENT-CONTEXT.md",
+          "line": 6,
+          "sha256": "112a7112c7affe81b59bf1055670f4b484e6088b43b3ca59182323def90e4ac6",
+          "observed_at": "2026-10-24T19:34:20.493480+00:00",
+          "review_scope": "Parent-reported user viewing/prototype milestone only; no independent Auth, browser, runner or final design acceptance. Audit-owned receipt excluded from original tree queue."
+        }
+      ]
+    }
+  },
+  "added_ids": [],
+  "deduplication": {
+    "historical": "Six readable cohort decisions within TRENDS-HISTORICAL-REPAIRS; repair versus missing-history fill separated, not new parent IDs.",
+    "rolling": "Two child gates preserve source/full-sweep versus grouped application/downstream proof; separate shipped parity remains closed.",
+    "results": "One eligible-only child; all21legacy scopes terminally quarantined, not reopened.",
+    "completed": "NEW15 exact production season-identity repair and19/19volatility plan closure retained; generated unknowns/research suggestions not converted into invented tasks.",
+    "milestones": "TG user-observed opens and player-card direction approval are separately attributed, not runner/Auth/final design acceptance."
+  }
+}

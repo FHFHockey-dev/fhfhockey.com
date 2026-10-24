@@ -1,0 +1,177 @@
+[
+  {
+    "path": "web/components/PlayerStats/playerStatsContract.ts",
+    "category": "original-nine",
+    "expected": "d9453373cc4b774ac61e458e616091440559399bcb1358f704c4c90abffdf242",
+    "actual": "d9453373cc4b774ac61e458e616091440559399bcb1358f704c4c90abffdf242",
+    "match": true
+  },
+  {
+    "path": "web/components/PlayerStats/playerStatsContract.test.ts",
+    "category": "original-nine",
+    "expected": "bf22582beb95ada6aa25daaa32c5e98a2f4a5160f99ed02e358dce8de34663d4",
+    "actual": "bf22582beb95ada6aa25daaa32c5e98a2f4a5160f99ed02e358dce8de34663d4",
+    "match": true
+  },
+  {
+    "path": "web/components/PlayerStats/PlayerContextualStats.tsx",
+    "category": "original-nine",
+    "expected": "7872aa27fe8c421a5e3d17be898a6ece641589e3fa2cdfb1d4a3087c57c557b9",
+    "actual": "7872aa27fe8c421a5e3d17be898a6ece641589e3fa2cdfb1d4a3087c57c557b9",
+    "match": true
+  },
+  {
+    "path": "web/components/PlayerStats/PlayerContextualStats.test.tsx",
+    "category": "original-nine",
+    "expected": "30c95ab42a569c8eb1fd973d390a62fb3d7728db22e85f5aef04cd5dc6988adf",
+    "actual": "30c95ab42a569c8eb1fd973d390a62fb3d7728db22e85f5aef04cd5dc6988adf",
+    "match": true
+  },
+  {
+    "path": "web/lib/NHL/statsPageFetch.ts",
+    "category": "original-nine",
+    "expected": "1a58b8ed40a070905b3d180b8cfa1d3ae3ee6d2ecb25bff38ffa8b9834ff7f66",
+    "actual": "1a58b8ed40a070905b3d180b8cfa1d3ae3ee6d2ecb25bff38ffa8b9834ff7f66",
+    "match": true
+  },
+  {
+    "path": "web/lib/NHL/statsPageFetch.test.ts",
+    "category": "original-nine",
+    "expected": "24433be6b0211c8d4bc923ee552964ec56f3cfa4108e2115561e6ed11ae1b4c4",
+    "actual": "24433be6b0211c8d4bc923ee552964ec56f3cfa4108e2115561e6ed11ae1b4c4",
+    "match": true
+  },
+  {
+    "path": "web/lib/NHL/statsPageTypes.ts",
+    "category": "original-nine",
+    "expected": "486e67073a7ffe6a5efc94174772da2d0df528d2be362c0eded7b747bd9b8d09",
+    "actual": "486e67073a7ffe6a5efc94174772da2d0df528d2be362c0eded7b747bd9b8d09",
+    "match": true
+  },
+  {
+    "path": "web/components/StatsPage/LeaderboardCategoryGoalie.tsx",
+    "category": "original-nine",
+    "expected": "3a3dc4e7f5db7cdfafb7ccab1a3647ec893b6000fa330aaf4745d87dac433158",
+    "actual": "3a3dc4e7f5db7cdfafb7ccab1a3647ec893b6000fa330aaf4745d87dac433158",
+    "match": true
+  },
+  {
+    "path": "web/components/StatsPage/LeaderboardCategoryGoalie.test.tsx",
+    "category": "original-nine",
+    "expected": "f2d614977a1e8a3fce96b1b29be7196f8bf106066b3c1669bcc92064d4e471cf",
+    "actual": "f2d614977a1e8a3fce96b1b29be7196f8bf106066b3c1669bcc92064d4e471cf",
+    "match": true
+  },
+  {
+    "path": "web/lib/stats/percentUnits.ts",
+    "category": "a7-a9",
+    "expected": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+    "actual": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+    "match": true
+  },
+  {
+    "path": "web/lib/stats/percentUnits.test.ts",
+    "category": "a7-a9",
+    "expected": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+    "actual": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+    "match": true
+  },
+  {
+    "path": "web/components/GoalieShareChart/index.tsx",
+    "category": "a7-a9",
+    "expected": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+    "actual": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+    "match": true
+  },
+  {
+    "path": "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+    "category": "a7-a9",
+    "expected": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+    "actual": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+    "match": true
+  },
+  {
+    "path": "web/hooks/useShotData.ts",
+    "category": "a7-a9",
+    "expected": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+    "actual": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+    "match": true
+  },
+  {
+    "path": "web/hooks/useShotData.test.tsx",
+    "category": "a7-a9",
+    "expected": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+    "actual": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+    "match": true
+  },
+  {
+    "path": "web/components/GameStateAnalysis/GameStateAnalysis.tsx",
+    "category": "a7-a9",
+    "expected": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+    "actual": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+    "match": true
+  },
+  {
+    "path": "web/components/GameStateAnalysis/GameStateAnalysis.test.tsx",
+    "category": "a7-a9",
+    "expected": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+    "actual": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+    "match": true
+  },
+  {
+    "path": "web/components/TeamDashboard/AdvancedL10Metrics.tsx",
+    "category": "a7-a9",
+    "expected": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+    "actual": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+    "match": true
+  },
+  {
+    "path": "web/components/TeamDashboard/AdvancedL10Metrics.test.tsx",
+    "category": "a7-a9",
+    "expected": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+    "actual": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+    "match": true
+  },
+  {
+    "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+    "category": "a7-a9",
+    "expected": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+    "actual": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+    "match": true
+  },
+  {
+    "path": "web/components/TeamDashboard/TeamDashboard.test.tsx",
+    "category": "a7-a9",
+    "expected": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+    "actual": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+    "match": true
+  },
+  {
+    "path": "web/lib/stats/teamCountConsumers.test.tsx",
+    "category": "a7-a9",
+    "expected": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa",
+    "actual": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa",
+    "match": true
+  },
+  {
+    "path": "web/components/PlayerStats/PlayerSummaryStrip.tsx",
+    "category": "p02-r1",
+    "expected": "3956e59250acfa65c7d855b512268da1416825319953fda71778e0a773385b84",
+    "actual": "3956e59250acfa65c7d855b512268da1416825319953fda71778e0a773385b84",
+    "match": true
+  },
+  {
+    "path": "web/components/PlayerStats/PlayerStatsSummary.tsx",
+    "category": "p02-r1",
+    "expected": "7dbddd62b5d1b8469b96daa2652b96d8649362d517db77ec0aec1dd65a8687d3",
+    "actual": "7dbddd62b5d1b8469b96daa2652b96d8649362d517db77ec0aec1dd65a8687d3",
+    "match": true
+  },
+  {
+    "path": "web/components/PlayerStats/PlayerGoalieSummaries.test.tsx",
+    "category": "p02-r1",
+    "expected": "97422008b0835ac6aa8e33e9223aa42a594df8e1d461fad0ec74152aa0f97e10",
+    "actual": "97422008b0835ac6aa8e33e9223aa42a594df8e1d461fad0ec74152aa0f97e10",
+    "match": true
+  }
+]

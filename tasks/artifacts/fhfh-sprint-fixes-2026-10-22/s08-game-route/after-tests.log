@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts __tests__/pages/statsGame.test.tsx
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-7tmjn93m/isolation/snapshot/web
+
+(node:22548) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/statsGame.test.tsx (37 tests) 245ms
+
+ Test Files  1 passed (1)
+      Tests  37 passed (37)
+   Start at  10:49:22
+   Duration  813ms (transform 153ms, setup 9ms, collect 245ms, tests 245ms, environment 223ms, prepare 30ms)
+

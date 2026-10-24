@@ -1,0 +1,38 @@
+{
+  "at": "2026-10-24T18:33:56.621280+00:00",
+  "before_ids": 209,
+  "after_ids": 211,
+  "before_evidence": 1058,
+  "after_evidence": 1083,
+  "added_ids": [
+    "SITE-FORGE-ERRORS",
+    "FORGE-TOP-ADDS-WEEK"
+  ],
+  "changed_existing_ids": [
+    "REPO-DOCUMENTATION",
+    "SITE-PLAYER-CARDS",
+    "SITE-FORGE-TESTING-GROUNDS",
+    "SUSTAINABILITY-NATURAL",
+    "PIPE-NATURAL"
+  ],
+  "all_prior_ids_scopes_evidence_prefixes_preserved": true,
+  "original_188_ids_preserved": true,
+  "legacy_blocks_byte_identical_each_markdown": 32,
+  "unchanged_existing_rows_identical": 204,
+  "readable_children_before": 10,
+  "readable_children_after": 12,
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "493e31e256b456e724ce5e76600c3132f874a44bf879528ba967be5aa3fd9925",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "6758a380de00ec854622e2769b9a97cb32b347c4b1e3a5bd0f29a16fb491b7ba",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "2b4265ce9f77f1eff4f59df1737474ea244b22c916e3cf51635de67dc174fe75"
+  },
+  "candidate_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "415d918354a7f40ceb6410aa732e8feebd6bc8c188631e282f49f128bb2f0b81",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "51c7962014116573f65538c640ab977dcbfe09d4ef58360bf6a70baabc7e2abf",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "894cb6a63fcf63244b10a08e610c93276c8e713b223ff7f53616f074c6c4190d"
+  },
+  "no_added_trailing_whitespace": true,
+  "application_tests_git_or_external_operations": 0,
+  "whole_tree_content_audit_complete": false,
+  "canonical_written": true
+}

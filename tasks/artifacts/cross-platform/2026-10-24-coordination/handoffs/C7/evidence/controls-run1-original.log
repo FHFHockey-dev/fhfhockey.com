@@ -1,0 +1,73 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls/c7LunaAdversarial.test.ts (40 tests | 1 failed) 668ms
+   ✓ C7 environment > C01 network guard is active inside the forked worker 1ms
+   ✓ C7 disabled / zero-attempt paths > C02 disabled never touches transport, key, admission or a missing ledger 17ms
+   ✓ C7 disabled / zero-attempt paths > C03 enabled=string true is not enabled 2ms
+   ✓ C7 disabled / zero-attempt paths > C03 enabled=1 is not enabled 2ms
+   ✓ C7 disabled / zero-attempt paths > C03 enabled=truthy object is not enabled 1ms
+   ✓ C7 disabled / zero-attempt paths > C04 enabled without a transport holds with zero attempts 3ms
+   ✓ C7 disabled / zero-attempt paths > C05 kill switch on with dispatch: no fetch/key/admission (records reported attempts) 8ms
+   ✓ C7 disabled / zero-attempt paths > C06 kill switch flips on after Responses: Decisions not dispatched (records surfaced status) 30ms
+   ✓ C7 uncertain-spend reservation > C07 Decisions-leg timeout retains reservation and blocks ledger (records surfaced status) 64ms
+   ✓ C7 uncertain-spend reservation > C08 missing key after admission: no fetch, reservation held conservatively 24ms
+   ✓ C7 uncertain-spend reservation > C09 leftover reserved row without blockedReason blocks new admission 4ms
+   ✓ C7 uncertain-spend reservation > C09 leftover uncertain row without blockedReason blocks new admission 2ms
+   ✓ C7 uncertain-spend reservation > C10 stale lock is never stolen; ledger bytes unchanged 2ms
+   ✓ C7 uncertain-spend reservation > C11 expired admits nothing 2ms
+   ✓ C7 uncertain-spend reservation > C11 disabled ledger admits nothing 2ms
+   ✓ C7 uncertain-spend reservation > C11 maxCalls zero admits nothing 2ms
+   ✓ C7 uncertain-spend reservation > C11 cap below one reservation admits nothing 2ms
+   ✓ C7 uncertain-spend reservation > C12 aggregate counts prior exposure + settled charges, not just reservations 2ms
+   ✓ C7 uncertain-spend reservation > C13 lock contention at settle: reservation never silently freed, next run blocked 14ms
+   ✓ C7 uncertain-spend reservation > C14 unresolved billing (cached tokens) is held uncertain, never settled 23ms
+   ✓ C7 uncertain-spend reservation > C14 unresolved billing (priority tier) is held uncertain, never settled 24ms
+   ✓ C7 uncertain-spend reservation > C14 unresolved billing (dated model alias) is held uncertain, never settled 22ms
+   ✓ C7 uncertain-spend reservation > C14 unresolved billing (missing usage) is held uncertain, never settled 22ms
+   ✓ C7 uncertain-spend reservation > C14 unresolved billing (output over cap) is held uncertain, never settled 21ms
+   ✓ C7 uncertain-spend reservation > C14 unresolved billing (negative input) is held uncertain, never settled 21ms
+   ✓ C7 uncertain-spend reservation > C15 oversize (>256KiB) and HTTP 500 responses are held uncertain 47ms
+   ✓ C7 uncertain-spend reservation > C16 caller cannot widen the wire (tools/store/tokens/tier/extra fields) 23ms
+   ✓ C7 uncertain-spend reservation > C17 provider error text and key never reach the review artifact 23ms
+   × C7 uncertain-spend reservation > C18 reservation ceiling arithmetic 6ms
+     → expected 232689601 to be 232689600 // Object.is equality
+   ✓ C7 source / time / occurrence binding > C19 same source instant in another valid format is accepted; 1 ms later is held pre-dispatch 47ms
+   ✓ C7 source / time / occurrence binding > C20 asOf before publish held pre-dispatch 2ms
+   ✓ C7 source / time / occurrence binding > C20 asOf after now held pre-dispatch 1ms
+   ✓ C7 source / time / occurrence binding > C21 review clock before ingestion is held pre-dispatch 1ms
+   ✓ C7 source / time / occurrence binding > C22 alias known after publish is excluded in causal mode; retrospective mode is explicitly marked 22ms
+   ✓ C7 source / time / occurrence binding > C23 goalie evidence spanning another occurrence is rejected 21ms
+   ✓ C7 source / time / occurrence binding > C24 goalie status on a non-goalie subject is rejected 3ms
+   ✓ C7 source / time / occurrence binding > C25 goalie canonicalId differing from the identity match is rejected; duplicate occurrence rejected 44ms
+   ✓ C7 source / time / occurrence binding > C26 likely on not-starting wording (observation: soft statuses are not wording-checked) 23ms
+   ✓ C7 source / time / occurrence binding > C26 projected on ruled-out wording (observation: soft statuses are not wording-checked) 25ms
+   ✓ C7 source / time / occurrence binding > C27 Decisions wire is identical with and without the Luna identity leg (proposals never become reviewer facts) 61ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C18 reservation ceiling arithmetic
+AssertionError: expected 232689601 to be 232689600 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 232689600[39m
+[31m+ 232689601[39m
+
+ ❯ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls/c7LunaAdversarial.test.ts:209:17
+    207|     const decisionsMax = priceLunaUsage({ model: LUNA_MODEL, usage: { …
+    208|     observed.C18 = { responsesMaxNano: max, decisionsMaxNano: decision…
+    209|     expect(max).toBe(232_689_600); expect(max).toBeLessThanOrEqual(LUN…
+       |                 ^
+    210|     expect(() => priceLunaUsage({ model: LUNA_MODEL, usage: { input_to…
+    211|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 39 passed (40)
+   Start at  10:45:14
+   Duration  1.09s (transform 162ms, setup 0ms, collect 293ms, tests 668ms, environment 0ms, prepare 30ms)
+

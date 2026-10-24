@@ -1,0 +1,2 @@
+e2e/roster-schedule-optimizer-fixtures.ts(39,22): error TS18048: 'options' is possibly 'undefined'.
+e2e/roster-schedule-optimizer-fixtures.ts(40,46): error TS18048: 'options' is possibly 'undefined'.

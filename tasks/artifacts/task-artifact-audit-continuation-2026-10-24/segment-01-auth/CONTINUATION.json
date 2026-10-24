@@ -1,0 +1,220 @@
+{
+  "at": "2026-10-24T15:24:18.329355+00:00",
+  "immutable_base_queue": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/CONTINUATION.json",
+  "immutable_base_queue_sha256": "35f667361b65d99a53f65ed476587f17d38dab7f963dceda8faa3ac56758a21c",
+  "overlay_completed_exact_hashes": [
+    {
+      "path": "tasks/TASKS/auth-user-settings-platform/docs/auth-provider-manual-config.md",
+      "sha256": "05b8f6fe4e9bf4ca058c0d9152240aef3736376893a84522e6ede98f283f16aa",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/auth-user-settings-platform/prd/prd-auth-user-settings-platform.md",
+      "sha256": "9b2b743962f86b50b74a3c34ddf571d6f183d41463aa2d792a6b21bc4b5c9851",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+      "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SECURITY-MATRIX.md",
+      "sha256": "35a4ffe308ada5d9706dd61fe5b60eeab09ecaa15e02f5e7af9259994efb70bd",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CREDENTIALS-PROPOSAL.md",
+      "sha256": "e154bbdd62968d7eb2013bd9b7dad5b7268914aa8bd951c720d80e5dbddc194c",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-RECEIPTS.md",
+      "sha256": "4bd572d4d018581c95ce5f5dcf3b2a01cd85a8bd0aca52e804d3e02d4a39d405",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-local/MASTER-RECONCILIATION.md",
+      "sha256": "77e611c0c7a0cee164561e7a31cac3d53019c46e98cf795b0597e07426dc7c92",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G1-auth-draftranker.md",
+      "sha256": "80476c68a21f1da68cbb63ec2b1c7b88c088527ef8a999db5c979589708f7c99",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-patreon/HANDOFF.md",
+      "sha256": "f2c2ba189e6438603b40a6df147a63279251370046b1e7dc9fb55e006b3ba9b7",
+      "coverage": "content-reviewed"
+    }
+  ],
+  "next_cursor": "tasks/TASKS/contextual-hockey-rankings/2026-06-07-goal.md",
+  "next_queue_head": [
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/2026-06-07-goal.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "50608b1714fb5bf872280d3aee81ce68d4e95f01a0d6bb98c02b938085bd4b8e",
+      "bytes": 18266,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/gpt-codex-suggested-prompt.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "2b095ea7ce7528dc13f9ee8879da3896a710738cbc37a6d221462a0ce5e933cf",
+      "bytes": 26454,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/prd-contextual-hockey-rankings.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "7fa5db7fcaf94cf076e0963418739e1482d6cc01b80e21ee4187ef0b2638bec6",
+      "bytes": 57800,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-ecosystem-alignment-audit.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "6ccc3745d506cc49c636e248604ff437e4a29584c8f2be7ccbf339eca2e342fb",
+      "bytes": 16471,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-post-alignment-gap-audit.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "9183311619adcf6b7b4a555b83f88e463df3c5cbd8b8af850c45c06864879f62",
+      "bytes": 27518,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/prd-v2-pass-CHR.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "3de3ef08ec39e82097db682e843dbb8de6a1ac6743c2b9ed192bbeaa311cf20c",
+      "bytes": 30048,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "a562057b2cafcce30a58dacaee995a372d8409ca243d2b8d126dd896cc38e855",
+      "bytes": 28167,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f",
+      "bytes": 152980,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "2c32a40f688304dd2c7cba9b2460575d25bf6d86038bd7e0e9c579dd6cc95c42",
+      "bytes": 45399,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "f7455649134bfb415ccb6ce5d3eb06d1ec88e7d9931ffbc5e6ed1edc8fd467a2",
+      "bytes": 29191,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/Recommendations-DRR.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "191f919e180ca069b510ac9cbf5ab6208a408d8fd4efba3f83b354f8db7f501e",
+      "bytes": 18373,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/context.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "68b581c6a625094baaf975575863cb861512b56df72cdcf66b11e8a70e2b1456",
+      "bytes": 23995,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    }
+  ],
+  "cited_but_not_fully_reviewed_in_this_segment": [
+    {
+      "path": "tasks/artifacts/security-audit-fixes-2026-10-18/token-vault-pg-result-v1.json",
+      "coverage": "referenced-unreviewed in segment01; underlying frozen index may have bounded inspection",
+      "reason": "Underlying SQL result/raw catalog/older report not independently adjudicated; summary is attributed to the fully read dated receipt, not direct/live proof."
+    },
+    {
+      "path": "tasks/artifacts/super-goal-audit-2026-10-17/PROD-READS-2026-10-19.md",
+      "coverage": "referenced-unreviewed in segment01; underlying frozen index may have bounded inspection",
+      "reason": "Underlying SQL result/raw catalog/older report not independently adjudicated; summary is attributed to the fully read dated receipt, not direct/live proof."
+    },
+    {
+      "path": "tasks/sprint-2026-10-18/CHEF-REGISTER-2026-10-19.md",
+      "coverage": "referenced-unreviewed in segment01; underlying frozen index may have bounded inspection",
+      "reason": "Underlying SQL result/raw catalog/older report not independently adjudicated; summary is attributed to the fully read dated receipt, not direct/live proof."
+    },
+    {
+      "path": "tasks/TASKS/super-goal/security-boundary-reconciliation.md",
+      "coverage": "referenced-unreviewed in segment01; underlying frozen index may have bounded inspection",
+      "reason": "Underlying SQL result/raw catalog/older report not independently adjudicated; summary is attributed to the fully read dated receipt, not direct/live proof."
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-api-errors/HANDOFF.md",
+      "coverage": "referenced-unreviewed in segment01; underlying frozen index may have bounded inspection",
+      "reason": "Underlying SQL result/raw catalog/older report not independently adjudicated; summary is attributed to the fully read dated receipt, not direct/live proof."
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-COMMENTS-PROPOSAL.md",
+      "coverage": "referenced-unreviewed in segment01; underlying frozen index may have bounded inspection",
+      "reason": "Underlying SQL result/raw catalog/older report not independently adjudicated; summary is attributed to the fully read dated receipt, not direct/live proof."
+    }
+  ],
+  "resume_rule": "Same worker; no extra agents/global metadata scan/app tests. Begin next unique task-bearing document, or resolve selected claim-dependent nested receipt. Recheck only chosen hashes. Canonical/register/Library/frozen outputs stay read-only until parent releases review freeze."
+}

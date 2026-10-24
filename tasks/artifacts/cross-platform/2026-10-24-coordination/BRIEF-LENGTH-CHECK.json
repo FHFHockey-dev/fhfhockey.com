@@ -1,0 +1,17 @@
+{
+  "units": "characters including common rules",
+  "maximum": 2000,
+  "main_prompt_characters": 1890,
+  "brief_characters": {
+    "Q1": 1529,
+    "Q2": 1479,
+    "C1": 1521,
+    "C2": 1520,
+    "C3": 1526,
+    "C4": 1507,
+    "C5": 1464,
+    "C6": 1430,
+    "C7": 1559
+  },
+  "all_pass": true
+}

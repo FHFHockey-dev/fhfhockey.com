@@ -1,0 +1,11 @@
+{
+  "name": "author-tests",
+  "command": "npm test -- --run --config ../tasks/artifacts/player-cards-2026-10-24/slice-02-review/vitest.review.config.mjs --configLoader native --no-cache lib/player-cards/domain.test.ts",
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "start": "2026-10-24T17:08:53.427Z",
+  "end": "2026-10-24T17:08:54.101Z",
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "note": "Existing local dependencies only. Author tests run unedited with artifact-owned native ESM configuration, node environment, no setup files and cache disabled. No broad suite."
+}

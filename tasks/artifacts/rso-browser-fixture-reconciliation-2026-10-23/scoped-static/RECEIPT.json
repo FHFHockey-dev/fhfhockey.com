@@ -1,0 +1,35 @@
+{
+  "at": "2026-10-23T16:48:45.586055+00:00",
+  "pins": {
+    "e2e/roster-schedule-optimizer.spec.ts": "6681805aeefaa3bfe81ce47660766500c6b2aa53bee0b78572443723a43dec13",
+    "e2e/roster-schedule-optimizer-fixtures.ts": "7de8756a3bfb9c322386dc5bbd6250992c1e4f0a0e1e408d7a14fd76095ee87d",
+    "e2e/acceptance/rso-p07-acceptance.spec.ts": "a7ba4795d0d9ee66ab0a9c4e0369f045341d3eb18ff847537159015286a265cc",
+    "components/RosterScheduleOptimizer/CompactSchedule.tsx": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e"
+  },
+  "checks": [
+    {
+      "name": "eslint",
+      "argv": [
+        "/usr/local/bin/node",
+        "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/node_modules/eslint/bin/eslint.js",
+        "e2e/roster-schedule-optimizer.spec.ts",
+        "e2e/roster-schedule-optimizer-fixtures.ts",
+        "e2e/acceptance/rso-p07-acceptance.spec.ts",
+        "components/RosterScheduleOptimizer/CompactSchedule.tsx"
+      ],
+      "exit": 0
+    },
+    {
+      "name": "typescript",
+      "argv": [
+        "/usr/local/bin/node",
+        "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/node_modules/typescript/bin/tsc",
+        "--project",
+        "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/scoped-static/tsconfig.json",
+        "--pretty",
+        "false"
+      ],
+      "exit": 0
+    }
+  ]
+}

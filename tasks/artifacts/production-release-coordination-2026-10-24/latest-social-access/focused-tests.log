@@ -1,0 +1,103 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-latest-social-access-zbjtop5e/web
+
+(node:30197) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:30200) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx (30 tests) 290ms
+(node:30212) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/players.test.ts (12 tests) 85ms
+(node:30214) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:30216) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/mondayGrid.test.ts (9 tests) 37ms
+(node:30218) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/access.test.ts (24 tests) 5ms
+(node:30220) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/trends.test.ts (6 tests) 176ms
+(node:30222) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/playerSources.test.ts (5 tests) 4ms
+(node:30242) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/editionFetch.test.ts (15 tests) 221ms
+(node:30244) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/tiers.test.ts (5 tests) 27ms
+(node:30246) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/SocialShare/SocialShareAccessGate.test.tsx (10 tests) 50ms
+(node:30248) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/teamRates.test.ts (3 tests) 3ms
+(node:30250) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/SocialShare/SocialShare.test.tsx [ components/SocialShare/SocialShare.test.tsx ]
+Error: Failed to resolve import "components/GameGrid/utils/scheduleOpportunity" from "lib/socialShare/matchups.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /private/tmp/fhfh-latest-social-access-zbjtop5e/web/lib/socialShare/matchups.ts:1:30
+  1  |  import { percentileMap } from "components/GameGrid/utils/scheduleOpportunity";
+     |                                 ^
+  2  |  import { countsAsOpportunity } from "./mondayGrid";
+  3  |  export const OPPONENT_STATS_MAX_AGE_MS = 72 * 36e5;
+ ❯ TransformPluginContext._formatLog ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41
+ ❯ TransformPluginContext.error ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16
+ ❯ normalizeUrl ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+ ❯ TransformPluginContext.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7
+ ❯ EnvironmentPluginContainer.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18
+ ❯ loadAndTransform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  lib/socialShare/matchups.test.ts [ lib/socialShare/matchups.test.ts ]
+Error: Failed to resolve import "components/GameGrid/utils/scheduleOpportunity" from "lib/socialShare/matchups.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /private/tmp/fhfh-latest-social-access-zbjtop5e/web/lib/socialShare/matchups.test.ts:3:52
+  1  |  import { describe, expect, it } from "vitest";
+  2  |  import { buildOpponentRatings, percentileMap } from "components/GameGrid/utils/scheduleOpportunity";
+     |                                                       ^
+  3  |  import { buildScheduleSnapshot, selectScheduleDates, weekDates } from "./schedule";
+  4  |  import { fictionalLeagueWeek, fictionalTeamStats } from "./fixtures";
+ ❯ TransformPluginContext._formatLog ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41
+ ❯ TransformPluginContext.error ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16
+ ❯ normalizeUrl ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+ ❯ TransformPluginContext.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7
+ ❯ EnvironmentPluginContainer.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18
+ ❯ loadAndTransform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  lib/socialShare/schedule.test.ts [ lib/socialShare/schedule.test.ts ]
+Error: Failed to resolve import "components/GameGrid/utils/scheduleOpportunity" from "lib/socialShare/matchups.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /private/tmp/fhfh-latest-social-access-zbjtop5e/web/lib/socialShare/matchups.ts:1:30
+  1  |  import { percentileMap } from "components/GameGrid/utils/scheduleOpportunity";
+     |                                 ^
+  2  |  import { countsAsOpportunity } from "./mondayGrid";
+  3  |  export const OPPONENT_STATS_MAX_AGE_MS = 72 * 36e5;
+ ❯ TransformPluginContext._formatLog ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41
+ ❯ TransformPluginContext.error ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16
+ ❯ normalizeUrl ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+ ❯ TransformPluginContext.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7
+ ❯ EnvironmentPluginContainer.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18
+ ❯ loadAndTransform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  3 failed | 10 passed (13)
+      Tests  119 passed (119)
+   Start at  18:03:08
+   Duration  5.83s (transform 345ms, setup 24ms, collect 937ms, tests 899ms, environment 2.14s, prepare 406ms)
+

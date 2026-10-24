@@ -1,0 +1,191 @@
+{
+  "at": "2026-10-24T20:14:35.677441+00:00",
+  "changes": {
+    "PIPE-ROLLING-DROP": {
+      "fields": {
+        "implementation": "R17 writer and 491-column drop shipped/applied. Dated October 22 first post-drop writer/natural completion is recorded, and later task2gate clears S-G row parity for its cohort. Space-reclamation outcome remains unverified; early-season stale/missing rows are separate history repair.",
+        "acceptance": "Dated column-drop/post-drop writer receipts and later 20-player/all-five-strength parity disposition retained; only 3 players have the detailed by-date/field proof. No whole-history, current natural-pipeline or completed vacuum claim.",
+        "verification": "Streamlining records R17 8b99c22d2 and applied ledger20261021185034, then October 22 rolling writes of 80/280 rows and 0 failed/0 degraded pipeline completion. Task2 VERDICT lines 57–68 clears the column drop: detailed later rows field-identical at 1e-6; early September29/30 and October3/6 gaps are stale-history, not a drop defect. pg_repack unavailable; TJ selected quiet-hour VACUUM FULL, with no later retained outcome inspected.",
+        "acceptance_release_gate": "Do not reopen cleared S-G parity or rerun the dated first-write check. Broader current natural proof stays PIPE-NATURAL; early-history application stays PIPE-ROLLING-HISTORY-REPAIR. Space reclamation remains a separate owner operation, never an audit command.",
+        "next_action": "Preserve the dated S-G/post-drop closures and reconcile only the existing owner space-reclamation outcome or deferral below. Keep current natural-run qualification and early-history repair under their existing IDs; no new parity replay or database maintenance.",
+        "children": [
+          {
+            "child_id": "PIPE-ROLLING-DROP/storage-reclaim-disposition",
+            "title": "Reconcile the owner space-reclamation outcome",
+            "status": "Owner operation selected; later retained completion unverified",
+            "owner": "PIPELINE",
+            "depends_on": [],
+            "next_action": "Locate an existing dated TJ VACUUM FULL outcome or explicit deferral. pg_repack was unavailable at 1.5.0 and no extension was created. Preserve quiet-hour/operator ownership; do not run SQL or infer completed reclamation from the column drop or first successful writes.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+              "line": 271
+            },
+            "approval_gate": "Owner-only operational disposition; no database, lock, maintenance, refresh or production action by this audit.",
+            "existing_work_credit": "R17/491-column drop, dated first post-drop writes and later S-G parity clearance retain closure. Early-season stale/missing rows remain PIPE-ROLLING-HISTORY-REPAIR."
+          }
+        ]
+      },
+      "before_fields": {
+        "implementation": "491-column drop shipped/applied perR17; parity gate open",
+        "acceptance": "partial",
+        "verification": "714 tests retained;20players×5strength parity not closed",
+        "acceptance_release_gate": "Do not equate absence of literal readers with row-identical recompute; vacuum is separate user operation",
+        "next_action": "Reconcile retained post-drop/natural receipt and any user vacuum outcome",
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          "line": 252,
+          "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be",
+          "observed_at": "2026-10-24T20:14:35.677441+00:00",
+          "review_scope": "Exact hash reuse of a prior full documentary review; this segment inspects only named clauses. No application or hosted acceptance inherited."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          "line": 271,
+          "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be",
+          "observed_at": "2026-10-24T20:14:35.677441+00:00",
+          "review_scope": "Exact hash reuse of a prior full documentary review; this segment inspects only named clauses. No application or hosted acceptance inherited."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          "line": 314,
+          "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be",
+          "observed_at": "2026-10-24T20:14:35.677441+00:00",
+          "review_scope": "Exact hash reuse of a prior full documentary review; this segment inspects only named clauses. No application or hosted acceptance inherited."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/9946cdde6b70-VERDICT.md",
+          "original_path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
+          "line": 57,
+          "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
+          "observed_at": "2026-10-24T20:14:35.677441+00:00",
+          "review_scope": "Exact hash reuse of a prior full documentary review; this segment inspects only named clauses. No application or hosted acceptance inherited."
+        }
+      ]
+    },
+    "SITE-ROLLING-READER-CONTRACT": {
+      "fields": {
+        "children": [
+          {
+            "child_id": "SITE-ROLLING-READER-CONTRACT/NEW7-public-trends-hydration",
+            "title": "Reconcile public player Trends reads against compacted storage",
+            "status": "Dated P1 regression; current exact closure unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Find later exact public-reader primary/sidecar hydration or intentional field-policy receipts and a regression built from genuinely compacted rows. Preserve row identity, selected strength/window and valid-zero/null semantics; do not treat a SELECT-only fix or HTTP200 as populated-chart proof.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md",
+              "line": 116
+            },
+            "approval_gate": "Reconciliation-first; no application edits/tests, hosted reads/writes, refresh/backfill, provider calls, schema change or deployment by this audit. Any surviving repair needs current exact ownership and separate acceptance/release scope.",
+            "existing_work_credit": "August 1 NEW-027 missing-column SELECT fix stays closed. The released FORGE S-F sidecar reader is a different consumer; this does not reopen its accepted hydration."
+          },
+          {
+            "child_id": "SITE-ROLLING-READER-CONTRACT/NEW7-validation-comparison",
+            "title": "Reconcile stored-versus-recomputed comparisons after compaction",
+            "status": "Dated P1 false-mismatch finding; current exact closure unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Find later exact validation-payload/checker hydration or field-exclusion contract and compacted-row regressions. Compare the intended stored primary-plus-support surface and label intentional compaction separately from missing source data or real mismatches.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md",
+              "line": 116
+            },
+            "approval_gate": "Reconciliation-first; no application edits/tests, hosted reads/writes, refresh/backfill, provider calls, schema change or deployment by this audit. Any surviving repair needs current exact ownership and separate acceptance/release scope.",
+            "existing_work_credit": "Original formula/window metadata, comparison matrices, support visibility and test/UI work retain completion. R17 dropped-column exclusions alone do not prove retained pruned fields are rejoined."
+          },
+          {
+            "child_id": "SITE-ROLLING-READER-CONTRACT/G3-strength-truthfulness",
+            "title": "Reconcile unsupported 5v5 requests and validation labels",
+            "status": "Proposed P3 contract reconciliation; no current defect reproduced",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile later exact route/selector receipts for true 5v5. Establish whether it is supported or explicitly rejected/disclosed; an unsupported request must not silently return all-strength data as the requested slice. Do not infer that writer support alone approves expanding the console.",
+            "source": {
+              "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md",
+              "line": 154
+            },
+            "approval_gate": "Reconciliation-first; no application edits/tests, hosted reads/writes, refresh/backfill, provider calls, schema change or deployment by this audit. Any surviving repair needs current exact ownership and separate acceptance/release scope.",
+            "existing_work_credit": "The original all/ev/pp/pk console scope and current Stats grain work retain their own limits; no new 5v5 product rollout is authorized."
+          }
+        ]
+      },
+      "is_new": true,
+      "before_fields": {
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/059fe8e750a5-tasks-rolling-player-pass-2-main-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md",
+          "line": 116,
+          "sha256": "059fe8e750a5497c0372f3785add66d24c4ee228a65b4df3af5c23339b2c0637",
+          "observed_at": "2026-10-24T20:14:35.677441+00:00",
+          "review_scope": "Full documentary content read. Dated source/author/reviewer/test/production claims retained with original provenance; no underlying application, hosted data or execution verification. Stored commands grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/5d8c5dc5b279-G3-rankings-rolling.md",
+          "original_path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md",
+          "line": 126,
+          "sha256": "5d8c5dc5b279357673b380b6ed0ce711df4f65e16ee47531c5bde6c128b3adda",
+          "observed_at": "2026-10-24T20:14:35.677441+00:00",
+          "review_scope": "Full documentary content read. Dated source/author/reviewer/test/production claims retained with original provenance; no underlying application, hosted data or execution verification. Stored commands grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/5d8c5dc5b279-G3-rankings-rolling.md",
+          "original_path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md",
+          "line": 154,
+          "sha256": "5d8c5dc5b279357673b380b6ed0ce711df4f65e16ee47531c5bde6c128b3adda",
+          "observed_at": "2026-10-24T20:14:35.677441+00:00",
+          "review_scope": "Full documentary content read. Dated source/author/reviewer/test/production claims retained with original provenance; no underlying application, hosted data or execution verification. Stored commands grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          "line": 239,
+          "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be",
+          "observed_at": "2026-10-24T20:14:35.677441+00:00",
+          "review_scope": "Exact hash reuse of a prior full documentary review; this segment inspects only named clauses. No application or hosted acceptance inherited."
+        }
+      ]
+    }
+  },
+  "added_ids": [
+    "SITE-ROLLING-READER-CONTRACT"
+  ],
+  "deduplication": [
+    {
+      "candidate": "Public/validation compacted readers",
+      "decision": "One new parent; two consumer children plus truthful-strength child. Not FORGE hydration, history repair, S-G drop or NEW-027 SELECT closure."
+    },
+    {
+      "candidate": "Old21 pass2 backlog items",
+      "decision": "KeepDone per August19 owner decision; no new tasks."
+    },
+    {
+      "candidate": "Alias retirement / PKsource-tail",
+      "decision": "Keep owner-deferred; later491drop is not blanket compatibility-retirement proof. No new implementation task from old wording."
+    },
+    {
+      "candidate": "FullRefresh / gamepaging / auth / optional metrics",
+      "decision": "Completed source/release receipts retained; no reopening."
+    },
+    {
+      "candidate": "Post-drop first writer / parity",
+      "decision": "Correct stale PIPE-ROLLING-DROP status; current natural and early history remain separate."
+    },
+    {
+      "candidate": "Historical coordinator routes/runtime/cron",
+      "decision": "Map to existing pipeline/source/natural/documentation IDs; March operator runbooks grant no authority or current timing claim."
+    },
+    {
+      "candidate": "STATS-S13/S14 and deferred candlesticks",
+      "decision": "Untouched; public player Trends hydration is not GS2cohort scope or a new modeling proposal."
+    }
+  ]
+}

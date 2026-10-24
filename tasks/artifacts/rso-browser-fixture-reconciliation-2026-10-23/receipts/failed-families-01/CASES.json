@@ -1,0 +1,125 @@
+[
+  {
+    "title": "readiness controls reach existing inputs across the required viewports",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/Daily mode and roster slots are proposed defaults/)\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/Daily mode and roster slots are proposed defaults/)\u001b[22m\n\n\n  226 |     await page.keyboard.press(\"Space\");\n  227 |     await expect(page.locator(\"#rso-rule-settings > summary\")).toBeFocused();\n> 228 |     await expect(page.getByText(/Daily mode and roster slots are proposed defaults/)).toBeVisible();\n      |                                                                                       ^\n  229 |     await page.getByRole(\"button\", { name: \"Review coverage\", exact: true }).focus();\n  230 |     await page.keyboard.press(\"Enter\");\n  231 |     await expect(page.locator(\"#rso-matchup-heading\")).toBeFocused();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:228:87"
+    ]
+  },
+  {
+    "title": "streams A to B to C through successive conditional acquisitions and keeps expanded desktop layout",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Plan summary' }).getByRole('article').filter({ hasText: 'Active games' }).locator('strong')\nExpected: \u001b[32m\"3 / 3\"\u001b[39m\nError: strict mode violation: getByRole('region', { name: 'Plan summary' }).getByRole('article').filter({ hasText: 'Active games' }).locator('strong') resolved to 2 elements:\n    1) <strong>3 / 3</strong> aka getByText('/ 3')\n    2) <strong>6</strong> aka getByText('6', { exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Plan summary' }).getByRole('article').filter({ hasText: 'Active games' }).locator('strong')\u001b[22m\n\n\n  279 |   await expect(stream.getByRole(\"row\", { name: /C#1/ }).getByRole(\"cell\").nth(1)).toContainText(\"Conditional add\");\n  280 |   await expect(stream.getByRole(\"row\", { name: /C#1/ }).getByRole(\"cell\").nth(2)).toContainText(\"Conditional add\");\n> 281 |   await expect(page.getByRole(\"region\", { name: \"Plan summary\" }).getByRole(\"article\").filter({ hasText: \"Active games\" }).locator(\"strong\")).toHaveText(\"3 / 3\");\n      |                                                                                                                                               ^\n  282 |   await openPlanDetails(page);\n  283 |   await expect(page.getByRole(\"region\", { name: \"Itinerary\" }).getByText(\"ADD Bravo Center\", { exact: true })).toBeVisible();\n  284 |   await expect(page.getByRole(\"region\", { name: \"Itinerary\" }).getByText(\"ADD Charlie Center\", { exact: true })).toBeVisible();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:281:143"
+    ]
+  },
+  {
+    "title": "fixture category tradeoffs use only startable post-acquisition games on desktop and mobile",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'Itinerary', exact: true }).getByText('Category lineup \u00b7 tradeoffs need your call', { exact: true })\nExpected: visible\nReceived: hidden\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Itinerary', exact: true }).getByText('Category lineup \u00b7 tradeoffs need your call', { exact: true })\u001b[22m\n\u001b[2m    33 \u00d7 locator resolved to <span class=\"RosterScheduleOptimizer_panelSub__WeNXk\">Category lineup \u00b7 tradeoffs need your call</span>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n\n\n  392 |     }\n  393 |     await expect(gains).toContainText(\"not win probabilities\");\n> 394 |     await expect(itinerary.getByText(\"Category lineup \u00b7 tradeoffs need your call\", { exact: true })).toBeVisible();\n      |                                                                                                      ^\n  395 |     await expect(itinerary.getByText(/Best found \u00b7/)).toHaveCount(0);\n  396 |     await showScheduleView(page, \"player\");\n  397 |     await expect(itinerary.getByRole(\"button\", { name: \"Show category lineup comparison\" })).toHaveAttribute(\"aria-pressed\", \"true\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:394:102"
+    ]
+  },
+  {
+    "title": "fixture category gains use only startable post-acquisition games on desktop and mobile",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'Itinerary', exact: true }).getByText('Category lineup \u00b7 tradeoffs need your call', { exact: true })\nExpected: visible\nReceived: hidden\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Itinerary', exact: true }).getByText('Category lineup \u00b7 tradeoffs need your call', { exact: true })\u001b[22m\n\u001b[2m    33 \u00d7 locator resolved to <span class=\"RosterScheduleOptimizer_panelSub__WeNXk\">Category lineup \u00b7 tradeoffs need your call</span>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n\n\n  392 |     }\n  393 |     await expect(gains).toContainText(\"not win probabilities\");\n> 394 |     await expect(itinerary.getByText(\"Category lineup \u00b7 tradeoffs need your call\", { exact: true })).toBeVisible();\n      |                                                                                                      ^\n  395 |     await expect(itinerary.getByText(/Best found \u00b7/)).toHaveCount(0);\n  396 |     await showScheduleView(page, \"player\");\n  397 |     await expect(itinerary.getByRole(\"button\", { name: \"Show category lineup comparison\" })).toHaveAttribute(\"aria-pressed\", \"true\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:394:102"
+    ]
+  },
+  {
+    "title": "fixture category unavailable baseline use only startable post-acquisition games on desktop and mobile",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'Itinerary', exact: true }).getByText('Category lineup \u00b7 tradeoffs need your call', { exact: true })\nExpected: visible\nReceived: hidden\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Itinerary', exact: true }).getByText('Category lineup \u00b7 tradeoffs need your call', { exact: true })\u001b[22m\n\u001b[2m    33 \u00d7 locator resolved to <span class=\"RosterScheduleOptimizer_panelSub__WeNXk\">Category lineup \u00b7 tradeoffs need your call</span>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n\n\n  392 |     }\n  393 |     await expect(gains).toContainText(\"not win probabilities\");\n> 394 |     await expect(itinerary.getByText(\"Category lineup \u00b7 tradeoffs need your call\", { exact: true })).toBeVisible();\n      |                                                                                                      ^\n  395 |     await expect(itinerary.getByText(/Best found \u00b7/)).toHaveCount(0);\n  396 |     await showScheduleView(page, \"player\");\n  397 |     await expect(itinerary.getByRole(\"button\", { name: \"Show category lineup comparison\" })).toHaveAttribute(\"aria-pressed\", \"true\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:394:102"
+    ]
+  },
+  {
+    "title": "connected manager bench locks constrain the worker and preserve provider authority through undo and reload",
+    "project": "chromium",
+    "status": "timedOut",
+    "errors": [
+      "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+      "Error: locator.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Refresh provider' })\u001b[22m\n\u001b[2m    - locator resolved to <button aria-busy=\"false\" aria-label=\"Refresh provider\" aria-describedby=\"rso-provider-refresh-status\">Refresh provider</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 \u00d7 waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - element is outside of the viewport\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 \u00d7 waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - element is outside of the viewport\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    114 \u00d7 waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m        - element is visible, enabled and stable\u001b[22m\n\u001b[2m        - scrolling into view if needed\u001b[22m\n\u001b[2m        - done scrolling\u001b[22m\n\u001b[2m        - element is outside of the viewport\u001b[22m\n\u001b[2m      - retrying click action\u001b[22m\n\u001b[2m        - waiting 500ms\u001b[22m\n\n\n  568 |   providerConflict = true;\n  569 |   await openPlanningSetup(page);\n> 570 |   await page.getByRole(\"button\", { name: \"Refresh provider\" }).click();\n      |                                                                ^\n  571 |   await expect(page.getByText(/provider lock retained and manager choice kept for review/)).toBeVisible();\n  572 |   await expect(outcome).toHaveText(\"8\");\n  573 |   await page.getByRole(\"button\", { name: \"Undo\", exact: true }).click();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:570:64"
+    ]
+  },
+  {
+    "title": "shows sequential stream occupants with real games and retains workspace layout when details expand",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "dense roster keeps schedule views and their scrollbars inside the desktop frame",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "weekly LW/RW and UTIL bench explanations preserve midpoint locks through worker reload",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "manual league eligibility must be confirmed and survives a reload",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "conflicting forecasts keep capacity planning and show the affected target",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (manual)",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (connected)",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "candidate worker ranks the complete population without blocking filters and retains zero AGP",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  1599 |   await expect(browser.getByRole(\"button\", { name: /Candidate 42/ }).first()).toBeVisible();\n  1600 |   const metrics = await page.evaluate(() => (window as any).__candidatePerformance);\n> 1601 |   expect(metrics.some((row: any) => row.evaluated === 999 && row.ticks > 0 && row.maxGapMs < 500)).toBe(true);\n       |                                                                                                    ^\n  1602 |   await writeFile(testInfo.outputPath(\"candidate-performance.json\"), JSON.stringify(metrics, null, 2));\n  1603 |   await browser.getByRole(\"searchbox\", { name: \"Find candidate\" }).fill(\"\");\n  1604 |   await page.screenshot({ path: testInfo.outputPath(\"rso-worker-zero-agp.png\"), fullPage: true });\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1601:100"
+    ]
+  },
+  {
+    "title": "compact future and partial weeks use league dates and retain the full horizon without saving",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32m\"2026-\u001b[7m10-07T01:00:00.0\u001b[27m00Z\"\u001b[39m\nReceived: \u001b[31m\"2026-\u001b[7m09-26T00:00:\u001b[27m00Z\"\u001b[39m\n\nCall Log:\n- Timeout 15000ms exceeded while waiting on the predicate\n\n  2046 |   await expect(page.getByRole(\"button\", { name: \"Select Tue, Oct 6\" }).locator(\"..\")).not.toHaveClass(/elapsedDay/);\n  2047 |   await expect(page.getByRole(\"button\", { name: \"Select Wed, Oct 7\" }).locator(\"..\")).not.toHaveClass(/elapsedDay/);\n> 2048 |   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem(\"fhfh:rso:workspace:v1\")!).context.asOf)).toBe(\"2026-10-07T01:00:00.000Z\");\n       |                                                                                                                         ^\n  2049 |   await page.getByRole(\"button\", { name: \"Select Thu, Oct 8\" }).click();\n  2050 |   await expect(slider).toHaveAttribute(\"aria-valuetext\", \"Thu, Oct 8\");\n  2051 |   const stored = await page.evaluate(() => localStorage.getItem(\"fhfh:rso:workspace:v1\"));\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2048:121"
+    ]
+  },
+  {
+    "title": "compact initial future week defaults to Monday and preserves clipped horizons",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m1.7109375\u001b[39m\n\n  1701 |     const box = node.closest(\"th\")!.getBoundingClientRect(); return box.left + box.width / 2;\n  1702 |   });\n> 1703 |   expect(Math.abs(thumbCenter - headerCenter)).toBeLessThanOrEqual(1);\n       |                                                ^\n  1704 | }\n  1705 |\n  1706 | for (const count of [19, 20, 29]) test(`compact layout accounts for ${count} slots with a maximum of 20 slot rows and internal labels`, async ({ page }, testInfo) => {\n    at expectDaySliderAligned (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1703:48)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2092:3"
+    ]
+  },
+  {
+    "title": "compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText('Shared schedule: partial', { exact: true })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Shared schedule: partial', { exact: true })\u001b[22m\n\n\n  2229 |   };\n  2230 |   await expect(table.locator('[data-player-id]')).toHaveCount(20);\n> 2231 |   await expect(page.getByText(\"Shared schedule: partial\", { exact: true })).toBeVisible();\n       |                                                                             ^\n  2232 |   await expect(page.getByText(/Forecasts unavailable. Schedule planning remains usable/).first()).toBeVisible();\n  2233 |   await expect(summary.getByText(\"Roster games\").locator(\"..\")).toHaveText(\"Roster games19 known\");\n  2234 |   await expect(summary.getByText(\"NHL games\").locator(\"..\")).toHaveText(\"NHL games1 known\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2231:77"
+    ]
+  }
+]

@@ -1,0 +1,23 @@
+K1-default exit=0 stdout={"status":"disabled","attempts":0,"holds":[]} stderr=
+K2-dispatch-killswitch exit=0 stdout={"status":"review_only","attempts":1,"holds":["decisions_unresolved","human_review_required","no_publication_authority"]} stderr=
+K3-dispatch-enabled-no-ledger exit=0 stdout={"status":"review_only","attempts":1,"holds":["decisions_unresolved","human_review_required","no_publication_authority"]} stderr=
+K3b-dispatch-missing-ledger-flag exit=1 stdout= stderr=Luna review held; no automatic retry. Inspect the approved local packet and admission record. 
+K4-existing-output exit=1 stdout= stderr=Luna review held; no automatic retry. Inspect the approved local packet and admission record. 
+k4 content after: keep
+K5-input-eq-output exit=1 stdout= stderr=Luna review held; no automatic retry. Inspect the approved local packet and admission record. 
+K6-repo-root-cwd exit=1 stdout= stderr=Luna review held; no automatic retry. Inspect the approved local packet and admission record. 
+total 88
+drwxr-xr-x@ 20 tim  wheel   640 Oct 24 12:46 .
+drwxr-xr-x@  7 tim  wheel   224 Oct 24 12:46 ..
+-rw-------@  1 tim  wheel   344 Oct 24 12:46 k1.json
+-rw-------@  1 tim  wheel  1820 Oct 24 12:46 k2.json
+-rw-------@  1 tim  wheel  1820 Oct 24 12:46 k3.json
+-rw-r--r--@  1 tim  wheel     5 Oct 24 12:46 k4.json
+== k1      344B
+{'status': 'disabled', 'attempts': 0, 'holds': [], 'requestIds': [], 'canPublish': False, 'canWriteAliases': False, 'canChangeStatus': False, 'canExecuteReplacement': False} decisionReview= None None
+== k2     1820B
+{'status': 'review_only', 'attempts': 1, 'holds': ['decisions_unresolved', 'human_review_required', 'no_publication_authority'], 'requestIds': [], 'canPublish': False, 'canWriteAliases': False, 'canChangeStatus': False, 'canExecuteReplacement': False} decisionReview= unknown reference_transport_or_response_error
+== k3     1820B
+{'status': 'review_only', 'attempts': 1, 'holds': ['decisions_unresolved', 'human_review_required', 'no_publication_authority'], 'requestIds': [], 'canPublish': False, 'canWriteAliases': False, 'canChangeStatus': False, 'canExecuteReplacement': False} decisionReview= unknown reference_transport_or_response_error
+no sentinel leak
+K1 byte-identical to owner CLI-DISABLED-RESULT.json

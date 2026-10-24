@@ -1,0 +1,102 @@
+{
+    "runId": "6f4bc3bddb0a4362b7be6fcad6a08bc3",
+    "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+    "utc": "2026-10-24T16:22:20.2397900Z",
+    "failure": "",
+    "passed": true,
+    "realPlayMode": true,
+    "cleanupComplete": true,
+    "savedSceneUnchanged": true,
+    "savedSceneBeforeSHA256": "80cc73daf727ad0b623d975c57706586295545fde23cd636058047e1ade801c2",
+    "savedSceneAfterSHA256": "80cc73daf727ad0b623d975c57706586295545fde23cd636058047e1ade801c2",
+    "originalSpawn": {
+        "x": -103.0,
+        "y": 0.4000000059604645,
+        "z": 0.0
+    },
+    "settledSpawn": {
+        "x": -103.0,
+        "y": 0.3299999535083771,
+        "z": 0.0
+    },
+    "finalPilotPosition": {
+        "x": -103.0,
+        "y": 0.3299999535083771,
+        "z": 0.0
+    },
+    "shotsFired": 9,
+    "hitsLanded": 9,
+    "disabledTargets": 3,
+    "method": "Saved v13 scene, original targets and player spawn. Virtual XRHMD look and Oculus Touch right-trigger input exercise real weapon Update/raycast/damage. No target moves, direct damage, proxy teleport or saved-scene edits. Capture uses synchronous Editor shader compilation and two camera submissions to avoid incomplete shader warm-up frames. Mono screenshots; no physical-device or stereo claim.",
+    "images": [
+        {
+            "file": "v13-initial-cockpit.png",
+            "cameraPosition": {
+                "x": -103.0,
+                "y": 2.679999828338623,
+                "z": 0.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 90.0,
+                "z": 0.0
+            },
+            "overhead": false,
+            "shots": 0,
+            "hits": 0,
+            "disabled": 0
+        },
+        {
+            "file": "v13-first-target-disabled.png",
+            "cameraPosition": {
+                "x": -103.0,
+                "y": 2.679999828338623,
+                "z": 0.0
+            },
+            "cameraEuler": {
+                "x": 359.8457336425781,
+                "y": 60.00001525878906,
+                "z": -2.001039334231791e-8
+            },
+            "overhead": false,
+            "shots": 3,
+            "hits": 3,
+            "disabled": 1
+        },
+        {
+            "file": "v13-range-complete-cockpit.png",
+            "cameraPosition": {
+                "x": -103.0,
+                "y": 2.679999828338623,
+                "z": 0.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 90.0,
+                "z": 0.0
+            },
+            "overhead": false,
+            "shots": 9,
+            "hits": 9,
+            "disabled": 3
+        },
+        {
+            "file": "v13-range-complete-overhead.png",
+            "cameraPosition": {
+                "x": 0.0,
+                "y": 190.0,
+                "z": 0.0
+            },
+            "cameraEuler": {
+                "x": 90.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "overhead": true,
+            "shots": 9,
+            "hits": 9,
+            "disabled": 3
+        }
+    ],
+    "errors": []
+}

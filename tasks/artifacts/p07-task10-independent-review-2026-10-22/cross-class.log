@@ -1,0 +1,241 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts components/RosterScheduleOptimizer/p07Task10Independent.test.tsx -t does not require goalie-only
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-task10-review-fosogs3g/web
+
+(node:72896) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/RosterScheduleOptimizer/p07Task10Independent.test.tsx (43 tests | 2 failed | 36 skipped) 1257ms
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=GOALS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=ASSISTS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=POINTS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=PLUS_MINUS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=PENALTY_MINUTES is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=PP_GOALS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=PP_ASSISTS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=PP_POINTS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=SH_GOALS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=SH_ASSISTS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=SH_POINTS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=GAME_WINNING_GOALS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=SHOTS_ON_GOAL is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=FACEOFFS_WON is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=FACEOFFS_LOST is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=HITS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=false key=BLOCKED_SHOTS is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=true key=WINS_GOALIE is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=true key=LOSSES_GOALIE is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=true key=GOALS_AGAINST_GOALIE is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=true key=SHOTS_AGAINST_GOALIE is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=true key=SAVES_GOALIE is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=true key=SHUTOUTS_GOALIE is absent
+   ↓ independent combined actual UI scoring > withholds full FP when weighted goalie=true key=GAMES_STARTED is absent
+   ↓ independent combined actual UI scoring > preserves all observed zeros for goalie=false
+   ↓ independent combined actual UI scoring > preserves all observed zeros for goalie=true
+   ↓ independent combined actual UI scoring > sums every supplied category including negative weights for goalie=false
+   ↓ independent combined actual UI scoring > sums every supplied category including negative weights for goalie=true
+   ↓ independent combined actual UI scoring > does not divide known conditional means again at start probability 0
+   ↓ independent combined actual UI scoring > does not divide known conditional means again at start probability null
+   ↓ independent combined actual UI scoring > does not divide known conditional means again at start probability 0.5
+   ↓ independent combined actual UI scoring > withholds a partial conditional total while preserving the complete unconditional total
+   ↓ independent combined actual UI scoring > removes displayed numbers and fails closed after reject refresh
+   ↓ independent combined actual UI scoring > removes displayed numbers and fails closed after replay refresh
+   ↓ independent combined actual UI scoring > removes displayed numbers and fails closed after revoked refresh
+   ↓ independent combined actual UI scoring > removes displayed numbers and fails closed after expired refresh
+   ✓ does not require goalie-only weighted WINS_GOALIE to complete a skater game 280ms
+   × does not require goalie-only weighted LOSSES_GOALIE to complete a skater game 202ms
+     → Unable to find a label with the text of: Expected fantasy points: 7.0
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33maria-label[39m=[32m"Synthetic player, C, 2026-10-23"[39m
+  [33mclass[39m=[32m"_cellButton_5a1c93"[39m
+  [33mdata-chip[39m=[32m"7"[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_nameLine_5a1c93"[39m
+  [36m>[39m
+    [36m<img[39m
+      [33malt[39m=[32m""[39m
+      [33mclass[39m=[32m"_logo_5a1c93"[39m
+      [33mdata-nimg[39m=[32m"1"[39m
+      [33mdecoding[39m=[32m"async"[39m
+      [33mheight[39m=[32m"18"[39m
+      [33mloading[39m=[32m"lazy"[39m
+      [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FMIN.png&w=48&q=75"[39m
+      [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FMIN.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&w=48&q=75 2x"[39m
+      [33mstyle[39m=[32m"color: transparent;"[39m
+      [33mwidth[39m=[32m"18"[39m
+    [36m/>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_name_5a1c93"[39m
+    [36m>[39m
+      [0mplayer[0m
+    [36m</span>[39m
+    [36m<span[39m
+      [33maria-label[39m=[32m"Locked"[39m
+      [33mclass[39m=[32m"_lock_5a1c93"[39m
+      [33mtitle[39m=[32m"Locked"[39m
+    [36m>[39m
+      [0m🔒[0m
+    [36m</span>[39m
+  [36m</span>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_opp_5a1c93"[39m
+  [36m>[39m
+    [0mvsTOR[0m
+  [36m</span>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_forecastPoints_5a1c93"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33maria-label[39m=[32m"Expected fantasy points: unavailable"[39m
+      [33mclass[39m=[32m"_points_5a1c93"[39m
+      [33mtitle[39m=[32m"Expected fantasy points unavailable: an applicable weighted stat or its approved use is missing."[39m
+    [36m>[39m
+      [0m—[0m
+    [36m</span>[39m
+  [36m</span>[39m
+[36m</button>[39m
+   ✓ does not require goalie-only weighted GOALS_AGAINST_GOALIE to complete a skater game 166ms
+   ✓ does not require goalie-only weighted SHOTS_AGAINST_GOALIE to complete a skater game 156ms
+   ✓ does not require goalie-only weighted SAVES_GOALIE to complete a skater game 157ms
+   ✓ does not require goalie-only weighted SHUTOUTS_GOALIE to complete a skater game 149ms
+   × does not require goalie-only weighted GAMES_STARTED to complete a skater game 148ms
+     → Unable to find a label with the text of: Expected fantasy points: 7.0
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33maria-label[39m=[32m"Synthetic player, C, 2026-10-23"[39m
+  [33mclass[39m=[32m"_cellButton_5a1c93"[39m
+  [33mdata-chip[39m=[32m"7"[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_nameLine_5a1c93"[39m
+  [36m>[39m
+    [36m<img[39m
+      [33malt[39m=[32m""[39m
+      [33mclass[39m=[32m"_logo_5a1c93"[39m
+      [33mdata-nimg[39m=[32m"1"[39m
+      [33mdecoding[39m=[32m"async"[39m
+      [33mheight[39m=[32m"18"[39m
+      [33mloading[39m=[32m"lazy"[39m
+      [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FMIN.png&w=48&q=75"[39m
+      [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FMIN.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&w=48&q=75 2x"[39m
+      [33mstyle[39m=[32m"color: transparent;"[39m
+      [33mwidth[39m=[32m"18"[39m
+    [36m/>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_name_5a1c93"[39m
+    [36m>[39m
+      [0mplayer[0m
+    [36m</span>[39m
+    [36m<span[39m
+      [33maria-label[39m=[32m"Locked"[39m
+      [33mclass[39m=[32m"_lock_5a1c93"[39m
+      [33mtitle[39m=[32m"Locked"[39m
+    [36m>[39m
+      [0m🔒[0m
+    [36m</span>[39m
+  [36m</span>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_opp_5a1c93"[39m
+  [36m>[39m
+    [0mvsTOR[0m
+  [36m</span>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_forecastPoints_5a1c93"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33maria-label[39m=[32m"Expected fantasy points: unavailable"[39m
+      [33mclass[39m=[32m"_points_5a1c93"[39m
+      [33mtitle[39m=[32m"Expected fantasy points unavailable: an applicable weighted stat or its approved use is missing."[39m
+    [36m>[39m
+      [0m—[0m
+    [36m</span>[39m
+  [36m</span>[39m
+[36m</button>[39m
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/RosterScheduleOptimizer/p07Task10Independent.test.tsx > does not require goalie-only weighted LOSSES_GOALIE to complete a skater game
+ FAIL  components/RosterScheduleOptimizer/p07Task10Independent.test.tsx > does not require goalie-only weighted GAMES_STARTED to complete a skater game
+TestingLibraryElementError: Unable to find a label with the text of: Expected fantasy points: 7.0
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33maria-label[39m=[32m"Synthetic player, C, 2026-10-23"[39m
+  [33mclass[39m=[32m"_cellButton_5a1c93"[39m
+  [33mdata-chip[39m=[32m"7"[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_nameLine_5a1c93"[39m
+  [36m>[39m
+    [36m<img[39m
+      [33malt[39m=[32m""[39m
+      [33mclass[39m=[32m"_logo_5a1c93"[39m
+      [33mdata-nimg[39m=[32m"1"[39m
+      [33mdecoding[39m=[32m"async"[39m
+      [33mheight[39m=[32m"18"[39m
+      [33mloading[39m=[32m"lazy"[39m
+      [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FMIN.png&w=48&q=75"[39m
+      [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FMIN.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&w=48&q=75 2x"[39m
+      [33mstyle[39m=[32m"color: transparent;"[39m
+      [33mwidth[39m=[32m"18"[39m
+    [36m/>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_name_5a1c93"[39m
+    [36m>[39m
+      [0mplayer[0m
+    [36m</span>[39m
+    [36m<span[39m
+      [33maria-label[39m=[32m"Locked"[39m
+      [33mclass[39m=[32m"_lock_5a1c93"[39m
+      [33mtitle[39m=[32m"Locked"[39m
+    [36m>[39m
+      [0m🔒[0m
+    [36m</span>[39m
+  [36m</span>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_opp_5a1c93"[39m
+  [36m>[39m
+    [0mvsTOR[0m
+  [36m</span>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_forecastPoints_5a1c93"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33maria-label[39m=[32m"Expected fantasy points: unavailable"[39m
+      [33mclass[39m=[32m"_points_5a1c93"[39m
+      [33mtitle[39m=[32m"Expected fantasy points unavailable: an applicable weighted stat or its approved use is missing."[39m
+    [36m>[39m
+      [0m—[0m
+    [36m</span>[39m
+  [36m</span>[39m
+[36m</button>[39m
+ ❯ Object.getElementError ../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText ../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ ../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/RosterScheduleOptimizer/p07Task10Independent.test.tsx:133:15
+    131| it.each(goalieKeys)("does not require goalie-only weighted %s to compl…
+    132|   const { cell } = await mount({ stats: { GOALS: 1, ASSISTS: 2 }, weig…
+    133|   expect(cell.getByLabelText("Expected fantasy points: 7.0")).toBeTrut…
+       |               ^
+    134| });
+    135| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed | 36 skipped (43)
+   Start at  12:40:30
+   Duration  2.36s (transform 457ms, setup 12ms, collect 710ms, tests 1.26s, environment 260ms, prepare 33ms)
+
+

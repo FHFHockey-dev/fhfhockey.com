@@ -1,0 +1,36 @@
+{
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-combined-static-02t26sdb/snapshot/web",
+  "environment": {
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-combined-static-02t26sdb/home",
+    "TMPDIR": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-combined-static-02t26sdb/tmp",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://unit-tests.supabase.invalid",
+    "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY": "synthetic-public-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "synthetic-service-role-key",
+    "NODE_OPTIONS": "--require /var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-combined-static-02t26sdb/snapshot/web/audit-network-deny.cjs --max-old-space-size=8192",
+    "npm_config_offline": "true",
+    "npm_config_audit": "false",
+    "npm_config_fund": "false",
+    "TZ": "UTC",
+    "npm_config_update_notifier": "false"
+  },
+  "argv": [
+    "npm",
+    "exec",
+    "--offline",
+    "--no",
+    "--",
+    "tsc",
+    "--noEmit",
+    "--pretty",
+    "false"
+  ],
+  "lock": {
+    "pid": 6719,
+    "token": "e3ea9956-8e32-4616-afb1-cfb900b295d7",
+    "thread": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+    "scope": "same frozen app TypeScript retry with established 8GB heap; no lint rerun",
+    "at": "2026-10-23T15:14:33.161645+00:00"
+  },
+  "reason": "Initial same-source typecheck exhausted default4GB; existing release verification uses8192MB."
+}

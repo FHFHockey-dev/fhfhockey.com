@@ -1,0 +1,42 @@
+[
+  {
+    "name": "seasonRecord",
+    "identical": true,
+    "sha256": "6aa716a7b02bba749dd90fc6133ed514aeacd1d1aaa50d7c2506c1b66d58cecb"
+  },
+  {
+    "name": "seasonPointPercentage",
+    "identical": true,
+    "sha256": "ab1804dd977a23c3424133d4f630e66d6fb7bbd06f1399e90ebebbb816f6f488"
+  },
+  {
+    "name": "seasonWinPercentage",
+    "identical": true,
+    "sha256": "24ab57f912eb545013c83cb93e55c07d588dbce1a88bb481e8e765188781156b"
+  },
+  {
+    "name": "analyzeGamePerformance",
+    "identical": true,
+    "sha256": "a9b64b05dd711466907ea59d4752e19d2f03c5e3d457e5b535762a64aaf33310"
+  },
+  {
+    "name": "calculateGameRating",
+    "identical": true,
+    "sha256": "c0dc48de041ec360ca810f14b01be4c4c2f3e8bc1ff730465293b898524e661d"
+  },
+  {
+    "name": "getPercentageClass",
+    "identical": true,
+    "sha256": "7b32f15734ef8f85b23811d3c16ae1245c19cc1e8a1b1942f2a1155b1f1f6e71"
+  },
+  {
+    "name": "getPointsPercentageClass",
+    "identical": true,
+    "sha256": "1dd226c37c91ad8b6d5f73b89edc3366c916784dc3e60d093eaf042ac7f218fb"
+  },
+  {
+    "name": "getLeagueRankingClass",
+    "identical": true,
+    "sha256": "bbaf8112346f55e0343ca3df466bf6f7a9527d72487d4cc1e8fbccff40638001"
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "pid": 81978,
+  "parentPid": 1,
+  "processGroup": 81978,
+  "tty": "??",
+  "command": "/usr/local/bin/node /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/serve-preview.mjs",
+  "separatePostLauncherExitCheck": true,
+  "ownProcessGroup": true,
+  "lsof": "COMMAND   PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME\nnode    81978  tim   15u  IPv4 0x5abcaf5d82d7cbe0      0t0  TCP 127.0.0.1:3125 (LISTEN)\n",
+  "postTurnSurvival": "Not yet observed; coordinator must confirm after final. Host/environment termination stops server."
+}

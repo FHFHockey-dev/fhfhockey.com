@@ -1,0 +1,37 @@
+{
+  "at": "2026-10-24T16:47:23.540888+00:00",
+  "resolved": [
+    {
+      "action": "cat tasks/artifacts/shift-charts-scope-2026-10-19/HANDOFF.md",
+      "target": "tasks/artifacts/shift-charts-scope-2026-10-19/HANDOFF.md",
+      "reason": "No such file; the folder has separately named reports, not HANDOFF.md.",
+      "outcome": "Read failed without mutation. No retry; actual task/PRD clauses were reviewed instead. Supporting named reports remain metadata-only.",
+      "pending": false
+    },
+    {
+      "action": "Read owner-referenced HANDOFF.md",
+      "target": "tasks/artifacts/player-cards-2026-10-24/slice-01/HANDOFF.md",
+      "reason": "No such file at attempted read; references appeared before handback files.",
+      "outcome": "No mutation; source claims remain unaccepted. Receipt delivery remains a next-review input, not an execution denial.",
+      "pending": false,
+      "historical_pending": "Owner receipt not yet inspected; no audit operation running or uncertain.",
+      "resolution": "New frozen-slice delivery evidence followed; one later full read succeeded. No current read blocker."
+    },
+    {
+      "action": "Read owner-referenced EVIDENCE.json",
+      "target": "tasks/artifacts/player-cards-2026-10-24/slice-01/EVIDENCE.json",
+      "reason": "No such file at attempted read; references appeared before handback files.",
+      "outcome": "No mutation; source claims remain unaccepted. Receipt delivery remains a next-review input, not an execution denial.",
+      "pending": false,
+      "historical_pending": "Owner receipt not yet inspected; no audit operation running or uncertain.",
+      "resolution": "New frozen-slice delivery evidence followed; one later full read succeeded. No current read blocker."
+    },
+    {
+      "action": "Re-read card HANDOFF.md/EVIDENCE.json after new frozen-slice requirements receipt",
+      "reason": "Material new delivery evidence justified one read after prior absence.",
+      "outcome": "Both full reads succeeded; earlier absence preserved as historical. No uncertain action or current receipt-read blocker.",
+      "pending": false
+    }
+  ],
+  "new_operations_uncertain": false
+}

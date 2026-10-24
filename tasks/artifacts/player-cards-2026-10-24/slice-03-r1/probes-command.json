@@ -1,0 +1,24 @@
+{
+  "action": "probes",
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "../tasks/artifacts/player-cards-2026-10-24/slice-03-r1/review.vitest.config.mts",
+    "--maxWorkers=1",
+    "--no-file-parallelism",
+    "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/interaction-controls.test.tsx"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "elapsedSeconds": 0.967,
+  "environmentOverrides": {
+    "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-r1/.npm-cache",
+    "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-r1/.npm-logs",
+    "NO_UPDATE_NOTIFIER": "1",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "lockOwnedAndReleased": true
+}

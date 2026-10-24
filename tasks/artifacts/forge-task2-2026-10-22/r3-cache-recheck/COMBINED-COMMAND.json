@@ -1,0 +1,33 @@
+{
+  "argv": [
+    "/usr/local/bin/npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "review-vitest.config.mts",
+    "lib/projections/queries/skater-queries.test.ts",
+    "lib/projections/runProjectionV2.test.ts",
+    "lib/projections/nativeGoalAccounting.test.ts",
+    "scripts/qualify-native-players-offline.test.ts",
+    "adversarial.test.ts",
+    "fallback-parity.test.ts",
+    "lib/projections/utils/market-output-builders.test.ts",
+    "lib/projections/utils/devig.test.ts",
+    "lib/projections/uncertainty.test.ts",
+    "lib/projections/dispersion.test.ts",
+    "lib/projections/goalieModel.test.ts",
+    "lib/projections/goalie/goalieOutcomes.test.ts"
+  ],
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-cache-recheck-cp6x37_2/web",
+  "environment": {
+    "PATH": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-cache-recheck-cp6x37_2/verification/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+    "TMPDIR": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T",
+    "CI": "true",
+    "NODE_ENV": "test",
+    "NO_COLOR": "1",
+    "NODE_OPTIONS": "--require=/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-cache-recheck-cp6x37_2/verification/network-fence.cjs"
+  },
+  "exitCode": 0,
+  "seconds": 10.241
+}

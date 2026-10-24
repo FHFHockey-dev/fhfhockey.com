@@ -1,0 +1,175 @@
+{
+  "R1-01": {
+    "status": "review_only",
+    "attempts": 2,
+    "holds": [
+      "decisions_unresolved",
+      "human_review_required",
+      "no_publication_authority"
+    ],
+    "requestIds": [
+      "request-responses"
+    ],
+    "decisionReview": "unknown",
+    "fetch": 2,
+    "ledgerRows": [
+      "settled",
+      "uncertain"
+    ],
+    "blocked": "unknown_billed_outcome"
+  },
+  "R1-02": {
+    "status": "review_only",
+    "attempts": 2,
+    "holds": [
+      "decisions_unresolved",
+      "human_review_required",
+      "no_publication_authority"
+    ],
+    "requestIds": [
+      "request-responses"
+    ],
+    "decisionReview": "unknown",
+    "fetch": 1,
+    "ledgerRows": [
+      "settled"
+    ],
+    "blocked": null
+  },
+  "R1-03": {
+    "status": "held",
+    "attempts": 0,
+    "holds": [
+      "retained_packet_unresolved"
+    ],
+    "requestIds": [],
+    "decisionReview": null,
+    "fetch": 0,
+    "ledgerRows": [],
+    "blocked": null
+  },
+  "R1-04": {
+    "status": "review_only",
+    "attempts": 2,
+    "holds": [
+      "decisions_unresolved",
+      "human_review_required",
+      "no_publication_authority"
+    ],
+    "requestIds": [
+      "request-responses"
+    ],
+    "decisionReview": "unknown",
+    "fetch": 1,
+    "ledgerRows": [
+      "settled"
+    ],
+    "blocked": null
+  },
+  "R1-05 kill switch": {
+    "status": "held",
+    "attempts": 1,
+    "holds": [
+      "luna_dispatch_disabled"
+    ],
+    "requestIds": [],
+    "decisionReview": null,
+    "fetch": 0,
+    "ledgerRows": [],
+    "blocked": null
+  },
+  "R1-05 ledger stopped": {
+    "status": "held",
+    "attempts": 1,
+    "holds": [
+      "luna_budget_stopped"
+    ],
+    "requestIds": [],
+    "decisionReview": null,
+    "fetch": 0,
+    "ledgerRows": [],
+    "blocked": "x"
+  },
+  "R1-05 maxCalls 0": {
+    "status": "held",
+    "attempts": 1,
+    "holds": [
+      "luna_budget_exhausted"
+    ],
+    "requestIds": [],
+    "decisionReview": null,
+    "fetch": 0,
+    "ledgerRows": [],
+    "blocked": null
+  },
+  "R1-05 unsettled leftover": {
+    "status": "held",
+    "attempts": 1,
+    "holds": [
+      "luna_unsettled_attempt"
+    ],
+    "requestIds": [],
+    "decisionReview": null,
+    "fetch": 0,
+    "ledgerRows": [
+      "reserved"
+    ],
+    "blocked": null
+  },
+  "R1-05 missing key after admission": {
+    "status": "held",
+    "attempts": 1,
+    "holds": [
+      "luna_attempt_held_no_retry"
+    ],
+    "requestIds": [],
+    "decisionReview": null,
+    "fetch": 0,
+    "ledgerRows": [
+      "uncertain"
+    ],
+    "blocked": "unknown_billed_outcome"
+  },
+  "R1-05 normal two legs": {
+    "status": "review_only",
+    "attempts": 2,
+    "holds": [
+      "human_review_required",
+      "no_publication_authority"
+    ],
+    "requestIds": [
+      "request-responses",
+      "request-decisions"
+    ],
+    "decisionReview": "bound_review",
+    "fetch": 2,
+    "ledgerRows": [
+      "settled",
+      "settled"
+    ],
+    "blocked": null
+  },
+  "R1-06": {
+    "status": "review_only",
+    "attempts": 2,
+    "holds": [
+      "human_review_required",
+      "no_publication_authority"
+    ],
+    "requestIds": [
+      "request-responses",
+      "request-decisions"
+    ],
+    "decisionReview": "bound_review",
+    "fetch": 2,
+    "ledgerRows": [
+      "settled",
+      "settled"
+    ],
+    "blocked": null
+  },
+  "R1-07": {
+    "attempts": 2,
+    "rows": 2
+  }
+}

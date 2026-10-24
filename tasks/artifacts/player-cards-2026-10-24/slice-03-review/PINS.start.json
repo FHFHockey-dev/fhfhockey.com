@@ -1,0 +1,574 @@
+{
+  "at": "2026-10-24T17:38:44.884090+00:00",
+  "pins": [
+    {
+      "path": "web/lib/player-cards/interactionFixtures.ts",
+      "size_bytes": 4100,
+      "sha256": "803cf3b41962b3125a0cd78c886700c58d2a37fd61206562545919767d04774e",
+      "group": "source_files",
+      "actual_sha256": "803cf3b41962b3125a0cd78c886700c58d2a37fd61206562545919767d04774e",
+      "actual_size_bytes": 4100,
+      "match": true
+    },
+    {
+      "path": "web/lib/player-cards/interactionSnapshot.ts",
+      "size_bytes": 3759,
+      "sha256": "53ce89f2495a7b832a20302d070c9f6b87d1dc099f1e460600e7471eb4aa3759",
+      "group": "source_files",
+      "actual_sha256": "53ce89f2495a7b832a20302d070c9f6b87d1dc099f1e460600e7471eb4aa3759",
+      "actual_size_bytes": 3759,
+      "match": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.tsx",
+      "size_bytes": 11421,
+      "sha256": "83d75fc766229367aa7599b89413f9dc1b8754b00910bd75bf4b0e20f22d0926",
+      "group": "source_files",
+      "actual_sha256": "83d75fc766229367aa7599b89413f9dc1b8754b00910bd75bf4b0e20f22d0926",
+      "actual_size_bytes": 11421,
+      "match": true
+    },
+    {
+      "path": "web/components/player-cards/InteractiveCard.tsx",
+      "size_bytes": 5023,
+      "sha256": "181a0cd3dd36b14433ce845c864209ce36103ecf14853037826faf6bec8e06fe",
+      "group": "source_files",
+      "actual_sha256": "181a0cd3dd36b14433ce845c864209ce36103ecf14853037826faf6bec8e06fe",
+      "actual_size_bytes": 5023,
+      "match": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.module.scss",
+      "size_bytes": 2931,
+      "sha256": "4e49342c3f99b62201e8bc2dcf76c60faee6a565ff924894c00e40c374512c43",
+      "group": "source_files",
+      "actual_sha256": "4e49342c3f99b62201e8bc2dcf76c60faee6a565ff924894c00e40c374512c43",
+      "actual_size_bytes": 2931,
+      "match": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.test.tsx",
+      "size_bytes": 7413,
+      "sha256": "a3372616fa57559d7717e7b43d667986e7fdbe2ece06fbf948c8ec23b123f7dc",
+      "group": "source_files",
+      "actual_sha256": "a3372616fa57559d7717e7b43d667986e7fdbe2ece06fbf948c8ec23b123f7dc",
+      "actual_size_bytes": 7413,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/HANDOFF.md",
+      "size_bytes": 7835,
+      "sha256": "4f08fbf892b88d78f97b3bf1daa6bfbf1375ade1755d24d02de701de3229cef9",
+      "group": "artifacts",
+      "actual_sha256": "4f08fbf892b88d78f97b3bf1daa6bfbf1375ade1755d24d02de701de3229cef9",
+      "actual_size_bytes": 7835,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/OWNERSHIP.json",
+      "size_bytes": 3542,
+      "sha256": "5c3ca4bf4718bfe97dfb8fdee1e748d95bbaef7e90d109325965482c7990affb",
+      "group": "artifacts",
+      "actual_sha256": "5c3ca4bf4718bfe97dfb8fdee1e748d95bbaef7e90d109325965482c7990affb",
+      "actual_size_bytes": 3542,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/browser-current.log",
+      "size_bytes": 51,
+      "sha256": "71bab14d653d4418a6e64b56c0395f8ed19233e95e3d5f6d6ca1a8cfc076ddfc",
+      "group": "artifacts",
+      "actual_sha256": "71bab14d653d4418a6e64b56c0395f8ed19233e95e3d5f6d6ca1a8cfc076ddfc",
+      "actual_size_bytes": 51,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/browser-final.log",
+      "size_bytes": 51,
+      "sha256": "73afdf65d2e50c80b46cbca8159fc0124b61ae729fb8e45c347a3b1543dc0c5a",
+      "group": "artifacts",
+      "actual_sha256": "73afdf65d2e50c80b46cbca8159fc0124b61ae729fb8e45c347a3b1543dc0c5a",
+      "actual_size_bytes": 51,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/browser-initial.log",
+      "size_bytes": 51,
+      "sha256": "73afdf65d2e50c80b46cbca8159fc0124b61ae729fb8e45c347a3b1543dc0c5a",
+      "group": "artifacts",
+      "actual_sha256": "73afdf65d2e50c80b46cbca8159fc0124b61ae729fb8e45c347a3b1543dc0c5a",
+      "actual_size_bytes": 51,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/browser-results.json",
+      "size_bytes": 2824,
+      "sha256": "ab24b19e62079205269579261332560906ae8bade7340c9de0cabca8e0c67c75",
+      "group": "artifacts",
+      "actual_sha256": "ab24b19e62079205269579261332560906ae8bade7340c9de0cabca8e0c67c75",
+      "actual_size_bytes": 2824,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/calendar-manifest.json",
+      "size_bytes": 7646,
+      "sha256": "7037e4f5d5fed09f07af42b49171b30ce468d22a4b994267caa445e492c2a79e",
+      "group": "artifacts",
+      "actual_sha256": "7037e4f5d5fed09f07af42b49171b30ce468d22a4b994267caa445e492c2a79e",
+      "actual_size_bytes": 7646,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/calendar.png",
+      "size_bytes": 236327,
+      "sha256": "6a35081fcb75899e2dfd162ef6e0d9673c991937e9ed61669947ebaac7630cb1",
+      "group": "artifacts",
+      "actual_sha256": "6a35081fcb75899e2dfd162ef6e0d9673c991937e9ed61669947ebaac7630cb1",
+      "actual_size_bytes": 236327,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/handoff-initial.py",
+      "size_bytes": 1669,
+      "sha256": "04607200b2b13623a9034786700cb2fe28163767affbaff015db5fa80c6affe3",
+      "group": "artifacts",
+      "actual_sha256": "04607200b2b13623a9034786700cb2fe28163767affbaff015db5fa80c6affe3",
+      "actual_size_bytes": 1669,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/handoff-preview.py",
+      "size_bytes": 1714,
+      "sha256": "fb8e224c8aa1b9b5be6e371ebb102a8735fb554f5c3b652163b24bd4b4466c42",
+      "group": "artifacts",
+      "actual_sha256": "fb8e224c8aa1b9b5be6e371ebb102a8735fb554f5c3b652163b24bd4b4466c42",
+      "actual_size_bytes": 1714,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/handoff-second.py",
+      "size_bytes": 1714,
+      "sha256": "565f575b57e469b1ee1432b4128d1350d4fe7713a11545b6edbc55ba1ea00c5a",
+      "group": "artifacts",
+      "actual_sha256": "565f575b57e469b1ee1432b4128d1350d4fe7713a11545b6edbc55ba1ea00c5a",
+      "actual_size_bytes": 1714,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/lint-current.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "group": "artifacts",
+      "actual_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual_size_bytes": 0,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/lint-final.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "group": "artifacts",
+      "actual_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual_size_bytes": 0,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/lint-initial.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "group": "artifacts",
+      "actual_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual_size_bytes": 0,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/local-http-before-final.json",
+      "size_bytes": 307,
+      "sha256": "56a8697718e198e47777fcef889a247257cf7a0dd8cfdb2d2826919164df2c6f",
+      "group": "artifacts",
+      "actual_sha256": "56a8697718e198e47777fcef889a247257cf7a0dd8cfdb2d2826919164df2c6f",
+      "actual_size_bytes": 307,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/local-http.json",
+      "size_bytes": 307,
+      "sha256": "1d28b25b03574c35e565c5713698fcc2e25f2d52688a57cc2172307f836f696b",
+      "group": "artifacts",
+      "actual_sha256": "1d28b25b03574c35e565c5713698fcc2e25f2d52688a57cc2172307f836f696b",
+      "actual_size_bytes": 307,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/own-l5-manifest.json",
+      "size_bytes": 7540,
+      "sha256": "aabef2b3d54a32b984d0334e4e32aec75da0085aff37479ecc2c735cac4bf901",
+      "group": "artifacts",
+      "actual_sha256": "aabef2b3d54a32b984d0334e4e32aec75da0085aff37479ecc2c735cac4bf901",
+      "actual_size_bytes": 7540,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/own-l5.png",
+      "size_bytes": 239538,
+      "sha256": "9314c90298b3e9e7cee1749b39d441900faaedbf1af28cc7bd6c09f3ab8ad4d1",
+      "group": "artifacts",
+      "actual_sha256": "9314c90298b3e9e7cee1749b39d441900faaedbf1af28cc7bd6c09f3ab8ad4d1",
+      "actual_size_bytes": 239538,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/partial-manifest.json",
+      "size_bytes": 7583,
+      "sha256": "3f7b5689ac4dc5a280a83ab6000fde0450f1f616c9dab7cb833fc6860db3d06c",
+      "group": "artifacts",
+      "actual_sha256": "3f7b5689ac4dc5a280a83ab6000fde0450f1f616c9dab7cb833fc6860db3d06c",
+      "actual_size_bytes": 7583,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/partial.png",
+      "size_bytes": 231764,
+      "sha256": "2803b585f3ae61e0b431cbd5d7e5d2fb1cfb2e14e6a753055c6bd0caa5919c84",
+      "group": "artifacts",
+      "actual_sha256": "2803b585f3ae61e0b431cbd5d7e5d2fb1cfb2e14e6a753055c6bd0caa5919c84",
+      "actual_size_bytes": 231764,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/preview-entry.tsx",
+      "size_bytes": 230,
+      "sha256": "058fca7598addf852c9a1373ae2aa1fcd61fa083aa397ecc3c465513b44796ae",
+      "group": "artifacts",
+      "actual_sha256": "058fca7598addf852c9a1373ae2aa1fcd61fa083aa397ecc3c465513b44796ae",
+      "actual_size_bytes": 230,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/preview.html",
+      "size_bytes": 317312,
+      "sha256": "c50ecfbe2fc56955c085c5ff1adfadef9d5a393c39f2a2ad1fb4b6aebe854357",
+      "group": "artifacts",
+      "actual_sha256": "c50ecfbe2fc56955c085c5ff1adfadef9d5a393c39f2a2ad1fb4b6aebe854357",
+      "actual_size_bytes": 317312,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/qa-desktop.png",
+      "size_bytes": 292716,
+      "sha256": "6a1b56332c4fa9c636b94526c4bd88616c6f4a403e14fd345891f62a93769d53",
+      "group": "artifacts",
+      "actual_sha256": "6a1b56332c4fa9c636b94526c4bd88616c6f4a403e14fd345891f62a93769d53",
+      "actual_size_bytes": 292716,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/qa-extra-pp.png",
+      "size_bytes": 285953,
+      "sha256": "e8f20e15340419ea4c4871345898b578f0c04d4d58078d61e7c2cf1b3a2d20b7",
+      "group": "artifacts",
+      "actual_sha256": "e8f20e15340419ea4c4871345898b578f0c04d4d58078d61e7c2cf1b3a2d20b7",
+      "actual_size_bytes": 285953,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/qa-mobile.png",
+      "size_bytes": 170704,
+      "sha256": "ad19fd63b53c1368a29bf892deded528cd4afe57b93da7cb257b74705cdcb1ae",
+      "group": "artifacts",
+      "actual_sha256": "ad19fd63b53c1368a29bf892deded528cd4afe57b93da7cb257b74705cdcb1ae",
+      "actual_size_bytes": 170704,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/qa-preview.mjs",
+      "size_bytes": 7880,
+      "sha256": "3bcdbac88eeeb1cb8d1fe7bbd2481894e4fd18d8b86ccc0b62b02a8137f8beca",
+      "group": "artifacts",
+      "actual_sha256": "3bcdbac88eeeb1cb8d1fe7bbd2481894e4fd18d8b86ccc0b62b02a8137f8beca",
+      "actual_size_bytes": 7880,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/render-current.log",
+      "size_bytes": 235,
+      "sha256": "f37b63b3cc6c0100ea81abf75ce58cb4815d274f9caefa585c9ed83ead22ab75",
+      "group": "artifacts",
+      "actual_sha256": "f37b63b3cc6c0100ea81abf75ce58cb4815d274f9caefa585c9ed83ead22ab75",
+      "actual_size_bytes": 235,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/render-final.log",
+      "size_bytes": 235,
+      "sha256": "91458126dd3cf97050d9dba21e62d1a33672c8f2f8f960701f8ce063642c075f",
+      "group": "artifacts",
+      "actual_sha256": "91458126dd3cf97050d9dba21e62d1a33672c8f2f8f960701f8ce063642c075f",
+      "actual_size_bytes": 235,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/render-preview.mjs",
+      "size_bytes": 2402,
+      "sha256": "b8f7ae4b0613daf3735f198334df9aa1e60232089380af72168630b15128eb4d",
+      "group": "artifacts",
+      "actual_sha256": "b8f7ae4b0613daf3735f198334df9aa1e60232089380af72168630b15128eb4d",
+      "actual_size_bytes": 2402,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/runtime-before-54140.json",
+      "size_bytes": 438,
+      "sha256": "9e2da67417a8d72385e61cf740498c7d67e1c9ca004cd80444709379d039b943",
+      "group": "artifacts",
+      "actual_sha256": "9e2da67417a8d72385e61cf740498c7d67e1c9ca004cd80444709379d039b943",
+      "actual_size_bytes": 438,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/runtime-before-67382.json",
+      "size_bytes": 483,
+      "sha256": "0dd5eaf1851c8ad2082a013d6da0ad689c54012bccd104434991538d719e2f44",
+      "group": "artifacts",
+      "actual_sha256": "0dd5eaf1851c8ad2082a013d6da0ad689c54012bccd104434991538d719e2f44",
+      "actual_size_bytes": 483,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/runtime-before.json",
+      "size_bytes": 483,
+      "sha256": "d896895a0362406707b625a89a695b180846649d2cdae471bf67bb2e567a9e33",
+      "group": "artifacts",
+      "actual_sha256": "d896895a0362406707b625a89a695b180846649d2cdae471bf67bb2e567a9e33",
+      "actual_size_bytes": 483,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/runtime-initial.json",
+      "size_bytes": 394,
+      "sha256": "8e5c2a35b9d0bd1857c0ae83d248015d2cb3438d326d77d1ab2d618d69aeb851",
+      "group": "artifacts",
+      "actual_sha256": "8e5c2a35b9d0bd1857c0ae83d248015d2cb3438d326d77d1ab2d618d69aeb851",
+      "actual_size_bytes": 394,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/runtime.json",
+      "size_bytes": 977,
+      "sha256": "7b140c4acb2256d07c6c7cbaa7e8bb5969bca90668bc8f2afc1bc4f823d27659",
+      "group": "artifacts",
+      "actual_sha256": "7b140c4acb2256d07c6c7cbaa7e8bb5969bca90668bc8f2afc1bc4f823d27659",
+      "actual_size_bytes": 977,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/serve-preview.mjs",
+      "size_bytes": 770,
+      "sha256": "cb6d1810a291af5a8f6a5a206bd28ba6d274b36bebea421f6310fc596c21df92",
+      "group": "artifacts",
+      "actual_sha256": "cb6d1810a291af5a8f6a5a206bd28ba6d274b36bebea421f6310fc596c21df92",
+      "actual_size_bytes": 770,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/source.patch",
+      "size_bytes": 35435,
+      "sha256": "3f77f9e6ccb49230f968da700f34749ead296270c96c6197bb814e5eaebf348c",
+      "group": "artifacts",
+      "actual_sha256": "3f77f9e6ccb49230f968da700f34749ead296270c96c6197bb814e5eaebf348c",
+      "actual_size_bytes": 35435,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/tests-current.log",
+      "size_bytes": 583,
+      "sha256": "33c4d52cdb26a9d82b70701aa4fdb41445c9558d0d27d582fbc2046c95fbc569",
+      "group": "artifacts",
+      "actual_sha256": "33c4d52cdb26a9d82b70701aa4fdb41445c9558d0d27d582fbc2046c95fbc569",
+      "actual_size_bytes": 583,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/tests-final.log",
+      "size_bytes": 583,
+      "sha256": "fbb1387503941598367f41d9952ea69172b519264d9cb1502c9f910dcfe48634",
+      "group": "artifacts",
+      "actual_sha256": "fbb1387503941598367f41d9952ea69172b519264d9cb1502c9f910dcfe48634",
+      "actual_size_bytes": 583,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/tests-initial.log",
+      "size_bytes": 583,
+      "sha256": "6e7f1b9e8bdf0be099479bf7919f5aeee1505d23a758ad2c6b6e0db49ebd093e",
+      "group": "artifacts",
+      "actual_sha256": "6e7f1b9e8bdf0be099479bf7919f5aeee1505d23a758ad2c6b6e0db49ebd093e",
+      "actual_size_bytes": 583,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/tsconfig.json",
+      "size_bytes": 549,
+      "sha256": "bb0c71be25e78df050ce4912ae59f2c0c722c18c7dd3cecd1ec28e4fadf3d753",
+      "group": "artifacts",
+      "actual_sha256": "bb0c71be25e78df050ce4912ae59f2c0c722c18c7dd3cecd1ec28e4fadf3d753",
+      "actual_size_bytes": 549,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/types-current.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "group": "artifacts",
+      "actual_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual_size_bytes": 0,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/types-final.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "group": "artifacts",
+      "actual_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual_size_bytes": 0,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/types-initial.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "group": "artifacts",
+      "actual_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual_size_bytes": 0,
+      "match": true
+    },
+    {
+      "path": "web/lib/player-cards/contracts.ts",
+      "size_bytes": 2213,
+      "sha256": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d",
+      "group": "direct_read_only_dependencies",
+      "actual_sha256": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d",
+      "actual_size_bytes": 2213,
+      "match": true
+    },
+    {
+      "path": "web/lib/player-cards/registry.ts",
+      "size_bytes": 3382,
+      "sha256": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29",
+      "group": "direct_read_only_dependencies",
+      "actual_sha256": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29",
+      "actual_size_bytes": 3382,
+      "match": true
+    },
+    {
+      "path": "web/lib/player-cards/windows.ts",
+      "size_bytes": 5859,
+      "sha256": "b7e989c211b8a9f5a1a91af157c69fc28cd29a409442f89365e57c662d10adb2",
+      "group": "direct_read_only_dependencies",
+      "actual_sha256": "b7e989c211b8a9f5a1a91af157c69fc28cd29a409442f89365e57c662d10adb2",
+      "actual_size_bytes": 5859,
+      "match": true
+    },
+    {
+      "path": "web/lib/player-cards/aggregation.ts",
+      "size_bytes": 5918,
+      "sha256": "4ffe0ed5cbdea97ecb15b153543aace6b2d349cac10b0ff3e6de7484768b410a",
+      "group": "direct_read_only_dependencies",
+      "actual_sha256": "4ffe0ed5cbdea97ecb15b153543aace6b2d349cac10b0ff3e6de7484768b410a",
+      "actual_size_bytes": 5918,
+      "match": true
+    },
+    {
+      "path": "web/lib/player-cards/adapter.ts",
+      "size_bytes": 6282,
+      "sha256": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f",
+      "group": "direct_read_only_dependencies",
+      "actual_sha256": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f",
+      "actual_size_bytes": 6282,
+      "match": true
+    },
+    {
+      "path": "web/lib/player-cards/ranking.ts",
+      "size_bytes": 1716,
+      "sha256": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338",
+      "group": "direct_read_only_dependencies",
+      "actual_sha256": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338",
+      "actual_size_bytes": 1716,
+      "match": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerCard.tsx",
+      "size_bytes": 5788,
+      "sha256": "917edf84256f3153459bc02302ff9a804a3847838eaaf8192bd000fb21f9cdfc",
+      "group": "direct_read_only_dependencies",
+      "actual_sha256": "917edf84256f3153459bc02302ff9a804a3847838eaaf8192bd000fb21f9cdfc",
+      "actual_size_bytes": 5788,
+      "match": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardPreview.tsx",
+      "size_bytes": 8174,
+      "sha256": "f58bdd545fa121be6ca79ffab03f52aeff8ca9d18a74e3e608b4addf7ae1a4b6",
+      "group": "direct_read_only_dependencies",
+      "actual_sha256": "f58bdd545fa121be6ca79ffab03f52aeff8ca9d18a74e3e608b4addf7ae1a4b6",
+      "actual_size_bytes": 8174,
+      "match": true
+    },
+    {
+      "path": "web/styles/vars.scss",
+      "size_bytes": 28850,
+      "sha256": "69b7ac0ea0bcd4504b60dd698f4d747daceddef80636de748e816f26a4112f1f",
+      "group": "direct_read_only_dependencies",
+      "actual_sha256": "69b7ac0ea0bcd4504b60dd698f4d747daceddef80636de748e816f26a4112f1f",
+      "actual_size_bytes": 28850,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review/HANDOFF.md",
+      "size_bytes": 4048,
+      "sha256": "f2c74098ba496bf50137260beea3ad169cd51dc2e53a63557130a55ae6829e43",
+      "group": "accepted_dependency_review",
+      "actual_sha256": "f2c74098ba496bf50137260beea3ad169cd51dc2e53a63557130a55ae6829e43",
+      "actual_size_bytes": 4048,
+      "match": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/EVIDENCE.json",
+      "group": "additional_review_input",
+      "sha256": "4d13665443e114d138d9f55082542f5509674ab67317b76b320eadb8f2d9b80d"
+    },
+    {
+      "path": "web/package.json",
+      "group": "additional_review_input",
+      "sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba"
+    },
+    {
+      "path": "web/package-lock.json",
+      "group": "additional_review_input",
+      "sha256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378"
+    },
+    {
+      "path": "web/.nvmrc",
+      "group": "additional_review_input",
+      "sha256": "6f7ebb0460b61089c4413e5740b5e2fa196a19281886e50ab1f99b15e0aeeb21"
+    },
+    {
+      "path": "web/tsconfig.json",
+      "group": "additional_review_input",
+      "sha256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b"
+    },
+    {
+      "path": "web/next-bootstrap.d.ts",
+      "group": "additional_review_input",
+      "sha256": "fbbabe3d21600eac77a1bf714dfdbb22e49736840d31597ce29160c331375ada"
+    }
+  ],
+  "patch_reconstructed": [
+    "web/lib/player-cards/interactionFixtures.ts",
+    "web/lib/player-cards/interactionSnapshot.ts",
+    "web/components/player-cards/PlayerCardFlow.tsx",
+    "web/components/player-cards/InteractiveCard.tsx",
+    "web/components/player-cards/PlayerCardFlow.module.scss",
+    "web/components/player-cards/PlayerCardFlow.test.tsx"
+  ]
+}

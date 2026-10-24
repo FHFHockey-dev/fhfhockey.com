@@ -1,0 +1,4 @@
+10: - the six `CHECKPOINT-DIARY-2026-10-18.md` files: draft-lane (S-13/S-19), forge-serving-release-review (S-01/Q-01/Q-05), forge-v2-integration (S-05), game-grid-lane (S-14), independent-audit (S-09/Q-03), security-audit-fixes (S-02/Q-02)
+68: | C12 | S-19 | Command Center shows safe unavailable text | `lib/dashboard/clientFetchCache.ts`, `lib/dashboard/commandCenterData.test.ts`, `components/forge-command-center/CommandCenterShell.tsx`, `__tests__/pages/forge/command-center.test.tsx` | `__tests__/pages/forge/command-center.test.tsx lib/dashboard` (57) | Browser check still pending |
+71: | C15 | S-03 | Goalie-power: 1000-row pages, in-flight cleanup, redacted 500 | `pages/api/v1/trends/goalie-power.ts`, new `__tests__/pages/api/v1/trends/goalie-power.test.ts` | that file (3) | Already merged with S-02's hunk (Chef-verified) |
+126: | `web/pages/api/v1/trends/goalie-power.ts` | S-02 hunk handed to S-03 | C15 (merged, verified) |

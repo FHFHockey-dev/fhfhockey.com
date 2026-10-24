@@ -1,0 +1,20 @@
+{
+  "source_patch_exact_new_files": [
+    "web/lib/player-cards/contracts.ts",
+    "web/lib/player-cards/registry.ts",
+    "web/lib/player-cards/ranking.ts",
+    "web/lib/player-cards/ranking.test.ts",
+    "web/lib/player-cards/fixtures.ts",
+    "web/components/player-cards/PlayerCard.tsx",
+    "web/components/player-cards/PlayerCard.module.scss",
+    "web/components/player-cards/PlayerCardPreview.tsx",
+    "web/components/player-cards/PlayerCardPreview.test.tsx"
+  ],
+  "png_dimensions": [
+    1080,
+    1080
+  ],
+  "source_patch_sha256": "5f88e8e7220b7bf14ce7ea2b16f821c0b2387277f0e9b1f2accb7da3d316987e",
+  "recorded_packet_pins": 43,
+  "reviewer_extra_pins": 6
+}

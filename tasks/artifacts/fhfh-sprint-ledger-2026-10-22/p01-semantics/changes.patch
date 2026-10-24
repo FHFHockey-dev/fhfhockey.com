@@ -1,0 +1,235 @@
+diff --git a/web/components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx b/web/components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx
+index 6ffbe8dc0..62b72545a 100644
+--- a/web/components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx
++++ b/web/components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx
+@@ -1,8 +1,10 @@
+ import React from "react";
+-import { cleanup, render, screen, within } from "@testing-library/react";
++import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import type { ScheduleGame, TeamStandingsDetails } from "hooks/useTeamSchedule";
+ 
++const { wgoStatsMock } = vi.hoisted(() => ({ wgoStatsMock: vi.fn() }));
++
+ vi.mock("lib/supabase", () => ({
+   default: {
+     from: () => {
+@@ -18,11 +20,15 @@ vi.mock("lib/supabase", () => ({
+ }));
+ 
+ vi.mock("hooks/useTeamScheduleWgoStats", () => ({
+-  useTeamScheduleWgoStats: () => ({ stats: [], loading: false, error: null }),
++  useTeamScheduleWgoStats: wgoStatsMock,
+ }));
+ 
+ import { TeamScheduleCalendar } from "./TeamScheduleCalendar";
+ 
++beforeEach(() => {
++  wgoStatsMock.mockReturnValue({ stats: [], loading: false, error: null });
++});
++
+ function game(index: number, overrides: Partial<ScheduleGame> = {}): ScheduleGame {
+   return {
+     id: 2024020001 + index,
+@@ -156,3 +162,75 @@ describe("TeamScheduleCalendar season standings", () => {
+     expect(card("Season Overview").getByText("0")).toBeTruthy();
+   });
+ });
++
++describe("TeamScheduleCalendar date identity", () => {
++  beforeEach(() => {
++    vi.useFakeTimers({ toFake: ["Date"] });
++    vi.setSystemTime(new Date("2026-10-22T12:00:00Z"));
++  });
++
++  afterEach(() => {
++    cleanup();
++    vi.useRealTimers();
++  });
++
++  function renderDatedGame(overrides: Partial<ScheduleGame> = {}) {
++    render(
++      <TeamScheduleCalendar
++        games={[game(0, {
++          season: 20262027,
++          gameDate: "2026-10-19",
++          startTimeUTC: "2026-10-19T23:00:00Z",
++          ...overrides,
++        })]}
++        teamId={22}
++        teamAbbreviation="EDM"
++        seasonId="20262027"
++      />,
++    );
++    return screen.getByText("vs BOS").parentElement!.parentElement!;
++  }
++
++  it("keeps a date-only game on the 19th in both the grid and tooltip", () => {
++    const day = renderDatedGame();
++    expect(within(day).getByText("19")).toBeTruthy();
++    fireEvent.mouseEnter(day);
++    expect(screen.getByText("Oct 19, 2026")).toBeTruthy();
++  });
++
++  it("uses the supplied game date for the WGO join without shifting to yesterday", () => {
++    // Synthetic cumulative rows isolate date selection; they do not certify stored WGO grain.
++    wgoStatsMock.mockReturnValue({ stats: [
++      { date: "2026-10-18", points: 0, games_played: 1, goals_for: 1, goals_against: 2 },
++      { date: "2026-10-19", points: 2, games_played: 2, goals_for: 4, goals_against: 3 },
++    ] });
++    const day = renderDatedGame({ homeTeamScore: 1, awayTeamScore: 2 });
++    fireEvent.mouseEnter(day);
++    const header = screen.getByText(/Oct (18|19), 2026/).parentElement!;
++    expect(within(header).getByText("Win", { exact: true })).toBeTruthy();
++  });
++
++  it("keeps tomorrow's date-only game scheduled near the UTC date boundary", () => {
++    vi.setSystemTime(new Date("2026-10-19T12:00:00Z"));
++    const day = renderDatedGame({
++      gameDate: "2026-10-20", gameState: "FUT",
++      homeTeamScore: undefined, awayTeamScore: undefined,
++    });
++    fireEvent.mouseEnter(day);
++    const header = screen.getByText(/Oct (19|20), 2026/).parentElement!;
++    expect(within(header).getByText("Scheduled", { exact: true })).toBeTruthy();
++  });
++
++  it("shows the schedule date and actual start timestamp with an explicit time zone", () => {
++    const day = renderDatedGame();
++    fireEvent.click(day);
++    expect(screen.getByText("Monday, October 19, 2026")).toBeTruthy();
++    expect(screen.getByText("7:00 PM EDT")).toBeTruthy();
++  });
++
++  it.each(["", "not-a-timestamp"])("does not invent a midnight start time from the date when start time is %j", (startTimeUTC) => {
++    const day = renderDatedGame({ startTimeUTC });
++    fireEvent.click(day);
++    expect(screen.getByText("Start time unavailable")).toBeTruthy();
++  });
++});
+diff --git a/web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx b/web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx
+index f68cab04b..057050b9a 100644
+--- a/web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx
++++ b/web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx
+@@ -1,6 +1,7 @@
+ import React, { useState, useMemo, useEffect, useCallback } from "react";
+ import {
+   format,
++  parseISO,
+   startOfDay,
+   startOfMonth,
+   endOfMonth,
+@@ -274,7 +275,7 @@ export function TeamScheduleCalendar({
+ 
+   // Enhanced game result determination with WGO stats integration
+   const getGameResult = useCallback((game: ScheduleGame): GameResult => {
+-    const gameDate = new Date(game.gameDate);
++    const gameDate = parseISO(game.gameDate);
+     const isGameInFuture = gameDate > today;
+ 
+     if (isGameInFuture) {
+@@ -282,7 +283,7 @@ export function TeamScheduleCalendar({
+     }
+ 
+     // Primary: Use wgo_team_stats for accurate game-by-game results
+-    const gameDate_YYYY_MM_DD = format(gameDate, "yyyy-MM-dd");
++    const gameDate_YYYY_MM_DD = game.gameDate;
+     const gameDayWGOStat = wgoStats.find(
+       (stat) => stat.date === gameDate_YYYY_MM_DD
+     );
+@@ -457,7 +458,7 @@ export function TeamScheduleCalendar({
+         opponent.abbrev ||
+         `T${opponent.id}`;
+ 
+-      const gameDate = format(new Date(game.gameDate), "yyyy-MM-dd");
++      const gameDate = game.gameDate;
+       const gameDayWGOStat = wgoStats.find((stat) => stat.date === gameDate);
+       const opponentStrength = calculateOpponentStrength(opponentAbbr, gameDate);
+ 
+@@ -497,8 +498,8 @@ export function TeamScheduleCalendar({
+       .filter(({ result }) => result && result !== "future")
+       .sort(
+         (a, b) =>
+-          new Date(a.game.gameDate).getTime() -
+-          new Date(b.game.gameDate).getTime()
++          parseISO(a.game.gameDate).getTime() -
++          parseISO(b.game.gameDate).getTime()
+       );
+ 
+     // Find all streaks of 3+ consecutive wins or losses
+@@ -607,7 +608,7 @@ export function TeamScheduleCalendar({
+     }
+ 
+     const gamesDates = gamesWithResults.map(
+-      ({ game }) => new Date(game.gameDate)
++      ({ game }) => parseISO(game.gameDate)
+     );
+     const minDate = new Date(Math.min(...gamesDates.map((d) => d.getTime())));
+     const maxDate = new Date(Math.max(...gamesDates.map((d) => d.getTime())));
+@@ -647,7 +648,7 @@ export function TeamScheduleCalendar({
+         const dateKey = format(day, "yyyy-MM-dd");
+         const gameForDay = gamesWithResults.find(
+           ({ game }) =>
+-            format(new Date(game.gameDate), "yyyy-MM-dd") === dateKey
++            game.gameDate === dateKey
+         );
+ 
+         return {
+@@ -1034,8 +1035,8 @@ export function TeamScheduleCalendar({
+       .map((day) => day.game!)
+       .sort(
+         (a, b) =>
+-          new Date(a.game.gameDate).getTime() -
+-          new Date(b.game.gameDate).getTime()
++          parseISO(a.game.gameDate).getTime() -
++          parseISO(b.game.gameDate).getTime()
+       );
+ 
+     if (monthGames.length === 0) return overlays;
+@@ -1168,7 +1169,7 @@ export function TeamScheduleCalendar({
+         }}
+       >
+         <div className={styles.tooltipHeader}>
+-          <strong>{format(new Date(game.gameDate), "MMM d, yyyy")}</strong>
++          <strong>{format(parseISO(game.gameDate), "MMM d, yyyy")}</strong>
+           {isPlayoff && <span className={styles.playoffLabel}>PLAYOFF</span>}
+           <span
+             className={`${styles.resultLabel} ${styles[result || "unknown"]}`}
+@@ -1288,8 +1289,8 @@ export function TeamScheduleCalendar({
+       .filter(({ result }) => result && result !== "future")
+       .sort(
+         (a, b) =>
+-          new Date(b.game.gameDate).getTime() -
+-          new Date(a.game.gameDate).getTime()
++          parseISO(b.game.gameDate).getTime() -
++          parseISO(a.game.gameDate).getTime()
+       );
+ 
+     if (completedGames.length === 0) {
+@@ -2076,7 +2077,16 @@ const EnhancedGameStatsSidebar = ({
+ }) => {
+   const isHomeTeam = game.homeTeam.id.toString() === teamId.toString();
+   const opponent = isHomeTeam ? game.awayTeam : game.homeTeam;
+-  const gameDate = new Date(game.gameDate);
++  const gameDate = parseISO(game.gameDate);
++  const startTime = new Date(game.startTimeUTC);
++  const startTimeLabel = Number.isNaN(startTime.getTime())
++    ? "Start time unavailable"
++    : new Intl.DateTimeFormat("en-US", {
++        timeZone: "America/New_York",
++        hour: "numeric",
++        minute: "2-digit",
++        timeZoneName: "short"
++      }).format(startTime);
+   const isFuture = gameDate > new Date();
+ 
+   return (
+@@ -2120,7 +2130,7 @@ const EnhancedGameStatsSidebar = ({
+         <div className={styles.gameDate}>
+           {format(gameDate, "EEEE, MMMM d, yyyy")}
+           <br />
+-          <small>{format(gameDate, "h:mm a")}</small>
++          <small>{startTimeLabel}</small>
+         </div>
+ 
+         {game.gameType === 3 && (

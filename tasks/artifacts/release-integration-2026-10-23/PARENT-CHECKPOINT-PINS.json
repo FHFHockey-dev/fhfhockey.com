@@ -1,0 +1,13 @@
+{
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "readAt": "2026-10-23T13:57:43.593498+00:00",
+  "files": {
+    "tasks/artifacts/release-integration-2026-10-23/trusted-yahoo/CANDIDATE.json": "43a56a2502eda17896f40e0b00f4220a81b056a0024919cc19119242037911df",
+    "tasks/artifacts/release-integration-2026-10-23/selected-model-baseline/CANDIDATE.json": "a376eba1f17c792bd22f02045f9224e82dddd3de3ff2d7403c00caef86932651",
+    "tasks/artifacts/d4-grants-2026-10-20/replay-2026-10-23/REPORT.md": "50f3ee569cfcbdd1701ba3fbe55bba908cf024fcaaab4a5f495d917c56de3666",
+    "tasks/artifacts/rso-browser-acceptance-2026-10-23/REPORT.md": "b85982e0f1554d18f7ab60e66c2009435beb3dda4719098e320bc46498700563",
+    "tasks/artifacts/billing-sales-rollout-2026-10-23/account-rollout-correction/CANDIDATE.json": "be496c86d1ade7e4e1beb36bf5dadd292a038253514a732e2df3e650185c36cf"
+  },
+  "status": "packet review, no release commit",
+  "activeGameGrid": "r4 header separation/border and centered week controls requests in progress; r3 historical"
+}

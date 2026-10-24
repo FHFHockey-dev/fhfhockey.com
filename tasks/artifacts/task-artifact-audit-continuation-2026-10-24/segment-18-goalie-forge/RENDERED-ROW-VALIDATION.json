@@ -1,0 +1,64 @@
+{
+  "checks": [
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "FPI-07",
+      "scalar_labels_matched": true,
+      "new_children": 0,
+      "prior_children_preserved": true
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "FPI-07",
+      "scalar_labels_matched": true,
+      "new_children": 0,
+      "prior_children_preserved": true
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "scalar_labels_matched": true,
+      "new_children": 1,
+      "prior_children_preserved": true
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "scalar_labels_matched": true,
+      "new_children": 1,
+      "prior_children_preserved": true
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-FORGE-RANGE-PRESENTATION",
+      "scalar_labels_matched": true,
+      "new_children": 0,
+      "prior_children_preserved": true
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "SITE-FORGE-RANGE-PRESENTATION",
+      "scalar_labels_matched": true,
+      "new_children": 0,
+      "prior_children_preserved": true
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-GOALIE-DISCLOSURE",
+      "scalar_labels_matched": true,
+      "new_children": 2,
+      "prior_children_preserved": true
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "SITE-GOALIE-DISCLOSURE",
+      "scalar_labels_matched": true,
+      "new_children": 2,
+      "prior_children_preserved": true
+    }
+  ],
+  "new_parent_not_duplicate_of_range": true,
+  "new_children_rendered_in_both": 3,
+  "no_current_runtime_observation": true,
+  "legacy_null_win_not_reopened": true
+}

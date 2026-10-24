@@ -1,0 +1,455 @@
+--- a/web/lib/rosterScheduleOptimizer/planning.ts
++++ b/web/lib/rosterScheduleOptimizer/planning.ts
+@@ -102,6 +102,37 @@
+ }
+ export function assignmentStats(forecast: GameForecast): StatLine {
+   return forecast.assignmentStats ?? forecast.stats;
++}
++export type GameForecastPoints = { expected: number | null; ifStarts: number | null };
++/** Readback of an already admitted forecast. This does not resolve or approve sources. */
++export function gameForecastPoints(snapshot: PlanningSnapshot, forecast: GameForecast): GameForecastPoints {
++  const unavailable: GameForecastPoints = { expected: null, ifStarts: null };
++  const player = snapshot.players.find(row => row.id === forecast.playerId);
++  if (!player || snapshot.rules.scoring.mode !== "points") return unavailable;
++  const applicability = statApplicability(snapshot);
++  const weights = Object.entries(snapshot.rules.scoring.weights)
++    .filter(([key, weight]) => weight !== 0 && applies(key, player.playerClass, applicability));
++  if (!weights.length || weights.some(([, weight]) => !finite(weight))) return unavailable;
++  const sum = (valueFor: (key: string) => number | null | undefined): number | null => {
++    let total = 0;
++    for (const [key, weight] of weights) {
++      if (!forecastAllows(forecast, key, "totals")) return null;
++      const value = valueFor(key);
++      if (!finite(value)) return null;
++      total += value * weight;
++    }
++    return finite(total) ? total : null;
++  };
++  return {
++    // stats already includes participation; multiplying or dividing by start probability changes its meaning.
++    expected: sum(key => forecast.stats[key]),
++    ifStarts: player.playerClass === "goalie" ? sum(key => {
++      const contribution = forecast.contributions?.[key];
++      // Resolved forecasts replace raw conditionalStats. A per-appearance mean is not a per-start mean.
++      if (forecast.contributions) return contribution?.basis === "per_start" ? contribution.conditionalMean : null;
++      return forecast.conditionalStats?.[key];
++    }) : null,
++  };
+ }
+ /** Supported remaining points on a player's selected assignments, excluding banked results. */
+ export function playerAssignedPoints(snapshot: PlanningSnapshot, evaluation: PlanEvaluation, playerId: string): number | null {
+--- /dev/null
++++ b/web/lib/rosterScheduleOptimizer/gameForecastPoints.test.ts
+@@ -0,0 +1,93 @@
++import { describe, expect, it } from "vitest";
++import { gameForecastPoints } from "./planning";
++import type { GameForecast, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
++import { defaultWorkspace } from "./workspace";
++import { CONTRIBUTION_RESOLVER_POLICY_VERSION, type ResolvedContribution } from "../player-forecasts/contributions";
++
++const allowed = { assignment: true, totals: true, comparison: true, conditionalTieBreak: false };
++const denied = { assignment: false, totals: false, comparison: false, conditionalTieBreak: false };
++const forecast = (patch: Partial<GameForecast> = {}): GameForecast => ({
++  playerId: "1", gameId: "10", stats: { GOALS: 1, ASSISTS: 2 }, conditioning: "unconditional",
++  startProbability: null, confirmedStart: false, revisionId: "fixture", issuedAt: "2026-10-22T12:00:00Z",
++  modelVersion: "fixture", limitations: [], allowedUses: allowed, ...patch,
++});
++const workspace = defaultWorkspace(new Date("2026-10-22T12:00:00Z"));
++const player = (id: string, goalie: boolean): PlanningPlayer => ({ id, playerClass: goalie ? "goalie" : "skater",
++  nhlId: null, name: id, teamAbbreviation: "MIN", eligiblePositions: [goalie ? "G" : "C"],
++  availability: "rostered", ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] });
++// These fixtures exercise readback only; no source reads or admission occurs here.
++const snapshot = (row: GameForecast, weights: Record<string, number>, goalie = false): PlanningSnapshot => ({
++  id: "display-fixture", context: workspace.context, roster: [], games: [], lockedAssignments: [], realized: {}, opponent: null, evidence: {},
++  players: [player(row.playerId, goalie), player("other", !goalie)],
++  forecasts: [row, forecast({ playerId: "other", stats: goalie ? { GOALS: 1, ASSISTS: 1 } : { SAVES_GOALIE: 20 } })],
++  rules: { ...workspace.rules, scoring: { mode: "points", weights, categories: [] } },
++});
++const score = (row: GameForecast, weights: Record<string, number> = { GOALS: 3, ASSISTS: 2 }, goalie = false) => gameForecastPoints(snapshot(row, weights, goalie), row);
++const resolved = (patch: Partial<ResolvedContribution> = {}): ResolvedContribution => ({
++  resolverVersion: CONTRIBUTION_RESOLVER_POLICY_VERSION,
++  game: { playerId: 1, nhlPlayerId: 1, seasonId: 20262027, teamId: 1, gameId: 10,
++    scheduledAt: "2026-10-23T23:00:00Z", scheduleRevision: "fixture", rosterRevision: "fixture" },
++  targetKey: "SAVES_GOALIE", sourceKind: "detailed", conditionalMean: 21, unconditionalMean: 11.55,
++  unit: "count", basis: "per_start", allowedUses: allowed, sourceIds: ["fixture"],
++  participationRevisionId: "fixture:start", blendWeight: null, exclusionReasons: [], limitations: [], ...patch,
++});
++
++describe("per-game forecast points display", () => {
++  it.each([undefined, null, NaN, Infinity])("withholds the entire FP total when a weighted stat is %s", value => {
++    const row = forecast({ stats: { GOALS: 1, ...(value === undefined ? {} : { ASSISTS: value }) } });
++    expect(score(row).expected).toBeNull();
++  });
++
++  it("ignores zero weights and the other player class, preserving genuine zero and negative FP", () => {
++    expect(score(forecast({ stats: { GOALS: 0 } }), { GOALS: 3, ASSISTS: 0, SAVES_GOALIE: 0.2 }).expected).toBe(0);
++    expect(score(forecast({ stats: { GOALS: 1, ASSISTS: 2 } }), { GOALS: -5, ASSISTS: 2 }).expected).toBe(-1);
++  });
++
++  it("withholds absent scoring, invalid weights and overflowing sums", () => {
++    expect(score(forecast(), {}).expected).toBeNull();
++    expect(score(forecast(), { GOALS: NaN }).expected).toBeNull();
++    expect(score(forecast({ stats: { GOALS: Number.MAX_VALUE } }), { GOALS: 2 }).expected).toBeNull();
++  });
++
++  it.each([0.55, 0, null])("reads conditional stats directly at start probability %s without weighting expected FP again", probability => {
++    const row = forecast({ stats: { SAVES_GOALIE: 11.55 }, conditionalStats: { SAVES_GOALIE: 21 }, startProbability: probability });
++    expect(score(row, { SAVES_GOALIE: 0.2 }, true)).toEqual({ expected: 2.31, ifStarts: 4.2 });
++  });
++
++  it("never reconstructs if-starts points by dividing an unconditional total", () => {
++    const row = forecast({ stats: { SAVES_GOALIE: 11.55 }, startProbability: 0.55 });
++    expect(score(row, { SAVES_GOALIE: 0.2 }, true)).toEqual({ expected: 2.31, ifStarts: null });
++  });
++
++  it("uses the selected per-start contribution instead of retained conditional stats", () => {
++    const row = forecast({ stats: { SAVES_GOALIE: 11.55 }, conditionalStats: { SAVES_GOALIE: 999 },
++      allowedUses: denied, contributions: { SAVES_GOALIE: resolved() } });
++    expect(score(row, { SAVES_GOALIE: 0.2 }, true)).toEqual({ expected: 2.31, ifStarts: 4.2 });
++  });
++
++  it.each(["per_appearance", "unconditional_game", null] as const)("does not label %s contributions as if-starts", basis => {
++    const row = forecast({ stats: { SAVES_GOALIE: 11.55 }, conditionalStats: { SAVES_GOALIE: 999 },
++      contributions: { SAVES_GOALIE: resolved({ basis }) } });
++    expect(score(row, { SAVES_GOALIE: 0.2 }, true)).toEqual({ expected: 2.31, ifStarts: null });
++  });
++
++  it("withholds a partial if-starts total even when the expected total is complete", () => {
++    const row = forecast({ stats: { SAVES_GOALIE: 11.55, WINS_GOALIE: 0.2 }, conditionalStats: { SAVES_GOALIE: 21 } });
++    expect(score(row, { SAVES_GOALIE: 0.2, WINS_GOALIE: 3 }, true).ifStarts).toBeNull();
++  });
++
++  it.each(["forecast", "target", "contribution"])("preserves %s permission denial even with numeric retained means", scope => {
++    const row = forecast({ stats: { SAVES_GOALIE: 11.55 }, conditionalStats: { SAVES_GOALIE: 21 },
++      ...(scope === "forecast" ? { allowedUses: denied } : scope === "target" ? { targetAllowedUses: { SAVES_GOALIE: denied } }
++        : { contributions: { SAVES_GOALIE: resolved({ allowedUses: denied }) } }) });
++    expect(score(row, { SAVES_GOALIE: 0.2 }, true)).toEqual({ expected: null, ifStarts: null });
++  });
++
++  it("does not show if-starts for skaters or for category scoring", () => {
++    const row = forecast({ conditionalStats: { GOALS: 2, ASSISTS: 4 } });
++    expect(score(row)).toEqual({ expected: 7, ifStarts: null });
++    const data = snapshot(row, { GOALS: 3 });
++    data.rules.scoring.mode = "categories";
++    expect(gameForecastPoints(data, row)).toEqual({ expected: null, ifStarts: null });
++  });
++});
+--- a/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
++++ b/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+@@ -9,6 +9,7 @@
+ import { comparePlanSensitivity } from "lib/player-forecasts/planComparison";
+ import { capacityPlanningSnapshot, type CurrentPlanningOptions } from "lib/rosterScheduleOptimizer/currentPlanningRead";
+ import { contributionLedger } from "lib/rosterScheduleOptimizer/contributionLedger";
++import { gameForecastPoints, type GameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
+ import { expandActiveSlots } from "lib/rosterScheduleOptimizer/slots";
+ import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
+ import { acquisitionEffectiveAt } from "lib/rosterScheduleOptimizer/planningTimeline";
+@@ -838,19 +839,12 @@
+   // A readback of the no-move lineup (open slots, weakest droppable player); it runs no search of its own.
+   const gapReport = useMemo(() => snapshot && result ? lineupGapReport(snapshot, workspace.intent, result.baseline) : null, [snapshot, result, workspace.intent]);
+   const pointsFor = useMemo(() => {
+-    if (rules.scoring.mode !== "points" || !result?.selected.forecastInputs?.length) return undefined;
+-    const byGame = new Map(result.selected.forecastInputs.map(row => [`${row.playerId}:${row.gameId}`, row]));
+-    return (playerId: string, gameId: string) => {
+-      const forecast = byGame.get(`${playerId}:${gameId}`);
+-      if (!forecast) return null;
+-      let total = 0, known = false;
+-      for (const [key, weight] of Object.entries(rules.scoring.weights)) {
+-        const value = forecast.stats[key];
+-        if (weight && typeof value === "number" && Number.isFinite(value)) { total += value * weight; known = true; }
+-      }
+-      return known ? total : null;
+-    };
+-  }, [result, rules.scoring]);
++    if (rules.scoring.mode !== "points" || !displaySnapshot || !result) return undefined;
++    const byGame = new Map((result.selected.forecastInputs ?? []).map(row =>
++      [`${row.playerId}:${row.gameId}`, gameForecastPoints(displaySnapshot, row)]));
++    return (playerId: string, gameId: string): GameForecastPoints =>
++      byGame.get(`${playerId}:${gameId}`) ?? { expected: null, ifStarts: null };
++  }, [result, rules.scoring, displaySnapshot]);
+   const goalieMinimum = result?.selected.goalie.required ?? rules.goalieMinimum.required;
+   const addsLeft = rules.periods.find(period => typeof period.remaining === "number")?.remaining ?? null;
+   const nameOf = (id: string) => players.find((player) => player.id === id)?.name ?? id;
+--- a/web/components/RosterScheduleOptimizer/SlotWeekGrid.tsx
++++ b/web/components/RosterScheduleOptimizer/SlotWeekGrid.tsx
+@@ -3,8 +3,10 @@
+ import { fallbackTeamLogo, getLocalTeamLogoPath } from "lib/images";
+ import { canEligibilityOccupySlot, normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
+ import type { ActiveSlotInstance } from "lib/rosterScheduleOptimizer/types";
++import type { GameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
+ import type { GameForecast, PastLineup, PlanningAssignment, PlanningGame, PlanningPlayer, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
+ import InfoTooltip from "./InfoTooltip";
++import ForecastPoints from "./ForecastPoints";
+ import styles from "./SlotWeekGrid.module.scss";
+ 
+ export type Props = {
+@@ -15,7 +17,7 @@
+   players: PlanningPlayer[];
+   roster: RosterEntry[];
+   forecasts?: GameForecast[];
+-  pointsFor?: (playerId: string, gameId: string) => number | null;
++  pointsFor?: (playerId: string, gameId: string) => GameForecastPoints;
+   focusedDate?: string | null;
+   onSelectPlayer?: (playerId: string) => void;
+   /** Each new value replays the optimize animation: every day from `today` moves from the current lineup to the optimized one. */
+@@ -199,7 +201,8 @@
+             {mark && <span className={styles.start} title={mark.text} aria-label={mark.text}>{mark.glyph}</span>}
+           </span>
+           {game ? <span className={styles.opp}>{game.home ? `vs${game.opponent}` : `@${game.opponent}`}</span> : <span className={styles.noGameTag}>No game</span>}
+-          {typeof points === "number" && <span className={styles.points} data-tier={tier(player.playerClass, points)} title={`Projected fantasy points for this game (${tier(player.playerClass, points)} for your lineup this week)`}>{points.toFixed(1)}</span>}
++          {points && <ForecastPoints points={points} goalie={player.playerClass === "goalie"}
++            tier={typeof points.expected === "number" ? tier(player.playerClass, points.expected) : undefined} />}
+         </>, !game)}
+       </td>
+     );
+@@ -211,7 +214,7 @@
+     const values: Record<string, number[]> = { skater: [], goalie: [] };
+     for (const assignment of assignments) {
+       const player = playerById.get(assignment.playerId), game = player ? gameFor(player, assignment.date, assignment.gameId) : undefined;
+-      const value = player && game ? pointsFor(player.id, game.id) : null;
++      const value = player && game ? pointsFor(player.id, game.id).expected : null;
+       if (player && typeof value === "number" && Number.isFinite(value)) values[player.playerClass].push(value);
+     }
+     for (const [playerClass, list] of Object.entries(values)) if (list.length >= 3) {
+@@ -230,7 +233,7 @@
+       <table className={styles.grid} aria-label="Lineup by position" style={{ "--day-count": dates.length } as CSSProperties}>
+         <thead role="rowgroup">
+           <tr role="row" className={`${styles.row} ${styles.headRow}`}>
+-            <th scope="col" role="columnheader" className={styles.corner}><InfoTooltip label="About the lineup grid"><span className={styles.legend}>Numbers are each player&apos;s projected fantasy points for that game, using your league&apos;s scoring: <span className={styles.points} data-tier="high">high</span> <span className={styles.points} data-tier="mid">mid</span> <span className={styles.points} data-tier="low">low</span> for your lineup this week. <b>✓</b> confirmed starter · <b>~</b> likely starter · <span className={styles.dust} aria-hidden="true" /> game on the bench · grey: no game that night. Past days show the lineup Yahoo recorded and each player&apos;s <span className={styles.points} data-actual="">actual</span> points.</span></InfoTooltip></th>
++            <th scope="col" role="columnheader" className={styles.corner}><InfoTooltip label="About the lineup grid"><span className={styles.legend}>Numbers are each player&apos;s projected fantasy points for that game, using your league&apos;s scoring: <span className={styles.points} data-tier="high">high</span> <span className={styles.points} data-tier="mid">mid</span> <span className={styles.points} data-tier="low">low</span> for your lineup this week. Goalie expected FP includes participation probability; if-starts FP assumes a start. These are alternative views of the same game, not values to add. — means complete approved scoring inputs are unavailable. <b>✓</b> confirmed starter · <b>~</b> likely starter · <span className={styles.dust} aria-hidden="true" /> game on the bench · grey: no game that night. Past days show the lineup Yahoo recorded and each player&apos;s <span className={styles.points} data-actual="">actual</span> points.</span></InfoTooltip></th>
+             {dates.map(date => {
+               const { weekday, label } = dateParts(date);
+               return <th key={date} scope="col" role="columnheader" {...columnAttrs(date)}>
+--- a/web/components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx
++++ b/web/components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx
+@@ -31,7 +31,7 @@
+       { playerId: "a", name: "Sidney Crosby", position: "BN", slotId: null, points: 3.4 },
+       { playerId: null, name: "Gone Player", position: "BN", slotId: null, points: null }] }];
+     render(<SlotWeekGrid dates={dates} slots={slots} assignments={assignments} games={games} players={players} roster={roster}
+-      forecasts={forecasts} pointsFor={() => 2.34} today="2026-10-21" pastLineups={pastLineups} onSelectPlayer={vi.fn()} />);
++      forecasts={forecasts} pointsFor={() => ({ expected: 2.34, ifStarts: null })} today="2026-10-21" pastLineups={pastLineups} onSelectPlayer={vi.fn()} />);
+     const day = (name: RegExp) => screen.getByRole("button", { name });
+     expect(day(/Jack Hughes, C, 2026-10-19, recorded lineup, 7\.2 actual points/).textContent).toContain("7.2");
+     expect(day(/Tristan Jarry, G, 2026-10-19, recorded lineup, 0\.0 actual points/)).toBeTruthy();
+@@ -43,7 +43,7 @@
+   it("renders the position-first week", () => {
+     const onSelectPlayer = vi.fn();
+     render(<SlotWeekGrid dates={dates} slots={slots} assignments={assignments} games={games} players={players} roster={roster}
+-      forecasts={forecasts} pointsFor={() => 2.34} onSelectPlayer={onSelectPlayer} />);
++      forecasts={forecasts} pointsFor={() => ({ expected: 2.34, ifStarts: null })} onSelectPlayer={onSelectPlayer} />);
+     expect(screen.getByRole("table", { name: "Lineup by position" })).toBeTruthy();
+     expect(screen.getByText("C")).toBeTruthy();
+     expect(screen.getByText("G")).toBeTruthy();
+@@ -55,7 +55,8 @@
+     expect(screen.getAllByText("@PHI")).toHaveLength(2);
+     expect(screen.getAllByText("vsMTL")).toHaveLength(1);
+     expect(screen.getAllByText("Empty")).toHaveLength(2);
+-    expect(screen.getAllByText("—")).toHaveLength(3);
++    expect(screen.getAllByText("—").filter(node => !node.hasAttribute("aria-label"))).toHaveLength(3);
++    expect(screen.getByLabelText("Fantasy points if starts: unavailable")).toBeTruthy();
+     const benchRow = screen.getByText("BN").closest("tr")!;
+     const cells = within(benchRow).getAllByRole("cell");
+     expect(within(cells[0]).getByText("Hughes")).toBeTruthy();
+@@ -72,8 +73,24 @@
+     expect(screen.getAllByText("2.3").every(node => ["high", "mid", "low"].includes(node.getAttribute("data-tier") ?? ""))).toBe(true);
+     fireEvent.focus(screen.getByRole("button", { name: "About the lineup grid" }));
+     expect(screen.getByText(/projected fantasy points for that game/)).toBeTruthy();
++    expect(screen.getByText(/if-starts FP assumes a start/)).toBeTruthy();
+     fireEvent.click(screen.getByRole("button", { name: /Sidney Crosby/ }));
+     expect(onSelectPlayer).toHaveBeenCalledWith("a");
++  });
++
++  it("ranks goalie cells by complete expected FP only, separately from if-starts FP", () => {
++    const goalies = ["one", "two", "three", "missing"].map(id => p(id, `Goalie ${id}`, "PIT", "goalie"));
++    const goalieSlots: ActiveSlotInstance[] = goalies.map((_, index) => ({ id: `G${index + 1}`, type: "G", index }));
++    const values = new Map(goalies.map((player, index) => [player.id, { expected: index === 3 ? null : index + 1, ifStarts: 40 - 10 * index }]));
++    render(<SlotWeekGrid dates={[dates[0]]} slots={goalieSlots} games={[games[0]]} players={goalies}
++      roster={goalies.map(player => ({ playerId: player.id, position: "active" }))}
++      assignments={goalies.map((player, index) => ({ date: dates[0], playerId: player.id, gameId: "1", slotId: goalieSlots[index].id, locked: false }))}
++      pointsFor={playerId => values.get(playerId)!} onSelectPlayer={vi.fn()} />);
++    for (const [index, expectedTier] of ["low", "mid", "high", null].entries()) {
++      const cell = within(screen.getByRole("button", { name: `Goalie ${goalies[index].id}, G, ${dates[0]}` }));
++      expect(cell.getByLabelText(/Expected fantasy points:/).getAttribute("data-tier")).toBe(expectedTier);
++      expect(cell.getByLabelText(/Fantasy points if starts:/).getAttribute("data-tier")).toBeNull();
++    }
+   });
+ 
+   it("replays Optimize day by day: current lineup first, then the optimized one, pulsing each day", () => {
+--- a/web/components/RosterScheduleOptimizer/SlotWeekGrid.module.scss
++++ b/web/components/RosterScheduleOptimizer/SlotWeekGrid.module.scss
+@@ -92,6 +92,14 @@
+ .cellButton > .opp, .cellBody > .opp, .cellButton > .noGameTag, .cellBody > .noGameTag { grid-column: 1; justify-self: start; }
+ .cellButton > .points, .cellBody > .points { grid-column: 2; grid-row: 1 / span 2; align-self: stretch; display: flex; align-items: center; justify-content: center; min-width: 34px; margin: 6px 0; padding: 5px; border-radius: 4px; font-size: 15px; }
+ .legend .points { display: inline; padding: 0 4px; font-size: 10px; }
++.forecastPoints { grid-column: 2; grid-row: 1 / span 2; align-self: center; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
++.forecastPoints .points { margin: 0; padding: 3px 4px; font-size: 15px; white-space: nowrap; }
++.forecastPoints small { font: 400 9px v.$font-family-primary; }
++.conditionalPoints { color: v.$text-secondary; font: 600 11px v.$font-family-numbers; white-space: nowrap; text-align: center; }
++.group[data-position="G"] { --cell-height: 64px; }
++.forecastPoints[data-goalie] { grid-column: 1 / -1; grid-row: 3; flex-direction: row; align-items: center; justify-content: space-between; }
++.forecastPoints[data-goalie] .points { padding: 2px 3px; font-size: 13px; line-height: 14px; text-align: center; }
++.forecastPoints[data-goalie] small { display: block; line-height: 10px; }
+ 
+ // Injured players (provider IR/O/DTD): red border, red tint and the injured icon.
+ .injuryIcon { flex: none; }
+--- /dev/null
++++ b/web/components/RosterScheduleOptimizer/ForecastPoints.tsx
+@@ -0,0 +1,25 @@
++import type { GameForecastPoints } from "lib/rosterScheduleOptimizer/planning";
++import styles from "./SlotWeekGrid.module.scss";
++
++type Props = { points: GameForecastPoints; goalie: boolean; tier?: "high" | "mid" | "low" };
++const formatted = (value: number | null) => typeof value === "number" && Number.isFinite(value) ? value.toFixed(1) : "—";
++
++export default function ForecastPoints({ points, goalie, tier }: Props) {
++  const expected = formatted(points.expected);
++  const ifStarts = formatted(points.ifStarts);
++  return <span className={styles.forecastPoints} data-goalie={goalie ? "" : undefined}>
++    <span className={styles.points} data-tier={expected === "—" ? undefined : tier}
++      title={expected === "—" ? "Expected fantasy points unavailable: an applicable weighted stat or its approved use is missing."
++        : goalie ? "Expected fantasy points for this game, including participation probability."
++          : "Projected fantasy points for this game, using your league's scoring."}
++      aria-label={`Expected fantasy points: ${expected === "—" ? "unavailable" : expected}`}>
++      {expected}{goalie && <small> expected</small>}
++    </span>
++    {goalie && <span className={styles.conditionalPoints}
++      title={ifStarts === "—" ? "Fantasy points if starts unavailable: complete approved per-start estimates are required."
++        : "Fantasy points conditional on starting. Assumes a start; not a second expected contribution to add."}
++      aria-label={`Fantasy points if starts: ${ifStarts === "—" ? "unavailable" : ifStarts}`}>
++      {ifStarts}<small> if starts</small>
++    </span>}
++  </span>;
++}
+--- /dev/null
++++ b/web/components/RosterScheduleOptimizer/ForecastPoints.test.tsx
+@@ -0,0 +1,33 @@
++import { cleanup, render, screen } from "@testing-library/react";
++import { afterEach, describe, expect, it } from "vitest";
++import ForecastPoints from "./ForecastPoints";
++
++afterEach(cleanup);
++
++describe("ForecastPoints", () => {
++  it("shows unavailable expected FP without a rank color", () => {
++    render(<ForecastPoints goalie={false} points={{ expected: null, ifStarts: null }} tier="high" />);
++    const value = screen.getByLabelText("Expected fantasy points: unavailable");
++    expect(value.textContent).toBe("—");
++    expect(value.getAttribute("data-tier")).toBeNull();
++    expect(value.getAttribute("title")).toContain("weighted stat");
++    expect(screen.queryByLabelText(/if starts/)).toBeNull();
++  });
++
++  it("labels expected and if-starts FP separately, with explicit semantics", () => {
++    render(<ForecastPoints goalie points={{ expected: 2.31, ifStarts: 4.2 }} tier="mid" />);
++    const expected = screen.getByLabelText("Expected fantasy points: 2.3");
++    const conditional = screen.getByLabelText("Fantasy points if starts: 4.2");
++    expect(expected.textContent).toBe("2.3 expected");
++    expect(conditional.textContent).toBe("4.2 if starts");
++    expect(expected.getAttribute("title")).toContain("including participation probability");
++    expect(conditional.getAttribute("title")).toContain("conditional on starting");
++    expect(conditional.getAttribute("data-tier")).toBeNull();
++  });
++
++  it("keeps genuine zero expected FP visible while conditional FP is unavailable", () => {
++    render(<ForecastPoints goalie points={{ expected: 0, ifStarts: null }} tier="low" />);
++    expect(screen.getByLabelText("Expected fantasy points: 0.0").textContent).toBe("0.0 expected");
++    expect(screen.getByLabelText("Fantasy points if starts: unavailable").textContent).toBe("— if starts");
++  });
++});
+--- /dev/null
++++ b/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx
+@@ -0,0 +1,94 @@
++import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { defaultWorkspace, writeWorkspace } from "lib/rosterScheduleOptimizer/workspace";
++import type { PlanningData, PlanningPlayer, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
++import { currentRsoUsePolicy } from "lib/player-forecasts/rsoUsePolicy";
++import RosterScheduleOptimizer from "./RosterScheduleOptimizer";
++
++vi.mock("contexts/AuthProviderContext", () => ({ useAuth: () => ({ user: null, teams: [] }) }));
++vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession: async () => ({ data: { session: null } }) } } }));
++vi.mock("components/RosterScheduleOptimizer/canonicalSchedule", async original => ({
++  ...await original<typeof import("./canonicalSchedule")>(),
++  useCanonicalSchedule: () => ({ games: [], teams: [], complete: false, error: "Offline calendar fixture" }),
++}));
++
++afterEach(() => { cleanup(); localStorage.clear(); vi.unstubAllGlobals(); vi.useRealTimers(); vi.restoreAllMocks(); });
++
++const now = "2026-10-22T12:00:00.000Z";
++type Scenario = { goalie?: boolean; stats: StatLine; conditional?: StatLine; probability?: number | null; native?: boolean };
++async function mount(scenario: Scenario) {
++  vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date(now)); vi.stubGlobal("Worker", undefined);
++  const workspace = defaultWorkspace(new Date(now));
++  const revision = scenario.native ? "unreviewed-native:fixture" : "forge-daily-bridge-v1:display-fixture";
++  const player: PlanningPlayer = { id: "7", nhlId: 77, nhlTeamId: 1, rosterRevision: "roster-a", name: "Synthetic player",
++    teamAbbreviation: "MIN", eligiblePositions: [scenario.goalie ? "G" : "C"], playerClass: scenario.goalie ? "goalie" : "skater",
++    eligibilityVerified: true, availability: "rostered", ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] };
++  const game = { id: "30", date: "2026-10-23", startsAt: "2026-10-23T20:00:00Z", teamAbbreviation: "MIN",
++    opponent: "TOR", home: true, status: "scheduled" as const, scheduleRevision: "schedule-a" };
++  const data: PlanningData = { players: [player], games: [game], forecasts: [], baselineSources: [], participationSources: [],
++    evidence: { schedule: { source: "synthetic complete schedule", asOf: now, seasonId: 20262027, completeness: "complete", limitations: [] },
++      forecasts: { source: "synthetic forecast", asOf: now, seasonId: 20262027, completeness: "complete", limitations: [] } },
++    forecastManifest: { version: "planning-forecasts-v1", id: "display-read", seasonId: 20262027, asOf: now,
++      scheduleRevision: "schedule-a", rosterRevision: "roster-a", issuedRevisionIds: [revision], baselineChecksum: null,
++      requiredOpportunities: 1, forecastedOpportunities: 1, exclusionCounts: {},
++      rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: scenario.native ? [] : [revision] } } };
++  const wire = { version: "forge-daily-bridge-wire-v1", seasonId: 20262027, limitations: ["Synthetic display fixture"],
++    runs: [[revision, revision, scenario.native ? "unreviewed-native" : "forge-daily-bridge-v1:fixture", now, now]],
++    rows: [["7", "30", 0, "2026-10-24T00:00:00Z", scenario.stats, scenario.probability ?? null, false, scenario.conditional ?? null]] };
++  workspace.context = { provider: "manual", seasonId: 20262027, leagueId: "fixture-league", teamId: "fixture-team",
++    startDate: game.date, endDate: game.date, timeZone: "UTC", asOf: now };
++  workspace.roster = [{ playerId: player.id, position: "active" }]; workspace.manualPlayers = [player];
++  workspace.rules = { ...workspace.rules, lineupMode: "daily", rosterSlots: scenario.goalie ? { G: 1 } : { C: 1 },
++    acquisitionTiming: "same_day", acquisitionCost: 1,
++    periods: [{ id: "p", start: now, end: "2026-10-25T00:00:00Z", remaining: 2, source: "manager" }],
++    scoring: { mode: "points", weights: scenario.goalie ? { SAVES_GOALIE: 0.2 } : { GOALS: 3, ASSISTS: 2 }, categories: [] } };
++  workspace.lockedAssignments = [{ date: game.date, playerId: player.id, slotId: scenario.goalie ? "G#1" : "C#1", source: "manager" }];
++  writeWorkspace(localStorage, workspace);
++  const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
++    if (url.endsWith("/access")) return { ok: true, json: async () => ({ data: { eligible: false, capabilities: [] } }) } as Response;
++    if (url.includes("/workspace?")) return { ok: true, json: async () => ({ data: null }) } as Response;
++    if (!url.startsWith("/api/v1/roster-schedule-optimizer/data?")) throw new Error(`Unexpected offline fixture path: ${url}`);
++    return { ok: true, json: async () => ({ success: true, data: structuredClone(data), bridgeForecasts: structuredClone(wire),
++      read: { nonce: (init?.headers as Record<string, string>)["X-RSO-Read-Nonce"], evaluatedAt: now } }) } as Response;
++  });
++  vi.stubGlobal("fetch", fetcher);
++  render(<RosterScheduleOptimizer />);
++  fireEvent.click(screen.getByRole("button", { name: "By position" }));
++  const cell = await screen.findByRole("button", { name: `Synthetic player, ${scenario.goalie ? "G" : "C"}, ${game.date}` });
++  await waitFor(() => expect(within(cell).getByLabelText(/Expected fantasy points:/)).toBeTruthy());
++  return { cell: within(cell), fetcher };
++}
++
++describe("RSO live grid points callback", () => {
++  it("renders complete FP from the current admitted read", async () => {
++    const { cell, fetcher } = await mount({ stats: { GOALS: 1, ASSISTS: 2 } });
++    expect(cell.getByLabelText("Expected fantasy points: 7.0")).toBeTruthy();
++    expect(fetcher.mock.calls.filter(([url]) => url.includes("/data?"))).toHaveLength(1);
++  });
++
++  it("renders unavailable FP for a missing weighted key instead of the known subtotal", async () => {
++    const { cell } = await mount({ stats: { GOALS: 1 } });
++    expect(cell.getByLabelText("Expected fantasy points: unavailable").textContent).toBe("—");
++    expect(cell.queryByText("3.0")).toBeNull();
++  });
++
++  it("renders goalie expected and if-starts FP with distinct semantics", async () => {
++    const { cell } = await mount({ goalie: true, stats: { SAVES_GOALIE: 11.55 }, conditional: { SAVES_GOALIE: 21 }, probability: 0.55 });
++    expect(cell.getByLabelText("Expected fantasy points: 2.3").textContent).toBe("2.3 expected");
++    expect(cell.getByLabelText("Fantasy points if starts: 4.2").textContent).toBe("4.2 if starts");
++  });
++
++  it.each([0, null])("does not invent an if-starts estimate at start probability %s", async probability => {
++    const { cell } = await mount({ goalie: true, stats: { SAVES_GOALIE: 0 }, probability });
++    expect(cell.getByLabelText("Fantasy points if starts: unavailable").textContent).toBe("— if starts");
++    expect(cell.queryByText(/NaN|Infinity/)).toBeNull();
++  });
++
++  it("does not admit numeric native forecasts without target review", async () => {
++    const { cell } = await mount({ goalie: true, stats: { SAVES_GOALIE: 11.55 }, conditional: { SAVES_GOALIE: 21 }, probability: 0.55, native: true });
++    expect(cell.getByLabelText("Expected fantasy points: unavailable")).toBeTruthy();
++    expect(cell.getByLabelText("Fantasy points if starts: unavailable")).toBeTruthy();
++    expect(cell.queryByText("2.3 expected")).toBeNull();
++    expect(cell.queryByText("4.2 if starts")).toBeNull();
++  });
++});

@@ -1,0 +1,398 @@
+diff --git a/tasks/TASKS/cron-operations/cron-schedule.md b/tasks/TASKS/cron-operations/cron-schedule.md
+--- a/tasks/TASKS/cron-operations/cron-schedule.md
++++ b/tasks/TASKS/cron-operations/cron-schedule.md
+@@ -35,6 +35,12 @@
+ -- is partial; this inventory correction does not establish complete ownership
+ -- coverage or change the live schedule. Older SQL snippets remain historical.
+ 
++-- 2026-10-22: job 79 update-nst-gamelog (07:25 UTC) was unscheduled by explicit
++-- TJ approval. It was capped at 6 NST URLs per run (a day is 20), failed daily
++-- and duplicated the 10:05Z pipeline's upstream_skater_sources step, which
++-- fetches the previous day's NST gamelogs. Its 07:25 slot left
++-- NST_ACTIVE_DIRECT_CRON_STARTS. Gap repair is a manual /db/runner job.
++
+ # ALL CRON JOBS:
+ ```json
+ [
+@@ -114,9 +120,10 @@
+     "jobname": "update-nst-gamelog",
+     "schedule": "25 7 * * *",
+     "run_time_utc": "07:25 UTC",
+-    "active": true,
+-    "method": "GET",
+-    "route": "/api/v1/db/update-nst-gamelog"
++    "active": false,
++    "method": "GET",
++    "route": "/api/v1/db/update-nst-gamelog",
++    "verification": "Unscheduled 2026-10-22 (cron.unschedule(79)) by explicit TJ approval after the 10-07..10-18 NST backfill was confirmed. The 10:05Z run-rolling-forge-pipeline upstream_skater_sources step fetches the previous day's NST gamelogs. Rollback: reschedule the same Vault-bearer GET at 25 7 * * *."
+   },
+   {
+     "jobid": 9,
+@@ -661,6 +668,17 @@
+     "active": false,
+     "method": "GET",
+     "route": "/api/v1/db/update-power-rankings"
++  },
++  {
++    "jobid": 399,
++    "jobname": "route-runner-tick",
++    "schedule": "* * * * *",
++    "run_time_utc": null,
++    "active": true,
++    "method": "GET",
++    "route": "/api/v1/db/route-runner-tick",
++    "auth": "Supabase Vault cron_secret",
++    "verification": "Scheduled 2026-10-22 by explicit TJ approval after release R21 (master 99c9e56b7, deployment dpl_7ZG28acCKCeHXn7tgL6x5eDEeQEi) was READY and smoke-tested. Calls the route only when a route_runner_jobs row is runnable and no lease is live; idle minutes make no HTTP call."
+   }
+ ]
+ ```
+@@ -2426,3 +2444,46 @@
+ -- stale assertions with the shared fail-closed Unauthorized. response.
+ -- This local evidence does not resolve the Production job-392 HTTP-401
+ -- current-secret parity gate; keep NEW 9.0 open and credential values unread.
++
++----------------------------------------------------------------------------------
++-- APPLIED 2026-10-22 as job 399 (route-runner-tick), by explicit TJ approval, after release R21
++-- (master 99c9e56b7) was READY and smoke-tested. Migration 98 (route_runner tables) applied first.
++--
++-- Worker for the /db/runner long-run route runner (web/pages/api/v1/db/route-runner-tick.ts).
++-- Every minute it calls the worker only when a route_runner_jobs row is runnable and no job holds
++-- an unexpired lease, so idle and busy minutes make zero Vercel calls. Each call runs one step of
++-- one job (concurrency 1) inside the 240 s maxDuration; the inner routes write their own audits and
++-- the tick writes one small cron_job_audit row (job_name route-runner-tick).
++-- Prerequisites (met): migration 98 (supabase/migrations/20261022133743_route_runner_tables.sql)
++-- and release R21 with the route live. Listed in the JSON inventory above as job 399.
++--
++-- SELECT cron.schedule(
++--   'route-runner-tick',
++--   '* * * * *',
++--   $$
++--     SELECT net.http_get(
++--       url := 'https://fhfhockey.com/api/v1/db/route-runner-tick',
++--       headers := jsonb_build_object(
++--         'Authorization', 'Bearer ' || (
++--           SELECT decrypted_secret FROM vault.decrypted_secrets
++--           WHERE name = 'cron_secret'
++--         )
++--       ),
++--       timeout_milliseconds := 300000
++--     )
++--     WHERE EXISTS (
++--       SELECT 1 FROM public.route_runner_jobs
++--       WHERE status IN ('queued', 'running', 'waiting')
++--         AND coalesce(not_before, now()) <= now()
++--         AND coalesce(lease_until, now() - interval '1 second') < now()
++--         AND expires_at > now()
++--     )
++--     AND NOT EXISTS (
++--       SELECT 1 FROM public.route_runner_jobs WHERE lease_until > now()
++--     );
++--   $$
++-- );
++--
++-- Rollback: SELECT cron.unschedule('route-runner-tick');
++-- Queued jobs stop advancing and keep their next_query; they resume if the job is rescheduled
++-- before their expires_at (72 h after creation).
+diff --git a/web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts b/web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts
+--- a/web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts
++++ b/web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts
+@@ -43,7 +43,6 @@
+     );
+ 
+     expect(manualRoutes).toEqual([
+-      "/api/v1/db/update-nst-gamelog",
+       "/api/v1/db/update-wgo-goalies",
+       "/api/v1/db/update-wgo-skaters",
+       "/api/v1/db/update-wgo-totals",
+@@ -82,8 +81,8 @@
+     expect(callerCounts).toEqual({
+       "browser-admin": 5,
+       "browser-admin-and-internal": 4,
+-      "cron-only": 26,
+-      "internal-server": 12,
++      "cron-only": 27,
++      "internal-server": 11,
+     });
+     expect(authFindings.filter((finding) => !finding.filePath)).toEqual([]);
+ 
+diff --git a/web/lib/cron/combinedCronInventory.test.ts b/web/lib/cron/combinedCronInventory.test.ts
+--- a/web/lib/cron/combinedCronInventory.test.ts
++++ b/web/lib/cron/combinedCronInventory.test.ts
+@@ -270,6 +270,12 @@
+       inventory.jobs.filter((job) => job.provider === "vercel"),
+     ).toHaveLength(30);
+     expect(inventory.jobs).toHaveLength(86);
++    // Isolated job79/job399 overlay: one retired, one added; other records unchanged.
++    expect(inventory.jobs.some((job) => job.provider === "pg_cron" && job.name === "update-nst-gamelog")).toBe(false);
++    expect(inventory.jobs).toContainEqual(expect.objectContaining({
++      provider: "pg_cron", name: "route-runner-tick",
++      routePath: "/api/v1/db/route-runner-tick", normalizedCronExpression: "* * * * *",
++    }));
+     expect(inventory.jobs).toContainEqual(
+       expect.objectContaining({
+         provider: "vercel",
+diff --git a/web/lib/cron/nstBurstPlans.test.ts b/web/lib/cron/nstBurstPlans.test.ts
+--- a/web/lib/cron/nstBurstPlans.test.ts
++++ b/web/lib/cron/nstBurstPlans.test.ts
+@@ -5,10 +5,10 @@
+   GOALIE_URLS_PER_DATE,
+   NST_GOALIES_REQUEST_INTERVAL_MS,
+   NST_SAFE_INTERVAL_MS,
+-  resolveGoalieNstRequestPlan
++  resolveGoalieNstRequestPlan,
++  resolveNstGamelogRequestPlan
+ } from "./nstBurstPlans";
+ import {
+-  NST_TEAM_DAILY_BURST_INTERVAL_MS,
+   NST_TEAM_DAILY_SAFE_INTERVAL_MS,
+   TEAM_DAILY_URLS_PER_DATE,
+   resolveTeamDailyNstRequestPlan
+@@ -18,8 +18,15 @@
+   resolveNstTeamStatsRequestPlan
+ } from "./nstBurstPlans";
+ 
+-describe("NST route burst plans", () => {
+-  it("allows update-nst-goalies to burst when two or fewer dates are queued", () => {
++describe("NST full-job pacing plans", () => {
++  it("bursts only full gamelog jobs below 40 URLs, independently of date aperture", () => {
++    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 39 })).toMatchObject({ burstAllowed: true, requestIntervalMs: 0 });
++    expect(resolveNstGamelogRequestPlan({ queuedDates: 1, requestCount: 1 }).requestIntervalMs).toBe(0);
++    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 40 })).toMatchObject({ burstAllowed: false, requestIntervalMs: 21_000 });
++    expect(resolveNstGamelogRequestPlan({ queuedDates: 3, requestCount: 3 }).requestIntervalMs).toBe(0);
++    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 41 }).burstAllowed).toBe(false);
++  });
++  it("bursts update-nst-goalies when its full queue is below 40 URLs", () => {
+     const plan = resolveGoalieNstRequestPlan({
+       queuedDates: 2,
+       totalQueuedUrls: GOALIE_URLS_PER_DATE * 2,
+@@ -32,7 +39,7 @@
+     expect(plan.requestIntervalMs).toBe(0);
+   });
+ 
+-  it("allows update-nst-goalies to burst when its full queue remains below 40 URLs", () => {
++  it("bursts a full goalie queue below 40 URLs independently of date count", () => {
+     const plan = resolveGoalieNstRequestPlan({
+       queuedDates: 3,
+       totalQueuedUrls: GOALIE_URLS_PER_DATE * 3,
+@@ -47,7 +54,7 @@
+     expect(plan.requestIntervalMs).toBe(0);
+   });
+ 
+-  it("keeps update-nst-team-daily on burst for one or two queued dates", () => {
++  it("bursts update-nst-team-daily for one or two queued dates", () => {
+     const oneDayPlan = resolveTeamDailyNstRequestPlan(["2026-03-21"]);
+     const twoDayPlan = resolveTeamDailyNstRequestPlan([
+       "2026-03-20",
+@@ -55,21 +62,21 @@
+     ]);
+ 
+     expect(oneDayPlan.requestCount).toBe(TEAM_DAILY_URLS_PER_DATE);
+-    expect(oneDayPlan.requestIntervalMs).toBe(NST_TEAM_DAILY_BURST_INTERVAL_MS);
++    expect(oneDayPlan.requestIntervalMs).toBe(0);
+     expect(oneDayPlan.burstAllowed).toBe(true);
+ 
+     expect(twoDayPlan.requestCount).toBe(TEAM_DAILY_URLS_PER_DATE * 2);
+-    expect(twoDayPlan.requestIntervalMs).toBe(NST_TEAM_DAILY_BURST_INTERVAL_MS);
++    expect(twoDayPlan.requestIntervalMs).toBe(0);
+     expect(twoDayPlan.burstAllowed).toBe(true);
+   });
+ 
+-  it("allows update-nst-team-daily to burst while the full queue is below 40 URLs", () => {
++  it("bursts update-nst-team-daily while the full queue is below 40 URLs", () => {
+     const dates = ["2026-03-19", "2026-03-20", "2026-03-21"];
+     const plan = resolveTeamDailyNstRequestPlan(dates);
+ 
+     expect(plan.requestCount).toBe(TEAM_DAILY_URLS_PER_DATE * dates.length);
+     expect(plan.burstAllowed).toBe(true);
+-    expect(plan.requestIntervalMs).toBe(NST_TEAM_DAILY_BURST_INTERVAL_MS);
++    expect(plan.requestIntervalMs).toBe(0);
+   });
+ 
+   it("keeps update-nst-team-daily on the safe interval for larger queued date counts", () => {
+@@ -95,7 +102,7 @@
+     expect(plan.burstAllowed).toBe(false);
+   });
+ 
+-  it("allows nst-team-stats to burst when the run is within two queued dates", () => {
++  it("bursts nst-team-stats when its full run is below 40 URLs", () => {
+     const plan = resolveNstTeamStatsRequestPlan({
+       queuedDates: 1,
+       dateRequestCount: 4,
+@@ -107,7 +114,7 @@
+     expect(plan.requestIntervalMs).toBe(0);
+   });
+ 
+-  it("uses URL count rather than date count to decide nst-team-stats bursts", () => {
++  it("bursts small nst-team-stats jobs independently of date count", () => {
+     const plan = resolveNstTeamStatsRequestPlan({
+       queuedDates: 3,
+       dateRequestCount: 12,
+@@ -128,6 +135,28 @@
+     expect(plan.burstEligibleByRequestCount).toBe(false);
+     expect(plan.burstAllowed).toBe(false);
+     expect(plan.requestIntervalMs).toBe(NST_TEAM_STATS_SAFE_INTERVAL_MS);
++  });
++
++  it.each([-1, 20_999, NaN, Infinity])("rejects unsafe explicit goalie spacing %s", (interval) => {
++    const plan = resolveGoalieNstRequestPlan({ queuedDates: 1, totalQueuedUrls: 1,
++      maxPendingUrls: 1, explicitRequestIntervalMs: interval });
++    expect(plan).toMatchObject({ requestIntervalMs: NST_SAFE_INTERVAL_MS, burstAllowed: false,
++      explicitIntervalRejected: true, usedExplicitInterval: false });
++  });
++
++  it("allows explicit zero only for a full job below 40 URLs", () => {
++    expect(resolveGoalieNstRequestPlan({ queuedDates: 1, totalQueuedUrls: 39,
++      maxPendingUrls: 1, explicitRequestIntervalMs: 0 })).toMatchObject({
++      requestIntervalMs: 0, burstAllowed: true, usedExplicitInterval: true });
++    expect(resolveGoalieNstRequestPlan({ queuedDates: 1, totalQueuedUrls: 40,
++      maxPendingUrls: 1, explicitRequestIntervalMs: 0 })).toMatchObject({
++      requestIntervalMs: NST_SAFE_INTERVAL_MS, burstAllowed: false, explicitIntervalRejected: true });
++  });
++
++  it("retains a longer explicit goalie interval", () => {
++    expect(resolveGoalieNstRequestPlan({ queuedDates: 1, totalQueuedUrls: 1,
++      maxPendingUrls: 1, explicitRequestIntervalMs: 30_000 })).toMatchObject({
++      requestIntervalMs: 30_000, usedExplicitInterval: true, explicitIntervalRejected: false });
+   });
+ 
+   it("does not hide a large goalie backlog behind a small per-run cap", () => {
+diff --git a/web/lib/cron/nstBurstPlans.ts b/web/lib/cron/nstBurstPlans.ts
+--- a/web/lib/cron/nstBurstPlans.ts
++++ b/web/lib/cron/nstBurstPlans.ts
+@@ -1,11 +1,12 @@
+ import {
+   assessNstRequestPlan,
+   canBurstNstRequests,
++  NST_MIN_REQUEST_INTERVAL_MS,
+   selectNstSafeInterval
+ } from "./nstRateLimitPolicy";
+ import { getNstCronBurstClearance } from "./nstCoordination";
+ 
+-export const NST_SAFE_INTERVAL_MS = 21_000;
++export const NST_SAFE_INTERVAL_MS = NST_MIN_REQUEST_INTERVAL_MS;
+ export const NST_GOALIES_REQUEST_INTERVAL_MS = NST_SAFE_INTERVAL_MS;
+ export const DEFAULT_MAX_PENDING_URLS_PER_RUN = 20;
+ export const NST_STRICT_MAX_URLS_PER_RUN = 6;
+@@ -18,22 +19,21 @@
+   safeIntervalMs?: number;
+   explicitRequestIntervalMs?: number;
+ }) {
+-  const safeIntervalMs = options.safeIntervalMs ?? NST_SAFE_INTERVAL_MS;
++  const safeIntervalMs = Math.max(options.safeIntervalMs ?? NST_SAFE_INTERVAL_MS, NST_SAFE_INTERVAL_MS);
+   const burstEligibleByRequestCount = canBurstNstRequests(
+     options.requestCount
+   );
+   const scheduleClearance = getNstCronBurstClearance(options.jobName);
+-  const burstAllowedByPolicy =
+-    burstEligibleByRequestCount && scheduleClearance.allowed;
++  // Scheduler clearance is advisory. Dispatch must still obtain shared ledger
++  // headroom, using the full job count rather than a per-invocation chunk.
+   const candidateIntervalsMs =
+     options.explicitRequestIntervalMs !== undefined
+-      ? burstAllowedByPolicy ||
+-        options.explicitRequestIntervalMs >= safeIntervalMs
++      ? Number.isFinite(options.explicitRequestIntervalMs) &&
++        (options.explicitRequestIntervalMs >= safeIntervalMs ||
++          (options.explicitRequestIntervalMs === 0 && burstEligibleByRequestCount))
+         ? [options.explicitRequestIntervalMs, safeIntervalMs]
+         : [safeIntervalMs]
+-      : burstAllowedByPolicy
+-        ? [0, safeIntervalMs]
+-        : [safeIntervalMs];
++      : burstEligibleByRequestCount ? [0, safeIntervalMs] : [safeIntervalMs];
+ 
+   const selectedPlan = selectNstSafeInterval(
+     options.requestCount,
+diff --git a/web/lib/cron/nstCoordination.test.ts b/web/lib/cron/nstCoordination.test.ts
+--- a/web/lib/cron/nstCoordination.test.ts
++++ b/web/lib/cron/nstCoordination.test.ts
+@@ -12,7 +12,17 @@
+   NST_SHARED_KEY_SERIAL_SPACING_MS
+ } from "lib/cron/nstCoordination";
+ 
++import { resolveNstGamelogRequestPlan } from "./nstBurstPlans";
++
+ describe("nstCoordination", () => {
++  it("keeps retired job79 clearance advisory while preserving full-job pacing", () => {
++    expect(NST_ACTIVE_DIRECT_CRON_STARTS.map((job) => job.jobName)).not.toContain("update-nst-gamelog");
++    expect(getNstCronBurstClearance("update-nst-gamelog").allowed).toBe(false);
++    expect(resolveNstGamelogRequestPlan({ queuedDates: 1, requestCount: 20 }))
++      .toMatchObject({ burstAllowed: true, requestIntervalMs: 0 });
++    expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount: 40 }))
++      .toMatchObject({ burstAllowed: false, requestIntervalMs: 21_000 });
++  });
+   it("returns a shared-key serialization policy for direct NST jobs", () => {
+     expect(getNstCoordinationPolicy("update-nst-gamelog")).toMatchObject({
+       coordinationScope: "shared_nst_key",
+@@ -28,7 +38,6 @@
+ 
+   it("confirms every active NST cron start has ten minutes of clearance", () => {
+     for (const jobName of [
+-      "update-nst-gamelog",
+       "update-nst-goalies",
+       "update-nst-current-season",
+       "update-nst-team-daily-incremental",
+diff --git a/web/lib/cron/nstCoordination.ts b/web/lib/cron/nstCoordination.ts
+--- a/web/lib/cron/nstCoordination.ts
++++ b/web/lib/cron/nstCoordination.ts
+@@ -17,7 +17,6 @@
+ export const NST_MIN_CRON_BURST_GAP_MS = 10 * 60 * 1000;
+ 
+ export const NST_ACTIVE_DIRECT_CRON_STARTS = [
+-  { jobName: "update-nst-gamelog", minuteOfDayUtc: 7 * 60 + 25 },
+   { jobName: "update-nst-goalies", minuteOfDayUtc: 8 * 60 + 30 },
+   { jobName: "update-nst-current-season", minuteOfDayUtc: 8 * 60 + 45 },
+   { jobName: "update-nst-team-stats-all", minuteOfDayUtc: 9 * 60 + 15 },
+diff --git a/web/lib/cron/nstRateLimitPolicy.test.ts b/web/lib/cron/nstRateLimitPolicy.test.ts
+--- a/web/lib/cron/nstRateLimitPolicy.test.ts
++++ b/web/lib/cron/nstRateLimitPolicy.test.ts
+@@ -58,13 +58,13 @@
+     );
+   });
+ 
+-  it("accepts a modest delay when it brings the plan under every limit", () => {
++  it("requires 21 seconds for a full job of 40 or more even when shorter pacing fits the windows", () => {
+     const assessment = assessNstRequestPlan({
+       requestCount: 81,
+       intervalMs: 4_000
+     });
+ 
+-    expect(assessment.isCompliant).toBe(true);
++    expect(assessment.isCompliant).toBe(false);
+     expect(assessment.windowCounts).toEqual(
+       expect.arrayContaining([
+         expect.objectContaining({
+@@ -100,7 +100,7 @@
+     const assessment = selectNstSafeInterval(81, [0, 1_000, 4_000, 21_000]);
+ 
+     expect(assessment).not.toBeNull();
+-    expect(assessment?.intervalMs).toBe(4_000);
++    expect(assessment?.intervalMs).toBe(21_000);
+     expect(assessment?.isCompliant).toBe(true);
+   });
+ 
+diff --git a/web/lib/cron/nstRateLimitPolicy.ts b/web/lib/cron/nstRateLimitPolicy.ts
+--- a/web/lib/cron/nstRateLimitPolicy.ts
++++ b/web/lib/cron/nstRateLimitPolicy.ts
+@@ -22,6 +22,8 @@
+   }>;
+ }
+ 
++// All four unique-URL windows apply across participating jobs. Only a complete
++// job below40 URLs may burst;21s spacing safely accommodates larger jobs.
+ export const NST_RATE_LIMIT_WINDOWS: readonly NstRateLimitWindow[] = [
+   { label: "1m_burst", windowMs: 60_000, maxRequests: 40 },
+   { label: "5m_burst", windowMs: 300_000, maxRequests: 80 },
+@@ -94,7 +96,11 @@
+   return {
+     requestCount,
+     intervalMs,
+-    isCompliant: windowCounts.every((window) => window.compliant),
++    isCompliant:
++      Number.isInteger(input.requestCount) && input.requestCount >= 0 &&
++      Number.isFinite(input.intervalMs) && input.intervalMs >= 0 &&
++      (requestCount <= NST_MAX_BURST_REQUESTS || intervalMs >= NST_MIN_REQUEST_INTERVAL_MS) &&
++      windowCounts.every((window) => window.compliant),
+     windowCounts
+   };
+ }

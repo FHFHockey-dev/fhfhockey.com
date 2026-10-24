@@ -1,0 +1,12 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review
+
+(node:23465) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ security-controls.test.tsx (35 tests) 171ms
+
+ Test Files  1 passed (1)
+      Tests  35 passed (35)
+   Start at  17:09:50
+   Duration  733ms (transform 58ms, setup 11ms, collect 169ms, tests 171ms, environment 262ms, prepare 34ms)
+

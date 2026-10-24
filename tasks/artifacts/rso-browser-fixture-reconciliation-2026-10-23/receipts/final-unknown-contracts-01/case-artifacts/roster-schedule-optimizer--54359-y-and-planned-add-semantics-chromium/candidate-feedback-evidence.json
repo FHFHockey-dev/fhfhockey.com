@@ -1,0 +1,38 @@
+{
+  "sourceGrossPoints": 20,
+  "selectedIntent": {
+    "revision": 2,
+    "steps": [
+      {
+        "id": "selected-1791072000868",
+        "type": "add",
+        "playerId": "fhfh:2",
+        "at": "2026-10-04T00:01:00.868Z",
+        "effectiveAt": "2026-10-04T00:01:00.868Z",
+        "conditional": true,
+        "dependsOn": []
+      }
+    ],
+    "protectedPlayerIds": [],
+    "excludedPlayerIds": [],
+    "goalieCoverage": "accept_risk",
+    "goalieWindow": "any",
+    "goalieSplit": "mon_thu",
+    "alternativeCount": 10
+  },
+  "worker": [
+    {
+      "activeGames": 1,
+      "limitations": [],
+      "intentRevision": 1
+    },
+    {
+      "activeGames": 1,
+      "limitations": [
+        "No acquisition period covers 2026-10-04T00:01:00.868Z.",
+        "Future availability for fhfh:2 must be rechecked before selected-1791072000868."
+      ],
+      "intentRevision": 2
+    }
+  ]
+}

@@ -1,0 +1,233 @@
+{
+  "created_at": "2026-10-22T13:37:51.255789+00:00",
+  "status": "combined_local_verification_pinned_from_independently_accepted_packets",
+  "release_ready": false,
+  "scope": "A1-A10 plus accepted NST R1 only; acceptance applies to 31 named changed files, not whole historical dirty baseline",
+  "changed_file_count": 31,
+  "accepted_files": {
+    "web/lib/projections/queries/skater-queries.ts": {
+      "sha256": "9dfcff408d4cd5f9bdb266a3380a8beacc557a584002e44d5b75e0639d74606a",
+      "packet": "A1-A4/A6"
+    },
+    "web/lib/projections/queries/skater-queries.test.ts": {
+      "sha256": "a417087529e6ed4319769699bb4f443c1873263fbdb738624c817c1861c732e2",
+      "packet": "A1-A4/A6"
+    },
+    "web/lib/rosterScheduleData/forgeDailyBridge.ts": {
+      "sha256": "57f21bc5214a37d3ef5aff985ba62f0c5d30ae5f3925693f7d61f55a240abc6a",
+      "packet": "A1-A4/A6"
+    },
+    "web/lib/rosterScheduleData/forgeDailyBridge.test.ts": {
+      "sha256": "d3f65f3b3c63b631799cd6ccd41b6e1031ea1d1a7dbd6bc3f7506028702cea24",
+      "packet": "A1-A4/A6"
+    },
+    "web/lib/player-forecasts/servedForecastLedger.ts": {
+      "sha256": "b9f5629e291bbcbee64f40378a762b2ee85e06fffe74cd1c564d6e62989098f1",
+      "packet": "A1-A4/A6"
+    },
+    "web/lib/player-forecasts/servedForecastLedger.test.ts": {
+      "sha256": "3052c97e64b16cbe03d0c8146a71f83f7516c83e3563c981a410eb56b8fd3577",
+      "packet": "A1-A4/A6"
+    },
+    "web/pages/api/v1/db/forge-served-forecast-settle.ts": {
+      "sha256": "699cb851dc0bd7b8635ce8f61c156fbf30f5451241e24720f3c9623a0e76db22",
+      "packet": "A1-A4/A6"
+    },
+    "web/pages/api/v1/db/forge-served-forecast-snapshot.ts": {
+      "sha256": "f77f22aabf9cfe3d5246354e5d0dd068a3286fb15e1d55c570a3b58e1f76a275",
+      "packet": "A1-A4/A6"
+    },
+    "web/pages/api/v1/forge/scoreboard.ts": {
+      "sha256": "260b504bdbe499e0779d6833dca4145893a7b5188f6d7174f1af4d348db21abb",
+      "packet": "A1-A4/A6"
+    },
+    "web/__tests__/pages/api/v1/db/forge-served-forecast-settle.test.ts": {
+      "sha256": "6885092c259430091efa2e07ce8aa3afc0cf03b747f137a69e2940c7b80f0d81",
+      "packet": "A1-A4/A6"
+    },
+    "web/tests/api/forge-scoreboard.test.ts": {
+      "sha256": "aa58a4d16e5b2354cfaf129796ca3fde72314a52890717bc1e30b9820dec4ac5",
+      "packet": "A1-A4/A6"
+    },
+    "web/lib/rollingForgePipelineRunState.ts": {
+      "sha256": "6ce1bab745bb6fa870b7aeb717c61b2470072db3645047e48006ea53304d2d38",
+      "packet": "NST R1"
+    },
+    "web/pages/api/v1/db/run-rolling-forge-pipeline.ts": {
+      "sha256": "ffe7e16c782987fdfec19f8b1e787a89a76aed0a2739994ec5f80eb9488f97b1",
+      "packet": "NST R1"
+    },
+    "web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts": {
+      "sha256": "1137a449405ec993cb8440395311cc199251fd6da87508469390ffc0ff8f8227",
+      "packet": "NST R1"
+    },
+    "web/lib/integrations/yahoo/rosterPlanning.ts": {
+      "sha256": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+      "packet": "A5/A10"
+    },
+    "web/lib/integrations/yahoo/rosterPlanning.test.ts": {
+      "sha256": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+      "packet": "A5/A10"
+    },
+    "web/lib/stats/percentUnits.ts": {
+      "sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+      "packet": "A7-A9 R1"
+    },
+    "web/lib/stats/percentUnits.test.ts": {
+      "sha256": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+      "packet": "A7-A9 R1"
+    },
+    "web/components/GoalieShareChart/index.tsx": {
+      "sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+      "packet": "A7-A9 R1"
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx": {
+      "sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+      "packet": "A7-A9 R1"
+    },
+    "web/hooks/useShotData.ts": {
+      "sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+      "packet": "A7-A9 R1"
+    },
+    "web/hooks/useShotData.test.tsx": {
+      "sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+      "packet": "A7-A9 R1"
+    },
+    "web/components/GameStateAnalysis/GameStateAnalysis.tsx": {
+      "sha256": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+      "packet": "A7-A9 R1"
+    },
+    "web/components/GameStateAnalysis/GameStateAnalysis.test.tsx": {
+      "sha256": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+      "packet": "A7-A9 R1"
+    },
+    "web/components/TeamDashboard/AdvancedL10Metrics.tsx": {
+      "sha256": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+      "packet": "A7-A9 R1"
+    },
+    "web/components/TeamDashboard/AdvancedL10Metrics.test.tsx": {
+      "sha256": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+      "packet": "A7-A9 R1"
+    },
+    "web/components/TeamDashboard/TeamDashboard.tsx": {
+      "sha256": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+      "packet": "A7-A9 R1"
+    },
+    "web/components/TeamDashboard/TeamDashboard.test.tsx": {
+      "sha256": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+      "packet": "A7-A9 R1"
+    },
+    "web/lib/stats/teamCountConsumers.test.tsx": {
+      "sha256": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa",
+      "packet": "A7-A9 R1"
+    },
+    "web/lib/projections/projectionPipelineState.ts": {
+      "sha256": "288eaf8e8add181cf23290fda001409d001980aec53f49d96d4164b49e716b8f",
+      "packet": "NST R1"
+    },
+    "web/lib/projections/projectionPipelineState.test.ts": {
+      "sha256": "bcfe0ea75668c7cca0d40346d8f901d123d5e7f190c2392bd4b2a5ed79e9b124",
+      "packet": "NST R1"
+    }
+  },
+  "dependency_fences": {
+    "web/lib/integrations/providerSyncAccessServer.ts": "6feba64d25aad65ae6322fcc812be8ad202c18545ba38eaaf4566f3379dd0bf1",
+    "web/lib/integrations/providerSyncAccess.ts": "5e34f581be828b4f0b45cbfbb0e0851b65567f81fc35795000af4e79f7483ae5",
+    "web/lib/integrations/providerSyncAccess.test.ts": "e02a9e1efedefae017aa5259cdaadf6f9cbc5bca247201f0c1adcf1ef52b2103",
+    "web/lib/integrations/providerSyncPaywall.test.ts": "d1ed5ef030e2af624fbc9029f8958bae3915f2bc3e7ae8cd34b97d7aa562637b",
+    "web/pages/api/v1/roster-schedule-optimizer/provider.ts": "7d2eaddedbf4ad6993cd41f451aaaa05a4a6fae45e80d844387ee84222bb571d",
+    "web/pages/api/v1/db/update-nst-gamelog.ts": "9f6b8f628f2d4be77e3bf15a3d94ee8bceef6b420618034eab5c23162d8db1d4",
+    "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts": "098de11dd4282c779c1fc3ee404b2931b5202af5309045d4409f596cf6e75e84",
+    "web/lib/nst/requestBudget.ts": "d19258f72183580919d26c16480287faa3f9b2fa30c9a9aa7d2982bba79b487e",
+    "web/lib/nst/client.ts": "712eefa3c63b3340770a4d45fb2c97428ffe7ede49a5581f36f75a9c9a3783e9",
+    "web/lib/nst/gamelogProgress.ts": "b0c657c0e28193384939c58fdab6321460347f149b698e8051c4211cacab9942",
+    "web/lib/cron/withCronJobAudit.ts": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+    "web/lib/cron/nhlOffSeason.ts": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f"
+  },
+  "reviews": {
+    "A1-A4/A6": {
+      "path": "tasks/artifacts/claude-audit-independent-review-2026-10-22/forge-ledger-lease/REVIEW.md",
+      "sha256": "9f442cfd13b0ed27297322596ec5e3960dc72fc2435d9891640765371b6909f2"
+    },
+    "A5/A10": {
+      "path": "tasks/artifacts/claude-audit-independent-review-2026-10-22/a5-a10-yahoo/REVIEW.md",
+      "sha256": "06118925296522d8c337964a6b263626c39ecb6c313038418e3e5b90fff4ef63"
+    },
+    "A7-A9 R1": {
+      "path": "tasks/artifacts/claude-audit-independent-review-2026-10-22/a7-a9-stats/r1/REVIEW.md",
+      "sha256": "ae5593e3aa5b93849aaabeefbc0bdfa48adf4ad9ce119cae6b0d1274bb9b9abc"
+    },
+    "NST R1": {
+      "path": "tasks/artifacts/claude-audit-independent-review-2026-10-22/nst-continuation/r1/REVIEW.md",
+      "sha256": "36ab2bc7374ae441d87ccdda4e2c007b4504569ed360f8f075d8ecee509a2c8d"
+    }
+  },
+  "archive": "fixed-source.tar.gz",
+  "archive_sha256": "1744faa8139dde75c8affd8457771b4eef7706725cddfa23019ae54996e6bf04",
+  "file_hash_manifest": "FIXED-SNAPSHOT.json",
+  "file_hash_manifest_sha256": "99008a5ef0debf289ce6c19647cbe5012de33fa4751d0a8df157b821c6ad3566",
+  "checks": {
+    "affected_suites": {
+      "exit": 0,
+      "files": 24,
+      "passed": 742,
+      "failed": 0,
+      "log": "evidence/affected-suites.log"
+    },
+    "original_and_independent_cases": {
+      "exit": 0,
+      "files": 7,
+      "passed": 28,
+      "failed": 0,
+      "log": "evidence/reproductions.log"
+    },
+    "all_file_types": {
+      "exit": 2,
+      "errors": 2,
+      "file": "web/__tests__/pages/api/v1/db/auditNstR1Additional.test.ts",
+      "lines": [
+        355,
+        359
+      ],
+      "scope": "Unmodified external review fixture; not an application candidate file",
+      "log": "evidence/typecheck.log"
+    },
+    "application_types": {
+      "exit": 0,
+      "scope": "Full application tsconfig, excluding only four added external review fixtures; no application files excluded",
+      "log": "evidence/application-typecheck.log"
+    },
+    "scoped_lint": {
+      "exit": 0,
+      "errors": 0,
+      "warnings": 2,
+      "scope": "All 31 accepted paths; two existing no-img-element warnings in GoalieShareChart",
+      "log": "evidence/lint.log"
+    },
+    "scoped_diff_check": {
+      "exit": 0,
+      "log": "evidence/diff-check.log"
+    },
+    "overlay_patch_check": {
+      "exit": 0,
+      "log": "evidence/overlay-patch-check.log"
+    },
+    "archive_integrity": {
+      "verified_files": 3365,
+      "passed": true
+    }
+  },
+  "test_executions_passed": 770,
+  "distinct_scenario_count_claimed": false,
+  "outside_packet_comparison": "CANONICAL-COMPARISON.json",
+  "outside_packet_difference_count": 58,
+  "held_gates": [
+    "A1 historical as-of/vintage inputs and candidate qualification; old inclusive captures invalid under corrected contract",
+    "A3 authoritative finality/completeness receipt and historical unsupported-settlement repair; no actual operational repair authorized",
+    "A4 durable independent-universe storage/receipt contract and approved migration; coverage stays unavailable",
+    "A6/NST real RPC durability, quiescent version-consistent rollout and bounded authorized recovery; old workers/direct runners bypass guard",
+    "Deployment/build/publish authorization and reconciliation into a clean release candidate; not part of this local packet"
+  ],
+  "no_production_requests": true,
+  "no_schema_or_dependency_changes": true
+}

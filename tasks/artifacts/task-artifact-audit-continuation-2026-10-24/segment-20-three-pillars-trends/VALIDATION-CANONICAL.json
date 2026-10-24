@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-24T20:02:15.253192+00:00",
+  "canonical_written": false,
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "ea51204fb3651d0c843b16512ca28a1faa835c2f0d11b65ef7fa9db61cc5636d",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "e380c5e22aaa5a8dde99e85f263f524202a4101b2a9d0bf5ba800102d09869a1",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "851adc891422d9224d67e4e775c3bae644462e74b12fd793053bd368e84fe650"
+  },
+  "canonical_after": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "ea51204fb3651d0c843b16512ca28a1faa835c2f0d11b65ef7fa9db61cc5636d",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "e380c5e22aaa5a8dde99e85f263f524202a4101b2a9d0bf5ba800102d09869a1",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "851adc891422d9224d67e4e775c3bae644462e74b12fd793053bd368e84fe650"
+  },
+  "all_canonical_bytes_unchanged": true,
+  "ids": 214,
+  "evidence": 1233,
+  "readable_children": 56,
+  "added_ids": [],
+  "added_children": [],
+  "changed_statuses": [],
+  "library_identity": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+  "library_version": 18,
+  "library_replacement_attempts": 0,
+  "native_version_confirmed": true,
+  "no_pending_or_uncertain_operation": true,
+  "no_current_runtime_verification": true
+}

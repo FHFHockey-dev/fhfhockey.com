@@ -1,0 +1,29 @@
+{
+  "status": "qualified_local_acceptance_R1_closed",
+  "headAtReview": "a6e9f8b61903ed4bb2bba6b21bf8597f51ac85d0",
+  "files": [
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.ts",
+      "sha256": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a"
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.test.ts",
+      "sha256": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451"
+    }
+  ],
+  "ownerTestsPassed": 34,
+  "originalReviewerControlsPassed": 11,
+  "testExecutionsPassed": 45,
+  "intentionalDuplicateRegressionExecutions": 2,
+  "scopedTscExit": 0,
+  "targetedLintExit": 0,
+  "priorPinsUnchanged": 53,
+  "intendedPriorPinChanges": 2,
+  "trialPinsUnchanged": 40,
+  "snapshotFilesUnchanged": 17,
+  "networkDiagnostics": false,
+  "applicationEdits": 0,
+  "externalActionsAttempted": 0,
+  "blockers": [],
+  "openGate": "earlier-source snapshot reuse requires explicit source-cutoff binding before integration; no model or release qualification"
+}

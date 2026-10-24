@@ -1,0 +1,6 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:698:5 › Yahoo timeout retains schedule analysis and matchup-week navigation without actionable acquisitions
+[1A[2K[2/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1368:5 › candidate feedback views preserve eligibility, availability and planned-add semantics
+[1A[2K  2 passed (5.0s)

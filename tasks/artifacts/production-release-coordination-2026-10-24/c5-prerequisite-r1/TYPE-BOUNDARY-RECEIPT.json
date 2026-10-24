@@ -1,0 +1,8 @@
+{
+  "at": "2026-10-24T21:44:54.991266+00:00",
+  "path": "web/pages/api/v1/db/update-line-combinations/index.ts",
+  "before_sha256": "3ca1ae4dc7a9a5a90cbc329a9a4faee913e8583f3f33e701cdbc4f4a1faf0b3e",
+  "after_sha256": "997896eb74b05f054402048e0bf1fb190f0b6375a8e0b0dfa5f2e784765c412e",
+  "reason": "Moving adminOnly outside audit loses contextual callback type. Restore only exact existing HEAD type-only imports/AuthorizedRequest alias/req-res annotations. No runtime or model-body change.",
+  "source": "Existing committed HEAD file; no new schema/client/gate"
+}

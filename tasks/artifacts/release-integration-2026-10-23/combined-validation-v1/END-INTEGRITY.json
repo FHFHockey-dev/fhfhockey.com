@@ -1,0 +1,31 @@
+{
+  "at": "2026-10-23T15:21:34.009334+00:00",
+  "frozenSnapshotDrift": [],
+  "canonicalOverlayDrift": [
+    {
+      "path": "web/e2e/game-grid-previews.spec.ts",
+      "tested": "dbe8db03640b64103fcbf6c94bde3248b4d624f9593b58fdc6550ff8a8f8798c",
+      "current": "52b59e88a1b10ab5c80c5c7662babb141419b440ae118e836354099087766d0d"
+    },
+    {
+      "path": "web/components/GameGrid/GameGrid.module.scss",
+      "tested": "7171d3ba0ebb3b2ca01065809db0d72ded645d3ca7d8f5cf4c7f602e435cf82a",
+      "current": "be198c4802d59f3899e413fd109d4869b1dd3faac847b5e402a39154fd725777"
+    },
+    {
+      "path": "web/lib/newsFeed.ts",
+      "tested": "5e67090b9b6cd57acea578387024eb921dd70dd230dcddf54787760a52b9f389",
+      "current": "de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d"
+    },
+    {
+      "path": "web/lib/homepageNewsCompatibility.test.tsx",
+      "tested": "c7ea065ce9e32c03363b95e7ae9784fbd987677efd522031da3d88fd38f057ff",
+      "current": "48321a8a5add55a9e9f4534cfd751dcf2e68d62b8576b696860a70288fde7ca7"
+    }
+  ],
+  "classification": {
+    "gameGrid": "owner actively implementing requested r5",
+    "news": "owner/source-test pair changed since pinned correction; revised receipt not yet reconciled"
+  },
+  "acceptance": "Current working tree is not the tested frozen composition; require superseding owner/review receipts."
+}

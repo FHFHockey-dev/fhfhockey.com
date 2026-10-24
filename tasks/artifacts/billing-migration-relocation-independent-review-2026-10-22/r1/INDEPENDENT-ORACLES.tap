@@ -1,0 +1,35 @@
+TAP version 13
+# Subtest: original exact preflight oracle still reproduces integration-test mismatch
+ok 1 - original exact preflight oracle still reproduces integration-test mismatch
+  ---
+  duration_ms: 2.071125
+  ...
+# Subtest: original SQL-path oracle remains ENOENT while relocated bytes retain original digest
+ok 2 - original SQL-path oracle remains ENOENT while relocated bytes retain original digest
+  ---
+  duration_ms: 0.188
+  ...
+# Subtest: R1 full source preflight and final guard accept exactly the independently derived seven inputs
+ok 3 - R1 full source preflight and final guard accept exactly the independently derived seven inputs
+  ---
+  duration_ms: 2.33875
+  ...
+# Subtest: occupied RESULTS.relocation-v1.json rejects before any target or database client load
+ok 4 - occupied RESULTS.relocation-v1.json rejects before any target or database client load
+  ---
+  duration_ms: 0.827459
+  ...
+# Subtest: occupied FAILED-RESULT.relocation-v1.json rejects before any target or database client load
+ok 5 - occupied FAILED-RESULT.relocation-v1.json rejects before any target or database client load
+  ---
+  duration_ms: 0.821167
+  ...
+1..5
+# tests 5
+# suites 0
+# pass 5
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 54.793375

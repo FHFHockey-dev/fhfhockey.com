@@ -1,0 +1,8 @@
+ ✓ lib/socialShare/schedule.test.ts (24 tests) 24ms
+ ✓ lib/socialShare/matchups.test.ts (8 tests) 55ms
+
+ Test Files  3 passed (3)
+      Tests  38 passed (38)
+   Start at  12:21:31
+   Duration  648ms (transform 136ms, setup 9ms, collect 255ms, tests 113ms, environment 914ms, prepare 129ms)
+

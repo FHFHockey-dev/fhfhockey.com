@@ -1,0 +1,142 @@
+--- a/web/pages/api/v1/db/tweet-pattern-review.ts
++++ b/web/pages/api/v1/db/tweet-pattern-review.ts
+@@ -119,6 +119,7 @@
+   primary_text_source: string | null;
+   tweet_posted_label: string | null;
+   status: string | null;
++  interpretation: unknown;
+ };
+ 
+ type LineSourceSnapshotReviewSourceRow = {
+@@ -153,6 +154,7 @@
+   primary_text_source: string | null;
+   tweet_posted_label: string | null;
+   status: string | null;
++  interpretation: unknown;
+ };
+ 
+ type LinesCccEventReviewSourceRow = {
+@@ -475,7 +477,9 @@
+       quotedAuthorName: row.quoted_author_name,
+       quotedAuthorHandle: row.quoted_author_handle,
+       quotedTweetId: row.quoted_tweet_id,
+-      quotedTweetUrl: row.quoted_tweet_url
++      quotedTweetUrl: row.quoted_tweet_url,
++      // Only the retained interpretation travels; other source metadata stays in its table.
++      interpretation: row.interpretation ?? null
+     },
+     reviewed_at: null,
+     source_priority: 4
+@@ -568,7 +572,9 @@
+       quotedAuthorName: row.quoted_author_name,
+       quotedAuthorHandle: row.quoted_author_handle,
+       quotedTweetId: row.quoted_tweet_id,
+-      quotedTweetUrl: row.quoted_tweet_url
++      quotedTweetUrl: row.quoted_tweet_url,
++      // Only the retained interpretation travels; other source metadata stays in its table.
++      interpretation: row.interpretation ?? null
+     },
+     reviewed_at: null,
+     source_priority: 4
+@@ -717,14 +723,14 @@
+       args.supabase
+         .from("lines_ccc" as any)
+         .select(
+-          "capture_key, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status"
++          "capture_key, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status, interpretation:metadata->interpretation"
+         )
+         .order("observed_at", { ascending: false })
+         .limit(args.perSourceLimit),
+       args.supabase
+         .from("line_source_snapshots" as any)
+         .select(
+-          "capture_key, source_group, source_key, source_account, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status"
++          "capture_key, source_group, source_key, source_account, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status, interpretation:metadata->interpretation"
+         )
+         .order("observed_at", { ascending: false })
+         .limit(args.perSourceLimit),
+--- a/web/lib/homepageNewsCompatibility.test.tsx
++++ b/web/lib/homepageNewsCompatibility.test.tsx
+@@ -4,9 +4,10 @@
+ import HomepageStandingsInjuriesSection, { buildHomepageInjuryUpdates } from 'components/HomePage/HomepageStandingsInjuriesSection';
+ import { fetchNewsFeedItems, getPublicNewsClaimPresentation, getPublicNewsSourceAttribution, getPublicNewsReportTopic, sanitizePublicNewsFeedItem } from 'lib/newsFeed';
+ import { syncTweetPatternReviewItems } from '../pages/api/v1/db/tweet-pattern-review';
++import { buildTweetNewsAutomationCandidate } from 'lib/sources/tweetNewsAutomation';
+ vi.mock('components/common/OptimizedImage', () => ({ default: ({alt}: {alt: string}) => <img alt={alt} /> }));
+ vi.mock('utils/adminOnlyMiddleware', () => ({ default: (handler: unknown) => handler }));
+-vi.mock('lib/sources/playerIdentity', () => ({ fetchPlayerIdentityDirectory: () => { throw new Error('Not used in sync regression'); } }));
++vi.mock('lib/sources/playerIdentity', async (original) => ({ ...await original<object>(), fetchPlayerIdentityDirectory: () => { throw new Error('Not used in sync regression'); } }));
+ vi.mock('lib/sources/linesCccIngestion', () => ({ fetchLinesCccTweetOEmbedAttempt: () => { throw new Error('Network forbidden'); } }));
+ vi.mock('lib/projections/rosterEvents', () => ({ buildRosterEventsFromReviewedTweet: () => { throw new Error('No roster mutation'); } }));
+ afterEach(cleanup);
+@@ -15,12 +16,15 @@
+   // Receipt gives prefixes, not full retained text or raw evidence. Never reconstruct missing evidence.
+   metadata:{automation:{source:'tweet_news_phrase_dictionary',autoPublish:false,primaryRuleId:'manual-review'}},
+   players:r.players.map(p=>({...p,player_name:p.name})),card_status:'published'} as any);
+-function fakeDb(sourceRows:any[]) {
++function fakeDb(sourceRows:any[], sourceTable='lines_ccc', existingRows:any[]=[]) {
+   const writes:any[]=[];const selects:Record<string,string[]>={};
+   return {writes, selects, db:{from(table:string) {
+     let columns:string[]=[];
+     const q:any={select(text:string){ columns=text.split(',').map(s=>s.trim());selects[table]=columns;return q;},order(){return q;},limit(){return q;},in(){return q;},upsert(rows:any[]){writes.push(...rows);return q;},then(resolve:any){
+-      const data=table==='lines_ccc'?sourceRows.map(row=>Object.fromEntries(columns.map(c=>[c,row[c]??null]))):[];
++      const rows=table===sourceTable?sourceRows:table==='tweet_pattern_review_items'?existingRows:[];
++      // Faithful PostgREST projection, including `alias:column->key` JSON paths.
++      const pick=(row:any,c:string)=>{const [alias,path=alias]=c.split(':');const [column,...keys]=path.split('->');return [alias,keys.reduce((v,k)=>v?.[k],row[column])??null];};
++      const data=rows.map(row=>Object.fromEntries(columns.map(c=>pick(row,c))));
+       return Promise.resolve(resolve({data,error:null}));
+     }};return q;
+   }}};
+@@ -244,3 +248,52 @@
+     expect(getPublicNewsClaimPresentation(first).claims).toEqual([]);
+   });
+ });
++
++describe('retained interpretation through sync writer, loader and serialized homepage', () => {
++  const text = 'Victor Hedman will not play tonight.';
++  const event = {playerId:8475167,playerName:'Victor Hedman',kind:'injury',state:'unknown',availability:'out',modality:'affirmative',evidence:{text,start:0,end:text.length}};
++  const interpretation = {version:'2026-10-13.1',units:[],unresolved:[],events:[event]};
++  const source = (metadata: any) => ({...baseRow,raw_text:text,team_id:14,team_abbreviation:'TBL',metadata:{rawLineageMarker:'not-public',temporalReview:{interpretation},...metadata}});
++  const json = <T,>(value: T): T => JSON.parse(JSON.stringify(value));
++  async function project(f: ReturnType<typeof fakeDb>) {
++    await syncTweetPatternReviewItems({supabase:f.db,perSourceLimit:1});
++    const review = {...f.writes[0],id:'review-retained-1'};
++    const candidate = buildTweetNewsAutomationCandidate({row:review,players:[{id:8475167,fullName:'Victor Hedman',position:'D',team_id:14}],nowIso:'2026-10-22T12:00:00.000Z'})!;
++    const item = {id:'news-retained-1',source_review_item_id:review.id,source_tweet_id:candidate.sourceTweetId,source_url:candidate.sourceUrl,tweet_url:candidate.tweetUrl,
++      source_label:candidate.sourceLabel,source_account:candidate.sourceAccount,team_id:14,team_abbreviation:'TBL',headline:candidate.headline,blurb:candidate.blurb,
++      category:candidate.category,subcategory:candidate.subcategory,card_status:'published',observed_at:candidate.observedAt,published_at:'2026-10-22T12:00:00.000Z',
++      metadata:candidate.metadata,created_at:'2026-10-22T12:00:00.000Z',updated_at:'2026-10-22T12:00:00.000Z'};
++    const rows:Record<string,any[]> = {news_feed_items:[item],tweet_pattern_review_items:[review],news_feed_item_players:[]};
++    const supabase = {from(table: string) {
++      const q:any = {select(){return q;},order(){return q;},limit(){return q;},eq(){return q;},in(){return q;},then(resolve:any){return Promise.resolve(resolve({data:rows[table],error:null}));}};
++      return q;
++    }};
++    const loaded = json((await fetchNewsFeedItems({supabase,status:'published'}))[0]);
++    return {review,loaded,withoutInterpretation:json(sanitizePublicNewsFeedItem({...item,metadata:{...item.metadata,interpretation:undefined},players:[]} as any,review))};
++  }
++  it.each(['lines_ccc','line_source_snapshots'])('keeps only the retained %s interpretation, which the existing validator then admits', async table => {
++    const f = fakeDb([source({interpretation})],table);
++    const {review,loaded,withoutInterpretation} = await project(f);
++    expect(getPublicNewsClaimPresentation(loaded).claims).toMatchObject([{playerId:8475167,playerName:'Victor Hedman',availability:'out'}]);
++    expect(f.selects[table]).toContain('interpretation:metadata->interpretation'); expect(f.selects[table]).not.toContain('metadata');
++    expect(review.metadata.interpretation).toEqual(interpretation);
++    expect(review.metadata).not.toHaveProperty('rawLineageMarker'); expect(review.metadata).not.toHaveProperty('temporalReview');
++    expect(loaded.source_attribution).toEqual(withoutInterpretation.source_attribution);
++    expect(json(sanitizePublicNewsFeedItem(loaded))).toEqual(loaded);
++    expect(JSON.stringify(loaded)).not.toContain('rawLineageMarker');
++  });
++  it('keeps the strict validator in charge: unresolved or unbound retained events stay source-only', async () => {
++    for (const held of [{...interpretation,unresolved:[{reason:'ambiguous'}]},{...interpretation,events:[{...event,evidence:{text:'Hedman is out.',start:0,end:14}}]}]) {
++      const {review,loaded} = await project(fakeDb([source({interpretation:held})]));
++      expect(review.metadata.interpretation).toEqual(held);
++      expect(getPublicNewsClaimPresentation(loaded).claims).toEqual([]);
++    }
++  });
++  it('does not keep an earlier interpretation after the retained source no longer has one', async () => {
++    const earlier = fakeDb([source({interpretation})]); await syncTweetPatternReviewItems({supabase:earlier.db,perSourceLimit:1});
++    expect(earlier.writes[0].metadata.interpretation).toEqual(interpretation);
++    const {review,loaded} = await project(fakeDb([source({})],'lines_ccc',[earlier.writes[0]]));
++    expect(review.metadata.interpretation).toBeNull();
++    expect(getPublicNewsClaimPresentation(loaded).claims).toEqual([]);
++  });
++});

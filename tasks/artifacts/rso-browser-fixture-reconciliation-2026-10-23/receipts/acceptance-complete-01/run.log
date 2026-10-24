@@ -1,0 +1,14 @@
+
+Running 10 tests using 1 worker
+
+[1A[2K[1/10] [desktop] › e2e/acceptance/rso-p07-acceptance.spec.ts:161:5 › P07 + task 10: complete authorized rows show expected and if-starts points; partial rows show — not a partial sum
+[1A[2K[2/10] [desktop] › e2e/acceptance/rso-p07-acceptance.spec.ts:180:5 › P07: a serialized forecast that claims its own allowed uses is not summed
+[1A[2K[3/10] [desktop] › e2e/acceptance/rso-p07-acceptance.spec.ts:194:5 › current-read nonce mismatch withholds projected points; the echoed nonce restores them
+[1A[2K[4/10] [desktop] › e2e/acceptance/rso-p07-acceptance.spec.ts:212:5 › Yahoo goalie marks from a provider snapshot are badges only: start chance and points unchanged
+[1A[2K[5/10] [desktop] › e2e/acceptance/rso-p07-acceptance.spec.ts:229:5 › trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks
+[1A[2K[6/10] [mobile] › e2e/acceptance/rso-p07-acceptance.spec.ts:161:5 › P07 + task 10: complete authorized rows show expected and if-starts points; partial rows show — not a partial sum
+[1A[2K[7/10] [mobile] › e2e/acceptance/rso-p07-acceptance.spec.ts:180:5 › P07: a serialized forecast that claims its own allowed uses is not summed
+[1A[2K[8/10] [mobile] › e2e/acceptance/rso-p07-acceptance.spec.ts:194:5 › current-read nonce mismatch withholds projected points; the echoed nonce restores them
+[1A[2K[9/10] [mobile] › e2e/acceptance/rso-p07-acceptance.spec.ts:212:5 › Yahoo goalie marks from a provider snapshot are badges only: start chance and points unchanged
+[1A[2K[10/10] [mobile] › e2e/acceptance/rso-p07-acceptance.spec.ts:229:5 › trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks
+[1A[2K  10 passed (36.5s)

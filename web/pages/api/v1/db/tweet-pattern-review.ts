@@ -290,11 +290,11 @@ function parseHandleFromTweetUrl(value: string | null | undefined): string | nul
   try {
     const url = new URL(value);
     const hostname = url.hostname.toLowerCase();
-    if (!hostname.includes("twitter.com") && !hostname.includes("x.com")) {
-      return null;
-    }
-    const handle = url.pathname.split("/").filter(Boolean)[0] ?? null;
-    return handle?.trim() || null;
+    if (!["https:", "http:"].includes(url.protocol) || url.username || url.password ||
+      !/^(?:(?:www|mobile)\.)?(?:twitter|x)\.com$/i.test(hostname)) return null;
+    const handle = url.pathname.match(/^\/([A-Za-z0-9_]{1,15})\/(?:status|statuses)\/\d+(?:\/|$)/i)?.[1];
+    // /i/web/status identifies a post, never an author.
+    return handle && !/^i$/i.test(handle) ? handle : null;
   } catch {
     return null;
   }

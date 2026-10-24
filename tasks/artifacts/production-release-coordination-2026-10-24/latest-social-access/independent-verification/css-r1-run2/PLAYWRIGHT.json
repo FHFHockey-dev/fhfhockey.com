@@ -1,0 +1,123 @@
+{
+  "config": {
+    "configFile": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/latest-social-access/independent-verification/css-r1-run2/playwright.local.config.ts",
+    "rootDir": "/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/latest-social-access/independent-verification/css-r1-run2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "",
+        "name": "",
+        "testDir": "/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "social-share.spec.ts"
+        ],
+        "timeout": 90000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/latest-social-access/independent-verification/css-r1-run2/PLAYWRIGHT.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "social-share.spec.ts",
+      "file": "social-share.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "schedule-aware tier list shows only tier teams' players as list rows, strict and widened",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "",
+              "projectName": "",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2123,
+                  "errors": [],
+                  "stdout": [
+                    {
+                      "text": "tier_geometry_measurements {\"mode\":\"strict\",\"offsetWidth\":1080,\"offsetHeight\":1080,\"scrollWidth\":1078,\"scrollHeight\":1078,\"frameWidth\":540,\"frameHeight\":540,\"playerRows\":15,\"maxPlayerRightBeyondFrame\":-18.5,\"maxPlayerBottomBeyondFooter\":-27.625,\"logoWidths\":[17,17,17,17,17,17,17,17]}\n"
+                    },
+                    {
+                      "text": "tier_geometry_measurements {\"mode\":\"widened\",\"offsetWidth\":1080,\"offsetHeight\":1080,\"scrollWidth\":1078,\"scrollHeight\":1078,\"frameWidth\":540,\"frameHeight\":540,\"playerRows\":15,\"maxPlayerRightBeyondFrame\":-18.5,\"maxPlayerBottomBeyondFooter\":-15,\"logoWidths\":[17,17,17,17,17,17,17,17,12.0625,12.0546875,12.0625,12.0546875,12.0625,12.0546875,12.0625,12.0625,12.0625,12.0625,12.0625,12.0625,12.0625,12.0625,12.0625,12.0625]}\n"
+                    },
+                    {
+                      "text": "social_editor_fixture_summary {\"role\":\"social_editor\",\"roleReads\":2,\"profileReads\":3,\"settingsReads\":1,\"blockedLocalApis\":[],\"abortedExternal\":[\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://img.buymeacoffee.com/button-api/\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://fonts.googleapis.com/css2\",\"https://cdn.vercel-insights.com/v1/script.debug.js\",\"https://va.vercel-scripts.com/v1/speed-insights/script.debug.js\"],\"rejectedBootstrap\":[],\"syntheticWriteAttempts\":[]}\n"
+                    }
+                  ],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T22:18:57.369Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-d4806826d849c6b2a6f3",
+          "file": "../../../../private/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e/social-share.spec.ts",
+          "line": 823,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-24T22:18:57.018Z",
+    "duration": 2707.4790000000003,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

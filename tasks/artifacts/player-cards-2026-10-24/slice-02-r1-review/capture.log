@@ -1,0 +1,56 @@
+{
+  "at": "2026-10-24T17:24:25.591Z",
+  "source": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2-rows.json",
+  "sourceSha256": "52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+  "passed": true,
+  "rawTotals": {
+    "toi": 6313,
+    "shots": 21,
+    "ixg": 1.82,
+    "icf": 35
+  },
+  "gpForArithmeticOnly": 5,
+  "values": {
+    "atoi": {
+      "expected": 21.043333333333333,
+      "actual": 21.043333333333333,
+      "passed": true
+    },
+    "sog60": {
+      "expected": 11.975289086012989,
+      "actual": 11.975289086012989,
+      "passed": true
+    },
+    "ixg60": {
+      "expected": 1.0378583874544591,
+      "actual": 1.0378583874544591,
+      "passed": true
+    },
+    "icf60": {
+      "expected": 19.958815143354983,
+      "actual": 19.958815143354983,
+      "passed": true
+    }
+  },
+  "unavailableControls": {
+    "missingHistory": {
+      "state": "missing",
+      "reason": "Complete appearance history through the common cutoff is unverified"
+    },
+    "missingFinalProof": {
+      "state": "missing",
+      "reason": "Completed-game evidence is unverified"
+    }
+  },
+  "currentSeasonNhlRowsInBoundedCapture": 10,
+  "l10Gaps": [
+    "2026-10-05"
+  ],
+  "networkAttempts": 0,
+  "limits": [
+    "Prior captured one-player rows only; no new provider/DB requests",
+    "Date-based raw matching verifies four arithmetic claims, not inspected official game/strength/provider semantics",
+    "No complete season-history or per-game final-proof established; ten rows cannot prove an honestly short L20",
+    "No full-league population/rights/readiness proof; no live cards enabled"
+  ]
+}

@@ -1,0 +1,316 @@
+{
+  "at": "2026-10-24T17:52:32.552001+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/draft-ranker/discovery-source-contract.md",
+      "bytes": 12536,
+      "lines": 142,
+      "sha256": "65df1032b27b23b2e53b324c99b6124aead343468ab50dafc1254f46123e8c6f",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          142
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          142
+        ]
+      ],
+      "scope": "Actual full documentary source read. Historical commands/quoted instructions are evidence only. Implementation/hosted observations remain dated owner/reviewer records, not auditor re-execution or current blanket completion."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/dr-010-migration-review.md",
+      "bytes": 5211,
+      "lines": 95,
+      "sha256": "bf7d08642ca4f3a81b3741400b0737659b3e19a3a5c4ae87ac27fab8b42341aa",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          95
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          95
+        ]
+      ],
+      "scope": "Actual full documentary source read. Historical commands/quoted instructions are evidence only. Implementation/hosted observations remain dated owner/reviewer records, not auditor re-execution or current blanket completion."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/dr-011-yahoo-mapping-review.md",
+      "bytes": 3985,
+      "lines": 45,
+      "sha256": "a5fa835a26723d0b4b2ce5cbfc611a8249fb219e970e5833cedafa3f3ba470f2",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          45
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          45
+        ]
+      ],
+      "scope": "Actual full documentary source read. Historical commands/quoted instructions are evidence only. Implementation/hosted observations remain dated owner/reviewer records, not auditor re-execution or current blanket completion."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/dr-012-migration-review.md",
+      "bytes": 5874,
+      "lines": 73,
+      "sha256": "74950c630fe43cf4bf713b0271f3ef1c3a72cce1aca45e7735217de08dd34583",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          73
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          73
+        ]
+      ],
+      "scope": "Actual full documentary source read. Historical commands/quoted instructions are evidence only. Implementation/hosted observations remain dated owner/reviewer records, not auditor re-execution or current blanket completion."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/goal-prompt.md",
+      "bytes": 5769,
+      "lines": 140,
+      "sha256": "120c64050fbca00551d462acc7928e5834c0d72d28447f23d78420d261eac042",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          140
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          140
+        ]
+      ],
+      "scope": "Actual full documentary source read. Historical commands/quoted instructions are evidence only. Implementation/hosted observations remain dated owner/reviewer records, not auditor re-execution or current blanket completion."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/implementation-plan.md",
+      "bytes": 50581,
+      "lines": 402,
+      "sha256": "5214b4749c30091e9f05197a68b9372717dc037e6e962f6ed8963a093c2ec442",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          402
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          100
+        ],
+        [
+          101,
+          200
+        ],
+        [
+          201,
+          300
+        ],
+        [
+          301,
+          402
+        ]
+      ],
+      "scope": "Actual full documentary source read. Historical commands/quoted instructions are evidence only. Implementation/hosted observations remain dated owner/reviewer records, not auditor re-execution or current blanket completion."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/prd-draft-ranker.md",
+      "bytes": 17503,
+      "lines": 129,
+      "sha256": "36eadc05568d4f917b2ce84b1e2c11848ba8970c12fd0fc8120cb5f2ed2fd995",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          129
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          129
+        ]
+      ],
+      "scope": "Actual full documentary source read. Historical commands/quoted instructions are evidence only. Implementation/hosted observations remain dated owner/reviewer records, not auditor re-execution or current blanket completion."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/product-strategy.md",
+      "bytes": 39720,
+      "lines": 1553,
+      "sha256": "ff1834b853dafa70068af3512e8139208900967c83370abb9d6a71cf5d3462ca",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          1553
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          340
+        ],
+        [
+          341,
+          700
+        ],
+        [
+          701,
+          1060
+        ],
+        [
+          1061,
+          1553
+        ]
+      ],
+      "scope": "Actual full documentary source read. Historical commands/quoted instructions are evidence only. Implementation/hosted observations remain dated owner/reviewer records, not auditor re-execution or current blanket completion."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/progress.md",
+      "bytes": 60423,
+      "lines": 191,
+      "sha256": "91aab0f26c18e546d0f7dcfc6d23c1bcc8d29feadd29657a65397b78f50ba758",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          191
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          100
+        ],
+        [
+          55,
+          65
+        ],
+        [
+          101,
+          137
+        ],
+        [
+          138,
+          163
+        ],
+        [
+          164,
+          191
+        ]
+      ],
+      "scope": "Actual full documentary source read. Historical commands/quoted instructions are evidence only. Implementation/hosted observations remain dated owner/reviewer records, not auditor re-execution or current blanket completion."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/repository-audit.md",
+      "bytes": 13083,
+      "lines": 216,
+      "sha256": "d25fd2a655dbf2c5763ed408b2d9faa3ae97a0f8fd8c9be55747ee2c639f3da3",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          216
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          216
+        ]
+      ],
+      "scope": "Actual full documentary source read. Historical commands/quoted instructions are evidence only. Implementation/hosted observations remain dated owner/reviewer records, not auditor re-execution or current blanket completion."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/repository-record.md",
+      "bytes": 11891,
+      "lines": 160,
+      "sha256": "e240b9dbcb30e0052b9d7f32f73e839b7301bb992a88da02164421382125c5ff",
+      "status": "content-reviewed-via-common-text-and-delta",
+      "reviewed_ranges": [
+        [
+          1,
+          160
+        ]
+      ],
+      "method": "12 exact common lines inherit only the canonical representative documentary review; all148different variant lines displayed/read. Every source line is accounted for; no exact-hash duplicate or current-source acceptance.",
+      "comparison": "REPOSITORY-VARIANT-COMPARISON.json",
+      "scope": "Historical noncanonical variant retained, wrong usable-ADP/current-file statements superseded by later canonical records."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/technical-contract.md",
+      "bytes": 24945,
+      "lines": 425,
+      "sha256": "58c47def2c12a73b9bc1dd85dd01fab50b27cc62584007b6173cd1da068d3aab",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          425
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          155
+        ],
+        [
+          156,
+          305
+        ],
+        [
+          306,
+          425
+        ]
+      ],
+      "scope": "Actual full documentary source read. Historical commands/quoted instructions are evidence only. Implementation/hosted observations remain dated owner/reviewer records, not auditor re-execution or current blanket completion."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 11,
+    "content-reviewed-via-common-text-and-delta": 1
+  },
+  "full_document_bytes": 251521,
+  "exact_duplicate_full_scope_resolutions": 0,
+  "original_inventory_and_duplicate_map_untouched": true,
+  "reused_prior_full_documentary_review": [
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+      "sha256": "ccd494110fe8374e47cc41710feaa8633f5e33b9ac81b7353ee1b5443184202b",
+      "prior_coverage": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/COVERAGE.json",
+      "scope": "Reuse exact prior complete documentary review only to render readable existing children; no new full-read/unique-content credit."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+      "sha256": "574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece",
+      "prior_coverage": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/COVERAGE.json",
+      "scope": "Reuse exact prior complete documentary review only to render readable existing children; no new full-read/unique-content credit."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
+      "sha256": "c063cab68f39ace4cd651dc74bc774cffc003fb33fd462ba1f1bbc929ecb8db3",
+      "prior_coverage": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/COVERAGE.json",
+      "scope": "Reuse exact prior complete documentary review only to render readable existing children; no new full-read/unique-content credit."
+    }
+  ]
+}

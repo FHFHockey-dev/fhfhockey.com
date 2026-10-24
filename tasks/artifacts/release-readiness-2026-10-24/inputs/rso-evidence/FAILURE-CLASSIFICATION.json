@@ -1,0 +1,310 @@
+[
+  {
+    "title": "connected refresh fixtures preserve nonzero intent through offline, cooldown, Undo and reopen",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "commandbar-and-oracles-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "manual workspace retains reviewed intent, protections and locks through recalculation and reload",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "mobile tabs keep selection and expose the matchup and player details",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "readiness controls reach existing inputs across the required viewports",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "remaining-controls-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "streams A to B to C through successive conditional acquisitions and keeps expanded desktop layout",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "commandbar-and-oracles-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "weekly lock keeps one fixed occupant across a window, including a confirmed midpoint assignment",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "fixture category tradeoffs use only startable post-acquisition games on desktop and mobile",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "commandbar-and-oracles-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "fixture category gains use only startable post-acquisition games on desktop and mobile",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "commandbar-and-oracles-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "fixture category unavailable baseline use only startable post-acquisition games on desktop and mobile",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "commandbar-and-oracles-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "provider refresh proposes repairs while keeping a selected move",
+    "affectedSpecStatus": "timedOut",
+    "latestStatus": "passed",
+    "latestRun": "adjudicated-controls-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "connected manager bench locks constrain the worker and preserve provider authority through undo and reload",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "remaining-controls-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "provider refresh adopts the authoritative league timezone and keeps the selected horizon and intent on reload",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "shows sequential stream occupants with real games and retains workspace layout when details expand",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "failed-families-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "dense roster keeps schedule views and their scrollbars inside the desktop frame",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "failed-families-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "Yahoo timeout retains schedule analysis and matchup-week navigation without actionable acquisitions",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "final-unknown-contracts-01",
+    "classification": "Retained inputs remain unverified. Raw manager-intent selection is distinct from authorized plan/netgain. Owned schedule and week navigation retained; no verified acquisition/netAGP."
+  },
+  {
+    "title": "mixed Kaprizov coverage stays unresolved until complete evidence supports the bench decision",
+    "affectedSpecStatus": "timedOut",
+    "latestStatus": "passed",
+    "latestRun": "disclosure-controls-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "weekly LW/RW and UTIL bench explanations preserve midpoint locks through worker reload",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "failed-families-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "manual league eligibility must be confirmed and survives a reload",
+    "affectedSpecStatus": "timedOut",
+    "latestStatus": "passed",
+    "latestRun": "failed-families-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "goalie competition stays unresolved across the worker and evidence view",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "assignment-only forecasts preserve their allowed uses in the browser",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "totals-only forecasts preserve their allowed uses in the browser",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "legacy forecasts preserve their allowed uses in the browser",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "unproven-lineage forecasts cannot certify readiness in the browser",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "connected refresh and account save preserve forecast permissions and exclusions",
+    "affectedSpecStatus": "timedOut",
+    "latestStatus": "passed",
+    "latestRun": "alignment-and-account-01",
+    "classification": "Valid current/private receipts + genuine command-bar wrap defect + existing status disclosure and player-specific label. Full original1180x757 flow passed."
+  },
+  {
+    "title": "conflicting forecasts keep capacity planning and show the affected target",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "failed-families-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "points goalie coverage survives worker reload and benches harmful starts once credited",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "remaining-controls-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (manual)",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "failed-families-01",
+    "classification": "Serialized native permissions cannot grant authority. Current server rates/receipts supplied; saved detailed/baseline/participation source identity/clocks and denied values preserved."
+  },
+  {
+    "title": "unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (connected)",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "failed-families-01",
+    "classification": "Serialized native permissions cannot grant authority. Current server rates/receipts supplied; saved detailed/baseline/participation source identity/clocks and denied values preserved."
+  },
+  {
+    "title": "candidate feedback views preserve eligibility, availability and planned-add semantics",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "final-unknown-contracts-01",
+    "classification": "Released unknown-budget contract: gross20 does not authorize a net plan. Proposed add0\u21921 preserved; no acquisition period means evaluated owned starts1, explicit worker limitation required. Old3 red retained."
+  },
+  {
+    "title": "projected candidate fit values usable points above schedule quantity",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "planning worker measures the full typical workload and cancels superseded edits",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "candidate worker ranks the complete population without blocking filters and retains zero AGP",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "adjudicated-controls-01",
+    "classification": "Released bounded-search contract:999 eligible,40 shortlist,<=160 evaluations,incomplete. Ranking,+16,zeroAGP and responsiveness preserved."
+  },
+  {
+    "title": "Audit1 native candidate Worker finds complete swaps before any plan is selected",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "commandbar-and-oracles-01",
+    "classification": "Explicit player view plus released three-card/1px-outline/4px-accent contract. Original seven-card/10px failure retained."
+  },
+  {
+    "title": "compact layout accounts for 20 slots with a maximum of 20 slot rows and internal labels",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "commandbar-and-oracles-01",
+    "classification": "Explicit player view plus released three-card/1px-outline/4px-accent contract. Original seven-card/10px failure retained."
+  },
+  {
+    "title": "compact layout accounts for 29 slots with a maximum of 20 slot rows and internal labels",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "commandbar-and-oracles-01",
+    "classification": "Explicit player view plus released three-card/1px-outline/4px-accent contract. Original seven-card/10px failure retained."
+  },
+  {
+    "title": "compact day and bench controls preserve saved intent and keyboard selection",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "final-contract-controls-01",
+    "classification": "Owner alignment fix plus current past-lineup/capacity-chip/disclosure controls;6/0/6over, accessible description, bounds, keyboard, intent retained."
+  },
+  {
+    "title": "compact short desktop and mobile retain rows, day state, reserves and unknown goalie status",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "horizontal-and-bench-01",
+    "classification": "Genuine initial padding and horizontal-scroll synchronization defects. Owner-pinned CSS/TSX fixes pass <=1px, scroll120, reverse60, closed/reopen, five widths."
+  },
+  {
+    "title": "compact future and partial weeks use league dates and retain the full horizon without saving",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "alignment-and-account-01",
+    "classification": "Current correlated server/display evaluation changes; saved manual provenance remains unchanged through pure view navigation. Original elapsed-day and horizon assertions preserved."
+  },
+  {
+    "title": "compact initial future week defaults to Monday and preserves clipped horizons",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "alignment-and-account-01",
+    "classification": "Current receipt/schema or selector/disclosure fixture mismatch; numerical, policy, workload, cancellation and layout oracles preserved."
+  },
+  {
+    "title": "compact vacancies and non-playing holds survive day changes and Bench collapse",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile",
+    "affectedSpecStatus": "failed",
+    "latestStatus": "passed",
+    "latestRun": "final-disclosure-controls-01",
+    "classification": "Current view/disclosures, valid unknown evidence enum, and scoped duplicate notice.19 known/1 known thenunknown states,20 rows/mobile/preservation retained."
+  },
+  {
+    "title": "alerts on a healthy player left in IR and shows what activating him gains",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  },
+  {
+    "title": "plans tonight's goalie from Yahoo's Starting and Not Starting marks and shows them in the grid",
+    "affectedSpecStatus": "passed",
+    "latestStatus": "passed",
+    "latestRun": "affected-spec-01",
+    "classification": "Passed affected-spec run; preserved unchanged substantive assertions."
+  }
+]

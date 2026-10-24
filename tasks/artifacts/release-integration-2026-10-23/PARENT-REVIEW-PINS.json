@@ -1,0 +1,45 @@
+{
+  "at": "2026-10-23T12:49:33.840146+00:00",
+  "head": "431ffcd673b42ad4a149dc3f9dfb03005dbec75a",
+  "branch": "octoberBranch",
+  "claude_review": {
+    "path": "tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md",
+    "bytes": 23735,
+    "lines": 190,
+    "sha256": "e5e12382bd3bd8d70884a4606c83ab21f2346cc17604b53f188dd6c74d76ec8b",
+    "all_sections_read": true
+  },
+  "packets": {
+    "baseline": {
+      "files": {
+        "web/lib/player-forecasts/resolvedPlanningForecast.ts": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07",
+        "web/lib/player-forecasts/rsoUsePolicy.ts": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215",
+        "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts": "dc4e9bcacd4e5ece49d8a26469b61af7c7005275a69a1b6f27e4ba8cd5fbf60c"
+      },
+      "canonical_mismatches": [],
+      "receipt": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/rso-correctness-2026-10-23/REPORT.md",
+      "receipt_sha256": "3c6eadfbc4979049de64525e26e3a67ad28a47423b8a0515699e7a2aa2493db3"
+    },
+    "game-grid": {
+      "files": {
+        "web/components/GameGrid/OpportunitySparkline.tsx": "413d6169cd54aa32f4d47712b5b0845ef137a8acb1762815cbaed9a4b617b227",
+        "web/components/GameGrid/OpportunitySparkline.module.scss": "e576c44b46f83b9b01618c09906cf54aea2ca82c892860dc517770c391e03866",
+        "web/components/GameGrid/utils/useFourWeekSchedule.ts": "befcdcc7a97b1cc226ba8b93fbe5f3d72de6da5b57d0ae0fbaa3025998209385",
+        "web/components/GameGrid/utils/useFourWeekSchedule.test.ts": "6eef1a876cfc37a4ce8f3e6f81957023d7d858f9cfa393b15780d650d9ab79b1",
+        "web/components/GameGrid/utils/useSchedule.ts": "db37d0ad1a49f1da46ee1ab2b586f6f81de849ff2072edb282d12d0494095db5",
+        "web/e2e/game-grid-previews.spec.ts": "03c05bccd3ab5770a734e98dcf8801ba831913bb644020837928731bda626baa",
+        "web/hooks/useTeams.ts": "9ee3009176c2f1a30e701c7dcfc3ceac0a51b4b502644c7ef486d00118f4b284",
+        "web/lib/NHL/client/index.ts": "4bc8d78b73ea4c04bb8325f9504980ee140ccf954f001c70199e805b11b89546",
+        "web/lib/dashboard/clientFetchCache.ts": "33d64d2cd4e0e4441a012aae6beec075781fcf8961e35182c993bdfd4ad140a3",
+        "web/lib/NHL/client/sharedRead.ts": "d3692fb7eedb6ac8ba9e3e440ff611248ddd818ba84ba37562c3e43c184d582d",
+        "web/lib/NHL/client/sharedRead.test.ts": "ea4cf9ab6036d762c8687a8bb9a5d3e03797c18b95902eda3e32076a43585e66",
+        "web/lib/NHL/client/index.test.tsx": "60ae4231e3b77a15776788ca2d769ae447c57b32a87698891344fede6f51b985",
+        "web/lib/dashboard/clientFetchCache.test.ts": "2616754e8e787c8917893048f6401055ee6ee6b3ebfe8eded9ce01f9a75eeb31"
+      },
+      "canonical_mismatches": [],
+      "receipt": "/Users/tim/Documents/Codex/2026-10-22/task-3/evidence/release-fixes/REPORT.md",
+      "receipt_sha256": "0a05d3625bca420d4b51e62092f37308b0a6cda14e002b5b6e3db744387ca139"
+    }
+  },
+  "staged_files": []
+}

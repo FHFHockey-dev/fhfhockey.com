@@ -1,0 +1,16 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c3-isolated/web
+
+(node:24319) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:24318) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/account/InSeasonPanel.rollout.test.tsx (7 tests) 92ms
+ ✓ components/account/InSeasonPanel.test.tsx (45 tests) 712ms
+
+ Test Files  2 passed (2)
+      Tests  52 passed (52)
+   Start at  11:12:59
+   Duration  1.18s (transform 99ms, setup 5ms, collect 258ms, tests 803ms, environment 316ms, prepare 64ms)
+
+JSON report written to /private/tmp/fhfh-c3-isolated/evidence/FINAL-TESTS.json

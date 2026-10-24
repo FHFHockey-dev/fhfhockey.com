@@ -1,0 +1,92 @@
+{
+  "checkedAt": "2026-10-22T14:17:56.457975+00:00",
+  "outcome": "changes_requested",
+  "findingCount": 1,
+  "packetBaseHead": "a565238f670edc4cf65da79ad52ba82ec41f3b71",
+  "firstChecksHead": "1cf7bf424fdf927570a13c361ce657d7a384962a",
+  "finalHead": "1db72ffc62bd73106a98e0146f3342346bbce69c",
+  "branch": "octoberBranch",
+  "identityNote": "Concurrent checkout commits advanced HEAD; all reviewed candidate file hashes still match the packet and first checks. Review attaches to these exact file hashes, not unrelated commits.",
+  "reviewedFiles": [
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql",
+      "sha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12",
+      "expectedSha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12",
+      "matches": true
+    },
+    {
+      "path": "web/lib/in-season/monthlyIntegration.test.ts",
+      "sha256": "778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025",
+      "expectedSha256": "778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-SQL-CHECK.cjs",
+      "sha256": "2236b42e5f0fde9ac4ef184831638502bca58a160c0b5185c6e094b73ac5b454",
+      "expectedSha256": "2236b42e5f0fde9ac4ef184831638502bca58a160c0b5185c6e094b73ac5b454",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs",
+      "sha256": "ce68ce9a2e137e6d6769a61994fa163f2f1da2a08334473d4ae26f1121669b14",
+      "expectedSha256": "ce68ce9a2e137e6d6769a61994fa163f2f1da2a08334473d4ae26f1121669b14",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-AUTH-CHECK.cjs",
+      "sha256": "a786b95ff5aee13a77e682d0edfbbffe71a26ef9a5aa18f566d68dccb664c7d9",
+      "expectedSha256": "a786b95ff5aee13a77e682d0edfbbffe71a26ef9a5aa18f566d68dccb664c7d9",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/REPORT.md",
+      "sha256": "4402a394a5df14dd4519f55311b7e48f083a3877eaeccc99521cbade3d6568c3",
+      "expectedSha256": "4402a394a5df14dd4519f55311b7e48f083a3877eaeccc99521cbade3d6568c3",
+      "matches": true
+    },
+    {
+      "path": "tasks/TASKS/repository-audit-remediation/migration-authority.json",
+      "sha256": "1918938309958c4cae037b83cd5a877d6fb7b4bcb972df9c74f9960969a3081d",
+      "expectedSha256": "1918938309958c4cae037b83cd5a877d6fb7b4bcb972df9c74f9960969a3081d",
+      "matches": true
+    },
+    {
+      "path": "web/lib/supabase/supportedBaselineMigration.test.ts",
+      "sha256": "3747a2ab91813cc3cacdb10db02ba6bd25fc6e61fef6113b9f969b1cc36ebfc1",
+      "expectedSha256": "3747a2ab91813cc3cacdb10db02ba6bd25fc6e61fef6113b9f969b1cc36ebfc1",
+      "matches": true
+    },
+    {
+      "path": "tasks/TASKS/super-goal/super-goal-final-summary.md",
+      "sha256": "8ac0643823ed6e7ad334bc1e772ac0b5a80173e773b5ac7961713c06ba650925",
+      "expectedSha256": "8ac0643823ed6e7ad334bc1e772ac0b5a80173e773b5ac7961713c06ba650925",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-HASHES-BEFORE.json",
+      "sha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659",
+      "expectedSha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/billing-migration-authority-2026-10-22/PROPOSED-RELOCATION.patch",
+      "sha256": "d990b7f1c8e977c05232a8bf0e01a301eee061130abc79bee6958bb82a5b34b2",
+      "expectedSha256": "d990b7f1c8e977c05232a8bf0e01a301eee061130abc79bee6958bb82a5b34b2",
+      "matches": true
+    }
+  ],
+  "oldSqlLocationAbsent": true,
+  "packetBeforeHashesMatchBase": true,
+  "evidenceHashes": {
+    "historical-tracked-diff.json": "79e76eda7eded147a8dd5deac8537f203ca9bb938f8a9b4fcb9a0d8016971334",
+    "diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "syntax-checks.json": "b9eb8a72915aef95a59a765391c94c7e0698540fec7471b3f7354770db75e9bf",
+    "CHECKS.json": "061055714902fa9cff42f6b837f0bf1eb6488f27650116ca23317e19cbf31e8f",
+    "queue-preflight-reproduction.json": "741e34c48240caf3621e5c24b8a60f1e2d6ba50fb6109fea655c8fef55cd1c0b",
+    "reverse-patch-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "sqlExecuted": false,
+  "networkCalls": 0,
+  "sourceEdits": false,
+  "commitsCreated": false
+}

@@ -1,0 +1,118 @@
+{
+    "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+    "source": "Assets/MapPrototype/Scenes/VesperBasin_v17_IndustrialDeck.unity",
+    "utc": "2026-10-24T18:24:46.0344510Z",
+    "clusters": 7,
+    "renderers": 7,
+    "colliders": 0,
+    "triangles": 19464,
+    "placed": [
+        {
+            "name": "North-west refinery",
+            "kind": "refinery",
+            "centre": {
+                "x": -155.0,
+                "y": 24.064823150634766,
+                "z": 200.0
+            },
+            "baseY": 24.064823150634766,
+            "spreadY": 3.8060264587402344,
+            "minDistanceToPlay": 91.79415130615234,
+            "height": 53.0,
+            "triangles": 2808,
+            "parts": 98
+        },
+        {
+            "name": "North-east tank farm",
+            "kind": "tanks",
+            "centre": {
+                "x": 99.33012390136719,
+                "y": 19.53812026977539,
+                "z": 202.5
+            },
+            "baseY": 19.53812026977539,
+            "spreadY": 3.8297367095947266,
+            "minDistanceToPlay": 90.59117889404297,
+            "height": 40.0,
+            "triangles": 2676,
+            "parts": 87
+        },
+        {
+            "name": "East cooling works",
+            "kind": "cooling",
+            "centre": {
+                "x": 205.0,
+                "y": 26.189517974853516,
+                "z": -30.0
+            },
+            "baseY": 26.189517974853516,
+            "spreadY": 2.4249610900878906,
+            "minDistanceToPlay": 32.01348876953125,
+            "height": 39.60000228881836,
+            "triangles": 2100,
+            "parts": 12
+        },
+        {
+            "name": "East derrick yard",
+            "kind": "derricks",
+            "centre": {
+                "x": 210.0,
+                "y": 32.533416748046875,
+                "z": 55.0
+            },
+            "baseY": 32.533416748046875,
+            "spreadY": 2.668548583984375,
+            "minDistanceToPlay": 56.62123107910156,
+            "height": 48.0,
+            "triangles": 3444,
+            "parts": 253
+        },
+        {
+            "name": "South fabrication halls",
+            "kind": "halls",
+            "centre": {
+                "x": -30.0,
+                "y": 28.875118255615234,
+                "z": -160.0
+            },
+            "baseY": 28.875118255615234,
+            "spreadY": 2.1698760986328125,
+            "minDistanceToPlay": 40.903419494628906,
+            "height": 46.0,
+            "triangles": 2184,
+            "parts": 114
+        },
+        {
+            "name": "South-east refinery",
+            "kind": "refinery",
+            "centre": {
+                "x": 135.0,
+                "y": 23.188095092773438,
+                "z": -160.0
+            },
+            "baseY": 23.188095092773438,
+            "spreadY": 2.057159423828125,
+            "minDistanceToPlay": 51.02758026123047,
+            "height": 47.69999694824219,
+            "triangles": 2808,
+            "parts": 98
+        },
+        {
+            "name": "West stack line",
+            "kind": "derricks",
+            "centre": {
+                "x": -207.5,
+                "y": 25.933555603027344,
+                "z": -47.009620666503906
+            },
+            "baseY": 25.933555603027344,
+            "spreadY": 5.754606246948242,
+            "minDistanceToPlay": 55.12474060058594,
+            "height": 43.19999694824219,
+            "triangles": 3444,
+            "parts": 253
+        }
+    ],
+    "skipped": [],
+    "note": "v17 preserved and read-only. v18 adds one root of distant rim clusters only (no colliders, shadows off). No existing object, material, collider, HUD or gameplay change. No Scout import, package, project-settings or main-project change."
+}

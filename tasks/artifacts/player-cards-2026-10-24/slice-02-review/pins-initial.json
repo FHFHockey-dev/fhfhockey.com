@@ -1,0 +1,185 @@
+{
+  "at": "2026-10-24T17:08:33.771Z",
+  "evidenceSha256": "a061e2df9cb9f04d34684397d7b466945586a54da4ddf5e651c2f7368cb866b7",
+  "node": "v22.11.0",
+  "checks": [
+    {
+      "path": "web/lib/player-cards/windows.ts",
+      "expectedSha256": "b7e989c211b8a9f5a1a91af157c69fc28cd29a409442f89365e57c662d10adb2",
+      "actualSha256": "b7e989c211b8a9f5a1a91af157c69fc28cd29a409442f89365e57c662d10adb2",
+      "expectedSize": 5859,
+      "actualSize": 5859,
+      "passed": true
+    },
+    {
+      "path": "web/lib/player-cards/aggregation.ts",
+      "expectedSha256": "36ca33b11876cc21630a8f22461e72fb45dc4447577f3a4da162c726bd8928de",
+      "actualSha256": "36ca33b11876cc21630a8f22461e72fb45dc4447577f3a4da162c726bd8928de",
+      "expectedSize": 5311,
+      "actualSize": 5311,
+      "passed": true
+    },
+    {
+      "path": "web/lib/player-cards/adapter.ts",
+      "expectedSha256": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f",
+      "actualSha256": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f",
+      "expectedSize": 6282,
+      "actualSize": 6282,
+      "passed": true
+    },
+    {
+      "path": "web/lib/player-cards/domain.test.ts",
+      "expectedSha256": "d24196f3844d151ed6de16427bd34ba5f41a61b2164a49a710a54b0e1a0d9978",
+      "actualSha256": "d24196f3844d151ed6de16427bd34ba5f41a61b2164a49a710a54b0e1a0d9978",
+      "expectedSize": 14958,
+      "actualSize": 14958,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/HANDOFF.md",
+      "expectedSha256": "cdef1a58e96d2f3b7b5f8f8777f6386acfcdd7007cd4ed5e3822201e828e352f",
+      "actualSha256": "cdef1a58e96d2f3b7b5f8f8777f6386acfcdd7007cd4ed5e3822201e828e352f",
+      "expectedSize": 6266,
+      "actualSize": 6266,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/OWNERSHIP.json",
+      "expectedSha256": "5859bee36d3934fdf35ad95898beccde19ecf8a36c71a3221f35ea8ccf77ad66",
+      "actualSha256": "5859bee36d3934fdf35ad95898beccde19ecf8a36c71a3221f35ea8ccf77ad66",
+      "expectedSize": 1407,
+      "actualSize": 1407,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/lint-final.log",
+      "expectedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actualSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expectedSize": 0,
+      "actualSize": 0,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/lint-initial.log",
+      "expectedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actualSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expectedSize": 0,
+      "actualSize": 0,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/local-evidence-inspection.json",
+      "expectedSha256": "ed91c2644b684a2b00d2638a766cb95ced5a29f49954b4cd552b9380cdec7b8a",
+      "actualSha256": "ed91c2644b684a2b00d2638a766cb95ced5a29f49954b4cd552b9380cdec7b8a",
+      "expectedSize": 2045,
+      "actualSize": 2045,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/local-evidence-results.json",
+      "expectedSha256": "18adde7d14dabcd3557e6f264878094b3fe4ada8514b04c197ed2cc21d5ad8c5",
+      "actualSha256": "18adde7d14dabcd3557e6f264878094b3fe4ada8514b04c197ed2cc21d5ad8c5",
+      "expectedSize": 1093,
+      "actualSize": 1093,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/local-evidence.log",
+      "expectedSha256": "39b0d575fe067bfe3ad1a80431cade4a99139029978a9a8a33c409eb34fc8611",
+      "actualSha256": "39b0d575fe067bfe3ad1a80431cade4a99139029978a9a8a33c409eb34fc8611",
+      "expectedSize": 73,
+      "actualSize": 73,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/source.patch",
+      "expectedSha256": "d389d9b51e2ee79d564bebb5513a43de9d16349df160245fdab1f9ef6925e709",
+      "actualSha256": "d389d9b51e2ee79d564bebb5513a43de9d16349df160245fdab1f9ef6925e709",
+      "expectedSize": 33105,
+      "actualSize": 33105,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/tests-final.log",
+      "expectedSha256": "bdccb1f0eb6f0322894e32a9876ff67e949670661f67a013ac5169cb16050b9a",
+      "actualSha256": "bdccb1f0eb6f0322894e32a9876ff67e949670661f67a013ac5169cb16050b9a",
+      "expectedSize": 550,
+      "actualSize": 550,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/tests-initial.log",
+      "expectedSha256": "3e7d787e3f660aa00a97c5777c3bc78dd1f0c4a3211402273dc3b7067ff3ec36",
+      "actualSha256": "3e7d787e3f660aa00a97c5777c3bc78dd1f0c4a3211402273dc3b7067ff3ec36",
+      "expectedSize": 550,
+      "actualSize": 550,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/tsconfig.json",
+      "expectedSha256": "726802a698a54fcb736572ef68d7beb76d27e904703b3a55d6da4f9995f60f97",
+      "actualSha256": "726802a698a54fcb736572ef68d7beb76d27e904703b3a55d6da4f9995f60f97",
+      "expectedSize": 393,
+      "actualSize": 393,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/types-final.log",
+      "expectedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actualSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expectedSize": 0,
+      "actualSize": 0,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/types-initial.log",
+      "expectedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actualSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expectedSize": 0,
+      "actualSize": 0,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/verify-local-evidence.cjs",
+      "expectedSha256": "d8d505e95b2535943ddf094a844d3c51e94ea4e3f86d5176b13b77ba9b13529f",
+      "actualSha256": "d8d505e95b2535943ddf094a844d3c51e94ea4e3f86d5176b13b77ba9b13529f",
+      "expectedSize": 3590,
+      "actualSize": 3590,
+      "passed": true
+    },
+    {
+      "path": "web/lib/player-cards/contracts.ts",
+      "expectedSha256": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d",
+      "actualSha256": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d",
+      "expectedSize": 2213,
+      "actualSize": 2213,
+      "passed": true
+    },
+    {
+      "path": "web/lib/player-cards/registry.ts",
+      "expectedSha256": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29",
+      "actualSha256": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29",
+      "expectedSize": 3382,
+      "actualSize": 3382,
+      "passed": true
+    },
+    {
+      "path": "web/lib/player-cards/ranking.ts",
+      "expectedSha256": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338",
+      "actualSha256": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338",
+      "expectedSize": 1716,
+      "actualSize": 1716,
+      "passed": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2-rows.json",
+      "expectedSha256": "52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+      "actualSha256": "52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+      "expectedSize": 18029,
+      "actualSize": 18029,
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "scope": "Four sources, three direct dependencies, fourteen listed author artifacts, and prior capture; excludes slice01 UI/TestingGrounds. No Git."
+}

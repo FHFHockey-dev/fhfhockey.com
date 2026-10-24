@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-24T16:30:28.159103+00:00",
+  "excluded_from_recursive_reaudit": true,
+  "outputs": [
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-06-pending-owner-steers/COVERAGE.json",
+      "bytes": 1246,
+      "sha256": "2eb504f8ca4fdc7374219122eca9065152c609e0adbc09fb06066dfe544918ad"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-06-pending-owner-steers/LIBRARY-READ-RECEIPT.json",
+      "bytes": 25618,
+      "sha256": "178a7bea6787c637ea31ea8ab20b0184b628f6cdd4bff985722f6c2ac1a5d2c6"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-06-pending-owner-steers/PENDING-RECONCILIATION.json",
+      "bytes": 2990,
+      "sha256": "472863e52e6cbe4c26c8ca4c9546d80e29a1915403c6fbaf203e8a5d608c739c"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-06-pending-owner-steers/REPORT.md",
+      "bytes": 1639,
+      "sha256": "c13036e8f6263e3644d1b73c43fa812bcf2c4ac8dc73f06b2c7215bf500b135b"
+    }
+  ],
+  "notes": "Own outputs listed separately; checksum/index exclude themselves to avoid recursive self-hash. No output grants authority."
+}

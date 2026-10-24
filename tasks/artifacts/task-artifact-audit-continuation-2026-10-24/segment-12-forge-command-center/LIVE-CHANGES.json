@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-24T18:21:06.310267+00:00",
+  "full_reviewed_source_drift": [],
+  "live_partially_inspected_changes": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "coverage": "partially-inspected",
+      "before_sha256": "ff6abb41d00c11c6651ce7cdf038b5256de5e84b0ff0ee012dd93472ccf70417",
+      "current_sha256": "d48f9b8d9eb65c8afcd115267915db14709c517c1fb665b1e5afe947a0163944",
+      "disposition": "Live partial source changed; old review scope retained, later additions pending inspection. No action depends on this partial search."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+      "coverage": "partially-inspected",
+      "before_sha256": "549d80021c41a83522aded37026b709386ee2b853175c549ab53dba71150aec3",
+      "current_sha256": "c4721ca68fa96b03e84f40401edd9684309deb1585b5190a40765dcfaecf7655",
+      "disposition": "Live partial source changed; old review scope retained, later additions pending inspection. No action depends on this partial search."
+    }
+  ],
+  "canonical_hashes_match_v11": true,
+  "scope": "Selected documentary sources only. Changed partial coordination content stays pending, never full content credit."
+}

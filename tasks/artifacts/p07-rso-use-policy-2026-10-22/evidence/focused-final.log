@@ -1,0 +1,44 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/player-forecasts/rsoUsePolicy.test.ts lib/rosterScheduleData/planning.test.ts lib/player-forecasts/planningContributions.test.ts lib/in-season/workspaceSchema.test.ts lib/integrations/yahoo/rosterPlanning.test.ts __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts lib/rosterScheduleOptimizer/planning.test.ts lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web
+
+(node:14678) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/rosterScheduleOptimizer/planning.test.ts > planning engine > evaluates the entire 1000-player population across 2 days with exact full-plan gains
+{"candidateBenchmark":"1000 players","days":2,"forecasts":2000,"evaluated":998,"elapsedMs":188.4586250000001}
+
+stdout | lib/rosterScheduleOptimizer/planning.test.ts > planning engine > evaluates the entire 1000-player population across 13 days with exact full-plan gains
+{"candidateBenchmark":"1000 players","days":13,"forecasts":13000,"evaluated":998,"elapsedMs":783.5349580000002}
+
+ ✓ lib/rosterScheduleOptimizer/planning.test.ts (145 tests) 10117ms
+   ✓ planning engine > evaluates the entire 1000-player population across 2 days with exact full-plan gains  350ms
+   ✓ planning engine > evaluates the entire 1000-player population across 13 days with exact full-plan gains  1822ms
+   ✓ planning engine > reaches multiple acquisitions within the bounded 25/300/7/4 workload  7580ms
+(node:14678) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts (8 tests) 184ms
+(node:14678) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/integrations/yahoo/rosterPlanning.test.ts (75 tests) 53ms
+(node:14678) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts (28 tests) 38ms
+(node:14678) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/planningContributions.test.ts (110 tests) 39ms
+(node:14678) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/in-season/workspaceSchema.test.ts (51 tests) 25ms
+(node:14678) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/rsoUsePolicy.test.ts (17 tests) 3ms
+ ✓ lib/rosterScheduleData/planning.test.ts (107 tests) 113ms
+
+ Test Files  8 passed (8)
+      Tests  541 passed (541)
+   Start at  10:33:40
+   Duration  13.40s (transform 760ms, setup 31ms, collect 1.03s, tests 10.57s, environment 1.12s, prepare 227ms)
+

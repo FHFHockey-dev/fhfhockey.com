@@ -1,0 +1,15 @@
+lib/rosterScheduleOptimizer/gameForecastPoints.test.ts(14,109): error TS2352: Conversion of type '{ players: { id: string; playerClass: "skater" | "goalie"; }[]; forecasts: GameForecast[]; rules: { scoring: { mode: "points"; weights: Record<string, number>; categories: never[]; }; }; }' to type 'PlanningSnapshot' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type '{ players: { id: string; playerClass: "skater" | "goalie"; }[]; forecasts: GameForecast[]; rules: { scoring: { mode: "points"; weights: Record<string, number>; categories: never[]; }; }; }' is missing the following properties from type 'PlanningSnapshot': id, context, roster, games, and 4 more.
+lib/rosterScheduleOptimizer/gameForecastPoints.test.ts(36,77): error TS2353: Object literal may only specify known properties, and 'SAVES_GOALIE' does not exist in type '{ GOALS: number; ASSISTS: number; }'.
+lib/rosterScheduleOptimizer/gameForecastPoints.test.ts(41,30): error TS2345: Argument of type '{}' is not assignable to parameter of type '{ GOALS: number; ASSISTS: number; }'.
+  Type '{}' is missing the following properties from type '{ GOALS: number; ASSISTS: number; }': GOALS, ASSISTS
+lib/rosterScheduleOptimizer/gameForecastPoints.test.ts(42,30): error TS2345: Argument of type '{ GOALS: number; }' is not assignable to parameter of type '{ GOALS: number; ASSISTS: number; }'.
+  Property 'ASSISTS' is missing in type '{ GOALS: number; }' but required in type '{ GOALS: number; ASSISTS: number; }'.
+lib/rosterScheduleOptimizer/gameForecastPoints.test.ts(43,68): error TS2345: Argument of type '{ GOALS: number; }' is not assignable to parameter of type '{ GOALS: number; ASSISTS: number; }'.
+  Property 'ASSISTS' is missing in type '{ GOALS: number; }' but required in type '{ GOALS: number; ASSISTS: number; }'.
+lib/rosterScheduleOptimizer/gameForecastPoints.test.ts(48,25): error TS2353: Object literal may only specify known properties, and 'SAVES_GOALIE' does not exist in type '{ GOALS: number; ASSISTS: number; }'.
+lib/rosterScheduleOptimizer/gameForecastPoints.test.ts(53,25): error TS2353: Object literal may only specify known properties, and 'SAVES_GOALIE' does not exist in type '{ GOALS: number; ASSISTS: number; }'.
+lib/rosterScheduleOptimizer/gameForecastPoints.test.ts(59,25): error TS2353: Object literal may only specify known properties, and 'SAVES_GOALIE' does not exist in type '{ GOALS: number; ASSISTS: number; }'.
+lib/rosterScheduleOptimizer/gameForecastPoints.test.ts(65,25): error TS2353: Object literal may only specify known properties, and 'SAVES_GOALIE' does not exist in type '{ GOALS: number; ASSISTS: number; }'.
+lib/rosterScheduleOptimizer/gameForecastPoints.test.ts(70,25): error TS2353: Object literal may only specify known properties, and 'SAVES_GOALIE' does not exist in type '{ GOALS: number; ASSISTS: number; }'.
+lib/rosterScheduleOptimizer/gameForecastPoints.test.ts(77,25): error TS2353: Object literal may only specify known properties, and 'SAVES_GOALIE' does not exist in type '{ GOALS: number; ASSISTS: number; }'.

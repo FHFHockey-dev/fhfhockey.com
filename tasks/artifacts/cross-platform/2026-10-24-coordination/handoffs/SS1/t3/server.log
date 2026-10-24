@@ -1,0 +1,60 @@
+
+> web@0.1.0 dev:stable
+> node scripts/dev-stable.mjs -p 3110
+
+   ▲ Next.js 15.5.22
+   - Local:        http://localhost:3110
+   - Network:      http://0.0.0.0:3110
+   - Environments: .env.development.local, .env.local, .env.development
+   - Experiments (use with caution):
+     ✓ externalDir
+
+ ✓ Starting...
+ ✓ Ready in 948ms
+ ○ Compiling /social-share/[format] ...
+ ✓ Compiled /social-share/[format] in 2.9s (971 modules)
+ GET /social-share/game-grid 200 in 3592ms
+ GET /social-share/game-grid 200 in 218ms
+ ⚠ Cross origin request detected from 127.0.0.1 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ GET /social-share/remaining-week 200 in 216ms
+ GET /social-share/game-grid 200 in 216ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/tuesday-trends 200 in 216ms
+ GET /social-share/player-spotlight 200 in 213ms
+ GET /social-share/category-rescue 200 in 212ms
+ ✓ Compiled /404 in 401ms (978 modules)
+ GET /social-share/not-a-format 404 in 871ms
+ GET /social-share/game-grid 200 in 228ms
+ GET /social-share/game-grid 200 in 216ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 219ms
+ GET /social-share/game-grid 200 in 216ms
+ ✓ Compiled in 68ms (721 modules)
+ GET /social-share/game-grid 200 in 215ms
+ ✓ Compiled in 41ms (257 modules)
+ ✓ Compiled in 50ms (721 modules)
+ ✓ Compiled in 43ms (257 modules)
+ GET /social-share/game-grid 200 in 286ms
+ GET /social-share/game-grid 200 in 217ms
+ GET /social-share/remaining-week 200 in 216ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/tuesday-trends 200 in 213ms
+ GET /social-share/player-spotlight 200 in 212ms
+ GET /social-share/category-rescue 200 in 213ms
+ GET /social-share/not-a-format 404 in 420ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 212ms
+[?25h

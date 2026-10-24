@@ -1,0 +1,30 @@
+{
+  "cwd": "/tmp/fhfh-release-prototype-zpsy1yw9/snapshot/web",
+  "commands": {
+    "types": [
+      "npm",
+      "exec",
+      "--offline",
+      "--no",
+      "--",
+      "tsc",
+      "--noEmit",
+      "--incremental",
+      "false"
+    ],
+    "compatibility": [
+      "npm",
+      "test",
+      "--",
+      "--run",
+      "--config",
+      "audit.vitest.config.mts",
+      "scripts/qualify-native-players-offline.test.ts",
+      "lib/player-forecasts/nativeContributionAdmission.test.ts",
+      "lib/rosterScheduleData/forgeDailyBridge.test.ts",
+      "lib/rosterScheduleData/planning.test.ts",
+      "--reporter=json",
+      "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/production-model-prototype/compatibility.json"
+    ]
+  }
+}

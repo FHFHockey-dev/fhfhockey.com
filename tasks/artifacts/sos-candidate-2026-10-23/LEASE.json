@@ -1,0 +1,20 @@
+{
+  "owner_thread": "01a168fb-3199-7407-9b20-160ccb41003d",
+  "as_of": "2026-10-23T13:40:16.412699+00:00",
+  "scope": [
+    "tasks/artifacts/sos-candidate-2026-10-23/**",
+    "tasks/diaries/2026-10-23-codex-sos-candidate.md"
+  ],
+  "coordination": "Parent confirmed release owner explicitly acknowledged this disjoint artifact/diary namespace at 2026-10-23 14:00:52 UTC. Historical ledger pending text is superseded by that direct parent handoff.",
+  "status": "active research-only",
+  "excluded": [
+    "web/**",
+    "existing research",
+    "Git/index/refs",
+    "GameGrid UI/readers",
+    "models",
+    "production reads/captures",
+    "migrations",
+    "push/deploy"
+  ]
+}

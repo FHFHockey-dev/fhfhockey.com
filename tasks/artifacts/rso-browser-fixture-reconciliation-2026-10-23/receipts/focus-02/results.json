@@ -1,0 +1,231 @@
+{
+  "config": {
+    "configFile": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/reconciliation.config.ts",
+    "rootDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focus-02/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "roster-schedule-optimizer.spec.ts"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "roster-schedule-optimizer.spec.ts",
+      "file": "roster-schedule-optimizer.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "manual workspace retains reviewed intent, protections and locks through recalculation and reload",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1688,
+                  "error": {
+                    "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation",
+                    "stack": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n    at Proxy.fulfill (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer-fixtures.ts:26:66)\n    at handler (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:99:53)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer-fixtures.ts:45:12",
+                    "location": {
+                      "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer-fixtures.ts",
+                      "column": 66,
+                      "line": 26
+                    },
+                    "snippet": "   at roster-schedule-optimizer-fixtures.ts:26\n\n  24 |           expect(JSON.parse(Buffer.from(bearer!.split(\".\")[1], \"base64url\").toString()).sub).toBe(RSO_FIXTURE_PRINCIPAL);\n  25 |         }\n> 26 |         const evaluatedAt = body.read?.evaluatedAt ?? await page.evaluate(() => new Date().toISOString());\n     |                                                                  ^\n  27 |         const nonce = privateRead ? scope.nonce : request.headers()[\"x-rso-read-nonce\"];\n  28 |         const data = body.data, existing = data.forecastManifest;\n  29 |         const forecasts = data.forecasts ?? [];"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer-fixtures.ts",
+                        "column": 66,
+                        "line": 26
+                      },
+                      "message": "Error: page.evaluate: Execution context was destroyed, most likely because of a navigation\n\n   at roster-schedule-optimizer-fixtures.ts:26\n\n  24 |           expect(JSON.parse(Buffer.from(bearer!.split(\".\")[1], \"base64url\").toString()).sub).toBe(RSO_FIXTURE_PRINCIPAL);\n  25 |         }\n> 26 |         const evaluatedAt = body.read?.evaluatedAt ?? await page.evaluate(() => new Date().toISOString());\n     |                                                                  ^\n  27 |         const nonce = privateRead ? scope.nonce : request.headers()[\"x-rso-read-nonce\"];\n  28 |         const data = body.data, existing = data.forecastManifest;\n  29 |         const forecasts = data.forecasts ?? [];\n    at Proxy.fulfill (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer-fixtures.ts:26:66)\n    at handler (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:99:53)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer-fixtures.ts:45:12"
+                    },
+                    {
+                      "location": {
+                        "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                        "column": 16,
+                        "line": 142
+                      },
+                      "message": "Error: page.reload: Test ended.\nCall log:\n\u001b[2m  - waiting for navigation until \"load\"\u001b[22m\n\u001b[2m    - navigated to \"http://127.0.0.1:3139/roster-schedule-optimizer\"\u001b[22m\n\n\n  140 |     });\n  141 |     await expectDesktopFrameVisible(page);\n> 142 |     await page.reload();\n      |                ^\n  143 |     await page.getByLabel(\"Manage Alpha Center\", { exact: true }).click();\n  144 |     await expect(page.getByRole(\"button\", { name: \"Remove Alpha Center\" })).toBeVisible();\n  145 |     await page.getByLabel(\"Manage Alpha Center\", { exact: true }).click();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:142:16"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T15:42:09.488Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focus-02/results/roster-schedule-optimizer--c3669-gh-recalculation-and-reload-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focus-02/results/roster-schedule-optimizer--c3669-gh-recalculation-and-reload-chromium/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focus-02/results/roster-schedule-optimizer--c3669-gh-recalculation-and-reload-chromium/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer-fixtures.ts",
+                    "column": 66,
+                    "line": 26
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "75e731aa0b382492d6e5-235b1fc564002e4b91ae",
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 104,
+          "column": 5
+        },
+        {
+          "title": "compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 16785,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Available Players' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Available Players' })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Available Players' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Available Players' })\u001b[22m\n\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1674:74",
+                    "location": {
+                      "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                      "column": 74,
+                      "line": 1674
+                    },
+                    "snippet": "  1672 |   await expect(table.locator('tr[data-compact-row]')).toHaveCount(count);\n  1673 |   await expect(page.getByRole(\"heading\", { name: \"Current Roster\" })).toBeVisible();\n> 1674 |   await expect(page.getByRole(\"heading\", { name: \"Available Players\" })).toBeVisible();\n       |                                                                          ^\n  1675 |   const metrics = await table.evaluate(node => {\n  1676 |     const viewport = node.parentElement!.getBoundingClientRect();\n  1677 |     const bodyTop = Math.max(viewport.top, node.querySelector(\"thead\")!.getBoundingClientRect().bottom);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                        "column": 74,
+                        "line": 1674
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('heading', { name: 'Available Players' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('heading', { name: 'Available Players' })\u001b[22m\n\n\n  1672 |   await expect(table.locator('tr[data-compact-row]')).toHaveCount(count);\n  1673 |   await expect(page.getByRole(\"heading\", { name: \"Current Roster\" })).toBeVisible();\n> 1674 |   await expect(page.getByRole(\"heading\", { name: \"Available Players\" })).toBeVisible();\n       |                                                                          ^\n  1675 |   const metrics = await table.evaluate(node => {\n  1676 |     const viewport = node.parentElement!.getBoundingClientRect();\n  1677 |     const bodyTop = Math.max(viewport.top, node.querySelector(\"thead\")!.getBoundingClientRect().bottom);\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1674:74"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T15:42:11.562Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focus-02/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focus-02/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focus-02/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                    "column": 74,
+                    "line": 1674
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "75e731aa0b382492d6e5-ef611062e76bbaaa8737",
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1666,
+          "column": 39
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-23T15:42:09.018Z",
+    "duration": 19513.266,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

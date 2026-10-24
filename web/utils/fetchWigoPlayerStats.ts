@@ -249,9 +249,9 @@ export function buildPlayerAggregatedStats({
     let lyValue = getAggregateValue(careerData, `ly_${baseColName}`);
     let ya3Value = getAggregateValue(careerData, `ya3_${baseColName}`);
     let caValue = getAggregateValue(careerData, `ca_${baseColName}`);
-    let l5Value = getAggregateValue(recentData, `l5_${baseColName}`);
-    let l10Value = getAggregateValue(recentData, `l10_${baseColName}`);
-    let l20Value = getAggregateValue(recentData, `l20_${baseColName}`);
+    const l5Value = getAggregateValue(recentData, `l5_${baseColName}`);
+    const l10Value = getAggregateValue(recentData, `l10_${baseColName}`);
+    const l20Value = getAggregateValue(recentData, `l20_${baseColName}`);
 
     if (metadata.isPerSixty && ratesData) {
       const pickRate = (suffix: string) => {
@@ -268,17 +268,12 @@ export function buildPlayerAggregatedStats({
       const rLy = pickRate("ly");
       const rCa = pickRate("ca");
       const r3ya = pickRate("3ya") ?? pickRate("ya3");
-      const rL5 = pickRate("l5");
-      const rL10 = pickRate("l10");
-      const rL20 = pickRate("l20");
 
       if (rStd !== undefined) stdValue = rStd;
       if (rLy !== undefined) lyValue = rLy;
       if (rCa !== undefined) caValue = rCa;
       if (r3ya !== undefined) ya3Value = r3ya;
-      if (rL5 !== undefined) l5Value = rL5;
-      if (rL10 !== undefined) l10Value = rL10;
-      if (rL20 !== undefined) l20Value = rL20;
+      // Recent rates and their coverage come from the same wigo_recent snapshot.
     }
 
     if (metadata.isPerSixty) {
@@ -588,7 +583,7 @@ export async function fetchPlayerAggregatedStats(
 ): Promise<TableAggregateData[]> {
   console.log(`Workspaceing pre-aggregated stats for Player ID: ${playerId}`);
 
-  // Fetch base aggregates plus rates table (authoritative for per-60 by timeframe)
+  // Fetch aggregates plus legacy historical rates; recent rates use wigo_recent.
   const [careerRes, recentRes, ratesRes, totalsRes] = await Promise.all([
     supabase
       .from("wigo_career")

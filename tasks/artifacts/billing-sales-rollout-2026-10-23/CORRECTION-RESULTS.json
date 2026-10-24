@@ -1,0 +1,14 @@
+[
+  {
+    "name": "corrected-tests",
+    "exit_code": 0
+  },
+  {
+    "name": "types",
+    "exit_code": 2
+  },
+  {
+    "name": "lint",
+    "exit_code": 0
+  }
+]

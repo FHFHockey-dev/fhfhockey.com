@@ -1,0 +1,136 @@
+{
+  "revision": "r5-final",
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "base": "loading-shell-v1/before, applied on accepted release-fixes packet",
+  "prior_packet_sha256": "e7b43c8894d7a30af1faa1fa487caccc4d684e9dae8ba09cc23fe2baef160b66",
+  "patch_sha256": "526714310534287ee87867c2e4c80ece7d0b5c1f99bd7c6bc51a42b4c47c0056",
+  "formula_functions_byte_identical": true,
+  "verification": {
+    "unit_cases": 100,
+    "browser_unique_cases_across_final_and_correction_runs": 60,
+    "final_correction_run": "11/11",
+    "typecheck": "pass",
+    "lint": "pass",
+    "hook_waterfall_comparison": "3/3",
+    "independent_review": "r5 local verification complete; final independent acceptance pending",
+    "final_visual_run": "15/15",
+    "unit_case_scope": "99 prior focused cases retained; the one corrected page test separately passed in r3",
+    "r3_page_test": "1/1 passed; r3-page-test.log",
+    "r4_existing_browser_checks": "17/17 passed; r4-browser.log",
+    "r4_header_alignment": "6/6 passed at 2048/1440/1024/768/520/390; r4-alignment.log",
+    "r4_unique_browser_cases": 20,
+    "r4_typecheck": "pass; r4-types.log",
+    "r4_lint": "pass; r4-lint.log",
+    "r5_browser": "20/20 focused cases passed; r5-browser.log",
+    "r5_typecheck": "pass; r5-types.log",
+    "r5_lint": "pass; r5-lint.log"
+  },
+  "files": {
+    "web/pages/game-grid/[mode].tsx": {
+      "before_sha256": "2d2e6af4a753f5622b93a10fb87d9cb0064b794109541be6c95a8c6d45607f5a",
+      "after_sha256": "21fcb18958338df8ef0481b7c3fd0e26a62ea99c5482459ce82a4a75585d90a9"
+    },
+    "web/components/GameGrid/GameGrid.tsx": {
+      "before_sha256": "59f68b446be46f7c9d71492b507068fa6a04cc1242c801cf3580a890a0c54fcd",
+      "after_sha256": "1e9f9d365a71ba67ec2c319a70da067f0241c11700252aa7f3ee2f72cba8b8d5"
+    },
+    "web/components/GameGrid/GameGrid.module.scss": {
+      "before_sha256": "6e850ff6b9edfb568ef4ef0eab0d376ad8f1eeb867f4cc1f7980f28c0478e497",
+      "after_sha256": "be198c4802d59f3899e413fd109d4869b1dd3faac847b5e402a39154fd725777"
+    },
+    "web/components/GameGrid/DesktopMasterTable.tsx": {
+      "before_sha256": "c49b7faaa24dfec56a0fde151a0aba2906ec4481ad8e624010ed9a3a22cde0cb",
+      "after_sha256": "20aa3a8de97469175fb8fb16b7cad019534317ac2bbfcbad18398957d0074da8"
+    },
+    "web/components/GameGrid/utils/FourWeekGrid.tsx": {
+      "before_sha256": "1ac51de43c9b6aa59fdcdbb63f4758abfbae1fbff33c0a17bb705f61cd23352c",
+      "after_sha256": "34611c949964977a9ed9019e5f666b88d07e4b43a914afde3c1f57499d6a576c"
+    },
+    "web/components/GameGrid/OpponentMetricsTable.tsx": {
+      "before_sha256": "c477a61e058150d90ae9a871f0a36c3e083a7f4a1c02f30543c404c4ed944a89",
+      "after_sha256": "20e0a5910438e65cfee22af83a83f31e318fc6ba3888bf082853a03f2c9eea12"
+    },
+    "web/components/GameGrid/utils/useFourWeekSchedule.ts": {
+      "before_sha256": "befcdcc7a97b1cc226ba8b93fbe5f3d72de6da5b57d0ae0fbaa3025998209385",
+      "after_sha256": "83a091c0e68f9476d3ae85361370be79a0d9cd67b16a715a0d25ab1c14c2cf0b"
+    },
+    "web/components/GameGrid/utils/useFourWeekSchedule.test.ts": {
+      "before_sha256": "6eef1a876cfc37a4ce8f3e6f81957023d7d858f9cfa393b15780d650d9ab79b1",
+      "after_sha256": "cbfacb2ae0500be639ae8f0c9648e72cbdeb308a4595b7ecc01fbd03f5129ed9"
+    },
+    "web/components/GameGrid/utils/useOpponentMetricsData.ts": {
+      "before_sha256": "e8aaf823a3bb1fdd4a13eb38ad40731407fa8527c7fc211c20cad4ea8fed36bd",
+      "after_sha256": "4675b77e436bad260c21922c7f100f7c41fcc7d03d5fbb99a440bc288eb0099d"
+    },
+    "web/components/GameGrid/utils/useOpponentMetricsData.test.ts": {
+      "before_sha256": "6daa51581a0bcdd0230aa1366e52204935b45e036dd7ee638bfe8ae23ca0aa72",
+      "after_sha256": "639a0fbfb0f045ef8fc94a4cd10932abe28c831dfa3ee50aaffbce469e6cf792"
+    },
+    "web/e2e/game-grid-previews.spec.ts": {
+      "before_sha256": "03c05bccd3ab5770a734e98dcf8801ba831913bb644020837928731bda626baa",
+      "after_sha256": "52b59e88a1b10ab5c80c5c7662babb141419b440ae118e836354099087766d0d"
+    },
+    "web/e2e/fixtures/game-grid-previews/data.ts": {
+      "before_sha256": "cef6302baddc1aa0fe38e5bfdb63137472551e5ca477fe1ae24b72b363aa45fb",
+      "after_sha256": "43905d436c8b46847ae3dd628fb155d7b170cc4acb7a152bc9f9d55baaefcc08"
+    },
+    "web/e2e/fixtures/game-grid-previews/server.mjs": {
+      "before_sha256": "c606d3b67629564e963a6b8f12dc15406bc4027c11159868f77cc172ef6ec6cb",
+      "after_sha256": "7a638c750cae36605419bfb933c5a9084ee37c7eaf54b12ef392d2c647598917"
+    },
+    "web/e2e/fixtures/game-grid-previews/App.tsx": {
+      "before_sha256": "49b5757199095808dc85418b58203feeb9e4673f4cd25cb8a1580ab25a9c20a7",
+      "after_sha256": "eedf5417c2be113efc28aa6c4e02550432d69e40cf2cccbe8c5c8986925a1c9b"
+    },
+    "web/lib/NHL/client/index.test.tsx": {
+      "before_sha256": "60ae4231e3b77a15776788ca2d769ae447c57b32a87698891344fede6f51b985",
+      "after_sha256": "89b43299bf5d0a6e15a300802456166fa5c02beeee0ad29466990eb46fc8f597"
+    },
+    "web/components/GameGrid/TransposedGrid.tsx": {
+      "before_sha256": "e0e4b95f014ca779cf245daf4e875a80fe96118ad9171ed5a9a93a1c09ca1a17",
+      "after_sha256": "661d6ac9b70de9be39cb246b6ce58f371f93a82c2fb8203cf427453a9013f767"
+    },
+    "web/components/GameGrid/utils/scheduleOpportunity.ts": {
+      "before_sha256": "281c54a90edfc228f1842b06d458a6b6800ee5f8b0b10148313906dd9761fcc6",
+      "after_sha256": "02198b9a732bc7b25e14e0ef285bae73b348ce5f645a26efe177ae52e773380c"
+    },
+    "web/components/GameGrid/OpportunitySparkline.tsx": {
+      "before_sha256": "413d6169cd54aa32f4d47712b5b0845ef137a8acb1762815cbaed9a4b617b227",
+      "after_sha256": "5696c4f7e1bc6062f8c0e23b4160af30bd6ebd2123f26612fa765a0e7e7e3426"
+    },
+    "web/components/GameGrid/OpponentMetricsTable.module.scss": {
+      "before_sha256": "147e6464bf773cf9cbb01fb0bc5e1fb9488c611b7c5d362099ae0bf813df2f4c",
+      "after_sha256": "d61f143b691defe7fb482ce67fea1fa37aacb50db92c7336f184f6126b0ee722"
+    },
+    "web/components/GameGrid/utils/FourWeekGrid.module.scss": {
+      "before_sha256": "b717bcb3d88f5fbff814ae4eccec93a8e547743b66904a8fe0f646f064689f58",
+      "after_sha256": "842da7b5ffaaa4d5614361feb28b4c61f6c60591d0004a0bfab10deac95baad4"
+    },
+    "web/components/GameGrid/OpportunitySparkline.test.tsx": {
+      "before_sha256": "7c21a9e2cf2aa327c19669a5c35b3eace32583934888935b1aa87b9fdce818d7",
+      "after_sha256": "aee965a1248549efeb3917fa9ccd1b43ea38a610e3d99949c4de15fe1b62bc3c"
+    },
+    "web/components/GameGrid/SortableHeaders.test.tsx": {
+      "before_sha256": "c46a87f924f19380e8e18f72e87c61a55d051baab9c0ba81f7fc424b9c6e8563",
+      "after_sha256": "50387284b9b9acfbed6a8c4c8c35868984b94118ae6ef26dca91e63578e98559"
+    },
+    "web/components/GameGrid/utils/FourWeekGrid.test.tsx": {
+      "before_sha256": "8ae62becc26b3d86de33b695f7260cf42eeeacb1d2124cb24ff72b8cd341895d",
+      "after_sha256": "0c6858a3bde83bd6a99bf4809c6efc29953f1bdfe4dc69a266268b0d576122a0"
+    },
+    "web/components/GameGrid/LoadingCells.tsx": {
+      "before_sha256": null,
+      "after_sha256": "b822c0bcab199b2f92ae7751488c1a9887d1c8bb4c3b62f104cd9bfda449cc37"
+    },
+    "web/components/GameGrid/LoadingCells.module.scss": {
+      "before_sha256": null,
+      "after_sha256": "255a0db1f9be4f4962169bb2ce4ce64cc33d0a07dbb266f3be46f81ebb852f05"
+    },
+    "web/components/GameGrid/GameGridPage.test.tsx": {
+      "before_sha256": "fd553b05d0ceb78c5288aa22b39e6a15b372a4af78ea91d81fcc8f170770c79a",
+      "after_sha256": "4234d106b282664b502664cbe6a8116786ecb40ab2433d0558e1261e28ed6b38",
+      "before_captured_in_revision": "r3"
+    }
+  },
+  "supersedes_patch_sha256": "50b8ff7f6c3ede4e3cac5190a136c52fd5d93375fc3c8b38d4d0d75405d9d336"
+}

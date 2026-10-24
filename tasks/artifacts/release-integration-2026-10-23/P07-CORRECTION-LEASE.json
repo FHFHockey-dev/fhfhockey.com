@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-23T12:08:35.498909+00:00",
+  "owner": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+  "scope": "Reject serialized Yahoo marks as quantitative runtime authority; preserve labels and approved server bridge",
+  "basis": "Parent release-integration correction authorization; Claude9a9c914f5 handoff explicitly requests P07 owner review; clean diff and snapshot hashes unchanged",
+  "files": {
+    "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "3e65a79ee7f293e9df9620688019191eae1187bb2fe387c2282e5773beaea1f7",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts": "7711471fc260851c9e3da56a72dec5e1aa9d843846a9ce6019dafb4bb569f042"
+  },
+  "excluded": [
+    "GameGrid files",
+    "provider authorization changes",
+    "production provider calls",
+    "native approval catalog",
+    "new secret/storage/schema"
+  ]
+}

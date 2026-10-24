@@ -1,0 +1,10 @@
+{
+  "source_drift": [],
+  "diff_check_exit": 0,
+  "application_paths": 18,
+  "test_paths": 16,
+  "packet_sha256": "88d70497b52641e31e83602cf8ea28977e0bc2de067c5562403acf3964153964",
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "no_services_started": true,
+  "no_external_calls": true
+}

@@ -1,0 +1,66 @@
+[
+  {
+    "path": "web/__tests__/pages/stats/team/teamAbbreviation.test.tsx",
+    "reviewed_sha256": "71dd3fb4234009950c6bad3cb7f5b0b047aa6ff198fb8648888d08987c9de16b",
+    "current_sha256": "71dd3fb4234009950c6bad3cb7f5b0b047aa6ff198fb8648888d08987c9de16b",
+    "production_sha256": "e4c6c1cf9d72acf46ee9b49d71ee490032cf67f6387e24b98d9fa1d584f5430c",
+    "current_matches_reviewed": true,
+    "production_matches_reviewed": false
+  },
+  {
+    "path": "web/styles/TeamStatsPage.module.scss",
+    "reviewed_sha256": "95729a78494dde4f7d1973a751651e97063ddfe0397423b7a4e5d5d3122b05f1",
+    "current_sha256": "95729a78494dde4f7d1973a751651e97063ddfe0397423b7a4e5d5d3122b05f1",
+    "production_sha256": "95729a78494dde4f7d1973a751651e97063ddfe0397423b7a4e5d5d3122b05f1",
+    "current_matches_reviewed": true,
+    "production_matches_reviewed": true
+  },
+  {
+    "path": "web/components/TeamTabNavigation/TeamTabNavigation.module.scss",
+    "reviewed_sha256": "e47eff8897504e8de063151db56fcf3004e65c53a35a8670095090c24467cd86",
+    "current_sha256": "e47eff8897504e8de063151db56fcf3004e65c53a35a8670095090c24467cd86",
+    "production_sha256": "e47eff8897504e8de063151db56fcf3004e65c53a35a8670095090c24467cd86",
+    "current_matches_reviewed": true,
+    "production_matches_reviewed": true
+  },
+  {
+    "path": "web/lib/supabase/pagination.ts",
+    "reviewed_sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+    "current_sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+    "production_sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+    "current_matches_reviewed": true,
+    "production_matches_reviewed": true
+  },
+  {
+    "path": "web/lib/supabase/index.ts",
+    "reviewed_sha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+    "current_sha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+    "production_sha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+    "current_matches_reviewed": true,
+    "production_matches_reviewed": true
+  },
+  {
+    "path": "web/hooks/useTeamSchedule.ts",
+    "reviewed_sha256": "c526df196651bb5c94ffba17b54bbc70133754bafc77b26c3bfb27602ba47826",
+    "current_sha256": "c526df196651bb5c94ffba17b54bbc70133754bafc77b26c3bfb27602ba47826",
+    "production_sha256": "c526df196651bb5c94ffba17b54bbc70133754bafc77b26c3bfb27602ba47826",
+    "current_matches_reviewed": true,
+    "production_matches_reviewed": true
+  },
+  {
+    "path": "web/lib/dashboard/clientFetchCache.ts",
+    "reviewed_sha256": "33d64d2cd4e0e4441a012aae6beec075781fcf8961e35182c993bdfd4ad140a3",
+    "current_sha256": "33d64d2cd4e0e4441a012aae6beec075781fcf8961e35182c993bdfd4ad140a3",
+    "production_sha256": "bcd32442ee36dd6fdc0ee35a426ee3afff5fc2c92a4cbdff72b32c6ca693fd16",
+    "current_matches_reviewed": true,
+    "production_matches_reviewed": false
+  },
+  {
+    "path": "web/hooks/useTeams.ts",
+    "reviewed_sha256": "9ee3009176c2f1a30e701c7dcfc3ceac0a51b4b502644c7ef486d00118f4b284",
+    "current_sha256": "9ee3009176c2f1a30e701c7dcfc3ceac0a51b4b502644c7ef486d00118f4b284",
+    "production_sha256": "551d63ba89aaca72d3a48d1c84f6acf74f548df48c11c7ede92bf8060e7e75a2",
+    "current_matches_reviewed": true,
+    "production_matches_reviewed": false
+  }
+]

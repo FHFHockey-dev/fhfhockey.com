@@ -1,0 +1,174 @@
+# Draft Ranker Launch and Operations Runbook
+
+## Current state
+
+The account-backed personal Draft Ranker is enabled for signed-in users at rollout stage `authenticated`, and the homepage pairwise module remains enabled under the product owner's recorded waiver. Explainable discovery, contribution collection, public Community Ranking, and beta entitlement remain off behind independent kill switches. Implementation and production schema do not imply public aggregate exposure. Any secondary-feature or Phase 8 expansion still requires its own evidence gate and approval.
+
+The daily health job runs at 12:45 UTC through `/api/v1/db/draft-ranker-health` and writes the repository-standard cron audit. Community refresh runs separately at 12:15 UTC and applies daily/weekly cadence rules.
+
+## Flags and entitlements
+
+| Control | Purpose | Safe default |
+| --- | --- | --- |
+| `DRAFT_RANKER_ENABLED` | Master personal-ranker API/UI switch | Off |
+| `DRAFT_RANKER_ROLLOUT_STAGE` | `off`, `staff`, `allowlist`, or `authenticated` | `off` in deployed environments |
+| `DRAFT_RANKER_STAFF_USER_IDS` | Comma-separated exact account UUIDs for staff | Empty |
+| `DRAFT_RANKER_BETA_USER_IDS` | Comma-separated exact account UUIDs added at allowlist stage | Empty |
+| `DRAFT_RANKER_HOMEPAGE_ENABLED` | Homepage pairwise slot | Off |
+| `DRAFT_RANKER_COMMUNITY_CONTRIBUTION_ENABLED` | Opted-in evidence eligibility | Off |
+| `DRAFT_RANKER_DISCOVERY_ENABLED` | Explainable discovery cards | Off |
+| `COMMUNITY_DRAFT_RANKINGS_ENABLED` | Aggregate public read API/page | Off |
+
+The master flag is checked before authentication. After authentication, every personal-ranker API enforces the rollout stage server-side. Invalid rollout-stage values fail closed. Staff IDs are eligible in both staff and allowlist stages; beta IDs are eligible only in allowlist; authenticated admits any signed-in account. The public aggregate remains a separate signed-out-safe decision.
+
+Never place allowlist IDs in a public environment variable or client bundle. Changing a deployed flag or allowlist requires an operator record and rollback owner.
+
+## Cohort gates
+
+### 1. Staff
+
+Enable the master flag with rollout stage `staff`. Keep all secondary flags off initially, then enable discovery, homepage, and contribution one at a time.
+
+Required evidence before allowlist expansion:
+
+- at least five distinct staff accounts or 50 complete account journeys;
+- zero cross-owner reads/writes and zero raw-comparison exposure;
+- zero ordering corruption, unresolved deletion residue, or non-idempotent retries;
+- less than 1% unexpected 5xx responses across ranker routes;
+- p95 read latency below 750 ms and mutation latency below 1,500 ms under normal load;
+- all daily health reports non-blocked and every warning understood;
+- successful flag-disable and account-deletion drills.
+
+Low-traffic personal-ranker exception approved 2026-07-16: for the current move directly from `staff` to signed-in `authenticated` personal access, the product owner replaced the five-account/50-journey and 72-hour thresholds with one genuine owner journey, one durably persisted successful health audit, one storage-level idempotent initialization retry, and 24 clean production hours after that audit. The final review must still confirm zero ownership mismatch, ordering block, incomplete seed, expired placement, non-idempotent mutation, or Draft Ranker 5xx cluster, and must explain every health warning. This exception does not enable discovery, contribution collection, public Community Ranking, or any beta allowlist.
+
+### 2. Allowlisted beta
+
+Set stage `allowlist` and add exact approved account UUIDs. Do not accept email addresses or display names as entitlement keys.
+
+Required evidence before authenticated expansion:
+
+- at least 25 distinct beta accounts, 500 successful mutations, and seven observed days;
+- no privacy/security incident and no unresolved blocker-level health report;
+- retry/conflict behavior produces no lost or duplicated ranking changes;
+- support issues are classified and under 5% of active beta accounts;
+- pairwise hard-limit and community-suppression rates are explainable;
+- community output remains evidence-labeled and undrafted admission tests remain green.
+
+### 3. Wider authenticated beta
+
+Set stage `authenticated`. Retain the master and every secondary kill switch.
+
+Required evidence before public aggregate exposure:
+
+- at least 100 distinct accounts, 2,500 successful mutations, and 14 observed days;
+- no cross-account data finding in logs or deletion drills;
+- no unresolved model manipulation or identity-quality incident;
+- refreshes, exports, and normalization remain within operational budgets;
+- browser, mobile, keyboard, screen-reader, and reduced-motion checks pass;
+- product owner approves the public aggregate wording and cold-start state.
+
+### 4. Public aggregate
+
+Enable `COMMUNITY_DRAFT_RANKINGS_ENABLED` independently. A market-seeded snapshot may be public only when it is explicitly described as prior Yahoo market data, never community consensus. Contribution collection can remain off even when aggregate reads are on.
+
+## Daily health interpretation
+
+- `healthy`: no actionable ranking, identity, placement, seed, or refresh condition.
+- `attention`: a recoverable or explicitly quarantined condition exists. Review counts and samples before expansion.
+- `blocked`: unsafe ordering keys or another integrity condition blocks cohort growth.
+
+The report contains aggregate counts, ranking IDs needed for repair, at most 100 candidate player IDs for editorial review, current flag state, latest discovery/community runs, and no user IDs.
+
+The ten Yahoo identity reviews intentionally left pending during DR-011 are expected quarantine, but keep the report at attention until editorial disposition.
+
+## Repair controls
+
+Admin endpoint: `/api/v1/db/draft-ranker-health`.
+
+- GET: read-only aggregate health report.
+- `normalize_ordering`: requires ranking ID, current version, UUID operation ID, reason, and exact `NORMALIZE_ORDERING` confirmation. The service-only transaction locks the board, writes deterministic `row_number * 1024` keys, increments the version only when needed, and records before/after state in the immutable event log.
+- `queue_identity_review`: requires a verified existing player ID, reason, UUID operation ID, and exact `QUEUE_IDENTITY_REVIEW` confirmation. It opens or reuses an editorial identity-conflict item. It never creates, merges, archives, or remaps a player.
+- `rebuild_community_snapshot`: defaults to dry run and requires exact `REBUILD_COMMUNITY` confirmation. A persisted run writes a new immutable snapshot; it never edits the prior snapshot.
+
+Take an export or database backup before a confirmed ordering repair on a real account. Compare entry count, first/last player, and version before and after. Do not repair a stale version; reload and re-diagnose.
+
+## Privacy and deletion drill
+
+For a disposable approved account:
+
+1. initialize and edit a real board;
+2. create watchlist, placement, prompt, comparison, consent, export, and rate-event records;
+3. withdraw contribution consent and rebuild the aggregate dry run;
+4. delete the account through the supported Auth path;
+5. verify zero rows remain in account-owned ranker tables and Auth;
+6. rebuild the aggregate and confirm accepted evidence drops;
+7. verify the public API contains no user IDs, pseudonymous keys, or private histories.
+
+Snapshots remain immutable audit artifacts, but rebuilt aggregate results must no longer reflect deleted or opted-out evidence.
+
+## Rollback
+
+1. Disable the affected secondary flag; disable `DRAFT_RANKER_ENABLED` for a personal-data or integrity incident.
+2. Set rollout stage `off` and clear both allowlists.
+3. Pause the health/community cron entries only if the job itself is unsafe; ordinary read failure is not a reason to delete data.
+4. Preserve ranking events, rate decisions, refresh runs, snapshots, and the last known-good export.
+5. Diagnose with the read-only health report and a dry-run community rebuild.
+6. Repair only with exact confirmation, current versions, reason, backup, and audited operation IDs.
+7. Re-enable one cohort/flag at a time after targeted tests and advisor review.
+
+Database migrations are additive. Routine rollback is flag/job disablement, not destructive down-migration. Dropping the DR-071 function is safe only after callers are disabled; dropping ownership or snapshot tables is outside routine rollback and requires a separately approved destructive plan.
+
+## Production approval checklist
+
+- [x] Focused Draft Ranker suites and full feasible repository checks pass.
+- [x] Live migration ledger matches local versions.
+- [x] Supabase function privileges, RLS, advisors, and foreign-key indexes pass.
+- [x] Account journey, export, opt-out, deletion, and rollback drills pass.
+- [x] Desktop/mobile visual and accessibility verification passes in a browser-capable environment.
+- [x] Community red-team calibration passes and residual coordinated-account risk is accepted.
+- [x] Current health report is reviewed; every attention item is documented.
+- [x] The paths in [release-manifest.md](./release-manifest.md) have been assembled from a clean current remote base into a reviewed READY production deployment that serves the feature routes with every rollout flag off.
+- [x] Named operator, support owner, rollback owner, cohort IDs, and observation window are recorded.
+- [x] Product owner explicitly approves the production cohort expansion.
+
+Local release evidence on 2026-07-15: 228/228 focused Draft Ranker tests, 18/18 affected WIGO regressions, full TypeScript, and the production build pass. The Community Ranking and authenticated board/export surfaces pass desktop and iPhone 14 Pro Max (430×932) inspection. The mobile document has no page-level horizontal overflow; its wide ranking table remains intentionally and independently scrollable. Two disposable account journeys ended with zero Auth or account-owned residue. Product-owner approval for staff-stage production expansion is recorded.
+
+A read-only Vercel preflight on 2026-07-15 found that the READY production deployment predates Draft Ranker and the live `/draft-rankings` route returns 404. [release-manifest.md](./release-manifest.md) classifies every dirty path and records a clean isolated assembly from current remote base `5743b6d808ff4cd9dd0cb01fef13863ac95f9f6d`: 102 included paths, zero conflicts/collisions, 228/228 Draft Ranker tests, 54/54 broader WIGO tests, passing TypeScript, and a complete 83-page production build.
+
+The scoped product commit `c78059b6de6671a0e594afe1e60d5e42421b5db4` was published in PR [#335](https://github.com/FHFHockey-dev/fhfhockey.com/pull/335), approved by the product owner, and merged as `722f1dff02b7a4b9486836b386c0b576f57c5cfd`. Vercel production deployment `dpl_2jLGmBmqwYjXiJJVuLjUMYJLrz4D` was READY from that exact merge SHA and passed the all-flags-off production smoke. The previous production deployment `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH` remains retained for rollback.
+
+## Staff cohort operational record
+
+The product owner approved staff-stage expansion. On 2026-07-15, the production-only master flag was set to `true`, rollout stage was set to `staff`, and exactly three verified Supabase Auth accounts whose application profile has `public.users.role = 'admin'` were entered in the server-only staff allowlist. The raw UUIDs exist only in Vercel's sensitive production environment configuration and are intentionally excluded from source control and this runbook. The deterministic SHA-256 fingerprint of the newline-delimited, lexicographically sorted cohort UUIDs is `08e5ae064daea8389205cbd9bf54a3ce3a1a31f555e7e51a381ca314a61053dd`.
+
+- operator: Tim Branson;
+- support owner: Tim Branson;
+- rollback owner: Tim Branson;
+- cohort source/count: `public.users.role = 'admin'`, three exact Auth UUIDs;
+- staff/homepage review deployment: `dpl_4hJivPJUBjNRUqV6JeHQ6fSSjx2W`, READY from source commit `89ace52c1eab547a0373a8ebae63648ec27c9262` and promoted merge deployment `dpl_HQhy8keYaN4eNzMGsesgrRoVU3dX`;
+- production aliases: `fhfhockey.com`, `www.fhfhockey.com`, and `fhfhockey.vercel.app`;
+- observation start: `2026-07-15T16:10:46Z` (`2026-07-15 12:10:46 EDT`);
+- earliest time-based review: `2026-07-17T14:42:52.363386Z`, after 24 clean hours on the response-before-audit durability fix from the verified production health audit;
+- approved low-traffic gate: one genuine owner journey, one durable successful health audit, one verified storage-level idempotent retry, and the 24-hour clean-production window; the former 50-journey and 72-hour requirements are superseded for this personal-ranker expansion only;
+- secondary state: homepage enabled under the recorded waiver; beta allowlist empty; discovery, contribution collection, and public Community Ranking remain off;
+- rollback: first set rollout stage `off` and disable the master flag; retain `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH` as the prior known-good deployment if artifact rollback is required.
+
+The staff-stage review artifact is READY. Anonymous `GET /api/v1/draft-ranker` returns HTTP 401 `authentication_required`; anonymous Community Ranking remains closed with HTTP 503 `draft_ranker_disabled`; both feature pages and the homepage return HTTP 200; and the homepage shows the signed-out Personal Draft Ranker account gate under the approved waiver. Production sign-in was visually confirmed for the allowlisted `TjsUsername` staff account. Its earlier test-initialized board was reset at the product owner's request without touching Auth, profile, role, or unrelated data; an aggregate zero-row checkpoint proved that deletion before the product owner explicitly created a new Yahoo-seeded board. The owner's subsequent genuine session persisted 42 decisive responses, advanced the ranking lock version to 23, retained 313 entries, and produced zero observed entry or comparison ownership mismatches without any inspection of player choices. The scheduled July 16 health route returned HTTP 200 but exposed a silent audit-persistence gap; PR #347 removed the redundant configuration early return and the first replay persisted a successful audit row at `2026-07-16T14:01:27.826057Z`. A later midpoint health response again returned a clean HTTP 200 but lost its post-response insert, proving the response could still finish before storage. PR [#350](https://github.com/FHFHockey-dev/fhfhockey.com/pull/350) now defers JSON/send flushing until audit persistence resolves. Preview persisted an immediate success row at `2026-07-16T14:33:37.915408Z`; review deployment `dpl_4hJivPJUBjNRUqV6JeHQ6fSSjx2W` did the same at `2026-07-16T14:42:52.363386Z` with zero affected rows and 252 ms duration. The production report had no ordering block, normalization recommendation, underfilled board, incomplete seed, expired placement, hard-limited pairwise event, new identity-review candidate, or ownership mismatch; its attention state was limited to the ten already documented pending identity reviews. Entry, event, prompt, comparison, and placement ownership mismatches were zero. Deployment-scoped error/fatal logs and 5xx counts were empty. A metadata-only storage replay of the owner's original initialization operation returned `completed` with `idempotentReplay = true` and no error code. Aggregate counts remained one active ranking, 313 entries, 47 total events, one initialization event, and one completed seed run; no player identity, pairing, outcome, or order was inspected. The product owner granted conditional advance approval to set only the personal rollout stage to `authenticated` after the final review passed. Every non-homepage secondary flag remained prohibited.
+
+## Authenticated personal rollout record
+
+DR-072's final aggregate-only review completed at `2026-07-17T21:13:37Z`, more than 30 hours after the durability boundary. Live health returned HTTP 200 with one active ranking, 313 entries, zero normalization recommendations, zero underfilled boards, zero new identity-review candidates, zero expired active placements, zero incomplete seeds, and zero hard-limited pairwise events. The only attention condition remained the ten already documented pending identity reviews. The audit row was durable before response completion at `2026-07-17T21:13:37.748385Z`, with status success, HTTP 200, zero affected rows, 683 ms duration, and no error. Counts-only reconciliation found zero entry, event, prompt, comparison, placement, or seed ownership/season mismatch and zero duplicate event, comparison, or rate-operation group. Deployment-scoped review found no Draft Ranker runtime error cluster, error/fatal log, or Draft Ranker 5xx response. No player identity, pairing, outcome, or personal ordering was inspected.
+
+At approximately `2026-07-17T21:19Z`, the operator changed only production `DRAFT_RANKER_ROLLOUT_STAGE` from `staff` to `authenticated`. The homepage remains enabled; the staff allowlist remains three; the beta allowlist remains empty; discovery, contribution collection, and public Community Ranking remain off. READY deployment `dpl_F6EpDdcMePEQorJfqnQTBoRzqy9Z` is an exact redeploy of source commit `89ace52c1eab547a0373a8ebae63648ec27c9262` with `action = redeploy` and `originalDeploymentId = dpl_4hJivPJUBjNRUqV6JeHQ6fSSjx2W`; all production aliases are assigned and `aliasError` is null. Post-change health returned HTTP 200 with `rolloutStage = authenticated` and the same healthy counts. Its audit row was durable at `2026-07-17T21:24:38.491822Z`, with zero affected rows, 454 ms duration, and no error. The homepage remained HTTP 200 and anonymous personal access remained HTTP 401. The only 5xx was the intentional anonymous Community HTTP 503 closed-state probe; the authenticated deployment had no Draft Ranker runtime-error cluster or error/fatal log.
+
+Rollback owner remains Tim Branson. For an authenticated-access incident, first restore `DRAFT_RANKER_ROLLOUT_STAGE=staff` and redeploy the exact artifact; use `off` plus the master kill switch for a broader emergency. Deployment `dpl_4hJivPJUBjNRUqV6JeHQ6fSSjx2W` is the immediate pre-authenticated artifact.
+
+## Homepage-only observation waiver
+
+On 2026-07-15 the product owner explicitly waived the then-current 72-hour/50-journey prerequisite for `DRAFT_RANKER_HOMEPAGE_ENABLED` only so the live homepage could show the account-backed voting surface and opening-night countdown. On 2026-07-16 the product owner separately approved the low-traffic personal-ranker expansion gate above. DR-072 completed on 2026-07-17 and the rollout stage is now `authenticated`; the staff cohort remains the exact three verified admin accounts, the beta cohort remains empty, and discovery, contribution collection, and public Community Ranking remain off.
+
+The original reviewed source was PR [#338](https://github.com/FHFHockey-dev/fhfhockey.com/pull/338), source commit `70c88054df6a4609bb419fa286cac6fc79e44c7a`, merged as `3685ce1ef87bf96bbad6f2fc307a971220428615`. READY preview `dpl_8sW3z1oABqQGAtxopeSnpLXsyWgp` was promoted exactly into READY production deployment `dpl_FiCyDfjVX1Dx14yuSoyySGJvGThQ` at approximately `2026-07-15T18:38:50.065Z`. Production-only sensitive `DRAFT_RANKER_HOMEPAGE_ENABLED=true` was the only newly enabled control. Top-of-board queue PR [#342](https://github.com/FHFHockey-dev/fhfhockey.com/pull/342) then merged as `1302ad84c34d87ae0c96999f2b83c4dcc6a0f421`; timestamp hydration PR [#343](https://github.com/FHFHockey-dev/fhfhockey.com/pull/343) merged as `e5bd6c83876cb6bedc981fed3bf3e0ad4e67eded`; cron-audit configuration PR [#347](https://github.com/FHFHockey-dev/fhfhockey.com/pull/347) merged as `7d5508860a5808580acfdd1caacc288bfe953bae`; and response-order PR [#350](https://github.com/FHFHockey-dev/fhfhockey.com/pull/350) merged as `89ace52c1eab547a0373a8ebae63648ec27c9262`. Exact merge deployment `dpl_HQhy8keYaN4eNzMGsesgrRoVU3dX` was promoted into staff-review production deployment `dpl_4hJivPJUBjNRUqV6JeHQ6fSSjx2W` with no flag or cohort change; authenticated deployment `dpl_F6EpDdcMePEQorJfqnQTBoRzqy9Z` now serves the same source with only the rollout-stage change.
+
+The live homepage passed visual and API smoke checks: the opening-night countdown and Personal Draft Ranker are visible, Transaction Trends is replaced, one Latest News section remains to the left of League Separation, anonymous personal access remains HTTP 401 `authentication_required`, anonymous Community Ranking remains HTTP 503 `draft_ranker_disabled`, and no grouped Vercel runtime errors appeared. The countdown uses canonical `public.seasons.startDate = 2026-09-29` and prefers the earliest official NHL `startTimeUTC`, currently `2026-09-29T21:00:00.000Z`. The follow-up visual review identified React hydration errors 418, 423, and 425 caused by server/client timezone differences in homepage news timestamps. PR #343 now formats news and transaction/injury timestamps deterministically in `America/New_York`; isolated preview and fresh production browser checks report zero page or hydration errors, with only the informational Apollo DevTools console message.
+
+For a homepage-only incident, first disable `DRAFT_RANKER_HOMEPAGE_ENABLED`; this restores Transaction Trends while preserving the personal route. If the incident is broader, set the rollout stage `off` and disable the master flag. Deployment `dpl_5LADmdbVfdJEzKubKkpR7Yr7zxzk` is the immediate pre-audit-fix artifact, `dpl_JDS7NpzpHgJa56ppWGQYoAcN7n8H` is the pre-hydration-fix Draft Ranker artifact, `dpl_8RitVqdJ9QsRTi11J7xjH66u6cdu` is the pre-homepage artifact, and `dpl_HgjrBeCQVzDTsgryafBLzmXqGyjH` remains the older retained rollback reference. No other secondary flag or public/community expansion is permitted without its own completed evidence gate and separate approval.

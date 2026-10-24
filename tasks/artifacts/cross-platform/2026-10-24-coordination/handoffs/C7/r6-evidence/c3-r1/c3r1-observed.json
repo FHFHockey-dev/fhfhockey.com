@@ -1,0 +1,51 @@
+{
+  "R1-U 36 dashes": {
+    "stored": "------------------------------------",
+    "sent": "96a6e8c5-1702-4fee-aa97-61f0d3d33e33",
+    "reused": false
+  },
+  "R1-U v1 UUID": {
+    "stored": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+    "sent": "348bd43f-4594-4177-ba8d-76c70a762c62",
+    "reused": false
+  },
+  "R1-U uppercase v4": {
+    "stored": "297F8FBB-BE20-4E34-AB71-71707B11605A",
+    "sent": "df5e6c64-5bdb-4c92-9fea-fc78137bc35e",
+    "reused": false
+  },
+  "R1-U v4 bad variant": {
+    "stored": "11111111-2222-4333-c444-555555555555",
+    "sent": "49d4b1ae-72ae-499b-b0c4-d48066d5cb36",
+    "reused": false
+  },
+  "R1-U 35 chars": {
+    "stored": "297f8fbb-be20-4e34-ab71-71707b11605",
+    "sent": "bb372c4f-8417-46ab-a833-e663d937ede6",
+    "reused": false
+  },
+  "R1-U trailing space": {
+    "stored": "297f8fbb-be20-4e34-ab71-71707b11605a ",
+    "sent": "8603cce7-8c9b-4f0f-a115-e52ccf7a1044",
+    "reused": false
+  },
+  "R1-U hex without dashes (36)": {
+    "stored": "0123456789abcdef0123456789abcdef0123",
+    "sent": "464b6a5b-ea32-4b6c-a403-d5c0b1132da8",
+    "reused": false
+  },
+  "R1-U v4-shaped nil-ish": {
+    "stored": "00000000-0000-4000-8000-000000000000",
+    "sent": "00000000-0000-4000-8000-000000000000",
+    "reused": true
+  },
+  "R1-U real randomUUID": {
+    "stored": "297f8fbb-be20-4e34-ab71-71707b11605a",
+    "sent": "297f8fbb-be20-4e34-ab71-71707b11605a",
+    "reused": true
+  },
+  "R1-U fresh": [
+    "f0a4a720-a87f-48a6-ac10-c8a17218bb40",
+    "f0a4a720-a87f-48a6-ac10-c8a17218bb40"
+  ]
+}

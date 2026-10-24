@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "next-bootstrap.d.ts",
+    "yahoo-fantasy.d.ts",
+    "__tests__/pages/api/v1/db/auditNstR1Additional.test.ts",
+    "types/nhlRawGamecenter.d.ts"
+  ]
+}

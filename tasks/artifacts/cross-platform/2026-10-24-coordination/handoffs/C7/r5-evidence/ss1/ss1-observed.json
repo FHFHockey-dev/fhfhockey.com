@@ -1,0 +1,48 @@
+{
+  "S1": {
+    "state": "ready",
+    "teamKeys": [
+      "gp",
+      "xgf",
+      "xga"
+    ],
+    "leaksName": false,
+    "leaksSecret": false,
+    "statsCalls": [
+      [
+        20262027
+      ]
+    ]
+  },
+  "S2": {
+    "scheduleState": "ready",
+    "opponents": {
+      "state": "missing",
+      "reasons": [
+        "Opponent team stats are unavailable."
+      ]
+    }
+  },
+  "S3": {
+    "unhandled": 0,
+    "statsCalled": 1
+  },
+  "S5": {
+    "extraKey": 400,
+    "post": 405,
+    "ok": 200,
+    "headers": {
+      "Cache-Control": "no-store",
+      "X-Robots-Tag": "noindex, nofollow"
+    },
+    "statsCalls": 1,
+    "scheduleCalls": 1
+  },
+  "S6": {
+    "statsArgs": [
+      [
+        20982099
+      ]
+    ]
+  }
+}

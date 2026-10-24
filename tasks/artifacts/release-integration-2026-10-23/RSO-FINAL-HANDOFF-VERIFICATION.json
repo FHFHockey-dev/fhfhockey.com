@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-23T16:59:12.613983+00:00",
+  "decision": "Accept bounded RSO fixture and layout packet for local integration only",
+  "deliveryManifestSha256": "a6b9617df984b6dd51223688571a2f67dbe7f82eb500d5ab9590dc30d043e7b2",
+  "verifiedChecks": {
+    "deliveryArtifacts": 8,
+    "fixturePins": 5,
+    "runtimePins": 2,
+    "runtimePatch": 1
+  },
+  "latestUniqueCases": 44,
+  "latestPassingCases": 44,
+  "singleFinalFullGreenRun": false,
+  "acceptanceCases": 10,
+  "scopedStatic": "TypeScript and ESLint exit0; existing receipts, no rerun",
+  "masterSha256": "86260ab86adc99fe4a17a29ca4487b5f7768eecd97bfd77d00ab4e49d6759347",
+  "sourceEditsThisCheckpoint": 0,
+  "gitMutations": 0,
+  "productionCalls": 0,
+  "remaining": "Coherent accepted source/resource composition, privacy and migration-authority screening, current whole-release verification, exact candidate commit/browser and parent/project/deployment gates. Bounded RSO fixture and layout packet is complete and accepted locally."
+}

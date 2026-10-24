@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-24T20:36:23.536473+00:00",
+  "scope": "In-season trust/clarity contract pair and directly relevant task-bearing decisions; no application/tests/Git/live/newworkers",
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "8b0a93d5e74ce9f32144e487ec7059ef33871505d7910e1c4bd47b0e7873b28e",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "24b32be9e45298af55635a1a6f36461ef968a5739ef2068ea1d471b693c97f4a",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "bc20a1f0096f3b265e20f9aa14e182d728b12b5d24802141891a0e4aff620fca"
+  },
+  "baseline_ids": 215,
+  "baseline_evidence": 1253,
+  "baseline_children": 71,
+  "library_version": 20,
+  "previous_continuation": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/CONTINUATION.json"
+}

@@ -1,0 +1,54 @@
+{
+  "at": "2026-10-23T15:15:26.462218+00:00",
+  "trustedYahoo": {
+    "decision": "independently accepted scoped packet",
+    "report": "/Users/tim/Documents/Codex/2026-10-23/task-3/trusted-yahoo-review/REPORT.md",
+    "result": "/Users/tim/Documents/Codex/2026-10-23/task-3/trusted-yahoo-review/INDEPENDENT-RESULT.json",
+    "resultSha256": "934d108f9103ca4d2e43c22ae2013030bc70b5e869cb4286d9cb804f6165cefd",
+    "passed": 58,
+    "newAdversarial": 21,
+    "sourcePins": 15,
+    "drift": [],
+    "patch": "7013599e82c6c2b8bc2512e3d95abd2b73db6d58c69c8e8c3456847c3030f001",
+    "archive": "78e986e8b065e2c07cb971b6ae654f474b52545e5caf1856a33fe4bf5785214a"
+  },
+  "selectedBaseline": {
+    "decision": "independently accepted restoration only",
+    "report": "/Users/tim/Documents/Codex/2026-10-23/task-9/selected-restoration/REVIEW.md",
+    "reportSha256": "55b8fbaffe7f1548706cd5d1cf2be6165b0349374714c3460f0b5b7c920d696f",
+    "passedAffected": 108,
+    "additionalGuards": 9
+  },
+  "gameGrid": {
+    "acceptedRevision": "r4",
+    "requestedTarget": "r5",
+    "r4CanonicalDrift": [],
+    "owner": "01a16599-195b-7550-9700-af8770380001",
+    "r5Scope": [
+      "web/components/GameGrid/GameGrid.module.scss",
+      "web/e2e/game-grid-previews.spec.ts"
+    ],
+    "r5Status": "owner active; exclude moving delta from frozen r4 check"
+  },
+  "news": {
+    "status": "owner correction locally applied; parent reports independent review running",
+    "manifest": "/Users/tim/Documents/Codex/2026-10-23/task-4/evidence/quote-author-correction/CANDIDATE.json",
+    "manifestSha256": "ea71eb0cfff5bfa2b3d7e10a6a027b53e2d8c5d79c58e7907fff07ab9663df97",
+    "ownerPassed": 106,
+    "metadataLossFixed": false
+  },
+  "billing": {
+    "decision": "independent local acceptance retained; lead inspected server/client behavior diff",
+    "preserved": "grants, recovery, cancellation, ownership gates",
+    "unverified": "previous Stripe checkout links; no Stripe action"
+  },
+  "directCoordination": {
+    "newsStatusMessage": "denied, known not sent; no retry",
+    "reason": "automatic review cites original outside-agent contact restriction"
+  },
+  "actions": {
+    "applicationEdits": 0,
+    "gitMutations": 0,
+    "productionCalls": 0
+  }
+}

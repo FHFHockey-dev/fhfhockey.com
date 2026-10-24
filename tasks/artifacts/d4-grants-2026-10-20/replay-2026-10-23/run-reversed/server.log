@@ -1,0 +1,23 @@
+2026-10-23 09:20:06.359 EDT [71331] LOG:  starting PostgreSQL 17.11 (Homebrew) on aarch64-apple-darwin27.0.0, compiled by Apple clang version 21.0.0 (clang-2100.3.34.2), 64-bit
+2026-10-23 09:20:06.359 EDT [71331] LOG:  listening on Unix socket "/private/tmp/fhfh-d4s-a2alekv9/.s.PGSQL.56301"
+2026-10-23 09:20:06.363 EDT [71334] LOG:  database system was shut down at 2026-10-23 09:20:06 EDT
+2026-10-23 09:20:06.365 EDT [71331] LOG:  database system is ready to accept connections
+2026-10-23 09:20:06.507 EDT [71359] WARNING:  "wal_level" is insufficient to publish logical changes
+2026-10-23 09:20:06.507 EDT [71359] HINT:  Set "wal_level" to "logical" before creating subscriptions.
+2026-10-23 09:20:08.791 EDT [71564] WARNING:  SET LOCAL can only be used in transaction blocks
+2026-10-23 09:20:08.814 EDT [71568] WARNING:  SET LOCAL can only be used in transaction blocks
+2026-10-23 09:20:08.825 EDT [71570] WARNING:  SET LOCAL can only be used in transaction blocks
+2026-10-23 09:20:08.848 EDT [71574] WARNING:  SET LOCAL can only be used in transaction blocks
+2026-10-23 09:20:08.909 EDT [71576] WARNING:  SET LOCAL can only be used in transaction blocks
+2026-10-23 09:20:08.909 EDT [71576] WARNING:  SET LOCAL can only be used in transaction blocks
+2026-10-23 09:20:08.925 EDT [71578] WARNING:  SET LOCAL can only be used in transaction blocks
+2026-10-23 09:20:08.925 EDT [71578] WARNING:  SET LOCAL can only be used in transaction blocks
+2026-10-23 09:20:08.940 EDT [71580] WARNING:  SET LOCAL can only be used in transaction blocks
+2026-10-23 09:20:08.940 EDT [71580] WARNING:  SET LOCAL can only be used in transaction blocks
+2026-10-23 09:20:09.201 EDT [71331] LOG:  received fast shutdown request
+2026-10-23 09:20:09.201 EDT [71331] LOG:  aborting any active transactions
+2026-10-23 09:20:09.202 EDT [71331] LOG:  background worker "logical replication launcher" (PID 71337) exited with exit code 1
+2026-10-23 09:20:09.202 EDT [71332] LOG:  shutting down
+2026-10-23 09:20:09.202 EDT [71332] LOG:  checkpoint starting: shutdown immediate
+2026-10-23 09:20:09.216 EDT [71332] LOG:  checkpoint complete: wrote 2506 buffers (15.3%); 0 WAL file(s) added, 0 removed, 2 recycled; write=0.013 s, sync=0.001 s, total=0.015 s; sync files=0, longest=0.000 s, average=0.000 s; distance=28308 kB, estimate=28308 kB; lsn=0/30BF968, redo lsn=0/30BF968
+2026-10-23 09:20:09.221 EDT [71331] LOG:  database system is shut down

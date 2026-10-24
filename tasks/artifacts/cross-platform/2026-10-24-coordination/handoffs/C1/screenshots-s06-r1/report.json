@@ -1,0 +1,318 @@
+[
+  {
+    "label": "TOR-lines-320",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 13,
+    "defense": 5,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra F · 13F/5D",
+        "cards": [
+          "Fixture Leafs13"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "BOS-lines-320",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 14,
+    "defense": 4,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra F · 14F/4D",
+        "cards": [
+          "Fixture Bruins13",
+          "Fixture Bruins14"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "BUF-lines-320",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 10,
+    "defense": 8,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra D · 10F/8D",
+        "cards": [
+          "Fixture Sabres27",
+          "Fixture Sabres28"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "MTL-lines-320",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 11,
+    "defense": 7,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra D · 11F/7D",
+        "cards": [
+          "Fixture Canadiens27"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "EDM-lines-320",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 12,
+    "defense": 6,
+    "goalies": 2,
+    "extras": []
+  },
+  {
+    "label": "EDM-shotmap-320",
+    "docOverflowPx": 0
+  },
+  {
+    "label": "TOR-lines-390",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 13,
+    "defense": 5,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra F · 13F/5D",
+        "cards": [
+          "Fixture Leafs13"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "BOS-lines-390",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 14,
+    "defense": 4,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra F · 14F/4D",
+        "cards": [
+          "Fixture Bruins13",
+          "Fixture Bruins14"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "BUF-lines-390",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 10,
+    "defense": 8,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra D · 10F/8D",
+        "cards": [
+          "Fixture Sabres27",
+          "Fixture Sabres28"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "MTL-lines-390",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 11,
+    "defense": 7,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra D · 11F/7D",
+        "cards": [
+          "Fixture Canadiens27"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "EDM-lines-390",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 12,
+    "defense": 6,
+    "goalies": 2,
+    "extras": []
+  },
+  {
+    "label": "EDM-shotmap-390",
+    "docOverflowPx": 0
+  },
+  {
+    "label": "TOR-lines-1024",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 13,
+    "defense": 5,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra F · 13F/5D",
+        "cards": [
+          "Fixture Leafs13"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "BOS-lines-1024",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 14,
+    "defense": 4,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra F · 14F/4D",
+        "cards": [
+          "Fixture Bruins13",
+          "Fixture Bruins14"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "BUF-lines-1024",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 10,
+    "defense": 8,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra D · 10F/8D",
+        "cards": [
+          "Fixture Sabres27",
+          "Fixture Sabres28"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "MTL-lines-1024",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 11,
+    "defense": 7,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra D · 11F/7D",
+        "cards": [
+          "Fixture Canadiens27"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "EDM-lines-1024",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 12,
+    "defense": 6,
+    "goalies": 2,
+    "extras": []
+  },
+  {
+    "label": "EDM-shotmap-1024",
+    "docOverflowPx": 0
+  },
+  {
+    "label": "TOR-lines-1440",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 13,
+    "defense": 5,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra F · 13F/5D",
+        "cards": [
+          "Fixture Leafs13"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "BOS-lines-1440",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 14,
+    "defense": 4,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra F · 14F/4D",
+        "cards": [
+          "Fixture Bruins13",
+          "Fixture Bruins14"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "BUF-lines-1440",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 10,
+    "defense": 8,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra D · 10F/8D",
+        "cards": [
+          "Fixture Sabres27",
+          "Fixture Sabres28"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "MTL-lines-1440",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 11,
+    "defense": 7,
+    "goalies": 2,
+    "extras": [
+      {
+        "label": "Extra D · 11F/7D",
+        "cards": [
+          "Fixture Canadiens27"
+        ]
+      }
+    ]
+  },
+  {
+    "label": "EDM-lines-1440",
+    "docOverflowPx": 0,
+    "linesPanelScrolls": false,
+    "forwards": 12,
+    "defense": 6,
+    "goalies": 2,
+    "extras": []
+  },
+  {
+    "label": "EDM-shotmap-1440",
+    "docOverflowPx": 0
+  }
+]

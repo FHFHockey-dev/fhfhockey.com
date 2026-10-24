@@ -1,0 +1,11 @@
+548e9a390668730984484ba56c43d497f1e615ded8d0288125c58a215c6c8d43  tasks/artifacts/p05-ownership-2026-10-22/r1/COMMANDS.json
+f08b07d618c34a3ef0771844f16562fe2ae54f4e0460857d0c33b5414cfd451e  tasks/artifacts/p05-ownership-2026-10-22/r1/FILE-HASHES.json
+b246ad0f818ae991bad3aabcddeeedfe7f38c588b99bfe38c0db03cc86fc4410  tasks/artifacts/p05-ownership-2026-10-22/r1/HANDOFF.md
+bffdd9342e02dbd9461d060f17daacc516d4efd8ac5a7e460339e37c8534645c  tasks/artifacts/p05-ownership-2026-10-22/r1/SHA256SUMS
+31b35c0612f536eb7bdb7b1ae998344a35a63d7088e3d43234a1e5ced65c102f  tasks/artifacts/p05-ownership-2026-10-22/r1/audit-p05.tsconfig.json
+e4cbf4e6f0960d37240292ec66b433b1df5bc22277b5d218681ae3c53ff757fa  tasks/artifacts/p05-ownership-2026-10-22/r1/correction.patch
+a2da2378280fd9f41be58d1c33b83b7d12c18bb87494309f0b2fb05e19cef5f3  tasks/artifacts/p05-ownership-2026-10-22/r1/fixed-source.tar.gz
+472b94d39522468dd2c9cfcb32ff0692e43750c568c1c307dd3671120cdda248  tasks/artifacts/p05-ownership-2026-10-22/r1/green.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  tasks/artifacts/p05-ownership-2026-10-22/r1/lint.log
+b4620b6813439594b658a6d20e9c7eb69ce6d4707ddf3042739649f2128f6e9d  tasks/artifacts/p05-ownership-2026-10-22/r1/red.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  tasks/artifacts/p05-ownership-2026-10-22/r1/types.log

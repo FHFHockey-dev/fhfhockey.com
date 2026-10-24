@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "/usr/local/bin/npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "review-vitest.config.mts",
+    "scripts/qualify-native-players-offline.test.ts",
+    "-t",
+    "writes a new reproducible receipt without changing or overwriting original inputs"
+  ],
+  "exitCode": 0,
+  "cwd": "/tmp/fhfh-task2-review-et29jk5z/web",
+  "metadataAdapter": "git-metadata.cjs supplies pinned base/branch only; all other git commands rejected"
+}

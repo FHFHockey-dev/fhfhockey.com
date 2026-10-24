@@ -1,0 +1,41 @@
+{
+  "X1": [
+    "sub_a:da013c1d",
+    "sub_b:c3f3c0b4",
+    "sub_a:3df4361d",
+    "sub_b:abada10c"
+  ],
+  "X2": {
+    "same": false
+  },
+  "X3": {
+    "keys": [
+      "constructor",
+      "sub_a/../x"
+    ],
+    "sent": [
+      "sub_a"
+    ]
+  },
+  "X4": {
+    "sentRequestId": "c66419d9-7e88-4f4b-8cdc-cd4b54bc53df"
+  },
+  "X5": {
+    "before": null,
+    "raw": null
+  },
+  "X6 resolves": {
+    "session": "x",
+    "upper": "x",
+    "old": "keep",
+    "v10": "keep",
+    "local": "x"
+  },
+  "X6 rejects": {
+    "session": "x",
+    "upper": "x",
+    "old": "keep",
+    "v10": "keep",
+    "local": "x"
+  }
+}

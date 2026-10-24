@@ -1,0 +1,26 @@
+start 2026-10-24T18:08:47Z pre-listen 3110: 0
+server pgid=79933
+ready=1 listeners: node/79961  3000=1
+
+Running 15 tests using 1 worker
+
+  ✓   1 [chromium] › e2e/social-share.spec.ts:95:5 › default summary, recalculated dates and actual PNG match one frozen edition (1.8s)
+  ✓   2 [chromium] › e2e/social-share.spec.ts:166:5 › Wednesday excludes Wednesday; mobile controls and detail PNG preserve selected games (1.2s)
+  ✓   3 [chromium] › e2e/social-share.spec.ts:202:5 › long text and missing logo stay inside the square and export with a branded fallback (1.1s)
+  ✓   4 [chromium] › e2e/social-share.spec.ts:215:5 › failed refresh preserves only a nonexportable preview and retries the same selection (1.1s)
+  ✓   5 [chromium] › e2e/social-share.spec.ts:245:5 › partial, stale and valid zero-game sources do not publish rankings (957ms)
+  ✓   6 [chromium] › e2e/social-share.spec.ts:264:5 › export font failures are explicit and retry without refetching schedule data (1.4s)
+  ✓   7 [chromium] › e2e/social-share.spec.ts:278:5 › edition expiry disables export and unsupported formats stay explicitly gated (2.9s)
+  ✓   8 [chromium] › e2e/social-share.spec.ts:295:5 › Monday default grid ranks every team by Game Grid weekScore in square day cells and exports (1.7s)
+  ✓   9 [chromium] › e2e/social-share.spec.ts:328:5 › Monday grid falls back to abbreviation tiles and never ranks an untrusted edition (1.7s)
+  ✓  10 [chromium] › e2e/social-share.spec.ts:347:5 › pinned Monday grid edition exports the same PNG bytes every run (3.3s)
+  ✓  11 [chromium] › e2e/social-share.spec.ts:396:5 › Easiest schedules and streaming matchup cards rank by Game Grid opponent DEF and export (1.7s)
+  ✓  12 [chromium] › e2e/social-share.spec.ts:428:5 › matchup cards never rank or export without current, complete opponent ratings (1.2s)
+  ✓  13 [chromium] › e2e/social-share.spec.ts:460:5 › Pickup tier and specialist cards list ranked players from top Week Score teams and export (2.2s)
+  ✓  14 [chromium] › e2e/social-share.spec.ts:494:5 › player cards never rank or export without current player sources or a ready schedule (1.2s)
+  ✓  15 [chromium] › e2e/social-share.spec.ts:521:5 › short pickup columns say how many qualify and the card still exports (1.3s)
+
+  15 passed (25.2s)
+playwright exit=0 2026-10-24T18:09:16Z
+/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/r10-evidence/ss1-5/run-ss1-5-pinned.sh: line 26: 79933 Terminated: 15          env -u CI -u GIT_DIR PLAYWRIGHT_ISOLATED_NEXT=1 NEXT_TELEMETRY_DISABLED=1 C7_NET_LOG=$E/node-network.jsonl NODE_OPTIONS="--require $P" npm run dev:stable -- -p 3110 > $E/server.log 2>&1
+post-listen 3110: 0 3000: 1 3125: 1 pgid-procs: 0

@@ -1,0 +1,47 @@
+{
+  "at": "2026-10-24T18:41:14.621602+00:00",
+  "files": [
+    {
+      "path": "tasks/TASKS/forge-projections/ecosystem-audits/prd-forge-pass-4-living-audit-remediation.md",
+      "sha256": "7b1d030b94b997aee28e434510c8b69c1fab81153293682a5a0c3afe5015389a",
+      "bytes": 11470,
+      "lines": 98,
+      "mtime_ns": 1785605126556476237
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md",
+      "sha256": "cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4",
+      "bytes": 21140,
+      "lines": 122,
+      "mtime_ns": 1785605126558397770
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+      "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be",
+      "bytes": 28784,
+      "lines": 327,
+      "mtime_ns": 1792684598318919489
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+      "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
+      "bytes": 19274,
+      "lines": 145,
+      "mtime_ns": 1792709030663720770
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md",
+      "sha256": "1c5b086e4ade172656c0aa9eb301f319188fec725193d168f2ad7855e8cf979d",
+      "bytes": 8757,
+      "lines": 104,
+      "mtime_ns": 1787194433989423294
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md",
+      "sha256": "4f015e18573239112cfe2e7ef3be6539adeb6aff8915d0a1d2d231121f55031c",
+      "bytes": 11657,
+      "lines": 252,
+      "mtime_ns": 1787194434054375995
+    }
+  ]
+}

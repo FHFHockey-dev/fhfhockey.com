@@ -1,0 +1,172 @@
+{
+    "runId": "4c4c6139b412443c9ef0dbb95fb59a19",
+    "scene": "Assets/MapPrototype/Scenes/VesperBasin_v17_IndustrialDeck.unity",
+    "utc": "2026-10-24T17:45:28.8234240Z",
+    "failure": "",
+    "passed": true,
+    "realPlayMode": true,
+    "cleanupComplete": true,
+    "maxHorizontalDegrees": 14.386393547058105,
+    "minDownDegrees": 13.971028327941895,
+    "maxDownDegrees": 23.32945442199707,
+    "minDistance": 0.9806783199310303,
+    "maxDistance": 1.0081253051757813,
+    "minGlyphDegrees": 1.2355470657348633,
+    "hudMaxRadiusFromPilot": 0.9783028960227966,
+    "proxyRadius": 1.100000262260437,
+    "checks": [
+        {
+            "name": "saved scene starts in player mode",
+            "passed": true,
+            "measured": 7.0,
+            "detail": "debug renderers 11"
+        },
+        {
+            "name": "objective line shows A neutral",
+            "passed": true,
+            "measured": 0.0,
+            "detail": "A  ENERGY   NEUTRAL"
+        },
+        {
+            "name": "weapon line shows all targets and ready",
+            "passed": true,
+            "measured": 0.0,
+            "detail": "TARGETS 3/3   READY"
+        },
+        {
+            "name": "controls hint visible at start",
+            "passed": true,
+            "measured": 0.0,
+            "detail": "TRIGGER / SPACE  FIRE   STICK / WASD  MOVE"
+        },
+        {
+            "name": "hidden debug instrumentation keeps updating",
+            "passed": true,
+            "measured": 0.0,
+            "detail": "A / Energy — NEUTRAL | PRACTICE 0/3 DISABLED | READY\nLOOK TO AIM | HOLD RIGHT TRIGGER / SPACE: FIRE"
+        },
+        {
+            "name": "HUD stays within +/-15 degrees horizontally (no edge-of-view text)",
+            "passed": true,
+            "measured": 14.386393547058105,
+            "detail": ""
+        },
+        {
+            "name": "HUD sits 8-30 degrees below the eye line",
+            "passed": true,
+            "measured": 23.32945442199707,
+            "detail": "min 14.0"
+        },
+        {
+            "name": "HUD is 0.8-1.3 m from the eye (comfortable focus distance band for this prototype)",
+            "passed": true,
+            "measured": 1.0081253051757813,
+            "detail": "min 0.98"
+        },
+        {
+            "name": "smallest glyph (hint) subtends at least 1.2 degrees",
+            "passed": true,
+            "measured": 1.2355470657348633,
+            "detail": ""
+        },
+        {
+            "name": "HUD stays inside the pilot proxy radius so walls cannot cut it",
+            "passed": true,
+            "measured": 0.9783028960227966,
+            "detail": "radius 1.10"
+        },
+        {
+            "name": "debug mode (API) restores every debug panel and hides the player HUD",
+            "passed": true,
+            "measured": 0.0,
+            "detail": ""
+        },
+        {
+            "name": "player mode (API) restores the player HUD",
+            "passed": true,
+            "measured": 0.0,
+            "detail": ""
+        },
+        {
+            "name": "desktop F3 toggles debug on and back off",
+            "passed": true,
+            "measured": 0.0,
+            "detail": ""
+        },
+        {
+            "name": "target count follows disabled targets",
+            "passed": true,
+            "measured": 0.0,
+            "detail": "TARGETS 2/3   READY"
+        },
+        {
+            "name": "objective shows capturing with percentage and a growing bar",
+            "passed": true,
+            "measured": 0.18958324193954468,
+            "detail": "A  ENERGY   CAPTURING 19%"
+        },
+        {
+            "name": "objective shows captured with a full bar",
+            "passed": true,
+            "measured": 1.0,
+            "detail": "A  ENERGY   CAPTURED"
+        },
+        {
+            "name": "hidden debug readout also reports captured",
+            "passed": true,
+            "measured": 0.0,
+            "detail": "A / Energy — CAPTURED"
+        },
+        {
+            "name": "controls hint has timed out after its window",
+            "passed": true,
+            "measured": 12.636666297912598,
+            "detail": ""
+        },
+        {
+            "name": "range clear state and reset hint appear",
+            "passed": true,
+            "measured": 0.0,
+            "detail": "TARGETS 0/3   RANGE CLEAR | HOLD B / R  RESET RANGE"
+        }
+    ],
+    "runtimeErrors": [],
+    "images": [
+        {
+            "file": "v16-play-start-player.png",
+            "state": "start",
+            "objective": "A  ENERGY   NEUTRAL",
+            "weapon": "TARGETS 3/3   READY",
+            "hint": "TRIGGER / SPACE  FIRE   STICK / WASD  MOVE"
+        },
+        {
+            "file": "v16-play-start-debug.png",
+            "state": "start debug",
+            "objective": "A  ENERGY   NEUTRAL",
+            "weapon": "TARGETS 3/3   READY",
+            "hint": ""
+        },
+        {
+            "file": "v16-play-capturing-player.png",
+            "state": "capturing",
+            "objective": "A  ENERGY   CAPTURING 19%",
+            "weapon": "TARGETS 2/3   READY",
+            "hint": "TRIGGER / SPACE  FIRE   STICK / WASD  MOVE"
+        },
+        {
+            "file": "v16-play-range-clear-player.png",
+            "state": "range clear",
+            "objective": "A  ENERGY   CAPTURED",
+            "weapon": "TARGETS 0/3   RANGE CLEAR",
+            "hint": "HOLD B / R  RESET RANGE"
+        },
+        {
+            "file": "v16-play-range-clear-debug.png",
+            "state": "range clear debug",
+            "objective": "A  ENERGY   CAPTURED",
+            "weapon": "TARGETS 0/3   RANGE CLEAR",
+            "hint": ""
+        }
+    ],
+    "method": "Saved v16 scene in Play Mode with virtual XRHMD + Oculus Touch + keyboard devices (as the v13 probes). Angles are from the live pilot camera to every corner of every player-HUD renderer's local bounds; glyph angular height uses the line's local bounds of the string 'ENERGY'. One setup warp places the pilot inside capture zone A; the zone then captures through its own simulation. Target damage is applied directly to test HUD binding only. Mono 1600x900 renders."
+}

@@ -1,0 +1,58 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/planningReproducibility.test.ts -t issued participation identity
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-rso-correctness-20261023/web
+
+(node:31683) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/rosterScheduleOptimizer/planningReproducibility.test.ts (20 tests | 2 failed | 18 skipped) 13ms
+   ↓ planning search reproducibility > keeps points manual and connected results equal for matching canonical inputs
+   ↓ planning search reproducibility > keeps categories manual and connected results equal for matching canonical inputs
+   ↓ planning search reproducibility > keeps goalie manual and connected results equal for matching canonical inputs
+   ↓ planning search reproducibility > reproduces admitted detailed quality decisions across scoring profiles and input order
+   ↓ planning search reproducibility > reproduces admitted blended quality decisions across scoring profiles and input order
+   ↓ planning search reproducibility > reproduces admitted baseline quality decisions across scoring profiles and input order
+   × planning search reproducibility > keeps issued participation identity when points baseline rates have a newer cutoff 11ms
+     → expected 'fixture-rate-v1' to be 'fixture-forge-v1' // Object.is equality
+   × planning search reproducibility > keeps issued participation identity when goalie baseline rates have a newer cutoff 1ms
+     → expected 'fixture-rate-v1' to be 'fixture-forge-v1' // Object.is equality
+   ↓ planning search reproducibility > replays admitted quality forecasts with daily locks and realized results
+   ↓ planning search reproducibility > replays admitted quality forecasts with weekly locks and realized results
+   ↓ planning search reproducibility > retains an eligible quality checkpoint when a deadline interrupts search
+   ↓ planning search reproducibility > bounds unchecked points bench decisions without inventing scoring evidence
+   ↓ planning search reproducibility > bounds unchecked categories bench decisions without inventing scoring evidence
+   ↓ planning search reproducibility > bounds unchecked goalie bench decisions without inventing scoring evidence
+   ↓ planning search reproducibility > prioritizes selected-plan explanations and shares duplicate receipts within the quota
+   ↓ planning search reproducibility > starts no bench rechecks after the response deadline and retains approved numerical inputs
+   ↓ planning search reproducibility > uses canonical schedule-fit and acquisition ordering across input permutations
+   ↓ planning search reproducibility > uses work quotas by default and labels an explicit time interruption
+   ↓ planning search reproducibility > bounds long-range default work by dates and available candidate groups
+   ↓ planning search reproducibility > bounds a 367-day catalog workload with 25 rostered and 300 available players
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planningReproducibility.test.ts > planning search reproducibility > keeps issued participation identity when points baseline rates have a newer cutoff
+ FAIL  lib/rosterScheduleOptimizer/planningReproducibility.test.ts > planning search reproducibility > keeps issued participation identity when goalie baseline rates have a newer cutoff
+AssertionError: expected 'fixture-rate-v1' to be 'fixture-forge-v1' // Object.is equality
+
+Expected: [32m"fixture-[7mforg[27me-v1"[39m
+Received: [31m"fixture-[7mrat[27me-v1"[39m
+
+ ❯ lib/rosterScheduleOptimizer/planningReproducibility.test.ts:192:30
+    190|     expect(row.contributions?.[target].sourceKind).toBe("baseline");
+    191|     expect(row.contributions?.[target].inputs?.baseline?.policyVersion…
+    192|     expect(row.modelVersion).toBe("fixture-forge-v1");
+       |                              ^
+    193|     expect(row.cutoffAt).toBe("2026-10-03T02:00:00Z");
+    194|     expect(row.contributions?.[target].inputs?.participation?.cutoffAt…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 18 skipped (20)
+   Start at  12:19:27
+   Duration  360ms (transform 106ms, setup 9ms, collect 113ms, tests 13ms, environment 133ms, prepare 27ms)
+

@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-23T15:10:44.890135+00:00",
+  "python": "3.13.0",
+  "unit_tests": {
+    "passed": 41,
+    "failed": 0,
+    "receipt": "tests-final.log",
+    "scope": "synthetic implementation consistency only"
+  },
+  "exact_stability_oracles": {
+    "C": {
+      "direct": "-1/10",
+      "rpi": "-1/15",
+      "colley": "-1/12"
+    },
+    "D": "opposite of C",
+    "A_B_E_F": "unchanged",
+    "record_arithmetic": "Fraction equality",
+    "colley_tolerance": "12 decimal places"
+  },
+  "example_cli": "generated and input hash verified",
+  "demo_cli": "two runs byte-identical",
+  "core_reuse": "Source hash verified; literal 7725-byte prefix with exactly one trailing LF removed equals the 7724-byte delivered core; all other bytes and arithmetic unchanged",
+  "unchanged_reviewed_source_pins": 8,
+  "local_markdown_links_checked": 26,
+  "syntax_parse": "PASS",
+  "authored_source_doc_diff_check": "PASS; no-index exit 1 is expected new-file difference",
+  "frozen_core_whitespace": "One blank line at EOF retained to preserve the pinned delivered-core hash; extraction removes one additional trailing LF from the source prefix",
+  "nhl_validation": "NOT RUN",
+  "application_tests": "NOT RUN; no application edits/imports",
+  "production_reads": 0,
+  "captures": 0,
+  "pushes": 0,
+  "deployments": 0,
+  "review_correction": {
+    "at": "2026-10-23T15:35:09.241988+00:00",
+    "independent_base_passed": [
+      41,
+      7
+    ],
+    "focused_passed": 3,
+    "full_suites_repeated": false,
+    "receipt": "review-r1/CLOSURE.json",
+    "nhl_validation": "NOT RUN"
+  }
+}

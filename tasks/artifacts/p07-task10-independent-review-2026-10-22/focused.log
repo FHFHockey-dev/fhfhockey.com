@@ -1,0 +1,41 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/gameForecastPoints.test.ts components/RosterScheduleOptimizer/ForecastPoints.test.tsx components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx components/RosterScheduleOptimizer/p07Task10Independent.test.tsx lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts lib/rosterScheduleOptimizer/p07R2IndependentCorrelation.test.ts lib/player-forecasts/p07BridgeClaimOracle.test.ts hooks/useRosterPlanning.test.tsx
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-task10-review-fosogs3g/web
+
+(node:66184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx (6 tests) 152ms
+(node:66184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/p07Task10Independent.test.tsx (36 tests) 6053ms
+(node:66184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx (6 tests) 1012ms
+(node:66184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/gameForecastPoints.test.ts (19 tests) 3ms
+(node:66184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts (6 tests) 23ms
+(node:66184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ hooks/useRosterPlanning.test.tsx (4 tests) 16ms
+(node:66184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/p07R2IndependentCorrelation.test.ts (3 tests) 18ms
+(node:66184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/ForecastPoints.test.tsx (3 tests) 14ms
+(node:66184) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/p07BridgeClaimOracle.test.ts (1 test) 1ms
+
+ Test Files  9 passed (9)
+      Tests  84 passed (84)
+   Start at  12:35:38
+   Duration  10.42s (transform 418ms, setup 32ms, collect 1.06s, tests 7.29s, environment 1.34s, prepare 249ms)
+
+

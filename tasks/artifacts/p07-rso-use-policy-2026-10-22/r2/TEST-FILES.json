@@ -1,0 +1,12 @@
+[
+  "__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts",
+  "lib/rosterScheduleOptimizer/p07IndependentComponent.test.tsx",
+  "lib/rosterScheduleOptimizer/executionAdapter.test.ts",
+  "lib/player-forecasts/planningContributions.test.ts",
+  "lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts",
+  "hooks/useRosterPlanning.test.tsx",
+  "hooks/useCandidateMetrics.test.tsx",
+  "lib/player-forecasts/rsoUsePolicy.test.ts",
+  "lib/player-forecasts/p07BridgeClaimOracle.test.ts",
+  "lib/rosterScheduleData/planning.test.ts"
+]

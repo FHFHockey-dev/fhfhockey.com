@@ -1,0 +1,168 @@
+diff --git a/web/components/StatsPage/PlayerSearchBar.test.tsx b/web/components/StatsPage/PlayerSearchBar.test.tsx
+index 160596d5f..a53f991b7 100644
+--- a/web/components/StatsPage/PlayerSearchBar.test.tsx
++++ b/web/components/StatsPage/PlayerSearchBar.test.tsx
+@@ -1,28 +1,34 @@
+ import React from "react";
+-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
++import { act, cleanup, fireEvent, render as renderView, screen } from "@testing-library/react";
++import { RouterContext } from "next/dist/shared/lib/router-context.shared-runtime";
++import type { NextRouter } from "next/router";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ 
+-const { fromMock, limitMock, ilikeMock, pushMock } = vi.hoisted(() => ({
++const { fromMock, limitMock, ilikeMock, pushMock, prefetchMock } = vi.hoisted(() => ({
+   fromMock: vi.fn(),
+   limitMock: vi.fn(),
+   ilikeMock: vi.fn(),
+   pushMock: vi.fn(),
++  prefetchMock: vi.fn(),
+ }));
+ 
+ vi.mock("lib/supabase", () => ({ default: { from: fromMock } }));
+-vi.mock("next/router", () => ({ useRouter: () => ({ push: pushMock }) }));
+-vi.mock("next/link", () => ({
+-  default: React.forwardRef<HTMLAnchorElement, React.ComponentProps<"a"> & { prefetch?: boolean }>(function MockLink(
+-    { children, onClick, prefetch: _prefetch, ...props }, ref,
+-  ) { return (
+-    <a {...props} ref={ref} onClick={(event) => { onClick?.(event); event.preventDefault(); }}>
+-      {children}
+-    </a>
+-  ); }),
+-}));
+ 
+ import PlayerSearchBar from "./PlayerSearchBar";
+ 
++// Keep Next's hook and Link implementation real so event-triggered prefetch cannot hide behind a mock.
++const router: NextRouter = {
++  pathname: "/stats", route: "/stats", query: {}, asPath: "/stats", basePath: "",
++  isReady: true, isLocaleDomain: false, isFallback: false, isPreview: false,
++  push: pushMock, prefetch: prefetchMock, replace: vi.fn(), reload: vi.fn(),
++  back: vi.fn(), forward: vi.fn(), beforePopState: vi.fn(),
++  events: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
++};
++
++function render(ui: React.ReactElement) {
++  return renderView(<RouterContext.Provider value={router}>{ui}</RouterContext.Provider>);
++}
++
+ const alice = { id: 1, fullName: "Alice Example", image_url: null, team_id: null };
+ const ben = { id: 2, fullName: "Ben Example", image_url: null, team_id: null };
+ type SearchResponse = { data: typeof alice[] | null; error?: { message: string } | null };
+@@ -46,6 +52,8 @@ beforeEach(() => {
+   vi.useFakeTimers();
+   vi.clearAllMocks();
+   limitMock.mockReset();
++  pushMock.mockResolvedValue(true);
++  prefetchMock.mockResolvedValue(undefined);
+   fromMock.mockReturnValue({ select: () => ({ ilike: ilikeMock }) });
+   ilikeMock.mockReturnValue({ limit: limitMock });
+   vi.stubGlobal("fetch", vi.fn(() => { throw new Error("Network is forbidden in P04 fixtures"); }));
+@@ -205,20 +213,58 @@ describe("PlayerSearchBar", () => {
+     fireEvent.keyDown(input, { key: "ArrowUp" });
+     expect(document.activeElement?.textContent).toBe(ben.fullName);
+     fireEvent.click(screen.getByRole("link", { name: ben.fullName }));
++    expect(pushMock).toHaveBeenCalledTimes(1);
++    expect(pushMock.mock.calls[0][0]).toBe("/stats/player/2");
+     expect((input as HTMLInputElement).value).toBe("");
+     expect(screen.queryByRole("link")).toBeNull();
+   });
+ 
+-  it("keeps new-tab navigation native without clearing the current search", async () => {
++  it.each(["ctrlKey", "metaKey", "shiftKey", "altKey"])("keeps %s navigation native without clearing the current search", async (modifier) => {
+     limitMock.mockResolvedValue({ data: [alice] });
+     render(<PlayerSearchBar />);
+     change("Al");
+     await debounce();
+-    fireEvent.click(screen.getByRole("link", { name: alice.fullName }), { ctrlKey: true });
++    let prevented: boolean | undefined;
++    document.addEventListener("click", (event) => {
++      prevented = event.defaultPrevented;
++      event.preventDefault(); // Stop jsdom navigation after observing the component's decision.
++    }, { once: true });
++    fireEvent.click(screen.getByRole("link", { name: alice.fullName }), { [modifier]: true });
++    expect(prevented).toBe(false);
++    expect(pushMock).not.toHaveBeenCalled();
+     expect((screen.getByLabelText("Search players") as HTMLInputElement).value).toBe("Al");
+     expect(screen.getByRole("link", { name: alice.fullName })).toBeTruthy();
+   });
+ 
++  it.each(["mouseEnter", "touchStart"] as const)("does not prefetch or navigate on %s", async (event) => {
++    limitMock.mockResolvedValue({ data: [alice] });
++    render(<PlayerSearchBar />);
++    change("Al");
++    await debounce();
++    expect(prefetchMock).not.toHaveBeenCalled();
++    fireEvent[event](screen.getByRole("link", { name: alice.fullName }));
++    expect(prefetchMock).not.toHaveBeenCalled();
++    expect(pushMock).not.toHaveBeenCalled();
++    expect((screen.getByLabelText("Search players") as HTMLInputElement).value).toBe("Al");
++  });
++
++  it("navigates once for a keyboard-style link activation", async () => {
++    limitMock.mockResolvedValue({ data: [alice] });
++    render(<PlayerSearchBar />);
++    change("Al");
++    await debounce();
++    fireEvent.keyDown(screen.getByLabelText("Search players"), { key: "ArrowDown" });
++    const link = screen.getByRole("link", { name: alice.fullName });
++    expect(document.activeElement).toBe(link);
++    expect(link.tabIndex).toBe(0);
++    expect(link.getAttribute("href")).toBe("/stats/player/1");
++    fireEvent.click(link, { button: 0, detail: 0 });
++    expect(pushMock).toHaveBeenCalledTimes(1);
++    expect(pushMock.mock.calls[0][0]).toBe("/stats/player/1");
++    expect((screen.getByLabelText("Search players") as HTMLInputElement).value).toBe("");
++    expect(screen.queryByRole("link")).toBeNull();
++  });
++
+   it.each(["blur", "Escape"])("does not reopen a dismissed search after %s", async (action) => {
+     const request = deferred();
+     limitMock.mockReturnValueOnce(request.promise);
+diff --git a/web/components/StatsPage/PlayerSearchBar.tsx b/web/components/StatsPage/PlayerSearchBar.tsx
+index 2f865294d..cfc783ee2 100644
+--- a/web/components/StatsPage/PlayerSearchBar.tsx
++++ b/web/components/StatsPage/PlayerSearchBar.tsx
+@@ -1,6 +1,6 @@
+ import React, { useState, useRef, useEffect, useId } from "react";
+ import supabase from "lib/supabase";
+-import Link from "next/link";
++import { useRouter } from "next/router";
+ 
+ interface PlayerResult {
+   id: number;
+@@ -10,6 +10,7 @@ interface PlayerResult {
+ }
+ 
+ export default function PlayerSearchBar() {
++  const router = useRouter();
+   const [query, setQuery] = useState("");
+   const [results, setResults] = useState<PlayerResult[]>([]);
+   const [showDropdown, setShowDropdown] = useState(false);
+@@ -154,13 +155,14 @@ export default function PlayerSearchBar() {
+         >
+           {results.map((player, index) => (
+             <li key={player.id}>
+-              <Link
++              <a
+                 ref={(element) => { resultRefs.current[index] = element; }}
+                 href={`/stats/player/${player.id}`}
+-                prefetch={false}
+                 onClick={(event) => {
+-                  if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
++                  if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
++                    event.preventDefault();
+                     updateQuery("");
++                    void router.push(`/stats/player/${player.id}`);
+                   }
+                 }}
+                 onKeyDown={(event) => {
+@@ -194,7 +196,7 @@ export default function PlayerSearchBar() {
+                   />
+                 )}
+                 <span>{player.fullName}</span>
+-              </Link>
++              </a>
+             </li>
+           ))}
+         </ul>

@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-23T16:40:12.267757+00:00",
+  "owner": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+  "path": "web/components/RosterScheduleOptimizer/CompactSchedule.tsx",
+  "beforeSha256": "e203017397116abb2a0cf1b3e98b41cff44f01cd6fad916c1ed96e6b5e8f1ec9",
+  "scope": "Synchronize existing date-controls/table horizontal scrollers in both directions and when reopening controls; no forecast/plan/persistence logic",
+  "sourceCleanBeforeEdit": true,
+  "testOwner": "01a168af-30c9-71b7-af0a-f25a9d90a02a",
+  "originalGeometrySha256": "7a03bc2cb96f36e72e610bd7fe06a9300eec1b6f58b7117aa6943df884947ee4"
+}

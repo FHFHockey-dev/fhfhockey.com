@@ -1,0 +1,15 @@
+{
+  "vitest": "/tmp/fhfh-sprint-integration-u5ophe9k/snapshot/web/audit.vitest.config.mts",
+  "vitest_sha256": "16b373a3c0026be1ab54fe30f00634b4db578b265426198f96b9349a06fab963",
+  "application_types_exclusions": [
+    "node_modules",
+    ".next",
+    ".next-*",
+    "next-env.d.ts",
+    "__tests__/pages/api/v1/db/auditNstIndependent.test.ts",
+    "__tests__/pages/api/v1/db/auditNstR1Additional.test.ts",
+    "lib/reviewConsumerExposure.test.tsx",
+    "lib/reviewNegativeExposure.test.tsx"
+  ],
+  "scope": "Application compiler excludes four preserved external reviewer fixtures, unchanged from previous application scope. No application source exclusions added."
+}

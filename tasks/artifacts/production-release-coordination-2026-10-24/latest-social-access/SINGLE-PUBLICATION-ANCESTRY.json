@@ -1,0 +1,18 @@
+{
+  "tip": "8f883c65269be83500b665b8be78f9d5e74d26b6",
+  "parents": "270def4ec6b0abc05b0ceeb2f55d75445b27a35a",
+  "contains_ancestors": {
+    "270def4ec6b0abc05b0ceeb2f55d75445b27a35a": true,
+    "212d38c65c3f48fc6f6ec820cd4edbacd1d364e8": true,
+    "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd": true
+  },
+  "changed_paths_vs_production": 67,
+  "C5_paths_in_tip_diff": [],
+  "C5_qualification": "Separate88-path patch, not a social runtime prerequisite; social qualification ran on270+46 without C5 overlay",
+  "recorded_expected_deployment_entries": 4,
+  "recorded_expected_completed_builds": 1,
+  "recorded_expected_ignored_companions": 3,
+  "pushes_required": 1,
+  "tests_rerun": 0,
+  "publication": false
+}

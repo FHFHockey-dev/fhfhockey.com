@@ -1,0 +1,16 @@
+{
+  "versions": {
+    "node": "v22.11.0",
+    "npm": "10.9.0"
+  },
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "--run",
+    "__tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts",
+    "lib/trends/ctpi.test.ts"
+  ],
+  "exit_code": 0,
+  "duration_seconds": 0.66
+}

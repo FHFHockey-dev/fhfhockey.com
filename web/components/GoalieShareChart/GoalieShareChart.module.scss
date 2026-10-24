@@ -97,6 +97,28 @@
     border-radius: v.$border-radius-md;
   }
 
+  .retryButton {
+    @include v.button-style;
+    display: block;
+    margin: v.$space-md auto 0;
+    background: v.$primary-color;
+    color: v.$text-button;
+    border: 1px solid v.$primary-color;
+    padding: v.$space-xs v.$space-md;
+    font-family: v.$font-family-accent;
+    font-size: v.$font-size-xs;
+    font-style: normal;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-radius: 20px;
+    cursor: pointer;
+
+    &:focus-visible {
+      outline: 2px solid v.$focus-color;
+      outline-offset: 2px;
+    }
+  }
+
   .chartsGrid {
     border: v.$primary-color 2px solid;
     border-radius: 4px;
@@ -110,12 +132,14 @@
     width: 100%;
     border-collapse: collapse;
 
+    // Team cells wrap to fit the column instead of overflowing it.
     tbody tr {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       width: 100%;
 
       td {
-        flex: 1;
+        min-width: 0;
         border: v.$primary-color 1px solid;
         padding: 0;
 
@@ -214,7 +238,9 @@
 
   .chartContainer {
     padding: v.$space-sm;
-    width: 160px;
+    width: 100%;
+    max-width: 160px;
+    box-sizing: border-box;
     height: 120px;
     margin: 0 auto v.$space-sm auto;
     display: flex;

@@ -1,0 +1,607 @@
+{
+  "workspace": {
+    "version": 1,
+    "context": {
+      "provider": "yahoo",
+      "seasonId": 20262027,
+      "leagueId": "league",
+      "teamId": "team",
+      "startDate": "2026-10-08",
+      "endDate": "2026-10-08",
+      "timeZone": "UTC",
+      "asOf": "2026-09-29T00:00:00.000Z"
+    },
+    "rules": {
+      "lineupMode": "daily",
+      "rosterSlots": {
+        "C": 1,
+        "BN": 1
+      },
+      "acquisitionTiming": "same_day",
+      "acquisitionCost": 1,
+      "periods": [
+        {
+          "id": "Week",
+          "start": "2026-10-05T00:00:00Z",
+          "end": "2026-10-09T00:00:00Z",
+          "remaining": 2,
+          "source": "manager"
+        }
+      ],
+      "lineupPeriods": [],
+      "scoring": {
+        "mode": "points",
+        "weights": {
+          "GOALS": 1
+        },
+        "categories": []
+      },
+      "goalieMinimum": {
+        "required": null,
+        "credited": null,
+        "counts": "unknown",
+        "penalty": "unknown"
+      },
+      "unsupported": []
+    },
+    "managerRuleOverrides": {},
+    "roster": [
+      {
+        "playerId": "1",
+        "position": "active"
+      },
+      {
+        "playerId": "2",
+        "position": "bench"
+      }
+    ],
+    "lockedAssignments": [],
+    "intent": {
+      "revision": 1,
+      "steps": [],
+      "protectedPlayerIds": [],
+      "excludedPlayerIds": [],
+      "goalieCoverage": "accept_risk",
+      "goalieWindow": "any",
+      "goalieSplit": "mon_thu",
+      "alternativeCount": 10
+    },
+    "manualPlayers": [
+      {
+        "id": "1",
+        "nhlId": 1,
+        "name": "Alpha Center",
+        "teamAbbreviation": "CAR",
+        "nhlTeamId": 12,
+        "rosterRevision": "roster",
+        "eligiblePositions": [
+          "C"
+        ],
+        "playerClass": "skater",
+        "eligibilityVerified": true,
+        "availability": "unknown",
+        "ownership": null,
+        "canDrop": null,
+        "holdValue": null,
+        "reserveEligibility": []
+      },
+      {
+        "id": "2",
+        "nhlId": 2,
+        "name": "Bravo Center",
+        "teamAbbreviation": "CAR",
+        "nhlTeamId": 12,
+        "rosterRevision": "roster",
+        "eligiblePositions": [
+          "C"
+        ],
+        "playerClass": "skater",
+        "eligibilityVerified": true,
+        "availability": "unknown",
+        "ownership": null,
+        "canDrop": null,
+        "holdValue": null,
+        "reserveEligibility": []
+      }
+    ],
+    "unresolvedNames": [],
+    "realized": {},
+    "opponent": null
+  },
+  "snapshot": {
+    "id": "retained-2026-09-29T00:00:00Z",
+    "context": {
+      "provider": "yahoo",
+      "seasonId": 20262027,
+      "leagueId": "league",
+      "teamId": "team",
+      "startDate": "2026-10-08",
+      "endDate": "2026-10-08",
+      "timeZone": "UTC",
+      "asOf": "2026-09-29T00:00:00.000Z"
+    },
+    "players": [
+      {
+        "id": "1",
+        "nhlId": 1,
+        "name": "Alpha Center",
+        "teamAbbreviation": "CAR",
+        "eligiblePositions": [
+          "C"
+        ],
+        "playerClass": "skater",
+        "availability": "manager_available",
+        "ownership": null,
+        "canDrop": true,
+        "holdValue": null,
+        "reserveEligibility": [],
+        "nhlTeamId": 12,
+        "rosterRevision": "roster",
+        "eligibilityVerified": true
+      },
+      {
+        "id": "2",
+        "nhlId": 2,
+        "name": "Bravo Center",
+        "teamAbbreviation": "CAR",
+        "eligiblePositions": [
+          "C"
+        ],
+        "playerClass": "skater",
+        "availability": "manager_available",
+        "ownership": null,
+        "canDrop": true,
+        "holdValue": null,
+        "reserveEligibility": [],
+        "nhlTeamId": 12,
+        "rosterRevision": "roster",
+        "eligibilityVerified": true
+      }
+    ],
+    "games": [
+      {
+        "id": "30",
+        "scheduleRevision": "schedule",
+        "date": "2026-10-08",
+        "startsAt": "2026-10-08T23:00:00Z",
+        "teamAbbreviation": "CAR",
+        "opponent": "NYR",
+        "home": true,
+        "status": "scheduled"
+      }
+    ],
+    "forecasts": [
+      {
+        "playerId": "1",
+        "gameId": "30",
+        "revisionId": "detail-1",
+        "stats": {
+          "GOALS": null
+        },
+        "allowedUses": {
+          "assignment": false,
+          "totals": false,
+          "comparison": false,
+          "conditionalTieBreak": false
+        },
+        "appearanceProbability": null,
+        "powerPlayRole": {
+          "value": null,
+          "status": "unavailable",
+          "reason": "current_role_evidence_unavailable",
+          "source": null
+        },
+        "startProbability": null,
+        "confirmedStart": false,
+        "conditioning": "unconditional",
+        "issuedAt": "2026-09-28T01:00:00Z",
+        "cutoffAt": "2026-09-28T00:00:00Z",
+        "expiresAt": "2026-09-30T00:00:00Z",
+        "modelVersion": "fixture",
+        "limitations": [
+          "Includes provisional baseline estimates; no calibrated uncertainty."
+        ],
+        "sourceKind": "detailed",
+        "sourceWatermark": "captured-reads",
+        "issuedContext": {
+          "version": "forge-issued-context-v1",
+          "playerId": "1",
+          "gameId": "30",
+          "nhlPlayerId": 1,
+          "seasonId": 20262027,
+          "teamId": 12,
+          "scheduledAt": "2026-10-08T23:00:00Z",
+          "scheduleRevision": "schedule",
+          "rosterRevision": "roster",
+          "observedAt": "2026-09-28T00:00:00Z",
+          "scheduleSourceUpdatedAt": null,
+          "scheduleFetchedAt": null,
+          "identityUpdatedAt": null,
+          "membershipCreatedAt": []
+        },
+        "assignmentStats": {
+          "GOALS": null
+        },
+        "tieBreakStats": {
+          "GOALS": null
+        },
+        "contributions": {
+          "GOALS": {
+            "inputs": {
+              "detailed": {
+                "playerId": 1,
+                "nhlPlayerId": 1,
+                "seasonId": 20262027,
+                "teamId": 12,
+                "gameId": 30,
+                "scheduledAt": "2026-10-08T23:00:00Z",
+                "scheduleRevision": "schedule",
+                "rosterRevision": "roster",
+                "kind": "detailed",
+                "sourceId": "detail-1",
+                "policyVersion": "fixture",
+                "released": true,
+                "allowedUses": {
+                  "assignment": false,
+                  "totals": false,
+                  "comparison": false,
+                  "conditionalTieBreak": false
+                },
+                "targetKey": "GOALS",
+                "unit": "count",
+                "basis": "per_appearance",
+                "mean": 8,
+                "participationIntegrated": false,
+                "cutoffAt": "2026-09-28T00:00:00Z",
+                "issuedAt": "2026-09-28T01:00:00Z",
+                "expiresAt": "2026-09-30T00:00:00Z",
+                "sourceWatermark": "captured-reads",
+                "limitations": []
+              },
+              "participation": {
+                "playerId": 1,
+                "nhlPlayerId": 1,
+                "seasonId": 20262027,
+                "teamId": 12,
+                "gameId": 30,
+                "scheduledAt": "2026-10-08T23:00:00Z",
+                "scheduleRevision": "schedule",
+                "rosterRevision": "roster",
+                "released": true,
+                "allowedUses": {
+                  "assignment": false,
+                  "totals": false,
+                  "comparison": false,
+                  "conditionalTieBreak": false
+                },
+                "issuedAt": "2026-09-28T01:00:00Z",
+                "basis": "appearance",
+                "probability": 0.5,
+                "revisionId": "detail-1:participation",
+                "cutoffAt": "2026-09-28T00:00:00Z",
+                "expiresAt": "2026-09-30T00:00:00Z"
+              },
+              "horizonDays": 14,
+              "calendarPolicy": {
+                "version": "forecast-calendar-v1",
+                "calendarDays": 14,
+                "overlapDays": 7,
+                "timeZone": "UTC"
+              },
+              "servingEnabled": true
+            },
+            "resolverVersion": "contribution-resolver-v1",
+            "game": {
+              "playerId": 1,
+              "nhlPlayerId": 1,
+              "seasonId": 20262027,
+              "teamId": 12,
+              "gameId": 30,
+              "scheduledAt": "2026-10-08T23:00:00Z",
+              "scheduleRevision": "schedule",
+              "rosterRevision": "roster"
+            },
+            "targetKey": "GOALS",
+            "sourceKind": "detailed",
+            "conditionalMean": 8,
+            "unconditionalMean": 4,
+            "unit": "count",
+            "basis": "per_appearance",
+            "allowedUses": {
+              "assignment": false,
+              "totals": false,
+              "comparison": false,
+              "conditionalTieBreak": false
+            },
+            "sourceIds": [
+              "detail-1"
+            ],
+            "participationRevisionId": "detail-1:participation",
+            "blendWeight": null,
+            "exclusionReasons": [
+              "use_not_approved"
+            ],
+            "limitations": []
+          }
+        },
+        "targetAllowedUses": {
+          "GOALS": {
+            "assignment": false,
+            "totals": false,
+            "comparison": false,
+            "conditionalTieBreak": false
+          }
+        }
+      },
+      {
+        "playerId": "2",
+        "gameId": "30",
+        "revisionId": "detail-2",
+        "stats": {
+          "GOALS": null
+        },
+        "allowedUses": {
+          "assignment": false,
+          "totals": false,
+          "comparison": false,
+          "conditionalTieBreak": false
+        },
+        "appearanceProbability": null,
+        "powerPlayRole": {
+          "value": null,
+          "status": "unavailable",
+          "reason": "current_role_evidence_unavailable",
+          "source": null
+        },
+        "startProbability": null,
+        "confirmedStart": false,
+        "conditioning": "unconditional",
+        "issuedAt": "2026-09-28T01:00:00Z",
+        "cutoffAt": "2026-09-28T00:00:00Z",
+        "expiresAt": "2026-10-09T00:00:00Z",
+        "modelVersion": "fixture",
+        "limitations": [
+          "Includes provisional baseline estimates; no calibrated uncertainty."
+        ],
+        "sourceKind": "detailed",
+        "sourceWatermark": "captured-reads",
+        "issuedContext": {
+          "version": "forge-issued-context-v1",
+          "playerId": "2",
+          "gameId": "30",
+          "nhlPlayerId": 2,
+          "seasonId": 20262027,
+          "teamId": 12,
+          "scheduledAt": "2026-10-08T23:00:00Z",
+          "scheduleRevision": "schedule",
+          "rosterRevision": "roster",
+          "observedAt": "2026-09-28T00:00:00Z",
+          "scheduleSourceUpdatedAt": null,
+          "scheduleFetchedAt": null,
+          "identityUpdatedAt": null,
+          "membershipCreatedAt": []
+        },
+        "assignmentStats": {
+          "GOALS": null
+        },
+        "tieBreakStats": {
+          "GOALS": null
+        },
+        "contributions": {
+          "GOALS": {
+            "inputs": {
+              "detailed": {
+                "playerId": 2,
+                "nhlPlayerId": 2,
+                "seasonId": 20262027,
+                "teamId": 12,
+                "gameId": 30,
+                "scheduledAt": "2026-10-08T23:00:00Z",
+                "scheduleRevision": "schedule",
+                "rosterRevision": "roster",
+                "kind": "detailed",
+                "sourceId": "detail-2",
+                "policyVersion": "fixture",
+                "released": true,
+                "allowedUses": {
+                  "assignment": false,
+                  "totals": false,
+                  "comparison": false,
+                  "conditionalTieBreak": false
+                },
+                "targetKey": "GOALS",
+                "unit": "count",
+                "basis": "per_appearance",
+                "mean": 2,
+                "participationIntegrated": false,
+                "cutoffAt": "2026-09-28T00:00:00Z",
+                "issuedAt": "2026-09-28T01:00:00Z",
+                "expiresAt": "2026-10-09T00:00:00Z",
+                "sourceWatermark": "captured-reads",
+                "limitations": []
+              },
+              "participation": {
+                "playerId": 2,
+                "nhlPlayerId": 2,
+                "seasonId": 20262027,
+                "teamId": 12,
+                "gameId": 30,
+                "scheduledAt": "2026-10-08T23:00:00Z",
+                "scheduleRevision": "schedule",
+                "rosterRevision": "roster",
+                "released": true,
+                "allowedUses": {
+                  "assignment": false,
+                  "totals": false,
+                  "comparison": false,
+                  "conditionalTieBreak": false
+                },
+                "issuedAt": "2026-09-28T01:00:00Z",
+                "basis": "appearance",
+                "probability": 0.5,
+                "revisionId": "detail-2:participation",
+                "cutoffAt": "2026-09-28T00:00:00Z",
+                "expiresAt": "2026-10-09T00:00:00Z"
+              },
+              "horizonDays": 14,
+              "calendarPolicy": {
+                "version": "forecast-calendar-v1",
+                "calendarDays": 14,
+                "overlapDays": 7,
+                "timeZone": "UTC"
+              },
+              "servingEnabled": true
+            },
+            "resolverVersion": "contribution-resolver-v1",
+            "game": {
+              "playerId": 2,
+              "nhlPlayerId": 2,
+              "seasonId": 20262027,
+              "teamId": 12,
+              "gameId": 30,
+              "scheduledAt": "2026-10-08T23:00:00Z",
+              "scheduleRevision": "schedule",
+              "rosterRevision": "roster"
+            },
+            "targetKey": "GOALS",
+            "sourceKind": "detailed",
+            "conditionalMean": 2,
+            "unconditionalMean": 1,
+            "unit": "count",
+            "basis": "per_appearance",
+            "allowedUses": {
+              "assignment": false,
+              "totals": false,
+              "comparison": false,
+              "conditionalTieBreak": false
+            },
+            "sourceIds": [
+              "detail-2"
+            ],
+            "participationRevisionId": "detail-2:participation",
+            "blendWeight": null,
+            "exclusionReasons": [
+              "use_not_approved"
+            ],
+            "limitations": []
+          }
+        },
+        "targetAllowedUses": {
+          "GOALS": {
+            "assignment": false,
+            "totals": false,
+            "comparison": false,
+            "conditionalTieBreak": false
+          }
+        }
+      }
+    ],
+    "roster": [
+      {
+        "playerId": "1",
+        "position": "active"
+      },
+      {
+        "playerId": "2",
+        "position": "bench"
+      }
+    ],
+    "rules": {
+      "lineupMode": "daily",
+      "rosterSlots": {
+        "C": 1,
+        "BN": 1
+      },
+      "acquisitionTiming": "same_day",
+      "acquisitionCost": 1,
+      "periods": [
+        {
+          "id": "Week",
+          "start": "2026-10-05T00:00:00Z",
+          "end": "2026-10-09T00:00:00Z",
+          "remaining": 2,
+          "source": "manager"
+        }
+      ],
+      "lineupPeriods": [],
+      "scoring": {
+        "mode": "points",
+        "weights": {
+          "GOALS": 1
+        },
+        "categories": []
+      },
+      "goalieMinimum": {
+        "required": null,
+        "credited": null,
+        "counts": "unknown",
+        "penalty": "unknown"
+      },
+      "unsupported": []
+    },
+    "lockedAssignments": [],
+    "realized": {},
+    "opponent": null,
+    "evidence": {
+      "forecasts": {
+        "source": "Current forecast read unavailable",
+        "asOf": null,
+        "seasonId": 20262027,
+        "completeness": "unknown",
+        "limitations": [
+          "Current forecast permissions are unavailable; schedule planning remains available."
+        ]
+      },
+      "baselines": {
+        "source": "Current forecast read unavailable",
+        "asOf": null,
+        "seasonId": 20262027,
+        "completeness": "unknown",
+        "limitations": [
+          "Current forecast permissions are unavailable; schedule planning remains available."
+        ]
+      },
+      "participation": {
+        "source": "Current forecast read unavailable",
+        "asOf": null,
+        "seasonId": 20262027,
+        "completeness": "unknown",
+        "limitations": [
+          "Current forecast permissions are unavailable; schedule planning remains available."
+        ]
+      }
+    },
+    "forecastInputExclusions": [],
+    "forecastManifest": {
+      "version": "planning-forecasts-v1",
+      "id": "policy-14",
+      "seasonId": 20262027,
+      "asOf": "2026-09-29T00:00:00.000Z",
+      "rsoUsePolicy": {
+        "version": "rso-target-use-v1",
+        "revision": "rso-review-before-use-2026-10-22-v1",
+        "bridgeRevisionIds": []
+      },
+      "scheduleRevision": "schedule",
+      "rosterRevision": "roster",
+      "issuedRevisionIds": [
+        "detail-1",
+        "detail-2"
+      ],
+      "baselineChecksum": "rates",
+      "requiredOpportunities": 2,
+      "forecastedOpportunities": 2,
+      "exclusionCounts": {},
+      "calendarPolicy": {
+        "version": "forecast-calendar-v1",
+        "calendarDays": 14,
+        "overlapDays": 7,
+        "timeZone": "UTC"
+      }
+    },
+    "baselineSources": [],
+    "participationSources": []
+  },
+  "version": 1,
+  "updatedAt": "2026-09-29T00:00:00Z"
+}

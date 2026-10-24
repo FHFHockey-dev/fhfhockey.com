@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-24T21:28:47.946560+00:00",
+  "status": "Qualified local composition completed; publication still held",
+  "candidate_commit": "270def4ec6b0abc05b0ceeb2f55d75445b27a35a",
+  "parent_commit": "212d38c65c3f48fc6f6ec820cd4edbacd1d364e8",
+  "selected_paths": 22,
+  "single_run_tests": 144,
+  "test_files": 9,
+  "whole_app_typescript": 0,
+  "scoped_lint": 0,
+  "lint_warnings": 3,
+  "social_independent_review": "accepted with limits; 35 fresh controls, 4 browser pass / 1 fixture-assumption failure / 4 not reached",
+  "c3_social_merge_tests": 30,
+  "matrix_sha256": "5cc37c91cdaa65fa9381a10ec3b18371b7eb039c42b15676d4675f1e96fc9e24",
+  "handoff_sha256": "33843d456c5f759337c73592411dda4099503b2107a8e3f50ca9dfc1f160d88f",
+  "push_retries": 0,
+  "deployments": 0,
+  "production_application_requests": 0,
+  "canonical_application_edits": 0,
+  "finalized_at": "2026-10-24T21:31:20.744690+00:00",
+  "c5_prerequisite_probe": {
+    "passed": 91,
+    "failed": 19,
+    "excluded": true
+  },
+  "coordination_message": "CODEX-20261024-056",
+  "active_owned_processes_or_lock": 0
+}

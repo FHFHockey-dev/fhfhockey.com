@@ -1,0 +1,11 @@
+{
+  "pid": 76261,
+  "execSession": 88560,
+  "route": "http://127.0.0.1:3125/player-cards",
+  "status": 200,
+  "bytes": 317312,
+  "sha256": "c50ecfbe2fc56955c085c5ff1adfadef9d5a393c39f2a2ad1fb4b6aebe854357",
+  "unchangedLastServedPreview": true,
+  "R1Activated": false,
+  "workerLocalGETs": 1
+}

@@ -1,0 +1,77 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts __tests__/pages/api/v1/transactions/ownership-trends.test.ts lib/dashboard/playerOwnership.test.ts -t identity authority|trend fallback
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-qsconr58/isolation/snapshot/web
+
+(node:91391) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts (35 tests | 1 failed | 33 skipped) 12ms
+   ↓ ownership-trends data contract > paginates beyond the 1000-row PostgREST cap with deterministic ranges
+   ↓ ownership-trends data contract > treats Yahoo forward eligibility as C/LW/RW/F rather than exact F only
+   ↓ ownership-trends data contract > normalizes Yahoo object metadata without implicit object coercion
+   ↓ ownership-trends data contract > derives freshness from the latest source timeline date rather than request time
+   ↓ ownership-trends data contract > builds daily ADP timelines and treats earlier average picks as risers
+   ↓ ownership-trends data contract > returns a stable public error when ownership trends dependencies fail
+   ↓ ownership-trends data contract > returns a stable public error when ownership snapshots dependencies fail
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (0)
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (44)
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("0")
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("44.5")
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (null)
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (undefined)
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("")
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("   ")
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (false)
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (true)
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("invalid")
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("1e1")
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ("0x10")
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ([])
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known ({})
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (-1)
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (101)
+   ↓ ownership snapshot provenance > keeps malformed ownership unknown and actual zero known (null)
+   ↓ ownership snapshot provenance > keeps each last valid observation's own date rather than another player's or an invalid newer point
+   ↓ ownership snapshot provenance > does not equate an unresolved NHL id to a Yahoo id
+   ↓ ownership snapshot provenance > does not choose one of conflicting mapping identities
+   ↓ ownership snapshot provenance > does not choose one of conflicting name identities
+   ↓ ownership snapshot provenance > fails closed on a truncated ownership response
+   ↓ ownership snapshot provenance > bounds the whole request before any database reads
+   ↓ ownership snapshot provenance > deduplicates requests and retains an unambiguous name fallback without treating request time as source time
+   ↓ ownership snapshot provenance > accepts the 500-player bound with one mapping and one ownership query
+   × ownership snapshot provenance > keeps identity authority through both real handlers and the client (ambiguous=true) 10ms
+     → expected 60 to be null // Object.is equality
+   ✓ ownership snapshot provenance > keeps identity authority through both real handlers and the client (ambiguous=false) 1ms
+(node:91391) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/dashboard/playerOwnership.test.ts (9 tests | 8 skipped) 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/pages/api/v1/transactions/ownership-trends.test.ts > ownership snapshot provenance > keeps identity authority through both real handlers and the client (ambiguous=true)
+AssertionError: expected 60 to be null // Object.is equality
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+60
+
+ ❯ __tests__/pages/api/v1/transactions/ownership-trends.test.ts:363:37
+    361|       expect(responses["/api/v1/transactions/ownership-trends"].select…
+    362|       expect(responses["/api/v1/transactions/ownership-snapshots"].pla…
+    363|       expect(context[12].ownership).toBe(ambiguous ? null : 60);
+       |                                     ^
+    364|       expect(context[12].delta).toBe(ambiguous ? null : 10);
+    365|     } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 2 passed | 41 skipped (44)
+   Start at  09:37:12
+   Duration  545ms (transform 71ms, setup 17ms, collect 56ms, tests 14ms, environment 285ms, prepare 68ms)
+

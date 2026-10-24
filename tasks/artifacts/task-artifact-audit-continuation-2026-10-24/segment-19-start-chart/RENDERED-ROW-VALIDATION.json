@@ -1,0 +1,63 @@
+{
+  "checks": [
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "NATIVE-ISSUANCE",
+      "scalar_labels_matched": true,
+      "prior_children_preserved": true,
+      "new_children": 1
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "NATIVE-ISSUANCE",
+      "scalar_labels_matched": true,
+      "prior_children_preserved": true,
+      "new_children": 1
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-CONTRACT",
+      "scalar_labels_matched": true,
+      "prior_children_preserved": true,
+      "new_children": 5
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "SITE-START-CONTRACT",
+      "scalar_labels_matched": true,
+      "prior_children_preserved": true,
+      "new_children": 5
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-RECENTFORM",
+      "scalar_labels_matched": true,
+      "prior_children_preserved": true,
+      "new_children": 2
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "SITE-START-RECENTFORM",
+      "scalar_labels_matched": true,
+      "prior_children_preserved": true,
+      "new_children": 2
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "scalar_labels_matched": true,
+      "prior_children_preserved": true,
+      "new_children": 0
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "scalar_labels_matched": true,
+      "prior_children_preserved": true,
+      "new_children": 0
+    }
+  ],
+  "new_children_rendered_in_both": 8,
+  "no_current_app_failure_claim": true,
+  "no_admission_or_activation_authority": true
+}

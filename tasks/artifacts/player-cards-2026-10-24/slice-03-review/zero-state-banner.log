@@ -1,0 +1,44 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/player-cards-2026-10-24/slice-03-review/review.vitest.config.mts -t PC-S03-02-zero --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+(node:74510) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ↓ web/components/player-cards/PlayerCardFlow.test.tsx (7 tests | 7 skipped)
+(node:74512) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ tasks/artifacts/player-cards-2026-10-24/slice-03-review/interaction-controls.test.tsx (5 tests | 1 failed | 4 skipped) 47ms
+   ↓ keeps the newest strength/window result after an interrupted success and rejection
+   ↓ applies only the latest queued history state after export failure and retries from that snapshot
+   ↓ exposes unverified appearance history honestly in the SVG accessible name [PC-S03-01]
+   ↓ keeps the missing-input reason inside the exported card for a short partial sample [PC-S03-02]
+   × does not label complete zero-exposure inputs as partial source [PC-S03-02-zero] 47ms
+     → expected 'Partial source: affected values and r…' not to contain 'Partial source'
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tasks/artifacts/player-cards-2026-10-24/slice-03-review/interaction-controls.test.tsx > does not label complete zero-exposure inputs as partial source [PC-S03-02-zero]
+AssertionError: expected 'Partial source: affected values and r…' not to contain 'Partial source'
+
+Expected: "Partial source"
+Received: "Partial source: affected values and ranks are unavailable."
+
+ ❯ tasks/artifacts/player-cards-2026-10-24/slice-03-review/interaction-controls.test.tsx:78:54
+     76|   await waitFor(() => expect(container.querySelector("svg")?.textConte…
+     77|   expect(container.querySelector("svg")!.textContent).toContain("0:00"…
+     78|   expect(screen.getByRole("status").textContent).not.toContain("Partia…
+       |                                                      ^
+     79| });
+     80| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 skipped (2)
+      Tests  1 failed | 11 skipped (12)
+   Start at  13:49:07
+   Duration  1.06s (transform 177ms, setup 13ms, collect 360ms, tests 47ms, environment 417ms, prepare 63ms)
+

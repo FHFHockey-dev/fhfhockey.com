@@ -1,0 +1,201 @@
+{
+  "as_of": "2026-10-22T17:16:51+00:00",
+  "observed_head": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+  "meaning": "Exact checkpoint documents and selected supporting receipts/source; hash equality is not health/acceptance. Historical application pin manifests remain authoritative for their reviewed snapshots.",
+  "files": [
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json",
+      "line": 1,
+      "sha256": "e6dfb76d1b5c3382848f639c04920f9583dee7666734092354de6a7e1a9565e2",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "line": 1,
+      "sha256": "6956ef4221eeabddb06f5023702e9dd79067d56728e2807d8553a8cab70abed1",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/CURRENT-OWNERSHIP.md",
+      "line": 1,
+      "sha256": "37e88ba9535e73e7e4602577bf2a19fe1384a4e3c649286833fbb61990c2b005",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEASE-TRANSITIONS.json",
+      "line": 1,
+      "sha256": "fb2395796fba21cb2cb6b9adcffac059e322dc3aef4a032d5f04501394dfcce9",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-CANDIDATE-STATUS.json",
+      "line": 1,
+      "sha256": "609b2448ab23bf83f83e831e9900a7992e21b86e4eaabbf0c5b30aeb3824a08a",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/RESUME-CHECKPOINT.md",
+      "line": 1,
+      "sha256": "0d7cf14514139dbad8e11befc2ed438edef5ebfba200e12c5ec84aa0cc4f0ad9",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/heavy-verification/RECEIPT.md",
+      "line": 1,
+      "sha256": "9ef03483ec2026b6fcbdd3e7e538290e544b612c5765a535b5b32f70fa8032ff",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/p07-task10-r1-independent-review-2026-10-22/REPORT.md",
+      "line": 1,
+      "sha256": "02243124f495702bd35158dbc722e680c251c96dd2b57b79ee41b49d7ebd50f0",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/forge-task1-independent-review-2026-10-22/REVIEW.md",
+      "line": 1,
+      "sha256": "5f5fddf9d0f66232bd96e4e3416d1d0792c56469a225f0156953cc07ef6d04ea",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/forge-task2-independent-review-2026-10-22/r1/REVIEW.md",
+      "line": 1,
+      "sha256": "c7372af0d059ad5d57ccfdbd9d232d3750230f21219bbe1d1280e133fa604db5",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/forge-task2-2026-10-22/r2/HANDOFF.md",
+      "line": 1,
+      "sha256": "b68d86a69e7349adf2acba689fdaf6ef3c917991eb1f79a9f39d5fa2fed5ef0c",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/fpi-11-4-job79-independent-review-2026-10-22/REVIEW.md",
+      "line": 1,
+      "sha256": "32e1e67b9f8f5feab536224cefc494ce72ebb80a8e6cf7f7905714e1273a02cb",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/forge-skater-candidates-2026-10-22/HANDOFF.md",
+      "line": 1,
+      "sha256": "c8b3979f70d054c3130b947987a4bd7a4203e3c32bd9e107e29e58be969ea791",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/forge-skater-candidates-2026-10-22/TASK3-DATA-ASK.md",
+      "line": 1,
+      "sha256": "c2247356c14947d7af8195ff66de7cf5fb1e4527eab1d3530a0ab90c950fd6a1",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "web/scripts/forge-assist-export.ts",
+      "line": 1,
+      "sha256": "d1c79d1869910d0fddd0284fb67baeb4b9e2968ea4a7321dc2e16f36ca6b5c2a",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/artifacts/sprint-integration-checkpoint-2026-10-22/REPORT.md",
+      "line": 1,
+      "sha256": "5a924494242ea59c88f517a1fed8ff5fe3b1eb5d38b687eff1b4789e76ee75b6",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    },
+    {
+      "path": "tasks/diaries/2026-10-22-codex-p07-rso-use-policy.md",
+      "line": 1,
+      "sha256": "36345385f0aab656bc533e3484a37386bcaf3eae9550a7e9cca34550f6aedd50",
+      "observed_at": "2026-10-22T17:16:51+00:00"
+    }
+  ],
+  "root_pilot_export": {
+    "recorded_at": "2026-10-22T17:03:00+00:00",
+    "source": "Trusted parent execution/checkpoint report; ledger auditor did not query, retrieve or inspect export bytes",
+    "approval": {
+      "decision": "TJ Yes to exact pilot request",
+      "at_utc": "2026-10-22T16:55:58Z"
+    },
+    "execution": {
+      "executor": "ROOT",
+      "at_utc": "2026-10-22T16:56:40.473Z",
+      "status": "One read-only export succeeded",
+      "reported_rows": 5219,
+      "reported_bytes_before_newline": 3363724,
+      "truncated": false,
+      "retries": 0,
+      "writes": 0
+    },
+    "root_cloud_files": {
+      "json": "/workspace/scratch/28bd2529354b/task3-pilot-export.json",
+      "sql": "/workspace/scratch/28bd2529354b/task3-executed-query.sql"
+    },
+    "library": {
+      "json": {
+        "id": "libfile_bdb4847bbdbc8191b5a958bce4ab9fde",
+        "name": "task3-pilot-export.json",
+        "bytes_including_newline": 3363725
+      },
+      "executed_sql": {
+        "id": "libfile_abe8480e81248191989de2276fa092cd",
+        "name": "task3-executed-query.sql"
+      }
+    },
+    "local_mac_state": "Not materialized; deep local validation not run",
+    "next_after_TJ_resume": "Materialize the existing Library JSON and exact executed SQL on Mac, hash/verify identity and size, then run existing local validator into a fresh output. Never repeat the production query.",
+    "acceptance": "Successful export is not matched-input validity, fitted coefficients, predictive quality, historical as-of proof or release acceptance."
+  },
+  "ledger_rows": 166,
+  "auditor_test_runs_this_checkpoint": 0,
+  "auditor_network_calls": 0,
+  "final_integration_checkpoint": {
+    "recorded_at": "2026-10-22T17:15:04+00:00",
+    "status": "HELD \u2014 final fixed integration snapshot verified, combined acceptance blocked by13tests",
+    "report": {
+      "path": "tasks/artifacts/sprint-integration-checkpoint-2026-10-22/REPORT.md",
+      "line": 1,
+      "sha256": "5a924494242ea59c88f517a1fed8ff5fe3b1eb5d38b687eff1b4789e76ee75b6",
+      "observed_at": "2026-10-22T17:15:04+00:00"
+    },
+    "observed_head": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+    "archive": "tasks/artifacts/sprint-integration-checkpoint-2026-10-22/export-completion/fixed-source.tar.gz",
+    "archive_sha256": "09bd763bc9b740159f2d4aa5b0c97d19ce3839872b1ac27762b21cbd6596beff",
+    "verified_files": 3585,
+    "accepted_pins": 110,
+    "retained_dependencies": 244,
+    "verification": {
+      "selected_test_files": 67,
+      "latest_passed": 1928,
+      "latest_failed": 13,
+      "accounting": "Original1925pass/16fail;21-case migration file rerun after3export-only inputs supplied replaces original migration result, not added to total. Counts are test executions/selection results, not distinct semantic coverage.",
+      "application_types": "Passed application-only config, all production/application sources retained",
+      "exported_review_fixture_types": "Open TS2352 in artifact-only p07Task10Serialization.test.ts:34; fixture absent from canonicalweb; original bytes/diagnostic preserved",
+      "lint": "97acceptedTS/TSX paths;0errors,9warnings (3raw-image,6hook dependencies)",
+      "relocation_oracles": "14/14passed",
+      "relocation_preflight": "Passed actual runner with7pinned inputs, no DB/client/target load",
+      "integrity": "All3585files and110accepted pins match per final owner receipt; ledger auditor did not rerun tests/extract archive"
+    },
+    "open_followups": [
+      {
+        "taskID": "INTEGRATE-PLANNER-CONTRACT",
+        "owner": "UNASSIGNED",
+        "custodian": "PARENT",
+        "paths": [
+          "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+          "web/lib/rosterScheduleData/forgeDailyBridge.test.ts:348"
+        ],
+        "failures": 13,
+        "scope": "12direct-native-fixture quantitative expectations and1directbridge/weightedunknown expectation. Require trusted target/current-read context and all nonzero weighted inputs; preserve original numerical assertions and denial controls.",
+        "gate": "New precise two-test-file lease and evidence before deciding test-contract versus actual runtime correction; no fix authorized by checkpoint."
+      },
+      {
+        "taskID": "INTEGRATE-REVIEW-FIXTURE-TYPES",
+        "owner": "REVIEW",
+        "path": "tasks/artifacts/p07-task10-independent-review-2026-10-22/p07Task10Serialization.test.ts:34",
+        "scope": "Versioned reviewer-owned typing correction; synthetic contribution record missing required ResolvedContribution fields (TS2352). Preserve historical fixture/receipt; no application error claim."
+      }
+    ],
+    "excluded": "Task2R2/newerClaude6/7/8/11 and unqualified skater changes; other canonical differences outside named accepted overlays. Two accepted query pins retain older A1 bytes, not held task2query.",
+    "task2_separate_hold": "1975matchingfiles/393pass1unchanged captured-input cache failure; Claude7leagueSavePct warmcache outside helper lease. Not part of1928/13selection.",
+    "next_after_resume": "Read final report and replay.py. Safe default replay only extracts/verifies archive; targeted --failed-planner requires resumed parent assignment. No new fix/test now.",
+    "release_ready": false
+  },
+  "library_delivery": "LIBRARY-DELIVERY.json"
+}

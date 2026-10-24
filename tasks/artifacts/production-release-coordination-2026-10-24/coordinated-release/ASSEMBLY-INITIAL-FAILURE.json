@@ -1,0 +1,5 @@
+{
+  "reason": "Initial assembly compared270 shared test before the already-reviewed8f override; corrected precedence preserves8f. Subsequent lookup incorrectly assumed /tmp rather than actual executor TMPDIR; actual task projection located without recreating it.",
+  "canonical_edits": 0,
+  "snapshot": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf"
+}

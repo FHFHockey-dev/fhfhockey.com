@@ -1,0 +1,17 @@
+{
+  "extends": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false,
+    "noEmit": true
+  },
+  "include": [
+    "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+    "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer-fixtures.ts",
+    "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts",
+    "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/next-env.d.ts"
+  ],
+  "exclude": [
+    "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/node_modules"
+  ]
+}

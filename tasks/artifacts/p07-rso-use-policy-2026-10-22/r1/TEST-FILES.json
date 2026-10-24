@@ -1,0 +1,18 @@
+[
+  "lib/in-season/workspaceRoutes.test.ts",
+  "lib/rosterScheduleOptimizer/executionAdapter.test.ts",
+  "lib/rosterScheduleOptimizer/planning.test.ts",
+  "__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx",
+  "__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts",
+  "components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx",
+  "lib/integrations/yahoo/rosterPlanning.test.ts",
+  "lib/player-forecasts/planningContributions.test.ts",
+  "lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts",
+  "lib/in-season/workspaceSchema.test.ts",
+  "hooks/useRosterPlanning.test.tsx",
+  "hooks/useCandidateMetrics.test.tsx",
+  "lib/player-forecasts/rsoUsePolicy.test.ts",
+  "components/RosterScheduleOptimizer/CompactSchedule.test.ts",
+  "lib/player-forecasts/p07BridgeClaimOracle.test.ts",
+  "lib/rosterScheduleData/planning.test.ts"
+]

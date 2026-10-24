@@ -1,0 +1,236 @@
+{
+  "mode": "fixed",
+  "at": "2026-10-24T18:10:03.259Z",
+  "checks": [
+    {
+      "name": "refund: 422 configuration error with its own code (re-capture of ticket-4 state 05): no raw, private or false text",
+      "pass": true,
+      "shown": [
+        "Your refund request couldn't be confirmed right now. Try again in a few minutes, or contact support if it keeps happening."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "refund: 422 the current route relabels refund_window_closed (known boundary limit): no raw, private or false text",
+      "pass": true,
+      "shown": [
+        "The 7-day refund request window for this purchase has closed. Contact support if you need help."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "refund: unrelated 404 HTML from a proxy: no raw, private or false text",
+      "pass": true,
+      "shown": [
+        "Your refund request couldn't be confirmed right now. Try again in a few minutes, or contact support if it keeps happening."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "refund: 409 with a different code: no raw, private or false text",
+      "pass": true,
+      "shown": [
+        "Your refund request couldn't be confirmed right now. Try again in a few minutes, or contact support if it keeps happening."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "refund window notice: open request, deadline in 36 h: no raw, private or false text",
+      "pass": true,
+      "shown": [],
+      "windowNotice": [
+        "Refund eligibility: eligible. The request window ends October 26, 2026 Eastern."
+      ]
+    },
+    {
+      "name": "refund window notice: deadline 36 h ago: no raw, private or false text",
+      "pass": true,
+      "shown": [],
+      "windowNotice": [
+        "Refund eligibility: window_closed. The request window ended October 23, 2026 Eastern."
+      ]
+    },
+    {
+      "name": "account load: 500 with database, email and key names: no raw, private or false text",
+      "pass": true,
+      "shown": [
+        "Draft Pro\n\nDraft Pro account details are unavailable. Refresh the page to try again, or contact support if it keeps happening."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "account load: 401 expired session: no raw, private or false text",
+      "pass": true,
+      "shown": [
+        "Draft Pro\n\nYour sign-in has expired. Sign in again to view Draft Pro."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "access code: network failure: no raw, private or false text",
+      "pass": true,
+      "shown": [
+        "We couldn't reach FHFH, so your code wasn't confirmed. Check your connection and try again."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "recovery code: 403 naming another account: no raw, private or false text",
+      "pass": true,
+      "shown": [
+        "That code couldn't be redeemed. Check it and try again, or contact support if you completed payment."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "access code accepted, every account refresh fails: no raw, private or false text",
+      "pass": true,
+      "shown": [
+        "Your code was accepted, but your access couldn't be refreshed. Refresh this page to check again."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "checkout verify: 503 configuration error: no raw, private or false text",
+      "pass": true,
+      "shown": [
+        "Payment is confirming with Stripe.\n\nCheck purchase status again",
+        "Your purchase status couldn't be checked. Check purchase status again, or contact support if you completed payment."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "Patreon connect: 500 with private details: no raw, private or false text",
+      "pass": true,
+      "shown": [
+        "Patreon connection couldn't be started. Try again later, or contact support if it keeps happening."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "every state screenshot is distinct",
+      "pass": true,
+      "count": 13
+    }
+  ],
+  "states": [
+    {
+      "state": "refund: 422 configuration error with its own code (re-capture of ticket-4 state 05)",
+      "file": "01-refund-config-422.png",
+      "sha256": "97158b1cf30429684855a9e0619006c74da35bdca6457f0e5d270c87b0870594",
+      "shown": [
+        "Your refund request couldn't be confirmed right now. Try again in a few minutes, or contact support if it keeps happening."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "refund: 422 the current route relabels refund_window_closed (known boundary limit)",
+      "file": "02-refund-relabelled-422.png",
+      "sha256": "b0771d6541fb8225d0c1124c9d338270d4321f8c4ee3db0fe620b08009f816d0",
+      "shown": [
+        "The 7-day refund request window for this purchase has closed. Contact support if you need help."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "refund: unrelated 404 HTML from a proxy",
+      "file": "03-refund-proxy-404.png",
+      "sha256": "832ec7dc63eb16423587cee4e73c6a280a7b99f377804c2fb3638481125a0fbc",
+      "shown": [
+        "Your refund request couldn't be confirmed right now. Try again in a few minutes, or contact support if it keeps happening."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "refund: 409 with a different code",
+      "file": "04-refund-409-other-code.png",
+      "sha256": "eba5aea55726c3f5cb46d1ee70db7b0f4cda1e8a9e2d06e3c81acc93c4f14f52",
+      "shown": [
+        "Your refund request couldn't be confirmed right now. Try again in a few minutes, or contact support if it keeps happening."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "refund window notice: open request, deadline in 36 h",
+      "file": "05-window-ends.png",
+      "sha256": "f04ee5efd8c1df925ef94a109a56ba6e1a0f29ddf114e7cb0332dc13c6bc5223",
+      "shown": [],
+      "windowNotice": [
+        "Refund eligibility: eligible. The request window ends October 26, 2026 Eastern."
+      ]
+    },
+    {
+      "state": "refund window notice: deadline 36 h ago",
+      "file": "06-window-ended.png",
+      "sha256": "b18616593f868dbb76f0ad9d456b53f0a4ddce497f5888588e0b3b02037afe5a",
+      "shown": [],
+      "windowNotice": [
+        "Refund eligibility: window_closed. The request window ended October 23, 2026 Eastern."
+      ]
+    },
+    {
+      "state": "account load: 500 with database, email and key names",
+      "file": "07-account-private-500.png",
+      "sha256": "32eb1366330259bdc3e9a072dcadc73e7f6cb21a2c12d13cd3c17211675e9996",
+      "shown": [
+        "Draft Pro\n\nDraft Pro account details are unavailable. Refresh the page to try again, or contact support if it keeps happening."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "account load: 401 expired session",
+      "file": "08-account-401.png",
+      "sha256": "d57509c35f2a708088b9c8624a61024634dadece75cc080439e0a40a85a86d70",
+      "shown": [
+        "Draft Pro\n\nYour sign-in has expired. Sign in again to view Draft Pro."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "access code: network failure",
+      "file": "09-redeem-network.png",
+      "sha256": "95592215a8227dfae685722baa8956174f0b6213c650aac564f57eb212136d8f",
+      "shown": [
+        "We couldn't reach FHFH, so your code wasn't confirmed. Check your connection and try again."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "recovery code: 403 naming another account",
+      "file": "10-recovery-403.png",
+      "sha256": "15d24caaf5c66a08b2f459cbc2110ae5e6718376d5b131e5043a3b17d73dc87b",
+      "shown": [
+        "That code couldn't be redeemed. Check it and try again, or contact support if you completed payment."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "access code accepted, every account refresh fails",
+      "file": "11-redeem-refresh-fails.png",
+      "sha256": "3c3383dcc1d5e1615efb7d3441df0ee372f078b0cf4436edf977986f4e428138",
+      "shown": [
+        "Your code was accepted, but your access couldn't be refreshed. Refresh this page to check again."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "checkout verify: 503 configuration error",
+      "file": "12-checkout-config-503.png",
+      "sha256": "3bd302baabcf73ddae4e63e4e831ff11b1194e43f069711401360e04a2ea628d",
+      "shown": [
+        "Payment is confirming with Stripe.\n\nCheck purchase status again",
+        "Your purchase status couldn't be checked. Check purchase status again, or contact support if you completed payment."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "Patreon connect: 500 with private details",
+      "file": "13-patreon-connect-500.png",
+      "sha256": "5469bca8b87aa4aeedf514ac1f2c2b9ae25d3fa8070f84b5742abdde9619495b",
+      "shown": [
+        "Patreon connection couldn't be started. Try again later, or contact support if it keeps happening."
+      ],
+      "windowNotice": []
+    }
+  ]
+}

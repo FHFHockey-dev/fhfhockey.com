@@ -1,0 +1,317 @@
+{
+  "snapshot": {
+    "id": "synthetic-flow-v1-1004-L10-all-allow-known-short-proposed-metric-gap",
+    "renderVersion": "player-card-v0",
+    "registryVersion": "proposed-nst-v0",
+    "source": "synthetic",
+    "capturedAt": "2026-10-24T02:00:00Z",
+    "settings": {
+      "season": 20262027,
+      "gameType": "regular",
+      "strength": "all",
+      "cutoff": "2026-10-24T00:00:00Z",
+      "period": {
+        "mode": "appearances",
+        "count": 10
+      },
+      "seasonPolicy": "season-only-proposed",
+      "shortSamplePolicy": "allow-known-short-proposed",
+      "rankPolicy": "competition-midrank-proposed"
+    },
+    "player": {
+      "id": "1004",
+      "name": "Jamie Chen",
+      "team": "Harbour · example",
+      "position": "LW"
+    },
+    "sample": {
+      "gp": 3,
+      "requested": 10,
+      "toiSeconds": 3174,
+      "firstDate": "2026-10-17",
+      "lastDate": "2026-10-23",
+      "gameIds": [
+        "2026100423",
+        "2026100420",
+        "2026100417"
+      ],
+      "warning": "Known short season · proposed policy"
+    },
+    "poolId": "synthetic-flow-v1-1004-L10-all-allow-known-short-proposed-metric-gap:all-valid-by-metric",
+    "sourceVersion": "interaction-fixtures-v1",
+    "readings": [
+      {
+        "id": "atoi",
+        "value": 17.633333333333333,
+        "state": "valid",
+        "rank": {
+          "ordinal": 18,
+          "population": 18,
+          "percentile": 2.7777777777777777,
+          "tied": false
+        }
+      },
+      {
+        "id": "sog60",
+        "value": 13.610586011342155,
+        "state": "valid",
+        "rank": {
+          "ordinal": 1,
+          "population": 18,
+          "percentile": 97.22222222222223,
+          "tied": false
+        }
+      },
+      {
+        "id": "icf60",
+        "value": 27.22117202268431,
+        "state": "valid",
+        "rank": {
+          "ordinal": 1,
+          "population": 18,
+          "percentile": 97.22222222222223,
+          "tied": false
+        }
+      },
+      {
+        "id": "iscf60",
+        "value": 10.207939508506616,
+        "state": "valid",
+        "rank": {
+          "ordinal": 1,
+          "population": 18,
+          "percentile": 97.22222222222223,
+          "tied": false
+        }
+      },
+      {
+        "id": "ixg60",
+        "value": null,
+        "state": "missing",
+        "reason": "Required component is missing, invalid or has incompatible TOI units",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "cf60",
+        "value": 79.39508506616257,
+        "state": "valid",
+        "rank": {
+          "ordinal": 1,
+          "population": 18,
+          "percentile": 97.22222222222223,
+          "tied": false
+        }
+      },
+      {
+        "id": "scf60",
+        "value": 36.294896030245745,
+        "state": "valid",
+        "rank": {
+          "ordinal": 1,
+          "population": 18,
+          "percentile": 97.22222222222223,
+          "tied": false
+        }
+      },
+      {
+        "id": "xgf60",
+        "value": 4.10586011342155,
+        "state": "valid",
+        "rank": {
+          "ordinal": 1,
+          "population": 18,
+          "percentile": 97.22222222222223,
+          "tied": false
+        }
+      },
+      {
+        "id": "xgPct",
+        "value": 54.029850746268664,
+        "state": "valid",
+        "rank": {
+          "ordinal": 1,
+          "population": 18,
+          "percentile": 97.22222222222223,
+          "tied": false
+        }
+      },
+      {
+        "id": "ipp",
+        "value": 11.11111111111111,
+        "state": "valid",
+        "rank": {
+          "ordinal": 15,
+          "population": 18,
+          "percentile": 11.11111111111111,
+          "tied": true
+        }
+      },
+      {
+        "id": "shPct",
+        "value": 8.333333333333334,
+        "state": "valid",
+        "rank": {
+          "ordinal": 5,
+          "population": 18,
+          "percentile": 75,
+          "tied": false
+        }
+      },
+      {
+        "id": "oiShPct",
+        "value": 16.9811320754717,
+        "state": "valid",
+        "rank": {
+          "ordinal": 1,
+          "population": 18,
+          "percentile": 97.22222222222223,
+          "tied": false
+        }
+      }
+    ]
+  },
+  "renderVariant": "interactive-v1",
+  "selectedMetrics": [
+    "atoi",
+    "sog60",
+    "iscf60",
+    "ixg60",
+    "xgf60",
+    "xgPct",
+    "shPct",
+    "ipp"
+  ],
+  "coverage": {
+    "atoi": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "sog60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "icf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "iscf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "ixg60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 17,
+      "knownUndefined": 0,
+      "missingIncomplete": 1,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": false
+    },
+    "cf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "scf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "xgf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "xgPct": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "ipp": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "shPct": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "oiShPct": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    }
+  },
+  "source": {
+    "definition": "synthetic-nst-shaped-v1",
+    "version": "interaction-fixtures-v1",
+    "definitionReference": "fabricated-provider-and-model-definition",
+    "verifiedMetrics": [
+      "atoi",
+      "sog60",
+      "icf60",
+      "iscf60",
+      "ixg60",
+      "cf60",
+      "scf60",
+      "xgf60",
+      "xgPct",
+      "ipp",
+      "shPct",
+      "oiShPct"
+    ]
+  },
+  "retrospective": true,
+  "liveActivation": false,
+  "premiumActivation": false
+}

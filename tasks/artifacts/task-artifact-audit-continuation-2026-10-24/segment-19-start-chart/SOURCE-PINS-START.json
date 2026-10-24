@@ -1,0 +1,16 @@
+[
+  {
+    "path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md",
+    "sha256": "3417e05f47f627991a2e8ca06aeecbadad107a7bc42e51ee4c5af4d0405f1f24",
+    "bytes": 17541,
+    "lines": 142,
+    "mtime_ns": 1787933500240455619
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md",
+    "sha256": "cf3ee0fd3cf0a7033dc77689170dec171f46212c96f99723ef3f7f5ae98a3044",
+    "bytes": 6332,
+    "lines": 118,
+    "mtime_ns": 1787933500293506707
+  }
+]

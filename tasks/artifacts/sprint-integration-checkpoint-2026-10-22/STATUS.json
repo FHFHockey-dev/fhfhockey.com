@@ -1,0 +1,27 @@
+{
+  "status": "combined_integration_held",
+  "release_ready": false,
+  "accepted_file_pins": 110,
+  "snapshot_files": 3585,
+  "snapshot_archive": "export-completion/fixed-source.tar.gz",
+  "snapshot_sha256": "09bd763bc9b740159f2d4aa5b0c97d19ce3839872b1ac27762b21cbd6596beff",
+  "latest_selected_test_results": {
+    "passed": 1928,
+    "failed": 13,
+    "selected": 1941,
+    "files": 67
+  },
+  "relocation_oracles_passed": 14,
+  "relocation_preflight": "passed",
+  "application_types": "passed; external reviewer fixtures excluded, raw reviewer TS2352 retained",
+  "full_export_types": "held by artifact-only reviewer TS2352",
+  "lint": {
+    "exit": 0,
+    "errors": 0,
+    "warnings": 9
+  },
+  "task2": "excluded; parent-reported warm-cache replay failure remains held",
+  "canonical_application_edits": 0,
+  "new_work_after_checkpoint": false,
+  "next_safe_command": "python3 tasks/artifacts/sprint-integration-checkpoint-2026-10-22/replay.py"
+}

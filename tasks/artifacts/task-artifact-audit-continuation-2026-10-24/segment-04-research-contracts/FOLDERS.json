@@ -1,0 +1,111 @@
+{
+  "scope": "Additive selected-folder coverage; no recursive reinventory.",
+  "folders": [
+    {
+      "folder": "tasks/TASKS/contextual-hockey-rankings/research",
+      "entries": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+          "coverage": "content-reviewed"
+        }
+      ],
+      "remainder": "Only named exact documents and ranges reviewed. Other source, raw results, scripts, captures and artifact siblings retain original coverage or are unreviewed."
+    },
+    {
+      "folder": "tasks/TASKS/contextual-hockey-rankings/workstation",
+      "entries": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/workstation/Recommendations-DRR.md",
+          "coverage": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/workstation/context.md",
+          "coverage": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/workstation/goal.md",
+          "coverage": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/workstation/deep-research-report.md",
+          "coverage": "duplicate-by-hash"
+        }
+      ],
+      "remainder": "Only named exact documents and ranges reviewed. Other source, raw results, scripts, captures and artifact siblings retain original coverage or are unreviewed."
+    },
+    {
+      "folder": "tasks/TASKS/contextual-hockey-rankings",
+      "entries": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+          "coverage": "content-reviewed"
+        }
+      ],
+      "remainder": "Only named exact documents and ranges reviewed. Other source, raw results, scripts, captures and artifact siblings retain original coverage or are unreviewed."
+    },
+    {
+      "folder": "tasks/TASKS/cron-operations/prd",
+      "entries": [
+        {
+          "path": "tasks/TASKS/cron-operations/prd/prd-cron-failed-jobs-remediation.md",
+          "coverage": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md",
+          "coverage": "content-reviewed"
+        }
+      ],
+      "remainder": "Only named exact documents and ranges reviewed. Other source, raw results, scripts, captures and artifact siblings retain original coverage or are unreviewed."
+    },
+    {
+      "folder": "tasks/TASKS/cron-operations",
+      "entries": [
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+          "coverage": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md",
+          "coverage": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md",
+          "coverage": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+          "coverage": "partially-inspected"
+        }
+      ],
+      "remainder": "Only named exact documents and ranges reviewed. Other source, raw results, scripts, captures and artifact siblings retain original coverage or are unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/codex-2026-10-20",
+      "entries": [
+        {
+          "path": "tasks/artifacts/codex-2026-10-20/REGISTER.md",
+          "coverage": "content-reviewed"
+        },
+        {
+          "path": "tasks/artifacts/codex-2026-10-20/PRODUCTION-FINDINGS.md",
+          "coverage": "content-reviewed"
+        }
+      ],
+      "remainder": "Only named exact documents and ranges reviewed. Other source, raw results, scripts, captures and artifact siblings retain original coverage or are unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts",
+      "entries": [
+        {
+          "path": "tasks/artifacts/cron-loop-batching-decisions.md",
+          "coverage": "content-reviewed"
+        },
+        {
+          "path": "tasks/artifacts/cron-failed-jobs-root-cause-matrix.md",
+          "coverage": "content-reviewed"
+        }
+      ],
+      "remainder": "Only named exact documents and ranges reviewed. Other source, raw results, scripts, captures and artifact siblings retain original coverage or are unreviewed."
+    }
+  ]
+}

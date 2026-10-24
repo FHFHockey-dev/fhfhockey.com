@@ -1,0 +1,230 @@
+{
+  "B1": {
+    "bad": [],
+    "shown": 36,
+    "widened": 3,
+    "bands": [
+      [
+        30,
+        50
+      ],
+      [
+        20,
+        30
+      ],
+      [
+        0,
+        20
+      ]
+    ],
+    "firstCallTeams": 32,
+    "teamsWithGames": 32
+  },
+  "R1": {
+    "out": {
+      "ready": 1,
+      "otherCases": 0
+    },
+    "shown": 33,
+    "skaters": 24,
+    "goalies": 9,
+    "since": "2026-10-05",
+    "sameIds": true,
+    "groupsOk": true
+  },
+  "R2": {
+    "playersState": "ready",
+    "allRecentNull": true,
+    "count": 33,
+    "cache": "public, max-age=0, s-maxage=300, stale-while-revalidate=300",
+    "leak": false,
+    "recentField": [
+      null,
+      null
+    ]
+  },
+  "L1": {
+    "keys": [
+      "assists",
+      "blocksPerGame",
+      "games",
+      "goals",
+      "goalsAgainst",
+      "hitsPerGame",
+      "kind",
+      "points",
+      "ppPoints",
+      "qualityStarts",
+      "saves",
+      "shots",
+      "shotsAgainst",
+      "through",
+      "toiSeconds",
+      "wins"
+    ],
+    "hits": []
+  },
+  "S1": {
+    "bad": [],
+    "nights": [
+      {
+        "team": "STL",
+        "opp": "ANA",
+        "date": "2026-10-27",
+        "flags": [
+          "goals",
+          "shots",
+          "tired"
+        ],
+        "oppDef": 6.451612903225808
+      },
+      {
+        "team": "DET",
+        "opp": "STL",
+        "date": "2026-10-30",
+        "flags": [
+          "goals",
+          "shots"
+        ],
+        "oppDef": 38.70967741935484
+      },
+      {
+        "team": "BUF",
+        "opp": "WPG",
+        "date": "2026-10-27",
+        "flags": [
+          "goals",
+          "shots"
+        ],
+        "oppDef": 12.903225806451616
+      },
+      {
+        "team": "NYI",
+        "opp": "WPG",
+        "date": "2026-10-30",
+        "flags": [
+          "tired"
+        ],
+        "oppDef": 12.903225806451616
+      },
+      {
+        "team": "VGK",
+        "opp": "BUF",
+        "date": "2026-10-30",
+        "flags": [
+          "goals"
+        ],
+        "oppDef": 16.129032258064512
+      },
+      {
+        "team": "MTL",
+        "opp": "SEA",
+        "date": "2026-10-30",
+        "flags": [
+          "shots"
+        ],
+        "oppDef": 29.032258064516128
+      }
+    ]
+  },
+  "Q1": [
+    {
+      "table": "rolling_player_game_metrics",
+      "select": "player_id,season,game_date,strength_state,season_games_played,goals_total_last5,assists_total_last5,points_total_last5,shots_total_last5,hits_avg_last5,blocks_avg_last5,toi_seconds_avg_last5,pp_points_total_last5",
+      "filters": [
+        [
+          "eq",
+          "season",
+          20262027
+        ],
+        [
+          "eq",
+          "strength_state",
+          "all"
+        ],
+        [
+          "in",
+          "player_id",
+          [
+            1,
+            2,
+            3
+          ]
+        ],
+        [
+          "gte",
+          "game_date",
+          "2026-10-05"
+        ],
+        [
+          "range",
+          0,
+          41
+        ]
+      ],
+      "writes": 0
+    },
+    {
+      "table": "wgo_goalie_stats",
+      "select": "goalie_id,date,season_id,games_played,wins,saves,shots_against,goals_against,quality_start",
+      "filters": [
+        [
+          "eq",
+          "season_id",
+          20262027
+        ],
+        [
+          "in",
+          "goalie_id",
+          [
+            9
+          ]
+        ],
+        [
+          "gte",
+          "date",
+          "2026-10-05"
+        ],
+        [
+          "range",
+          0,
+          13
+        ]
+      ],
+      "writes": 0
+    }
+  ],
+  "Q2": {
+    "teams": 32,
+    "counts": {
+      "yahoo_players": 1,
+      "wgo_skater_stats_totals": 1,
+      "wgo_goalie_stats_totals": 1,
+      "yahoo_nhl_player_map_read": 27
+    },
+    "ranges": [
+      [
+        "yahoo_players",
+        [
+          0,
+          1999
+        ]
+      ],
+      [
+        "wgo_skater_stats_totals",
+        [
+          0,
+          1499
+        ]
+      ],
+      [
+        "wgo_goalie_stats_totals",
+        [
+          0,
+          199
+        ]
+      ]
+    ],
+    "writes": 0
+  }
+}

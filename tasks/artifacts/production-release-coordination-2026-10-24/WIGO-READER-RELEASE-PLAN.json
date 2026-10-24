@@ -1,0 +1,63 @@
+{
+  "at": "2026-10-24T21:01:40.131322+00:00",
+  "candidate_commit": "212d38c65c3f48fc6f6ec820cd4edbacd1d364e8",
+  "repository": "FHFHockey-dev/fhfhockey.com",
+  "remote_master_preflight_verified": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "projects": [
+    {
+      "project": "fhfhockey",
+      "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "root": "web",
+      "production_branch": "master",
+      "previews_disabled": true,
+      "ignore_command": "if test -n \"$VERCEL_GIT_PREVIOUS_SHA\" && git cat-file -e \"$VERCEL_GIT_PREVIOUS_SHA^{commit}\" 2>/dev/null; then git diff --quiet \"$VERCEL_GIT_PREVIOUS_SHA\" HEAD -- . ../tasks/TASKS/cron-operations/cron-schedule.md; else exit 1; fi",
+      "config_sha256": "bcd2cab8174bead693c7a4268ce2dd44ea551c9dfa92736b347868a0ebac2d2b",
+      "expected_outcome": "Web build"
+    },
+    {
+      "project": "functions-fhfhockey",
+      "id": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+      "root": "functions",
+      "production_branch": "master",
+      "previews_disabled": true,
+      "ignore_command": "p=$VERCEL_GIT_PREVIOUS_SHA;if [ -n \"$p\" ]&&git cat-file -e \"$p^{commit}\" 2>/dev/null;then git diff --quiet \"$p\" HEAD ./;elif [ -n \"$p\" ]&&git cat-file -e HEAD~1 2>/dev/null;then git diff --quiet HEAD~1 HEAD ./;else exit 1;fi",
+      "config_sha256": "e019c54a60fb314a8242e6be9f321bfbfda88c7e5771e5586672c5a731e6bedb",
+      "expected_outcome": "Ignored/canceled; no application build"
+    },
+    {
+      "project": "cms-fhfhockey",
+      "id": "prj_gG8SHX7C5GbCDJoind7trh9bj6dK",
+      "root": "cms",
+      "production_branch": "master",
+      "previews_disabled": true,
+      "ignore_command": "p=$VERCEL_GIT_PREVIOUS_SHA;if [ -n \"$p\" ]&&git cat-file -e \"$p^{commit}\" 2>/dev/null;then git diff --quiet \"$p\" HEAD ./;elif [ -n \"$p\" ]&&git cat-file -e HEAD~1 2>/dev/null;then git diff --quiet HEAD~1 HEAD ./;else exit 1;fi",
+      "config_sha256": "c5e9d87df6482fd2b5473ab9e39f6d74cd40cfc6433452cde9a5ab8bac5db87f",
+      "expected_outcome": "Ignored/canceled; no application build"
+    },
+    {
+      "project": "fhfhockey.com",
+      "id": "prj_3X6goi9DxqUnD0sHChwEwaRakquG",
+      "root": null,
+      "production_branch": "master",
+      "previews_disabled": true,
+      "ignore_command": "exit 0",
+      "config_sha256": "c18d6c5262ce3443c70667b03b99b2f7d91d3977b0e522c5eb01077d89f7f961",
+      "expected_outcome": "Ignored/canceled; no application build"
+    }
+  ],
+  "expected_entries": 4,
+  "expected_builds": 1,
+  "companion_builds": 0,
+  "fresh_settings_read": "Four sequential bounded CLI GETs, non-secret whitelist; no settings changed",
+  "unchanged_ignore_policy": "Root exit 0; functions/cms unchanged directory diff returns 0 with prior SHA or one-parent fallback. No need to change project integrations or schedules.",
+  "duplication_check": "Connected exact-SHA lookup across four projects returned no deployments before denied push attempt.",
+  "cost": "One normal Next.js production web build if publication approved; exact billable CPU/cost unknown. No companion application builds expected.",
+  "verification_after_approval": [
+    "Re-read remote master before exact fast-forward push; stop if advanced",
+    "Inspect all four exact-SHA deployment entries; wait for existing in-progress build rather than duplicate",
+    "Confirm web READY, exact SHA, expected production aliases and three companion ignore outcomes",
+    "Verify deployed source metadata/file hashes for reader pair; prefer deployment metadata over data-bearing application requests",
+    "At most five sequential predeclared read-only smoke requests only if needed after route behavior is screened; no cron/refresh/repair/model invocation"
+  ],
+  "current_status": "Publication denied before execution by automatic review. Direct trusted user approval of exact master publication and web production build required."
+}

@@ -1,0 +1,65 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/confirmedStartReview.test.ts -t unconfirmed server status
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-rso-correctness-20261023/web
+
+(node:43796) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/rosterScheduleOptimizer/confirmedStartReview.test.ts (14 tests | 2 failed | 10 skipped) 40ms
+   ↓ applies trusted confirmed and ruled-out server evidence through real adapter and worker, without trusting contradictory Yahoo labels
+   × does not override the modeled prior for unconfirmed server status likely 27ms
+     → expected { sourceKind: 'detailed', …(17) } to match object { startProbability: 0.3, …(2) }
+(52 matching properties omitted from actual)
+   × does not override the modeled prior for unconfirmed server status projected 5ms
+     → expected { sourceKind: 'detailed', …(17) } to match object { startProbability: 0.3, …(2) }
+(52 matching properties omitted from actual)
+   ✓ does not override the modeled prior for unconfirmed server status unknown 3ms
+   ✓ does not override the modeled prior for unconfirmed server status unconfirmed 4ms
+   ↓ does not override for not_accepted server observation
+   ↓ does not override for expired server observation
+   ↓ does not override for future_published server observation
+   ↓ does not override for future_available server observation
+   ↓ does not override for future_created server observation
+   ↓ does not override for wrong_game server observation
+   ↓ does not override for wrong_team server observation
+   ↓ does not override for wrong_player server observation
+   ↓ does not override for absent server observation
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleOptimizer/confirmedStartReview.test.ts > does not override the modeled prior for unconfirmed server status likely
+ FAIL  lib/rosterScheduleOptimizer/confirmedStartReview.test.ts > does not override the modeled prior for unconfirmed server status projected
+AssertionError: expected { sourceKind: 'detailed', …(17) } to match object { startProbability: 0.3, …(2) }
+(52 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[2m    "confirmedStart": false,[22m
+[32m-   "startProbability": 0.3,[39m
+[31m+   "startProbability": 0.8,[39m
+[2m    "stats": {[22m
+[32m-     "SAVES_GOALIE": 7.5,[39m
+[31m+     "SAVES_GOALIE": 20,[39m
+[2m    },[22m
+[2m  }[22m
+
+ ❯ lib/rosterScheduleOptimizer/confirmedStartReview.test.ts:113:78
+    111|   const { snapshot, body, intent } = fromServerObservation(acceptedObs…
+    112|   const result = await executeRosterPlanning(snapshot, intent);
+    113|   expect(result.displaySnapshot.forecasts.find(row => row.playerId ===…
+       |                                                                              ^
+    114|     startProbability: 0.3, confirmedStart: false, stats: { SAVES_GOALI…
+    115| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 2 passed | 10 skipped (14)
+   Start at  12:44:28
+   Duration  490ms (transform 168ms, setup 9ms, collect 202ms, tests 40ms, environment 138ms, prepare 29ms)
+

@@ -1,0 +1,43 @@
+{
+  "at": "2026-10-24T16:29:27.331501+00:00",
+  "canonical_checkpoint": "segment05/Libraryv6/206IDs/925evidence retained",
+  "requests": [
+    {
+      "request": "Investigate broken WiGO L5/L10/L20 for8476453",
+      "existing_id": "SITE-WIGO",
+      "duplicate_new_id": false,
+      "owner": "01a16eab-cefb-71a0-9a22-199c2d039009",
+      "status": "Assigned diagnostic in progress per parent; approved bounded production diagnostic applies only to that owner, no repairs authorized.",
+      "findings": "Owner offline actual-source report reproduces null legacy override masking valid recent rates, prior-season STD fallback and ignored builder read errors; live root cause remains unproven by this report. Existing cross-season window behavior is a contract decision, not automatic regression. C4 workflow-link fixture acceptance does not establish current metric coverage.",
+      "next_action": "At next coherent checkpoint map this child into SITE-WIGO and read exact completed diagnostic receipts. Do not duplicate C4 wiring, run queries or repair from this audit."
+    },
+    {
+      "request": "Shareable observed player-card PRD",
+      "proposed_id_if_needed": "SITE-PLAYER-CARDS-PRD",
+      "existing_aliases": [
+        "SITE-WIGO",
+        "SITE-SOCIAL-SHARE"
+      ],
+      "dedup_result": "Current206 task fields contain WiGO workflow scope and existing isolated social browser scope but no dedicated public observed-player-card PRD requirement. Schedule-specific export/player-spotlight format is not implemented player cards. Proposed distinct planning row only at next coherent checkpoint; cross-link existing IDs and rights/billing gates rather than repeat them.",
+      "library_file_id": "libfile_c30125d0825481919d792fe441de993c",
+      "version": 0,
+      "status": "DRAFT FOR TJ REVIEW; not locally installed by auditor; no task generation/implementation approved.",
+      "confirmed": [
+        "Free public search/basic card/PNG",
+        "Curated default plus optional metrics/cards",
+        "Premium expanded metrics and two-player comparison",
+        "Actual value/raw ordinal/all-valid-player denominator/percentile",
+        "Own-last5/10/20 appearances default; calendar option"
+      ],
+      "pending_decisions": [
+        "Exact free/premium split",
+        "Season/carryover and incomplete-N policy",
+        "Proposed defaults and rank/percentile/visual conventions",
+        "Source completeness and all-position metric compatibility"
+      ],
+      "next_action": "Retain planning gates and verify future PRD approval before task generation. No source/schema/prototype field is live coverage proof. Skater-card v1 scope must not silently narrow the required all-valid-NHL metric pool; compatible goalie inputs remain unverified."
+    }
+  ],
+  "source_report_hash": "e8e2db19ab5e7243f3bd2cf7049cbc1c33c3b6d1f5e495968d3b13b99a063ab9",
+  "scope": "Documentary continuation only. No new ID or status write to canonical/Library solely for this steer."
+}

@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-24T17:39:09.320374+00:00",
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "3c200103ad156edbf3a791e7b7ba8798ffacd621a945ffd5a290e1fcc11d4203",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "78b2592599b1029e12c64cab438438d1a27b91d7e577d2c83078759c66e4d5fe",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "bcdae180aaaa315c95ef1c3e280c2b28e4cdcb644b24b31966dc79f0ee8e0688"
+  },
+  "library_version_before": 9,
+  "ids_before": 208,
+  "evidence_before": 1013,
+  "prior_continuation": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/CONTINUATION.json",
+  "planned": [
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+      "bytes": 105304,
+      "lines": 1886,
+      "sha256": "574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece"
+    }
+  ],
+  "scope": "Same single documentary auditor/sole register custody. No application edits/tests/Git/production/new workers. Product feedback leaves card design unresolved."
+}

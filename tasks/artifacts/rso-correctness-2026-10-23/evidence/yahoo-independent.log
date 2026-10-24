@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-rso-correctness-20261023/web
+
+(node:33157) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts (4 tests) 37ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  12:23:00
+   Duration  386ms (transform 116ms, setup 9ms, collect 123ms, tests 37ms, environment 122ms, prepare 27ms)
+

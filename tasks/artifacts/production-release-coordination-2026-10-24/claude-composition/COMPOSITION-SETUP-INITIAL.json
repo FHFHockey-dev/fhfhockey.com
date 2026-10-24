@@ -1,0 +1,8 @@
+{
+  "status": "Initial preparation stopped before checks; no candidate recorded",
+  "reason": "Older grid-readers manifest index.test.tsx pin differs from final r1 selected overlay. Use exact final r1 pin, which matches canonical and frozen accepted input.",
+  "path": "web/lib/NHL/client/index.test.tsx",
+  "older_pin": "60ae4231e3b77a15776788ca2d769ae447c57b32a87698891344fede6f51b985",
+  "final_pin": "89b43299bf5d0a6e15a300802456166fa5c02beeee0ad29466990eb46fc8f597",
+  "application_source_writes": 0
+}

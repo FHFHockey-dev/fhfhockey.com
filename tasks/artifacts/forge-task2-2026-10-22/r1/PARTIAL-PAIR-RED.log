@@ -1,0 +1,183 @@
+
+> web@0.1.0 test
+> vitest --run lib/projections/runProjectionV2.test.ts -t partial current-season
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:59588) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/projections/runProjectionV2.test.ts (112 tests | 4 failed | 108 skipped) 7ms
+   ↓ immutable issued target receipts > binds final written targets to captured identities and keeps unsupported components missing
+   ↓ starter probability heuristics > suppresses the previous-game starter on game 2 of a back-to-back
+   ↓ starter probability heuristics > heavily penalizes stale goalies after 30+ days
+   ↓ starter probability heuristics > applies line-combo recency prior as a soft starter boost
+   ↓ starter probability heuristics > uses projected GSAA/60 and season start share as soft priors
+   ↓ issued FORGE context > retains game, schedule and unique canonical roster fingerprints from bounded reads
+   ↓ issued FORGE context > rejects ambiguous identity and incomplete bounded context reads
+   ↓ issued FORGE context > does not fabricate a canonical mapping for an unmapped roster member
+   ↓ issued FORGE context > accepts equivalent alternate cache keys and rejects conflicting versions or malformed membership
+   ↓ issued FORGE context > retains a distinct context for each explicitly scoped game
+   ↓ issued FORGE context > consumes both context read sets during offline replay
+   ↓ starter candidate filtering > removes non-current-team goalies and very stale options
+   ↓ deployment TOI prior helpers > normalizes minute-based WGO TOI values to seconds
+   ↓ deployment TOI prior helpers > keeps second-like WGO TOI values in seconds
+   ↓ deployment TOI prior helpers > returns null for invalid or non-positive WGO TOI values
+   ↓ deployment TOI prior helpers > blends rolling TOI with deployment prior using provided weight
+   ↓ deployment TOI prior helpers > falls back to whichever source exists when one side is missing
+   ↓ skater shot-quality adjustments > returns neutral multipliers when no profile exists
+   ↓ skater shot-quality adjustments > boosts goal conversion and shot rate for strong ixG + rush/rebound profiles
+   ↓ skater shot-quality adjustments > penalizes weak shot-quality profiles
+   ↓ skater on-ice context adjustments > returns neutral multipliers without a profile
+   ↓ skater on-ice context adjustments > boosts environment multipliers for strong on-ice xG and possession
+   ↓ skater on-ice context adjustments > penalizes environment for poor on-ice xG and possession
+   ↓ skater team-level context adjustments > returns neutral multipliers when no team context is available
+   ↓ skater team-level context adjustments > boosts multipliers in favorable offense + opponent-defense environments
+   ↓ skater team-level context adjustments > penalizes multipliers in weak offense + strong-opponent-defense environments
+   ↓ skater opponent-goalie context adjustments > returns neutral multipliers with no opponent goalie context
+   ↓ skater opponent-goalie context adjustments > penalizes scoring when likely opponent starter projects strong
+   ↓ skater opponent-goalie context adjustments > boosts scoring when likely opponent starter projects weak
+   ↓ skater rest/schedule adjustments > returns neutral multipliers when rest context is unavailable
+   ↓ skater rest/schedule adjustments > penalizes on second leg of back-to-back against rested opponent
+   ↓ skater rest/schedule adjustments > boosts rested home team versus opponent on back-to-back
+   ↓ skater rest/schedule adjustments > reads rest days as days since the previous game, so a back-to-back (1) is the heavy tier
+   ↓ skater small-sample shrinkage adjustments > flags low sample and callup fallback with sparse evidence
+   ↓ skater small-sample shrinkage adjustments > returns strong sample weight for established skaters
+   ↓ skater physical event rates > keeps a thin window of zero hits and blocks from zeroing an established defenseman
+   ↓ skater physical event rates > keeps this season at full weight and rescales prior seasons to the league rate to date
+   × skater physical event rates > keeps partial current-season C hits count/exposure pairs unknown 5ms
+     → expected 2.0475409836065572 to be close to 3.046341463414634, received difference is 0.998800479808077, but expected 5e-13
+   × skater physical event rates > keeps partial current-season D hits count/exposure pairs unknown 0ms
+     → expected 2.019672131147541 to be close to 3.004878048780488, received difference is 0.9852059176329466, but expected 5e-13
+   × skater physical event rates > keeps partial current-season C blocks count/exposure pairs unknown 0ms
+     → expected 2.0090909090909093 to be close to 2.882608695652174, received difference is 0.8735177865612647, but expected 5e-13
+   × skater physical event rates > keeps partial current-season D blocks count/exposure pairs unknown 0ms
+     → expected 2.2181818181818183 to be close to 3.1826086956521737, received difference is 0.9644268774703555, but expected 5e-13
+   ↓ skater physical event rates > treats a row from an earlier season as all prior history
+   ↓ skater physical event rates > bounds the league scale and uses the prior two seasons' rate before any league games
+   ↓ skater physical event rates > uses the position prior, not zero, when there is no all-strength row or history
+   ↓ skater physical event rates > shrinks a short rookie history toward the prior and lets a genuine non-hitter stay near zero
+   ↓ skater physical event rates > weights the recent rate by the minutes its window covers and reads the legacy rate when canonical is missing
+   ↓ skater physical event rates > adds bounded PK time and never returns negative or non-finite rates
+   ↓ strength-split conversion rates > models PP goal rate above ES goal rate when PP shot conversion evidence is stronger
+   ↓ strength-split conversion rates > applies external multipliers independently to split rates
+   ↓ strength-split conversion rates > applies stronger shrinkage for tiny samples than for established samples
+   ↓ assist rate scale > fits assists per goal, pulled modestly from the 1.7 raw rate toward the 1.44 prior
+   ↓ assist rate scale > keeps the legacy per-two-goals numbers exactly
+   ↓ assist rate scale > refits ES assists per goal and keeps PP on the per-two-goals scale by default
+   ↓ pp opportunity allocation > allocates team PP TOI target across skaters using role-weighted shares
+   ↓ official pp opportunity > splits the team PP target in proportion to official last-10 PP TOI, falling back to rolling for absent players
+   ↓ official pp opportunity > applies the TOP/MIDDLE PP minimum only to players with a PP unit
+   ↓ official pp opportunity > uses official PP share when present, else puts PK time in the strength-table denominator
+   ↓ teammate assist coupling > boosts assist dependency for top-unit players with strong line/PP share
+   ↓ teammate assist coupling > penalizes assist dependency for depth players with low teammate context
+   ↓ role-specific usage bounds > caps depth skater TOI/shot spikes
+   ↓ role-specific usage bounds > preserves top-role usage when already within bounds
+   ↓ skater pool recovery safeguards > merges supplemental skaters without dropping original ordering
+   ↓ skater pool recovery safeguards > can restore a collapsed pool toward 18 skaters with supplemental candidates
+   ↓ skater pool recovery safeguards > constrains candidates to active roster skaters
+   ↓ skater pool recovery safeguards > keeps line skaters beyond the old first24 membership sample
+   ↓ skater pool recovery safeguards > lets the gated season bootstrap reach current roster candidates before rolling history exists
+   ↓ skater pool recovery safeguards > fails open when active roster skaters are unavailable
+   ↓ skater pool recovery safeguards > caps team skater TOI target when projected pool is undersized
+   ↓ skater pool recovery safeguards > keeps canonical team skater TOI target for normal projected pool sizes
+   ↓ skater pool recovery safeguards > keeps canonical team skater TOI target at the minimum valid projected pool size
+   ↓ skater pool recovery safeguards > caps team skater TOI target immediately below the minimum valid projected pool size
+   ↓ reconciliation distribution validation > keeps reconciled vectors unchanged when concentration is within limits
+   ↓ reconciliation distribution validation > blends and renormalizes when one player dominates ES/PP share
+   ↓ skater role scenarios > builds normalized top scenarios from role continuity
+   ↓ skater role scenarios > produces meaningful alternate scenarios under volatility
+   ↓ skater scenario stat blending > returns base outputs when scenarios are absent
+   ↓ skater scenario stat blending > blends scenario lines by probability
+   ↓ skater scenario stat blending > matches exact weighted expectation for explicit two-scenario mixture
+   ↓ horizon scenario propagation > returns per-game scenario summaries matching horizon length
+   ↓ horizon scenario propagation > softens top-role certainty deeper into horizon
+   ↓ horizon scenario propagation > preserves total blended mass near base means for neutral role scenarios
+   ↓ skater scenario metadata > produces model version, count, and sorted top drivers
+   ↓ active skater filtering > uses continuous in-season age without admitting traded, rookie or missing season evidence
+   ↓ active skater filtering > retains a verified season-opening prior without weakening team or position filters
+   ↓ active skater filtering > filters out non-team and goalie-position candidates
+   ↓ active skater filtering > hard-filters skaters with stale metrics beyond threshold and soft-penalizes mid-stale skaters
+   ↓ active skater filtering > treats players with no recent metrics as inactive and excludes them
+   ↓ line-combination recency assessment > marks missing line combinations as hard stale
+   ↓ line-combination recency assessment > marks moderately old line combinations as soft stale only
+   ↓ line-combination recency assessment > keeps line combinations at the soft-stale boundary in the fresh bucket
+   ↓ line-combination recency assessment > marks very old line combinations as hard stale
+   ↓ line-combination recency assessment > keeps boundary-day line combinations out of hard-stale bucket
+   ↓ skater role tagging > assigns line/pair roles from line-combination ordering
+   ↓ skater role tagging > falls back to TOI-ranked roles when requested
+   ↓ skater role tagging > handles emergency fallback skaters with unknown position by assigning depth role
+   ↓ skater role continuity > computes continuity and volatility summaries from recent role history
+   ↓ skater role continuity > penalizes volatile role histories and mildly boosts stable roles
+   ↓ roster-event availability weighting > fully removes unavailable event types and restores on return/callup
+   ↓ roster-event availability weighting > applies confidence-weighted penalties for partial-availability events
+   ↓ starter scenarios > builds normalized top-2 scenarios from multi-goalie probabilities
+   ↓ starter scenarios > returns a single scenario with full probability when only one goalie exists
+   ↓ scenario blending > blends top scenarios using raw starter probabilities
+   ↓ horizon scalars > builds sequential scalars with schedule decay and b2b penalty
+   ↓ goalie rest-split adjustments > maps days-since-start into expected rest buckets
+   ↓ goalie rest-split adjustments > applies sample-weighted positive adjustments and ignores low-sample buckets
+   ↓ team strength priors > increases shots-against and opponent goal context when defense xGA and opponent xGF are elevated
+   ↓ team strength priors > raises team goals when the opponent's defence allows more xG
+   ↓ team strength priors > returns neutral adjustments when no team priors are available
+   ↓ team 5v5 context priors > boosts league save context for strong 5v5 save profiles
+   ↓ team 5v5 context priors > returns neutral values when no 5v5 profile is available
+   ↓ NST opponent danger context > raises shot-danger context when defending team has elevated NST xGA/60
+   ↓ NST opponent danger context > returns neutral adjustments when NST profiles are unavailable
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/projections/runProjectionV2.test.ts > skater physical event rates > keeps partial current-season C hits count/exposure pairs unknown
+AssertionError: expected 2.0475409836065572 to be close to 3.046341463414634, received difference is 0.998800479808077, but expected 5e-13
+ ❯ lib/projections/runProjectionV2.test.ts:875:37
+    873|     for (const missing of [null, undefined]) {
+    874|       // Either missing member invalidates the split, without inventin…
+    875|       expect(rate(missing, 120000)).toBeCloseTo(unsplit, 12);
+       |                                     ^
+    876|       expect(rate(40, missing)).toBeCloseTo(unsplit, 12);
+    877|       expect(rate(0, missing)).toBeCloseTo(unsplit, 12);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  lib/projections/runProjectionV2.test.ts > skater physical event rates > keeps partial current-season D hits count/exposure pairs unknown
+AssertionError: expected 2.019672131147541 to be close to 3.004878048780488, received difference is 0.9852059176329466, but expected 5e-13
+ ❯ lib/projections/runProjectionV2.test.ts:875:37
+    873|     for (const missing of [null, undefined]) {
+    874|       // Either missing member invalidates the split, without inventin…
+    875|       expect(rate(missing, 120000)).toBeCloseTo(unsplit, 12);
+       |                                     ^
+    876|       expect(rate(40, missing)).toBeCloseTo(unsplit, 12);
+    877|       expect(rate(0, missing)).toBeCloseTo(unsplit, 12);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  lib/projections/runProjectionV2.test.ts > skater physical event rates > keeps partial current-season C blocks count/exposure pairs unknown
+AssertionError: expected 2.0090909090909093 to be close to 2.882608695652174, received difference is 0.8735177865612647, but expected 5e-13
+ ❯ lib/projections/runProjectionV2.test.ts:875:37
+    873|     for (const missing of [null, undefined]) {
+    874|       // Either missing member invalidates the split, without inventin…
+    875|       expect(rate(missing, 120000)).toBeCloseTo(unsplit, 12);
+       |                                     ^
+    876|       expect(rate(40, missing)).toBeCloseTo(unsplit, 12);
+    877|       expect(rate(0, missing)).toBeCloseTo(unsplit, 12);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  lib/projections/runProjectionV2.test.ts > skater physical event rates > keeps partial current-season D blocks count/exposure pairs unknown
+AssertionError: expected 2.2181818181818183 to be close to 3.1826086956521737, received difference is 0.9644268774703555, but expected 5e-13
+ ❯ lib/projections/runProjectionV2.test.ts:875:37
+    873|     for (const missing of [null, undefined]) {
+    874|       // Either missing member invalidates the split, without inventin…
+    875|       expect(rate(missing, 120000)).toBeCloseTo(unsplit, 12);
+       |                                     ^
+    876|       expect(rate(40, missing)).toBeCloseTo(unsplit, 12);
+    877|       expect(rate(0, missing)).toBeCloseTo(unsplit, 12);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 108 skipped (112)
+   Start at  12:28:37
+   Duration  1.04s (transform 299ms, setup 3ms, collect 555ms, tests 7ms, environment 277ms, prepare 35ms)
+

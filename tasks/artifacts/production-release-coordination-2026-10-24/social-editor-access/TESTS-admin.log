@@ -1,0 +1,19 @@
+
+> web@0.1.0 test
+> vitest --run --maxWorkers=1 __tests__/utils/adminOnlyMiddleware.test.ts components/Admin/AdminPageGate.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:22722) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/Admin/AdminPageGate.test.tsx (7 tests) 63ms
+(node:22726) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/utils/adminOnlyMiddleware.test.ts (54 tests) 8ms
+
+ Test Files  2 passed (2)
+      Tests  61 passed (61)
+   Start at  17:01:58
+   Duration  1.21s (transform 152ms, setup 4ms, collect 555ms, tests 71ms, environment 315ms, prepare 64ms)
+

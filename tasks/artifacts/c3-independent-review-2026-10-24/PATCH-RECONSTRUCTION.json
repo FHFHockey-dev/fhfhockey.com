@@ -1,0 +1,46 @@
+{
+  "commands": [
+    {
+      "command": [
+        "patch",
+        "--batch",
+        "--forward",
+        "-p1",
+        "-i",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/C3-CANCEL-RELOAD.patch"
+      ],
+      "cwd": "tasks/artifacts/c3-independent-review-2026-10-24/isolated/panel",
+      "exitCode": 0,
+      "log": "panel-patch.log"
+    },
+    {
+      "command": [
+        "patch",
+        "--batch",
+        "--forward",
+        "-p1",
+        "-i",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/PROPOSED-BOUNDARY-browser-auth.patch"
+      ],
+      "cwd": "tasks/artifacts/c3-independent-review-2026-10-24/isolated/proposed",
+      "exitCode": 0,
+      "log": "proposed-patch.log"
+    }
+  ],
+  "candidateChecks": [
+    {
+      "path": "isolated/panel/web/components/account/InSeasonPanel.tsx",
+      "expected": "9987664256fd615d6b47cb41d019edd7c9515456e8c02808d42d741e239776ea",
+      "actual": "9987664256fd615d6b47cb41d019edd7c9515456e8c02808d42d741e239776ea",
+      "matches": true
+    },
+    {
+      "path": "isolated/panel/web/components/account/InSeasonPanel.test.tsx",
+      "expected": "646b3379e105e0ae3777c196db148fcd9af1366faa757102ccb3ebeae4b3e535",
+      "actual": "646b3379e105e0ae3777c196db148fcd9af1366faa757102ccb3ebeae4b3e535",
+      "matches": true
+    }
+  ],
+  "proposedAuthSha256": "6c4f86fefb3219fb310513efc85aaafe3dc5b698a2fab24b78731628255ef2b0",
+  "canonicalAuthUnchanged": true
+}

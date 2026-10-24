@@ -1,0 +1,19 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts components/PlayerPickupTable/PlayerPickupTable.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web
+
+(node:2896) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | components/PlayerPickupTable/PlayerPickupTable.test.ts > Player pickup interactions > retries a failed player request
+Failed to load player data: { message: [32m'Unavailable'[39m }
+
+ ✓ components/PlayerPickupTable/PlayerPickupTable.test.ts (31 tests) 1157ms
+
+ Test Files  1 passed (1)
+      Tests  31 passed (31)
+   Start at  10:05:54
+   Duration  1.81s (transform 195ms, setup 9ms, collect 318ms, tests 1.16s, environment 230ms, prepare 29ms)
+

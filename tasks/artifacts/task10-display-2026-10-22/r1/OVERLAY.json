@@ -1,0 +1,11 @@
+{
+  "reviewer_snapshot": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-task10-review-fosogs3g",
+  "candidate_snapshot": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task10-r1-2er5yphn",
+  "changed_pins": {
+    "web/lib/rosterScheduleOptimizer/planning.ts": "d1300a64ac98d97765b9daff8017f3fe8341aa8757984ff176a177fc3a2674f2",
+    "web/lib/rosterScheduleOptimizer/gameForecastPoints.test.ts": "932bae6895f65b1a83b5eea20fca7bcebdf5136c719108bf16d6cc27246cbfb6",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx": "914a1f665db2d3e5a28f9b172cc1bb5e02f1648ce9143e289a8fee2e1d624539"
+  },
+  "unchanged_pins": 36,
+  "reviewer_fixtures_unchanged": true
+}

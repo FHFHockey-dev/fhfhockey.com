@@ -1,0 +1,16 @@
+[
+  {
+    "title": "compact day and bench controls preserve saved intent and keyboard selection",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('slider', { name: 'Selected planning day' })\nExpected: \u001b[32m\"Wed, Oct 7\"\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('slider', { name: 'Selected planning day' })\u001b[22m\n\n\n  1981 |   await showScheduleView(page, \"player\");\n  1982 |   await expect(bench).toHaveAttribute(\"aria-expanded\", \"false\");\n> 1983 |   await expect(slider).toHaveAttribute(\"aria-valuetext\", dates[2]);\n       |                        ^\n  1984 |   await bench.focus();\n  1985 |   await page.keyboard.press(\"Enter\"); await expect(bench).toHaveAttribute(\"aria-expanded\", \"true\");\n  1986 |   await expect(table.locator('tbody[data-position=\"BENCH\"] tr[data-player-id]:visible')).toHaveCount(6);\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1983:24"
+    ]
+  },
+  {
+    "title": "compact short desktop and mobile retain rows, day state, reserves and unknown goalie status",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  }
+]

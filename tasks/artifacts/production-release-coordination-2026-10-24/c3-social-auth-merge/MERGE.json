@@ -1,0 +1,19 @@
+{
+  "baseline": {
+    "path": "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access/baseline/web/__tests__/contexts/AuthProviderContext.test.tsx",
+    "sha256": "7e9bb5e5f6370b1e8ffb69eca11dbcc4385fab0aa441facceb62de66758d8074"
+  },
+  "social_candidate": {
+    "path": "web/__tests__/contexts/AuthProviderContext.test.tsx",
+    "sha256": "4b37b6d250e41a48c0f9e8a0ee102c833974a60a0efda324608a86b8f0d628c5"
+  },
+  "c3_candidate": {
+    "path": "/tmp/fhfh-claude-c3-reconcile-m8fw8h47/web/__tests__/contexts/AuthProviderContext.test.tsx",
+    "sha256": "9173deb1c043c2e03e1a9de1dd7184dd66f8c3835f256263d3ed5def2b81aa8c"
+  },
+  "three_way_merge_exit": 0,
+  "merged_sha256": "c3cf3f66b7b51d992a11df5207a429ed22350bd88c03ba43993033e82ff1941b",
+  "merged_path": "tasks/artifacts/production-release-coordination-2026-10-24/c3-social-auth-merge/AuthProviderContext.merged.test.tsx",
+  "canonical_edits": 0,
+  "status": "Clean isolated test merge; verification pending"
+}

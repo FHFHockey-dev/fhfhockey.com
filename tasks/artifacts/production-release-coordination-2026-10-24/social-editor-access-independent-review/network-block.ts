@@ -1,0 +1,15 @@
+import http from 'node:http';
+import https from 'node:https';
+import net from 'node:net';
+import tls from 'node:tls';
+const deny = () => { throw new Error('REAL NETWORK FORBIDDEN: independent social access review'); };
+globalThis.fetch = deny as typeof fetch;
+globalThis.XMLHttpRequest = class { constructor() { deny(); } } as unknown as typeof XMLHttpRequest;
+globalThis.WebSocket = class { constructor() { deny(); } } as unknown as typeof WebSocket;
+http.request = deny as typeof http.request;
+http.get = deny as typeof http.get;
+https.request = deny as typeof https.request;
+https.get = deny as typeof https.get;
+net.connect = deny as typeof net.connect;
+net.createConnection = deny as typeof net.createConnection;
+tls.connect = deny as typeof tls.connect;

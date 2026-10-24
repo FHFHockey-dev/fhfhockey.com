@@ -1,0 +1,39 @@
+{
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-release-readiness-20261024-jc9ti1o5/snapshot/web",
+  "argv": [
+    "npm",
+    "exec",
+    "--no",
+    "--",
+    "vitest",
+    "run",
+    "--config",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-readiness-2026-10-24/diagnostics/vitest.config.mts",
+    "--reporter=json",
+    "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-readiness-2026-10-24/diagnostics/tests.json"
+  ],
+  "environment": {
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-release-readiness-20261024-jc9ti1o5/home",
+    "TMPDIR": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-release-readiness-20261024-jc9ti1o5/tmp",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://unit-tests.supabase.invalid",
+    "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY": "synthetic-public-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "synthetic-service-role-key",
+    "NODE_OPTIONS": "--max-old-space-size=8192 --require /Users/tim/Code/fhfhockey.com/tasks/artifacts/release-readiness-2026-10-24/offline-network-deny.cjs",
+    "npm_config_offline": "true",
+    "npm_config_audit": "false",
+    "npm_config_fund": "false",
+    "npm_config_update_notifier": "false",
+    "TZ": "UTC",
+    "CI": "1",
+    "PLAYWRIGHT_ISOLATED_NEXT": "1"
+  },
+  "scope": "Artifact-only diagnosis; no candidate/app source changed",
+  "lock": {
+    "pid": 11657,
+    "token": "5cd427a0-9795-40a6-8516-a53b7a0fda7c",
+    "thread": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+    "scope": "Two artifact-only permission diagnostics against immutable candidate",
+    "at": "2026-10-24T14:33:23.803008+00:00"
+  }
+}

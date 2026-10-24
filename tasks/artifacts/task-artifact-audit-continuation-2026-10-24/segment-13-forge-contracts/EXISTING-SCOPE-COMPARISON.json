@@ -1,0 +1,60 @@
+{
+  "at": "2026-10-24T18:24:21.337833+00:00",
+  "rows": [
+    {
+      "taskID": "RSO-FE-05c",
+      "scope": "Verify horizon operation and coherent serving",
+      "implementation": "Local progress explicitly recorded; current authority leaves gate open",
+      "acceptance": "not closed; exact newer evidence reconciliation required",
+      "release": "Existing RSO bridge release does not activate all shared forecast gates",
+      "next_action": "Assign explicit acceptance/implementation owner; map to native/RSO current candidate before doing duplicate work.",
+      "children": null
+    },
+    {
+      "taskID": "RSO-FE-05f",
+      "scope": "Operate a bounded calendar horizon locally without new Vercel generation",
+      "implementation": "Local progress explicitly recorded; current authority leaves gate open",
+      "acceptance": "not closed; exact newer evidence reconciliation required",
+      "release": "Existing RSO bridge release does not activate all shared forecast gates",
+      "next_action": "Assign explicit acceptance/implementation owner; map to native/RSO current candidate before doing duplicate work.",
+      "children": null
+    },
+    {
+      "taskID": "PIPE-NATURAL",
+      "scope": "Natural daily pipeline completion / terminal alert evidence",
+      "implementation": "Existing natural production schedules preserved; local monitoring handoff complete. No current hosted run UUID/lease/completion observed.",
+      "acceptance": "End-to-end natural pipeline acceptance remains open;186offline calculations complete is separate.",
+      "release": "R20 recorded",
+      "next_action": "Reconcile existing retained terminal route/audit evidence for the NEW72/C0076 quartet separately from the closed August3 C0047 report receipt and newer PIPELINE work. Do not add a duplicate wrapper repair from an old gap or infer natural success from200/submission alone. Current Oct23/24 report UUID/lease/completion evidence stays separately open; no endpoint invocation, historical backfill or model/pilot restart.",
+      "children": null
+    },
+    {
+      "taskID": "SUSTAINABILITY-NATURAL",
+      "scope": "Batch-complete natural sustainability chain and markers",
+      "implementation": "Preserve accepted narrower local repairs and historical releases. Exact C0019 / failed-jobs NEW6 requires committed-batch receipts after partial baseline writes; NST NEW73/C0065 separately requires job374/baseline order and full score-page population. August1 NEW61 handoff success predates the October17 recurrence and does not close it.",
+      "acceptance": "Exact later natural committed-batch, non-overlap and full-population closure remains unverified in inspected receipts. Historical all-200 chain and local counter repair are narrower evidence.",
+      "release": "Historical fixes retain release credit; exact shipped baseline receipt and later natural chain closure remain open, not inferred from local source or document schedule slots.",
+      "next_action": "Existing owner reconciles retained exact release and natural receipts for C0019/NEW6 and C0065/NEW73 against Sustainability NEW17. Record source/job/run identity, committed counts and all-page coverage; keep missing evidence open rather than rerunning or duplicating accepted local fixes.",
+      "children": null
+    },
+    {
+      "taskID": "SITE-DRAFT-ERRORS",
+      "scope": "Draft Pro status/error sweep and refund-route follow-up",
+      "implementation": "Local37-test sweep; account refund consumer excluded",
+      "acceptance": "follow-up unverified",
+      "release": "not established",
+      "next_action": "Billing owner triages exact out-of-scope consumer before edits",
+      "children": null
+    },
+    {
+      "taskID": "FORGE-LEDGER-WEEK",
+      "scope": "F6 fixture-only Q3\u2013Q6 scripts split by Release C run identity",
+      "implementation": "Offline F6 evaluator, input/proof contract, seven bounded SELECT templates and fixtures complete.",
+      "acceptance": "Owner 31/31 tests and CLI refusal/valid controls passed; independent reviewer UNASSIGNED. No SQL execution or model qualification.",
+      "release": "Not released; no production authorization",
+      "next_action": "Parent assigns artifact-only independent review. Any future bounded read requires separate TJ approval plus actual first issuance, complete finality/dressed universe and immutable forecast-revision evidence; no recapture.",
+      "children": null
+    }
+  ],
+  "conclusion": "No new FORGE-DASHBOARD-PROMOTION catchall. Retain dashboard-source/render qualification as individually held children under existing Sustainability/natural pipeline parents; weekly TopAdds exact horizon5 obligation is distinct from F6 fixture scripts and RSO selected-horizon generation. S19 is separate from DraftPro API/refund status sweep."
+}

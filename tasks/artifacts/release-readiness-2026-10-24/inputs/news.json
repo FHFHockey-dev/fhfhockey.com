@@ -1,0 +1,56 @@
+{
+  "recorded_at": "2026-10-23T15:23:17.449753+00:00",
+  "status": "applied_locally_pending_independent_rereview",
+  "branch": "octoberBranch",
+  "current_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "combined_diff_base": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "combined_patch_sha256": "25f3b2053eed4c3401a882a6b3c808fedd7787c5097bba72d1555f963e753c9c",
+  "serialization_correction_patch_sha256": "08e3db4cf35490acccf2b5c97b4b12b7e6642d13cc98abce2e4c425e634d7dca",
+  "files": {
+    "web/components/HomePage/HomepageStandingsInjuriesSection.test.tsx": "17e6f87b89d521e24a41950017e118d91eb8fb3a5c0e95589db5c8694bd93ace",
+    "web/components/HomePage/HomepageStandingsInjuriesSection.tsx": "8f1916979730fe35cd9bb1c2b5d905390d158a3a230510bf44d1395c0cb69f9f",
+    "web/lib/newsFeed.ts": "de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d",
+    "web/pages/api/v1/db/tweet-pattern-review.ts": "0145984ba46c82bc09698b047b00a395018b0e9488acd52cb5f1d9c616083445",
+    "web/lib/homepageNewsCompatibility.test.tsx": "48321a8a5add55a9e9f4534cfd751dcf2e68d62b8576b696860a70288fde7ca7",
+    "web/lib/sources/fixtures/homepageNewsReceipt.json": "ac3e9711a02275749990f9020611e560ae8c07b6f06daa476f587bb14467a0a1"
+  },
+  "changed_from_previous_candidate": [
+    "web/lib/newsFeed.ts",
+    "web/lib/homepageNewsCompatibility.test.tsx"
+  ],
+  "other_four_paths_unchanged": true,
+  "claim_validator_unchanged": true,
+  "public_attribution_contract": {
+    "version": "public-news-source-v1",
+    "scope": "display only; no claim/publication authority",
+    "loader": "recomputes raw records; never honors a stored/client display marker",
+    "repeated_display": "validates and preserves resolved/unavailable/conflict decisions; malformed or unsupported versions fail closed"
+  },
+  "tests": {
+    "before_correction": {
+      "failed": 6,
+      "passed": 3,
+      "skipped": 37
+    },
+    "final": {
+      "passed": 115,
+      "suites": 4
+    },
+    "reviewer_fixture": {
+      "passed": 9,
+      "failed": 0,
+      "sourceSha256": "de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d"
+    }
+  },
+  "scoped_type_errors": 0,
+  "lint_errors": 0,
+  "lint_warnings": 2,
+  "diff_check": "passed",
+  "metadata_sync_loss_fixed": false,
+  "production_calls": 0,
+  "db_changes": 0,
+  "git_index_changes": 0,
+  "commits": 0,
+  "pushes": 0,
+  "deployments": 0
+}

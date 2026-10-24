@@ -1,0 +1,117 @@
+{
+  "source": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad",
+  "variants": {
+    "a": {
+      "captures": 62,
+      "strengths": [
+        "ev",
+        "pp"
+      ],
+      "dates": [
+        "2026-10-21"
+      ],
+      "capturesWithAllStrength": 0,
+      "missingPhysicalSelectColumns": [
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+      ],
+      "rollingSelectColumnCount": 25
+    },
+    "b": {
+      "captures": 62,
+      "strengths": [
+        "ev",
+        "pp"
+      ],
+      "dates": [
+        "2026-10-21"
+      ],
+      "capturesWithAllStrength": 0,
+      "missingPhysicalSelectColumns": [
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+      ],
+      "rollingSelectColumnCount": 25
+    },
+    "a0": {
+      "captures": 62,
+      "strengths": [
+        "ev",
+        "pp"
+      ],
+      "dates": [
+        "2026-10-21"
+      ],
+      "capturesWithAllStrength": 0,
+      "missingPhysicalSelectColumns": [
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+      ],
+      "rollingSelectColumnCount": 25
+    },
+    "b0": {
+      "captures": 62,
+      "strengths": [
+        "ev",
+        "pp"
+      ],
+      "dates": [
+        "2026-10-21"
+      ],
+      "capturesWithAllStrength": 0,
+      "missingPhysicalSelectColumns": [
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+      ],
+      "rollingSelectColumnCount": 25
+    },
+    "c": {
+      "captures": 0,
+      "strengths": [],
+      "dates": [],
+      "capturesWithAllStrength": 0,
+      "missingPhysicalSelectColumns": [
+        "toi_seconds_total_last5",
+        "hits_per_60_hits_3ya",
+        "hits_per_60_toi_seconds_3ya",
+        "blocks_per_60_blocks_3ya",
+        "blocks_per_60_toi_seconds_3ya",
+        "hits_per_60_hits_season",
+        "hits_per_60_toi_seconds_season",
+        "blocks_per_60_blocks_season",
+        "blocks_per_60_toi_seconds_season"
+      ],
+      "rollingSelectColumnCount": 0
+    }
+  },
+  "postR19VariantCReconstruction": "blocked: no c captures; retained four variants lack all-strength history and nine physical select fields",
+  "rowIdentical20Players5Strengths": "blocked: retained projection captures do not contain the five-strength raw writer input cohort; not substituted with synthetic data"
+}

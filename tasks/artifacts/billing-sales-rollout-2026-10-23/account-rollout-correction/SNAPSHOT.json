@@ -1,0 +1,16 @@
+{
+  "snapshot": "/tmp/fhfh-account-rollout-6ca52clw/snapshot",
+  "environment": {
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/tmp/fhfh-account-rollout-6ca52clw/snapshot/home",
+    "TMPDIR": "/tmp/fhfh-account-rollout-6ca52clw/snapshot/tmp",
+    "TZ": "UTC",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://unit-tests.supabase.invalid",
+    "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY": "synthetic-public-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "synthetic-service-role-key",
+    "NODE_OPTIONS": "--require /tmp/fhfh-account-rollout-6ca52clw/snapshot/web/audit-network-deny.cjs",
+    "npm_config_offline": "true",
+    "npm_config_audit": "false",
+    "npm_config_fund": "false"
+  }
+}

@@ -1,0 +1,10 @@
+--- a/auditNstR1Additional.test.ts
++++ b/auditNstR1Additional.test.ts
+@@ -354,6 +354,7 @@
+     let corrupt = true;
+     pipelineStateRpc.mockImplementation(async (name: string, args: any) => {
+       const result = await originalRpc(name, args);
++      if (result.error !== null) return result;
+       if (corrupt && args.p_operation_key === "upstream_skater_sources" && args.p_transition === "acquire") {
+         corrupt = false;
+         return { ...result, data: [{ ...result.data[0], cursor_game_id: 99 }] };

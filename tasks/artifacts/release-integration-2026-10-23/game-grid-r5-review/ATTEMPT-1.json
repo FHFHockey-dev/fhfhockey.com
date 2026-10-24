@@ -1,0 +1,6 @@
+{
+  "exit": 1,
+  "stage": "snapshot preparation before browser/lock",
+  "reason": "Reboot removed prior temporary selected-baseline snapshot",
+  "resolution": "Extract preserved SHA-verified combined-validation-v1 archive; no canonical source copy or network"
+}

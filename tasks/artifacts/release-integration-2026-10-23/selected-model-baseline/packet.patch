@@ -1,0 +1,987 @@
+--- a/web/lib/projections/stages/skater-stage.ts
++++ b/web/lib/projections/stages/skater-stage.ts
+@@ -163,6 +163,8 @@
+   SKATER_TEAMMATE_ASSIST_PP_MAX_MULTIPLIER,
+   SKATER_ASSIST_SHARE_MIN,
+   SKATER_ASSIST_SHARE_MAX,
++  SKATER_TEAM_ASSISTS_PER_GOAL,
++  SKATER_GOAL_CONVERSION_PRIORS,
+   SKATER_ROLE_TOP_TOI_ES_MIN,
+   SKATER_ROLE_TOP_TOI_ES_MAX,
+   SKATER_ROLE_TOP_TOI_PP_MIN,
+@@ -256,14 +258,11 @@
+   computeSkaterPhysicalEventRates,
+   computeSkaterAssistShare,
+   computeSkaterShotRatePer60,
+-  allocateTeamAssists,
+   computeSkaterRestScheduleAdjustments,
+   computeSkaterSampleShrinkageAdjustments,
+   computeSkaterShotQualityAdjustments,
+   computeSkaterTeamLevelContextAdjustments,
+-  computeSupportedStrengthSplitConversionRates,
+-  applySupportedSkaterConversionHeads,
+-  resolveSkaterConversionRates,
++  computeStrengthSplitConversionRates,
+   resolveAssistDenominators,
+   skaterConversionPriorsAndBounds,
+   SKATER_ASSIST_DENOMINATOR_DEFAULT,
+@@ -1433,9 +1432,6 @@
+       goals: number;
+       assists: number;
+       powerPlayPoints: number;
+-      goalsAvailable: boolean;
+-      assistsAvailable: boolean;
+-      powerPlayPointsAvailable: boolean;
+       blockedShots: number;
+       lineupSourceGameDate: string | null;
+       lineupRecencyDays: number | null;
+@@ -1560,7 +1556,7 @@
+     const seasonYear = Math.floor(game.id / 1_000_000);
+     const bootstrapSeasonId = seasonYear * 10000 + seasonYear + 1;
+     let bootstrap = args.seasonBootstrap
+-      ? await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", false)
++      ? await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", true)
+       : new Map<number, SeasonBootstrap>();
+     const bootstrapEligible = () => new Set([...bootstrap].filter(([, prior]) => prior.currentSeasonGames === 0
+       && (prior.historyGames > 0 || prior.sourceIds.length > 0)).map(([id]) => id));
+@@ -1714,7 +1710,7 @@
+           return meta.position !== "G" && meta.team_id === teamId;
+         });
+ 
+-        if (args.seasonBootstrap) bootstrap = await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", false);
++        if (args.seasonBootstrap) bootstrap = await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", true);
+         evRows = await fetchRollingRows(
+           teamPositionFilteredSkaterIds,
+           "ev",
+@@ -1942,18 +1938,13 @@
+         await fetchTeamRestDays(opponentTeamId, asOfDate),
+       );
+     }
+-    const restScheduleArgs = {
++    const restScheduleAdjustment = computeSkaterRestScheduleAdjustments({
++      // The Q8 tiers remain an unqualified offline candidate; preserve Release C behavior.
++      buckets: "legacy",
+       teamRestDays: teamRestDaysCache.get(teamDateKey(teamId)) ?? null,
+       opponentRestDays:
+         teamRestDaysCache.get(teamDateKey(opponentTeamId)) ?? null,
+       isHome: teamId === game.homeTeamId,
+-    };
+-    const restScheduleAdjustment =
+-      computeSkaterRestScheduleAdjustments(restScheduleArgs);
+-    // Backtest-only: what the pre-Q8 buckets would have applied.
+-    const restScheduleLegacyAdjustment = computeSkaterRestScheduleAdjustments({
+-      ...restScheduleArgs,
+-      buckets: "legacy",
+     });
+     if (restScheduleAdjustment.sampleWeight > 0) {
+       metrics.data_quality.rest_schedule_teams_with_signal += 1;
+@@ -2018,13 +2009,10 @@
+         toiPp: number;
+         shotsEs: number;
+         shotsPp: number;
+-        conversionSupport: ReturnType<typeof computeSupportedStrengthSplitConversionRates>;
+         goalRateEs: number;
+         goalRatePp: number;
+         assistRateEs: number;
+         assistRatePp: number;
+-        legacyAssistRateEs: number;
+-        legacyAssistRatePp: number;
+         hitsRate: number;
+         blocksRate: number;
+         physicalToiMultiplier: number;
+@@ -2068,11 +2056,6 @@
+         restScheduleRestDelta: number;
+         restScheduleTeamRestDays: number | null;
+         restScheduleOpponentRestDays: number | null;
+-        restScheduleIsHome: boolean;
+-        restScheduleLegacyAdjustment: SkaterRestScheduleAdjustment;
+-        conversionShrink: ReturnType<
+-          typeof resolveSkaterConversionRates
+-        >["conversionShrink"];
+         smallSampleWeight: number;
+         smallSampleIsLow: boolean;
+         smallSampleUsedCallupFallback: boolean;
+@@ -2257,9 +2240,40 @@
+       const shotsEs = computeShotsFromRate(boundedToiEs, sogPer60Ev);
+       const shotsPp = computeShotsFromRate(boundedToiPp, sogPer60Pp);
+ 
+-      // Conversion counts must share an explicitly retained canonical observation frame.
+-      const splitRates = computeSupportedStrengthSplitConversionRates({
+-        ev, pp,
++      // Online learning: blend recent and season-long conversion rates.
++      const goalsTotal = safeNumber(ev?.goals_total_all, 0);
++      const shotsTotal = safeNumber(ev?.shots_total_all, 0);
++      const assistsTotal = safeNumber(ev?.assists_total_all, 0);
++      const goalsRecent = safeNumber(ev?.goals_total_last5, 0);
++      const shotsRecent = safeNumber(ev?.shots_total_last5, 0);
++      const assistsRecent = safeNumber(ev?.assists_total_last5, 0);
++      const ppGoalsTotal = safeNumber(pp?.goals_total_all, 0);
++      const ppShotsTotal = safeNumber(pp?.shots_total_all, 0);
++      const ppAssistsTotal = safeNumber(pp?.assists_total_all, 0);
++      const ppGoalsRecent = safeNumber(pp?.goals_total_last5, 0);
++      const ppShotsRecent = safeNumber(pp?.shots_total_last5, 0);
++      const ppAssistsRecent = safeNumber(pp?.assists_total_last5, 0);
++      if (ppShotsTotal <= 0 && ppShotsRecent <= 0) {
++        metrics.data_quality.missing_pp_conversion_samples += 1;
++      }
++
++      learningCounters.players += 1;
++      if (shotsRecent > 0) learningCounters.goalRecent += 1;
++      if (goalsRecent > 0) learningCounters.assistRecent += 1;
++
++      const splitRates = computeStrengthSplitConversionRates({
++        evGoalsRecent: goalsRecent,
++        evShotsRecent: shotsRecent,
++        evGoalsAll: goalsTotal,
++        evShotsAll: shotsTotal,
++        evAssistsRecent: assistsRecent,
++        evAssistsAll: assistsTotal,
++        ppGoalsRecent,
++        ppShotsRecent,
++        ppGoalsAll: ppGoalsTotal,
++        ppShotsAll: ppShotsTotal,
++        ppAssistsRecent,
++        ppAssistsAll: ppAssistsTotal,
+         goalRateMultiplier:
+           shotQualityAdjustment.goalRateMultiplier *
+           onIceContextAdjustment.goalEnvironmentMultiplier *
+@@ -2271,18 +2285,15 @@
+           teamLevelContextAdjustment.assistRateMultiplier *
+           opponentGoalieContextAdjustment.assistRateMultiplier *
+           restScheduleAdjustment.assistRateMultiplier,
+-        position: shotPosition,
++        position: playerMetaById.get(playerId)?.position ?? null,
+       });
+-      if (splitRates.goalRatePp === null) metrics.data_quality.missing_pp_conversion_samples += 1;
+-      learningCounters.players += 1;
+-      if ((splitRates.support.ev?.pairs.goalPerShot?.last5.denominator ?? 0) > 0) learningCounters.goalRecent += 1;
+-      if ((splitRates.support.ev?.pairs.assistPerGoal?.last5.denominator ?? 0) > 0) learningCounters.assistRecent += 1;
+-      // Fixed priors remain internal benchmarks. Missing learned heads are masked before persistence.
+-      const {
+-        goalRateEs,
+-        goalRatePp,
+-        conversionShrink,
+-      } = resolveSkaterConversionRates({ splitRates, sampleWeight, position: shotPosition });
++      // Goals per shot shrink to the F/D prior by measured shots (task 4). The small-sample shrink
++      // stays, now toward that prior: it also damps the context goal multipliers above, which
++      // compound to about 1.3 for some skaters until task 9 sizes them (dropping it, Q7, raised
++      // forward goals per shot to 0.154 in the 10-13 pilot).
++      const goalPrior = SKATER_GOAL_CONVERSION_PRIORS[shotPosition === "D" ? "D" : "F"];
++      const goalRateEs = clamp(splitRates.goalRateEs * sampleWeight + (1 - sampleWeight) * goalPrior.es.perShot, 0.025, 0.3);
++      const goalRatePp = clamp(splitRates.goalRatePp * sampleWeight + (1 - sampleWeight) * goalPrior.pp.perShot, 0.04, 0.45);
+       // Assist rates are shares of on-ice goals for (task 3), shrunk to F/D priors; the
+       // team-goal environment carries the goal context terms, so no assist multiplier applies.
+       const assistPosition = playerMetaById.get(playerId)?.position ?? null;
+@@ -2290,22 +2301,6 @@
+         ippAllPct: ev?.ipp_all, position: assistPosition, strength: "es" }).share;
+       const assistRatePp = computeSkaterAssistShare({ goalsAll: pp?.goals_total_all, assistsAll: pp?.assists_total_all,
+         ippAllPct: pp?.ipp_all, position: assistPosition, strength: "pp" }).share;
+-      // Ledger-only: the same path on the former per-two-goals assist scale.
+-      const legacyAssistRates = resolveSkaterConversionRates({
+-        splitRates: computeSupportedStrengthSplitConversionRates({
+-          ev,
+-          pp,
+-          goalRateMultiplier: 1,
+-          assistRateMultiplier:
+-            onIceContextAdjustment.assistEnvironmentMultiplier *
+-            teamLevelContextAdjustment.assistRateMultiplier *
+-            opponentGoalieContextAdjustment.assistRateMultiplier *
+-            restScheduleAdjustment.assistRateMultiplier,
+-          assistDenominator: "per_two_goals",
+-        }),
+-        sampleWeight,
+-        assistDenominator: "per_two_goals",
+-      });
+ 
+       const roleContinuity =
+         roleTag != null
+@@ -2357,7 +2352,6 @@
+       const trendGoalMultiplier = trendAdjustment?.goalRateMultiplier ?? 1;
+       const trendAssistMultiplier = trendAdjustment?.assistRateMultiplier ?? 1;
+       projected.set(playerId, {
+-        conversionSupport: splitRates,
+         toiEs: boundedToiEs * availabilityMultiplier,
+         toiPp: boundedToiPp * availabilityMultiplier,
+         shotsEs: shotsEs * availabilityMultiplier * trendShotMultiplier,
+@@ -2366,18 +2360,6 @@
+         goalRatePp: clamp(goalRatePp * trendGoalMultiplier, 0.04, 0.45),
+         assistRateEs: clamp(assistRateEs * trendAssistMultiplier, SKATER_ASSIST_SHARE_MIN, SKATER_ASSIST_SHARE_MAX),
+         assistRatePp: clamp(assistRatePp * trendAssistMultiplier, SKATER_ASSIST_SHARE_MIN, SKATER_ASSIST_SHARE_MAX),
+-        legacyAssistRateEs: clampSkaterAssistRate(
+-          legacyAssistRates.assistRateEs * trendAssistMultiplier,
+-          "es",
+-          "trend",
+-          "per_two_goals",
+-        ),
+-        legacyAssistRatePp: clampSkaterAssistRate(
+-          legacyAssistRates.assistRatePp * trendAssistMultiplier,
+-          "pp",
+-          "trend",
+-          "per_two_goals",
+-        ),
+         hitsRate: physicalRates.hitsPer60,
+         blocksRate: physicalRates.blocksPer60,
+         physicalToiMultiplier: physicalRates.toiMultiplier,
+@@ -2436,9 +2418,6 @@
+         restScheduleRestDelta: restScheduleAdjustment.restDelta,
+         restScheduleTeamRestDays: restScheduleAdjustment.teamRestDays,
+         restScheduleOpponentRestDays: restScheduleAdjustment.opponentRestDays,
+-        restScheduleIsHome: restScheduleArgs.isHome,
+-        restScheduleLegacyAdjustment,
+-        conversionShrink,
+         smallSampleWeight: sampleShrinkage.sampleWeight,
+         smallSampleIsLow: sampleShrinkage.isLowSample,
+         smallSampleUsedCallupFallback: sampleShrinkage.usedCallupFallback,
+@@ -2645,18 +2624,6 @@
+         SKATER_ASSIST_SHARE_MIN,
+         SKATER_ASSIST_SHARE_MAX,
+       );
+-      p.legacyAssistRateEs = clampSkaterAssistRate(
+-        p.legacyAssistRateEs * teammateCoupling.assistRateEsMultiplier,
+-        "es",
+-        "coupling",
+-        "per_two_goals",
+-      );
+-      p.legacyAssistRatePp = clampSkaterAssistRate(
+-        p.legacyAssistRatePp * teammateCoupling.assistRatePpMultiplier,
+-        "pp",
+-        "coupling",
+-        "per_two_goals",
+-      );
+       p.teammateAssistEsMultiplier = teammateCoupling.assistRateEsMultiplier;
+       p.teammateAssistPpMultiplier = teammateCoupling.assistRatePpMultiplier;
+       p.teammateDependencyScore = teammateCoupling.dependencyScore;
+@@ -2778,19 +2745,32 @@
+       assistsPp: 0,
+     };
+ 
+-    // Assists from team on-ice goals x assist share (task 3), reconciled to league assists per goal.
+-    const assistIndexByPlayerId = new Map([...projected.keys()].map((id, index) => [id, index]));
+-    const allocatedAssists = allocateTeamAssists([...projected.values()].map(p => ({
+-      toiEs: p.toiEs, toiPp: p.toiPp, goalsEs: p.shotsEs * p.goalRateEs, goalsPp: p.shotsPp * p.goalRatePp,
+-      assistShareEs: p.assistRateEs, assistSharePp: p.assistRatePp,
+-    })));
++    // Assists come from the goals scored while a skater is on the ice: team goals at each
++    // strength x his share of the five skater slots x his assist share, scaled so the team's
++    // assists per goal match the league's at that strength.
++    const assistTeam = { goalsEs: 0, goalsPp: 0, toiEs: 0, toiPp: 0, rawEs: 0, rawPp: 0 };
++    for (const p of projected.values()) {
++      assistTeam.goalsEs += p.shotsEs * p.goalRateEs;
++      assistTeam.goalsPp += p.shotsPp * p.goalRatePp;
++      assistTeam.toiEs += p.toiEs;
++      assistTeam.toiPp += p.toiPp;
++    }
++    const onIceGoals = (toi: number, teamToi: number, teamGoals: number) =>
++      teamToi > 0 ? (teamGoals * 5 * toi) / teamToi : 0;
++    for (const p of projected.values()) {
++      assistTeam.rawEs += onIceGoals(p.toiEs, assistTeam.toiEs, assistTeam.goalsEs) * p.assistRateEs;
++      assistTeam.rawPp += onIceGoals(p.toiPp, assistTeam.toiPp, assistTeam.goalsPp) * p.assistRatePp;
++    }
++    const assistScaleEs = assistTeam.rawEs > 0 ? (SKATER_TEAM_ASSISTS_PER_GOAL.es * assistTeam.goalsEs) / assistTeam.rawEs : 0;
++    const assistScalePp = assistTeam.rawPp > 0 ? (SKATER_TEAM_ASSISTS_PER_GOAL.pp * assistTeam.goalsPp) / assistTeam.rawPp : 0;
+ 
+     for (const [playerId, p] of projected.entries()) {
+       let shotsEs = p.shotsEs;
+       let shotsPp = p.shotsPp;
+       const baseGoalsEs = shotsEs * p.goalRateEs;
+       const baseGoalsPp = shotsPp * p.goalRatePp;
+-      const { assistsEs: baseAssistsEs, assistsPp: baseAssistsPp } = allocatedAssists[assistIndexByPlayerId.get(playerId)!];
++      const baseAssistsEs = onIceGoals(p.toiEs, assistTeam.toiEs, assistTeam.goalsEs) * p.assistRateEs * assistScaleEs;
++      const baseAssistsPp = onIceGoals(p.toiPp, assistTeam.toiPp, assistTeam.goalsPp) * p.assistRatePp * assistScalePp;
+       const scenarioBlend = blendSkaterScenarioStatLinesAcrossHorizon({
+         currentRole: p.roleTag?.esRole ?? null,
+         scenarios: p.roleScenarios,
+@@ -2838,7 +2818,10 @@
+         ({ goalsEs, goalsPp, assistsEs, assistsPp, shotsEs, shotsPp } = seasonLine);
+         projHits = seasonLine.hits; projBlocks = seasonLine.blocks;
+       }
+-      const naivePrior = buildSkaterNaivePriorBaseline({ shotsEs, shotsPp });
++      const naivePriorGoalsEs = shotsEs * 0.095;
++      const naivePriorGoalsPp = shotsPp * 0.145;
++      const naivePriorAssistsEs = naivePriorGoalsEs * 1.44;
++      const naivePriorAssistsPp = naivePriorGoalsPp * 0.95;
+ 
+       teamTotals.toiEsSeconds += p.toiEs;
+       teamTotals.toiPpSeconds += p.toiPp;
+@@ -2910,14 +2893,14 @@
+             naive_prior: {
+               definition:
+                 "fixed_league_conversion_priors_on_reconciled_opportunities",
+-              goal_rate_es: naivePrior.goal_rate_es,
+-              goal_rate_pp: naivePrior.goal_rate_pp,
+-              assist_per_goal_es: naivePrior.assist_per_goal_es,
+-              assist_per_goal_pp: naivePrior.assist_per_goal_pp,
+-              goals_es: Number(naivePrior.goals_es.toFixed(4)),
+-              goals_pp: Number(naivePrior.goals_pp.toFixed(4)),
+-              assists_es: Number(naivePrior.assists_es.toFixed(4)),
+-              assists_pp: Number(naivePrior.assists_pp.toFixed(4)),
++              goal_rate_es: 0.095,
++              goal_rate_pp: 0.145,
++              assist_per_goal_es: 1.44,
++              assist_per_goal_pp: 0.95,
++              goals_es: Number(naivePriorGoalsEs.toFixed(4)),
++              goals_pp: Number(naivePriorGoalsPp.toFixed(4)),
++              assists_es: Number(naivePriorAssistsEs.toFixed(4)),
++              assists_pp: Number(naivePriorAssistsPp.toFixed(4)),
+               shots_es: Number(shotsEs.toFixed(4)),
+               shots_pp: Number(shotsPp.toFixed(4)),
+               hits: Number(projHits.toFixed(4)),
+@@ -3170,21 +3153,6 @@
+               assist_rate_multiplier: Number(
+                 p.restScheduleAssistRateMultiplier.toFixed(4),
+               ),
+-              // Backtest inputs: days since previous game (B2B = 1).
+-              rest: {
+-                team_rest_days: p.restScheduleTeamRestDays,
+-                opponent_rest_days: p.restScheduleOpponentRestDays,
+-                is_home: p.restScheduleIsHome,
+-              },
+-              rest_legacy_multipliers: {
+-                toi_multiplier: p.restScheduleLegacyAdjustment.toiMultiplier,
+-                shot_rate_multiplier:
+-                  p.restScheduleLegacyAdjustment.shotRateMultiplier,
+-                goal_rate_multiplier:
+-                  p.restScheduleLegacyAdjustment.goalRateMultiplier,
+-                assist_rate_multiplier:
+-                  p.restScheduleLegacyAdjustment.assistRateMultiplier,
+-              },
+             },
+             small_sample: {
+               sample_weight: Number(p.smallSampleWeight.toFixed(4)),
+@@ -3201,14 +3169,8 @@
+               assist_rate_es: Number(p.assistRateEs.toFixed(4)),
+               assist_rate_pp: Number(p.assistRatePp.toFixed(4)),
+             },
+-            // Backtest inputs: pre-shrink Bayes rate vs the former second shrink.
+-            conversion_shrink: p.conversionShrink,
+             assist_rate_scale: {
+-              convention: { ...SKATER_ASSIST_DENOMINATOR_DEFAULT },
+-              legacy_per_two_goals: {
+-                assist_rate_es: Number(p.legacyAssistRateEs.toFixed(4)),
+-                assist_rate_pp: Number(p.legacyAssistRatePp.toFixed(4)),
+-              },
++              convention: { es: "per_goal", pp: "per_two_goals" },
+             },
+             pp_opportunity: {
+               team_pp_target_seconds: p.ppOpportunityTeamTargetSeconds,
+@@ -3236,7 +3198,7 @@
+         },
+       });
+ 
+-      const playerUpsert = applySupportedSkaterConversionHeads({
++      const playerUpsert = {
+         run_id: runId,
+         as_of_date: asOfDate,
+         horizon_games: horizonGames,
+@@ -3266,11 +3228,11 @@
+         proj_blocks: Number((projBlocks * teamHorizonTotalScalar).toFixed(3)),
+         uncertainty: uncertaintyWithRole,
+         updated_at: new Date().toISOString(),
+-      }, p.conversionSupport);
++      };
+       playerUpserts.push({
+         ...playerUpsert,
+         uncertainty: {
+-          ...playerUpsert.uncertainty,
++          ...uncertaintyWithRole,
+           native_goal_accounting: buildNativePlayerGoalAccounting(playerUpsert),
+         },
+       });
+@@ -3287,12 +3249,10 @@
+         assists: Number(
+           ((assistsEs + assistsPp) * teamHorizonTotalScalar).toFixed(3),
+         ),
+-        // Internal benchmark values are never exported when their heads are unavailable.
+-        powerPlayPoints: Number((Number((goalsPp * teamHorizonTotalScalar).toFixed(3)) +
+-          Number((assistsPp * teamHorizonTotalScalar).toFixed(3))).toFixed(3)),
+-        goalsAvailable: playerUpsert.proj_goals_es !== null && playerUpsert.proj_goals_pp !== null,
+-        assistsAvailable: playerUpsert.proj_assists_es !== null && playerUpsert.proj_assists_pp !== null,
+-        powerPlayPointsAvailable: playerUpsert.proj_goals_pp !== null && playerUpsert.proj_assists_pp !== null,
++        // Match the PP heads consumed by the board; rounding raw totals again can disagree.
++        powerPlayPoints: Number(
++          (playerUpsert.proj_goals_pp + playerUpsert.proj_assists_pp).toFixed(3),
++        ),
+         blockedShots: Number((projBlocks * teamHorizonTotalScalar).toFixed(3)),
+         lineupSourceGameDate: lcContext.sourceGameDate,
+         lineupRecencyDays: lcRecency.daysStale,
+@@ -3336,9 +3296,6 @@
+       for (const [marketType, marketSummary] of Object.entries(
+         marketSummaryByType,
+       )) {
+-        if ((["player_goals", "player_goal_scorer_anytime", "player_points"].includes(marketType) && !projectionInput.goalsAvailable)
+-          || (["player_assists", "player_points"].includes(marketType) && !projectionInput.assistsAvailable)
+-          || (marketType === "player_power_play_points" && !projectionInput.powerPlayPointsAvailable)) continue;
+         const expectedValue = getProjectionValueForPropMarket({
+           marketType,
+           projection: {
+@@ -3458,8 +3415,6 @@
+           horizonGames,
+           teamHorizonScalars,
+         ),
+-        ...(teamGoalAccounting.reportedComponents.esMean === null ? { goals_es: null } : {}),
+-        ...(teamGoalAccounting.reportedComponents.ppMean === null ? { goals_pp: null } : {}),
+         native_goal_accounting: teamGoalAccounting,
+         native_roster_contributor_coverage: nativeRosterCoverage,
+       },
+--- a/web/lib/projections/run-forge-projections.ts
++++ b/web/lib/projections/run-forge-projections.ts
+@@ -1,7 +1,5 @@
+ import supabase from "lib/supabase/server";
+ import { resolveNullableCompatibilityValue } from "lib/rollingPlayerMetricCompatibility";
+-// The skater and goalie stages disable external fantasy inputs at every season-bootstrap
+-// call (nativeInputEligibility.test.ts), so this pipeline may claim the exclusion label.
+ import { buildForgeInputProvenance } from "lib/projections/calibrationEligibility";
+ import { fetchRecentTeamLineCombinations } from "lib/projections/queries/line-combo-queries";
+ import { hasCompleteStoredPbpGame } from "lib/projections/pbpCompletenessServer";
+@@ -517,7 +515,7 @@
+       modelMode: resolveSkaterRolloutConfig().mode,
+       modelEnvironment: projectionModelEnvironment(),
+       seasonBootstrapApplied: seasonBootstrap,
+-      inputProvenance: { ...buildForgeInputProvenance({ externalFantasyInputsExcluded: true }), capturedReads: capturedReadReceipt(capture.reads),
++      inputProvenance: { ...buildForgeInputProvenance(), capturedReads: capturedReadReceipt(capture.reads),
+         ...(issuedContexts ? { issuedContexts, issuedTargets: capturedIssuedTargets(issuedContexts, capture.writes) } : {}) },
+       dailyBoardEvidence: capture.writes.filter((ops) => ops[0]?.args[0] === "forge_runs")
+         .map((ops) => (ops.find((op) => op.method === "update")?.args[0] as any)?.metrics?.daily_board_evidence)
+@@ -594,7 +592,7 @@
+     decisionAsOf: capture.reads.reduce((latest, read) => read.receivedAt > latest ? read.receivedAt : latest, args.inputCutoff),
+     inputCutoff: args.inputCutoff, capturedAt: new Date().toISOString(), codeVersion: args.codeVersion,
+     modelMode: resolveSkaterRolloutConfig().mode, modelEnvironment: projectionModelEnvironment(),
+-    inputProvenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }), deterministicSeed: 0, horizonGames: 1, gameIds: [args.gameId],
++    inputProvenance: buildForgeInputProvenance(), deterministicSeed: 0, horizonGames: 1, gameIds: [args.gameId],
+     replayClassification: "historical_reconstruction", reads: capture.reads,
+     ...(args.controlledNews ? { controlledScenario: { classification: "controlled_news_fixture" as const, fixtureHash: projectionInputHash(args.controlledNews) } } : {}),
+     outputHash: projectionWritesHash(capture.writes), goalieStarts: capturedGoalieStarts(capture.reads, capture.writes),
+@@ -650,7 +648,7 @@
+   const metrics: Record<string, any> = {
+     as_of_date: asOfDate,
+     horizon_games: clampHorizonGames(opts?.horizonGames ?? 1),
+-    input_provenance: buildForgeInputProvenance({ externalFantasyInputsExcluded: true }),
++    input_provenance: buildForgeInputProvenance(),
+     decision_as_of: opts?.decisionAsOf,
+     board_lease: opts?.boardLease ?? null,
+     analytics_sidecar: {
+--- a/web/lib/projections/apiHelpers.ts
++++ b/web/lib/projections/apiHelpers.ts
+@@ -2,7 +2,6 @@
+ import { z } from "zod";
+ 
+ import supabase from "lib/supabase/server";
+-import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "./calibrationEligibility";
+ import { excludeOffReleaseRuns, restrictRunsToHorizon } from "./releasedRunFence";
+ 
+ export const dateSchema = z
+@@ -41,7 +40,7 @@
+   if (!supabase) throw new Error("Supabase server client not available");
+   const { data, error } = await restrictRunsToHorizon(excludeOffReleaseRuns(supabase
+     .from("forge_runs")
+-    .select("run_id,metrics")
++    .select("run_id")
+     .eq("as_of_date", asOfDate)
+     .eq("status", "succeeded")), horizonGames)
+     .order("created_at", { ascending: false })
+@@ -57,11 +56,5 @@
+     (err as any).statusCode = 404;
+     throw err;
+   }
+-  if ((data as any)?.metrics?.input_provenance?.external_fantasy_input_contract
+-    !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
+-    const err = new Error("Selected projection run lacks external fantasy exclusion provenance.");
+-    (err as any).statusCode = 422;
+-    throw err;
+-  }
+   return runId;
+ }
+--- a/web/pages/api/v1/forge/players.ts
++++ b/web/pages/api/v1/forge/players.ts
+@@ -4,7 +4,6 @@
+ import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
+ import { resolveProjectionTeamIdentity } from "lib/NHL/seasonAwareScheduleTeam";
+ import supabase from "lib/supabase/server";
+-import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+ import { excludeOffReleaseRuns } from "lib/projections/releasedRunFence";
+ import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+ import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
+@@ -177,7 +176,7 @@
+       (candidates ?? []) as Array<{
+         run_id: string;
+         as_of_date: string;
+-        metrics?: { input_provenance?: { external_fantasy_input_contract?: string } };
++        metrics?: unknown;
+       }>
+     )
+       // Within a date, a full-slate run outranks a later single-game run.
+@@ -191,7 +190,6 @@
+       )
+       .map(({ row }) => row);
+     for (const row of rows) {
+-      if (row.metrics?.input_provenance?.external_fantasy_input_contract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) continue;
+       const { count, error } = await supabase
+         .from("forge_player_projections")
+         .select("player_id", { count: "exact", head: true })
+--- a/web/pages/api/v1/forge/goalies.ts
++++ b/web/pages/api/v1/forge/goalies.ts
+@@ -5,7 +5,6 @@
+ import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
+ import { buildGoalieReaderCompatibility } from "lib/projections/compatibilityInventory";
+ import supabase from "lib/supabase/server";
+-import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+ import { excludeOffReleaseRuns, isOffReleaseGitSha } from "lib/projections/releasedRunFence";
+ import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+ import {
+@@ -477,7 +476,7 @@
+       calibrationHints,
+     ] = await Promise.all([
+       requestedRunId ? fetchRunSummary(requestedRunId) : Promise.resolve(null),
+-      requestedRunId === resolvedRunId
++      !requestedRunId || requestedRunId === resolvedRunId
+         ? Promise.resolve(null)
+         : fetchRunSummary(resolvedRunId),
+       fetchGamesScheduledCount(requestedDate),
+@@ -489,12 +488,6 @@
+     const runSummary = resolvedRunSummaryMaybe ?? requestedRunSummary;
+     if (q.runId && requestedRunSummary && isOffReleaseGitSha(requestedRunSummary.git_sha)) {
+       const error = new Error(`Projection run ${q.runId} was made off the release path (null or local git_sha) and is not served.`);
+-      (error as any).statusCode = 422;
+-      throw error;
+-    }
+-    if (runSummary?.run_id !== resolvedRunId || runSummary?.status !== "succeeded"
+-      || runSummary?.metrics?.input_provenance?.external_fantasy_input_contract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
+-      const error = new Error("Selected goalie run lacks external fantasy exclusion provenance.");
+       (error as any).statusCode = 422;
+       throw error;
+     }
+--- a/web/pages/api/v1/projections/players.ts
++++ b/web/pages/api/v1/projections/players.ts
+@@ -2,7 +2,6 @@
+ import { z } from "zod";
+ 
+ import supabase from "lib/supabase/server";
+-import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+ import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+ import {
+   buildProjectionApiErrorResponse,
+@@ -59,22 +58,6 @@
+     if (!supabase) throw new Error("Supabase server client not available");
+     const q = parseQuery(req);
+     const runId = q.runId ?? (await requireLatestSucceededRunId(q.date));
+-    if (q.runId) {
+-      const { data: run, error: runError } = await supabase.from("forge_runs")
+-        .select("metrics").eq("run_id", q.runId).maybeSingle();
+-      if (runError) throw runError;
+-      if (!run) {
+-        const error = new Error(`No projection run found for runId=${q.runId}`);
+-        (error as any).statusCode = 404;
+-        throw error;
+-      }
+-      if ((run as any).metrics?.input_provenance?.external_fantasy_input_contract
+-        !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
+-        const error = new Error("Selected projection run lacks external fantasy exclusion provenance.");
+-        (error as any).statusCode = 422;
+-        throw error;
+-      }
+-    }
+ 
+     let query = supabase
+       .from("forge_player_projections")
+--- a/web/pages/api/v1/projections/goalies.ts
++++ b/web/pages/api/v1/projections/goalies.ts
+@@ -2,7 +2,6 @@
+ import { z } from "zod";
+ 
+ import supabase from "lib/supabase/server";
+-import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+ import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+ import {
+   buildProjectionApiErrorResponse,
+@@ -59,22 +58,6 @@
+     if (!supabase) throw new Error("Supabase server client not available");
+     const q = parseQuery(req);
+     const runId = q.runId ?? (await requireLatestSucceededRunId(q.date));
+-    if (q.runId) {
+-      const { data: run, error: runError } = await supabase.from("forge_runs")
+-        .select("metrics").eq("run_id", q.runId).maybeSingle();
+-      if (runError) throw runError;
+-      if (!run) {
+-        const error = new Error(`No projection run found for runId=${q.runId}`);
+-        (error as any).statusCode = 404;
+-        throw error;
+-      }
+-      if ((run as any).metrics?.input_provenance?.external_fantasy_input_contract
+-        !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
+-        const error = new Error("Selected projection run lacks external fantasy exclusion provenance.");
+-        (error as any).statusCode = 422;
+-        throw error;
+-      }
+-    }
+ 
+     let query = supabase
+       .from("forge_goalie_projections")
+--- a/web/pages/api/v1/projections/teams.ts
++++ b/web/pages/api/v1/projections/teams.ts
+@@ -2,7 +2,6 @@
+ import { z } from "zod";
+ 
+ import supabase from "lib/supabase/server";
+-import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+ import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+ import {
+   buildProjectionApiErrorResponse,
+@@ -50,22 +49,6 @@
+     if (!supabase) throw new Error("Supabase server client not available");
+     const q = parseQuery(req);
+     const runId = q.runId ?? (await requireLatestSucceededRunId(q.date));
+-    if (q.runId) {
+-      const { data: run, error: runError } = await supabase.from("forge_runs")
+-        .select("metrics").eq("run_id", q.runId).maybeSingle();
+-      if (runError) throw runError;
+-      if (!run) {
+-        const error = new Error(`No projection run found for runId=${q.runId}`);
+-        (error as any).statusCode = 404;
+-        throw error;
+-      }
+-      if ((run as any).metrics?.input_provenance?.external_fantasy_input_contract
+-        !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
+-        const error = new Error("Selected projection run lacks external fantasy exclusion provenance.");
+-        (error as any).statusCode = 422;
+-        throw error;
+-      }
+-    }
+ 
+     let query = supabase
+       .from("forge_team_projections")
+--- a/web/lib/projections/constants/projection-weights.ts
++++ b/web/lib/projections/constants/projection-weights.ts
+@@ -109,21 +109,20 @@
+ export const SKATER_PHYSICAL_TOI_RATIO_MAX = 1.3;
+ // Assist share of on-ice goals for, by position and strength: NST regular-season game logs
+ // 2023-24..2025-26 (tasks/artifacts/forge-priors-2026-10-22). k is the on-ice goals that weigh as
+-// much as the prior: method of moments on player-season totals (K-REFIT.json).
++// much as the prior, from alternate-game split halves: k = n(1 - r) / r.
+ export const SKATER_ASSIST_SHARE_PRIORS = {
+-  F: { es: { share: 0.3747, k: 99 }, pp: { share: 0.3554, k: 20 } },
+-  D: { es: { share: 0.2782, k: 98 }, pp: { share: 0.4838, k: 65 } },
++  F: { es: { share: 0.3747, k: 258 }, pp: { share: 0.3554, k: 58 } },
++  D: { es: { share: 0.2782, k: 309 }, pp: { share: 0.4838, k: 84 } },
+ } as const;
+ export const SKATER_ASSIST_SHARE_MIN = 0.02;
+ export const SKATER_ASSIST_SHARE_MAX = 0.9;
+ /** League assists per goal by strength over the same seasons; team assists are scaled to these. */
+ export const SKATER_TEAM_ASSISTS_PER_GOAL = { es: 1.65, pp: 1.91 } as const;
+ // Goals per shot and shots per 60 by position and strength over the same game logs (task 4). k is
+-// the shots (conversion; method of moments, K-REFIT.json) or hours (shot rate; split halves, as the
+-// moment fit over-disperses multi-season shot history) that weigh as much as the prior.
++// the shots (conversion) or hours (shot rate) that weigh as much as the prior, from split halves.
+ export const SKATER_GOAL_CONVERSION_PRIORS = {
+-  F: { es: { perShot: 0.1181, k: 224 }, pp: { perShot: 0.1589, k: 107 } },
+-  D: { es: { perShot: 0.0537, k: 532 }, pp: { perShot: 0.0862, k: 934 } },
++  F: { es: { perShot: 0.1181, k: 423 }, pp: { perShot: 0.1589, k: 155 } },
++  D: { es: { perShot: 0.0537, k: 704 }, pp: { perShot: 0.0862, k: 73 } },
+ } as const;
+ export const SKATER_SHOT_RATE_PRIORS = {
+   F: { es: { per60: 6.62, kHours: 8.4 }, pp: { per60: 11.23, kHours: 10.3 } },
+--- a/web/lib/projections/runProjectionV2.test.ts
++++ b/web/lib/projections/runProjectionV2.test.ts
+@@ -819,20 +819,20 @@
+   });
+ 
+   it("shrinks the observed share toward the prior by on-ice goals", () => {
+-    // 10 G + 20 A at 60% IPP = 50 on-ice goals; (20 + 99 x 0.3747) / (50 + 99).
++    // Release C: 10 G + 20 A at 60% IPP = 50 on-ice goals; (20 + 258 x 0.3747) / (50 + 258).
+     const es = computeSkaterAssistShare({ goalsAll: 10, assistsAll: 20, ippAllPct: 60, position: "L", strength: "es" });
+     expect(es.onIceGoalsHistory).toBeCloseTo(50, 10);
+-    expect(es.share).toBeCloseTo((20 + 99 * 0.3747) / 149, 10);
+-    // Defence PP: 2 G + 18 A at 50% IPP = 40 on-ice goals; (18 + 65 x 0.4838) / (40 + 65).
++    expect(es.share).toBeCloseTo((20 + 258 * 0.3747) / 308, 10);
++    // Defence PP: 2 G + 18 A at 50% IPP = 40 on-ice goals; (18 + 84 x 0.4838) / (40 + 84).
+     expect(computeSkaterAssistShare({ goalsAll: 2, assistsAll: 18, ippAllPct: 50, position: "D", strength: "pp" }).share)
+-      .toBeCloseTo((18 + 65 * 0.4838) / 105, 10);
++      .toBeCloseTo((18 + 84 * 0.4838) / 124, 10);
+   });
+ 
+   it("never credits more assists than on-ice goals and stays within bounds", () => {
+     // IPP above 100% is inconsistent source data: assists cap at the implied on-ice goals.
+     const capped = computeSkaterAssistShare({ goalsAll: 0, assistsAll: 30, ippAllPct: 150, position: "C", strength: "pp" });
+     expect(capped.onIceGoalsHistory).toBeCloseTo(20, 10);
+-    expect(capped.share).toBeCloseTo((20 + 20 * 0.3554) / 40, 10);
++    expect(capped.share).toBeCloseTo((20 + 58 * 0.3554) / 78, 10);
+     expect(computeSkaterAssistShare({ goalsAll: 0, assistsAll: 1e6, ippAllPct: 100, position: "C", strength: "es" }).share).toBe(0.9);
+   });
+ });
+@@ -862,9 +862,9 @@
+     const d = computeStrengthSplitConversionRates({ ...counts, position: "D" });
+     expect(d.goalRateEs).toBeCloseTo(0.0537, 10);
+     expect(d.goalRatePp).toBeCloseTo(0.0862, 10);
+-    // A forward's 30 goals on 200 ES shots against 224 prior shots.
++    // A forward's 30 goals on 200 ES shots against 423 prior shots.
+     const f = computeStrengthSplitConversionRates({ ...counts, evGoalsAll: 30, evShotsAll: 200, position: "C" });
+-    expect(f.goalRateEs).toBeCloseTo((30 + 224 * 0.1181) / 424, 10);
++    expect(f.goalRateEs).toBeCloseTo((30 + 423 * 0.1181) / 623, 10);
+     // Without a position the former position-blind prior remains.
+     expect(computeStrengthSplitConversionRates(counts).goalRateEs).toBeCloseTo(0.095, 10);
+   });
+--- a/web/lib/projections/apiHelpers.runAdmission.test.ts
++++ b/web/lib/projections/apiHelpers.runAdmission.test.ts
+@@ -5,14 +5,14 @@
+ }));
+ vi.mock("lib/supabase/server", () => ({ default: { from: lookup.from } }));
+ 
+-import { buildProjectionApiErrorResponse, requireLatestSucceededRunId } from "./apiHelpers";
++import { requireLatestSucceededRunId } from "./apiHelpers";
+ import {
+   FORGE_ROLLING_HISTORY_INPUT_CONTRACT,
+   FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT,
+ } from "./calibrationEligibility";
+ import { runHorizonFilter } from "./releasedRunFence";
+ 
+-describe("latest FORGE run admission", () => {
++describe("released legacy FORGE run lookup (separate from native admission)", () => {
+   beforeEach(() => {
+     for (const mock of Object.values(lookup)) mock.mockReset();
+     for (const method of ["from", "select", "eq", "not", "or", "order", "limit"] as const) {
+@@ -26,7 +26,7 @@
+     } }, error: null });
+     expect(await requireLatestSucceededRunId("2026-10-13")).toBe("native-run");
+     expect(lookup.from).toHaveBeenCalledWith("forge_runs");
+-    expect(lookup.select).toHaveBeenCalledWith("run_id,metrics");
++    expect(lookup.select).toHaveBeenCalledWith("run_id");
+     expect(lookup.eq.mock.calls).toEqual([["as_of_date", "2026-10-13"], ["status", "succeeded"]]);
+     expect(lookup.not.mock.calls).toEqual([["git_sha", "is", null], ["git_sha", "like", "local:*"]]);
+     expect(lookup.or.mock.calls).toEqual([[runHorizonFilter(1)]]);
+@@ -36,25 +36,22 @@
+   });
+ 
+   it.each([undefined, null, true, [], {}, "comparison_reference", "blended_v0"])(
+-    "rejects legacy or unsupported provenance with 422 rather than the fallback-triggering 404: %j",
++    "retains released legacy run lookup without requiring native-only provenance: %j",
+     async contract => {
+       lookup.maybeSingle.mockResolvedValue({ data: { run_id: "legacy-run", metrics: { input_provenance: {
+         rolling_player_history_contract: FORGE_ROLLING_HISTORY_INPUT_CONTRACT,
+         external_fantasy_input_contract: contract,
+       } } }, error: null });
+-      const error = await requireLatestSucceededRunId("2026-10-13").catch(value => value);
+-      expect(error).toMatchObject({ statusCode: 422 });
+-      expect(buildProjectionApiErrorResponse(error, "PROJECTIONS_UNAVAILABLE")).toEqual({ statusCode: 422,
+-        error: "Selected projection run lacks external fantasy exclusion provenance." });
++      await expect(requireLatestSucceededRunId("2026-10-13")).resolves.toBe("legacy-run");
+       expect(lookup.maybeSingle).toHaveBeenCalledTimes(1);
+     },
+   );
+ 
+   it.each([undefined, null, [], {}, { input_provenance: null }])(
+-    "rejects absent or malformed metrics with 422: %j",
++    "does not reinterpret absent legacy metrics as native qualification: %j",
+     async metrics => {
+       lookup.maybeSingle.mockResolvedValue({ data: { run_id: "legacy-run", metrics }, error: null });
+-      await expect(requireLatestSucceededRunId("2026-10-13")).rejects.toMatchObject({ statusCode: 422 });
++      await expect(requireLatestSucceededRunId("2026-10-13")).resolves.toBe("legacy-run");
+     },
+   );
+ 
+--- a/web/lib/projections/nativeInputEligibility.test.ts
++++ b/web/lib/projections/nativeInputEligibility.test.ts
+@@ -34,16 +34,18 @@
+ describe("FORGE native input boundary", () => {
+   beforeEach(() => { database.history = []; database.tables = []; });
+ 
+-  it.each(["stages/skater-stage.ts", "stages/goalie-stage.ts"])(
+-    "%s disables external fantasy inputs at every season-bootstrap call",
+-    file => {
++  it.each([["stages/skater-stage.ts", ts.SyntaxKind.TrueKeyword], ["stages/goalie-stage.ts", ts.SyntaxKind.FalseKeyword]] as const)(
++    "%s preserves the selected Release C bootstrap policy",
++    (file, expectedPolicy) => {
+       let calls = 0;
+       visit(sourceFile(file), node => {
+         if (!ts.isCallExpression(node) || !ts.isIdentifier(node.expression)
+           || node.expression.text !== "loadSeasonBootstrap") return;
+         calls += 1;
+         expect(node.arguments.length).toBe(5);
+-        expect(node.arguments[4].kind).toBe(ts.SyntaxKind.FalseKeyword);
++        // Release C skaters retain legacy inputs and must not claim native exclusion.
++        // The actual producer-to-native-consumer rejection is checked by the offline qualification suite.
++        expect(node.arguments[4].kind).toBe(expectedPolicy);
+       });
+       expect(calls).toBe(file.includes("skater") ? 2 : 1);
+     },
+--- a/web/__tests__/pages/api/v1/forge/players.test.ts
++++ b/web/__tests__/pages/api/v1/forge/players.test.ts
+@@ -125,7 +125,7 @@
+ let projectionSelectQueries: string[] = [];
+ 
+ describe("/api/v1/forge/players", () => {
+-  it.each([undefined, "external_inputs_allowed"])("rejects fallback candidates with exclusion contract %s before reading their rows", async contract => {
++  it.each([undefined, "external_inputs_allowed"])("preserves released legacy fallback rows without native-only contract %s", async contract => {
+     requireLatestSucceededRunIdMock.mockRejectedValueOnce(Object.assign(new Error("missing"), { statusCode: 404 }));
+     const prior = fromMock.getMockImplementation()!;
+     fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
+@@ -134,9 +134,10 @@
+     })) : prior(table));
+     const res = createMockRes();
+     await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+-    expect(res.statusCode).toBe(404);
+-    expect(res.body.data).toBeUndefined();
+-    expect(fromMock.mock.calls.some(([table]) => table === "forge_player_projections")).toBe(false);
++    expect(res.statusCode).toBe(200);
++    expect(res.body).toMatchObject({ runId: "fallback-external", asOfDate: "2026-02-06", fallbackApplied: true });
++    expect(res.body.data.length).toBeGreaterThan(0);
++    expect(fromMock.mock.calls.some(([table]) => table === "forge_player_projections")).toBe(true);
+   });
+   beforeEach(() => {
+     vi.clearAllMocks();
+--- a/web/__tests__/pages/api/v1/forge/goalies.test.ts
++++ b/web/__tests__/pages/api/v1/forge/goalies.test.ts
+@@ -91,7 +91,7 @@
+ }
+ 
+ describe("/api/v1/forge/goalies", () => {
+-  it.each([true, false])("checks the actual fallback summary after requested-date 404: qualified=%s", async qualified => {
++  it.each([true, false])("preserves released fallback after requested-date 404 with native-only contract=%s", async qualified => {
+     vi.mocked(requireLatestSucceededRunId).mockRejectedValueOnce(Object.assign(new Error("missing requested date"), { statusCode: 404 }));
+     const prior = fromMock.getMockImplementation()!;
+     let projectionReads = 0;
+@@ -113,19 +113,14 @@
+     });
+     const res = createMockRes();
+     await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+-    expect(res.statusCode).toBe(qualified ? 200 : 422);
+-    expect(summaryReads).toEqual(["run-122"]);
+-    if (qualified) {
+-      expect(res.body).toMatchObject({ runId: "run-122", asOfDate: "2026-02-06", fallbackApplied: true });
+-      expect(res.body.data).toHaveLength(1);
+-      expect(res.body.diagnostics.requested.runId).toBeNull();
+-    } else {
+-      expect(res.body.data).toBeUndefined();
+-      expect(res.body.error).toContain("exclusion provenance");
+-    }
+-  });
+-
+-  it.each(["fallback", "explicit"])("withholds rows when the selected %s run lacks exclusion provenance", async mode => {
++    expect(res.statusCode).toBe(200);
++    expect(summaryReads).toEqual([]);
++    expect(res.body).toMatchObject({ runId: "run-122", asOfDate: "2026-02-06", fallbackApplied: true });
++    expect(res.body.data).toHaveLength(1);
++    expect(res.body.diagnostics.requested.runId).toBeNull();
++  });
++
++  it.each(["fallback", "explicit"])("retains released legacy rows for selected %s runs without claiming native qualification", async mode => {
+     const prior = fromMock.getMockImplementation()!;
+     let projectionReads = 0;
+     fromMock.mockImplementation((table: string) => {
+@@ -145,9 +140,9 @@
+     const res = createMockRes();
+     await handler({ method: "GET", query: { date: "2026-02-07", ...(mode === "explicit"
+       ? { runId: "11111111-1111-4111-8111-111111111111" } : {}) } } as any, res);
+-    expect(res.statusCode).toBe(422);
+-    expect(res.body.data).toBeUndefined();
+-    expect(res.body.error).toContain("exclusion provenance");
++    expect(res.statusCode).toBe(200);
++    expect(res.body.data).toHaveLength(1);
++    expect(res.body.runId).toBe(mode === "explicit" ? "11111111-1111-4111-8111-111111111111" : "run-122");
+   });
+   beforeEach(() => {
+     vi.clearAllMocks();
+--- a/web/scripts/qualify-native-players-offline.test.ts
++++ b/web/scripts/qualify-native-players-offline.test.ts
+@@ -29,8 +29,23 @@
+ beforeEach(() => { vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-10-10T00:00:00.000Z") }); });
+ afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.unstubAllEnvs(); });
+ 
++function expectLegacyProducerRejected(receipt: Awaited<ReturnType<typeof qualifyNativePlayersOffline>>) {
++  // The selected Release C producer retains legacy bootstrap inputs. Reconstructing
++  // it must never fabricate the stricter native provenance or grant numeric use.
++  expect(receipt.result.qualificationEligible).toBe(false);
++  expect(receipt.result.admission.exclusionCounts.use_not_approved).toBeGreaterThan(0);
++  for (const target of receipt.result.categoryCoverage) {
++    expect(target.admission.acceptedByUnchangedConsumer).toBe(false);
++    expect(target.admission.reasons.some(row => row.reasons.includes("use_not_approved"))).toBe(true);
++    for (const category of target.categories.filter(row => row.status !== "not_applicable")) {
++      expect(category).toMatchObject({ status: "blocked", admittedDiagnosticValue: null });
++      expect(category.reasons).toContain("consumer_admission_failed");
++    }
++  }
++}
++
+ describe("offline current native player qualification", () => {
+-  it("reproduces current native calculations with genuine admission and zero live client/transport/writes", async () => {
++  it("reproduces the selected Release C calculation with native admission denied and zero live client/transport/writes", async () => {
+     const inputs = input(), original = projectionInputHash(inputs);
+     const env = process.env.STARTER_BOARD_COMPUTE_ENABLED;
+     const network = vi.fn(() => { throw new Error("Unexpected network"); });
+@@ -50,10 +65,10 @@
+     expect(first.result.qualificationEligible).toBe(false);
+     const skater = first.result.categoryCoverage[0], goalie = first.result.categoryCoverage[1];
+     expect(skater.participation.status).toBe("confirmed_evidence");
+-    expect(skater.admission.acceptedByUnchangedConsumer).toBe(true);
++    expectLegacyProducerRejected(first);
+     for (const key of ["G", "A", "SOG"]) expect(skater.categories.find(row => row.category === key)).toMatchObject({
+-      modeledStatus: "missing", status: "blocked", reasons: expect.arrayContaining(["missing_pk_heads_and_fullgame_bridge"]) });
+-    expect(skater.categories.find(row => row.category === "PPP")).toMatchObject({ modeledStatus: "missing", status: "blocked",
++      status: "blocked", reasons: expect.arrayContaining(["missing_pk_heads_and_fullgame_bridge"]) });
++    expect(skater.categories.find(row => row.category === "PPP")).toMatchObject({ status: "blocked",
+       reasons: expect.arrayContaining(["synthetic_fixture_is_not_forecast_evidence"]) });
+     expect(skater.categories.find(row => row.category === "HIT")?.reasons).toContain("full_strength_exposure_unproven");
+     expect(goalie.categories.find(row => row.category === "SO")?.reasons).toContain("official_individual_shutout_credit_unproven");
+@@ -62,7 +77,7 @@
+     expect(Date.parse(first.createdAt)).toBeGreaterThan(Date.parse(asOf));
+   });
+ 
+-  it("leaves absent playing/start evidence unknown and preserves consumer missing-participation rejection", async () => {
++  it("leaves absent playing/start evidence unknown while legacy provenance still blocks native admission", async () => {
+     const inputs = input();
+     updateRows(inputs, "player_forecast_lineup_snapshots", []);
+     updateRows(inputs, "player_forecast_lineup_assignments", []);
+@@ -72,7 +87,8 @@
+     const skater = receipt.result.categoryCoverage[0];
+     expect(skater.participation).toMatchObject({ status: "missing", probability: null });
+     expect(skater.admission.acceptedByUnchangedConsumer).toBe(false);
+-    expect(skater.admission.reasons.some(row => row.reasons.includes("missing_participation"))).toBe(true);
++    expectLegacyProducerRejected(receipt);
++    expect(skater.categories.find(row => row.category === "PPP")?.reasons).toContain("missing_confirmed_participation");
+     expect(receipt.result.categoryCoverage[1].participation.status).toBe("uncalibrated_model");
+   });
+ 
+@@ -133,7 +149,7 @@
+       } else {
+         expect(receipt.result.blockers).toEqual([]);
+         expect(receipt.result.calculation?.gamesProcessed).toBe(1);
+-        if (table === "roster_optimizer_team_games") expect(receipt.result.categoryCoverage.every(target => target.admission.acceptedByUnchangedConsumer)).toBe(true);
++        if (table === "roster_optimizer_team_games") expectLegacyProducerRejected(receipt);
+       }
+     }
+   });
+@@ -146,7 +162,7 @@
+       confidence: 1, payload: {}, created_at: "2026-10-09T12:00:00.000Z", effective_from: "2026-10-11T00:00:00Z", effective_to: later }]);
+     const original = projectionInputHash(inputs), receipt = await qualifyNativePlayersOffline(inputs, asOf);
+     expect(receipt.result.blockers).toEqual([]);
+-    expect(receipt.result.categoryCoverage.every(target => target.admission.acceptedByUnchangedConsumer)).toBe(true);
++    expectLegacyProducerRejected(receipt);
+     expect(receipt.result.asOf).toBe(asOf);
+     expect(Date.parse(receipt.createdAt)).toBeGreaterThan(Date.parse(asOf));
+     expect(projectionInputHash(inputs)).toBe(original);
+@@ -162,7 +178,8 @@
+     updateRows(inputs, "player_forecast_lineup_assignments", inputs.tables.player_forecast_lineup_assignments.rows.filter(row => row.unit_type === "power_play"));
+     const result = (await qualifyNativePlayersOffline(inputs, asOf)).result;
+     expect(result.categoryCoverage[0].participation.probability).toBeNull();
+-    expect(result.categoryCoverage[0].admission.reasons.some(row => row.reasons.includes("missing_participation"))).toBe(true);
++    expect(result.categoryCoverage[0].admission.reasons.some(row => row.reasons.includes("use_not_approved"))).toBe(true);
++    expect(result.categoryCoverage[0].categories.find(row => row.category === "PPP")?.reasons).toContain("missing_confirmed_participation");
+   });
+ 
+   it("rejects missing receipts, incomplete exports, changed hashes and late nested source evidence", async () => {
+@@ -355,14 +372,15 @@
+     expect(ppp?.status).toBe("blocked"); expect(ppp?.reasons).toContain("missing_pp_counts_or_exposure_denominators");
+   });
+ 
+-  it("keeps PPP missing and blocked when PP rows and aligned count support are absent", async () => {
++  it("withholds native PPP despite a legacy diagnostic when retained PP rows are absent", async () => {
+     const inputs = input();
+     updateRows(inputs, "rolling_player_game_metrics", inputs.tables.rolling_player_game_metrics.rows.filter(row => row.strength_state !== "pp"));
+     const result = (await qualifyNativePlayersOffline(inputs, asOf)).result;
+     expect(result.blockers).toEqual([]);
+     const target = result.categoryCoverage[0], ppp = target.categories.find(row => row.category === "PPP");
+     expect(target.inputCoverage.retainedRollingRowsByStrength.pp).toBe(0);
+-    expect(ppp).toMatchObject({ modeledStatus: "missing", modeledValue: null, status: "blocked" });
++    expect(ppp).toMatchObject({ admittedDiagnosticValue: null, status: "blocked" });
++    expect(ppp?.reasons).toContain("consumer_admission_failed");
+     expect(ppp?.reasons).toContain("missing_retained_pp_history");
+     expect(ppp?.reasons).toContain("pp_event_exposure_coverage_unproven");
+   });

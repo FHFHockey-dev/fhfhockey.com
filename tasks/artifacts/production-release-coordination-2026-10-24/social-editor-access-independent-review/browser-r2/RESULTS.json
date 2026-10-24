@@ -1,0 +1,318 @@
+{
+  "status": "passed",
+  "scope": "Actual pinned AuthProvider, gate, SocialShare and editionFetch; synthetic auth, stubbed ensureUserRecords; fictional route responses. No Next server or live handler/Supabase.",
+  "checks": [
+    {
+      "name": "Late prior-account role grant cannot reopen workspace or fetch an edition",
+      "passed": true
+    },
+    {
+      "name": "Failed role revalidation clears authority and leaves workspace closed",
+      "passed": true
+    },
+    {
+      "name": "Logout immediately closes workspace and actual pending edition rejects after logout",
+      "passed": true
+    },
+    {
+      "name": "Bearer stays on allowlisted edition routes, assets receive none, no external or uncaught page errors",
+      "passed": true
+    }
+  ],
+  "apiRequests": [
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26",
+      "authorization": "Bearer synthetic-C",
+      "number": 1,
+      "held": false,
+      "failedFixtureResponse": false,
+      "completed": true
+    },
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26",
+      "authorization": "Bearer synthetic-D",
+      "number": 2,
+      "held": false,
+      "failedFixtureResponse": false,
+      "completed": true
+    },
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26&selectedDates=2026-10-26%2C2026-10-27%2C2026-10-28%2C2026-10-29%2C2026-10-30%2C2026-10-31%2C2026-11-01",
+      "authorization": "Bearer synthetic-D",
+      "number": 3,
+      "held": true,
+      "failedFixtureResponse": false,
+      "completed": true
+    }
+  ],
+  "assetRequests": [
+    {
+      "path": "/teamLogos/NJD.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/NYI.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/NYR.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/PHI.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/PIT.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/BOS.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/BUF.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/MTL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/OTT.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/TOR.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/CAR.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/FLA.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/TBL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/WSH.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/CHI.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/DET.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/NSH.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/STL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/CGY.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/COL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/EDM.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/VAN.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/ANA.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/DAL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/LAK.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/SJS.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/CBJ.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/MIN.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/WPG.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/VGK.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/SEA.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/UTA.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/NJD.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/NYI.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/NYR.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/PHI.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/PIT.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/BOS.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/BUF.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/MTL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/OTT.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/TOR.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/CAR.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/FLA.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/TBL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/WSH.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/CHI.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/DET.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/NSH.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/STL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/CGY.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/COL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/EDM.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/VAN.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/ANA.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/DAL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/LAK.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/SJS.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/CBJ.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/MIN.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/WPG.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/VGK.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/SEA.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/UTA.png",
+      "authorization": null
+    }
+  ],
+  "aborted": [],
+  "pageErrors": [],
+  "launches": 1,
+  "ensureUserRecords": [
+    "old",
+    "new",
+    "C",
+    "D"
+  ],
+  "screenshots": {
+    "02-signed-out.png": "a1add6e3c6ead613d3b1beaacb91fdd2e07bca2d85741f04d966fa9fa9b03fb8"
+  }
+}

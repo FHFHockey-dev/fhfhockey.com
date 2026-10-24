@@ -1,0 +1,905 @@
+{
+  "at": "2026-10-24T15:11:46.731093+00:00",
+  "changes": [
+    {
+      "path": "tasks/diaries",
+      "change": "modified",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24",
+      "change": "modified",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+      "change": "modified",
+      "before_sha256": "a72a72ca35b98398ffcbb605d0cc6aa7f6d4cf03256bde19f6f6f1c77d2876a2",
+      "after_sha256": "af813e8c32ca47011020d2b8c19cadbf6690bc5925885b6a6e9cc76e1abf0bf1",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "change": "modified",
+      "before_sha256": "723c309704c5d1f219e738e3f52486e62252103a7828ea2f5c4f960a74d747a5",
+      "after_sha256": "d9551570f2862fb864df983677e850f98bed5abc5dd69524d6299b0152c97326",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+      "change": "modified",
+      "before_sha256": "a247eaf907264357892c638e94053dd3bde255f448ce83d9113b49c5e4d1fd77",
+      "after_sha256": "0ff8a1501c7c457df675d452f1e0b03e65a8ee4925defb497ba6c823f05daa9c",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4",
+      "change": "modified",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7",
+      "change": "modified",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2",
+      "change": "modified",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/RECEIPT.md",
+      "change": "modified",
+      "before_sha256": "beb7b754e12096d2968334881f0bd26f6a3d51b0e341f9329365cce36d81a6a7",
+      "after_sha256": "383ad2e237dc86618ce5567b1de28a635a3e38a83d81fa9af6b982aa6df66d01",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/orchestrator-full-tsc-1506.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "63ef597615206d0b02e1a19c695738e989fd33ca50c2d79d22ba5a2d5284fcbb",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence",
+      "change": "modified",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images",
+      "change": "modified",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/source",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/LANE-OUTPUTS.sha256",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "b4b08d4adb16273623fe01a6c2f9bd9d833ab1877029ab9e3999a16b01dc0c71",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/PROJECT-OUTPUTS.sha256",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "f42d2d27920528458ee8dbdafe48e7e5375d8c5ae3753ed5e41f298a45a15fa0",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/RECEIPT.md",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "1811893ed261163d05e9082b30e0726a8dbcc245c457e4cca7e411dc0389cdd8",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/baseline-after.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "5d35d744de85baa50ea694393c0af5bdf6734f44e23044c41b9947fc550abc1e",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/isolated-snapshot-after.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "411e882ecffd2cb3e78dbf8fa8e2165ddef62b94cfb3ff80a22808e9058b0214",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/isolated-snapshot-diff.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "8012e2325d55de30c2d66b680c7809af7b43ce498465bf6a6af497bacd380b70",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/qa-v11-pilot-regression.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "c3bd56bfd6b3460f50a1237be4ce32378b8906de050a0711d4bf9666057fefe1",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/qa-v13-route.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "7debfb36e173abd60c2bfa74c042d0de041a7d20b529f4a4bb52197142e27753",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/saved-v14-validation.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "93b43e4bc28c95e0d9a24cdb83aeee752309ff1d856994daf4e2a0c4619b991b",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v13-first-target-disabled.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "cf8a71fdf7aa47d11603ae6a8f14b36952131f24e6563f85a2ebd9dba1108725",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v13-initial-cockpit.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "c933f88870fc8b0ea81c86d1584b2bcae10375b7dc30e865b0429edf8881d63f",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v13-range-complete-cockpit.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "e29d67d8b798587a4b758bd18568e401f187b0fcf6eedf7fc9159209ab4e3618",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v13-range-complete-overhead.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "6c66880c629b8b6071f3c1bb032f698387c20147c9355201f7cc4832127af11e",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v13-visual-evidence.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "e5739722947f5afc931e112002cefa21339dab309a456a4bd94e30616d0f0548",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-build-capture-2-execution.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "d44977caed11fad9baedce0970b59f61314cc1f9212cc1976d425d861560c1f5",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-build-capture-2-launcher.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-build-capture-2.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "a0369fd1fada8c50a315e0a8ea54367d7fca3ce11f1dbc6d559cf1699b7d71ec",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-build.json",
+      "change": "modified",
+      "before_sha256": "bd020979a9833a2c418ba54a09bc49c46e8f042f62a2508ea4265f577c618858",
+      "after_sha256": "2f3f2ab3d4531ba891447ba5dd2c7dc1405f84fc9fc021738e671dcadc1c941e",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-capture-final-execution.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "d39a3dfd487622131b55f05925fa9a431b5a743ae5ddb7892f129a1582e9f70e",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-capture-final-launcher.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-capture-final.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "3eb26efcc47a7ed44e75babfb66e12d37d231ebff2e92bf6edefcf2bca4b0f87",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-matched-captures.json",
+      "change": "modified",
+      "before_sha256": "107c9f0afd66b919903e09238d90bfcdace5c5d667a6b5a1c34cc37f124f263b",
+      "after_sha256": "5d835e2b00b14744c19a78680add5b46222686e8291f8d9538d27183fd4508ef",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-pilot-regression-execution.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "ab998ac6160272c1d9acc499a5db6960888b37f02f2163ab231de55509380749",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-pilot-regression-launcher.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-pilot-regression.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "058e0af2ef42a4b7900a449d692ae7d916190388f9149d016736426b3224b6a1",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-route-playmode-execution.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "1eeb5ccad5094403bea31b15569412cdd5f08b0a7e2c988e7c87846e50c53d45",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-route-playmode-launcher.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-route-playmode.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "750bbfce17bb199c35e01fec71ebff3a2374cee02e0ab8888413a878a810f87d",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-runtime-evidence-execution.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "40fbbca56dfd53ab621de0abdb323040c5aaa7ed168b4145ef673c8e844ea3df",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-runtime-evidence-launcher.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-runtime-evidence.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "4bfc389a0a186528e727143702cd6d1b2141a0c62cd72ce39552cbead8435fc1",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-saved-validation-execution.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "7b2268cd00e4552cd7b7f7d276cbab82c606e2756274275ce982edc9407d52fa",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-saved-validation-launcher.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-saved-validation.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "fab971430c8a5185f2929ade31962fcb0d0b29a66e79a6785c269477e6aafc33",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/v14-build.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "bd020979a9833a2c418ba54a09bc49c46e8f042f62a2508ea4265f577c618858",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/v14-matched-captures.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "107c9f0afd66b919903e09238d90bfcdace5c5d667a6b5a1c34cc37f124f263b",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/v14-scene-iteration1.sha256",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "a89e174d8c36808e7c619a3ca21ec3e17095c293d52854204dcf14d33e0c9beb",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v13-before-basin-overview-west-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "417191d3f5b1e2ffab1fd66396c11808043e6aa8f6b471af3805e10316362185",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v13-before-descent-landing-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "919e44a287de5f340f4857a98b9a2738b9caced43c24806517f147ff1e3b1e11",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v13-before-lower-approach-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "675f1e782eaff47e6441190118df45c98dc90697a7e0d8b2b54ab9208586e1b6",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v13-before-middle-ascent-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "72fd16135655f16e0b787552cc0899f2148034e27abb3b75142dfea471d33052",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v13-before-original-spawn-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "cefe6eb58e5efdfab97e2ce2c716a2b3ff0bd6c45579b51967ee6cf0843bae71",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v13-before-original-spawn-debug.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "f0966787c6fe914d8bf3f4dc27c22dbf4c7bbd76f63059777819cc2e2c26c8ab",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v13-before-radar-to-artillery-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "2b510edcee025af663a3d20133d9add44f91f7d074ba7c7c04d90cc66c022841",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v13-before-radar-to-energy-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "f1d5e0f7636866702f271afe3f3b29d3572c506055c682857e421be36946fafc",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v13-before-route-overview-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "dd6c8f3bb83a5ea65d8033c84f23e5f1acfa06b1a83dec1e65378aaa645d090b",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v13-before-throat-east-close-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "2b229fac7b1562710ab0aa70a3ce9ee6bc47a31d54e03b5905254ce2a554700b",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v13-before-throat-west-close-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "df21cc2e1e3e8e380a41dde80ad049067da3db6ee1cfcc05775e7e236f00eb30",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v14-after-basin-overview-west-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "54f9851fb20cf1cc72879fcfb08ba06bac3c2d1c1dd59e6f0e29f50455a8897b",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v14-after-descent-landing-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "a56e48d43bee4f8ff1637bce2b3e33adb89d86be493fde8f3f6ec459f783f95f",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v14-after-lower-approach-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "cb379c008a45117503d0935f948ff7016991b9f69674fbcfc07344af2277abd1",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v14-after-middle-ascent-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "6cfb0307178f35f33d1ffb0b7136e0c93335af87e58be1960dc994a7bf0d6cec",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v14-after-original-spawn-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "5e830fb6cceb279ee4208a00dc0e48ce8b7b5d5cc10bd994aee666bf147026c6",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v14-after-original-spawn-debug.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "63b5caf75506ba1446c5a1873d8497925f337b0a6a4a9542fc9c52b12602649f",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v14-after-radar-to-artillery-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "bdeca75342459e9291696b9800d6275f78104f29af1f6db079d46caf0883e3d2",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v14-after-radar-to-energy-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "af4112a158e37f83630f1c223f0167fb38facf364b7a62a4174778eccdf5f94f",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v14-after-route-overview-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "736ae57bd00b72f578bd19ca39e74ff1e8c5533ef3cc82e3c3864400b0b309fe",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v14-after-throat-east-close-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "31a28738c07cfb3e664b041bcec0a4c7554cbccfe57c31be2ba8a550f034d9b5",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/iteration1/images/v14-after-throat-west-close-clean.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "292df742cb08a7d8d43651eba39d01b7826a0514e13f2d0d5ebcffcbac063653",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v13-before-basin-overview-west-clean.png",
+      "change": "modified",
+      "before_sha256": "417191d3f5b1e2ffab1fd66396c11808043e6aa8f6b471af3805e10316362185",
+      "after_sha256": "123a885e3c08cfc6c6515f13d2db2ecbfb01bc3187eddc83b04a0748ccfee5a4",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v13-before-descent-landing-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v13-before-lower-approach-clean.png",
+      "change": "modified",
+      "before_sha256": "675f1e782eaff47e6441190118df45c98dc90697a7e0d8b2b54ab9208586e1b6",
+      "after_sha256": "a9382ef782c247d956b3eed5d028be8da14a9c4d989b4102142f648e95d0b885",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v13-before-middle-ascent-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v13-before-original-spawn-clean.png",
+      "change": "modified",
+      "before_sha256": "cefe6eb58e5efdfab97e2ce2c716a2b3ff0bd6c45579b51967ee6cf0843bae71",
+      "after_sha256": "24fa88b211af6d4a4840dd776ceb407b88d77db0baed7fede888578c9a43c063",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v13-before-original-spawn-debug.png",
+      "change": "modified",
+      "before_sha256": "f0966787c6fe914d8bf3f4dc27c22dbf4c7bbd76f63059777819cc2e2c26c8ab",
+      "after_sha256": "225591c55ca87eef03f733d6bce388bb9a74414c611c1be0a9a7ff908de3e61f",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v13-before-radar-to-artillery-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v13-before-radar-to-energy-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v13-before-route-overview-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v13-before-throat-east-close-clean.png",
+      "change": "modified",
+      "before_sha256": "2b229fac7b1562710ab0aa70a3ce9ee6bc47a31d54e03b5905254ce2a554700b",
+      "after_sha256": "4cf8829ce06f8e4f87748ff73b7fce176b478731859592238459bf987a2fc602",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v13-before-throat-west-close-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v13-v14-comparison-sheet.png",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "974e715b5156e8e7caeadc8cb88ca336351e5d5111bace8e912df7d7f791d8ee",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v14-after-basin-overview-west-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v14-after-descent-landing-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v14-after-lower-approach-clean.png",
+      "change": "modified",
+      "before_sha256": "cb379c008a45117503d0935f948ff7016991b9f69674fbcfc07344af2277abd1",
+      "after_sha256": "fc20220f197ea4b1b9f866027b84dff6da675b8399e000c9740962627d45097d",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v14-after-middle-ascent-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v14-after-original-spawn-clean.png",
+      "change": "modified",
+      "before_sha256": "5e830fb6cceb279ee4208a00dc0e48ce8b7b5d5cc10bd994aee666bf147026c6",
+      "after_sha256": "5c7c5442927b25dd2cc3e6b858b89e44d3c95516b9f3b142ae2c0990d8844fcc",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v14-after-original-spawn-debug.png",
+      "change": "modified",
+      "before_sha256": "63b5caf75506ba1446c5a1873d8497925f337b0a6a4a9542fc9c52b12602649f",
+      "after_sha256": "62a3d857fde44bd3fafc743cfbc6b701ddfdcbe0768a2500a99f52e4ee7e4e8a",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v14-after-radar-to-artillery-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v14-after-radar-to-energy-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v14-after-route-overview-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v14-after-throat-east-close-clean.png",
+      "change": "modified",
+      "before_sha256": "31a28738c07cfb3e664b041bcec0a4c7554cbccfe57c31be2ba8a550f034d9b5",
+      "after_sha256": "30c3fb3182aba67b3d2d921649af01a32ff51f260bcecbe77fdfbbe8d1baa765",
+      "coverage": "metadata-only"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/images/v14-after-throat-west-close-clean.png",
+      "change": "metadata-only; hash unchanged"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/source/SprintV14.cs",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "8eafd4e9fabfc8cba8ee5d2e9cdf9883613ca9d8e271d54d4af6e57e6b52aa9a",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/source/SprintV14Capture.cs",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "9536836edc68f4350174910701782b9f296fbf22c7681ac94005de9ae893b170",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/source/SprintV14EvidenceRunner.cs",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "25f343a6579f8f58ab87e6bb8320513f1548771b8ccaf94b5275d2a5f9e35aec",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/source/SprintV14PilotRegressionRunner.cs",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "e29c9d442957b60f8698efe3e9d36890bff4af5e865fd062317a34071377d39d",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/source/SprintV14RouteRunner.cs",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "cfe65e05c4bfd23eb9c4262c9a9ccefd00e08518158c114677f00d26013a9c8d",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/source/SprintV14Survey.cs",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "593c7ba511a29307ffc39f707af421092a9aa1aac3c51d5d1bec9fc7c331c3d3",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/source/SprintV14Terrain.cs",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "d4643ace5fb02f37d2519b1e2cf2fc78847a45c5010a00207715ff3092107454",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/source/SprintV14Validation.cs",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "cd5de581ed66ba8d5bdb5ff9380527c3d9a5c0fb2a2ab5ed72bd3e66fea0e6a3",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/source/VesperV14StrataRock.shader",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "ceb9473e713a9bfcdcf6b8e83c6bd38b584233f5f9453808a3eca6acf13d9437",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json",
+      "change": "modified",
+      "before_sha256": "4177c589cb540db676b2a27b9989e0e89f925aad1f51d8f1d41b5ea5167cd15b",
+      "after_sha256": "7fa7064bfc903b6d4885417e94b7b57ab0e29c9b39a939b8eeb1681ccc46809e",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "change": "modified",
+      "before_sha256": "cfabe7f773e4d8e46ba335cc0e5360d3641c2f04ce49420a441190c5e390141d",
+      "after_sha256": "3c4df2c90b05c43c48169d86087cdbb9de14db1c4325a124f7798183c32c9a46",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/.npm-cache",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/.npm-logs",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": null,
+      "coverage": "directory-indexed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/COMMANDS.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "1331012ca2e0ab90ca9ca9bb8f30792cf872a7a25155251f4452e440b327d423",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/PINS.end.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "1a17ece024b94cf9212c158902bf60131d047c573616a9c1f12bb96ab1336def",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/PINS.start.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "d77c58ca1f1f8b0862f97dd8d745a7fc48d59931fdad9bdabf2008188b3eb0f1",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/REVIEW-EVIDENCE.json",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "9d43796cc2b3a12b02126c3e5197ed097f19a609a2b362b05e9bc9fead8c9a15",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/REVIEW.md",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "bec6a620d8fed4d2b66afbf4da3665b2d7c577208797f0d9bd00c73d8bc8d188",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/SHA256SUMS",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "4228050dc05efffeb43cdeaf376f4b7400e3c4e67989618db02687efdb0f4ca3",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/precision.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "cbc7045551bb8ef16e96625dce21a695069b0fe39523a12d81bc624bc83bb576",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/precision.test.ts",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "98d6a21db2c3feeadcbabc9df0c5702c10ce8e461a9f6e674475711ed9284214",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/review.vitest.config.mts",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "1b034c7c61d59469376a23d93d3e0a0cd9ca483e22dd4816a7914fa7e13c5cd3",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/scoped-lint.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/scoped-ts.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/.npm-cache/_update-notifier-last-checked",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/.npm-logs/2026-10-24T15_07_22_947Z-debug-0.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "89b7c8c849151ba7932c79be783aea78aa236547ffabdc0971ea499e3464b26a",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/.npm-logs/2026-10-24T15_07_23_645Z-debug-0.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "3a54768077e8450eb7ec50c741f224ccfaff1a152ff9ee6d36dec129751e3933",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/.npm-logs/2026-10-24T15_07_24_623Z-debug-0.log",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "33e1bd809614cf80b6feea8e0161c54c00c8881cdbf69512f1c40d1ff8c1ac5b",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/OWNERSHIP.md",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "1e45f9052a054ce2c5dac3fd7b29e96fe923057e25b4736b23c08cac5c8d9f32",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/diaries/2026-10-24-claude-c3-billing-cancel-reload.md",
+      "change": "new",
+      "before_sha256": null,
+      "after_sha256": "f303171fb747a69f827990b6782dd1333fd429f7c92e5d12fce874ce025d5016",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/diaries/2026-10-24-claude-c4-site-wigo-links.md",
+      "change": "modified",
+      "before_sha256": "822942fb79bf62be559a008ffd92e9881c3e200618903086bdc45446b37c8656",
+      "after_sha256": "a4b2f871257af2c2638c90fa048d8f8ffc30e3fe0201f0cbadf12cad54ccae51",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/diaries/2026-10-24-claude-orchestrator-coordination.md",
+      "change": "modified",
+      "before_sha256": "3a869657de86436809974a3facfb2f283b771b5042ec08371f9ffea42e8cc26f",
+      "after_sha256": "3df8333b2fdc4fa97d20aba9005a5f8686950b2e7bd31c1f9ed41c1f5217989f",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/diaries/2026-10-24-codex-forge-testing-grounds.md",
+      "change": "modified",
+      "before_sha256": "c3d0f49717b814558f193e1a79af46c254d1a3c57b7d5edab6f02e3c4fbdcf9b",
+      "after_sha256": "ed9b47f970e4b5406fd118d9a9b155569e76caf502e4f7eb5eea3d62adad1099",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/diaries/2026-10-24-codex-testing-grounds-slice01-review.md",
+      "change": "modified",
+      "before_sha256": "5431e7165cf7650d150ccb657a0fa660af65176ffd7b61c4eaeae88ef43943d9",
+      "after_sha256": "d5820004a4e510c3ee00cb67a212aadfc1a9732d094d593583da4bb084a94af9",
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "change": "modified",
+      "before_sha256": "47741b6bcbe32d7a2b324d6630e37a06fe4cf5c14c3e03a47623e2516f6a76c4",
+      "after_sha256": "9d9ac2a4f1e0d25873c01c2a929715b8e82d9d8ff79af668c0ab8bab89d9ba8c",
+      "coverage": "partially-inspected"
+    }
+  ],
+  "original_cutoff": "2026-10-24T14:29:07.341370+00:00"
+}

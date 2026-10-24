@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest --run --config vitest.offline.config.mts adversarial.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-job79-independent-5yyabruo/web
+
+ ✓ adversarial.test.ts (10 tests) 14ms
+
+ Test Files  1 passed (1)
+      Tests  10 passed (10)
+   Start at  12:34:47
+   Duration  166ms (transform 32ms, setup 6ms, collect 33ms, tests 14ms, environment 0ms, prepare 31ms)
+

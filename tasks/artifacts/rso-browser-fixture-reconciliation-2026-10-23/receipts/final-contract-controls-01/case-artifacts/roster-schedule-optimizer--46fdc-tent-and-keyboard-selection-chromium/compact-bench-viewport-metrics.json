@@ -1,0 +1,51 @@
+[
+  {
+    "date": "Mon, Oct 5",
+    "totalRows": 34,
+    "visibleRows": 15,
+    "clientHeight": 499,
+    "scrollHeight": 1028
+  },
+  {
+    "date": "Tue, Oct 6",
+    "totalRows": 34,
+    "visibleRows": 15,
+    "clientHeight": 499,
+    "scrollHeight": 1028
+  },
+  {
+    "date": "Wed, Oct 7",
+    "totalRows": 20,
+    "visibleRows": 15,
+    "clientHeight": 499,
+    "scrollHeight": 636
+  },
+  {
+    "date": "Thu, Oct 8",
+    "totalRows": 20,
+    "visibleRows": 15,
+    "clientHeight": 499,
+    "scrollHeight": 636
+  },
+  {
+    "date": "Fri, Oct 9",
+    "totalRows": 20,
+    "visibleRows": 15,
+    "clientHeight": 499,
+    "scrollHeight": 636
+  },
+  {
+    "date": "Sat, Oct 10",
+    "totalRows": 20,
+    "visibleRows": 15,
+    "clientHeight": 499,
+    "scrollHeight": 636
+  },
+  {
+    "date": "Sun, Oct 11",
+    "totalRows": 20,
+    "visibleRows": 15,
+    "clientHeight": 499,
+    "scrollHeight": 636
+  }
+]

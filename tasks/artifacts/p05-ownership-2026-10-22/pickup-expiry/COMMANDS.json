@@ -1,0 +1,30 @@
+[
+  {
+    "cwd": "/tmp/fhfh-queue-check-4tjbf816/isolation/snapshot/web",
+    "command": "env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp/fhfh-queue-check-4tjbf816/isolation/snapshot/web/.audit-home TMPDIR=/tmp/fhfh-queue-check-4tjbf816/isolation/snapshot/web/.audit-tmp NEXT_PUBLIC_SUPABASE_URL=https://unit-tests.supabase.invalid NEXT_PUBLIC_SUPABASE_PUBLIC_KEY=synthetic-public-key SUPABASE_SERVICE_ROLE_KEY=synthetic-service-role-key 'NODE_OPTIONS=--require /tmp/fhfh-queue-check-4tjbf816/isolation/snapshot/web/audit-network-deny.cjs' npm test -- --run --config audit.vitest.config.mts components/PlayerPickupTable/PlayerPickupTable.test.ts -t 'mounted pickup ownership freshness'",
+    "log": "red.log",
+    "exitCode": 1,
+    "result": "6 failed, 25 skipped; final fixtures against pre-correction component"
+  },
+  {
+    "cwd": "/tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web",
+    "command": "env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web/.audit-home TMPDIR=/tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web/.audit-tmp NEXT_PUBLIC_SUPABASE_URL=https://unit-tests.supabase.invalid NEXT_PUBLIC_SUPABASE_PUBLIC_KEY=synthetic-public-key SUPABASE_SERVICE_ROLE_KEY=synthetic-service-role-key 'NODE_OPTIONS=--require /tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web/audit-network-deny.cjs' npm test -- --run --config audit.vitest.config.mts components/PlayerPickupTable/PlayerPickupTable.test.ts",
+    "log": "green.log",
+    "exitCode": 0,
+    "result": "31 passed"
+  },
+  {
+    "cwd": "/tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web",
+    "command": "env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web/.audit-home TMPDIR=/tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web/.audit-tmp NEXT_PUBLIC_SUPABASE_URL=https://unit-tests.supabase.invalid NEXT_PUBLIC_SUPABASE_PUBLIC_KEY=synthetic-public-key SUPABASE_SERVICE_ROLE_KEY=synthetic-service-role-key 'NODE_OPTIONS=--require /tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web/audit-network-deny.cjs' npm exec --offline -- eslint --report-unused-disable-directives-severity warn components/PlayerPickupTable/PlayerPickupTable.tsx components/PlayerPickupTable/PlayerPickupTable.test.ts",
+    "log": "lint.log",
+    "exitCode": 0,
+    "result": "no diagnostics"
+  },
+  {
+    "cwd": "/tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web",
+    "command": "env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web/.audit-home TMPDIR=/tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web/.audit-tmp NEXT_PUBLIC_SUPABASE_URL=https://unit-tests.supabase.invalid NEXT_PUBLIC_SUPABASE_PUBLIC_KEY=synthetic-public-key SUPABASE_SERVICE_ROLE_KEY=synthetic-service-role-key 'NODE_OPTIONS=--require /tmp/fhfh-queue-check-73l26zbu/isolation/snapshot/web/audit-network-deny.cjs' npm exec --offline -- tsc --noEmit -p audit-pickup.tsconfig.json",
+    "log": "types.log",
+    "exitCode": 0,
+    "result": "no diagnostics"
+  }
+]

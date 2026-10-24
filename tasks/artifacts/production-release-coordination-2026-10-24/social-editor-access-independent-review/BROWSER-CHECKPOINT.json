@@ -1,0 +1,204 @@
+{
+  "verdict": "frozen_access_candidate_planned_browser_gaps_closed_across_distinct_runs",
+  "application_defects_found": [],
+  "target": "Original frozen reviewed social access candidate, not advancing canonical SS1 renderer",
+  "candidate_patch_sha256": "aa929138adc11eed6eb2070aeddb90f28465c31c426f85314abf4dc94012da38",
+  "candidate_checks": {
+    "web/contexts/AuthProviderContext/index.tsx": {
+      "sha256": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "expected_sha256": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "matches": true
+    },
+    "web/__tests__/contexts/AuthProviderContext.test.tsx": {
+      "sha256": "4b37b6d250e41a48c0f9e8a0ee102c833974a60a0efda324608a86b8f0d628c5",
+      "expected_sha256": "4b37b6d250e41a48c0f9e8a0ee102c833974a60a0efda324608a86b8f0d628c5",
+      "matches": true
+    },
+    "web/pages/social-share/[format].tsx": {
+      "sha256": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "expected_sha256": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "matches": true
+    },
+    "web/pages/api/v1/social-share/[format].ts": {
+      "sha256": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+      "expected_sha256": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+      "matches": true
+    },
+    "web/lib/socialShare/editionFetch.ts": {
+      "sha256": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "expected_sha256": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "matches": true
+    },
+    "web/lib/socialShare/editionFetch.test.ts": {
+      "sha256": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236",
+      "expected_sha256": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236",
+      "matches": true
+    },
+    "web/lib/socialShare/schedule.test.ts": {
+      "sha256": "29a8d4f8e176ac0c6d530eda71f7ee0f27b68cab6f88692c39a713105de3b052",
+      "expected_sha256": "29a8d4f8e176ac0c6d530eda71f7ee0f27b68cab6f88692c39a713105de3b052",
+      "matches": true
+    },
+    "web/components/SocialShare/SocialShare.test.tsx": {
+      "sha256": "e9b2e6e3b7f0265790029577601c86c26bf4860565a5defcd3fccaf79adc11f3",
+      "expected_sha256": "e9b2e6e3b7f0265790029577601c86c26bf4860565a5defcd3fccaf79adc11f3",
+      "matches": true
+    },
+    "web/lib/socialShare/access.ts": {
+      "sha256": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "expected_sha256": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "matches": true
+    },
+    "web/lib/socialShare/access.test.ts": {
+      "sha256": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+      "expected_sha256": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+      "matches": true
+    },
+    "web/components/SocialShare/SocialShareAccessGate.tsx": {
+      "sha256": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "expected_sha256": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "matches": true
+    },
+    "web/components/SocialShare/SocialShareAccessGate.test.tsx": {
+      "sha256": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+      "expected_sha256": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+      "matches": true
+    }
+  },
+  "all_49_frozen_bundle_inputs_unchanged": true,
+  "bundle_sha256": "11c34cbd6e1f60ead0f111241f365ca402f148cee80ef79cb5d5a4f832ed51b8",
+  "R2_bundle_identical": true,
+  "R1": {
+    "status": "failed_after_10_passing_assertions",
+    "passed": [
+      {
+        "name": "Signed-out page denies actual workspace and makes no edition request",
+        "passed": true
+      },
+      {
+        "name": "Signed-in non-editor denies actual workspace and makes no edition request",
+        "passed": true
+      },
+      {
+        "name": "Editor mounts actual renderer and starts an allowlisted bearer edition read",
+        "passed": true
+      },
+      {
+        "name": "Concurrent exact-same-URL reads use separate account bearers; old account content never renders",
+        "passed": true
+      },
+      {
+        "name": "Actual pending old-token edition promise rejects after refresh; no stale renderer data",
+        "passed": true
+      },
+      {
+        "name": "Legitimate manual refresh obtains new-token edition and displays it",
+        "passed": true
+      },
+      {
+        "name": "Actual bearer helper rejects unallowlisted URLs before any page/network request",
+        "passed": true
+      },
+      {
+        "name": "Actual renderer handles a mocked edition failure and exposes retry",
+        "passed": true
+      },
+      {
+        "name": "Actual renderer retry recovers with the current bearer",
+        "passed": true
+      },
+      {
+        "name": "Revoked stored role closes actual protected workspace",
+        "passed": true
+      }
+    ],
+    "failure": "Harness status-role selector ambiguity: output implicit role plus gate paragraph",
+    "api_fixture_requests": 6,
+    "script_sha256": "b0343a24f3dcd0067d5d0e0a715fdc50951f55a69995e256d4a6001a3e75ed7c"
+  },
+  "R2": {
+    "status": "passed",
+    "passed": [
+      {
+        "name": "Late prior-account role grant cannot reopen workspace or fetch an edition",
+        "passed": true
+      },
+      {
+        "name": "Failed role revalidation clears authority and leaves workspace closed",
+        "passed": true
+      },
+      {
+        "name": "Logout immediately closes workspace and actual pending edition rejects after logout",
+        "passed": true
+      },
+      {
+        "name": "Bearer stays on allowlisted edition routes, assets receive none, no external or uncaught page errors",
+        "passed": true
+      }
+    ],
+    "api_fixture_requests": 3,
+    "script_sha256": "16c37ea19f8e9c0d4921b93103c25f0a26a42df6c64d50e0a082b04ef963ab00",
+    "earlier_10_assertions_repeated": false
+  },
+  "single_original_all_green_run_claimed": false,
+  "real_handler_coverage": "Original 35 local passing unit controls, actual handler with mocked auth/role/source. Preserved, not rerun. Browser route no-store/status responses are fixtures and do not prove handler headers/authorization.",
+  "prior_evidence_preservation": {
+    "R1_all_original_files_unchanged": true,
+    "R2_all_prior_including_R1_files_unchanged": true,
+    "manifests": [
+      "browser-r1/PRESERVED-PRIOR-EVIDENCE.json",
+      "browser-r2/PRESERVED-PRIOR-EVIDENCE.json"
+    ]
+  },
+  "screen_inspection": [
+    "browser-r1/failure.png",
+    "browser-r2/02-signed-out.png"
+  ],
+  "source_edits": 0,
+  "servers_or_ports": 0,
+  "external_application_requests_observed": 0,
+  "real_auth_or_DB_writes": 0,
+  "publication": false,
+  "role_grant": false,
+  "browsers_closed": true,
+  "heavy_lock_released": true,
+  "remaining_limits": [
+    "latest SS1 renderer/access composition requires separately pinned integration",
+    "No live API/Supabase/RLS or real-account authorization evidence",
+    "No Next SSR/server/build/full-E2E evidence",
+    "Neutral styling and local font failure; no visual-layout/PNG-export acceptance",
+    "Role initialization and publication remain unapproved"
+  ],
+  "canonical_drift_at_preflight": {
+    "web/components/SocialShare/SocialShare.tsx": {
+      "frozen_sha256": "e15e95c131dc0b4d377c6d3356ad4f7d30606fabed64e0fd7e3db9cbb348fe77",
+      "current_sha256": "c16e1b3adbeebca741a883b845e295be1cbc5106aa54012acc46728032c8ed92"
+    },
+    "web/e2e/social-share.spec.ts": {
+      "frozen_sha256": "6e2d42d5ce5a554b59e8e57331cc8bea7cf8f99009abdad0cbbb5a67c7fc8edf",
+      "current_sha256": "83230d539d6bcac430fc4167f318087db302f6c00e6171e23011b1d20678f904"
+    }
+  },
+  "artifact_sha256": {
+    "BROWSER-CHECKPOINT.md": "be84f499a81c51e73fb102f476771063354929ff8aa9466e4da1e2dd5e077773",
+    "browser-r1/INPUT-PINS-initial.json": "00e0aec711333f4d778a6784ca306a017dd9531315ccc85733446f2cd633c6b0",
+    "browser-r1/INPUT-PINS.json": "315029985c328a21436412e29f374ead512e0aae193659af39d9c841e4bee0bc",
+    "browser-r1/DEPENDENCY-PINS.json": "80011f4c028002b1ccadff8639bb6821ada51522e1c35eb0f9ba0933b2dd68f7",
+    "browser-r1/BUILD.log": "5f02ba44a32b2e9c5e3f06ae909427ef1da313a1c6a1508d41087ab290408984",
+    "browser-r1/RUN.log": "928ba57cea7d2eee94aee40eb36ce72815523feb21467684c58b19f05087c218",
+    "browser-r1/RESULTS.json": "f7fffb66ae994374627281c27db94e9b4131037c06861a8622ee180774e108f2",
+    "browser-r1/EXECUTION.json": "852578cd7da747f06b93ab85eedaf75023bff254438c4da2dd7d51b66344fb74",
+    "browser-r1/failure.png": "bdbf2c3a48dbe3f322fda76e1bf61186204b06c29a6d7406e9ee756cc3dd4f0c",
+    "browser-r1/01-account-B.png": "bf5ac56310031349f7a1c6bd401eb587ea534c0cbc2497d71026155637044423",
+    "browser-r1/run.cjs": "b0343a24f3dcd0067d5d0e0a715fdc50951f55a69995e256d4a6001a3e75ed7c",
+    "browser-r1/bundle.js": "11c34cbd6e1f60ead0f111241f365ca402f148cee80ef79cb5d5a4f832ed51b8",
+    "browser-r2/HARNESS-DELTA.json": "63626b6ffe80e3afd18af0236e990ae39b528512e58d1e3176cb8b37684b08e9",
+    "browser-r2/INPUT-PINS.json": "ef61598a550d11761f69f07301a6d4afb2f11ef0da0894b2d57085022387b3d4",
+    "browser-r2/RUN.log": "cc047951f80efeccde8b0c518d25e4e79c177e8d6443b3fa8c78b16b3d72886e",
+    "browser-r2/RESULTS.json": "a471b220b239fc3b64f80b32821230a069e35543aaff3318e094228b0f964bf5",
+    "browser-r2/EXECUTION.json": "b6925176ff1e93e93726285b72473e3e1add68d99d704ec3c0bb6980770fc61f",
+    "browser-r2/02-signed-out.png": "a1add6e3c6ead613d3b1beaacb91fdd2e07bca2d85741f04d966fa9fa9b03fb8",
+    "browser-r2/run.cjs": "16c37ea19f8e9c0d4921b93103c25f0a26a42df6c64d50e0a082b04ef963ab00",
+    "browser-r2/bundle.js": "11c34cbd6e1f60ead0f111241f365ca402f148cee80ef79cb5d5a4f832ed51b8"
+  }
+}

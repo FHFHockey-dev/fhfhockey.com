@@ -1,0 +1,702 @@
+// /Users/tim/Desktop/FHFH/fhfhockey.com/web/pages/index.tsx
+// @ts-nocheck
+import type { NextPage } from "next";
+import { useState } from "react";
+import Head from "next/head";
+import Link from "next/link";
+import Image from "next/image";
+import { NextSeo } from "next-seo";
+import moment from "moment";
+
+import Container from "components/Layout/Container";
+import ClientOnly from "components/ClientOnly";
+import styles from "../styles/Home.module.scss";
+import HomepageGamesSection from "components/HomePage/HomepageGamesSection";
+import HomepageStandingsInjuriesSection from "components/HomePage/HomepageStandingsInjuriesSection";
+import { useHomepageGames } from "components/HomePage/useHomepageGames";
+import NewsCard from "components/NewsFeed/NewsCard";
+
+import {
+  isPlayoffsActive,
+  getPlayoffBracketYear,
+  shouldShowPlayoffSnapshot,
+} from "lib/NHL/playoffs";
+import { getPlayoffBracket } from "lib/NHL/server/playoffBracket";
+import { getCurrentSeason } from "lib/NHL/server";
+import { fetchNewsFeedItems } from "lib/newsFeed";
+import { fetchHomepagePulse } from "lib/homepagePulse";
+import { enrichHomepageGames } from "lib/homepageGameAnalytics";
+import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
+import { checkIsOffseason } from "../hooks/useOffseason";
+import Fetch from "lib/cors-fetch";
+import supabaseServer from "lib/supabase/server";
+import {
+  buildTeamStatusDirectory,
+  fetchBellMediaInjuries,
+  fetchCurrentHomepagePlayerStatuses,
+  mapPlayerStatusRowsToHomepageRows,
+  normalizeBellMediaInjuryRows,
+} from "lib/sources/injuryStatusIngestion";
+
+// Import our chart component
+import TeamStandingsChart from "components/TeamStandingsChart/TeamStandingsChart";
+import TransactionTrends from "components/TransactionTrends/TransactionTrends";
+import HomepageDraftRanker from "components/HomePage/HomepageDraftRanker";
+import {
+  isDraftRankerEnabled,
+  isDraftRankerHomepageEnabled,
+} from "lib/draft-ranker/api";
+
+// Shared debug logger for both server and client
+const debugLog = (...args: any[]) => {
+  if (process.env.NODE_ENV !== "production") {
+    console.log(...args);
+  }
+};
+
+// Re-enable the homepage promotion for next draft season.
+const SHOW_DRAFT_DASHBOARD_PROMO = false;
+
+const HOMEPAGE_TOOL_TABS = [
+  { id: "draft-ranker", label: "Draft Ranker" },
+  { id: "transaction-trends", label: "Transaction Trends" },
+] as const;
+
+// DEV NOTE:
+// Integrate Live Period/Time Clock instead of just displaying "LIVE" for live games
+
+const Home: NextPage = ({
+  initialGames,
+  initialInjuries,
+  initialStandings,
+  nextGameDate,
+  playoffsActive,
+  playoffBracket,
+  playoffSeasonYear,
+  playoffWeekGames,
+  homepageSnapshotGeneratedAt,
+  standingsLoadError,
+  injuriesLoadError,
+  latestNews,
+  recentTransactions,
+  recentInjuryNews,
+  homepagePlayerCount,
+  homepagePulsePoints,
+  openingNightDate,
+  openingNightStartTime,
+  isOffseason,
+  draftRankerHomepageEnabled,
+}) => {
+  const {
+    currentDate,
+    games,
+    gamesHeaderText,
+    changeDate,
+    loading,
+    error,
+    lastUpdatedAt,
+  } = useHomepageGames({
+    initialGames,
+    nextGameDate,
+  });
+  const [expandedNewsId, setExpandedNewsId] = useState<string | null>(null);
+  const [activeHomepageTool, setActiveHomepageTool] =
+    useState<(typeof HOMEPAGE_TOOL_TABS)[number]["id"]>("draft-ranker");
+  const homepageNewsItems = latestNews?.slice(0, 5) ?? [];
+
+  const handleHomepageToolKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>,
+    currentIndex: number,
+  ) => {
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowRight") {
+      nextIndex = (currentIndex + 1) % HOMEPAGE_TOOL_TABS.length;
+    } else if (event.key === "ArrowLeft") {
+      nextIndex =
+        (currentIndex - 1 + HOMEPAGE_TOOL_TABS.length) %
+        HOMEPAGE_TOOL_TABS.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = HOMEPAGE_TOOL_TABS.length - 1;
+    }
+    if (nextIndex == null) return;
+
+    event.preventDefault();
+    const nextTab = HOMEPAGE_TOOL_TABS[nextIndex];
+    setActiveHomepageTool(nextTab.id);
+    document.getElementById(`homepage-${nextTab.id}-tab`)?.focus();
+  };
+
+  return (
+    <Container className={styles.homeContainer}>
+      <NextSeo
+        title="Fantasy Hockey Tools, NHL Stats & Podcast | FHFH"
+        description="Plan your fantasy hockey lineup with Game Grid, explore NHL player and team stats, and find analysis from the Five Hole Fantasy Hockey podcast."
+      />
+      <Head>
+        <meta
+          name="google-site-verification"
+          content="ilj1AkBDPlpfcKH8A0zBJUdKtcUjE8TKIyCLa6buHxk"
+        />
+      </Head>
+      <div className={styles.homepage}>
+        <HomepageGamesSection
+          currentDate={currentDate}
+          games={games}
+          gamesHeaderText={gamesHeaderText}
+          onChangeDate={changeDate}
+          loading={loading}
+          error={error}
+          lastUpdatedAt={lastUpdatedAt}
+          playoffsActive={playoffsActive}
+          playoffBracket={playoffBracket}
+          playoffSeasonYear={playoffSeasonYear}
+          playoffWeekGames={playoffWeekGames}
+          heroMetrics={[
+            {
+              label: "Players",
+              value: String(homepagePlayerCount ?? 0),
+              caption: "indexed",
+            },
+            {
+              label: "News",
+              value: Array.isArray(recentTransactions)
+                ? String(recentTransactions.length)
+                : "0",
+              caption: "updates",
+            },
+            {
+              label: "Injuries",
+              value: Array.isArray(initialInjuries)
+                ? String(initialInjuries.length)
+                : "0",
+              caption: "current updates",
+            },
+          ]}
+          pulsePoints={homepagePulsePoints}
+          openingNightDate={openingNightDate}
+          openingNightStartTime={openingNightStartTime}
+        />
+        {SHOW_DRAFT_DASHBOARD_PROMO ? (
+          <section className={styles.draftDashboardBanner} aria-labelledby="draft-dashboard-banner-title">
+            <Image src="/pictures/draft-dashboard-hero.png" alt="" fill sizes="(max-width: 768px) 100vw, 1200px" className={styles.draftBannerArt} />
+            <div className={styles.draftBannerCopy}>
+              <p className={styles.draftBannerEyebrow}>Your draft. Every angle.</p>
+              <h2 id="draft-dashboard-banner-title">FHFH <span>Draft Dashboard</span></h2>
+              <p>Compare projections, track every pick, and build your roster.</p>
+              <div className={styles.draftBannerActions}>
+                <Link href="/draft-dashboard">Open Draft Dashboard</Link>
+                <Link href="/account?section=draft-pro" className={styles.draftProPromotion}>Explore Draft Pro</Link>
+              </div>
+            </div>
+          </section>
+        ) : null}
+        <ClientOnly>
+          {draftRankerHomepageEnabled && isOffseason ? (
+            <div className={styles.homepageToolSwitcher}>
+              <div
+                className={styles.homepageToolTabs}
+                role="tablist"
+                aria-label="Homepage fantasy tools"
+              >
+                {HOMEPAGE_TOOL_TABS.map((tab, index) => (
+                  <button
+                    key={tab.id}
+                    id={`homepage-${tab.id}-tab`}
+                    type="button"
+                    role="tab"
+                    aria-selected={activeHomepageTool === tab.id}
+                    aria-controls={`homepage-${tab.id}-panel`}
+                    tabIndex={activeHomepageTool === tab.id ? 0 : -1}
+                    className={styles.homepageToolTab}
+                    onClick={() => setActiveHomepageTool(tab.id)}
+                    onKeyDown={(event) =>
+                      handleHomepageToolKeyDown(event, index)
+                    }
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              <div
+                id="homepage-draft-ranker-panel"
+                className={styles.homepageToolPanel}
+                role="tabpanel"
+                aria-labelledby="homepage-draft-ranker-tab"
+                hidden={activeHomepageTool !== "draft-ranker"}
+              >
+                {activeHomepageTool === "draft-ranker" ? (
+                  <HomepageDraftRanker />
+                ) : null}
+              </div>
+              <div
+                id="homepage-transaction-trends-panel"
+                className={styles.homepageToolPanel}
+                role="tabpanel"
+                aria-labelledby="homepage-transaction-trends-tab"
+                hidden={activeHomepageTool !== "transaction-trends"}
+              >
+                {activeHomepageTool === "transaction-trends" ? (
+                  <TransactionTrends
+                    defaultMetric={isOffseason ? "adp" : "ownership"}
+                  />
+                ) : null}
+              </div>
+            </div>
+          ) : (
+            <TransactionTrends
+              defaultMetric={isOffseason ? "adp" : "ownership"}
+            />
+          )}
+        </ClientOnly>
+
+        <section
+          className={styles.insightsGrid}
+          aria-label="League news and trends"
+        >
+          <div className={styles.newsPanel}>
+            <div className={styles.compactPanelHeader}>
+              <h2>
+                Latest <span>News</span>
+              </h2>
+              <Link href="/news">View all</Link>
+            </div>
+            <div className={styles.compactNewsList}>
+              {homepageNewsItems.map((item) => {
+                const itemKey = String(
+                  item.id ??
+                    item.source_url ??
+                    item.tweet_url ??
+                    `${item.published_at ?? item.created_at}-${item.headline}`,
+                );
+
+                return (
+                  <NewsCard
+                    key={itemKey}
+                    compact
+                    rail
+                    item={item}
+                    expanded={expandedNewsId === itemKey}
+                    onExpandedChange={(expanded) =>
+                      setExpandedNewsId(expanded ? itemKey : null)
+                    }
+                  />
+                );
+              })}
+              {!homepageNewsItems.length ? (
+                <p className={styles.inlineEmptyState}>
+                  No published news cards are available right now.
+                </p>
+              ) : null}
+            </div>
+            <Link href="/news" className={styles.newsBottomAction}>
+              <span>View all news</span>
+              <span aria-hidden="true">›</span>
+            </Link>
+          </div>
+
+          <div className={styles.leagueChartPanel}>
+            <ClientOnly>
+              <TeamStandingsChart compact />
+            </ClientOnly>
+          </div>
+        </section>
+
+        <HomepageStandingsInjuriesSection
+          standings={initialStandings}
+          injuries={initialInjuries}
+          recentTransactions={recentTransactions}
+          recentInjuryNews={recentInjuryNews}
+          snapshotGeneratedAt={homepageSnapshotGeneratedAt}
+          standingsError={standingsLoadError}
+          injuriesError={injuriesLoadError}
+        />
+      </div>
+    </Container>
+  );
+};
+
+export async function getServerSideProps({ req, res }) {
+  res.setHeader(
+    "Cache-Control",
+    "public, s-maxage=60, stale-while-revalidate=120", // Cache for 60s, allow stale for 2 min
+  );
+
+  const fetchJson = async (url: string) => {
+    const response = await Fetch(url);
+    const text = await response.text();
+
+    if (!response.ok) {
+      throw new Error(
+        `Request failed (${response.status})${text ? `: ${text.slice(0, 200)}` : ""}`,
+      );
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      throw new Error(
+        `Expected JSON response but received: ${text.slice(0, 120)}`,
+      );
+    }
+  };
+
+  const fetchGames = async (date: string) => {
+    try {
+      const scheduleUrl = `https://api-web.nhle.com/v1/schedule/${date}`;
+      const response = await fetchJson(scheduleUrl);
+      return {
+        games: response?.gameWeek?.[0]?.games || [],
+        weeklyGames: Array.isArray(response?.gameWeek)
+          ? response.gameWeek.flatMap((entry: any) =>
+              (entry?.games || []).map((game: any) => ({
+                ...game,
+                scheduleDate: entry.date,
+              })),
+            )
+          : [],
+        failed: false,
+      };
+    } catch (error) {
+      console.error(`Error fetching games for ${date}: `, error.message);
+      return {
+        games: [],
+        weeklyGames: [],
+        failed: true,
+      };
+    }
+  };
+
+  const fetchInjuries = async () => {
+    try {
+      const persistedStatuses = await fetchCurrentHomepagePlayerStatuses({
+        supabase: supabaseServer,
+      });
+      if (persistedStatuses.length > 0) {
+        return {
+          data: persistedStatuses.sort((a, b) =>
+            moment(b.date).diff(moment(a.date)),
+          ),
+          error: null,
+        };
+      }
+
+      const rawTeams = await fetchBellMediaInjuries();
+      const normalizedRows = normalizeBellMediaInjuryRows({
+        rawTeams,
+        snapshotDate: moment().utc().format("YYYY-MM-DD"),
+        directory: buildTeamStatusDirectory(),
+        rosterByTeam: new Map(),
+      });
+
+      return {
+        data: mapPlayerStatusRowsToHomepageRows(
+          normalizedRows.map((row) => ({
+            snapshot_date: row.snapshot_date,
+            player_id: row.player_id,
+            player_name: row.player_name,
+            team_abbreviation: row.team_abbreviation,
+            status_state: row.status_state,
+            raw_status: row.raw_status,
+            status_detail: row.status_detail,
+          })),
+        ).sort((a, b) => moment(b.date).diff(moment(a.date))),
+        error: null,
+      };
+    } catch (error) {
+      console.error("Error fetching injuries: ", error.message);
+      return {
+        data: [],
+        error: "Injury updates could not be loaded.",
+      };
+    }
+  };
+
+  const fetchStandings = async () => {
+    try {
+      const currentSeason = await fetchCurrentSeason(); // Assuming this returns valid start/end dates
+      const now = new Date();
+      let dateForStandings = moment().utc().format("YYYY-MM-DD"); // Use UTC for server
+
+      if (currentSeason && currentSeason.startDate && currentSeason.endDate) {
+        const seasonStart = new Date(currentSeason.startDate);
+        const seasonEnd = new Date(currentSeason.endDate);
+
+        // Check if current date is outside the regular season range
+        if (now < seasonStart || now > seasonEnd) {
+          // Attempt to get the end date of the season if outside
+          dateForStandings = moment(seasonEnd).format("YYYY-MM-DD");
+          console.log(
+            `Outside regular season. Fetching standings for season end date: ${dateForStandings}`,
+          );
+        }
+      } else {
+        console.warn(
+          "Could not determine current season dates accurately. Defaulting to today for standings.",
+        );
+      }
+
+      let response = await fetchJson(
+        `https://api-web.nhle.com/v1/standings/${dateForStandings}`,
+      );
+
+      if (
+        !Array.isArray(response?.standings) ||
+        response.standings.length === 0
+      ) {
+        response = await fetchJson("https://api-web.nhle.com/v1/standings/now");
+      }
+
+      if (!response || !Array.isArray(response.standings)) {
+        console.error(
+          "Standings data not available or in unexpected format for date:",
+          dateForStandings,
+          response,
+        );
+        return {
+          data: [],
+          error: "Standings are unavailable right now.",
+        };
+      }
+
+      // Map directly if the structure is already flat
+      const standingsData = response.standings.map((team: any) => ({
+        leagueSequence: team.leagueSequence ?? 99, // Provide default
+        teamName: team.teamName?.default ?? "Unknown Team", // Provide default
+        teamAbbreviation: team.teamAbbrev?.default ?? "NHL",
+        gamesPlayed: team.gamesPlayed ?? 0,
+        wins: team.wins ?? 0,
+        losses: team.losses ?? 0,
+        otLosses: team.otLosses ?? 0,
+        points: team.points ?? 0,
+        pointPercentage: team.pointPctg ?? 0,
+        streak: team.streakCode ?? "—",
+        conference: team.conferenceName ?? null,
+        division: team.divisionName ?? null,
+        teamLogo:
+          team.teamLogo ??
+          `https://assets.nhle.com/logos/nhl/svg/${
+            team.teamAbbrev?.default ?? "NHL"
+          }_light.svg`, // Default logo
+      }));
+
+      // Sort by leagueSequence ascending after mapping
+      standingsData.sort((a, b) => a.leagueSequence - b.leagueSequence);
+
+      return {
+        data: standingsData,
+        error: null,
+      };
+    } catch (error) {
+      console.error("Error fetching standings: ", error.message);
+      return {
+        data: [],
+        error: "Standings could not be loaded.",
+      };
+    }
+  };
+
+  // Check if we're in the offseason first
+  const isOffseason = await checkIsOffseason();
+  const currentSeason = await getCurrentSeason();
+  let playoffsActive = !isOffseason && isPlayoffsActive(currentSeason);
+
+  const today = moment().format("YYYY-MM-DD");
+  let gamesToday = [];
+  let playoffWeekGames = [];
+  let nextGameDateFound = today;
+  let openingNightDate = null;
+  let openingNightStartTime = null;
+
+  try {
+    const { data, error } = await supabaseServer
+      .from("seasons")
+      .select("startDate")
+      .gte("startDate", today)
+      .order("startDate", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw error;
+    openingNightDate = data?.startDate ?? null;
+
+    if (openingNightDate) {
+      const openingNightGames = await fetchGames(openingNightDate);
+      openingNightStartTime = openingNightGames.games
+        .map((game: any) => game?.startTimeUTC)
+        .filter((value: unknown): value is string => typeof value === "string")
+        .sort()[0] ?? null;
+    }
+  } catch (error: any) {
+    console.error("Error fetching the next NHL opening night:", error.message);
+  }
+
+  playoffsActive = shouldShowPlayoffSnapshot({
+    season: currentSeason,
+    isOffseason,
+    openingNightDate,
+  });
+
+  if (isOffseason) {
+    console.log("Currently in offseason - skipping game search");
+    // During offseason, don't search for games as there won't be any
+    // Just use empty array and today's date
+    gamesToday = [];
+    nextGameDateFound = today;
+  } else {
+    // Only search for games during the regular season or playoffs
+    const todayGamesResult = await fetchGames(today);
+    gamesToday = todayGamesResult.games;
+    playoffWeekGames = todayGamesResult.weeklyGames;
+    nextGameDateFound = today;
+
+    if (
+      !playoffsActive &&
+      gamesToday.length === 0 &&
+      !todayGamesResult.failed
+    ) {
+      debugLog(
+        `No games found for today (${today}), searching for next available date...`,
+      );
+      let nextDay = moment(today).add(1, "days");
+      let attempts = 0;
+      const maxAttempts = 7; // Reduce from 30 to 7 days during season
+
+      while (gamesToday.length === 0 && attempts < maxAttempts) {
+        const dateStr = nextDay.format("YYYY-MM-DD");
+        debugLog(`Checking for games on ${dateStr}...`);
+        const nextGamesResult = await fetchGames(dateStr);
+        gamesToday = nextGamesResult.games;
+        if (nextGamesResult.failed) {
+          console.warn(
+            `Stopping future game search after upstream failure on ${dateStr}.`,
+          );
+          break;
+        }
+        if (gamesToday.length > 0) {
+          nextGameDateFound = dateStr;
+          playoffWeekGames = nextGamesResult.weeklyGames;
+          debugLog(`Found next games on ${nextGameDateFound}`);
+          break;
+        }
+        nextDay.add(1, "days");
+        attempts++;
+      }
+      if (gamesToday.length === 0) {
+        console.warn(
+          `Could not find games within the next ${maxAttempts} days.`,
+        );
+      }
+    } else {
+      debugLog(`Found games for today (${today})`);
+    }
+  }
+
+  let playoffBracket = null;
+  let playoffSeasonYear = null;
+  if (playoffsActive) {
+    try {
+      playoffSeasonYear = getPlayoffBracketYear(currentSeason);
+      playoffBracket = await getPlayoffBracket(playoffSeasonYear);
+    } catch (error: any) {
+      console.error("Error fetching playoff bracket:", error.message);
+    }
+  }
+
+  if (gamesToday.length > 0) {
+    gamesToday = await enrichHomepageGames({
+      supabase: supabaseServer,
+      games: gamesToday,
+      date: nextGameDateFound,
+    });
+  }
+
+  const injuriesResult = await fetchInjuries();
+  const standingsResult = await fetchStandings();
+  let latestNews = [];
+  let recentTransactions = [];
+  let recentInjuryNews = [];
+  let homepagePlayerCount = 0;
+  let homepagePulsePoints = [];
+  try {
+    const publishedNews = await fetchNewsFeedItems({
+      supabase: supabaseServer,
+      status: "published",
+      limit: 40,
+    });
+    latestNews = publishedNews.slice(0, 8);
+    recentTransactions = publishedNews
+      .filter((item) =>
+        [
+          "TRANSACTION",
+          "TRADE",
+          "SIGNING",
+          "ROSTER MOVE",
+          "WAIVER",
+          "NEWS UPDATE",
+          "RETIREMENT",
+        ].includes(
+          String(item.category ?? "")
+            .trim()
+            .toUpperCase(),
+        ),
+      )
+      .slice(0, 32);
+    recentInjuryNews = await fetchNewsFeedItems({
+      supabase: supabaseServer,
+      status: "published",
+      categories: ["INJURY", "REPORTED INJURY", "RETURN", "RETURNING"],
+      limit: 32,
+    });
+  } catch (error: any) {
+    console.error("Error fetching homepage news cards:", error.message);
+  }
+
+  try {
+    const { count, error } = await supabaseServer
+      .from("players")
+      .select("id", { count: "exact", head: true });
+    if (error) throw error;
+    homepagePlayerCount = count ?? 0;
+  } catch (error: any) {
+    console.error("Error fetching homepage player count:", error.message);
+  }
+
+  try {
+    homepagePulsePoints = await fetchHomepagePulse({
+      supabase: supabaseServer,
+      currentDate: today,
+    });
+  } catch (error: any) {
+    console.error("Error fetching homepage pulse:", error.message);
+  }
+
+  return {
+    props: {
+      initialGames: gamesToday,
+      initialInjuries: injuriesResult.data,
+      initialStandings: standingsResult.data,
+      nextGameDate: nextGameDateFound,
+      isOffseason,
+      playoffsActive: Boolean(playoffsActive && playoffBracket),
+      playoffBracket,
+      playoffSeasonYear,
+      playoffWeekGames,
+      homepageSnapshotGeneratedAt: new Date().toISOString(),
+      standingsLoadError: standingsResult.error,
+      injuriesLoadError: injuriesResult.error,
+      latestNews,
+      recentTransactions,
+      recentInjuryNews,
+      homepagePlayerCount,
+      homepagePulsePoints,
+      openingNightDate,
+      openingNightStartTime,
+      draftRankerHomepageEnabled:
+        isDraftRankerEnabled() && isDraftRankerHomepageEnabled(),
+    },
+  };
+}
+
+export default Home;

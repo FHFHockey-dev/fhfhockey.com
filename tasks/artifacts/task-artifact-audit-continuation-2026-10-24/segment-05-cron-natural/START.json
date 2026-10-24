@@ -1,0 +1,128 @@
+{
+  "at": "2026-10-24T16:10:54.573927+00:00",
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "ac006c547ed467ff29951bc56e4921a25c5c3ae5922362bcf1dbbbdfd622d488",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "538e4bd8230eff1b9cfb0d8613f5471216175f8b5d4f8d8b25ae1f1978a9582a",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "9dfd1bb0bb019ad140d42f0c811c5e6544ffc54e46d970f8fc9e2189c92f4c71"
+  },
+  "library_version": 5,
+  "scope": "Same worker, exact documentary content audit only. Preserve v5/206IDs/902evidence until meaningful consolidated checkpoint. C0019 committed-batch natural receipt retained under SUSTAINABILITY-NATURAL. No cron/API/database/provider/natural execution.",
+  "selected": [
+    {
+      "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+      "bytes": 107571,
+      "lines": 2537,
+      "sha256": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+      "candidate_sensitive_lines": [],
+      "chunks": [
+        [
+          1,
+          704,
+          21990
+        ],
+        [
+          705,
+          1151,
+          21933
+        ],
+        [
+          1152,
+          1633,
+          21987
+        ],
+        [
+          1634,
+          2115,
+          21951
+        ],
+        [
+          2116,
+          2537,
+          19700
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/prd/prd-cron-nst-audit-remediation.md",
+      "bytes": 76660,
+      "lines": 306,
+      "sha256": "4f36ba3e9b2c1e8aed8c37d7602518f2be5e4d9d86ad66ba44a5756c7b1a6b69",
+      "candidate_sensitive_lines": [],
+      "chunks": [
+        [
+          1,
+          64,
+          21959
+        ],
+        [
+          65,
+          181,
+          21845
+        ],
+        [
+          182,
+          259,
+          21933
+        ],
+        [
+          260,
+          306,
+          10901
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+      "bytes": 81003,
+      "lines": 224,
+      "sha256": "844403dc2edf97cbf36db6684d4488955e681ebfa67cc82d69231c4c1abcbefe",
+      "candidate_sensitive_lines": [],
+      "chunks": [
+        [
+          1,
+          81,
+          21868
+        ],
+        [
+          82,
+          164,
+          21752
+        ],
+        [
+          165,
+          195,
+          21734
+        ],
+        [
+          196,
+          224,
+          15609
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+      "bytes": 57015,
+      "lines": 222,
+      "sha256": "97e857115518a7c92dde1922f398cf2b3cee1838c1fbc3234c1a975959489572",
+      "candidate_sensitive_lines": [],
+      "chunks": [
+        [
+          1,
+          101,
+          21764
+        ],
+        [
+          102,
+          198,
+          21257
+        ],
+        [
+          199,
+          222,
+          13984
+        ]
+      ]
+    }
+  ]
+}

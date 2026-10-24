@@ -1,0 +1,21 @@
+{
+  "branch": "octoberBranch",
+  "head": "a6e9f8b61903ed4bb2bba6b21bf8597f51ac85d0",
+  "snapshot": "/tmp/fhfh-queue-check-tuhnc30g/isolation/snapshot/web",
+  "reverse_copy": "/tmp/p04-prefetch-review-1gwt_rqy/reverse",
+  "patch_sha256": "f5a6c648b2dd0d34932a49d3c11152b72677b2dc271e17600a9af8b534c74a69",
+  "files": [
+    {
+      "file": "web/components/StatsPage/PlayerSearchBar.tsx",
+      "current": "ddd48a75a636aeba2721adf79f50bd44561c35d8399cc9e48e1b822c69bcc33f",
+      "snapshot": "ddd48a75a636aeba2721adf79f50bd44561c35d8399cc9e48e1b822c69bcc33f",
+      "reverse_patch_before": "078fc18af0c5a50c5b1aa859f7bc99b13227c46025ed0138fd321bfe2f0a2826"
+    },
+    {
+      "file": "web/components/StatsPage/PlayerSearchBar.test.tsx",
+      "current": "33edc3fecc41818280146ed2cc6f3bec9172630418f31b3b1258a0f5366ce6e1",
+      "snapshot": "33edc3fecc41818280146ed2cc6f3bec9172630418f31b3b1258a0f5366ce6e1",
+      "reverse_patch_before": "dbe37d2a8d53c657c8e6cd130a951120642f875c4c10ccc9006e6e6802e2157c"
+    }
+  ]
+}

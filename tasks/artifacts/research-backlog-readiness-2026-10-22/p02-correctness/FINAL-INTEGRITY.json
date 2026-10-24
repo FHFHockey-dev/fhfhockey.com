@@ -1,0 +1,9 @@
+{
+  "owned_pins_matched": 9,
+  "a7_a9_pins_unchanged": 13,
+  "tested_import_closure": 50,
+  "outside_owned_dependency_drift": [],
+  "authored_integrity_issues": [],
+  "local_links_checked": 13,
+  "candidate_sha256": "ed8550bfaf63983d71bd8f203de16f3fd5ac1013409db1bae1b169d6d266a275"
+}

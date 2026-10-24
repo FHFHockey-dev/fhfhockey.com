@@ -1,0 +1,76 @@
+{
+  "at": "2026-10-24T17:37:37.902021+00:00",
+  "checkpoint": "segment09 complete; overall audit unfinished",
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "3c200103ad156edbf3a791e7b7ba8798ffacd621a945ffd5a290e1fcc11d4203",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "78b2592599b1029e12c64cab438438d1a27b91d7e577d2c83078759c66e4d5fe",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "bcdae180aaaa315c95ef1c3e280c2b28e4cdcb644b24b31966dc79f0ee8e0688"
+  },
+  "ids_before": 207,
+  "ids_after": 208,
+  "evidence_before": 982,
+  "evidence_after": 1013,
+  "added_ids": [
+    "SITE-PICKUP-TOKENS"
+  ],
+  "changed_existing_ids": [
+    "REPO-DOCUMENTATION",
+    "SITE-PRIVACY-POLICY",
+    "YAHOO-HISTORY-RETIREMENT",
+    "SITE-FORGE-TESTING-GROUNDS",
+    "SITE-PLAYER-CARDS"
+  ],
+  "all_207_prior_ids_scopes_evidence_prefixes_preserved": true,
+  "legacy_blocks_each_markdown_byte_identical": 32,
+  "unchanged_existing_rows_identical": 202,
+  "new_evidence_references_verified": 31,
+  "frozen_source_pins_verified": 16,
+  "coverage_counts": {
+    "content-reviewed": 16,
+    "partially-inspected": 3
+  },
+  "full_content_bytes": 372245,
+  "application_source_inspected_only": "Read-only23-line SCSS contradiction check1744–1766; no other app content acceptance",
+  "historical_unique_text_candidates_remaining": 1713,
+  "historical_raw_queue_records_remaining_not_deep_document_obligations": 12143,
+  "known_support_metadata_role_dispositions_carried": 39,
+  "selected_unique_report_candidates_remaining": 8,
+  "current_reviewed_source_drift": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+      "reviewed_sha256": "57c7ecb6b7fdcfa23dd390f60ab72e11eec557b5e688cc19444767a8cb73b657",
+      "current_sha256": "6bee52dcc9b9aa41aa09d4e4795be2909f18198e80583a0230faf7c0d4af09f7",
+      "reviewed_scope": "partially-inspected",
+      "action": "Retain exact frozen extracts; later content is queued, never silently accepted."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+      "reviewed_sha256": "51e61899d5f006d7fb0e9148562262e1e06ae9104f10d3e373e266ec34cbdfdd",
+      "current_sha256": "5f0e9f218d0743dc3eb360e8dd3e48d1437dfc6fa05099c7e464127c07c950a5",
+      "reviewed_scope": "partially-inspected",
+      "action": "Retain exact frozen extracts; later content is queued, never silently accepted."
+    }
+  ],
+  "library": {
+    "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "current_version": 9,
+    "status": "succeeded",
+    "native_download": "https://chatgpt.com/api/library/files/libfile_9987e7d9d1b8819181b366a318cc9a9c/download",
+    "native_xattr_readback": [
+      {
+        "name": "user.library-file-version",
+        "matches_returned_value": true,
+        "exit_code": 0
+      }
+    ],
+    "local_bytes_unchanged_after_xattrs": true
+  },
+  "next_cursor": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+  "whole_tree_full_content_review_complete": false,
+  "application_edits_tests_git_or_production_operations": 0,
+  "pending_mutation": false,
+  "selected_coordination_drift_recheck": {
+    "path": "SCOPED-LIVE-RECHECK.json",
+    "selected_acceptance_evidence_unchanged": true
+  }
+}

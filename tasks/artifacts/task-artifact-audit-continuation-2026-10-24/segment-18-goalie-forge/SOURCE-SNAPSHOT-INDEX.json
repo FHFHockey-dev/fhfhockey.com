@@ -1,0 +1,40 @@
+{
+  "cutoff": "2026-10-24T19:44:19.352386+00:00",
+  "sources": {
+    "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/c7c9de60578a-tasks-goalie-forge.md",
+      "sha256": "c7c9de60578a6f1b21fb0180602908220dac38a6ef3cb0ccc46ccdff00a656ac",
+      "original_path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+      "observed_at": "2026-10-24T19:44:19.352386+00:00",
+      "review_scope": "All task-bearing prose1–200 read. Explicitly historical catalog201–940 bounded by full fenced/comment/job-label/endpoint/tail inspection; individual SQL semantics not reviewed. No full-file content credit or current schedule/operation authority."
+    },
+    "tasks/artifacts/forge-projection-audit-2026-10-21/forge-model-release-inventory.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/4983e152de3e-forge-model-release-inventory.md",
+      "sha256": "4983e152de3eea45fd8f764b4ec1304c860d40cf6b8cfc47042c5f6db0598be6",
+      "original_path": "tasks/artifacts/forge-projection-audit-2026-10-21/forge-model-release-inventory.md",
+      "observed_at": "2026-10-24T19:44:19.352386+00:00",
+      "review_scope": "Only release inventory lines30–62 and140–150 fully read to reconcile null-win closure; keyword matches elsewhere are navigation, not full-content credit. Line149 explicitly records goalie reader null-safe from R7. No app/Git/release execution/current reader check; remaining inventory content unreviewed by this segment."
+    },
+    "tasks/TASKS/forge-projections/v1/goalie-forge.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/e1e58da5e8f1-goalie-forge.md",
+      "sha256": "e1e58da5e8f11456750070be9db1628d1e95155d0362e429a4d3191e6c3103cd",
+      "original_path": "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+      "observed_at": "2026-10-24T19:44:19.352386+00:00",
+      "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+    },
+    "tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/c33a3a7e8e1d-goalie-forge-implementation-plan.md",
+      "sha256": "c33a3a7e8e1dddc98906822885f3e9678050ce4f4f49c6e4c6145c9c1e4070a6",
+      "original_path": "tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md",
+      "observed_at": "2026-10-24T19:44:19.352386+00:00",
+      "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+    },
+    "tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/6dc10247757f-goalie-forge-operator-runbook.md",
+      "sha256": "6dc10247757feedf2e1022b7b8f31a3cbb7231705b8935476ab9c01113e06075",
+      "original_path": "tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md",
+      "observed_at": "2026-10-24T19:44:19.352386+00:00",
+      "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+    }
+  }
+}

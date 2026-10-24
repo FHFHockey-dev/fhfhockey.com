@@ -1,0 +1,32 @@
+[
+  {
+    "lane": "C1",
+    "patch_chain_applies": true,
+    "canonical_matches": 11,
+    "file_count": 11,
+    "baseline_HEAD_differs_from_production_paths": [
+      "web/components/GoalieShareChart/index.tsx",
+      "web/hooks/useShotData.ts",
+      "web/pages/stats/team/[teamAbbreviation].tsx"
+    ],
+    "production_qualification": "Needs explicit inherited source/dependency selection and production-base integration checks"
+  },
+  {
+    "lane": "C4",
+    "patch_chain_applies": true,
+    "canonical_matches": 6,
+    "file_count": 6,
+    "baseline_HEAD_differs_from_production_paths": [],
+    "production_qualification": "Touched file baselines equal production; external dependencies and retained reviews still require selection"
+  },
+  {
+    "lane": "C5",
+    "patch_chain_applies": true,
+    "canonical_matches": 5,
+    "file_count": 5,
+    "baseline_HEAD_differs_from_production_paths": [
+      "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts"
+    ],
+    "production_qualification": "Needs explicit inherited source/dependency selection and production-base integration checks"
+  }
+]

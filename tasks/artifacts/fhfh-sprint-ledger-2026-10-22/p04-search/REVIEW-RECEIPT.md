@@ -1,5 +1,7 @@
 # P04 — shared player search local candidate
 
+Follow-up: [P3 hover/touch correction](prefetch-correction/RECEIPT.md) supersedes the candidate hashes and no-prefetch assumption below. This original receipt remains historical.
+
 Status: implemented locally; ready for independent review. No release or whole-S09 acceptance claimed.
 
 ## Scope and source evidence

@@ -1,0 +1,375 @@
+{
+  "at": "2026-10-24T21:40:08.980553+00:00",
+  "base": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "snapshot": "/tmp/fhfh-c5-auth-order-r1-gf0v1n3n",
+  "selected": {
+    "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts": {
+      "sha256": "f1d3238b68c45d43eb15c77825bed0a6e718779c8bccf34efccadafdefc6c8c6",
+      "source": "Exact C5 r2 source/test handback"
+    },
+    "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts": {
+      "sha256": "c2de0f7e2d86d5e26e87592428e0f112004ac1c30d5407ec0d01356513cc977e",
+      "source": "Exact C5 r2 source/test handback"
+    },
+    "web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts": {
+      "sha256": "f16fad19188630ced0a9d32c53a91b5a969cee0b4e45b6cee5c2e2ca98899b27",
+      "source": "Exact C5 r2 source/test handback"
+    },
+    "web/pages/api/internal/yahoo-live-draft.ts": {
+      "sha256": "20c99628240be857c349a3a2b97c36fc48a58519f7a30c06cb33a71fd1f8abbe",
+      "source": "Exact C5 r2 source/test handback"
+    },
+    "web/pages/api/v1/db/update-drafted-prospects.ts": {
+      "sha256": "e4c5e476c50e57be341498a615ad0517ccd9f918937f42d85410f8a7c1df9881",
+      "source": "Exact C5 r2 source/test handback"
+    },
+    "web/lib/cron/withCronJobAudit.ts": {
+      "sha256": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+      "source": "Committed HEAD prerequisite used by C5 canonical review; explicitly selected for isolated qualification, not blanket accepted"
+    },
+    "web/lib/cron/nhlOffSeason.ts": {
+      "sha256": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+      "source": "Committed HEAD prerequisite used by C5 canonical review; explicitly selected for isolated qualification, not blanket accepted"
+    },
+    "web/lib/cron/cronAuditCoverage.ts": {
+      "sha256": "754a0df900b7cabd573838b4d229857ae63d83361e6ad94ad6a7f7ea084706b3",
+      "source": "Committed HEAD prerequisite used by C5 canonical review; explicitly selected for isolated qualification, not blanket accepted"
+    },
+    "web/lib/cron/withCronJobAudit.test.ts": {
+      "sha256": "87db115af6c190a14020e1502eafcebd9174db5f9cfd9ed94a4592b14f755bb5",
+      "source": "Committed HEAD prerequisite used by C5 canonical review; explicitly selected for isolated qualification, not blanket accepted"
+    },
+    "web/lib/cron/nhlOffSeason.test.ts": {
+      "sha256": "ca7dd5725c8529cd3b8e85e62ce130d3aa7c3d774065d2a47daa3c1d8935d5d6",
+      "source": "Committed HEAD prerequisite used by C5 canonical review; explicitly selected for isolated qualification, not blanket accepted"
+    },
+    "web/pages/api/internal/espn-sync.ts": {
+      "sha256": "f57c6a825fc70895da1b3ca799a63656c0c7615614a5326cb48fb67537a0fa14",
+      "source": "Exact existing committed auth-first sync audit delegate or historical inventory prerequisite; no caller/credential/schedule mutation"
+    },
+    "web/pages/api/internal/fantrax-sync.ts": {
+      "sha256": "6e1685d0564616c5d83e60c65d677a105b5e9d2c5c4ea5c3df866f9a5fa90b9a",
+      "source": "Exact existing committed auth-first sync audit delegate or historical inventory prerequisite; no caller/credential/schedule mutation"
+    },
+    "web/pages/api/internal/patreon-reconcile.ts": {
+      "sha256": "8cb1373b5b994e1acadf7e26cd5f906142c36ab2d287a51f8bed64aa34a892e2",
+      "source": "Exact existing committed auth-first sync audit delegate or historical inventory prerequisite; no caller/credential/schedule mutation"
+    },
+    "tasks/TASKS/cron-operations/cron-schedule.md": {
+      "sha256": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+      "source": "Exact existing committed auth-first sync audit delegate or historical inventory prerequisite; no caller/credential/schedule mutation"
+    },
+    "web/pages/api/Teams/nst-team-stats.ts": {
+      "sha256": "01edee13cdfe2bdfb7f372947fe9750a14ce4c65fb6cf3990da9c035ec0d873e",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/backfill-goalie-underlying-season.ts": {
+      "sha256": "2d50d246e77da6174b74a8835e5d027d2bc1c12ed44c9c78a35ea72f383847ee",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/backfill-player-underlying-season.ts": {
+      "sha256": "60941ff55e77cef60dbe9f6bdae9ecf547f5c8b9632e9a9ed5dce6a568734e45",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/backfill-team-underlying-season.ts": {
+      "sha256": "e230fabbf2a340b1474b2f96cd08324f5feac566f1c2273506c84f7c8b2adf7a",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/calculate-wigo-stats.ts": {
+      "sha256": "69014f862d3a3013827cc1fff2e5335d0609da2e4cb02621bc4a964580d7e0ec",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/catch-up-goalie-underlying.ts": {
+      "sha256": "03203f91f6af2faee0631f329111e2477eb3c9bdeaed35d3ad50cfde3dec0f69",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/catch-up-player-underlying.ts": {
+      "sha256": "bb8a3df5102c4c5461fca04409296f16a1fcebfd351f90490f427fb1c5040414",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/catch-up-team-underlying.ts": {
+      "sha256": "f3ad1f80591c5fc5fd2091b741bfc9d6773b2df09d6fd96f82d3bd6a677e03ad",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/cron/update-stats-cron.ts": {
+      "sha256": "6632a3a231e6d99bf5e429335788234b6820cfd6d35a1155a385244b12fbf901",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/draft-ranker-health.ts": {
+      "sha256": "2ca0be1a8e50591c24d0ef766bc13e3789dd154f758131167241ef14e7c2dee5",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/powerPlayTimeFrame.ts": {
+      "sha256": "83a4331ced9dcd69e3f2e7446b94b99ceaa4e52968219956e919ba074c54cdaa",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/refresh-draft-ranker-community.ts": {
+      "sha256": "933d6d13d06e283e80c1a6b70c93b7c744beda0b4b8925a3515806871ff25231",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/refresh-draft-ranker-discovery.ts": {
+      "sha256": "3e6c8a34bea915f914c03c7ec8327d9702aed9acb493f49da6297a9af3901719",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/register-nhl-xg-model.ts": {
+      "sha256": "76b7dc863bcecbdb76a656df60d01cd6bc0a94012fdfc89fbfb2a51507731a3b",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/run-fetch-wgo-data.ts": {
+      "sha256": "657b1a98b85b483a75b411822724501359d74f819d3b68dc88932fb8dd5f9718",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/sustainability/rebuild-baselines.ts": {
+      "sha256": "68c02f34529aac043e665b1f073211f82d4409d76d0faedbdd81f8941844229c",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-PbP.ts": {
+      "sha256": "5cd4bdbc588d396ab91f4a05ef394260cb3d2c5b7e5f20212696d3f10c48d5d4",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-entity-metric-rankings.ts": {
+      "sha256": "f2a186ea2fb1d49f6d5a8d131f4ee18d7d22a7ca76e94be19f80886f1890816c",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-games.ts": {
+      "sha256": "671c2e12456ce5390380272007ef148d2bd8c42beec4bde16a1c044b67c63901",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-goalie-underlying-stats.ts": {
+      "sha256": "ec242cf14c83a8ec8e9939819cc2d037ca90a4b283f0fff91eb74a78cb3d60b0",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-goalie-underlying-summaries.ts": {
+      "sha256": "f2951808e7617c16191a2a37e50f4bed57669c1709bc944371ffd47c3dd8d993",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-line-combinations/[id].ts": {
+      "sha256": "0efc3fe33f77d327af9ccb097625ece7821fbc938a2e1748629da8e418cac115",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-line-combinations/index.ts": {
+      "sha256": "997896eb74b05f054402048e0bf1fb190f0b6375a8e0b0dfa5f2e784765c412e",
+      "source": "Production-preserving auth-before-audit tokens plus exact existing HEAD erased request/response type annotations, preserving previously inferred admin request shape; business function body unchanged"
+    },
+    "web/pages/api/v1/db/update-lineup-deployment-tallies.ts": {
+      "sha256": "b24167dc68a6e91e5b0a4218aa0dca119dffb27e194a7213b1b6459765d1343e",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-market-prices.ts": {
+      "sha256": "1072c1eba8fb19772fc80ff4786a9ac16ee65427fad2e92216fba506a52752da",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-nhl-edge-stats.ts": {
+      "sha256": "f23721a71a166883fa4ba280ce2ec3a9e20e0fa6622aa0abd065030f6366c5d3",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-nhl-play-by-play.ts": {
+      "sha256": "78be7a8c17e75e77bb3e5e9f6566b8762da1986689de418cb04447fb84d391f4",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-nhl-shift-charts.ts": {
+      "sha256": "156da5b2b99868d4d039b796aa5190b2ec64ddfcd104cd0de2904642b67da80f",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-nhl-xg-aggregates.ts": {
+      "sha256": "b876769ee8d1f94bb51b06bccbb6076837092298b2548c756bbc120ee66bab06",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-nhl-xg-shot-predictions.ts": {
+      "sha256": "555bc676b180d3b1a5d5bd799db0dbba0a47b0f8c5bfbd77040802bdf6f3dc93",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-nhlscraper-contracts.ts": {
+      "sha256": "b1e3404bed8846d113718e648a3b012396e487934de7846086d58c9bf12a37a4",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-nst-current-season.ts": {
+      "sha256": "01cb818ffa53d4e30fcd594c7cc3ba84d95cfef021dd7873f8f5d037cf67db12",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-nst-goalies.ts": {
+      "sha256": "aeaddea4bd81b246e08ac176468915c1378a4be20dc907ffffd0207df019520e",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-nst-team-daily.ts": {
+      "sha256": "d710f6e73e89cfdc250238b890d6f4a48d7fe682a54656d333973010d56ca5c5",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-player-impact-ratings.ts": {
+      "sha256": "d76a4ae518e9048dfa8171d4077feaa63c06516852a744512dd5f4d0f436d4f2",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-player-trend-metrics.ts": {
+      "sha256": "0bc2e85776bcfd9b603259333517bec3bf662a7ace706b2fa70359476a0d8594",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-player-underlying-stats.ts": {
+      "sha256": "30dbcc33651f612f18c51feafa6ad8d0f46c61b059fda73893c365a2af5de36b",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-player-underlying-summaries.ts": {
+      "sha256": "e87a8eb5cceb305bf9115754ccd386c75921cc6ff5e37067f1ef204531433249",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-player/[playerId].ts": {
+      "sha256": "296204b91d978d9d074ed57083c1a3b0bdbd075728bbea27c5c04fec2a472d30",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-players.ts": {
+      "sha256": "a7b23ab40a1b183684a2c15cb5c0d84a97d684c223b764e21c8b4ae8f96b95b5",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-power-play-combinations/[gameId].ts": {
+      "sha256": "8c702065650099873efdb74967cb7ea648a310092b50c1f11d895cf192469ee3",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-power-play-combinations/index.ts": {
+      "sha256": "14a459c34cf47867012de4eefe86eb7e9eb8758d85ae7fc831dbbe90ae58d8be",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-rolling-games.ts": {
+      "sha256": "9b52f3e0053bb562729e5ddd2b6211920c8b6233e4ee11a7682334fdb5ff03b3",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-season-stats.ts": {
+      "sha256": "0f1f32281bf7be17c16770ec2eb33345e2a742a347e9a442d93157dd9c666354",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-seasons.ts": {
+      "sha256": "56cc24eea821952f2155ea2972209e5f80d46d3e11b880141e7dbe5df4ccde38",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-shifts.ts": {
+      "sha256": "865077cb645a8366edb4352d07531c264c8e406d7331e800d64742d078c93e0d",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-skater-composite-ratings.ts": {
+      "sha256": "6c79c199a648fe101992e37c3de71d52fedab8773f8c424e0ab6a7cb1cd53245",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-sko-stats.ts": {
+      "sha256": "a24656c35b3ad5c646c24ee2139cc4aceb66e3c30dd3e7fe35dfd28942eca718",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-standings-details/index.ts": {
+      "sha256": "7392a00af4f8c9abb44ddee40deb35f168dd76945fb3f56de500d6e0d28273c4",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-stats/[gameId].ts": {
+      "sha256": "bef48906227b6bc417c0009af8dac7d9439d9a517341c33c42e48591cf8d1b8c",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-team-ctpi-daily.ts": {
+      "sha256": "03a310525d41b5933dab7cedf9a1005b4cd9feec39fdabfd39c0471d0372ab98",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-team-power-ratings.ts": {
+      "sha256": "59e73eaaf30ee5c5affbca1b4275dc99aa62fa6a0b7c2df1ae7227f7d69a396a",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-team-sos.ts": {
+      "sha256": "8e48f8e2cdae155f509558fa2cfdd1abb56320a5761d175f37d77eb0f0668d1e",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-team-unit-toi.ts": {
+      "sha256": "9d1b9d2a04306bc94b2ed9211d17534e50650d58a9b0dc41ef2b727fc07fae4c",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-team-yearly-summary.ts": {
+      "sha256": "d781c99c9c166f6ef276f583ff2c618d89bb5562310673f0fffdad865975c25e",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-wgo-averages.ts": {
+      "sha256": "d5898943c8a34d603b7fc3576b6497495fecefaeec036ec60367c74ddc7c3241",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/update-wgo-goalie-totals.ts": {
+      "sha256": "85f457d25a453a9acd8475b0c9a1284101bd0000239c4abe40755ca05743b190",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/db/upsert-csv.ts": {
+      "sha256": "59bf75c7cd582c12ad20d890770de2552a84abbecd055d0c09b5146d2c7b9a49",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/game-predictions/accuracy-loop.ts": {
+      "sha256": "0d03ab046bce5c8239f3bb8af1111eb0bf4db2a6994814028c7ea55fb20545ea",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/game-predictions/backfill-feature-snapshots.ts": {
+      "sha256": "01d540273f6c5632754b060fadbd5d01fddd2e725a915a1fc6cac3f7fe1c5783",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/game-predictions/backtest-ablation.ts": {
+      "sha256": "27e790b39f6b0d73e8b23ac41ab265c61ac88561cbb0eb33d46e09073e48b092",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/game-predictions/backtest.ts": {
+      "sha256": "869ffb6f81a290c43644d317ff1c25fcdb606a9e1df020d5bfcdf248c957bbc4",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/game-predictions/feature-signal-analysis.ts": {
+      "sha256": "a75310407b574487f80713397e98f3db1ef6f080f68ada9725309290e4515cdd",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/game-predictions/forecast.ts": {
+      "sha256": "76b0f4c5ef06af5251f8ccdf2b253c24709ad87485140394bd60b1773613ca3c",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/game-predictions/generate.ts": {
+      "sha256": "a63d55bb72803a536b57a781586355cfc4707896ea23c83451d6e24290237c0b",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/game-predictions/import-market-odds.ts": {
+      "sha256": "02aeecd2854e9d57d76873e99faf57b4910e798d0b30f8e90d984291f82bdc75",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/game-predictions/ingest-espn-odds.ts": {
+      "sha256": "d74eeae404a9e4a3964b6f1fe92b0871e9bcb7eac0bcb8352f9df94d8eda617b",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/game-predictions/promote-model-version.ts": {
+      "sha256": "2fea72c2149b23ed9b8b44b4b66ade05ec154e868ee15642b330f267eeb50210",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/game-predictions/score.ts": {
+      "sha256": "048e5ee5965c1c6e6c5a17da0b744bea090b497a6e6ce0d0afb34cbc8d30a714",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/sustainability/process-recompute-queue.ts": {
+      "sha256": "020e436cf5267e2ff60fbb2863ba86b2289a24e6d8782dd3ad41e7c714774ed3",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/sustainability/rebuild-priors.ts": {
+      "sha256": "598a684cc388a9156bb8bc90a4ed030fafd1f4d97b983b102c707f0c04ae89b7",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/sustainability/rebuild-score.ts": {
+      "sha256": "6fddaeed41db6e5bf632d302606ffe57e76f5c8dcaef4a5259ec4d657e97859e",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/sustainability/rebuild-trend-bands.ts": {
+      "sha256": "aa0680d2459e0f30c6edc4987f8a40443293f55eb7dc503c25cee1564b64c256",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    },
+    "web/pages/api/v1/sustainability/rebuild-window-z.ts": {
+      "sha256": "0dffa59bc819f47f07603732a66ef841d91a36d24639226518496c43995dd401",
+      "source": "Production-preserving auth-before-audit predecessor; wrapper tokens only, callback bodies/imports unchanged"
+    }
+  },
+  "status": "Wrapper-only predecessor composition prepared for offline qualification; independent review and acceptance pending",
+  "ownership": "Coordinator owns only this temporary snapshot and c5-prerequisite-r1 artifacts. Canonical 75 routes/shared sources remain read-only; no application lease stolen or core body/source overwritten.",
+  "scope": "C5 r2 + exact existing shared wrapper/classifier/seasonal metadata + three existing provider audit delegates + pinned historical inventory. Next transform may only move existing adminOnly gate around audit wrapper, preserving all callback bodies/imports/options. NST new caller-secret changes are explicitly excluded.",
+  "exclusions": "No environment/config values, migrations, schedule mutation, provider/cron execution, model contract/algorithm change, role grant or production action.",
+  "auth_order": {
+    "declared": 75,
+    "transformed": 74,
+    "already_auth_first": 1
+  },
+  "typing_exception": {
+    "path": "web/pages/api/v1/db/update-line-combinations/index.ts",
+    "before_sha256": "3ca1ae4dc7a9a5a90cbc329a9a4faee913e8583f3f33e701cdbc4f4a1faf0b3e",
+    "after_sha256": "997896eb74b05f054402048e0bf1fb190f0b6375a8e0b0dfa5f2e784765c412e",
+    "reason": "Moving adminOnly outside audit loses contextual callback type. Restore only exact existing HEAD type-only imports/AuthorizedRequest alias/req-res annotations. No runtime or model-body change.",
+    "source": "Existing committed HEAD file; no new schema/client/gate"
+  }
+}

@@ -1,0 +1,116 @@
+import type { NextApiRequest, NextApiResponse } from "next";
+import { z } from "zod";
+
+import supabase from "lib/supabase/server";
+import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
+import {
+  buildProjectionApiErrorResponse,
+  dateSchema,
+  getQueryStringParam,
+  requireLatestSucceededRunId,
+} from "lib/projections/apiHelpers";
+
+const querySchema = z.object({
+  date: dateSchema,
+  horizon: z.coerce.number().int().min(1).max(10).default(1),
+  runId: z.string().uuid().optional(),
+  gameId: z.coerce.number().int().optional(),
+  teamId: z.coerce.number().int().optional(),
+  goalieId: z.coerce.number().int().optional(),
+});
+
+function parseQuery(req: NextApiRequest) {
+  const parsed = querySchema.safeParse({
+    date: getQueryStringParam(req.query.date),
+    horizon: getQueryStringParam(req.query.horizon),
+    runId: getQueryStringParam(req.query.runId),
+    gameId: getQueryStringParam(req.query.gameId),
+    teamId: getQueryStringParam(req.query.teamId),
+    goalieId: getQueryStringParam(req.query.goalieId),
+  });
+  if (!parsed.success) {
+    const err = new Error("Invalid query parameters");
+    (err as any).statusCode = 400;
+    (err as any).details = parsed.error.flatten();
+    throw err;
+  }
+  return parsed.data;
+}
+
+function applyDeprecationHeaders(res: NextApiResponse) {
+  res.setHeader("Deprecation", "true");
+  res.setHeader("X-FHF-Canonical-Route", "/api/v1/forge/goalies");
+  res.setHeader("Link", '</api/v1/forge/goalies>; rel="successor-version"');
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse,
+) {
+  const startedAt = Date.now();
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+    return res.status(405).json({ error: "Method not allowed" });
+  }
+
+  try {
+    applyDeprecationHeaders(res);
+    if (!supabase) throw new Error("Supabase server client not available");
+    const q = parseQuery(req);
+    const runId = q.runId ?? (await requireLatestSucceededRunId(q.date));
+    if (q.runId) {
+      const { data: run, error: runError } = await supabase.from("forge_runs")
+        .select("metrics").eq("run_id", q.runId).maybeSingle();
+      if (runError) throw runError;
+      if (!run) {
+        const error = new Error(`No projection run found for runId=${q.runId}`);
+        (error as any).statusCode = 404;
+        throw error;
+      }
+      if ((run as any).metrics?.input_provenance?.external_fantasy_input_contract
+        !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
+        const error = new Error("Selected projection run lacks external fantasy exclusion provenance.");
+        (error as any).statusCode = 422;
+        throw error;
+      }
+    }
+
+    let query = supabase
+      .from("forge_goalie_projections")
+      .select("*")
+      .eq("run_id", runId)
+      .eq("as_of_date", q.date)
+      .eq("horizon_games", q.horizon);
+
+    if (q.gameId != null) query = query.eq("game_id", q.gameId);
+    if (q.teamId != null) query = query.eq("team_id", q.teamId);
+    if (q.goalieId != null) query = query.eq("goalie_id", q.goalieId);
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    return res.status(200).json({
+      durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+      deprecated: true,
+      canonicalRoute: "/api/v1/forge/goalies",
+      runId,
+      asOfDate: q.date,
+      horizonGames: q.horizon,
+      data: data ?? [],
+    });
+  } catch (e) {
+    applyDeprecationHeaders(res);
+    const failure = buildProjectionApiErrorResponse(
+      e,
+      "PROJECTION_GOALIES_UNAVAILABLE",
+    );
+    return res.status(failure.statusCode).json({
+      durationMs: formatDurationMsToMMSS(Date.now() - startedAt),
+      deprecated: true,
+      canonicalRoute: "/api/v1/forge/goalies",
+      error: failure.error,
+      details: failure.details,
+    });
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "REPORT.md": "3e0d87556959036fa1702683b69ae3b7f6cad08f5e1a1d8813378df07d1ab991",
+  "COMMANDS.md": "d65643cb6cdb3dcdb460e1f1a6e6c7d190e0115b31a9a32431ea34de8402fbcd",
+  "audit-network-deny.cjs": "5fd1c8ce5bb65531ab0558bccf4fe9ef252e4c524c4bec4c944c37e4bd707c06",
+  "bridge-claim-oracle.test.ts": "375b5bd032d200bccffe1fd5ed2e1052d7ab68ddf446bc2666c68a8aa7889963",
+  "offline-policy-oracle.log": "508d3a5f27e1883cfe356b9a0667f2947b81861ae31e75dd728db1e2f99ab005",
+  "END-HASHES.json": "f085b41e7eb9cc84e6337ce9848f630dd79ed4636860881298a563baff0b434b",
+  "SCRATCH-PATH.txt": "e16cd31074db1329ed8f940a74ce950ebd4722ae9deef35b01dd796d2cd8d939",
+  "START-HASHES.json": "76844989777d54e58f5fdf3cf3d0764ab68cef9327a43b5e7f226d674b02d0eb"
+}

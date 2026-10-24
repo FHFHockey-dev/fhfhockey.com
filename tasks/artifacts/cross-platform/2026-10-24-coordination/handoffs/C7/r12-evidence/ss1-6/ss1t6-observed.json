@@ -1,0 +1,71 @@
+{
+  "W1": {
+    "selected": [
+      "2026-10-29",
+      "2026-10-30",
+      "2026-10-31",
+      "2026-11-01"
+    ],
+    "leaks": [],
+    "easiest": 8,
+    "streams": 8,
+    "tiers": 3
+  },
+  "W2": {
+    "gridRank": null,
+    "target": "OTT",
+    "state": "ready",
+    "remaining": 0,
+    "rank": 32,
+    "onEasiest": false,
+    "onStream": false,
+    "onPickups": false,
+    "onSpec": false
+  },
+  "T1": {
+    "bad": [],
+    "underToi": 0,
+    "counts": {
+      "hot": 5,
+      "cold": 5,
+      "up": 4,
+      "down": 4
+    }
+  },
+  "T2": {
+    "staleMetrics": {
+      "state": "stale",
+      "moversState": "ready",
+      "hot": 0,
+      "movers": 5
+    },
+    "staleOwnership": {
+      "state": "ready",
+      "moversState": "stale",
+      "hot": 5,
+      "movers": 0
+    }
+  },
+  "T3": {
+    "trendsLayer": null,
+    "opponents": null,
+    "scheduleCalls": 1,
+    "rateCalls": 0,
+    "spotlightState": "blocked",
+    "callsAfterSpotlight": 1
+  },
+  "T4": {
+    "leak": false,
+    "moverKeys": [
+      "key",
+      "name",
+      "team",
+      "positions",
+      "latest",
+      "previous",
+      "delta",
+      "latestDate",
+      "previousDate"
+    ]
+  }
+}

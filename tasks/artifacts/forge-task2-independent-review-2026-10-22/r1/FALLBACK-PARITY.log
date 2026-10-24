@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run --config review-vitest.config.mts fallback-parity.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-r1-independent-ksvb02so/web
+
+(node:74560) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ fallback-parity.test.ts (4 tests) 7ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed (4)
+   Start at  12:43:47
+   Duration  318ms (transform 54ms, setup 3ms, collect 60ms, tests 7ms, environment 131ms, prepare 29ms)
+

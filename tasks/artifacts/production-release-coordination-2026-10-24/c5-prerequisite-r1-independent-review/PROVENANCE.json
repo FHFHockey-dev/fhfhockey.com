@@ -1,0 +1,64 @@
+{
+  "C5_r2_patch_sha256": "e86b43ce3ad0d62586d5c1423b79a65139ceef73e262596c5e39b537d807c062",
+  "C5_exact_r2_files": {
+    "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts": {
+      "sha256": "f1d3238b68c45d43eb15c77825bed0a6e718779c8bccf34efccadafdefc6c8c6",
+      "equals_in_memory_HEAD_plus_original_r2_patch": true
+    },
+    "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts": {
+      "sha256": "c2de0f7e2d86d5e26e87592428e0f112004ac1c30d5407ec0d01356513cc977e",
+      "equals_in_memory_HEAD_plus_original_r2_patch": true
+    },
+    "web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts": {
+      "sha256": "f16fad19188630ced0a9d32c53a91b5a969cee0b4e45b6cee5c2e2ca98899b27",
+      "equals_in_memory_HEAD_plus_original_r2_patch": true
+    },
+    "web/pages/api/internal/yahoo-live-draft.ts": {
+      "sha256": "20c99628240be857c349a3a2b97c36fc48a58519f7a30c06cb33a71fd1f8abbe",
+      "equals_in_memory_HEAD_plus_original_r2_patch": true
+    },
+    "web/pages/api/v1/db/update-drafted-prospects.ts": {
+      "sha256": "e4c5e476c50e57be341498a615ad0517ccd9f918937f42d85410f8a7c1df9881",
+      "equals_in_memory_HEAD_plus_original_r2_patch": true
+    }
+  },
+  "exact_HEAD_prerequisites": {
+    "web/lib/cron/withCronJobAudit.ts": {
+      "sha256": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+      "equals_committed_HEAD": true
+    },
+    "web/lib/cron/nhlOffSeason.ts": {
+      "sha256": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+      "equals_committed_HEAD": true
+    },
+    "web/lib/cron/cronAuditCoverage.ts": {
+      "sha256": "754a0df900b7cabd573838b4d229857ae63d83361e6ad94ad6a7f7ea084706b3",
+      "equals_committed_HEAD": true
+    },
+    "web/lib/cron/withCronJobAudit.test.ts": {
+      "sha256": "87db115af6c190a14020e1502eafcebd9174db5f9cfd9ed94a4592b14f755bb5",
+      "equals_committed_HEAD": true
+    },
+    "web/lib/cron/nhlOffSeason.test.ts": {
+      "sha256": "ca7dd5725c8529cd3b8e85e62ce130d3aa7c3d774065d2a47daa3c1d8935d5d6",
+      "equals_committed_HEAD": true
+    },
+    "web/pages/api/internal/espn-sync.ts": {
+      "sha256": "f57c6a825fc70895da1b3ca799a63656c0c7615614a5326cb48fb67537a0fa14",
+      "equals_committed_HEAD": true
+    },
+    "web/pages/api/internal/fantrax-sync.ts": {
+      "sha256": "6e1685d0564616c5d83e60c65d677a105b5e9d2c5c4ea5c3df866f9a5fa90b9a",
+      "equals_committed_HEAD": true
+    },
+    "web/pages/api/internal/patreon-reconcile.ts": {
+      "sha256": "8cb1373b5b994e1acadf7e26cd5f906142c36ab2d287a51f8bed64aa34a892e2",
+      "equals_committed_HEAD": true
+    },
+    "tasks/TASKS/cron-operations/cron-schedule.md": {
+      "sha256": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+      "equals_committed_HEAD": true
+    }
+  },
+  "C7_receipt_sha256": "0bf6de05cbc00daf096dd52644038a5bb2bc6e70dac6059f74ce723c683f5c4b"
+}

@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-23T14:47:55.823689+00:00",
+  "gridCanonicalDrift": [],
+  "yahooCanonicalDrift": [],
+  "yahooPatch": "7013599e82c6c2b8bc2512e3d95abd2b73db6d58c69c8e8c3456847c3030f001",
+  "yahooArchive": "78e986e8b065e2c07cb971b6ae654f474b52545e5caf1856a33fe4bf5785214a",
+  "reportSha256": "5ddf39aa1973a061da2c22177b9a1f4dffa6014f322cbd70ff8d785a0f425641",
+  "decision": "accept r4 two-file correction at pinned snapshot, not overall release",
+  "browserResult": {
+    "startTime": "2026-10-23T14:17:55.857Z",
+    "duration": 5130.597,
+    "expected": 6,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

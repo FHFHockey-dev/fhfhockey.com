@@ -1,0 +1,42 @@
+{
+  "base_archive_sha256": "f51b4291439a973f3e3d4cf35ec789c5ccfe99899b54c5059180b420568f3077",
+  "patch": "accepted-overlay.patch",
+  "patch_sha256": "49bf5c0f5bcddbf1fd537d0205cd791897d20835b50484ac8eb35904be52de4d",
+  "check_exit": 0,
+  "overlay_paths": [
+    "web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts",
+    "web/components/GameStateAnalysis/GameStateAnalysis.test.tsx",
+    "web/components/GameStateAnalysis/GameStateAnalysis.tsx",
+    "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+    "web/components/GoalieShareChart/index.tsx",
+    "web/components/TeamDashboard/AdvancedL10Metrics.test.tsx",
+    "web/components/TeamDashboard/AdvancedL10Metrics.tsx",
+    "web/components/TeamDashboard/TeamDashboard.test.tsx",
+    "web/components/TeamDashboard/TeamDashboard.tsx",
+    "web/hooks/useShotData.test.tsx",
+    "web/hooks/useShotData.ts",
+    "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+    "web/lib/integrations/yahoo/rosterPlanning.ts",
+    "web/lib/projections/projectionPipelineState.test.ts",
+    "web/lib/projections/projectionPipelineState.ts",
+    "web/lib/rollingForgePipelineRunState.ts",
+    "web/lib/stats/percentUnits.test.ts",
+    "web/lib/stats/percentUnits.ts",
+    "web/lib/stats/teamCountConsumers.test.tsx",
+    "web/pages/api/v1/db/run-rolling-forge-pipeline.ts"
+  ],
+  "accepted_paths_unchanged_from_original_packet": [
+    "web/__tests__/pages/api/v1/db/forge-served-forecast-settle.test.ts",
+    "web/lib/player-forecasts/servedForecastLedger.test.ts",
+    "web/lib/player-forecasts/servedForecastLedger.ts",
+    "web/lib/projections/queries/skater-queries.test.ts",
+    "web/lib/projections/queries/skater-queries.ts",
+    "web/lib/rosterScheduleData/forgeDailyBridge.test.ts",
+    "web/lib/rosterScheduleData/forgeDailyBridge.ts",
+    "web/pages/api/v1/db/forge-served-forecast-settle.ts",
+    "web/pages/api/v1/db/forge-served-forecast-snapshot.ts",
+    "web/pages/api/v1/forge/scoreboard.ts",
+    "web/tests/api/forge-scoreboard.test.ts"
+  ],
+  "first_check": "Failed because generated patch lacked new-file mode headers for three additions. Added headers and checked again; no source edits."
+}

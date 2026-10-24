@@ -1,0 +1,85 @@
+{
+  "at": "2026-10-24T19:46:42.139658+00:00",
+  "status": "Verified bounded GoalieFORGE documentary checkpoint; whole audit unfinished",
+  "canonical_ids": 214,
+  "canonical_evidence": 1201,
+  "readable_children": 48,
+  "added_parent_ids": [
+    "SITE-GOALIE-DISCLOSURE"
+  ],
+  "changed_existing_ids": [
+    "FPI-07",
+    "SITE-FORGE-RANGE-PRESENTATION",
+    "REPO-DOCUMENTATION"
+  ],
+  "readable_children_added": 3,
+  "evidence_added": 18,
+  "all_prior_213_ids_scopes_evidence_preserved": true,
+  "legacy_blocks_byte_identical": 32,
+  "unchanged_existing_rows_identical": 210,
+  "prior_children_preserved": true,
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "95388d86ad5a39a8aeb0ca290c3c4c2375d6fb79553d64ee0ac00adf32aa1e0d",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "a6694debc718574d9d3457601b66172972b4a85f1b9ad64d43bd03361ed17b51",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "536cc05b16b7683b5195b7ad3d7e85616a733fbe3d8414e4cfb128887c7c7036"
+  },
+  "library": {
+    "at": "2026-10-24T19:46:42.139658+00:00",
+    "status": "succeeded",
+    "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "version_before": 16,
+    "version_after": 17,
+    "same_identity": true,
+    "replacement_attempts": 1,
+    "raw_response": "LIBRARY-REPLACE-RAW.json",
+    "parsed_receipt": "LIBRARY-REPLACE-RECEIPT.json",
+    "helper_exit_code": 0,
+    "native_returned_xattrs_matched": [
+      "user.library-file-version"
+    ],
+    "local_master_sha256": "95388d86ad5a39a8aeb0ca290c3c4c2375d6fb79553d64ee0ac00adf32aa1e0d",
+    "file_size_bytes": 675340,
+    "no_remote_download_checksum_claim": true,
+    "download_url": "https://chatgpt.com/api/library/files/libfile_9987e7d9d1b8819181b366a318cc9a9c/download",
+    "no_pending_or_uncertain_operation": true
+  },
+  "segment_coverage": {
+    "full_primary_texts": 3,
+    "full_text_bytes": 33925,
+    "task_bearing_prose_read": {
+      "path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+      "ranges": [
+        [
+          1,
+          200
+        ]
+      ]
+    },
+    "historical_catalog_bounded_range": [
+      201,
+      940
+    ],
+    "additional_release_inventory_read_ranges": [
+      [
+        30,
+        62
+      ],
+      [
+        140,
+        150
+      ]
+    ],
+    "partial_files": 2,
+    "all_catalog_SQL_semantics_reviewed": false,
+    "release_inventory_remainder_unreviewed": true
+  },
+  "null_win_R7_fix_preserved_closed": true,
+  "no_new_runtime_observation": true,
+  "remaining_unique_text_candidates": 1636,
+  "not_all_candidates_deep_read_obligations": true,
+  "remaining_base_queue_items": 12062,
+  "next_cursor": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md",
+  "pending_or_uncertain_operations": [],
+  "audit_blockers": [],
+  "application_tests_git_production_provider_new_workers": 0
+}

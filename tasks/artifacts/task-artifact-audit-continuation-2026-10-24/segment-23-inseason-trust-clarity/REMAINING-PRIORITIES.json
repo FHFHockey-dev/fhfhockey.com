@@ -1,0 +1,86 @@
+{
+  "at": "2026-10-24T20:51:33.216119+00:00",
+  "tentative_unique_text_candidates": 1587,
+  "not_all_are_deep_document_obligations": true,
+  "next_sources": [
+    {
+      "path": "tasks/tasks-README.md",
+      "sha256": "28fc17b6954a2d78660555cabd8124c30816bf761dc444f7d143706b711f2497",
+      "bytes": 42455,
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/TASKS/wigo-charts-audit/00-shared-pipeline.md",
+      "sha256": "22e25ca340df9978167898507a9c96ab9c9cde30f2d68eae43746988c08c7b57",
+      "bytes": 3023,
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/TASKS/wigo-charts-audit/12-comparison-table.md",
+      "sha256": "dd66cdae40f6c0826420fb7183b829797628ef1b9208af2329a7766cb554ce95",
+      "bytes": 3579,
+      "coverage": "partially-inspected"
+    },
+    {
+      "path": "tasks/TASKS/wigo-charts-audit/16-time-on-ice.md",
+      "sha256": "6c2d97076657a43d394c9c322624b1b342fd9d45a40ab56014bc390cfb5ab341",
+      "bytes": 2166,
+      "coverage": "partially-inspected"
+    }
+  ],
+  "owner_memo_partial": {
+    "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
+    "sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
+    "bytes": 124967,
+    "lines": 542,
+    "encoding": "utf8-text",
+    "mtime_ns": 1790916360310070094,
+    "kind": "unique-task-document",
+    "inventory_sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
+    "changed_since_inventory": false,
+    "coverage": "partially-inspected",
+    "reviewed_ranges": [
+      [
+        1,
+        80
+      ],
+      [
+        126,
+        135
+      ],
+      [
+        235,
+        266
+      ],
+      [
+        373,
+        402
+      ],
+      [
+        452,
+        542
+      ]
+    ],
+    "unreviewed_ranges": [
+      [
+        81,
+        125
+      ],
+      [
+        136,
+        234
+      ],
+      [
+        267,
+        372
+      ],
+      [
+        403,
+        451
+      ]
+    ],
+    "review_scope": "Selected owner decisions, News contract/late lineage, Rankings source/history and final completion gates read at exact ranges; UUID/email identifiers redacted in readout. Other historical UI/QA receipts remain unread. No private values, pixels, execution or current runtime acceptance.",
+    "snapshot_mode": "reviewed-clauses-redacted-preserve-lines"
+  },
+  "support_limits": "33bounded structural JSON,48image metadata,28log metadata,3script metadata; no execution or pixel acceptance. Other current-source families remain queued."
+}

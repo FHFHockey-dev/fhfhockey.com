@@ -1,0 +1,47 @@
+{
+  "version": "luna-r1-slot-correction-v1",
+  "baseHead": "fd58ba2452c0175b201e50285df156cb7f91b4f4",
+  "headAtVerification": "87ab20cbd6059d2e2116843f303ed00b4902c2ac",
+  "files": [
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.ts",
+      "sha256": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a"
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.test.ts",
+      "sha256": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451"
+    }
+  ],
+  "patchSha256": "ed584d5e242458530c23e4e1eeb835bcfd09a37b9835d7b857d857115c18b5f6",
+  "sourceArchiveSha256": "b8a639374e07c4839bef444fac7ca7f52ee02b7502b1328d6230c436c11d8bbb",
+  "originalReviewTestSha256": "2eb47699a268abdaffe8043e8d4aad540fa6600f8565f9abb4981939332b53cb",
+  "originalR1ControlsCopiedVerbatim": true,
+  "priorPins": {
+    "total": 55,
+    "intentionalChanges": [
+      "web/lib/sources/tweetIdentityReplacementReview.ts",
+      "web/lib/sources/tweetIdentityReplacementReview.test.ts"
+    ],
+    "unchanged": 53
+  },
+  "retainedTrialPinsUnchanged": 40,
+  "referenceSha256": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+  "checks": {
+    "redOriginalControls": {
+      "failed": 2,
+      "skipped": 9,
+      "reason": "expected reviewable_held to be held"
+    },
+    "ownerTestsPassed": 34,
+    "unchangedReviewerControlsPassed": 11,
+    "overlappingR1Controls": 2,
+    "testExecutionsPassed": 45,
+    "scopedTscExit": 0,
+    "targetedLintExit": 0,
+    "diffCheckExit": 0,
+    "networkDiagnostics": false
+  },
+  "independentRereviewStatus": "pending",
+  "externalActionsAttempted": 0,
+  "currentHeadRetainsExactPreCorrectionSource": true
+}

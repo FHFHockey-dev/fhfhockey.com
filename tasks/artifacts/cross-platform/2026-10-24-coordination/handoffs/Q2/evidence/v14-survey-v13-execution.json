@@ -1,0 +1,29 @@
+{
+  "startedUtc": "2026-10-24T14:57:52.675198+00:00",
+  "finishedUtc": "2026-10-24T14:58:01.908643+00:00",
+  "command": [
+    "/usr/bin/nice",
+    "-n",
+    "15",
+    "/Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/MacOS/Unity",
+    "-batchmode",
+    "-quit",
+    "-job-worker-count",
+    "2",
+    "-projectPath",
+    "/Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject",
+    "-executeMethod",
+    "VesperBasin.Editor.SprintV14Survey.Run",
+    "-logFile",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-survey-v13.log"
+  ],
+  "cwd": "/Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject",
+  "exitCode": 0,
+  "timedOut": false,
+  "seconds": 9.23,
+  "processCountHints": {
+    "DOTNET_PROCESSOR_COUNT": "2",
+    "JAVA_TOOL_OPTIONS": "-XX:ActiveProcessorCount=2"
+  },
+  "tempDirectory": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/"
+}

@@ -1,0 +1,32 @@
+{
+  "at": "2026-10-23T15:35:09.241988+00:00",
+  "base_manifest_sha256": "8d398f05ba46c6d0b6ad3bba13aaa4c3ca90fb4c0f2534eee3289277da485a70",
+  "review_scope": "Independent acceptance covers the preserved base revision, not a re-review of this correction.",
+  "independent_base_tests": {
+    "supplied": 41,
+    "independent": 7
+  },
+  "fixes": [
+    "Provenance explicitly records one removed trailing LF",
+    "Past diagnostic window normalized; future label unchanged"
+  ],
+  "focused_tests": {
+    "passed": 3,
+    "failed": 0,
+    "names": [
+      "test_past_retrospective_selected_horizon",
+      "test_zero_gp_known_prior_only",
+      "test_faced_then_separate_from_retrospective"
+    ],
+    "receipt": "focused-tests.log"
+  },
+  "full_suites_repeated": false,
+  "formula_diff": "Only two diagnostic-label lines added to calculator; all other source bytes unchanged",
+  "provenance_check": "source prefix length 7725; delivered core length 7724; prefix[:-1] equals core byte-for-byte",
+  "unchanged_cli_outputs": [
+    "EXAMPLE-RESULT.json",
+    "SYNTHETIC-REPORT.json"
+  ],
+  "unchanged_core_sha256": "eb886d1aa79ec8b49d23ed9f0c3e82a16c0b3ad693cea461bc45c3c3f0350258",
+  "nhl_validation": "NOT RUN"
+}

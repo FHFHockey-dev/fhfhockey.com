@@ -1,0 +1,39 @@
+# Contextual rankings content segment
+
+This bounded segment is complete; the full task-tree content audit remains unfinished. Thirteen documents were read completely: eight Rankings product/task documents, the R-COST handoff and two independent review pairs. They total 288,715 bytes and 5,317 lines. The 152,980-byte, 665-line main Rankings task list received only a checkbox-structure scan. Its zero unchecked boxes are not full semantic review or proof of original-vision completion.
+
+The v4 checkpoint remains preserved in the prior segment and this segment's three BASELINE files. No global inventory, repeat benchmark, application test, source repair, provider/production request, capture, paid operation, Git mutation or new worker was performed. Stored goals, production commands and quoted runbooks were read as evidence only.
+
+## Substantive findings
+
+**Most older Rankings gaps already have narrower closures.** The post-alignment PRD's outstanding list is superseded by dated task receipts for team-unit metric URL restoration, generated types, coverage metadata, PP-points inputs in MCM, verified Fenwick xS%/SAX% denominators, Results Luck null explanations, Relative SV%, basic typed opportunity signals and the comparison context rail. October19 NEW10 also records the team/goalie/deployment paging repair, 22 owning-file tests and missing-key adversaries. These are preserved documentary receipts, not fresh observations of the current application or hosted sources. No duplicate repair was added from those old claims.
+
+**The documentation still has a concrete contract conflict.** The original PRD describes cume-dist-style percentiles; V2 proposes inclusive better-or-equal math and says the best row falls below100. Later alignment notes/task7 select tested strictly-worse-peer semantics with explicit best/worst/tie/singleton behavior, and task17 records dated durable snapshot regeneration. The original/V2 source summaries also retain missing-feature statements closed by later work. REPO-DOCUMENTATION now links the supersession map. This is a documentation correction proposal, not a runtime percentile defect or authority to regenerate data. WiGO's own percentile/peer contracts remain separate.
+
+**Checked parent tasks do not establish exact original-formula parity.** Many children permit either implementation or an explicit source-pending contract. The later task list expressly retains exact Shoot First/Pass First/Play Driver, team-without-player relative skater metrics, Under Pressure pressure/screen labels, adjusted-impact controls, adjusted team style, goalie/team secondary tabs and WAR as pending or diagnostic. Opportunity signals are live only for TOI Up, Usage Drop and Shot Volume Spike; PP/line/pair promotion, goalie-share and team-unit history signals remain source-pending. These obligations are traceable in FINDINGS.json and remain parked under the accepted broader Rankings pause. No new active task ID or feature/model dispatch was created.
+
+**The reader-cost remainder is already registered.** NEW21/C0124 maps to SPRINT-OPTIMIZATION. Full R-COST reading confirms its own proposal-only opening is superseded by the implemented hydration-reuse receipt: 24 owning-file tests, 16 complete response comparisons and 36 unchanged workload pairs. Full-cohort reads and81 stress ranking pages remain. Local medians do not establish hosted p95, database cost, capacity or monetary savings. Preserve the existing cost-acceptance gate and full-cohort correctness; do not restore naive entity/limit pushdown or commission another benchmark from this audit.
+
+**C3's independent result is limited acceptance with a material assurance correction.** Reload continuity is accepted with limits after9 independent offline controls. The retained52 owner cases were inspected, not rerun. An unmounted48h control proves24h is request-ID restore/reuse eligibility, not automatic deletion of stored private billing metadata. The exact reset-key proposal passed isolated reviewer controls, but canonical auth remains unapplied and the exact auth/test lease is held. No unauthorized cancellation or exactly-once financial result was demonstrated. BILLING-CANCEL-RELOAD now records this distinction and preserves separate refund/private-error and release-integration work.
+
+**Testing Grounds slice03 is not accepted.** Its independent review reports CHANGES REQUIRED/P2 S03-R1: two pending_outcomes responses consume the execution budget, after which a claim changes still-pending coverage into failed coverage. One invocation produced owner16/16 plus independent9/10, totaling25passes/1failure. Scoped static passes do not close the defect. The run is failed rather than falsely successful; no invented metric value was demonstrated. Parent reports correction underway. No corrected accepted pins were inspected here. SITE-FORGE-TESTING-GROUNDS now requires a separately frozen correction and focused re-review while preserving prior timestamp/policy verdicts within their limits.
+
+## Register change and verification
+
+Only three existing rows changed: BILLING-CANCEL-RELOAD, SITE-FORGE-TESTING-GROUNDS and REPO-DOCUMENTATION. All206 IDs/scopes and892 prior evidence entries remain; ten references bring the total to902. The other203 JSON task rows are structurally identical. All32 legacy blocks remain byte-identical in both Markdown files. Markdown ID order/parity, every changed field, all new source hashes/line anchors, selected-file coverage hashes, archive integrity and unchanged sprint control passed. The canonical three-file diff/whitespace check passed. CHANGELOG.json and CANONICAL-CHECKPOINT.patch isolate the changes from v4; VALIDATION-canonical.json supplies the exact current hashes.
+
+Library replacement succeeded under the existing master identity with a version4 guard, producing version5 and the returned filename MASTER-TASKLIST-2026-10-20(2).md. Local Library identity metadata application exited0. The validated canonical file was uploaded; no download round-trip checksum is claimed. No canonical or Library mutation is pending.
+
+## Coverage limits and continuation
+
+COVERAGE.json records exact per-file ranges, hashes, full versus partial status and the one absent-path discovery. Truncated alignment-task output was recovered with focused line reads before full-review classification. A read-only probe for handoff-2026-10-20/README.md failed because that path does not exist; no claim relies on it and it was not retried.
+
+Ranking application implementations/tests, current hosted data, R-COST raw harness/before-after results, independent reviewer tests/logs/bulk pin files and images were not comprehensively inspected or executed. Results here are attributed to the full dated receipts. Research reports, workstation materials and the main task list remain in the queue. Each selected folder's remainder is recorded in FOLDERS.json; all other folders retain the original frozen coverage. Exact duplicates inherit only their representative's reviewed scope. Own generated outputs are listed separately and excluded from recursive semantic re-audit.
+
+The next unique document is tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md. CONTINUATION.json overlays the original queue and earlier completed exact versions. Continue this same worker with targeted full reads and necessary contradictory receipts, preserving paused work and current custody. No new inventory or application audit is implied by that cursor. Overall tree coverage remains partial.
+
+Final hashes:
+
+- tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md: `ac006c547ed467ff29951bc56e4921a25c5c3ae5922362bcf1dbbbdfd622d488`
+- tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md: `538e4bd8230eff1b9cfb0d8613f5471216175f8b5d4f8d8b25ae1f1978a9582a`
+- tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json: `9dfd1bb0bb019ad140d42f0c811c5e6544ffc54e46d970f8fc9e2189c92f4c71`

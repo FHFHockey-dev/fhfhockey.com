@@ -1,0 +1,38 @@
+{
+  "status": "Bounded local runtime correction verified: original mobile browser case and scopedTS/lint pass; whole-release gates remain",
+  "path": "web/components/RosterScheduleOptimizer/CompactSchedule.tsx",
+  "beforeSha256": "e203017397116abb2a0cf1b3e98b41cff44f01cd6fad916c1ed96e6b5e8f1ec9",
+  "afterSha256": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e",
+  "patchSha256": "673536bd26d634767d90857cc4da716a6fc58227c8174d22bb265ecc60d6552f",
+  "cssSha256": "4e40feb952963ba192e4bb7d0568983e8d1cc3d0bcaa292b8c79627355be22a2",
+  "geometrySha256": "7a03bc2cb96f36e72e610bd7fe06a9300eec1b6f58b7117aa6943df884947ee4",
+  "oracle": "Original <=1px afterhorizontal scroll plus reverse scroll/reopen; no relaxedthreshold",
+  "static": {
+    "receipt": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/scoped-static/RECEIPT.json",
+    "sha256": "429b76076aa1e561486982b9ccf79a59b73c16b6ee9268129a150a88128b57ba",
+    "typescript": "exit0",
+    "eslint": "exit0,no output",
+    "matchedCanonicalPins": {
+      "web/e2e/roster-schedule-optimizer.spec.ts": "6681805aeefaa3bfe81ce47660766500c6b2aa53bee0b78572443723a43dec13",
+      "web/e2e/roster-schedule-optimizer-fixtures.ts": "7de8756a3bfb9c322386dc5bbd6250992c1e4f0a0e1e408d7a14fd76095ee87d",
+      "web/components/RosterScheduleOptimizer/CompactSchedule.tsx": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e"
+    },
+    "scope": "Changed E2E spec/helper,versioned acceptance harness andCompactSchedule.tsx plus imports; not fullappcurrent-snapshotcheck"
+  },
+  "browser": {
+    "receipt": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/horizontal-and-bench-01",
+    "sourcePinsVerified": true,
+    "case": "compact short desktop and mobile retain rows, day state, reserves and unknown goalie status",
+    "status": "passed",
+    "runTotals": {
+      "passed": 1,
+      "failed": 1,
+      "exit": 1
+    },
+    "otherFailure": "Separate bench/day case needs Date-controls disclosure reopened after view switch; not an alignment failure",
+    "casesSha256": "12f82f7def80f3a53772f64623ab5324ffdc67a5c9f0b03519ee2b88a6941853",
+    "testPinsSha256": "2fc93c9c4e61f98d5b48a52c47085062e221ae96714722ea3b8bd1a47fd4a1bb",
+    "resultsSha256": "2434b6a9940d3d3191cdfffd77fcdfd50ae36b13ab7e086c045e54dd1dfb763a",
+    "ownerReportedAdditionalControls": "reverse60scroll and closed/reopen120sync;375/390/1024/320/720 viewports; bench/keyboard/reserve/overflow/persistence preserved"
+  }
+}

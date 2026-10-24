@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "/usr/local/bin/npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "review-vitest.config.mts",
+    "scripts/cache-cause.test.ts"
+  ],
+  "cwd": "/tmp/fhfh-task2-r2-d3c181zf/web",
+  "environment": {
+    "PATH": "/tmp/fhfh-task2-r2-d3c181zf/verification/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+    "TMPDIR": "/tmp",
+    "CI": "true",
+    "NODE_ENV": "test",
+    "NODE_OPTIONS": "--require=/tmp/fhfh-task2-r2-d3c181zf/verification/network-fence.cjs",
+    "NO_COLOR": "1",
+    "DIAG_OUTPUT": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task2-2026-10-22/r2/CACHE-CAUSE.json"
+  },
+  "exitCode": 0,
+  "seconds": 1.1140189170837402
+}

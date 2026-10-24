@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-24T18:32:00.229413+00:00",
+  "original_path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+  "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/d89550cc0efe-CODEX-TO-CLAUDE.md",
+  "sha256": "d89550cc0efeb197c888287bfde38f0d577ed89354f4b075dafc72f92f1199e9",
+  "bytes": 79565,
+  "read_ranges": [
+    [
+      1,
+      35
+    ]
+  ],
+  "prior_source_hash": "d48f9b8d9eb65c8afcd115267915db14709c517c1fb665b1e5afe947a0163944",
+  "scope": "Read actual advanced prefix; omitted body remains partial; immutable snapshot frozen before register reconciliation."
+}

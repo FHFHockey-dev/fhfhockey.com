@@ -1,0 +1,257 @@
+--- a/web/components/SocialShare/SocialShare.tsx
++++ b/web/components/SocialShare/SocialShare.tsx
+@@ -4,6 +4,8 @@
+ import { calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
+ import { bounded, downloadSharePng, readyShareFonts, SHARE_SIZE, teamLogoDataUrl } from "lib/socialShare/export";
+ import { mondayGridRows } from "lib/socialShare/mondayGrid";
++import { fetchEdition } from "lib/socialShare/editionFetch";
++import { editionLabel } from "lib/socialShare/edition";
+ import { easiestSchedules, opponentsReady, SOFT_DEFENSE_MAX, STREAM_TEAM_RANK_MAX, streamingNights, type MatchupGame } from "lib/socialShare/matchups";
+ import { deploymentChanges, hotCold, MIN_RATE_TOI_SECONDS_LAST5, MIN_TREND_SEASON_GAMES, moversReady, ownershipMovers, rateStandouts, TREND_WINDOW_GAMES, trendsReady, type RateMetric, type TrendPick } from "lib/socialShare/trends";
+ import { MIN_GOALIE_STARTS, MIN_SKATER_GAMES, PICKUP_BANDS, PLAYER_TEAM_RANK_MAX, pickupTiers, playersMatchSelection, playersReady, specialists, type RankedPlayer, type SpecialistCategory } from "lib/socialShare/players";
+@@ -22,7 +24,8 @@
+ // Monday and Wednesday open on the logo grid, Tuesday on hot and cold; other formats keep the leaders summary.
+ const defaultGraphic = (format: SocialShareFormat) => format === "game-grid" || format === "remaining-week" ? "grid" : format === "tuesday-trends" ? "hot" : "leaders";
+ const editionDays: Partial<Record<SocialShareFormat, string>> = { "game-grid": "Monday", "tuesday-trends": "Tuesday", "remaining-week": "Wednesday" };
+-const editionDay = (snapshot: SocialShareSnapshot) => editionDays[snapshot.format] ?? "Weekly";
++// Eyebrow label from the edition's real date context, e.g. "This week" on a Saturday (SS1-8-O3).
++const editionDay = (snapshot: SocialShareSnapshot) => editionLabel(snapshot);
+ /** Selected days as "Thu–Sun" when contiguous, else "Mon, Wed, Fri". */
+ function coveredDays(snapshot: SocialShareSnapshot) {
+   const indexes = snapshot.days.map((day, index) => day.selected ? index : -1).filter(index => index >= 0);
+@@ -313,7 +316,7 @@
+   const ready = trendReady(kind, snapshot, trusted), trends = snapshot.trends;
+   const columns = ready ? trendColumns(kind, snapshot) : [];
+   return <>
+-    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `Tuesday · ${kind === "movers" ? "Rostered % movers" : "Last 5 games vs season"}` : "Unranked preview"} title={trendTitles[kind]} compact />
++    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `${editionDay(snapshot)} · ${kind === "movers" ? "Rostered % movers" : "Last 5 games vs season"}` : "Unranked preview"} title={trendTitles[kind]} compact />
+     {!ready ? <div className={styles.matchupEmpty}><strong>Ranking unavailable</strong><p>Trend cards need a ready schedule and current {kind === "movers" ? "Yahoo ownership" : "rolling game metrics"}; {trendUnreadyReason(kind, snapshot, trusted)}.</p></div>
+       : <div className={styles.trendColumns} style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>{columns.map(column => <div key={column.key} className={styles.trendColumn}>
+         <h3>{column.title}</h3>
+@@ -377,8 +380,9 @@
+     const query = new URLSearchParams({ weekStart: week });
+     if (dates !== undefined) query.set("selectedDates", dates.join(","));
+     try {
+-      const response = await bounded(fetch(`/api/v1/social-share/${format}?${query}`, { cache: "no-store" }), "Schedule request timed out. Retry this edition.", 20000);
+-      const next = await response.json();
++      // Shared in-flight request: a strict-mode double mount or repeat click joins the pending call.
++      const response = await bounded(fetchEdition(`/api/v1/social-share/${format}?${query}`), "Schedule request timed out. Retry this edition.", 20000);
++      const next = response.body as unknown as SocialShareSnapshot & { error?: string };
+       if (!response.ok) throw new Error(next.error || "Schedule could not be loaded.");
+       if (id !== requestId.current) return;
+       setSnapshot(next); selectedRef.current = next.selectedDates; setGraphic(current => /^\d+$/.test(current) ? defaultGraphic(format) : current);
+--- a/web/e2e/social-share.spec.ts
++++ b/web/e2e/social-share.spec.ts
+@@ -11,6 +11,7 @@
+ import { localDate } from "../lib/rosterScheduleOptimizer/planningDates";
+ import { buildTrendLayer, deploymentChanges, hotCold, ownershipMovers, rateStandouts } from "../lib/socialShare/trends";
+ import { fictionalTrendSources } from "../lib/socialShare/trendsFixture";
++import { editionLabel } from "../lib/socialShare/edition";
+ 
+ const evidence = process.env.SOCIAL_SHARE_EVIDENCE_DIR || "/tmp/fhf-social-card-readiness-evidence-20261008";
+ const upcomingWeek = calendarWeekStart(new Date(Date.now() + 7 * 86400000).toISOString());
+@@ -330,7 +331,7 @@
+   });
+   // One away mark per fixture game; the fictional week has no doubleheaders.
+   expect(geometry).toEqual({ cells: 32 * 7, squareCells: true, fits: true, awayMarks: edition.games.length, brokenImages: 0 });
+-  await expect(square).toHaveAttribute("aria-label", new RegExp(`^FHFH Best schedules, Monday streamer grid.*1\\. ${edition.rows[0].team.name}: ${edition.rows[0].remainingGames} games left`));
++  await expect(square).toHaveAttribute("aria-label", new RegExp(`^FHFH Best schedules, ${editionLabel(edition)} streamer grid.*1\\. ${edition.rows[0].team.name}: ${edition.rows[0].remainingGames} games left`));
+   await downloadedPng(page, "monday-best-schedules-grid");
+   await page.screenshot({ path: `${evidence}/monday-grid-page.png`, fullPage: true });
+   expect(errors).toEqual([]);
+@@ -563,14 +564,17 @@
+ }
+ 
+ test("pinned Wednesday and Tuesday editions export the same PNG bytes every run", async ({ page }) => {
++  // Each edition is generated on its own posting day (Wednesday, then Tuesday), as it would be live.
+   const source = await install(page), week = "2026-10-26";
+-  source.mode = "league"; source.pinnedAt = `${week}T13:00:00.000Z`;
+-  await page.clock.install({ time: new Date(`${week}T13:05:00Z`) });
++  source.mode = "league"; source.pinnedAt = "2026-10-28T13:00:00.000Z";
++  await page.clock.install({ time: new Date("2026-10-28T13:05:00Z") });
+   await page.goto("/social-share/remaining-week");
+   await page.getByLabel("Week of (Monday)").fill(week);
+   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+   const wednesday = await exportCards(page, ["grid", "easiest", "stream", "pickups-50", "pickups-30", "pickups-20", "specialists"], "wednesday");
+   if (process.env.SOCIAL_SHARE_PINNED_WEDNESDAY_SHA256) expect(wednesday).toBe(process.env.SOCIAL_SHARE_PINNED_WEDNESDAY_SHA256);
++  source.pinnedAt = "2026-10-27T13:00:00.000Z";
++  await page.clock.setSystemTime(new Date("2026-10-27T13:05:00Z"));
+   await page.goto("/social-share/tuesday-trends");
+   await page.getByLabel("Week of (Monday)").fill(week);
+   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+@@ -588,7 +592,8 @@
+   await expect(download).toBeEnabled();
+   const edition = source.latest!, covered = weekDates(upcomingWeek).slice(3);
+   expect(edition.selectedDates).toEqual(covered);
+-  await expect(square).toContainText("WEDNESDAY · REST OF WEEK", { ignoreCase: true });
++  const label = editionLabel(edition);
++  await expect(square).toContainText(`${label} · Rest of week`, { ignoreCase: true });
+   await expect(square).toContainText("COVERS THU–SUN");
+   await expect(square.locator("[data-covered]")).toHaveAttribute("data-covered", covered.join(","));
+   expect(await square.locator("[data-team]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-team")))).toEqual(edition.rows.map(row => row.team.abbreviation));
+@@ -602,7 +607,7 @@
+   for (const [card, teams] of cards) {
+     await graphic.selectOption(card);
+     await expect(square).toContainText("COVERS THU–SUN");
+-    await expect(square).toContainText("Wednesday ·");
++    await expect(square).toContainText(`${label} ·`);
+     expect(teams.length).toBeGreaterThan(0);
+     expect(await square.locator("[data-team]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-team")))).toEqual(teams);
+     expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
+@@ -680,3 +685,31 @@
+   }
+   await downloadedPreview(page, "tuesday-live-not-connected-preview");
+ });
++
++test("a page load makes exactly one edition API call even under the dev strict-mode double mount", async ({ page }) => {
++  const source = await install(page), apiCalls: string[] = [];
++  page.on("request", request => { if (request.url().includes("/api/v1/social-share/")) apiCalls.push(new URL(request.url()).search); });
++  await page.goto("/social-share/game-grid");
++  await expect(page.getByRole("button", { name: "Refresh schedule", exact: true })).toBeEnabled();
++  await page.waitForTimeout(1500);
++  expect(apiCalls).toHaveLength(1);
++  expect(source.requests).toBe(1);
++  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
++  await expect.poll(() => source.requests).toBe(2);
++  await page.waitForTimeout(500);
++  expect(source.requests).toBe(2);
++});
++
++test("the eyebrow names the real date context, not the format's posting day", async ({ page }) => {
++  const source = await install(page);
++  source.mode = "league";
++  await open(page);
++  const square = page.getByTestId("share-square");
++  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
++  const label = editionLabel(source.latest!);
++  // open() loads next week's edition, so it is always generated before that week starts.
++  expect(label).toBe("Week ahead");
++  await expect(square).toContainText(`${label} · Streamer grid`, { ignoreCase: true });
++  await page.getByRole("combobox", { name: /^Graphic/ }).selectOption("pickups-20");
++  await expect(square).toContainText(`${label} · Pickups on top-10 schedules`, { ignoreCase: true });
++});
+--- /dev/null
++++ b/web/lib/socialShare/editionFetch.ts
+@@ -0,0 +1,20 @@
++export type EditionResponse = { ok: boolean; status: number; body: { error?: string } & Record<string, unknown> };
++
++// One in-flight request per edition URL, shared by every caller in the page.
++const inflight = new Map<string, Promise<EditionResponse>>();
++
++/**
++ * Fetch a social-share edition once per URL at a time. A second caller while the first request is
++ * pending (React strict-mode double mount in dev, a double click) joins it instead of issuing another
++ * API call, so each load makes exactly one upstream edition read. Settled requests are forgotten, so
++ * an explicit refresh still fetches a new edition.
++ */
++export function fetchEdition(url: string, fetcher: typeof fetch = fetch): Promise<EditionResponse> {
++  const pending = inflight.get(url);
++  if (pending) return pending;
++  const request = fetcher(url, { cache: "no-store" })
++    .then(async response => ({ ok: response.ok, status: response.status, body: await response.json() }))
++    .finally(() => inflight.delete(url));
++  inflight.set(url, request);
++  return request;
++}
+--- /dev/null
++++ b/web/lib/socialShare/editionFetch.test.ts
+@@ -0,0 +1,46 @@
++import { describe, expect, it, vi } from "vitest";
++import { fetchEdition } from "./editionFetch";
++import { editionLabel } from "./edition";
++
++const reply = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body }) as unknown as Response;
++
++describe("single in-flight edition request", () => {
++  it("joins concurrent callers for the same URL and fetches again once settled", async () => {
++    let release!: (value: Response) => void;
++    const fetcher = vi.fn(() => new Promise<Response>(resolve => { release = resolve; }));
++    const first = fetchEdition("/api/v1/social-share/game-grid?weekStart=2026-10-26", fetcher as unknown as typeof fetch);
++    const second = fetchEdition("/api/v1/social-share/game-grid?weekStart=2026-10-26", fetcher as unknown as typeof fetch);
++    expect(second).toBe(first);
++    expect(fetcher).toHaveBeenCalledTimes(1);
++    release(reply({ state: "ready" }));
++    expect(await first).toEqual({ ok: true, status: 200, body: { state: "ready" } });
++    const fresh = vi.fn(async () => reply({ state: "ready" }));
++    await fetchEdition("/api/v1/social-share/game-grid?weekStart=2026-10-26", fresh as unknown as typeof fetch);
++    expect(fresh).toHaveBeenCalledTimes(1);
++  });
++
++  it("keeps different editions separate and forgets failed requests", async () => {
++    const fetcher = vi.fn(async (url: string) => url.includes("fail") ? Promise.reject(new Error("down")) : reply({ url }));
++    const [a, b] = await Promise.all([fetchEdition("/a", fetcher as unknown as typeof fetch), fetchEdition("/b", fetcher as unknown as typeof fetch)]);
++    expect([a.body.url, b.body.url]).toEqual(["/a", "/b"]);
++    await expect(fetchEdition("/fail", fetcher as unknown as typeof fetch)).rejects.toThrow("down");
++    await expect(fetchEdition("/fail", fetcher as unknown as typeof fetch)).rejects.toThrow("down");
++    expect(fetcher).toHaveBeenCalledTimes(4);
++  });
++});
++
++describe("edition eyebrow label", () => {
++  const edition = (format: "game-grid" | "remaining-week" | "tuesday-trends" | "player-spotlight", generatedAt: string) => ({ format, generatedAt, weekStart: "2026-10-19", weekEnd: "2026-10-25" });
++  it("names the posting day only on that day, otherwise the week context", () => {
++    expect(editionLabel(edition("game-grid", "2026-10-19T13:00:00Z"))).toBe("Monday");
++    expect(editionLabel(edition("game-grid", "2026-10-24T19:33:24Z"))).toBe("This week");
++    expect(editionLabel(edition("tuesday-trends", "2026-10-20T13:00:00Z"))).toBe("Tuesday");
++    expect(editionLabel(edition("remaining-week", "2026-10-21T13:00:00Z"))).toBe("Wednesday");
++    expect(editionLabel(edition("remaining-week", "2026-10-19T13:00:00Z"))).toBe("This week");
++    expect(editionLabel(edition("game-grid", "2026-10-17T20:00:00Z"))).toBe("Week ahead");
++    expect(editionLabel(edition("game-grid", "2026-10-27T01:00:00Z"))).toBe("Past week");
++    // New York date, not UTC: 03:00Z on Tuesday is still Monday evening.
++    expect(editionLabel(edition("game-grid", "2026-10-20T03:00:00Z"))).toBe("Monday");
++    expect(editionLabel(edition("player-spotlight", "2026-10-19T13:00:00Z"))).toBe("This week");
++  });
++});
+--- /dev/null
++++ b/web/lib/socialShare/edition.ts
+@@ -0,0 +1,18 @@
++import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
++import { weekDates } from "./schedule";
++import { SHARE_TIME_ZONE, type SocialShareFormat, type SocialShareSnapshot } from "./types";
++
++// Each edition's own posting day within its week (Mon = 0).
++const POSTING_DAYS: Partial<Record<SocialShareFormat, { label: string; index: number }>> = {
++  "game-grid": { label: "Monday", index: 0 }, "tuesday-trends": { label: "Tuesday", index: 1 }, "remaining-week": { label: "Wednesday", index: 2 },
++};
++
++/**
++ * Card eyebrow label from the edition's real date context (SS1-8-O3): the posting day's name only when
++ * the edition was generated on that day of its week; otherwise "Week ahead", "This week" or "Past week".
++ */
++export function editionLabel(snapshot: Pick<SocialShareSnapshot, "format" | "generatedAt" | "weekStart" | "weekEnd">): string {
++  const today = localDate(snapshot.generatedAt, SHARE_TIME_ZONE), own = POSTING_DAYS[snapshot.format];
++  if (own && today === weekDates(snapshot.weekStart)[own.index]) return own.label;
++  return today < snapshot.weekStart ? "Week ahead" : today > snapshot.weekEnd ? "Past week" : "This week";
++}
+--- /dev/null
++++ b/web/components/SocialShare/SocialShare.test.tsx
+@@ -0,0 +1,29 @@
++import { StrictMode } from "react";
++import { render, screen, waitFor } from "@testing-library/react";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import SocialShare from "./SocialShare";
++import { TUESDAY_NOT_CONNECTED, buildBlockedSnapshot } from "lib/socialShare/schedule";
++
++// A strict-mode double mount must still make exactly one edition API call (SS1-8 correction).
++describe("SocialShare edition loading", () => {
++  const fetchMock = vi.fn();
++  beforeEach(() => {
++    fetchMock.mockReset();
++    fetchMock.mockImplementation(async (url: string) => {
++      const query = new URL(url, "http://localhost").searchParams;
++      const body = buildBlockedSnapshot({ format: "tuesday-trends", weekStart: query.get("weekStart")!, generatedAt: "2026-10-24T19:00:00Z", ...TUESDAY_NOT_CONNECTED });
++      return { ok: true, status: 200, json: async () => body } as unknown as Response;
++    });
++    vi.stubGlobal("fetch", fetchMock);
++    vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
++    Object.defineProperty(document, "fonts", { configurable: true, value: { load: async () => [], check: () => false } });
++  });
++  afterEach(() => { vi.unstubAllGlobals(); });
++
++  it("issues one API call per load under a React strict-mode double mount", async () => {
++    render(<StrictMode><SocialShare format="tuesday-trends" asOf="2026-10-24T19:00:00Z" /></StrictMode>);
++    await waitFor(() => expect(screen.getByText(/Rolling game metrics and ownership are not connected/)).toBeTruthy());
++    const apiCalls = fetchMock.mock.calls.filter(([url]) => String(url).startsWith("/api/v1/social-share/"));
++    expect(apiCalls).toEqual([["/api/v1/social-share/tuesday-trends?weekStart=2026-10-19", { cache: "no-store" }]]);
++  });
++});

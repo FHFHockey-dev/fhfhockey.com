@@ -1,0 +1,49 @@
+
+> web@0.1.0 test
+> vitest lib/socialShare components/SocialShare
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:37666) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:37673) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:37670) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:37671) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:37664) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:37667) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:37665) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:37672) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:37668) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:37675) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:37674) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:37669) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/teamRates.test.ts (3 tests) 3ms
+ ✓ lib/socialShare/playerSources.test.ts (5 tests) 6ms
+ ✓ lib/socialShare/access.test.ts (24 tests) 6ms
+ ✓ lib/socialShare/mondayGrid.test.ts (9 tests) 50ms
+ ✓ lib/socialShare/tiers.test.ts (7 tests) 51ms
+ ✓ lib/socialShare/matchups.test.ts (9 tests) 91ms
+ ✓ lib/socialShare/players.test.ts (12 tests) 105ms
+ ✓ lib/socialShare/schedule.test.ts (32 tests) 98ms
+ ✓ lib/socialShare/trends.test.ts (6 tests) 210ms
+ ✓ lib/socialShare/editionFetch.test.ts (15 tests) 227ms
+ ✓ components/SocialShare/SocialShareAccessGate.test.tsx (10 tests) 56ms
+ ✓ components/SocialShare/SocialShare.test.tsx (1 test) 54ms
+
+ Test Files  12 passed (12)
+      Tests  133 passed (133)
+   Start at  18:32:18
+   Duration  1.57s (transform 1.30s, setup 118ms, collect 2.49s, tests 955ms, environment 8.21s, prepare 1.29s)
+

@@ -1,0 +1,306 @@
+--- /dev/null
++++ web/lib/player-cards/interactionFixtures.ts
+@@ -0,0 +1,42 @@
++import type { CardSettings } from "./contracts";
++import type { LocalCardInput } from "./adapter";
++import type { GameMetricRecord } from "./aggregation";
++import { METRICS } from "./registry";
++
++export const EXAMPLE_PLAYERS = [
++  { id: 1001, name: "Alex Morgan", team: "Harbour", position: "RW" },
++  { id: 1002, name: "Alex Morgan", team: "Summit", position: "C" },
++  { id: 1003, name: "Alexandria Montgomery-Sutherland", team: "North", position: "D" },
++  { id: 1004, name: "Jamie Chen", team: "Harbour", position: "LW" },
++] as const;
++export type FixtureScenario = "complete" | "metric-gap" | "unknown-pool" | "history-gap" | "stale" | "source-error";
++export const FIXTURE_CUTOFF = "2026-10-24T00:00:00Z";
++export const FIXTURE_CAPTURED = "2026-10-24T02:00:00Z";
++
++/** Entirely fabricated population, game histories, completion proofs and source fields. */
++export function buildInteractionFixture(settings: CardSettings, scenario: FixtureScenario, selectedId: number): LocalCardInput {
++  const definition = "synthetic-nst-shaped-v1", version = "interaction-fixtures-v1";
++  const players = Array.from({ length: 18 }, (_, index) => {
++    const id = 1001 + index;
++    const days = id === 1004 ? [17, 20, 23] : Array.from({ length: 23 }, (_, i) => i + 1).filter(day => day % 7 !== index % 7);
++    const appearances = days.map(day => ({ playerId: id, gameId: 2026000000 + id * 100 + day, season: 20262027, gameType: "regular" as const, date: `2026-10-${String(day).padStart(2, "0")}`, played: true, completion: { status: "verified-final" as const, completedAt: `2026-10-${String(day).padStart(2, "0")}T22:00:00Z`, reference: "fabricated-final-proof" } }));
++    const records: GameMetricRecord[] = appearances.map((game, i) => {
++      const seed = index * 17 + i * 7;
++      const ppZero = settings.strength === "pp" && i % 3 === 0;
++      const toi = ppZero ? 0 : settings.strength === "pp" ? 120 + seed % 90 : settings.strength === "5v5" ? 600 + seed % 200 : 1000 + seed % 400;
++      const shots = ppZero ? 0 : seed % (settings.strength === "pp" ? 3 : 6);
++      const goals = shots && seed % 3 === 0 ? 1 : 0;
++      const points = ppZero ? 0 : goals + (seed % 4 === 0 ? 1 : 0);
++      const gf = ppZero ? 0 : Math.max(points, 1 + seed % 4);
++      return { playerId: id, gameId: game.gameId, season: game.season, date: game.date, strength: settings.strength, sourceDefinition: definition, sourceVersion: version, capturedAt: FIXTURE_CAPTURED, state: "ready", toiUnit: "seconds", individual: { toi, shots, goals, total_points: points, icf: ppZero ? 0 : shots + 2 + seed % 4, iscfs: ppZero ? 0 : 1 + seed % 4, ixg: ppZero ? 0 : 0.08 + (seed % 7) * 0.11 }, onIce: { toi, cf: ppZero ? 0 : 12 + seed % 20, scf: ppZero ? 0 : 6 + seed % 10, xgf: ppZero ? 0 : 0.6 + (seed % 10) * 0.13, xga: ppZero ? 0 : 0.7 + (seed % 10) * 0.07, gf, sf: ppZero ? 0 : gf + 10 + seed % 10 } };
++    });
++    if (id === selectedId) {
++      if (scenario === "metric-gap") records[records.length - 1].individual.ixg = null;
++      if (scenario === "stale" || scenario === "source-error") records.forEach(row => { row.state = scenario; });
++    }
++    return { frame: { playerId: id, season: 20262027, gameType: "regular" as const, dateBasis: "UTC" as const, completeHistory: !(id === selectedId && scenario === "history-gap"), historyThrough: FIXTURE_CUTOFF, historyReference: "fabricated-complete-season-history", appearances }, records };
++  });
++  const id = `synthetic-flow-v1-${selectedId}-${settings.period.mode === "appearances" ? `L${settings.period.count}` : `${settings.period.start}-${settings.period.end}`}-${settings.strength}-${settings.shortSamplePolicy}-${scenario}`;
++  return { id, origin: "synthetic", capturedAt: FIXTURE_CAPTURED, settings, source: { definition, version, definitionReference: "fabricated-provider-and-model-definition", verifiedMetrics: METRICS.map(metric => metric.id) }, population: { scope: "synthetic-all-values", complete: scenario !== "unknown-pool", reference: "fabricated18-player-population-includes-all-compatible-values", expectedPlayerIds: players.map(player => player.frame.playerId) }, players };
++}
++
+--- /dev/null
++++ web/lib/player-cards/interactionSnapshot.ts
+@@ -0,0 +1,23 @@
++import type { CardSettings, PlayerCardSnapshot, Strength } from "./contracts";
++import type { AdaptedCard } from "./adapter";
++import { EXAMPLE_PLAYERS, FIXTURE_CUTOFF, type FixtureScenario } from "./interactionFixtures";
++
++export type FlowState = { playerId: number; mode: "appearances" | "calendar"; count: 5 | 10 | 20; start: string; end: string; strength: Strength; scenario: FixtureScenario; fullN: boolean };
++export const INITIAL_FLOW: FlowState = { playerId: 1001, mode: "appearances", count: 10, start: "2026-10-10", end: "2026-10-23", strength: "all", scenario: "complete", fullN: false };
++export function readFlow(search: string): FlowState {
++  const p = new URLSearchParams(search), count = Number(p.get("n")), playerId = Number(p.get("player"));
++  return { ...INITIAL_FLOW, playerId: EXAMPLE_PLAYERS.some(player => player.id === playerId) ? playerId : INITIAL_FLOW.playerId, mode: p.get("mode") === "calendar" ? "calendar" : "appearances", count: [5, 10, 20].includes(count) ? count as 5 | 10 | 20 : 10, start: p.get("start") || INITIAL_FLOW.start, end: p.get("end") || INITIAL_FLOW.end, strength: ["all", "5v5", "pp"].includes(p.get("strength") || "") ? p.get("strength") as Strength : "all", scenario: ["complete", "metric-gap", "unknown-pool", "history-gap", "stale", "source-error"].includes(p.get("case") || "") ? p.get("case") as FixtureScenario : "complete", fullN: p.get("full") === "1" };
++}
++export function flowSearch(state: FlowState) { return `?${new URLSearchParams({ player: String(state.playerId), mode: state.mode, n: String(state.count), start: state.start, end: state.end, strength: state.strength, case: state.scenario, full: state.fullN ? "1" : "0" })}`; }
++export function flowSettings(state: FlowState): CardSettings {
++  return { season: 20262027, gameType: "regular", strength: state.strength, cutoff: FIXTURE_CUTOFF, period: state.mode === "appearances" ? { mode: "appearances", count: state.count } : { mode: "calendar", start: state.start, end: state.end, timezone: "UTC" }, seasonPolicy: "season-only-proposed", shortSamplePolicy: state.fullN ? "require-full-proposed" : "allow-known-short-proposed", rankPolicy: "competition-midrank-proposed" };
++}
++export type FlowSnapshot = Omit<PlayerCardSnapshot, "sample"> & { sample: Omit<PlayerCardSnapshot["sample"], "toiSeconds" | "gp"> & { toiSeconds: number | null; gp: number | null } };
++export function pngContext(snapshot: FlowSnapshot): PlayerCardSnapshot | null {
++  return snapshot.sample.toiSeconds === null || snapshot.sample.gp === null ? null : { ...snapshot, sample: { ...snapshot.sample, gp: snapshot.sample.gp, toiSeconds: snapshot.sample.toiSeconds } };
++}
++export function displaySnapshot(card: AdaptedCard): FlowSnapshot {
++  const player = EXAMPLE_PLAYERS.find(player => player.id === card.selection.playerId)!;
++  const atoi = card.readings.find(row => row.id === "atoi")?.value;
++  return { id: card.snapshotId, renderVersion: "player-card-v0", registryVersion: "proposed-nst-v0", source: "synthetic", capturedAt: card.capturedAt, settings: card.settings, player: { id: String(player.id), name: player.name, team: `${player.team} · example`, position: player.position }, sample: { gp: card.selection.state === "missing" ? null : card.selection.actualGp, requested: card.selection.requestedN ?? card.selection.actualGp, toiSeconds: atoi == null ? null : atoi * 60 * card.selection.actualGp, firstDate: card.selection.firstDate || "unverified", lastDate: card.selection.lastDate || "unverified", gameIds: card.selection.games.map(game => String(game.gameId)), ...(card.selection.knownShort ? { warning: "Known short season · proposed policy" } : {}) }, poolId: `${card.snapshotId}:all-valid-by-metric`, sourceVersion: card.source.version, readings: card.readings };
++}
+--- /dev/null
++++ web/components/player-cards/PlayerCardFlow.tsx
+@@ -0,0 +1,69 @@
++import React, { useEffect, useMemo, useRef, useState } from "react";
++import { adaptLocalSnapshot, type AdaptedCard, type LocalCardInput } from "../../lib/player-cards/adapter";
++import { buildInteractionFixture, EXAMPLE_PLAYERS, type FixtureScenario } from "../../lib/player-cards/interactionFixtures";
++import { displaySnapshot, flowSearch, flowSettings, pngContext, readFlow, type FlowState } from "../../lib/player-cards/interactionSnapshot";
++import { CATEGORIES, CURATED_METRICS, EXTRA_METRICS, METRICS } from "../../lib/player-cards/registry";
++import type { CardSettings } from "../../lib/player-cards/contracts";
++import { cardPng } from "./PlayerCardPreview";
++import { formatMetric } from "./PlayerCard";
++import InteractiveCard from "./InteractiveCard";
++import styles from "./PlayerCardFlow.module.scss";
++
++export type FixtureLoader = (settings: CardSettings, scenario: FixtureScenario, playerId: number) => Promise<LocalCardInput>;
++const localLoader: FixtureLoader = async (settings, scenario, playerId) => buildInteractionFixture(settings, scenario, playerId);
++function save(blob: Blob, filename: string) { const url = URL.createObjectURL(blob), anchor = document.createElement("a"); anchor.href = url; anchor.download = filename; anchor.click(); window.setTimeout(() => URL.revokeObjectURL(url),1000); }
++
++export default function PlayerCardFlow({ loadFixture = localLoader }: { loadFixture?: FixtureLoader }) {
++  const [state, setState] = useState<FlowState>(() => readFlow(typeof window === "undefined" ? "" : window.location.search));
++  const [query, setQuery] = useState(""); const [extra,setExtra] = useState(false); const [attempt,setAttempt] = useState(0);
++  const [card,setCard] = useState<AdaptedCard | null>(null); const [phase,setPhase] = useState<"loading" | "ready" | "error">("loading");
++  const [message,setMessage] = useState(""); const [busy,setBusy] = useState(false); const svg = useRef<SVGSVGElement>(null); const exporting = useRef(false); const pendingPop = useRef<FlowState | null>(null);
++  const settings = useMemo(() => flowSettings(state),[state]);
++  useEffect(() => { const pop = () => { const next = readFlow(window.location.search); if (exporting.current) pendingPop.current = next; else { setState(next); setMessage(""); } }; window.addEventListener("popstate",pop); return () => window.removeEventListener("popstate",pop); },[]);
++  useEffect(() => {
++    let current = true; setPhase("loading"); setCard(null); setMessage("");
++    loadFixture(settings,state.scenario,state.playerId).then(input => {
++      if (!current) return;
++      const result = adaptLocalSnapshot(input,state.playerId);
++      if (result.state === "rejected") throw new Error(result.reason);
++      setCard(result); setPhase("ready");
++    }).catch(error => { if (current) { setPhase("error"); setMessage(error instanceof Error ? error.message : "Local fixture failed. Retry."); } });
++    return () => { current = false; };
++  },[loadFixture,settings,state.playerId,state.scenario,attempt]);
++  function update(change: Partial<FlowState>) { if (exporting.current) return; const next = { ...state,...change }; window.history.pushState(null,"",flowSearch(next)); setState(next); setMessage(""); }
++  const snapshot = card ? displaySnapshot(card) : null;
++  const exportContext = snapshot ? pngContext(snapshot) : null;
++  const selected = extra ? EXTRA_METRICS : CURATED_METRICS;
++  const matches = EXAMPLE_PLAYERS.filter(player => player.name.toLowerCase().includes(query.trim().toLowerCase()));
++  async function exportPng() {
++    if (exporting.current || !svg.current || !snapshot || !exportContext || !card || card.state === "unavailable" || phase !== "ready") return;
++    exporting.current = true; setBusy(true); setMessage("Creating PNG from this displayed fixture snapshot…");
++    try { const blob = await cardPng(svg.current,exportContext); save(blob,`${snapshot.id}-${extra ? "extra" : "curated"}.png`); setMessage("Synthetic PNG downloaded from the displayed snapshot."); }
++    catch(error) { setMessage(error instanceof Error ? error.message : "PNG failed. Retry with this snapshot."); }
++    finally { exporting.current = false; setBusy(false); if (pendingPop.current) { setState(pendingPop.current); pendingPop.current = null; } }
++  }
++  return <main className={styles.flowPage}>
++    <p className={styles.flowBadge}>FHFH · INTERACTIVE SYNTHETIC PREVIEW</p><h1 className={styles.flowTitle}>Pick a player. Choose the period. Keep the context.</h1>
++    <p className={styles.flowIntro}>This fixture-only flow computes cards from fabricated game records and an 18-player comparison population. Search, period changes and PNG export are free. Live data and premium activation remain off. Defaults, season/short-N policies and rank conventions are proposals.</p>
++    <div className={styles.flowStudio}><section className={styles.flowControls} aria-label="Player-card controls">
++      <label htmlFor="flow-search">Search example skaters</label><input id="flow-search" value={query} disabled={busy} onChange={event => setQuery(event.target.value)} placeholder="Try Alex or Jamie" autoComplete="off" />
++      {query && <ul className={styles.flowResults}>{matches.length ? matches.map(player => <li key={player.id}><button disabled={busy} onClick={() => { update({playerId:player.id}); setQuery(""); }}>{player.name} · {player.team} · {player.position} · ID {player.id}</button></li>) : <li role="status">No example skaters found.</li>}</ul>}
++      <p className={styles.flowSmall}>Selected: {EXAMPLE_PLAYERS.find(player => player.id === state.playerId)!.name} · ID {state.playerId}</p>
++      <label htmlFor="flow-mode">Period mode</label><select id="flow-mode" value={state.mode} disabled={busy} onChange={event => update({mode:event.target.value as FlowState["mode"]})}><option value="appearances">Each player’s own appearances</option><option value="calendar">Shared calendar dates · UTC</option></select>
++      {state.mode === "appearances" ? <><label htmlFor="flow-n">Appearances per player</label><select id="flow-n" value={state.count} disabled={busy} onChange={event => update({count:Number(event.target.value) as FlowState["count"]})}><option value="5">Last 5</option><option value="10">Last 10</option><option value="20">Last 20</option></select></> : <><label htmlFor="flow-start">Start date · inclusive UTC</label><input id="flow-start" type="date" value={state.start} disabled={busy} onChange={event => update({start:event.target.value})} /><label htmlFor="flow-end">End date · inclusive UTC</label><input id="flow-end" type="date" value={state.end} disabled={busy} onChange={event => update({end:event.target.value})} /></>}
++      <label htmlFor="flow-strength">Strength · synthetic coverage</label><select id="flow-strength" value={state.strength} disabled={busy} onChange={event => update({strength:event.target.value as FlowState["strength"]})}><option value="all">All Strengths</option><option value="5v5">5v5</option><option value="pp">Power play</option></select>
++      <label htmlFor="flow-policy">Short season policy · proposed</label><select id="flow-policy" value={state.fullN ? "full" : "allow"} disabled={busy} onChange={event => update({fullN:event.target.value === "full"})}><option value="allow">Allow honestly known short sample</option><option value="full">Require all N appearances</option></select>
++      <label htmlFor="flow-case">Source scenario · synthetic</label><select id="flow-case" value={state.scenario} disabled={busy} onChange={event => update({scenario:event.target.value as FixtureScenario})}><option value="complete">Complete example</option><option value="metric-gap">Missing ixG input</option><option value="unknown-pool">Unknown comparison coverage</option><option value="history-gap">Unverified appearance history</option><option value="stale">Stale source</option><option value="source-error">Source error</option></select>
++      <label htmlFor="flow-content">Card content · proposed</label><select id="flow-content" value={extra ? "extra" : "curated"} disabled={busy} onChange={event => setExtra(event.target.value === "extra")}><option value="curated">Curated metrics</option><option value="extra">Extra metrics card</option></select>
++      <button className={styles.flowDownload} disabled={busy || phase !== "ready" || !exportContext || card?.state === "unavailable"} onClick={exportPng}>{busy ? "Creating PNG…" : "Download synthetic PNG"}</button>
++      <button disabled={busy || !snapshot || phase !== "ready"} onClick={() => save(new Blob([JSON.stringify({snapshot,renderVariant:"interactive-v1",selectedMetrics:selected,coverage:card?.coverage,source:card?.source,retrospective:card?.retrospective,liveActivation:false,premiumActivation:false},null,2)],{type:"application/json"}),`${snapshot!.id}-manifest.json`)}>Download snapshot manifest</button>
++      <p className={styles.flowSmall}>Season-contained windows · common completed-game cutoff: 24 Oct 2026, 00:00 UTC. Every identity, source proof and statistic here is fabricated. No portrait assets or service access.</p>
++    </section><section className={styles.flowPreview} aria-label="Computed fixture card">
++      <p className={styles.flowStatus} role="status" aria-live="polite">{phase === "loading" ? "Computing local fixture…" : message || (card?.state === "unavailable" ? card.selection.reason || "Source unavailable: no exportable values." : card?.state === "partial" ? "Partial source: affected values and ranks are unavailable." : "Fixture snapshot ready.")}</p>
++      {phase === "error" && <button onClick={() => setAttempt(value => value+1)}>Retry local fixture</button>}
++      {snapshot && phase === "ready" && <><InteractiveCard snapshot={snapshot} selected={selected} svgRef={svg} /><p className={styles.flowSmall}>The PNG uses this exact displayed SVG. Its synthetic label and sample context are preserved. No period or source recomputation happens during export.</p>
++        <details className={styles.flowReadings}><summary>Read values, source states and coverage at text size</summary>{CATEGORIES.map(category => <section key={category}><h2>{category}</h2><dl>{METRICS.filter(metric => metric.category === category && selected.includes(metric.id)).map(metric => { const value = snapshot.readings.find(row => row.id === metric.id)!, coverage = card!.coverage[metric.id]; return <div key={metric.id}><dt>{metric.label}<br />{metric.unit}</dt><dd><strong>{formatMetric(metric.id,value.value)}</strong><br />{value.rank ? `${value.rank.tied ? "T-" : ""}${value.rank.ordinal} of ${value.rank.population} · ${value.rank.percentile.toFixed(1)} percentile` : value.reason || value.rankReason}<br />{coverage.valid} valid · {coverage.knownUndefined} undefined · {coverage.missingIncomplete} missing<br />{coverage.knownShort} known short</dd></div>; })}</dl></section>)}</details>
++        <details className={styles.flowReadings}><summary>Rank definition and interpretation</summary><p>Same metric, strength, season, cutoff and period rule for all valid values. Competition ties use1,2,2,4; percentile is100 × (values below + half the equal values) / valid N. No minimum GP/TOI or position filter. Unknown comparison coverage withholds ranks. Own-last-N spans can differ; calendar dates are shared and inclusive. Percentiles describe numeric magnitude, not quality or a forecast. Premium allocation remains undecided and inactive.</p></details></>}
++    </section></div>
++  </main>;
++}
+--- /dev/null
++++ web/components/player-cards/InteractiveCard.tsx
+@@ -0,0 +1,36 @@
++import React from "react";
++import type { MetricId } from "../../lib/player-cards/contracts";
++import type { FlowSnapshot } from "../../lib/player-cards/interactionSnapshot";
++import { CATEGORIES, METRICS } from "../../lib/player-cards/registry";
++import { formatMetric } from "./PlayerCard";
++import styles from "./PlayerCardFlow.module.scss";
++
++export function periodLabel(snapshot: FlowSnapshot) { const period = snapshot.settings.period; return period.mode === "appearances" ? `Own L${period.count} appearances` : `${period.start} to ${period.end} · UTC`; }
++export function strengthLabel(snapshot: FlowSnapshot) { return snapshot.settings.strength === "all" ? "All Strengths" : snapshot.settings.strength === "pp" ? "Power play" : "5v5"; }
++export default function InteractiveCard({ snapshot, selected, svgRef }: { snapshot: FlowSnapshot; selected: readonly MetricId[]; svgRef: React.Ref<SVGSVGElement> }) {
++  const sample = snapshot.sample, long = snapshot.player.name.length > 25, names = snapshot.player.name.split(" ");
++  return <svg ref={svgRef} className={styles.flowCard} viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg" role="img" aria-label={`${snapshot.player.name}. Synthetic fixture. ${periodLabel(snapshot)}. ${strengthLabel(snapshot)}. ${sample.gp} actual appearances.`} data-snapshot-id={snapshot.id}>
++    <title>Synthetic player card · {snapshot.player.name}</title>
++    <rect width="1080" height="1080" fill="#1A1D21" /><rect width="1080" height="9" fill="#07AAE2" />
++    <g fontFamily="Arial, sans-serif" fill="#F4F8FB">
++      <text x="48" y="65" fontSize="29" fontWeight="800">FHFH / PLAYER CARD</text><rect x="671" y="32" width="361" height="49" rx="10" fill="#BDEFFF" /><text x="851" y="64" textAnchor="middle" fontSize="23" fontWeight="700" fill="#101214">SYNTHETIC FIXTURE</text>
++      {long ? <text x="48" y="137" fontSize="44" fontWeight="800"><tspan x="48">{names[0]}</tspan><tspan x="48" dy="49">{names.slice(1).join(" ")}</tspan></text> : <text x="48" y="158" fontSize="68" fontWeight="800">{snapshot.player.name}</text>}
++      <text x="48" y="225" fontSize="27" fill="#A7B4C0">{snapshot.player.team} · {snapshot.player.position} · Example ID {snapshot.player.id}</text>
++      {CATEGORIES.map((category, index) => <g key={category} transform={`translate(${index < 2 ? 48 : 566} ${[276,436,276,540][index]})`}>
++        <text fill="#63D2F5" fontSize="25" fontWeight="700">{category.toUpperCase()}</text>
++        {METRICS.filter(metric => metric.category === category && selected.includes(metric.id)).map((metric, row) => {
++          const value = snapshot.readings.find(reading => reading.id === metric.id)!;
++          return <g key={metric.id} transform={`translate(0 ${row * 94 + 20})`}><title>{metric.help}</title><text y="28" fontSize="27">{metric.label}</text><text x="464" y="28" textAnchor="end" fontSize="38" fontWeight="700">{formatMetric(metric.id,value.value)}</text><text y="57" fontSize="21" fill="#A7B4C0">{metric.id === "atoi" ? "min:sec per appearance" : metric.unit}</text><text y="83" fontSize="22" fill={value.rank ? "#63D2F5" : "#FFC857"}>{value.rank ? `${value.rank.tied ? "T-" : ""}${value.rank.ordinal} of ${value.rank.population} · ${value.rank.percentile.toFixed(1)} pct` : value.state === "valid" ? "Rank unavailable · incomplete pool" : "Unavailable · see sample/source state"}</text></g>;
++        })}
++      </g>)}
++      <line x1="48" x2="1032" y1="778" y2="778" stroke="#2F353D" strokeWidth="2" />
++      <text x="48" y="819" fontSize={snapshot.settings.period.mode === "calendar" ? 28 : 31} fontWeight="700">{periodLabel(snapshot)} · {strengthLabel(snapshot)}</text>
++      <text x="48" y="858" fontSize="25">{sample.gp === null ? "GP unverified" : snapshot.settings.period.mode === "appearances" ? `${sample.gp} of ${sample.requested} GP` : `${sample.gp} GP`} · {sample.toiSeconds === null ? "TOI unavailable" : `${(sample.toiSeconds/60).toFixed(1)} min TOI`} · {sample.firstDate} → {sample.lastDate}</text>
++      <text x="48" y="894" fontSize="23" fill="#FFC857">{sample.warning || (snapshot.readings.some(row => row.state === "missing") ? "Source incomplete · affected values and ranks withheld" : snapshot.settings.period.mode === "calendar" ? "Shared calendar dates · actual GP can differ · no hidden sample filter" : "Own appearance spans may differ across players · no hidden sample filter")}</text>
++      <text x="48" y="932" fontSize="22" fill="#A7B4C0">Cutoff: {snapshot.settings.cutoff.replace("T"," ")} · Capture: {snapshot.capturedAt.slice(5,16).replace("T"," ")} UTC</text>
++      <text x="48" y="969" fontSize="23">Fabricated 18-player cohort · per-metric valid N · no GP, TOI or position filter</text>
++      <text x="48" y="1003" fontSize="21" fill="#A7B4C0">Source/identities/games are synthetic · numeric magnitude is not quality or a forecast</text>
++      <text x="48" y="1042" fontSize="21" fill="#63D2F5">Proposed season/short-N policy, competition ties and midrank percentiles · fhfhockey.com</text>
++    </g>
++  </svg>;
++}
+--- /dev/null
++++ web/components/player-cards/PlayerCardFlow.module.scss
+@@ -0,0 +1,27 @@
++@use "../../styles/vars" as v;
++.flowPage { max-width: 1440px; margin: auto; padding: 32px 24px 60px; color: v.$color-brand-white; font-family: Arial,sans-serif; }
++.flowTitle { font-size: clamp(30px,4vw,48px); margin: 12px 0; letter-spacing: -.03em; }
++.flowIntro { max-width: 850px; color: v.$color-neutral-400; line-height: 1.6; }
++.flowBadge { color: v.$color-blue-300; font-size: 13px; font-weight: 700; letter-spacing: .1em; }
++.flowStudio { display: grid; grid-template-columns: 300px minmax(0,850px); gap: 28px; align-items: start; margin-top: 28px; }
++.flowControls { background: v.$color-brand-dark; border-radius: 18px; padding: 22px; box-shadow: 0 0 0 1px rgba(255,255,255,.12); }
++.flowControls label { display: block; font-size: 14px; font-weight: 600; margin: 14px 0 7px; }
++.flowControls :is(input,select,button) { box-sizing: border-box; width: 100%; min-height: 44px; color: v.$color-brand-white; background: v.$color-neutral-900; border: 1px solid v.$color-neutral-400; border-radius: 7px; padding: 9px; font: inherit; }
++.flowControls button { margin-top: 10px; cursor: pointer; }
++.flowControls button:hover { background: v.$color-neutral-800; }
++.flowControls :is(input,select,button):focus-visible, .flowReadings summary:focus-visible { outline: 3px solid v.$color-gold-400; outline-offset: 3px; }
++.flowControls :disabled { opacity: .55; cursor: default; }
++.flowControls .flowDownload { color: v.$color-neutral-950; background: v.$color-blue-300; font-weight: 700; }
++.flowSmall { color: v.$color-neutral-400; font-size: 13px; line-height: 1.5; }
++.flowResults { padding: 0; list-style: none; }
++.flowResults button { text-align: left; }
++.flowPreview { min-width: 0; }
++.flowPreview > button { min-height: 44px; padding: 10px 16px; border: 1px solid v.$color-neutral-400; border-radius: 7px; color: v.$color-brand-white; background: v.$color-neutral-900; font: inherit; cursor: pointer; }
++.flowPreview > button:focus-visible { outline: 3px solid v.$color-gold-400; outline-offset: 3px; }
++.flowCard { width: 100%; height: auto; display: block; font-variant-numeric: tabular-nums; box-shadow: 0 0 0 1px rgba(255,255,255,.1); border-radius: 7px; }
++.flowStatus { min-height: 24px; color: v.$color-gold-400; line-height: 1.5; }
++.flowReadings { margin-top: 18px; color: v.$color-neutral-400; line-height: 1.6; }
++.flowReadings summary { min-height: 44px; padding: 12px 0; cursor: pointer; color: v.$color-brand-white; }
++.flowReadings h2 { font-size: 16px; color: v.$color-blue-300; }
++.flowReadings dl { margin: 0; font-variant-numeric: tabular-nums; }.flowReadings dl > div { display: flex; justify-content: space-between; gap: 16px; border-bottom: 1px solid v.$color-neutral-800; padding: 12px 0; }.flowReadings dt { color: v.$color-brand-white; }.flowReadings dd { margin: 0; text-align: right; }
++@media(max-width:820px) { .flowPage { padding: 24px 16px 40px; }.flowStudio { grid-template-columns: minmax(0,1fr); gap: 24px; } }
+--- /dev/null
++++ web/components/player-cards/PlayerCardFlow.test.tsx
+@@ -0,0 +1,91 @@
++import React from "react";
++import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
++import { afterEach, describe, expect, it, vi } from "vitest";
++import PlayerCardFlow, { type FixtureLoader } from "./PlayerCardFlow";
++import { buildInteractionFixture } from "../../lib/player-cards/interactionFixtures";
++import type { LocalCardInput } from "../../lib/player-cards/adapter";
++import * as frozenExport from "./PlayerCardPreview";
++
++afterEach(() => { cleanup(); window.history.replaceState(null,"","/"); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
++const ready = () => waitFor(() => expect(screen.getByText("Fixture snapshot ready.")).toBeTruthy());
++
++describe("free fixture selection / period / snapshot flow", () => {
++  it("recomputes ownL5/L10/L20 and inclusive calendar context from game records", async () => {
++    const {container} = render(<PlayerCardFlow />); await ready();
++    const old = container.querySelector("svg")!.textContent;
++    fireEvent.change(screen.getByLabelText("Appearances per player"),{target:{value:"5"}}); await ready();
++    expect(container.querySelector("svg")!.textContent).toContain("Own L5 appearances");
++    expect(container.querySelector("svg")!.textContent).not.toBe(old);
++    fireEvent.change(screen.getByLabelText("Appearances per player"),{target:{value:"20"}}); await ready();
++    expect(container.querySelector("svg")!.textContent).toContain("20 of 20 GP");
++    fireEvent.change(screen.getByLabelText("Period mode"),{target:{value:"calendar"}}); await ready();
++    expect(container.querySelector("svg")!.textContent).toContain("2026-10-10 to 2026-10-23 · UTC");
++    expect(container.querySelector("svg")!.textContent).toContain("Shared calendar dates · actual GP can differ");
++  });
++  it("disambiguates duplicate names by stable example identity and keeps short samples explicit", async () => {
++    const {container} = render(<PlayerCardFlow />); await ready();
++    fireEvent.change(screen.getByLabelText("Search example skaters"),{target:{value:"Alex Morgan"}});
++    fireEvent.click(screen.getByRole("button",{name:"Alex Morgan · Summit · C · ID 1002"})); await ready();
++    expect(container.querySelector("svg")!.textContent).toContain("Summit · example · C · Example ID 1002");
++    fireEvent.change(screen.getByLabelText("Search example skaters"),{target:{value:"Jamie"}});
++    fireEvent.click(screen.getByRole("button",{name:"Jamie Chen · Harbour · LW · ID 1004"})); await ready();
++    expect(container.querySelector("svg")!.textContent).toContain("3 of 10 GP");
++    fireEvent.change(screen.getByLabelText("Short season policy · proposed"),{target:{value:"full"}});
++    await waitFor(() => expect(screen.getByText("Known short season sample excluded by the proposed full-N policy")).toBeTruthy());
++    expect((screen.getByRole("button",{name:"Download synthetic PNG"}) as HTMLButtonElement).disabled).toBe(true);
++  });
++  it("shows metric gaps and unavailable source/history without exporting stale values", async () => {
++    const {container} = render(<PlayerCardFlow />); await ready();
++    fireEvent.change(screen.getByLabelText("Source scenario · synthetic"),{target:{value:"metric-gap"}});
++    await waitFor(() => expect(screen.getByText("Partial source: affected values and ranks are unavailable.")).toBeTruthy());
++    expect(container.querySelector("svg")!.textContent).toContain("—");
++    fireEvent.change(screen.getByLabelText("Source scenario · synthetic"),{target:{value:"history-gap"}});
++    await waitFor(() => expect(screen.getByText("Complete appearance history through the common cutoff is unverified")).toBeTruthy());
++    expect(container.querySelector("svg")!.textContent).toContain("TOI unavailable");
++    expect(container.querySelector("svg")!.textContent).toContain("GP unverified");
++    expect((screen.getByRole("button",{name:"Download synthetic PNG"}) as HTMLButtonElement).disabled).toBe(true);
++  });
++  it("rejects invalid ranges and retries a failed local load", async () => {
++    let fail = true;
++    const loader: FixtureLoader = async (...args) => { if (fail) throw new Error("Example local read failed"); return buildInteractionFixture(...args); };
++    render(<PlayerCardFlow loadFixture={loader} />);
++    await screen.findByText("Example local read failed"); fail = false;
++    fireEvent.click(screen.getByRole("button",{name:"Retry local fixture"})); await ready();
++    fireEvent.change(screen.getByLabelText("Period mode"),{target:{value:"calendar"}}); await ready();
++    fireEvent.change(screen.getByLabelText("Start date · inclusive UTC"),{target:{value:"2026-10-30"}});
++    await screen.findByText("Invalid inclusive UTC calendar range");
++    expect((screen.getByRole("button",{name:"Download synthetic PNG"}) as HTMLButtonElement).disabled).toBe(true);
++  });
++  it("ignores interrupted older loads when a newer period finishes first", async () => {
++    const pending: {resolve:(data:LocalCardInput)=>void;data:LocalCardInput}[]=[];
++    const loader: FixtureLoader = (...args) => new Promise(resolve => pending.push({resolve,data:buildInteractionFixture(...args)}));
++    const {container}=render(<PlayerCardFlow loadFixture={loader} />);
++    fireEvent.change(screen.getByLabelText("Appearances per player"),{target:{value:"5"}});
++    await act(async () => pending[1].resolve(pending[1].data)); await ready();
++    await act(async () => pending[0].resolve(pending[0].data));
++    expect(container.querySelector("svg")!.textContent).toContain("Own L5 appearances");
++    expect(container.querySelector("svg")!.textContent).not.toContain("Own L10 appearances");
++  });
++  it("restores a compatible state on Back/Forward popstate", async () => {
++    const {container}=render(<PlayerCardFlow />); await ready();
++    await act(async () => { window.history.pushState(null,"","?player=1002&mode=appearances&n=5"); window.dispatchEvent(new PopStateEvent("popstate")); }); await ready();
++    expect(container.querySelector("svg")!.textContent).toContain("Own L5 appearances");
++    expect(container.querySelector("svg")!.textContent).toContain("Example ID 1002");
++  });
++  it("freezes the exported snapshot, ignores repeated clicks and queues history changes until export finishes", async () => {
++    let finish!: (blob:Blob)=>void;
++    const raster = vi.spyOn(frozenExport,"cardPng").mockImplementation(() => new Promise(resolve => {finish=resolve;}));
++    vi.stubGlobal("URL",{createObjectURL:vi.fn(()=>"blob:synthetic"),revokeObjectURL:vi.fn()});
++    vi.spyOn(HTMLAnchorElement.prototype,"click").mockImplementation(()=>{});
++    const {container}=render(<PlayerCardFlow />); await ready();
++    fireEvent.click(screen.getByRole("button",{name:"Download synthetic PNG"}));
++    fireEvent.click(screen.getByRole("button",{name:"Creating PNG…"}));
++    expect(raster).toHaveBeenCalledTimes(1);
++    expect(raster.mock.calls[0][1].settings.period).toEqual({mode:"appearances",count:10});
++    expect((screen.getByLabelText("Appearances per player") as HTMLSelectElement).disabled).toBe(true);
++    await act(async () => {window.history.pushState(null,"","?n=5");window.dispatchEvent(new PopStateEvent("popstate"));});
++    expect(container.querySelector("svg")!.textContent).toContain("Own L10 appearances");
++    await act(async () => finish(new Blob(["example PNG"],{type:"image/png"})));
++    await waitFor(()=>expect(container.querySelector("svg")!.textContent).toContain("Own L5 appearances"));
++  });
++});

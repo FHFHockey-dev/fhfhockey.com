@@ -1,0 +1,22 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-r1-review/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+(node:44975) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ web/lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx (12 tests | 8 skipped) 58ms
+(node:44992) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-review/boundaries.test.tsx (6 tests | 4 skipped) 58ms
+(node:45004) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-r1-review/completion.test.tsx (3 tests) 54ms
+
+ Test Files  3 passed (3)
+      Tests  9 passed | 12 skipped (21)
+   Start at  12:19:38
+   Duration  1.36s (transform 165ms, setup 5ms, collect 377ms, tests 170ms, environment 453ms, prepare 95ms)
+

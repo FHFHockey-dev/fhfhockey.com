@@ -1,0 +1,10 @@
+{
+  "extends": "../../../web/tsconfig.json",
+  "compilerOptions": { "incremental": false },
+  "include": [
+    "../../../web/lib/projections/research/skater-candidates/*.ts",
+    "../../../web/scripts/forge-skater-candidate-ablation.ts",
+    "../../../web/scripts/forge-skater-candidate-ablation.test.ts"
+  ],
+  "exclude": []
+}

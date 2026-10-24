@@ -1,0 +1,288 @@
+{
+  "snapshot": {
+    "id": "synthetic-flow-v1-1002-L20-5v5-allow-known-short-proposed-unknown-pool",
+    "renderVersion": "player-card-v0",
+    "registryVersion": "proposed-nst-v0",
+    "source": "synthetic",
+    "capturedAt": "2026-10-24T02:00:00Z",
+    "settings": {
+      "season": 20262027,
+      "gameType": "regular",
+      "strength": "5v5",
+      "cutoff": "2026-10-24T00:00:00Z",
+      "period": {
+        "mode": "appearances",
+        "count": 20
+      },
+      "seasonPolicy": "season-only-proposed",
+      "shortSamplePolicy": "allow-known-short-proposed",
+      "rankPolicy": "competition-midrank-proposed"
+    },
+    "player": {
+      "id": "1002",
+      "name": "Alex Morgan",
+      "team": "Summit · example",
+      "position": "C"
+    },
+    "sample": {
+      "gp": 19,
+      "requested": 20,
+      "toiSeconds": 12920,
+      "firstDate": "2026-10-02",
+      "lastDate": "2026-10-23",
+      "gameIds": [
+        "2026100223",
+        "2026100221",
+        "2026100220",
+        "2026100219",
+        "2026100218",
+        "2026100217",
+        "2026100216",
+        "2026100214",
+        "2026100213",
+        "2026100212",
+        "2026100211",
+        "2026100210",
+        "2026100209",
+        "2026100207",
+        "2026100206",
+        "2026100205",
+        "2026100204",
+        "2026100203",
+        "2026100202"
+      ],
+      "warning": "Known short season · proposed policy"
+    },
+    "poolId": "synthetic-flow-v1-1002-L20-5v5-allow-known-short-proposed-unknown-pool:all-valid-by-metric",
+    "sourceVersion": "interaction-fixtures-v1",
+    "readings": [
+      {
+        "id": "atoi",
+        "value": 11.333333333333334,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "sog60",
+        "value": 13.93188854489164,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "icf60",
+        "value": 32.3219814241486,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "iscf60",
+        "value": 13.095975232198143,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "ixg60",
+        "value": 2.1705882352941184,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "cf60",
+        "value": 113.6842105263158,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "scf60",
+        "value": 56.8421052631579,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "xgf60",
+        "value": 6.43653250773994,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "xgPct",
+        "value": 54.09836065573773,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "ipp",
+        "value": 17.02127659574468,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "shPct",
+        "value": 6,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      },
+      {
+        "id": "oiShPct",
+        "value": 14.37308868501529,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      }
+    ]
+  },
+  "renderVariant": "interactive-v1",
+  "selectedMetrics": [
+    "atoi",
+    "sog60",
+    "iscf60",
+    "ixg60",
+    "xgf60",
+    "xgPct",
+    "shPct",
+    "ipp"
+  ],
+  "coverage": {
+    "atoi": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 7,
+      "fullEligiblePopulationVerified": false
+    },
+    "sog60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 7,
+      "fullEligiblePopulationVerified": false
+    },
+    "icf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 7,
+      "fullEligiblePopulationVerified": false
+    },
+    "iscf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 7,
+      "fullEligiblePopulationVerified": false
+    },
+    "ixg60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 7,
+      "fullEligiblePopulationVerified": false
+    },
+    "cf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 7,
+      "fullEligiblePopulationVerified": false
+    },
+    "scf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 7,
+      "fullEligiblePopulationVerified": false
+    },
+    "xgf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 7,
+      "fullEligiblePopulationVerified": false
+    },
+    "xgPct": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 7,
+      "fullEligiblePopulationVerified": false
+    },
+    "ipp": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 7,
+      "fullEligiblePopulationVerified": false
+    },
+    "shPct": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 7,
+      "fullEligiblePopulationVerified": false
+    },
+    "oiShPct": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 7,
+      "fullEligiblePopulationVerified": false
+    }
+  },
+  "source": {
+    "definition": "synthetic-nst-shaped-v1",
+    "version": "interaction-fixtures-v1",
+    "definitionReference": "fabricated-provider-and-model-definition",
+    "verifiedMetrics": [
+      "atoi",
+      "sog60",
+      "icf60",
+      "iscf60",
+      "ixg60",
+      "cf60",
+      "scf60",
+      "xgf60",
+      "xgPct",
+      "ipp",
+      "shPct",
+      "oiShPct"
+    ]
+  },
+  "retrospective": true,
+  "liveActivation": false,
+  "premiumActivation": false
+}

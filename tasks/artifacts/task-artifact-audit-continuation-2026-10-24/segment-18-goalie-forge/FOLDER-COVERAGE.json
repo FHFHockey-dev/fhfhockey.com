@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-24T19:45:53.658994+00:00",
+  "group_paths": [
+    "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+    "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+    "tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md",
+    "tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md"
+  ],
+  "full_source_texts": 3,
+  "full_text_bytes": 33925,
+  "task_file": {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+    "coverage": "partially-inspected",
+    "task_bearing_ranges": [
+      [
+        1,
+        200
+      ]
+    ],
+    "catalog_range": [
+      201,
+      940
+    ],
+    "role_disposed": true,
+    "all_SQL_semantics_reviewed": false
+  },
+  "additional_release_receipt": {
+    "path": "tasks/artifacts/forge-projection-audit-2026-10-21/forge-model-release-inventory.md",
+    "sha256": "4983e152de3eea45fd8f764b4ec1304c860d40cf6b8cfc47042c5f6db0598be6",
+    "coverage": "partially-inspected",
+    "reviewed_ranges": [
+      [
+        30,
+        62
+      ],
+      [
+        140,
+        150
+      ]
+    ],
+    "review_scope": "Only release inventory lines30\u201362 and140\u2013150 fully read to reconcile null-win closure; keyword matches elsewhere are navigation, not full-content credit. Line149 explicitly records goalie reader null-safe from R7. No app/Git/release execution/current reader check; remaining inventory content unreviewed by this segment."
+  },
+  "remaining_group_primary_documents": 0,
+  "remaining_other_forge_unique_candidates": 9,
+  "limits": "Captured named source group only. Other Forge documents and remainder of release inventory remain unreviewed; original inventory/duplicate maps preserved."
+}

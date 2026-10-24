@@ -1,0 +1,650 @@
+{
+    "utc": "2026-10-24T15:07:52.5521060Z",
+    "failure": "",
+    "v13SHA256": "077bd43b9bcaccd51a68e5d353b23cb2c701c7003c8eb21ea3c46c5ddd89aa80",
+    "v14SHA256": "450e21bf020bb2f579cfb468b1589909ea7ca43430be64e1dd31deb5333ec80a",
+    "passed": true,
+    "savedScenesUnchanged": true,
+    "viewHeightOverSurface": 2.430000066757202,
+    "method": "Matched 1920x1080 Editor mono renders (URP SingleCameraRequest, two submissions, synchronous shader compilation, 600 m far clip) of the saved v13 and v14 scenes from identical cameras. Player-height views use the saved pilot eye offset plus controller skin above route surfaces. Clean images temporarily disable pilot/target renderers and TextMesh debug labels only; debug images show the actual spawn presentation. Render counters come from Unity ProfilerRecorder around the review camera render; stats.available=false means the Editor reported no counters for that batch-mode offscreen render (zeros are not measurements). Any counters are Editor desktop figures, not Quest headset frame cost.",
+    "images": [
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+            "file": "images/v13-before-lower-approach-clean.png",
+            "sha256": "a9382ef782c247d956b3eed5d028be8da14a9c4d989b4102142f648e95d0b885",
+            "camera": {
+                "name": "lower-approach",
+                "position": {
+                    "x": -18.0,
+                    "y": 2.7799999713897705,
+                    "z": 8.0
+                },
+                "target": {
+                    "x": -10.0,
+                    "y": 13.0,
+                    "z": 60.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+            "file": "images/v13-before-middle-ascent-clean.png",
+            "sha256": "72fd16135655f16e0b787552cc0899f2148034e27abb3b75142dfea471d33052",
+            "camera": {
+                "name": "middle-ascent",
+                "position": {
+                    "x": -14.0,
+                    "y": 10.279999732971191,
+                    "z": 37.0
+                },
+                "target": {
+                    "x": -2.0,
+                    "y": 22.0,
+                    "z": 82.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+            "file": "images/v13-before-radar-to-artillery-clean.png",
+            "sha256": "2b510edcee025af663a3d20133d9add44f91f7d074ba7c7c04d90cc66c022841",
+            "camera": {
+                "name": "radar-to-artillery",
+                "position": {
+                    "x": 7.0,
+                    "y": 16.780000686645508,
+                    "z": 68.0
+                },
+                "target": {
+                    "x": 0.0,
+                    "y": 34.0,
+                    "z": 126.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+            "file": "images/v13-before-radar-to-energy-clean.png",
+            "sha256": "f1d5e0f7636866702f271afe3f3b29d3572c506055c682857e421be36946fafc",
+            "camera": {
+                "name": "radar-to-energy",
+                "position": {
+                    "x": -2.0,
+                    "y": 16.780000686645508,
+                    "z": 65.0
+                },
+                "target": {
+                    "x": -12.0,
+                    "y": 3.0,
+                    "z": 10.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+            "file": "images/v13-before-route-overview-clean.png",
+            "sha256": "dd6c8f3bb83a5ea65d8033c84f23e5f1acfa06b1a83dec1e65378aaa645d090b",
+            "camera": {
+                "name": "route-overview",
+                "position": {
+                    "x": 105.0,
+                    "y": 90.0,
+                    "z": -70.0
+                },
+                "target": {
+                    "x": 0.0,
+                    "y": 12.0,
+                    "z": 62.0
+                },
+                "fov": 55.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+            "file": "images/v13-before-original-spawn-clean.png",
+            "sha256": "24fa88b211af6d4a4840dd776ceb407b88d77db0baed7fede888578c9a43c063",
+            "camera": {
+                "name": "original-spawn",
+                "position": {
+                    "x": -103.0,
+                    "y": 2.75,
+                    "z": 0.0
+                },
+                "target": {
+                    "x": -42.99999237060547,
+                    "y": 2.75,
+                    "z": -0.000007152557373046875
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+            "file": "images/v13-before-throat-east-close-clean.png",
+            "sha256": "4cf8829ce06f8e4f87748ff73b7fce176b478731859592238459bf987a2fc602",
+            "camera": {
+                "name": "throat-east-close",
+                "position": {
+                    "x": -14.0,
+                    "y": 10.279999732971191,
+                    "z": 37.0
+                },
+                "target": {
+                    "x": 10.0,
+                    "y": 6.0,
+                    "z": 33.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+            "file": "images/v13-before-throat-west-close-clean.png",
+            "sha256": "df21cc2e1e3e8e380a41dde80ad049067da3db6ee1cfcc05775e7e236f00eb30",
+            "camera": {
+                "name": "throat-west-close",
+                "position": {
+                    "x": -12.0,
+                    "y": 12.780000686645508,
+                    "z": 46.0
+                },
+                "target": {
+                    "x": -32.0,
+                    "y": 7.0,
+                    "z": 27.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+            "file": "images/v13-before-descent-landing-clean.png",
+            "sha256": "919e44a287de5f340f4857a98b9a2738b9caced43c24806517f147ff1e3b1e11",
+            "camera": {
+                "name": "descent-landing",
+                "position": {
+                    "x": -10.0,
+                    "y": 12.780000686645508,
+                    "z": 46.0
+                },
+                "target": {
+                    "x": -18.0,
+                    "y": 2.0,
+                    "z": 8.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+            "file": "images/v13-before-basin-overview-west-clean.png",
+            "sha256": "123a885e3c08cfc6c6515f13d2db2ecbfb01bc3187eddc83b04a0748ccfee5a4",
+            "camera": {
+                "name": "basin-overview-west",
+                "position": {
+                    "x": -150.0,
+                    "y": 70.0,
+                    "z": -40.0
+                },
+                "target": {
+                    "x": -20.0,
+                    "y": 0.0,
+                    "z": 20.0
+                },
+                "fov": 55.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+            "file": "images/v13-before-original-spawn-debug.png",
+            "sha256": "225591c55ca87eef03f733d6bce388bb9a74414c611c1be0a9a7ff908de3e61f",
+            "camera": {
+                "name": "original-spawn",
+                "position": {
+                    "x": -103.0,
+                    "y": 2.75,
+                    "z": 0.0
+                },
+                "target": {
+                    "x": -42.99999237060547,
+                    "y": 2.75,
+                    "z": -0.000007152557373046875
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": false,
+            "hiddenRenderers": 0,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-after-lower-approach-clean.png",
+            "sha256": "fc20220f197ea4b1b9f866027b84dff6da675b8399e000c9740962627d45097d",
+            "camera": {
+                "name": "lower-approach",
+                "position": {
+                    "x": -18.0,
+                    "y": 2.7799999713897705,
+                    "z": 8.0
+                },
+                "target": {
+                    "x": -10.0,
+                    "y": 13.0,
+                    "z": 60.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-after-middle-ascent-clean.png",
+            "sha256": "6cfb0307178f35f33d1ffb0b7136e0c93335af87e58be1960dc994a7bf0d6cec",
+            "camera": {
+                "name": "middle-ascent",
+                "position": {
+                    "x": -14.0,
+                    "y": 10.279999732971191,
+                    "z": 37.0
+                },
+                "target": {
+                    "x": -2.0,
+                    "y": 22.0,
+                    "z": 82.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-after-radar-to-artillery-clean.png",
+            "sha256": "bdeca75342459e9291696b9800d6275f78104f29af1f6db079d46caf0883e3d2",
+            "camera": {
+                "name": "radar-to-artillery",
+                "position": {
+                    "x": 7.0,
+                    "y": 16.780000686645508,
+                    "z": 68.0
+                },
+                "target": {
+                    "x": 0.0,
+                    "y": 34.0,
+                    "z": 126.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-after-radar-to-energy-clean.png",
+            "sha256": "af4112a158e37f83630f1c223f0167fb38facf364b7a62a4174778eccdf5f94f",
+            "camera": {
+                "name": "radar-to-energy",
+                "position": {
+                    "x": -2.0,
+                    "y": 16.780000686645508,
+                    "z": 65.0
+                },
+                "target": {
+                    "x": -12.0,
+                    "y": 3.0,
+                    "z": 10.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-after-route-overview-clean.png",
+            "sha256": "736ae57bd00b72f578bd19ca39e74ff1e8c5533ef3cc82e3c3864400b0b309fe",
+            "camera": {
+                "name": "route-overview",
+                "position": {
+                    "x": 105.0,
+                    "y": 90.0,
+                    "z": -70.0
+                },
+                "target": {
+                    "x": 0.0,
+                    "y": 12.0,
+                    "z": 62.0
+                },
+                "fov": 55.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-after-original-spawn-clean.png",
+            "sha256": "5c7c5442927b25dd2cc3e6b858b89e44d3c95516b9f3b142ae2c0990d8844fcc",
+            "camera": {
+                "name": "original-spawn",
+                "position": {
+                    "x": -103.0,
+                    "y": 2.75,
+                    "z": 0.0
+                },
+                "target": {
+                    "x": -42.99999237060547,
+                    "y": 2.75,
+                    "z": -0.000007152557373046875
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-after-throat-east-close-clean.png",
+            "sha256": "30c3fb3182aba67b3d2d921649af01a32ff51f260bcecbe77fdfbbe8d1baa765",
+            "camera": {
+                "name": "throat-east-close",
+                "position": {
+                    "x": -14.0,
+                    "y": 10.279999732971191,
+                    "z": 37.0
+                },
+                "target": {
+                    "x": 10.0,
+                    "y": 6.0,
+                    "z": 33.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-after-throat-west-close-clean.png",
+            "sha256": "292df742cb08a7d8d43651eba39d01b7826a0514e13f2d0d5ebcffcbac063653",
+            "camera": {
+                "name": "throat-west-close",
+                "position": {
+                    "x": -12.0,
+                    "y": 12.780000686645508,
+                    "z": 46.0
+                },
+                "target": {
+                    "x": -32.0,
+                    "y": 7.0,
+                    "z": 27.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-after-descent-landing-clean.png",
+            "sha256": "a56e48d43bee4f8ff1637bce2b3e33adb89d86be493fde8f3f6ec459f783f95f",
+            "camera": {
+                "name": "descent-landing",
+                "position": {
+                    "x": -10.0,
+                    "y": 12.780000686645508,
+                    "z": 46.0
+                },
+                "target": {
+                    "x": -18.0,
+                    "y": 2.0,
+                    "z": 8.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-after-basin-overview-west-clean.png",
+            "sha256": "54f9851fb20cf1cc72879fcfb08ba06bac3c2d1c1dd59e6f0e29f50455a8897b",
+            "camera": {
+                "name": "basin-overview-west",
+                "position": {
+                    "x": -150.0,
+                    "y": 70.0,
+                    "z": -40.0
+                },
+                "target": {
+                    "x": -20.0,
+                    "y": 0.0,
+                    "z": 20.0
+                },
+                "fov": 55.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-after-original-spawn-debug.png",
+            "sha256": "62a3d857fde44bd3fafc743cfbc6b701ddfdcbe0768a2500a99f52e4ee7e4e8a",
+            "camera": {
+                "name": "original-spawn",
+                "position": {
+                    "x": -103.0,
+                    "y": 2.75,
+                    "z": 0.0
+                },
+                "target": {
+                    "x": -42.99999237060547,
+                    "y": 2.75,
+                    "z": -0.000007152557373046875
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": false,
+            "hiddenRenderers": 0,
+            "stats": {
+                "available": false,
+                "batches": 0,
+                "drawCalls": 0,
+                "setPassCalls": 0,
+                "triangles": 0,
+                "vertices": 0
+            }
+        }
+    ]
+}

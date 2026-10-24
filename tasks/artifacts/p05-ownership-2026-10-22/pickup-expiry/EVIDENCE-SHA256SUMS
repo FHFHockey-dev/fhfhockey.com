@@ -1,0 +1,13 @@
+539c07a8620fb66986ebcc5494572da3517faefcd01efc36c73892ef385547e3  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/COMMANDS.json
+31621d3cb8958f702c4c38d568f93b7195662bdd2a6f4c1cb086b7c25c5d7caf  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/FILE-HASHES.json
+1f9a651b4fb52ac55502002cdafb0b72b99383aea49e72142155806f49b4c38e  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/HANDOFF.md
+aa4212c98978fd37d2f9749bd55472204416c96bc224e69877837bec14d86e31  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/SHA256SUMS
+5daa1e88019362e4d79fc500ffd728931e2bed9765e84799f939552d73ea5ff5  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/audit-pickup.tsconfig.json
+844e1a46442df583dcc903a79478ee5077cd9669c26d898edd5da7c11bdf6ed3  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/correction.patch
+45f7d4eff5fcfe030b92fd4caecf68fbfaf173359addccb8f180ba5b97c79bc9  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/fixed-source.tar.gz
+77eb0bb9982d29236534095cc22c3a9eaab75f66293fbf6089dc243ad96908f9  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/green.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/lint.log
+0673cfb6b32ca6f46b706bc293efc7972f9fde39335f18104438129c6e6df6ba  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/red.log
+3ff5ed7de5612974bca95a41704885b37e66903a7457ae7a58e3e82ec08cd041  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/superseded-timer-fixture.log
+4561eed0245bb4ab9306b9bbb6a699aac8d9d9e55e2811dd6db05181672d6554  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/timer-diagnostic.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/types.log

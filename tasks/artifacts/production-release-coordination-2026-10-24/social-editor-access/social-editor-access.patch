@@ -1,0 +1,710 @@
+diff --git a/web/contexts/AuthProviderContext/index.tsx b/web/contexts/AuthProviderContext/index.tsx
+--- a/web/contexts/AuthProviderContext/index.tsx
++++ b/web/contexts/AuthProviderContext/index.tsx
+@@ -14,6 +14,7 @@
+ import supabase from "lib/supabase/client";
+ import { resetSupabaseBrowserAuthState } from "lib/supabase/browser-auth";
+ import { ensureUserRecords } from "lib/user-settings/ensureUserRecords";
++import { isSocialShareRole } from "lib/socialShare/access";
+ 
+ type User = {
+   id: string;
+@@ -24,7 +25,7 @@
+   emailConfirmedAt: string | null;
+   isEmailVerified: boolean;
+   providers: string[];
+-  role: "admin" | null;
++  role: "admin" | "social_editor" | null;
+ } | null;
+ 
+ type AuthContextValue = {
+@@ -143,12 +144,9 @@
+         .eq("user_id", session.user.id)
+         .maybeSingle()
+         .then(({ data, error }) => {
++          if (!isMounted || roleRequestRef.current !== roleRequest) return;
+           finishRoleRequest();
+-          if (!isMounted || error) {
+-            return;
+-          }
+-
+-          const resolvedRole = data?.role === "admin" ? "admin" : null;
++          const resolvedRole = !error && isSocialShareRole(data?.role) ? data.role : null;
+           setUser((currentUser) => {
+             if (!currentUser || currentUser.id !== session.user.id) {
+               return currentUser;
+@@ -163,7 +161,11 @@
+               role: resolvedRole
+             };
+           });
+-        }, finishRoleRequest);
++        }, () => {
++          if (!isMounted || roleRequestRef.current !== roleRequest) return;
++          finishRoleRequest();
++          setUser(currentUser => currentUser?.id === session.user.id ? { ...currentUser, role: null } : currentUser);
++        });
+     }
+ 
+     const initialSessionRevision = sessionRevisionRef.current;
+diff --git a/web/__tests__/contexts/AuthProviderContext.test.tsx b/web/__tests__/contexts/AuthProviderContext.test.tsx
+--- a/web/__tests__/contexts/AuthProviderContext.test.tsx
++++ b/web/__tests__/contexts/AuthProviderContext.test.tsx
+@@ -42,6 +42,7 @@
+ 
+ import AuthProvider, { useAuth } from "contexts/AuthProviderContext";
+ import UserMenu from "components/auth/UserMenu";
++import AdminPageGate from "components/Admin/AdminPageGate";
+ 
+ function AuthProbe() {
+   const { user, isLoading, signOut, refreshProfileAvatar } = useAuth();
+@@ -50,6 +51,7 @@
+     <div>
+       <div>{isLoading ? "loading" : user?.email || "signed-out"}</div>
+       <div data-testid="avatar-url">{user?.avatarUrl || "none"}</div>
++      <div data-testid="stored-role">{user?.role ?? "none"}</div>
+       <UserMenu />
+       <button type="button" onClick={() => user && void refreshProfileAvatar(user.id)}>Refresh avatar</button>
+       <button type="button" onClick={() => void signOut()}>
+@@ -95,6 +97,51 @@
+     cleanup();
+   });
+ 
++  it("preserves social_editor as its own role while admin pages remain prohibited", async () => {
++    authState.maybeSingle.mockResolvedValue({ data: { role: "social_editor" }, error: null });
++    render(<AuthProvider><AuthProbe /><AdminPageGate><p>Administrator tools</p></AdminPageGate></AuthProvider>);
++    await waitFor(() => expect(screen.getByTestId("stored-role").textContent).toBe("social_editor"));
++    expect(screen.queryByText("Administrator tools")).toBeNull();
++    expect(screen.getByRole("alert").textContent).toContain("not an administrator");
++  });
++
++  it("ignores editable metadata roles and unrecognized stored roles", async () => {
++    const session = (await authState.getSession()).data.session;
++    session.user.user_metadata.role = "admin";
++    session.user.app_metadata.role = "social_editor";
++    authState.maybeSingle.mockResolvedValue({ data: { role: "developer" }, error: null });
++    render(<AuthProvider><AuthProbe /></AuthProvider>);
++    await screen.findByText("tim@example.com");
++    expect(screen.getByTestId("stored-role").textContent).toBe("none");
++  });
++
++  it.each(["returned", "rejected"])("withdraws a previously known role on a %s lookup failure", async mode => {
++    authState.maybeSingle.mockResolvedValue({ data: { role: "social_editor" }, error: null });
++    render(<AuthProvider><AuthProbe /></AuthProvider>);
++    await waitFor(() => expect(screen.getByTestId("stored-role").textContent).toBe("social_editor"));
++    if (mode === "returned") authState.maybeSingle.mockResolvedValueOnce({ data: { role: "social_editor" }, error: new Error("unavailable") });
++    else authState.maybeSingle.mockRejectedValueOnce(new Error("unavailable"));
++    const session = (await authState.getSession()).data.session;
++    await act(async () => authState.onAuthStateChange.mock.calls[0][0]("TOKEN_REFRESHED", session));
++    await waitFor(() => expect(screen.getByTestId("stored-role").textContent).toBe("none"));
++  });
++
++  it("ignores an older same-user role grant that resolves after a newer denial", async () => {
++    authState.maybeSingle.mockResolvedValue({ data: { role: "social_editor" }, error: null });
++    render(<AuthProvider><AuthProbe /></AuthProvider>);
++    await waitFor(() => expect(screen.getByTestId("stored-role").textContent).toBe("social_editor"));
++    let resolve!: (value: any) => void;
++    authState.maybeSingle.mockReturnValueOnce(new Promise(res => { resolve = res; }));
++    const session = (await authState.getSession()).data.session;
++    const sync = authState.onAuthStateChange.mock.calls[0][0];
++    await act(async () => sync("TOKEN_REFRESHED", session));
++    authState.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
++    await act(async () => sync("TOKEN_REFRESHED", session));
++    await waitFor(() => expect(screen.getByTestId("stored-role").textContent).toBe("none"));
++    await act(async () => resolve({ data: { role: "social_editor" }, error: null }));
++    expect(screen.getByTestId("stored-role").textContent).toBe("none");
++  });
++
+   function renderProvider() {
+     return render(<AuthProvider><AuthProbe /></AuthProvider>);
+   }
+diff --git a/web/pages/social-share/[format].tsx b/web/pages/social-share/[format].tsx
+--- a/web/pages/social-share/[format].tsx
++++ b/web/pages/social-share/[format].tsx
+@@ -2,17 +2,20 @@
+ import { NextSeo } from "next-seo";
+ import Container from "components/Layout/Container";
+ import SocialShare from "components/SocialShare/SocialShare";
++import SocialShareAccessGate from "components/SocialShare/SocialShareAccessGate";
++import { SOCIAL_SHARE_CACHE_CONTROL } from "lib/socialShare/access";
+ import { isSocialShareFormat, type SocialShareFormat } from "lib/socialShare/types";
+ 
+ export default function SocialSharePage({ format, asOf }: { format: SocialShareFormat; asOf: string }) {
+   return <Container contentVariant="full">
+     <NextSeo title="Schedule share studio | FHFH" noindex nofollow />
+-    <SocialShare key={format} format={format} asOf={asOf} />
++    <SocialShareAccessGate><SocialShare key={format} format={format} asOf={asOf} /></SocialShareAccessGate>
+   </Container>;
+ }
+ 
+ export const getServerSideProps: GetServerSideProps = async ({ params, res }) => {
+   res.setHeader("X-Robots-Tag", "noindex, nofollow");
++  res.setHeader("Cache-Control", SOCIAL_SHARE_CACHE_CONTROL);
+   const format = params?.format;
+   if (typeof format !== "string" || !isSocialShareFormat(format)) return { notFound: true };
+   return { props: { format, asOf: new Date().toISOString() } };
+diff --git a/web/pages/api/v1/social-share/[format].ts b/web/pages/api/v1/social-share/[format].ts
+--- a/web/pages/api/v1/social-share/[format].ts
++++ b/web/pages/api/v1/social-share/[format].ts
+@@ -1,18 +1,20 @@
+ import type { NextApiRequest, NextApiResponse } from "next";
+-import { loadScheduleShareSnapshot, shareCacheControl, SocialShareRequestError } from "lib/socialShare/server";
++import { loadScheduleShareSnapshot, SocialShareRequestError } from "lib/socialShare/server";
+ import { isSocialShareFormat } from "lib/socialShare/types";
++import { requireSocialShareAccess, SOCIAL_SHARE_CACHE_CONTROL } from "lib/socialShare/access";
+ 
+ export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+-  res.setHeader("Cache-Control", "no-store");
++  res.setHeader("Cache-Control", SOCIAL_SHARE_CACHE_CONTROL);
++  res.setHeader("Vary", "Authorization");
+   res.setHeader("X-Robots-Tag", "noindex, nofollow");
+   if (req.method !== "GET") { res.setHeader("Allow", "GET"); return res.status(405).json({ error: "Use GET." }); }
+   const { format, weekStart, selectedDates } = req.query;
+   if (typeof format !== "string" || !isSocialShareFormat(format)) return res.status(404).json({ error: "Unknown social-share format." });
+   if ((weekStart !== undefined && typeof weekStart !== "string") || (selectedDates !== undefined && typeof selectedDates !== "string") || Object.keys(req.query).some(key => !["format", "weekStart", "selectedDates"].includes(key))) return res.status(400).json({ error: "Invalid query parameters." });
++  if (!await requireSocialShareAccess(req, res)) return;
+   try {
+     const dates = selectedDates === undefined ? undefined : selectedDates === "" ? [] : (selectedDates as string).split(",");
+     const snapshot = await loadScheduleShareSnapshot(format, weekStart as string | undefined, dates);
+-    res.setHeader("Cache-Control", shareCacheControl(snapshot));
+     return res.status(200).json(snapshot);
+   } catch (error) {
+     return res.status(error instanceof SocialShareRequestError ? error.status : 503).json({ error: error instanceof SocialShareRequestError ? error.message : "NHL schedule unavailable." });
+diff --git a/web/lib/socialShare/editionFetch.ts b/web/lib/socialShare/editionFetch.ts
+--- a/web/lib/socialShare/editionFetch.ts
++++ b/web/lib/socialShare/editionFetch.ts
+@@ -1,6 +1,9 @@
++import supabase from "lib/supabase/client";
++import { isSocialShareFormat } from "./types";
++
+ export type EditionResponse = { ok: boolean; status: number; body: { error?: string } & Record<string, unknown> };
+ 
+-// One in-flight request per edition URL, shared by every caller in the page.
++// Only callers with the same user, token and edition URL may share a pending read.
+ const inflight = new Map<string, Promise<EditionResponse>>();
+ 
+ /**
+@@ -9,12 +12,25 @@
+  * API call, so each load makes exactly one upstream edition read. Settled requests are forgotten, so
+  * an explicit refresh still fetches a new edition.
+  */
+-export function fetchEdition(url: string, fetcher: typeof fetch = fetch): Promise<EditionResponse> {
+-  const pending = inflight.get(url);
++export async function fetchEdition(url: string, fetcher: typeof fetch = fetch): Promise<EditionResponse> {
++  const path = url.match(/^\/api\/v1\/social-share\/([a-z-]+)(?:\?[^#\s\\]*)?$/);
++  if (!path || !isSocialShareFormat(path[1])) throw new Error("Invalid share studio request.");
++  const { data, error } = await supabase.auth.getSession();
++  const session = data.session;
++  if (error || !session?.user.id || !session.access_token) throw new Error("Sign in to use the share studio.");
++  const key = JSON.stringify([session.user.id, session.access_token, url]);
++  const pending = inflight.get(key);
+   if (pending) return pending;
+-  const request = fetcher(url, { cache: "no-store" })
+-    .then(async response => ({ ok: response.ok, status: response.status, body: await response.json() }))
+-    .finally(() => inflight.delete(url));
+-  inflight.set(url, request);
++  const request = fetcher(url, { cache: "no-store", credentials: "omit", headers: { Authorization: `Bearer ${session.access_token}` } })
++    .then(async response => {
++      const body = await response.json();
++      const current = await supabase.auth.getSession();
++      if (current.error || current.data.session?.user.id !== session.user.id || current.data.session?.access_token !== session.access_token) {
++        throw new Error("Your session changed. Reopen the share studio.");
++      }
++      return { ok: response.ok, status: response.status, body };
++    })
++    .finally(() => inflight.delete(key));
++  inflight.set(key, request);
+   return request;
+ }
+diff --git a/web/lib/socialShare/editionFetch.test.ts b/web/lib/socialShare/editionFetch.test.ts
+--- a/web/lib/socialShare/editionFetch.test.ts
++++ b/web/lib/socialShare/editionFetch.test.ts
+@@ -1,8 +1,13 @@
+-import { describe, expect, it, vi } from "vitest";
++import { beforeEach, describe, expect, it, vi } from "vitest";
++const auth = vi.hoisted(() => ({ getSession: vi.fn() }));
++vi.mock("lib/supabase/client", () => ({ default: { auth } }));
+ import { fetchEdition } from "./editionFetch";
+ import { editionLabel } from "./edition";
+ 
+ const reply = (body: unknown, status = 200) => ({ ok: status < 400, status, json: async () => body }) as unknown as Response;
++const session = (id = "one", token = "synthetic-token") => ({ user: { id }, access_token: token });
++const editionUrl = "/api/v1/social-share/game-grid?weekStart=2026-10-26";
++beforeEach(() => { auth.getSession.mockReset(); auth.getSession.mockResolvedValue({ data: { session: session() }, error: null }); });
+ 
+ describe("single in-flight edition request", () => {
+   it("joins concurrent callers for the same URL and fetches again once settled", async () => {
+@@ -10,10 +15,11 @@
+     const fetcher = vi.fn(() => new Promise<Response>(resolve => { release = resolve; }));
+     const first = fetchEdition("/api/v1/social-share/game-grid?weekStart=2026-10-26", fetcher as unknown as typeof fetch);
+     const second = fetchEdition("/api/v1/social-share/game-grid?weekStart=2026-10-26", fetcher as unknown as typeof fetch);
+-    expect(second).toBe(first);
+-    expect(fetcher).toHaveBeenCalledTimes(1);
++    await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1));
++    expect(fetcher).toHaveBeenCalledWith(editionUrl, { cache: "no-store", credentials: "omit", headers: { Authorization: "Bearer synthetic-token" } });
+     release(reply({ state: "ready" }));
+     expect(await first).toEqual({ ok: true, status: 200, body: { state: "ready" } });
++    expect(await second).toEqual(await first);
+     const fresh = vi.fn(async () => reply({ state: "ready" }));
+     await fetchEdition("/api/v1/social-share/game-grid?weekStart=2026-10-26", fresh as unknown as typeof fetch);
+     expect(fresh).toHaveBeenCalledTimes(1);
+@@ -21,11 +27,49 @@
+ 
+   it("keeps different editions separate and forgets failed requests", async () => {
+     const fetcher = vi.fn(async (url: string) => url.includes("fail") ? Promise.reject(new Error("down")) : reply({ url }));
+-    const [a, b] = await Promise.all([fetchEdition("/a", fetcher as unknown as typeof fetch), fetchEdition("/b", fetcher as unknown as typeof fetch)]);
+-    expect([a.body.url, b.body.url]).toEqual(["/a", "/b"]);
+-    await expect(fetchEdition("/fail", fetcher as unknown as typeof fetch)).rejects.toThrow("down");
+-    await expect(fetchEdition("/fail", fetcher as unknown as typeof fetch)).rejects.toThrow("down");
++    const aUrl = "/api/v1/social-share/game-grid", bUrl = "/api/v1/social-share/remaining-week";
++    const [a, b] = await Promise.all([fetchEdition(aUrl, fetcher as unknown as typeof fetch), fetchEdition(bUrl, fetcher as unknown as typeof fetch)]);
++    expect([a.body.url, b.body.url]).toEqual([aUrl, bUrl]);
++    await expect(fetchEdition(`${aUrl}?weekStart=fail`, fetcher as unknown as typeof fetch)).rejects.toThrow("down");
++    await expect(fetchEdition(`${aUrl}?weekStart=fail`, fetcher as unknown as typeof fetch)).rejects.toThrow("down");
+     expect(fetcher).toHaveBeenCalledTimes(4);
++  });
++
++  it.each([null, { user: { id: "one" } }])("makes no request without a usable session %j", async current => {
++    auth.getSession.mockResolvedValue({ data: { session: current }, error: null });
++    const fetcher = vi.fn();
++    await expect(fetchEdition(editionUrl, fetcher)).rejects.toThrow("Sign in");
++    expect(fetcher).not.toHaveBeenCalled();
++  });
++
++  it("fails closed on session lookup errors", async () => {
++    auth.getSession.mockResolvedValueOnce({ data: { session: session() }, error: new Error("unavailable") });
++    const fetcher = vi.fn();
++    await expect(fetchEdition(editionUrl, fetcher)).rejects.toThrow("Sign in");
++    expect(fetcher).not.toHaveBeenCalled();
++  });
++
++  it.each(["https://other.test/api/v1/social-share/game-grid", "//other.test/api/v1/social-share/game-grid", "/api/v1/db/update-players", "/api/v1/social-share/publish", "/api/v1/social-share/game-grid#other", "/api/v1/social-share/game-grid?x=\\other"])("never sends a bearer token to %s", async url => {
++    const fetcher = vi.fn();
++    await expect(fetchEdition(url, fetcher)).rejects.toThrow("Invalid share studio request");
++    expect(fetcher).not.toHaveBeenCalled();
++    expect(auth.getSession).not.toHaveBeenCalled();
++  });
++
++  it.each([session("two", "other-token"), session("one", "refreshed-token"), null])("does not reuse or expose an old session's pending response: %j", async current => {
++    let release!: (value: Response) => void;
++    const oldFetcher = vi.fn(() => new Promise<Response>(resolve => { release = resolve; }));
++    const old = fetchEdition(editionUrl, oldFetcher as typeof fetch);
++    const oldRejected = expect(old).rejects.toThrow("session changed");
++    await vi.waitFor(() => expect(oldFetcher).toHaveBeenCalledTimes(1));
++    auth.getSession.mockResolvedValue({ data: { session: current }, error: null });
++    const nextFetcher = vi.fn(async () => reply({ edition: "new" }));
++    if (current) {
++      expect((await fetchEdition(editionUrl, nextFetcher)).body).toEqual({ edition: "new" });
++      expect(nextFetcher).toHaveBeenCalledTimes(1);
++    }
++    release(reply({ edition: "old" }));
++    await oldRejected;
+   });
+ });
+ 
+diff --git a/web/lib/socialShare/schedule.test.ts b/web/lib/socialShare/schedule.test.ts
+--- a/web/lib/socialShare/schedule.test.ts
++++ b/web/lib/socialShare/schedule.test.ts
+@@ -4,6 +4,12 @@
+ import type { SocialScheduleGame as GameData, SocialScheduleData as ScheduleData } from "./types";
+ const upstream = vi.hoisted(() => ({ getSchedule: vi.fn() }));
+ vi.mock("lib/NHL/server", () => upstream);
++// The edition boundary is exercised with an authenticated editor; no Auth or DB calls leave this test.
++vi.mock("lib/supabase", () => ({ createClientWithToken: () => ({
++  auth: { getUser: async () => ({ data: { user: { id: "social-editor" } }, error: null }) },
++  from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { role: "social_editor" }, error: null }) }) }) }),
++}) }));
++import { SOCIAL_SHARE_CACHE_CONTROL } from "./access";
+ // Never a Supabase read in unit tests: opponent rates come only from this mock.
+ const opponentSource = vi.hoisted(() => ({ loadShareTeamRates: vi.fn(() => Promise.reject(new Error("offline"))) }));
+ vi.mock("lib/socialShare/teamRates", () => opponentSource);
+@@ -199,13 +205,13 @@
+ });
+ 
+ 
+-describe("public schedule API", () => {
++describe("social editor schedule API", () => {
+   // The supported-season window is relative to the request date, so pin it.
+   beforeEach(() => { vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date(now)); });
+   afterEach(() => { vi.useRealTimers(); });
+   async function request(query: NextApiRequest["query"], method = "GET") {
+     const response = { code: 0, body: null as any, headers: {} as Record<string, string>, setHeader(key: string, value: string) { this.headers[key] = value; }, status(code: number) { this.code = code; return this; }, json(body: any) { this.body = body; return this; } };
+-    await handler({ method, query } as NextApiRequest, response as unknown as NextApiResponse);
++    await handler({ method, query, headers: { authorization: "Bearer synthetic-token" } } as NextApiRequest, response as unknown as NextApiResponse);
+     return response;
+   }
+   it("allowlists formats, methods and exact query dates without upstream reads", async () => {
+@@ -219,16 +225,16 @@
+     expect(blocked.body.source).toMatchObject({ state: "blocked", fetchedAt: null, updatedAt: null, coveredDates: [] });
+     expect(upstream.getSchedule).not.toHaveBeenCalled();
+   });
+-  it("returns public snapshots including an explicit empty selection and honest no-store source errors", async () => {
++  it("returns private snapshots including an explicit empty selection and honest source errors", async () => {
+     upstream.getSchedule.mockResolvedValue({ data: {}, numGamesPerDay: [0, 0, 0, 0, 0, 0, 0], coveredDates: dates, fetchedAt: new Date().toISOString(), games: [] });
+     const result = await request({ format: "game-grid", weekStart, selectedDates: "" });
+     expect(result.code).toBe(200); expect(result.body.selectedDates).toEqual([]);
+-    expect(result.headers["Cache-Control"]).toBe("public, max-age=0, s-maxage=60"); expect(result.headers["X-Robots-Tag"]).toContain("noindex");
++    expect(result.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL); expect(result.headers["X-Robots-Tag"]).toContain("noindex");
+     expect(upstream.getSchedule).toHaveBeenLastCalledWith(weekStart, { includeOdds: false });
+     upstream.getSchedule.mockRejectedValue(new Error("private dependency detail"));
+     const failure = await request({ format: "game-grid", weekStart });
+     expect(failure.code).toBe(503); expect(JSON.stringify(failure.body)).not.toContain("private dependency");
+-    expect(failure.headers["Cache-Control"]).toBe("no-store");
++    expect(failure.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+   });
+   it("serves the October indexed contract without disclosing private fields or projecting players", async () => {
+     vi.useFakeTimers();
+@@ -270,7 +276,7 @@
+       expect(result.body).toMatchObject({ format: "tuesday-trends", state: "blocked", expiresAt: null, reasons: ["Rolling game metrics and ownership are not connected."] });
+       expect(result.body.source).toMatchObject({ state: "blocked", fetchedAt: null, coveredDates: [], reasons: ["No upstream read is made until a live trend source is approved."] });
+       expect(result.body.trends ?? null).toBeNull(); expect(result.body.opponents ?? null).toBeNull();
+-      expect(result.headers["Cache-Control"]).toBe("no-store");
++      expect(result.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+     }
+     expect(upstream.getSchedule).not.toHaveBeenCalled();
+     expect(opponentSource.loadShareTeamRates).not.toHaveBeenCalled();
+@@ -297,7 +303,7 @@
+       const result = await request({ format, weekStart: rejected });
+       expect(result.code).toBe(400);
+       expect(result.body.error).toBe("weekStart must fall in the 2024–25, 2025–26 or 2026–27 NHL season.");
+-      expect(result.headers["Cache-Control"]).toBe("no-store");
++      expect(result.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+     }
+     expect(upstream.getSchedule).not.toHaveBeenCalled();
+     expect(opponentSource.loadShareTeamRates).not.toHaveBeenCalled();
+@@ -327,7 +333,7 @@
+     const hidden = sources().skaters.find(row => !shown.has(row.player_id))!.player_name!;
+     expect(JSON.stringify(ok.body)).not.toContain(`"${hidden}"`);
+     expect(JSON.stringify(ok.body.players)).not.toMatch(/465\.p\.|player_key|editorial|last_updated/);
+-    expect(ok.headers["Cache-Control"]).toBe("public, max-age=0, s-maxage=300, stale-while-revalidate=300");
++    expect(ok.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+ 
+     // Id-mapping miss: the first shown skater loses its map row and simply drops out.
+     const missingId = ok.body.players.players.find((player: { group: string }) => player.group !== "G").nhlId;
+@@ -337,13 +343,13 @@
+     expect(miss.body.players.state).toBe("ready");
+     expect(miss.body.players.players.map((player: { nhlId: number }) => player.nhlId)).not.toContain(missingId);
+ 
+-    // Stale ownership (two weeks old): no names leave the server and the cache stays short.
++    // Stale ownership (two weeks old): no names leave the server and the response remains private.
+     playerSource.loadSharePlayerSources.mockResolvedValueOnce(fictionalPlayerSources(20252026, "2025-12-20", "2026-01-05T08:00:00Z"));
+     const stale = await request({ format: "remaining-week", weekStart });
+     expect(stale.body.players).toMatchObject({ state: "stale", players: [], selectedDates: dates.slice(3) });
+     expect(playerSource.loadSharePlayerRecent).toHaveBeenCalledTimes(2);
+     expect(JSON.stringify(stale.body)).not.toContain("Fixture ");
+-    expect(stale.headers["Cache-Control"]).toBe("public, max-age=0, s-maxage=60");
++    expect(stale.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+ 
+     // Missing: the loader fails (e.g. over a limit); the schedule edition still serves.
+     playerSource.loadSharePlayerSources.mockRejectedValueOnce(new Error("Yahoo ownership response was incomplete or over its 1000-row limit."));
+@@ -362,7 +368,7 @@
+     const empty = await request({ format: "game-grid", weekStart });
+     expect(empty.body.players).toMatchObject({ state: "ready", recentState: "ready" });
+     expect(empty.body.players.players.every((player: { recent: unknown }) => player.recent === null)).toBe(true);
+-    expect(empty.headers["Cache-Control"]).toBe("public, max-age=0, s-maxage=300, stale-while-revalidate=300");
++    expect(empty.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+     // Rejected (network or dependency error) and over-limit reads are "unavailable", never "no game".
+     for (const failure of [new Error("offline"), new Error("Skater recent games response was incomplete or over its 420-row limit.")]) {
+       playerSource.loadSharePlayerRecent.mockRejectedValueOnce(failure);
+@@ -372,7 +378,7 @@
+       expect(failed.body.players.players.length).toBeGreaterThan(0);
+       expect(failed.body.players.players.every((player: { recent: unknown }) => player.recent === null)).toBe(true);
+       expect(JSON.stringify(failed.body)).not.toMatch(/offline|420-row/);
+-      expect(failed.headers["Cache-Control"]).toBe("public, max-age=0, s-maxage=60");
++      expect(failed.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+     }
+   });
+   it("never reads players after a failed or partial schedule", async () => {
+diff --git a/web/components/SocialShare/SocialShare.test.tsx b/web/components/SocialShare/SocialShare.test.tsx
+--- a/web/components/SocialShare/SocialShare.test.tsx
++++ b/web/components/SocialShare/SocialShare.test.tsx
+@@ -3,6 +3,9 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import SocialShare from "./SocialShare";
+ import { TUESDAY_NOT_CONNECTED, buildBlockedSnapshot } from "lib/socialShare/schedule";
++vi.mock("lib/supabase/client", () => ({ default: { auth: {
++  getSession: vi.fn(async () => ({ data: { session: { user: { id: "social-editor" }, access_token: "synthetic-token" } }, error: null })),
++} } }));
+ 
+ // A strict-mode double mount must still make exactly one edition API call (SS1-8 correction).
+ describe("SocialShare edition loading", () => {
+@@ -24,6 +27,6 @@
+     render(<StrictMode><SocialShare format="tuesday-trends" asOf="2026-10-24T19:00:00Z" /></StrictMode>);
+     await waitFor(() => expect(screen.getByText(/Rolling game metrics and ownership are not connected/)).toBeTruthy());
+     const apiCalls = fetchMock.mock.calls.filter(([url]) => String(url).startsWith("/api/v1/social-share/"));
+-    expect(apiCalls).toEqual([["/api/v1/social-share/tuesday-trends?weekStart=2026-10-19", { cache: "no-store" }]]);
++    expect(apiCalls).toEqual([["/api/v1/social-share/tuesday-trends?weekStart=2026-10-19", { cache: "no-store", credentials: "omit", headers: { Authorization: "Bearer synthetic-token" } }]]);
+   });
+ });
+diff --git a/web/lib/socialShare/access.ts b/web/lib/socialShare/access.ts
+new file mode 100644
+--- /dev/null
++++ b/web/lib/socialShare/access.ts
+@@ -0,0 +1,43 @@
++import type { NextApiRequest, NextApiResponse } from "next";
++
++export type SocialShareRole = "social_editor" | "admin";
++export const SOCIAL_SHARE_CACHE_CONTROL = "private, no-store, max-age=0";
++
++export function isSocialShareRole(role: unknown): role is SocialShareRole {
++  return role === "social_editor" || role === "admin";
++}
++
++/** Authorizes edition reads only; this does not confer any publishing or admin permission. */
++export async function requireSocialShareAccess(req: NextApiRequest, res: NextApiResponse) {
++  const authorization = req.headers.authorization;
++  const rawHeaders = req.rawHeaders ?? [];
++  let authorizationCount = 0;
++  for (let index = 0; index < rawHeaders.length; index += 2) {
++    if (rawHeaders[index].toLowerCase() === "authorization") authorizationCount++;
++  }
++  if (authorizationCount > 1 || typeof authorization !== "string" || !/^Bearer [A-Za-z0-9._~+/-]+=*$/.test(authorization)) {
++    res.status(401).json({ error: "Sign in to use the share studio." });
++    return null;
++  }
++
++  try {
++    const { createClientWithToken } = await import("lib/supabase");
++    const token = authorization.slice("Bearer ".length);
++    const client = createClientWithToken(token);
++    const { data: auth, error: authError } = await client.auth.getUser(token);
++    if (authError || !auth.user?.id) {
++      res.status(401).json({ error: "Invalid or expired session." });
++      return null;
++    }
++    const { data, error } = await client.from("users").select("role").eq("user_id", auth.user.id).maybeSingle();
++    if (error) throw error;
++    if (!isSocialShareRole(data?.role)) {
++      res.status(403).json({ error: "Social editor access is required." });
++      return null;
++    }
++    return { userId: auth.user.id, role: data.role };
++  } catch {
++    res.status(503).json({ error: "Share studio access could not be verified. Try again." });
++    return null;
++  }
++}
+diff --git a/web/lib/socialShare/access.test.ts b/web/lib/socialShare/access.test.ts
+new file mode 100644
+--- /dev/null
++++ b/web/lib/socialShare/access.test.ts
+@@ -0,0 +1,117 @@
++import type { NextApiRequest, NextApiResponse } from "next";
++import { beforeEach, describe, expect, it, vi } from "vitest";
++
++const auth = vi.hoisted(() => ({ getUser: vi.fn(), role: vi.fn(), eq: vi.fn(), from: vi.fn() }));
++vi.mock("lib/supabase", () => ({ createClientWithToken: vi.fn(() => ({
++  auth: { getUser: auth.getUser },
++  from: auth.from,
++})) }));
++vi.mock("lib/supabase/server", () => ({ default: {} }));
++const source = vi.hoisted(() => ({ loadScheduleShareSnapshot: vi.fn() }));
++vi.mock("lib/socialShare/server", () => ({ ...source, SocialShareRequestError: class extends Error {} }));
++import { createClientWithToken } from "lib/supabase";
++import handler from "pages/api/v1/social-share/[format]";
++import adminOnly from "utils/adminOnlyMiddleware";
++import { isSocialShareRole, SOCIAL_SHARE_CACHE_CONTROL } from "./access";
++import { SOCIAL_SHARE_FORMATS } from "./types";
++
++function response() {
++  return { code: 0, body: null as any, headers: {} as Record<string, string>,
++    setHeader(name: string, value: string) { this.headers[name] = value; },
++    status(code: number) { this.code = code; return this; },
++    json(body: unknown) { this.body = body; return this; },
++  };
++}
++async function request(overrides: Partial<NextApiRequest> = {}) {
++  const res = response();
++  await handler({ method: "GET", query: { format: "game-grid" }, headers: { authorization: "Bearer synthetic-token" }, ...overrides } as NextApiRequest, res as unknown as NextApiResponse);
++  expect(res.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
++  expect(res.headers.Vary).toBe("Authorization");
++  return res;
++}
++
++beforeEach(() => {
++  vi.clearAllMocks();
++  auth.getUser.mockResolvedValue({ data: { user: { id: "verified-user", user_metadata: { role: "admin" }, app_metadata: { role: "admin" } } }, error: null });
++  auth.role.mockResolvedValue({ data: { role: "social_editor" }, error: null });
++  auth.eq.mockReturnValue({ maybeSingle: auth.role });
++  auth.from.mockReturnValue({ select: () => ({ eq: auth.eq }) });
++  source.loadScheduleShareSnapshot.mockResolvedValue({ state: "ready" });
++});
++
++describe("social editor edition boundary", () => {
++  it.each(["social_editor", "admin"])("allows exact stored role %s after verifying the token and user id", async role => {
++    auth.role.mockResolvedValueOnce({ data: { role }, error: null });
++    expect((await request()).code).toBe(200);
++    expect(createClientWithToken).toHaveBeenCalledWith("synthetic-token");
++    expect(auth.getUser).toHaveBeenCalledWith("synthetic-token");
++    expect(auth.from).toHaveBeenCalledWith("users");
++    expect(auth.eq).toHaveBeenCalledWith("user_id", "verified-user");
++    expect(auth.role.mock.invocationCallOrder[0]).toBeLessThan(source.loadScheduleShareSnapshot.mock.invocationCallOrder[0]);
++  });
++
++  it.each([undefined, "", "Bearer", "Bearer a b", "Basic synthetic-token", ["Bearer synthetic-token"]])("rejects malformed or absent credentials %j before reads", async authorization => {
++    expect((await request({ headers: { authorization } as NextApiRequest["headers"] })).code).toBe(401);
++    expect(auth.getUser).not.toHaveBeenCalled();
++    expect(source.loadScheduleShareSnapshot).not.toHaveBeenCalled();
++  });
++
++  it("rejects duplicate authorization headers", async () => {
++    expect((await request({ rawHeaders: ["Authorization", "Bearer synthetic-token", "authorization", "Bearer other"] })).code).toBe(401);
++    expect(auth.getUser).not.toHaveBeenCalled();
++  });
++
++  it.each([{ data: { user: null }, error: null }, { data: { user: { id: "forged-user" } }, error: { message: "expired" } }])("rejects invalid/expired sessions before role and edition reads", async result => {
++    auth.getUser.mockResolvedValueOnce(result);
++    expect((await request()).code).toBe(401);
++    expect(auth.from).not.toHaveBeenCalled();
++    expect(source.loadScheduleShareSnapshot).not.toHaveBeenCalled();
++  });
++
++  it.each([null, "basic", "developer", "social-editor", "ADMIN", "social_editor ", ["social_editor"]])("denies missing or unapproved stored role %j despite metadata claims", async role => {
++    auth.role.mockResolvedValueOnce({ data: role === null ? null : { role }, error: null });
++    expect((await request()).code).toBe(403);
++    expect(source.loadScheduleShareSnapshot).not.toHaveBeenCalled();
++    expect(isSocialShareRole(role)).toBe(false);
++  });
++
++  it.each(["returned", "rejected"])("fails closed on %s role lookup errors, including duplicate rows", async mode => {
++    const error = new Error("private duplicate/database detail");
++    if (mode === "returned") auth.role.mockResolvedValueOnce({ data: { role: "admin" }, error });
++    else auth.role.mockRejectedValueOnce(error);
++    const res = await request();
++    expect(res.code).toBe(503);
++    expect(JSON.stringify(res.body)).not.toContain("private");
++    expect(source.loadScheduleShareSnapshot).not.toHaveBeenCalled();
++  });
++
++  it("fails closed on Auth service failure", async () => {
++    auth.getUser.mockRejectedValueOnce(new Error("private auth detail"));
++    expect((await request()).code).toBe(503);
++    expect(source.loadScheduleShareSnapshot).not.toHaveBeenCalled();
++  });
++
++  it("allows only the five existing GET formats, without granting mutations or future routes", async () => {
++    for (const format of SOCIAL_SHARE_FORMATS) expect((await request({ query: { format } })).code).toBe(200);
++    source.loadScheduleShareSnapshot.mockClear();
++    for (const method of ["POST", "PUT", "PATCH", "DELETE", "HEAD"]) expect((await request({ method })).code).toBe(405);
++    expect((await request({ query: { format: "publish" } })).code).toBe(404);
++    expect((await request({ query: { format: "game-grid", action: "publish" } })).code).toBe(400);
++    expect(source.loadScheduleShareSnapshot).not.toHaveBeenCalled();
++  });
++
++  it("keeps source failures private and uncached", async () => {
++    source.loadScheduleShareSnapshot.mockRejectedValueOnce(new Error("private source detail"));
++    const res = await request();
++    expect(res.code).toBe(503);
++    expect(JSON.stringify(res.body)).not.toContain("private");
++  });
++
++  it("does not turn a social editor into an administrator", async () => {
++    const adminHandler = vi.fn();
++    const res = response();
++    await adminOnly(adminHandler)({ method: "GET", headers: { authorization: "Bearer synthetic-token" } } as any, res as unknown as NextApiResponse);
++    expect(res.code).toBe(403);
++    expect(adminHandler).not.toHaveBeenCalled();
++  });
++});
+diff --git a/web/components/SocialShare/SocialShareAccessGate.tsx b/web/components/SocialShare/SocialShareAccessGate.tsx
+new file mode 100644
+--- /dev/null
++++ b/web/components/SocialShare/SocialShareAccessGate.tsx
+@@ -0,0 +1,16 @@
++import { Fragment, type ReactNode } from "react";
++import Link from "next/link";
++import { useAuth } from "contexts/AuthProviderContext";
++import { isSocialShareRole } from "lib/socialShare/access";
++
++export default function SocialShareAccessGate({ children }: { children: ReactNode }) {
++  const { user, isLoading, isRoleLoading } = useAuth();
++  if (isLoading || isRoleLoading) return <p role="status">Checking share studio access…</p>;
++  if (!user || !isSocialShareRole(user.role)) return <section aria-labelledby="share-access-title">
++    <h1 id="share-access-title">Share studio</h1>
++    <p role="alert">{user ? "Social editor access is required to use this studio." : "Sign in with your FHFH social editor account to continue."}</p>
++    {!user && <Link href="/auth">Sign in</Link>}
++  </section>;
++  // An account switch must discard the previous user's edition and pending preview work.
++  return <Fragment key={user.id}>{children}</Fragment>;
++}
+diff --git a/web/components/SocialShare/SocialShareAccessGate.test.tsx b/web/components/SocialShare/SocialShareAccessGate.test.tsx
+new file mode 100644
+--- /dev/null
++++ b/web/components/SocialShare/SocialShareAccessGate.test.tsx
+@@ -0,0 +1,77 @@
++import { useEffect, useState } from "react";
++import { renderToString } from "react-dom/server";
++import { cleanup, fireEvent, render, screen } from "@testing-library/react";
++import { afterEach, describe, expect, it, vi } from "vitest";
++
++const auth = vi.hoisted(() => ({ value: { isLoading: true, isRoleLoading: true, user: null as any } }));
++vi.mock("contexts/AuthProviderContext", () => ({ useAuth: () => auth.value }));
++vi.mock("next-seo", () => ({ NextSeo: () => null }));
++vi.mock("components/Layout/Container", () => ({ default: ({ children }: any) => <div>{children}</div> }));
++const studio = vi.hoisted(() => ({ mounted: vi.fn() }));
++vi.mock("components/SocialShare/SocialShare", () => ({ default: () => { studio.mounted(); return <p>Protected studio</p>; } }));
++import SocialShareAccessGate from "./SocialShareAccessGate";
++import SocialSharePage, { getServerSideProps } from "pages/social-share/[format]";
++import { SOCIAL_SHARE_CACHE_CONTROL } from "lib/socialShare/access";
++
++afterEach(() => { cleanup(); vi.clearAllMocks(); });
++function state(role: unknown, id = "one") {
++  auth.value = { isLoading: false, isRoleLoading: false, user: role === undefined ? null : { id, role } };
++}
++
++describe("social-share locked page", () => {
++  it.each([undefined, null, "basic", "developer", "social-editor"])("keeps the workspace unmounted for %j", role => {
++    state(role);
++    render(<SocialSharePage format="game-grid" asOf="2026-10-24T19:00:00Z" />);
++    expect(screen.getByRole("alert")).toBeTruthy();
++    expect(studio.mounted).not.toHaveBeenCalled();
++    if (role === undefined) expect(screen.getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/auth");
++  });
++
++  it.each(["social_editor", "admin"])("mounts the existing workspace for %s", role => {
++    state(role);
++    render(<SocialSharePage format="game-grid" asOf="2026-10-24T19:00:00Z" />);
++    expect(screen.getByText("Protected studio")).toBeTruthy();
++  });
++
++  it("serves only a locked shell during initial auth and role revalidation", () => {
++    auth.value = { isLoading: true, isRoleLoading: true, user: null };
++    const html = renderToString(<SocialSharePage format="game-grid" asOf="2026-10-24T19:00:00Z" />);
++    expect(html).toContain("Checking share studio access");
++    expect(html).not.toContain("Protected studio");
++    state("social_editor"); auth.value.isRoleLoading = true;
++    render(<SocialSharePage format="game-grid" asOf="2026-10-24T19:00:00Z" />);
++    expect(screen.getByRole("status").textContent).toContain("Checking");
++    expect(studio.mounted).not.toHaveBeenCalled();
++  });
++
++  it("discards the old workspace on account switch and unmounts it on sign-out/revocation", () => {
++    const unmounted = vi.fn();
++    function Workspace() {
++      const [edition, setEdition] = useState("Fresh edition");
++      useEffect(() => () => { unmounted(); }, []);
++      return <button onClick={() => setEdition("Previous user's edition")}>{edition}</button>;
++    }
++    state("social_editor");
++    const view = render(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
++    fireEvent.click(screen.getByRole("button"));
++    state("social_editor", "two");
++    view.rerender(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
++    expect(screen.getByText("Fresh edition")).toBeTruthy();
++    expect(screen.queryByText("Previous user's edition")).toBeNull();
++    state(null, "two");
++    view.rerender(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
++    expect(screen.queryByRole("button")).toBeNull();
++    state(undefined);
++    view.rerender(<SocialShareAccessGate><Workspace /></SocialShareAccessGate>);
++    expect(screen.getByRole("link", { name: "Sign in" })).toBeTruthy();
++    expect(unmounted).toHaveBeenCalledTimes(2);
++  });
++
++  it("keeps valid and unknown page responses private, with only generic page props", async () => {
++    const setHeader = vi.fn();
++    const result = await getServerSideProps({ params: { format: "game-grid" }, res: { setHeader } } as any);
++    expect(result).toEqual({ props: { format: "game-grid", asOf: expect.any(String) } });
++    expect(setHeader).toHaveBeenCalledWith("Cache-Control", SOCIAL_SHARE_CACHE_CONTROL);
++    expect(await getServerSideProps({ params: { format: "publish" }, res: { setHeader } } as any)).toEqual({ notFound: true });
++  });
++});

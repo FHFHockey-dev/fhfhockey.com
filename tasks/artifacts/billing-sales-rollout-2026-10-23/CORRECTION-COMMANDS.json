@@ -1,0 +1,91 @@
+{
+  "cwd": "/tmp/fhfh-billing-sales-6jhey6e0/snapshot/web",
+  "environment": {
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/tmp/fhfh-billing-sales-6jhey6e0/snapshot/home",
+    "TMPDIR": "/tmp/fhfh-billing-sales-6jhey6e0/snapshot/tmp",
+    "TZ": "UTC",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://unit-tests.supabase.invalid",
+    "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY": "synthetic-public-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "synthetic-service-role-key",
+    "NODE_OPTIONS": "--require /tmp/fhfh-billing-sales-6jhey6e0/snapshot/web/audit-network-deny.cjs",
+    "npm_config_offline": "true",
+    "npm_config_audit": "false",
+    "npm_config_fund": "false"
+  },
+  "commands": [
+    [
+      "corrected-tests",
+      [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "audit.vitest.config.mts",
+        "components/account/DraftProPanel.test.tsx",
+        "lib/integrations/providerSyncRolloutRoutes.test.ts",
+        "--reporter=json",
+        "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/billing-sales-rollout-2026-10-23/corrected-tests.json"
+      ]
+    ],
+    [
+      "types",
+      [
+        "npm",
+        "exec",
+        "--offline",
+        "--no",
+        "--",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "tsconfig.billing-check.json"
+      ]
+    ],
+    [
+      "lint",
+      [
+        "npm",
+        "exec",
+        "--offline",
+        "--no",
+        "--",
+        "eslint",
+        "components/account/DraftProPanel.tsx",
+        "components/account/DraftProPanel.test.tsx",
+        "lib/draft-pro/features.ts",
+        "lib/draft-pro/features.test.ts",
+        "lib/draft-pro/account/index.ts",
+        "lib/draft-pro/account/index.test.ts",
+        "pages/api/v1/account/draft-pro/checkout.ts",
+        "lib/draft-pro/api-tests/checkout.test.ts",
+        "lib/integrations/providerSyncAccess.ts",
+        "lib/integrations/providerSyncAccessServer.ts",
+        "lib/integrations/providerSyncAccess.test.ts",
+        "pages/api/v1/account/provider-sync.ts",
+        "hooks/useProviderSyncAccess.ts",
+        "hooks/useDraftProAccess.test.tsx",
+        "components/account/InSeasonPanel.tsx",
+        "components/account/InSeasonPanel.test.tsx",
+        "pages/api/v1/account/in-season/checkout.ts",
+        "lib/in-season/billingRoutes.test.ts",
+        "lib/integrations/yahoo/liveDraftAccess.ts",
+        "lib/integrations/yahoo/pickupApi.test.ts",
+        "components/DraftDashboard/DraftWorkspaceHeader.tsx",
+        "components/DraftDashboard/DraftSettingsShell.tsx",
+        "components/DraftDashboard/GodView.tsx",
+        "components/DraftDashboard/MockDraftWorkspace.tsx",
+        "components/DraftDashboard/SuggestedPicks.tsx",
+        "__tests__/components/DraftDashboard/SuggestedPicks.test.tsx",
+        "__tests__/components/DraftDashboard/DraftSettingsShell.test.tsx",
+        "pages/index.tsx",
+        "pages/draft-pro/policies.tsx",
+        "e2e/god-view.spec.ts",
+        "e2e/draft-layout.spec.ts",
+        "lib/integrations/providerSyncPaywall.test.ts",
+        "lib/integrations/providerSyncRolloutRoutes.test.ts"
+      ]
+    ]
+  ]
+}

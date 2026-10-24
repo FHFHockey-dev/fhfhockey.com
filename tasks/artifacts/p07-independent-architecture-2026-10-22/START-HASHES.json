@@ -1,0 +1,31 @@
+{
+  "head": "d77602cf7fbdd4549588127603ebf0b535138b99",
+  "candidate_mismatches": [],
+  "files": {
+    "web/lib/player-forecasts/rsoUsePolicy.ts": "0220aad16417e0073898f8b805ad3e139b88f70a4a4064f73173d1db3bbfc8ab",
+    "web/lib/player-forecasts/rsoUsePolicy.test.ts": "234ae88abcae41182a9673aa31e99aeea0db50bd39de4c4b1002de596e643e07",
+    "web/lib/rosterScheduleData/planning.ts": "e945135114e21ff631a1f23b486490323e569db0c30d67b6c565deb2a87f5306",
+    "web/lib/rosterScheduleData/planning.test.ts": "579f1c5e44824ce3453518d61f2286f42ccffd578f6037b48f10f292d6d47aa3",
+    "web/lib/rosterScheduleOptimizer/planningTypes.ts": "0e45829a1aa0eaad17140668f01e63e0c0dfe63cc47b89e903a6be1847872e0c",
+    "web/lib/player-forecasts/planningContributions.ts": "b0837ce323c1815687c76426e98234296f5fc74568404e69a8de935d537453d1",
+    "web/lib/player-forecasts/planningContributions.test.ts": "e69a921f9503504da870bc0a3f61d65043c4604042dd42fe95cb841850d69f01",
+    "web/lib/rosterScheduleOptimizer/planning.ts": "f3ba1b151776a6fb1060a0b20d24eb2d28c2998cbab14682489c913c4f7791c9",
+    "web/lib/rosterScheduleOptimizer/planning.test.ts": "a2f4767c5e9b764b0d422cb86d042d33353d8bf16092e50793942fd16192a666",
+    "web/lib/rosterScheduleData/planningDataTransport.ts": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+    "web/lib/in-season/workspaceSchema.ts": "e1f4718cb7f529495acc591fe0e4886e3854282cd156560a57b293f375045cd5",
+    "web/lib/in-season/workspaceSchema.test.ts": "8d4f2908b418bbcf889f02ba0480ef1c977518027b911b6cc3db1607e9f8ff20",
+    "web/pages/api/v1/roster-schedule-optimizer/data.ts": "dc7f5814046448fa23a201401b1ab0d1f744908b5330cee21177459594cb16ce",
+    "web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts": "a1ce00fc369634c8642115113b213daa416f312ddc4ca17e449426a1c502872e",
+    "web/lib/integrations/yahoo/rosterPlanning.ts": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+    "web/lib/integrations/yahoo/rosterPlanning.test.ts": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+    "web/lib/player-forecasts/gameExpectationReader.ts": "440843c4f17bd18c91ddd2e3674827cbef8dce0e31b20053af318dd6db94b922",
+    "AGENTS.md": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b",
+    "web/hooks/useRosterPlanning.ts": "a12a23454a64c11a65f007f2c4b7d1582e18d54b0fb11ff6d49a5552ccdaed00",
+    "web/hooks/rosterPlanning.worker.ts": "5dce9ea3809b91aa2f339add94574d7b5d9f6d197bfac27b13a46922e126f002",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "1d3875029d5677ac759efc88390305637788db87f7d826cb51521e18b0951c7b",
+    "web/components/RosterScheduleOptimizer/CompactSchedule.tsx": "48c68b76afa8181d5c03e320fafb16e996945b951c4873d41645e7c4911077c0",
+    "web/lib/rosterScheduleOptimizer/refreshForecastInputs.ts": "a77283cfdced008068f95cebb0dcc40315c70595cd28f8e55a0577d06384a594",
+    "web/pages/api/v1/roster-schedule-optimizer/workspace.ts": "0848b58b2f38d52d38c17a8ba1ce611f0baddacecfb4f7a39ab08832f10c5721",
+    "web/lib/rosterScheduleData/bridgeForecastWire.ts": "d5e4aa7b51cdc6d5362ebfe5b70f163701764b80d9db14feae35beef53959b27"
+  }
+}

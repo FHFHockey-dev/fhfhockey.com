@@ -1,0 +1,7 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts components/account/InSeasonPanel.rollout.test.tsx -t explains free rollout --reporter=json --outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/billing-sales-rollout-2026-10-23/account-rollout-correction/red-tests.json
+
+(node:90742) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/billing-sales-rollout-2026-10-23/account-rollout-correction/red-tests.json

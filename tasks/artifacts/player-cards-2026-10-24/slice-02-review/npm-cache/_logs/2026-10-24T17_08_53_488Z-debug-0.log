@@ -1,0 +1,54 @@
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+1 info using npm@10.9.0
+1 info using npm@10.9.0
+1 info using npm@10.9.0
+2 info using node@v22.11.0
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+2 info using node@v22.11.0
+4 silly config load:file:/Users/tim/Code/fhfhockey.com/web/.npmrc
+2 info using node@v22.11.0
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+5 silly config load:file:/Users/tim/.npmrc
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/tim/Code/fhfhockey.com/web/.npmrc
+6 silly config load:file:/usr/local/etc/npmrc
+4 silly config load:file:/Users/tim/Code/fhfhockey.com/web/.npmrc
+5 silly config load:file:/Users/tim/.npmrc
+5 silly config load:file:/Users/tim/.npmrc
+7 verbose title npm test --run --config ../tasks/artifacts/player-cards-2026-10-24/slice-02-review/vitest.review.config.mjs --configLoader native --no-cache lib/player-cards/domain.test.ts
+6 silly config load:file:/usr/local/etc/npmrc
+6 silly config load:file:/usr/local/etc/npmrc
+7 verbose title npm exec tsc --noEmit --project ../tasks/artifacts/player-cards-2026-10-24/slice-02/tsconfig.json
+7 verbose title npm exec eslint lib/player-cards/windows.ts lib/player-cards/aggregation.ts lib/player-cards/adapter.ts lib/player-cards/domain.test.ts
+8 verbose argv "test" "--" "--run" "--config" "../tasks/artifacts/player-cards-2026-10-24/slice-02-review/vitest.review.config.mjs" "--configLoader" "native" "--no-cache" "lib/player-cards/domain.test.ts"
+8 verbose argv "exec" "--offline" "--" "tsc" "--noEmit" "--project" "../tasks/artifacts/player-cards-2026-10-24/slice-02/tsconfig.json"
+8 verbose argv "exec" "--offline" "--" "eslint" "lib/player-cards/windows.ts" "lib/player-cards/aggregation.ts" "lib/player-cards/adapter.ts" "lib/player-cards/domain.test.ts"
+9 verbose logfile logs-max:10 dir:/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-02-review/npm-cache/_logs/2026-10-24T17_08_53_488Z-
+9 verbose logfile logs-max:10 dir:/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-02-review/npm-cache/_logs/2026-10-24T17_08_53_488Z-
+10 verbose logfile /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-02-review/npm-cache/_logs/2026-10-24T17_08_53_488Z-debug-0.log
+9 verbose logfile logs-max:10 dir:/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-02-review/npm-cache/_logs/2026-10-24T17_08_53_488Z-
+10 verbose logfile /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-02-review/npm-cache/_logs/2026-10-24T17_08_53_488Z-debug-0.log
+10 verbose logfile /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-02-review/npm-cache/_logs/2026-10-24T17_08_53_488Z-debug-0.log
+11 silly logfile done cleaning log files
+11 silly logfile done cleaning log files
+11 silly logfile done cleaning log files
+12 verbose cwd /Users/tim/Code/fhfhockey.com/web
+13 verbose os Darwin 27.0.0
+14 verbose node v22.11.0
+15 verbose npm  v10.9.0
+16 verbose exit 0
+17 info ok
+12 verbose cwd /Users/tim/Code/fhfhockey.com/web
+13 verbose os Darwin 27.0.0
+14 verbose node v22.11.0
+15 verbose npm  v10.9.0
+16 verbose exit 0
+17 info ok
+12 verbose cwd /Users/tim/Code/fhfhockey.com/web
+13 verbose os Darwin 27.0.0
+14 verbose node v22.11.0
+15 verbose npm  v10.9.0
+16 verbose exit 0
+17 info ok

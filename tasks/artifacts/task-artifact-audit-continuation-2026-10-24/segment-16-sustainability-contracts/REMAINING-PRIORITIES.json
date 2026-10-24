@@ -1,0 +1,79 @@
+{
+  "at": "2026-10-24T19:25:50.916199+00:00",
+  "source": "Saved inventory only; no live-tree reinventory",
+  "remaining_unique_text_candidates": 1646,
+  "not_all_candidates_require_deep_read": true,
+  "remaining_family": [
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/deep-research-report.md",
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "2cdba9dab7def7bd101e78b4c54fc6ea9195ac732fb983f88803931b46297573",
+      "bytes": 22089
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-trends-audit.md",
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "5ecdf072650054e3ee00bee7109f5293f5406db5ed6a715f8c8480e357327695",
+      "bytes": 23842
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+      "bytes": 20679
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "397987998667390b8161f6d268e99dba9c206ce66391e98dc4df97f636b8faac",
+      "bytes": 72814
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md",
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "de5c10b7b2dbce6e3a692da9e25914d6884bbc0b58b5277a951ea787ba6e5b2e",
+      "bytes": 8797
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+      "bytes": 42327
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-dependency-map.json",
+      "kind": "structured-evidence",
+      "coverage": "partially-inspected",
+      "sha256": "3614e6e55913b6f12b9f7a4f4f9a4401742eb0e627bd4e64b5b067bd68da5375",
+      "bytes": 667393
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-inventory.json",
+      "kind": "structured-evidence",
+      "coverage": "partially-inspected",
+      "sha256": "dc7fa2f3a95444a04f2a30b9fefc8b228257d80f54824c8ca138da7e7bb859b4",
+      "bytes": 466521
+    }
+  ],
+  "next_task_bearing_group": [
+    "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+    "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-trends-audit.md",
+    "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+    "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+    "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md"
+  ],
+  "deferred_research": "tasks/TASKS/three-pillars-analytics/sustainability/deep-research-report.md",
+  "structured_inventory_method": "When needed, schema/role and exact task-bearing references only; no per-row acceptance claim from counts.",
+  "remaining_by_kind": {
+    "unique-task-document": 1646,
+    "structured-evidence": 2526,
+    "binary-or-supporting-snapshot": 3814,
+    "duplicate-scope-check": 4088
+  }
+}

@@ -1,0 +1,11 @@
+ok 1 - anonymous workspace read denied
+ok 2 - even owner must use authenticated server API
+ok 3 - user A cannot read user B saved plan
+ok 4 - user A cannot overwrite user B saved plan
+ok 5 - user A cannot delete user B saved plan
+ok 6 - user A cannot insert a saved plan for user B
+ok 7 - server ownership/context filter returns only A
+ok 8 - server owner/context/version update changes exactly A
+ok 9 - stale compare-and-swap cannot overwrite A
+ok 10 - B saved plan and version unchanged
+1..10

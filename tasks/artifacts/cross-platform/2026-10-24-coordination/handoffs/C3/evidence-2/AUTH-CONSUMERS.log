@@ -1,0 +1,15 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c3-isolated/web
+
+(node:40070) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:40069) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/auth/index.test.tsx (1 test) 35ms
+ ✓ __tests__/components/auth/AuthForm.test.tsx (5 tests) 133ms
+
+ Test Files  2 passed (2)
+      Tests  6 passed (6)
+   Start at  12:14:23
+   Duration  899ms (transform 253ms, setup 9ms, collect 450ms, tests 168ms, environment 443ms, prepare 95ms)
+

@@ -1,0 +1,35 @@
+{
+  "release_sha": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "release_commit_at": "2026-10-22T22:22:10Z",
+  "deployment_receipt": {
+    "id": "dpl_G2REeofNhSMFgHLSDczeD1MS9vMb",
+    "state": "READY",
+    "smoke": "5/5",
+    "source": "tasks/diaries/2026-10-22-claude-forge-improvements-sprint.md:70-77",
+    "fresh_remote_observation": false
+  },
+  "handover_claim": {
+    "date": "2026-10-23",
+    "snapshot_cron_utc": "12:30",
+    "source": "tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-rso-forge-handover.md:F6"
+  },
+  "actual_first_issued_at": null,
+  "actual_first_served_at": null,
+  "verified": false,
+  "reason": "Named retained receipts identify release, not first successful ledger/run issuance. Both Release C and current bridge bind issued_at to forge_runs.created_at; snapshot schedule is not issuance evidence. No raw first-issued row receipt found, no capture attempted.",
+  "target_seven_settled_days_around": "2026-10-30",
+  "target_is_guarantee": false,
+  "source_sha256": {
+    "AGENTS.md": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "ac07821292e50c916149084ea9b126bf90a4ccbd5e6a2a29b6b07f37a4c146c3",
+    "tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-rso-forge-handover.md": "8e24674a0228492608c0096fbbeb2cd0ff2b990a76d07ded26ea0d9c96218a68",
+    "tasks/artifacts/fantasy-point-audit-2026-10-22/REPORT.md": "d71e12842039674dde090a39ce7570357cff20baeb343789ec18ef57912d63cc",
+    "tasks/diaries/2026-10-22-claude-forge-improvements-sprint.md": "fe47a656dc58c36c6af1e9344d980d5a0b4766f26004da1908df54f5d271ee3c",
+    "web/lib/player-forecasts/servedForecastLedger.ts": "71910c828a3792d8ae85d275e2e6f017d5818f65fbc44c2e2d044ca9998d7c36",
+    "web/pages/api/v1/db/forge-served-forecast-settle.ts": "699cb851dc0bd7b8635ce8f61c156fbf30f5451241e24720f3c9623a0e76db22",
+    "web/pages/api/v1/db/forge-served-forecast-snapshot.ts": "d2ad7239a6207903f8154a07a3f6948bce790ddec6d9cd03c8fbbcd93a86983c",
+    "web/lib/rosterScheduleData/forgeDailyBridge.ts": "651eff511275b93f6f598181f3c5402c9b4d1b57d3959eb772528842910855f5",
+    "supabase/migrations/20261021230025_forge_served_forecast_ledger.sql": "825b9d5290c540e0505ba12bee13a39b578c21dfaf8a75e50b1fcbabbb9c6efe",
+    "web/lib/supabase/database-generated.types.ts": "348d1a452d649ca6d4160b7611cd59a7feb30f8e7cc4f6119baabe43f0aaf6b3"
+  }
+}

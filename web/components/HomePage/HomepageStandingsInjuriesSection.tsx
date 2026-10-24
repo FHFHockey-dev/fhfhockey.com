@@ -17,6 +17,7 @@ import {
   formatNewsFeedLabel,
   getPublicNewsItemDetails,
   getPublicNewsClaimPresentation,
+  getPublicNewsReportTopic,
   sanitizePublicNewsFeedItem,
   type NewsFeedItem,
 } from "lib/newsFeed";
@@ -73,10 +74,11 @@ function newsItemToHomepageInjury(item: NewsFeedItem) {
     team: item.team_abbreviation ?? "NHL",
     player: {
       id: onlyClaim?.playerId ?? null,
-      displayName: playerNames.join(", ") || "Source report",
+      displayName: playerNames.join(", ") || "—",
     },
     status: presentation.claims.length ? presentation.claims.map(claim =>
-      `${formatNewsFeedLabel(claim.kind)} ${formatNewsFeedLabel(claim.state)} report${claim.observation ? ` · ${claim.observation}` : ""}`).join("; ") : "Claim unavailable",
+      `${formatNewsFeedLabel(claim.kind)} ${formatNewsFeedLabel(claim.state)} report${claim.observation ? ` · ${claim.observation}` : ""}`).join("; ") : getPublicNewsReportTopic(item),
+    claimNote: presentation.claims.length ? null : "Source text only; player and status are not verified.",
     description: getPublicNewsItemDetails({ ...item, metadata: null, headline: "Source passage unavailable" }),
     sourceUrl: item.source_url,
     sourceAttribution: item.source_account ?? item.source_label,
@@ -171,7 +173,8 @@ export default function HomepageStandingsInjuriesSection({
         newsTimestamp: true,
         team: transaction.team_abbreviation,
         player: { displayName: buildHomepageTransactionTitle(transaction) },
-        status: "Source report",
+        status: getPublicNewsReportTopic(transaction),
+        claimNote: "Source text only; transaction completion is not verified.",
         statusState: "transaction",
         description: getPublicNewsItemDetails({ ...transaction, metadata: null, headline: "Source passage unavailable" }),
         sourceUrl: transaction.source_url,
@@ -457,7 +460,8 @@ export default function HomepageStandingsInjuriesSection({
                             playerName
                           )}
                         </td>
-                        <td className={styles.statusColumn}>
+                        <td className={styles.statusColumn} title={injury.claimNote ?? undefined}
+                          aria-label={injury.claimNote ? `${injury.status}. ${injury.claimNote}` : undefined}>
                           {injury.status ?? "N/A"}
                         </td>
                         <td className={styles.descriptionColumn}>
@@ -465,6 +469,7 @@ export default function HomepageStandingsInjuriesSection({
                             <span className={styles.descriptionContent} title={injury.description ?? undefined}>
                               {injury.description ?? "N/A"}
                             </span>
+                            {injury.sourceAttribution ? <span className={styles.descriptionContent}>{injury.sourceAttribution}</span> : null}
                             {injury.sourceUrl ? (
                               <ExternalNewsLink
                                 href={injury.sourceUrl}
@@ -497,6 +502,7 @@ export default function HomepageStandingsInjuriesSection({
                       >
                         <td colSpan={5} className={styles.expandedUpdateCell}>
                           <span>{injury.description ?? "N/A"}</span>
+                          {injury.claimNote ? <span>{injury.claimNote}</span> : null}
                           <span className={styles.expandedUpdateMeta}>
                             {injury.newsTimestamp ? `Published ${formatHomepageTimestamp(injury.date) || "unavailable"} · Observed ${formatHomepageTimestamp(injury.observedAt) || "unavailable"}` : formatHomepageTimestamp(injury.date)}
                             {injury.sourceAttribution

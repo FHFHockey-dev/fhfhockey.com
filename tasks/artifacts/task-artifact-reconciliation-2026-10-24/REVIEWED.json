@@ -1,0 +1,112 @@
+[
+  {
+    "path": "tasks/seo-audit-2026-09-25.md",
+    "sha256": "6022c3eddbea50d452cf9f4aab6057d92b65ea0cfa887575c240bf6c6bc8f05c",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/OWNERSHIP.md",
+    "sha256": "3cc311281f50fa43aca6ecb8e5481759708801276db921b768dc946f9b7554ac",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/release-readiness-2026-10-24/HANDOFF.md",
+    "sha256": "2d468a3c06bd4ad2aad201644e2c3ee17111d6d673470ca7b026aced3c58a75a",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/HANDOFF.md",
+    "sha256": "ca8b79b0f130d21e45dfb1c4182bb09b942c07a04b877a46f2277ba5a0558cdf",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/FINDINGS.md",
+    "sha256": "d26c441cce903fc724c2773c0a8585767343cf94fdea31ec22e1427a858bca31",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/LIVE-MASTER-DELTA.md",
+    "sha256": "01bd17e243598c08158573704a97a3495fa4bfc2e2caf77f36d8df502ba254ef",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/reconciliation-summary.json",
+    "sha256": "7645ee819ff1db85892d2c7f6366a3def90cbf513e116734f8ac9f0eec902d7d",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/release-ledger-2026-10-17/NEXT-RELEASE-PLAN.md",
+    "sha256": "fe9445221c3bbafdf568d9b2fec22342092aec5580cc5af906b138d34112d095",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/underlying-stats-final-verification-notes-5-5.md",
+    "sha256": "808c59cc34f6ba8a4381810e3f15eda99b3caffa479c98e9218d3b02d4c3a15a",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+    "sha256": "ff2222039a20ab9e2e54aaab366786cadb76e10b171c0d8061e848062c8a7598",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-LEASES.json",
+    "sha256": "7e4373379567168dd6987f2c45edb48bbbd827f6c19e60584f85defaefcaa817",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+    "sha256": "8bf69a12194417465be735e812fb03d99b9725c74658f7d4529f60bddfced4dc",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+    "sha256": "ab7dcf694ef136bd64fa13dfdb90014552419d33745a4c89c4c203e9e6421594",
+    "review": "Full document read; source/owner-reported claims retain their own acceptance limits."
+  },
+  {
+    "path": "tasks/artifacts/release-readiness-2026-10-24/r1/HANDOFF.md",
+    "sha256": "d37592a7debc7686b0a7ea7b2b6874d16b1b3974dc1255c2c69e1697214b4669",
+    "review": "Full document read; recorded owner claims retain independent/live limits."
+  },
+  {
+    "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/HANDOFF.md",
+    "sha256": "9b6e58fc5b55f666e76ec60b64acac48d27f7d86dab3f74d5b3fc183be9c3ecc",
+    "review": "Full document read; recorded owner claims retain independent/live limits."
+  },
+  {
+    "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/SOURCE-RESOLUTION-AND-NEXT.md",
+    "sha256": "1431646bedd6763aec7987b3301fc740ae13f9f32817b608114bb2169bca8ede",
+    "review": "Full document read; recorded owner claims retain independent/live limits."
+  },
+  {
+    "path": "tasks/artifacts/xg-release-gate-verdict-2026-03-31-v2.md",
+    "sha256": "162c649cfe9d8e0cd7b01076f8156b1eecdfbc790fe5c6cfd3a994382bc835bf",
+    "review": "Full document read; recorded owner claims retain independent/live limits."
+  },
+  {
+    "path": "tasks/artifacts/xg-gate-lane-2026-10-18/S-18-report.md",
+    "sha256": "db655d602c960af782c8595ce1f0a64f63bf3fa1d2b3c631d3bfd4c71fa5f2fc",
+    "review": "Full document read; recorded owner claims retain independent/live limits."
+  },
+  {
+    "path": "tasks/artifacts/data-correctness-fixes-2026-10-18/DIARY.md",
+    "sha256": "02558d56bc733969f1cf95b4a645984557e38c368d3ffba110915004d5972f28",
+    "review": "Full document read; recorded owner claims retain independent/live limits."
+  },
+  {
+    "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C1/RECEIPT.md",
+    "sha256": "34cc64cbeefa6656c41386a77c932c7c1cad28fe5b47da11947371e380296583",
+    "review": "Full immutable lane receipt read; owner/reviewer-reported tests and visual claims are scoped and were not executed/viewed by audit."
+  },
+  {
+    "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C5/RECEIPT.md",
+    "sha256": "567279e8ec001e747e3f1de2b5d4b508e41cb040c912716accb3bca6b4b422c7",
+    "review": "Full immutable lane receipt read; owner/reviewer-reported tests and visual claims are scoped and were not executed/viewed by audit."
+  },
+  {
+    "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/REVIEW.md",
+    "sha256": "24024990e5ef907a0a53315d997d822b1c6e857076dfc51864986004c05a4a28",
+    "review": "Full immutable lane receipt read; owner/reviewer-reported tests and visual claims are scoped and were not executed/viewed by audit."
+  }
+]

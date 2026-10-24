@@ -1,0 +1,183 @@
+{
+  "config": {
+    "configFile": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/reconciliation.config.ts",
+    "rootDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focus-03/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "roster-schedule-optimizer.spec.ts"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "roster-schedule-optimizer.spec.ts",
+      "file": "roster-schedule-optimizer.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "manual workspace retains reviewed intent, protections and locks through recalculation and reload",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 4110,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T15:43:58.226Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "75e731aa0b382492d6e5-235b1fc564002e4b91ae",
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 104,
+          "column": 5
+        },
+        {
+          "title": "compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1807,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoHaveLength\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected length: \u001b[32m7\u001b[39m\nReceived length: \u001b[31m3\u001b[39m\nReceived array:  \u001b[31m[{\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}, {\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}, {\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}]\u001b[39m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoHaveLength\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected length: \u001b[32m7\u001b[39m\nReceived length: \u001b[31m3\u001b[39m\nReceived array:  \u001b[31m[{\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}, {\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}, {\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}]\u001b[39m\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1736:26",
+                    "location": {
+                      "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                      "column": 26,
+                      "line": 1736
+                    },
+                    "snippet": "  1734 |     before: getComputedStyle(node, \"::before\").content, after: getComputedStyle(node, \"::after\").content,\n  1735 |   })));\n> 1736 |   expect(articleBorders).toHaveLength(7);\n       |                          ^\n  1737 |   for (const border of articleBorders) {\n  1738 |     expect(border.width).toBe(\"10px\"); expect(border.style).toBe(\"solid\"); expect(border.topLeftRadius).toBe(\"10px\"); expect(border.bottomLeftRadius).toBe(\"10px\");\n  1739 |     expect(border.outlineColors).toEqual([border.band, border.band, border.band]); expect(border.outlineWidths).toEqual([\"1px\", \"1px\", \"1px\"]);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                        "column": 26,
+                        "line": 1736
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoHaveLength\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected length: \u001b[32m7\u001b[39m\nReceived length: \u001b[31m3\u001b[39m\nReceived array:  \u001b[31m[{\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}, {\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}, {\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}]\u001b[39m\n\n  1734 |     before: getComputedStyle(node, \"::before\").content, after: getComputedStyle(node, \"::after\").content,\n  1735 |   })));\n> 1736 |   expect(articleBorders).toHaveLength(7);\n       |                          ^\n  1737 |   for (const border of articleBorders) {\n  1738 |     expect(border.width).toBe(\"10px\"); expect(border.style).toBe(\"solid\"); expect(border.topLeftRadius).toBe(\"10px\"); expect(border.bottomLeftRadius).toBe(\"10px\");\n  1739 |     expect(border.outlineColors).toEqual([border.band, border.band, border.band]); expect(border.outlineWidths).toEqual([\"1px\", \"1px\", \"1px\"]);\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1736:26"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T15:44:02.411Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focus-03/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focus-03/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focus-03/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                    "column": 26,
+                    "line": 1736
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "75e731aa0b382492d6e5-ef611062e76bbaaa8737",
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1666,
+          "column": 39
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-23T15:43:57.763Z",
+    "duration": 6563.954,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

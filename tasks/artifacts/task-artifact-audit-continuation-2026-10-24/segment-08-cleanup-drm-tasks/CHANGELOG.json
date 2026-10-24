@@ -1,0 +1,316 @@
+{
+  "at": "2026-10-24T17:15:34.417533+00:00",
+  "changes": {
+    "SITE-WIGO": {
+      "fields": {
+        "implementation": "The exact four-file local WiGO correction at patcha63ef5a4e6dde4ee1255661a612f01b79a4e4306c5822f8d4fe078f89fbb394e now has independent ACCEPT WITH LIMITS and parent acceptance with limits. Preserve C4 workflow-link credit and both original diagnosis/failure packets; no persisted aggregate was refreshed by these local changes.",
+        "acceptance": "Independent75/75 offline checks (58owner+17new controls), scoped lint and46unchanged pins support exact local acceptance only. Parent accepts with limits. Whole-web TypeScript still has the two prior Luna errors; no auth/browser/query-plan/population-wide/live-data or whole-WiGO acceptance follows.",
+        "verification": "Full independent REVIEW and REVIEW-EVIDENCE read. Reviewer reports exact four-file patch reconstruction, eight baseline/candidate copies and46pins; no reviewer source repair or hosted action. Auditor reran no application tests. Retained68-row matching remains5/9/13; absent legacy-rate row means that separate fix is not the demonstrated Kucherov cause. True gaps and source-arrival chronology remain qualified.",
+        "next_action": "Preserve accepted exact pins for parent integration and separate authorized release; do not repeat the completed review without a changed candidate. Stored L5 nulls, October5 source ingestion and any bounded refresh/backfill remain unapproved. Broad-route partial commits/population compatibility and the separate historical STD fallback are outside acceptance; no broad calculate-wigo-stats invocation or card-cohort claim.",
+        "dispatch_class": "Exact local correction independently and parent accepted with limits; production refresh/backfill and wider feature qualification held"
+      },
+      "before_fields": {
+        "implementation": "C4 workflow-link candidate/browser receipt retains its narrow credit. Separate investigator01a16eab-cefb-71a0-9a22-199c2d039009 handed back the TJ-approved four-file local data fix at patcha63ef5a4e6dde4ee1255661a612f01b79a4e4306c5822f8d4fe078f89fbb394e. Source-frame alignment, six read-error branches and recent-snapshot rate authority are implemented per owner; independent review/integration pending, no production refresh/backfill.",
+        "acceptance": "No whole WiGO/data acceptance. Retained diagnostic has two SELECTs/68rows/no writes: L5 current inputs5/5 but stored nulls, L10 matches9/10, independent L20 matches13/20. Owner reports58/58 focused tests and scoped lint passed; whole-web TypeScript exits2 on the same two pre-existing Luna errors, not a clean build. Exact correction independent review is pending. One-player/fixture evidence establishes no league coverage.",
+        "verification": "Full original offline report was reviewed in segment06; full production addendum/summary/SQL and local-fix ownership read here. Auditor parsed retained68row source groups and date/season joins, reproduced5/9/13 matching and L5 sums6313seconds/1.82ixG/35iCF without SQL/app execution. No wigo_rates row existed for this player and STD matched, so offline override/STD risks are not this demonstrated cause. Six older unmatched selected L20 dates are not proven absent deeper in source tables; chronology of L5 nulls remains unknown.",
+        "next_action": "Parent independently reviews the exact four-file correction and its invalid-frame/fail-closed behavior before acceptance/integration. Earlier written player batches are not rolled back on a later source error; population-wide legacy-frame compatibility was not tested and remains a release concern. Preserve true NST gaps as unavailable, current cross-season policy and C4 wiring credit. Stored L5 nulls remain unchanged by code edits; any bounded refresh path/execution and October5 backfill require separate authority. Card worker consumes only reviewed supplied evidence.",
+        "dispatch_class": "Existing WiGO investigator handed back local four-file candidate; independent review pending, no new worker or execution authority from audit"
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/43a8edca387f-REVIEW.md",
+          "original_path": "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW.md",
+          "line": 3,
+          "sha256": "43a8edca387fa4d4b3742c03c98bdb2b097a7f27c262494aba7cdc6f4486e8e1",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/726b59e90abb-REVIEW-EVIDENCE.json",
+          "original_path": "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW-EVIDENCE.json",
+          "line": 1,
+          "sha256": "726b59e90abb89a410a98d78507f82859a38b2123825557e8da4d18cf158d4d8",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9b3c682e7952-PARENT-STEERS.json",
+          "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json",
+          "line": 1,
+          "sha256": "9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ]
+    },
+    "SITE-FORGE-TESTING-GROUNDS": {
+      "fields": {
+        "implementation": "Preserve accepted limited timestamp/policy and S03-R1 correction credit. Slice05 adds local server/API/owner-gate/page boundaries with inactive actions, but independent review found P2 S05-R1: TOKEN_REFRESHED can remount the synthetic workspace after hidden-page withdrawal. Owner has frozen a two-file lifecycle correction for focused re-review; no acceptance of that revision is established.",
+        "acceptance": "S03-R1 limited verdict retained. Original slice05 CHANGES REQUIRED: one68pass/1fail invocation (owner61/61, independent7/8),127pins unchanged. Owner R1 reports9focused passes/8intentional skips and138preserved pins; independent correction acceptance remains pending. No wrong-owner grant/server-owner bypass or real/sealed-result disclosure was demonstrated.",
+        "verification": "Full slice05 REVIEW/REVIEW-EVIDENCE and R1 HANDOFF read. Hidden auth callback/remount reproduction is distinct from server identity; optional trusted adapter payloads pass through unvalidated and no default store/executor is connected. R1 owner preserves pagehide latch and fresh visible-return checks but does not implement single-use live verification budgeting. Auditor performed no source/test/browser/auth/provider operation.",
+        "dependencies": "Dedicated runner A remains selected; durability, actual trusted request/session/worker integration, safe read-adapter projections/sealing, scientific/model/pilot and approved hosted runtime/storage/retention/cost remain open. Local owner activation is separately approved but blocked with0of1approved auth reads used: private verification transport, inherited AuthProvider profile/settings-write containment and existing-server ownership unresolved. Missing owner configuration is not rejection of TJ identity.",
+        "next_action": "Same reviewer evaluates the frozen two-file S05-R1 correction; preserve the original failure and exact boundary without importing owner passes as acceptance. Resolve safe private verification transport/budget and inherited-write containment before the already-approved owner activation; no additional auth call or new approval request from this audit. No actual read adapter/runner/model or real-run acceptance; payload/owner/sealing and scientific gates remain separate.",
+        "dispatch_class": "Single Astra correction frozen for focused re-review; S05-R1 not yet accepted, local owner activation blocked0of1authreadsused"
+      },
+      "before_fields": {
+        "implementation": "Installed approved requirements retained. Slice01 progress/data-health helpers, R1 timestamp correction, slice02 owner-policy interface and slice03 dedicated memory-reference runner are local partial implementations. Configure/preflight/remote launch/reconnect/review and durable hosted operation remain incomplete.",
+        "acceptance": "Earlier timestamp and owner-policy limited verdicts retained. Slice03 original P2 S03-R1 is resolved only on the frozen three-file R1 pins: independent ACCEPT WITH LIMITS reports one11-pass/24-intentionally-skipped invocation plus scoped TS/lint. Original failed evidence is preserved. Scout retains integration authority; no full-product, hosted or scientific acceptance.",
+        "verification": "Full slice03-r1 HANDOFF, independent REVIEW and REVIEW-EVIDENCE read; owner EVIDENCE non-pin fields reviewed structurally. Independent11 controls comprise original2, new owner regression groups3 and new independent6; original16 owner cases were not rerun by reviewer. Reviewer88/88 pins are reported, not reproduced by auditor. Unresolved evaluation stays successful0/failed0/pending1/percent0 at waiting cap. Optional outcome-check limit preserves omitted manifest hash but increases conservative total claims from E to E+W, up to2E for legacy omission; no hosted resource allowance inferred.",
+        "dependencies": "Dedicated bounded/checkpointed runner A remains selected. Memory-only durability, actual trusted request/session/worker authorization, sealing/reveal, executor finality, statistical/model/pilot contracts and approved runtime/storage/retention/cost plan remain incomplete. CODEX016 grants ten-path local owner/page/API implementation and a narrow requested localhost view, not shared-auth edits, hosted calls, owner environment configuration or activation.",
+        "next_action": "Retain S03-R1 limited correction credit on exact new pins and original failure history. Budget computation and outcome checks independently before any hosted activation; incomplete computation must checkpoint rather than claim availability waiting. Follow the exact local slice05 lease and preserve locked SSR/API owner gates. Preview/page delivery or localhost request is not evidence of durable workflow/auth/scientific acceptance.",
+        "dispatch_class": "Single Astra local implementation; limited reviewer correction verdict and exact slice05 grant recorded, no external execution authority"
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/ca0670df6439-REVIEW.md",
+          "original_path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW.md",
+          "line": 3,
+          "sha256": "ca0670df6439d44cbbdcdc75c1c873ad09f88b6cc445ef4a8d3364e05f57a47b",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/7a5ac23ec40b-REVIEW-EVIDENCE.json",
+          "original_path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW-EVIDENCE.json",
+          "line": 1,
+          "sha256": "7a5ac23ec40bb5bd4c6d832023b3245ac14e2b18952b1ddfb08330b54e7d8e05",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/5cbacd13d0b3-HANDOFF.md",
+          "original_path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1/HANDOFF.md",
+          "line": 18,
+          "sha256": "5cbacd13d0b30702533370bd6d4e5cb3b16123344ac40670816bd7d4d575d9f7",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/5cbacd13d0b3-HANDOFF.md",
+          "original_path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1/HANDOFF.md",
+          "line": 25,
+          "sha256": "5cbacd13d0b30702533370bd6d4e5cb3b16123344ac40670816bd7d4d575d9f7",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9b3c682e7952-PARENT-STEERS.json",
+          "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json",
+          "line": 1,
+          "sha256": "9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ]
+    },
+    "SITE-PLAYER-CARDS": {
+      "fields": {
+        "acceptance": "Task list is parent-reviewed for dispatch; slice01 independent review is ongoing, not accepted. Owner synthetic preview10unit/10offline-browser/scoped static passes retain only owner-evidence status. Confirmed free/public/basic PNG and premium comparison choices remain; exact allocation, season/incomplete-N policy, defaults/rank/visual proposals and observed integration stay open.",
+        "dispatch_class": "Existing single Sol card implementation; slice01 independent review ongoing, no acceptance or release inferred"
+      },
+      "before_fields": {
+        "acceptance": "Task list is parent-reviewed for dispatch; implementation acceptance pending. Free public search/basic card/PNG, curated optional metrics and premium expanded metrics/two-player comparison are confirmed. Exact allocation, season/incomplete-N policy, proposed defaults, rank convention and visual proposals remain unapproved choices.",
+        "dispatch_class": "Authorized single-Sol bounded local implementation; parent integration/review remains separate"
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9b3c682e7952-PARENT-STEERS.json",
+          "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json",
+          "line": 1,
+          "sha256": "9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ]
+    },
+    "PAID-SYNC": {
+      "fields": {
+        "next_action": "Release owner preserves the exact accepted35-path sales-off/paid-sync packet, existing/grandfathered grants, cancellation/recovery and manual workflows. Retain the older Yahoo live-draft readiness clauses as held reconciliation: supervised sub-minute worker substrate, exact target migration/runtime and closed-browser/provider rehearsal are not established by UI/OAuth/local fixture passes. The August24 tracker is NO-GO, not proof current infrastructure is absent. Reconcile newer owner receipts before any future restoration; do not activate a worker, change sales/rollout or invoke the rehearsal. Previously issued Stripe links remain an external risk with no mutation/refund authority.",
+        "verification": "Existing paid-sync packet acceptance remains unchanged in scope. Full Yahoo private-beta runbook/readiness/backlog read: local OAuth/coordinator/harness evidence is distinct from durable deployed execution and real provider latency/pick completeness. Recurrent Vercel request-only functions are not the documented sub-minute worker substitute. Deferred adjacent features and proposed cadences remain parked, not new dispatches."
+      },
+      "before_fields": {
+        "next_action": "Release owner includes the exact accepted 35-path packet. Preserve existing/grandfathered grants, cancellation and recovery. Previously issued Stripe links remain an unverified external risk; no Stripe mutation/refund authority.",
+        "verification": "Initial independent 320/320 suite and correction 36/36 plus 3/3 adversarial receipts read; TS/lint remain owner evidence. No tests rerun here."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/65f143fa43c8-live-draft-runbook.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md",
+          "line": 7,
+          "sha256": "65f143fa43c8b3eaadde4c2c5f273448ef3206307bb5546b1df3191fdff5c497",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/e584a8a3c87d-live-draft-production-readiness.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          "line": 11,
+          "sha256": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/e584a8a3c87d-live-draft-production-readiness.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          "line": 20,
+          "sha256": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/e584a8a3c87d-live-draft-production-readiness.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          "line": 34,
+          "sha256": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/fc43f5343286-yahoo-live-draft-backlog.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-live-draft-backlog.md",
+          "line": 3,
+          "sha256": "fc43f5343286440c25bd31490d2f8b325a2214c1467172a63c1513e616f33225",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ]
+    },
+    "SITE-PRIVACY-POLICY": {
+      "fields": {
+        "next_action": "Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code. Preserve the Oct19 approved linked-lifetime/same-purpose credential contract. Fact sheet must distinguish local disconnect/actual-auth-user deletion cleanup from user-facing account-deletion workflow, hosted cascade, backups/logs/derived-data erasure and upstream invalidation/provider rights, all unqualified by the reviewed policy. No new deletion feature or changed lifetime policy is requested. Full Draft/Yahoo source review adds separate session/pick/audit/rehearsal retention facts: the dated design has30-day poll observations but no automatic completed-session/pick deletion, with owner/legal policy needed before broad rollout. Reconcile current facts first;30days is not a new linked-credential or league-data lifetime policy."
+      },
+      "before_fields": {
+        "next_action": "Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code. Preserve the Oct19 approved linked-lifetime/same-purpose credential contract. Fact sheet must distinguish local disconnect/actual-auth-user deletion cleanup from user-facing account-deletion workflow, hosted cascade, backups/logs/derived-data erasure and upstream invalidation/provider rights, all unqualified by the reviewed policy. No new deletion feature or changed lifetime policy is requested."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/65f143fa43c8-live-draft-runbook.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md",
+          "line": 132,
+          "sha256": "65f143fa43c8b3eaadde4c2c5f273448ef3206307bb5546b1df3191fdff5c497",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/e584a8a3c87d-live-draft-production-readiness.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          "line": 30,
+          "sha256": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/3b8988c67e1a-yahoo-tables.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md",
+          "line": 171,
+          "sha256": "3b8988c67e1ac72c5d9674e978cea2f7febc71ae41aefa7da538864b8accbb06",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ]
+    },
+    "YAHOO-HISTORY-RETIREMENT": {
+      "fields": {
+        "verification": "Full Yahoo current-inventory and schema documentation read. Dated July31 normalized-reader cutover/revocation/atomic writer receipts retain closure; August3 pagination and legacy guard fixtures do not close controlled provider/runtime, per-season league equivalence, Python retirement or resumable historical backfill. Static older table/gap paragraphs coexist with later closure overlays and require documentary reconciliation, not another writer repair. Source tables/types are contracts, not current coverage.",
+        "next_action": "Reconcile retained newer value-free lifecycle/equivalence/retirement receipts against the existing gated historical scope before proposing any bounded slice. Preserve completed canonical-reader cutover and local guard work; do not revive old unsafe legacy owners, guess a global league from accounts, launch backfill or count private-beta fixture/UI work as provider equivalence."
+      },
+      "before_fields": {
+        "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+        "next_action": "Reconcile any newer value-free lifecycle evidence; identify the required equivalence/retirement receipt before proposing a bounded historical slice. Do not guess a global league from connected accounts."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          "line": 3,
+          "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          "line": 13,
+          "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          "line": 29,
+          "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          "line": 83,
+          "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/3b8988c67e1a-yahoo-tables.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md",
+          "line": 1,
+          "sha256": "3b8988c67e1ac72c5d9674e978cea2f7febc71ae41aefa7da538864b8accbb06",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ]
+    },
+    "REPO-DOCUMENTATION": {
+      "fields": {
+        "next_action": "Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion."
+      },
+      "before_fields": {
+        "next_action": "Retain reported C6 pointer-correction allocation and all auth/Rankings/Underlying scopes. Dead-code full reads confirm B-DEAD44/44 closure, supported FORGE/admin surfaces, retained quarantines and superseded sKO burn-down; do not revive old deletion/modernization recommendations or re-close them as new work. Reconcile stale open boilerplate to later dated CLEAN/DRM closures while preserving October recurrences and held history. Player-card inputs are now installed by their owner; cloud-copy header wording is historical. No diary/document retirement from audit."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/89b939a9a2d0-tasks-prd-cleanup-tasks.md",
+          "original_path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+          "line": 139,
+          "sha256": "89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/89b939a9a2d0-tasks-prd-cleanup-tasks.md",
+          "original_path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+          "line": 253,
+          "sha256": "89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/7d0cebf7d3c3-tasks-prd-drm-refactor.md",
+          "original_path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          "line": 143,
+          "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/8a1e4cb7e816-tasks-draft-dashboard-interface-polish.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md",
+          "line": 3,
+          "sha256": "8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          "line": 29,
+          "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ]
+    }
+  },
+  "added_ids": []
+}

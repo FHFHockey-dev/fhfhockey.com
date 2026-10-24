@@ -1,0 +1,151 @@
+{
+  "synthetic": true,
+  "qualification": "SYNTHETIC_TARGETS_PASS",
+  "production_qualified": false,
+  "release_baseline": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "issues": [],
+  "window": {
+    "from": "2026-10-23",
+    "game_days": [
+      "2026-10-23",
+      "2026-10-24",
+      "2026-10-25",
+      "2026-10-26",
+      "2026-10-27",
+      "2026-10-28",
+      "2026-10-29"
+    ],
+    "to": "2026-10-29"
+  },
+  "denominator": {
+    "coverage": 1.0,
+    "eligible_dressed": 70,
+    "scored_dressed": 70
+  },
+  "chronological_primary_days": [
+    {
+      "actual_over_expected": 1.0,
+      "actual_sum": 56.85,
+      "bias": 0.0,
+      "date": "2026-10-23",
+      "expected_sum": 56.85,
+      "mae": 0.0,
+      "median_actual": 5.6850000000000005,
+      "n": 10,
+      "rmse": 0.0,
+      "share_below_expected": 0.0
+    },
+    {
+      "actual_over_expected": 1.0,
+      "actual_sum": 56.85,
+      "bias": 0.0,
+      "date": "2026-10-24",
+      "expected_sum": 56.85,
+      "mae": 0.0,
+      "median_actual": 5.6850000000000005,
+      "n": 10,
+      "rmse": 0.0,
+      "share_below_expected": 0.0
+    },
+    {
+      "actual_over_expected": 1.0,
+      "actual_sum": 56.85,
+      "bias": 0.0,
+      "date": "2026-10-25",
+      "expected_sum": 56.85,
+      "mae": 0.0,
+      "median_actual": 5.6850000000000005,
+      "n": 10,
+      "rmse": 0.0,
+      "share_below_expected": 0.0
+    },
+    {
+      "actual_over_expected": 1.0,
+      "actual_sum": 56.85,
+      "bias": 0.0,
+      "date": "2026-10-26",
+      "expected_sum": 56.85,
+      "mae": 0.0,
+      "median_actual": 5.6850000000000005,
+      "n": 10,
+      "rmse": 0.0,
+      "share_below_expected": 0.0
+    },
+    {
+      "actual_over_expected": 1.0,
+      "actual_sum": 56.85,
+      "bias": 0.0,
+      "date": "2026-10-27",
+      "expected_sum": 56.85,
+      "mae": 0.0,
+      "median_actual": 5.6850000000000005,
+      "n": 10,
+      "rmse": 0.0,
+      "share_below_expected": 0.0
+    },
+    {
+      "actual_over_expected": 1.0,
+      "actual_sum": 56.85,
+      "bias": 0.0,
+      "date": "2026-10-28",
+      "expected_sum": 56.85,
+      "mae": 0.0,
+      "median_actual": 5.6850000000000005,
+      "n": 10,
+      "rmse": 0.0,
+      "share_below_expected": 0.0
+    },
+    {
+      "actual_over_expected": 1.0,
+      "actual_sum": 56.85,
+      "bias": 0.0,
+      "date": "2026-10-29",
+      "expected_sum": 56.85,
+      "mae": 0.0,
+      "median_actual": 5.6850000000000005,
+      "n": 10,
+      "rmse": 0.0,
+      "share_below_expected": 0.0
+    }
+  ],
+  "q6_served_dressed": {
+    "n": 70,
+    "pp_a_per_pp_g": 1.8499999999999999,
+    "zero_fraction": {
+      "blocks": 0.0,
+      "hits": 0.0
+    }
+  },
+  "targets": {
+    "decile_10_0_9_to_1_1": true,
+    "each_weighted_bias_le_0_03": true,
+    "fp_abs_bias_le_0_10": true,
+    "fp_actual_expected_0_95_to_1_05": true,
+    "pp_assists_per_goal_1_8_to_1_91": true,
+    "zero_blk_lt_0_10": true,
+    "zero_hit_lt_0_10": true
+  },
+  "primary_fp": {
+    "actual_over_expected": 1.0,
+    "actual_sum": 397.95000000000005,
+    "bias": 0.0,
+    "expected_sum": 397.95000000000005,
+    "mae": 0.0,
+    "median_actual": 5.6850000000000005,
+    "n": 70,
+    "rmse": 0.0,
+    "share_below_expected": 0.0
+  },
+  "primary_decile_10": {
+    "actual_over_expected": 1.0,
+    "actual_sum": 68.145,
+    "bias": 0.0,
+    "decile": 10,
+    "expected_sum": 68.145,
+    "mae": 0.0,
+    "median_actual": 9.735,
+    "n": 7,
+    "rmse": 0.0,
+    "share_below_expected": 0.0
+  }
+}

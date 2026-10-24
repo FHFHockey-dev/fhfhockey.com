@@ -1,0 +1,962 @@
+[
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-10-23",
+      "goals": 0,
+      "shots": 2,
+      "points": 0,
+      "pp_toi": 469,
+      "assists": 0,
+      "game_id": 2026020167,
+      "pp_points": 0,
+      "season_id": 20262027,
+      "games_played": 1,
+      "toi_per_game": 1243,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-10-20",
+      "goals": 1,
+      "shots": 2,
+      "points": 3,
+      "pp_toi": 142,
+      "assists": 2,
+      "game_id": 2026020151,
+      "pp_points": 1,
+      "season_id": 20262027,
+      "games_played": 1,
+      "toi_per_game": 1099,
+      "total_primary_assists": 1
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-10-17",
+      "goals": 2,
+      "shots": 7,
+      "points": 2,
+      "pp_toi": 55,
+      "assists": 0,
+      "game_id": 2026020123,
+      "pp_points": 1,
+      "season_id": 20262027,
+      "games_played": 1,
+      "toi_per_game": 1240,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-10-15",
+      "goals": 0,
+      "shots": 8,
+      "points": 0,
+      "pp_toi": 258,
+      "assists": 0,
+      "game_id": 2026020111,
+      "pp_points": 0,
+      "season_id": 20262027,
+      "games_played": 1,
+      "toi_per_game": 1336,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-10-13",
+      "goals": 0,
+      "shots": 2,
+      "points": 0,
+      "pp_toi": 321,
+      "assists": 0,
+      "game_id": 2026020095,
+      "pp_points": 0,
+      "season_id": 20262027,
+      "games_played": 1,
+      "toi_per_game": 1395,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-10-10",
+      "goals": 0,
+      "shots": 1,
+      "points": 2,
+      "pp_toi": 323,
+      "assists": 2,
+      "game_id": 2026020081,
+      "pp_points": 1,
+      "season_id": 20262027,
+      "games_played": 1,
+      "toi_per_game": 1066,
+      "total_primary_assists": 1
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-10-08",
+      "goals": 0,
+      "shots": 1,
+      "points": 2,
+      "pp_toi": 231,
+      "assists": 2,
+      "game_id": 2026020060,
+      "pp_points": 1,
+      "season_id": 20262027,
+      "games_played": 1,
+      "toi_per_game": 1255,
+      "total_primary_assists": 2
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-10-05",
+      "goals": 0,
+      "shots": 1,
+      "points": 2,
+      "pp_toi": 354,
+      "assists": 2,
+      "game_id": 2026020040,
+      "pp_points": 0,
+      "season_id": 20262027,
+      "games_played": 1,
+      "toi_per_game": 1319,
+      "total_primary_assists": 1
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-10-03",
+      "goals": 0,
+      "shots": 3,
+      "points": 1,
+      "pp_toi": 314,
+      "assists": 1,
+      "game_id": 2026020024,
+      "pp_points": 0,
+      "season_id": 20262027,
+      "games_played": 1,
+      "toi_per_game": 1366,
+      "total_primary_assists": 1
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-10-01",
+      "goals": 1,
+      "shots": 1,
+      "points": 1,
+      "pp_toi": 578,
+      "assists": 0,
+      "game_id": 2026020010,
+      "pp_points": 0,
+      "season_id": 20262027,
+      "games_played": 1,
+      "toi_per_game": 1447,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-04-15",
+      "goals": 0,
+      "shots": 1,
+      "points": 0,
+      "pp_toi": 302,
+      "assists": 0,
+      "game_id": 2025021302,
+      "pp_points": 0,
+      "season_id": 20252026,
+      "games_played": 1,
+      "toi_per_game": 1254,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-04-13",
+      "goals": 1,
+      "shots": 3,
+      "points": 2,
+      "pp_toi": 113,
+      "assists": 1,
+      "game_id": 2025021282,
+      "pp_points": 0,
+      "season_id": 20252026,
+      "games_played": 1,
+      "toi_per_game": 989,
+      "total_primary_assists": 1
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-04-11",
+      "goals": 0,
+      "shots": 2,
+      "points": 0,
+      "pp_toi": 108,
+      "assists": 0,
+      "game_id": 2025021261,
+      "pp_points": 0,
+      "season_id": 20252026,
+      "games_played": 1,
+      "toi_per_game": 1221,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-04-09",
+      "goals": 0,
+      "shots": 1,
+      "points": 1,
+      "pp_toi": 450,
+      "assists": 1,
+      "game_id": 2025021248,
+      "pp_points": 0,
+      "season_id": 20252026,
+      "games_played": 1,
+      "toi_per_game": 1392,
+      "total_primary_assists": 1
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-04-07",
+      "goals": 0,
+      "shots": 3,
+      "points": 1,
+      "pp_toi": 174,
+      "assists": 1,
+      "game_id": 2025021234,
+      "pp_points": 0,
+      "season_id": 20252026,
+      "games_played": 1,
+      "toi_per_game": 1181,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-04-06",
+      "goals": 1,
+      "shots": 3,
+      "points": 1,
+      "pp_toi": 494,
+      "assists": 0,
+      "game_id": 2025021229,
+      "pp_points": 1,
+      "season_id": 20252026,
+      "games_played": 1,
+      "toi_per_game": 1410,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-04-04",
+      "goals": 1,
+      "shots": 3,
+      "points": 1,
+      "pp_toi": 120,
+      "assists": 0,
+      "game_id": 2025021210,
+      "pp_points": 0,
+      "season_id": 20252026,
+      "games_played": 1,
+      "toi_per_game": 1018,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-04-02",
+      "goals": 1,
+      "shots": 4,
+      "points": 3,
+      "pp_toi": 174,
+      "assists": 2,
+      "game_id": 2025021192,
+      "pp_points": 0,
+      "season_id": 20252026,
+      "games_played": 1,
+      "toi_per_game": 1245,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-03-31",
+      "goals": 0,
+      "shots": 6,
+      "points": 0,
+      "pp_toi": 382,
+      "assists": 0,
+      "game_id": 2025021180,
+      "pp_points": 0,
+      "season_id": 20252026,
+      "games_played": 1,
+      "toi_per_game": 1390,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nhl_log",
+    "payload": {
+      "date": "2026-03-26",
+      "goals": 0,
+      "shots": 1,
+      "points": 1,
+      "pp_toi": 118,
+      "assists": 1,
+      "game_id": 2025021139,
+      "pp_points": 1,
+      "season_id": 20252026,
+      "games_played": 1,
+      "toi_per_game": 1131,
+      "total_primary_assists": 0
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 6,
+      "ixg": 0.13,
+      "toi": 1243,
+      "hdcf": 0,
+      "goals": 0,
+      "iscfs": 2,
+      "shots": 2,
+      "season": 20262027,
+      "date_scraped": "2026-10-23",
+      "total_points": 0
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 3,
+      "ixg": 0.27,
+      "toi": 1099,
+      "hdcf": 1,
+      "goals": 1,
+      "iscfs": 1,
+      "shots": 2,
+      "season": 20262027,
+      "date_scraped": "2026-10-20",
+      "total_points": 3
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 11,
+      "ixg": 0.83,
+      "toi": 1240,
+      "hdcf": 2,
+      "goals": 2,
+      "iscfs": 4,
+      "shots": 7,
+      "season": 20262027,
+      "date_scraped": "2026-10-17",
+      "total_points": 2
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 12,
+      "ixg": 0.49,
+      "toi": 1336,
+      "hdcf": 0,
+      "goals": 0,
+      "iscfs": 4,
+      "shots": 8,
+      "season": 20262027,
+      "date_scraped": "2026-10-15",
+      "total_points": 0
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 3,
+      "ixg": 0.1,
+      "toi": 1395,
+      "hdcf": 0,
+      "goals": 0,
+      "iscfs": 0,
+      "shots": 2,
+      "season": 20262027,
+      "date_scraped": "2026-10-13",
+      "total_points": 0
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 3,
+      "ixg": 0.11,
+      "toi": 1066,
+      "hdcf": 0,
+      "goals": 0,
+      "iscfs": 0,
+      "shots": 1,
+      "season": 20262027,
+      "date_scraped": "2026-10-10",
+      "total_points": 2
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 9,
+      "ixg": 0.41,
+      "toi": 1255,
+      "hdcf": 1,
+      "goals": 0,
+      "iscfs": 2,
+      "shots": 1,
+      "season": 20262027,
+      "date_scraped": "2026-10-08",
+      "total_points": 2
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 6,
+      "ixg": 0.29,
+      "toi": 1366,
+      "hdcf": 0,
+      "goals": 0,
+      "iscfs": 1,
+      "shots": 3,
+      "season": 20262027,
+      "date_scraped": "2026-10-03",
+      "total_points": 1
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 7,
+      "ixg": 0.53,
+      "toi": 1447,
+      "hdcf": 1,
+      "goals": 1,
+      "iscfs": 6,
+      "shots": 1,
+      "season": 20262027,
+      "date_scraped": "2026-10-01",
+      "total_points": 1
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 5,
+      "ixg": 0.07,
+      "toi": 1216,
+      "hdcf": 0,
+      "goals": 0,
+      "iscfs": 2,
+      "shots": 3,
+      "season": 20252026,
+      "date_scraped": "2026-05-03",
+      "total_points": 0
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 17,
+      "ixg": 1.21,
+      "toi": 1370,
+      "hdcf": 2,
+      "goals": 0,
+      "iscfs": 7,
+      "shots": 6,
+      "season": 20252026,
+      "date_scraped": "2026-05-01",
+      "total_points": 0
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 10,
+      "ixg": 0.31,
+      "toi": 1304,
+      "hdcf": 1,
+      "goals": 0,
+      "iscfs": 2,
+      "shots": 8,
+      "season": 20252026,
+      "date_scraped": "2026-04-29",
+      "total_points": 0
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 8,
+      "ixg": 0.35,
+      "toi": 1377,
+      "hdcf": 2,
+      "goals": 0,
+      "iscfs": 4,
+      "shots": 3,
+      "season": 20252026,
+      "date_scraped": "2026-04-26",
+      "total_points": 2
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 12,
+      "ixg": 0.29,
+      "toi": 1235,
+      "hdcf": 0,
+      "goals": 0,
+      "iscfs": 1,
+      "shots": 1,
+      "season": 20252026,
+      "date_scraped": "2026-04-24",
+      "total_points": 1
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 10,
+      "ixg": 0.48,
+      "toi": 1402,
+      "hdcf": 1,
+      "goals": 1,
+      "iscfs": 3,
+      "shots": 5,
+      "season": 20252026,
+      "date_scraped": "2026-04-21",
+      "total_points": 1
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 9,
+      "ixg": 0.24,
+      "toi": 1058,
+      "hdcf": 0,
+      "goals": 0,
+      "iscfs": 1,
+      "shots": 5,
+      "season": 20252026,
+      "date_scraped": "2026-04-19",
+      "total_points": 2
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 5,
+      "ixg": 0.24,
+      "toi": 1254,
+      "hdcf": 2,
+      "goals": 0,
+      "iscfs": 3,
+      "shots": 1,
+      "season": 20252026,
+      "date_scraped": "2026-04-15",
+      "total_points": 0
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 6,
+      "ixg": 0.31,
+      "toi": 989,
+      "hdcf": 2,
+      "goals": 1,
+      "iscfs": 4,
+      "shots": 3,
+      "season": 20252026,
+      "date_scraped": "2026-04-13",
+      "total_points": 2
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 5,
+      "ixg": 0.12,
+      "toi": 1221,
+      "hdcf": 0,
+      "goals": 0,
+      "iscfs": 2,
+      "shots": 2,
+      "season": 20252026,
+      "date_scraped": "2026-04-11",
+      "total_points": 0
+    }
+  },
+  {
+    "source": "nst_individual_log",
+    "payload": {
+      "gp": 1,
+      "icf": 3,
+      "ixg": 0.28,
+      "toi": 1392,
+      "hdcf": 0,
+      "goals": 0,
+      "iscfs": 1,
+      "shots": 1,
+      "season": 20252026,
+      "date_scraped": "2026-04-09",
+      "total_points": 1
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 25,
+      "gf": 2,
+      "gp": 1,
+      "sf": 11,
+      "scf": 12,
+      "toi": 1243,
+      "xga": 1.41,
+      "xgf": 1.57,
+      "season": 20262027,
+      "date_scraped": "2026-10-23"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 17,
+      "gf": 4,
+      "gp": 1,
+      "sf": 8,
+      "scf": 11,
+      "toi": 1099,
+      "xga": 1.33,
+      "xgf": 1.34,
+      "season": 20262027,
+      "date_scraped": "2026-10-20"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 30,
+      "gf": 2,
+      "gp": 1,
+      "sf": 15,
+      "scf": 18,
+      "toi": 1240,
+      "xga": 0.57,
+      "xgf": 2.15,
+      "season": 20262027,
+      "date_scraped": "2026-10-17"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 29,
+      "gf": 0,
+      "gp": 1,
+      "sf": 15,
+      "scf": 18,
+      "toi": 1336,
+      "xga": 1.25,
+      "xgf": 1.88,
+      "season": 20262027,
+      "date_scraped": "2026-10-15"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 23,
+      "gf": 0,
+      "gp": 1,
+      "sf": 9,
+      "scf": 11,
+      "toi": 1395,
+      "xga": 1.21,
+      "xgf": 1.23,
+      "season": 20262027,
+      "date_scraped": "2026-10-13"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 14,
+      "gf": 2,
+      "gp": 1,
+      "sf": 6,
+      "scf": 9,
+      "toi": 1066,
+      "xga": 0.13,
+      "xgf": 1.16,
+      "season": 20262027,
+      "date_scraped": "2026-10-10"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 34,
+      "gf": 2,
+      "gp": 1,
+      "sf": 13,
+      "scf": 15,
+      "toi": 1255,
+      "xga": 1.69,
+      "xgf": 1.35,
+      "season": 20262027,
+      "date_scraped": "2026-10-08"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 29,
+      "gf": 1,
+      "gp": 1,
+      "sf": 11,
+      "scf": 12,
+      "toi": 1366,
+      "xga": 0.75,
+      "xgf": 2.26,
+      "season": 20262027,
+      "date_scraped": "2026-10-03"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 31,
+      "gf": 1,
+      "gp": 1,
+      "sf": 11,
+      "scf": 21,
+      "toi": 1447,
+      "xga": 2.44,
+      "xgf": 1.45,
+      "season": 20262027,
+      "date_scraped": "2026-10-01"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 17,
+      "gf": 0,
+      "gp": 1,
+      "sf": 9,
+      "scf": 8,
+      "toi": 1216,
+      "xga": 0.22,
+      "xgf": 0.58,
+      "season": 20252026,
+      "date_scraped": "2026-05-03"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 51,
+      "gf": 0,
+      "gp": 1,
+      "sf": 18,
+      "scf": 24,
+      "toi": 1370,
+      "xga": 1.1,
+      "xgf": 3.12,
+      "season": 20252026,
+      "date_scraped": "2026-05-01"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 35,
+      "gf": 0,
+      "gp": 1,
+      "sf": 26,
+      "scf": 14,
+      "toi": 1304,
+      "xga": 1,
+      "xgf": 1.41,
+      "season": 20252026,
+      "date_scraped": "2026-04-29"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 39,
+      "gf": 2,
+      "gp": 1,
+      "sf": 15,
+      "scf": 29,
+      "toi": 1377,
+      "xga": 0.38,
+      "xgf": 3.51,
+      "season": 20252026,
+      "date_scraped": "2026-04-26"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 25,
+      "gf": 2,
+      "gp": 1,
+      "sf": 7,
+      "scf": 7,
+      "toi": 1235,
+      "xga": 0.46,
+      "xgf": 0.74,
+      "season": 20252026,
+      "date_scraped": "2026-04-24"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 40,
+      "gf": 2,
+      "gp": 1,
+      "sf": 15,
+      "scf": 16,
+      "toi": 1402,
+      "xga": 0.57,
+      "xgf": 1.96,
+      "season": 20252026,
+      "date_scraped": "2026-04-21"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 30,
+      "gf": 2,
+      "gp": 1,
+      "sf": 15,
+      "scf": 14,
+      "toi": 1058,
+      "xga": 0.92,
+      "xgf": 1.72,
+      "season": 20252026,
+      "date_scraped": "2026-04-19"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 35,
+      "gf": 0,
+      "gp": 1,
+      "sf": 17,
+      "scf": 18,
+      "toi": 1254,
+      "xga": 0.87,
+      "xgf": 2.72,
+      "season": 20252026,
+      "date_scraped": "2026-04-15"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 17,
+      "gf": 2,
+      "gp": 1,
+      "sf": 7,
+      "scf": 9,
+      "toi": 989,
+      "xga": 0.93,
+      "xgf": 0.77,
+      "season": 20252026,
+      "date_scraped": "2026-04-13"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 18,
+      "gf": 0,
+      "gp": 1,
+      "sf": 7,
+      "scf": 10,
+      "toi": 1221,
+      "xga": 0.89,
+      "xgf": 0.68,
+      "season": 20252026,
+      "date_scraped": "2026-04-11"
+    }
+  },
+  {
+    "source": "nst_on_ice_log",
+    "payload": {
+      "cf": 20,
+      "gf": 1,
+      "gp": 1,
+      "sf": 12,
+      "scf": 14,
+      "toi": 1392,
+      "xga": 1.32,
+      "xgf": 1.76,
+      "season": 20252026,
+      "date_scraped": "2026-04-09"
+    }
+  }
+]

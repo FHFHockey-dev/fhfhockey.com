@@ -1,0 +1,126 @@
+
+> web@0.1.0 test
+> vitest --run --config review-vitest.config.mts lib/projections/queries/skater-queries.test.ts lib/projections/runProjectionV2.test.ts lib/projections/nativeGoalAccounting.test.ts scripts/qualify-native-players-offline.test.ts adversarial.test.ts fallback-parity.test.ts lib/projections/utils/market-output-builders.test.ts lib/projections/utils/devig.test.ts lib/projections/uncertainty.test.ts lib/projections/dispersion.test.ts lib/projections/goalieModel.test.ts lib/projections/goalie/goalieOutcomes.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-task2-r2-d3c181zf/web
+
+ ❯ scripts/qualify-native-players-offline.test.ts (56 tests | 1 failed) 6273ms
+   × offline current native player qualification > reproduces current native calculations with genuine admission and zero live client/transport/writes 554ms
+     → expected 'af79349485a6e2e6ef26fa3db59a1eca352b2…' to be '566790293cb9b577555fdf4206e13d50861b1…' // Object.is equality
+   ✓ offline current native player qualification > leaves absent playing/start evidence unknown and preserves consumer missing-participation rejection 95ms
+   ✓ offline current native player qualification > bounds original publishedAt before/equal/one microsecond after cutoff 191ms
+   ✓ offline current native player qualification > bounds original receivedAt before/equal/one microsecond after cutoff 189ms
+   ✓ offline current native player qualification > bounds original verifiedAt before/equal/one microsecond after cutoff 191ms
+   ✓ offline current native player qualification > bounds retained roster_optimizer_team_games.fetched_at before/equal/one microsecond after cutoff 189ms
+   ✓ offline current native player qualification > bounds retained roster_optimizer_team_games.fetchedAt before/equal/one microsecond after cutoff 200ms
+   ✓ offline current native player qualification > bounds retained roster_optimizer_team_games.source_updated_at before/equal/one microsecond after cutoff 191ms
+   ✓ offline current native player qualification > bounds retained roster_optimizer_team_games.sourceUpdatedAt before/equal/one microsecond after cutoff 188ms
+   ✓ offline current native player qualification > bounds retained rosters.created_at before/equal/one microsecond after cutoff 191ms
+   ✓ offline current native player qualification > bounds retained fhfh_player_identities.updated_at before/equal/one microsecond after cutoff 204ms
+   ✓ offline current native player qualification > bounds retained player_forecast_lineup_snapshots.observed_at before/equal/one microsecond after cutoff 191ms
+   ✓ offline current native player qualification > bounds retained player_forecast_lineup_snapshots.available_at before/equal/one microsecond after cutoff 186ms
+   ✓ offline current native player qualification > bounds retained player_forecast_lineup_snapshots.created_at before/equal/one microsecond after cutoff 202ms
+   ✓ offline current native player qualification > bounds retained player_forecast_lineup_assignments.created_at before/equal/one microsecond after cutoff 204ms
+   ✓ offline current native player qualification > bounds retained player_forecast_goalie_start_observations.observed_at before/equal/one microsecond after cutoff 191ms
+   ✓ offline current native player qualification > bounds retained player_forecast_goalie_start_observations.available_at before/equal/one microsecond after cutoff 196ms
+   ✓ offline current native player qualification > bounds retained player_forecast_goalie_start_observations.created_at before/equal/one microsecond after cutoff 203ms
+   ✓ offline current native player qualification > bounds retained player_forecast_observation_conflicts.detected_at before/equal/one microsecond after cutoff 195ms
+   ✓ offline current native player qualification > bounds retained player_forecast_observation_conflicts.created_at before/equal/one microsecond after cutoff 190ms
+   ✓ offline current native player qualification > bounds retained player_forecast_conflict_resolutions.resolved_at before/equal/one microsecond after cutoff 199ms
+   ✓ offline current native player qualification > bounds retained player_forecast_conflict_resolutions.created_at before/equal/one microsecond after cutoff 191ms
+   ✓ offline current native player qualification > bounds retained forge_board_news_events.accepted_at before/equal/one microsecond after cutoff 190ms
+   ✓ offline current native player qualification > bounds retained market_prices_daily.source_observed_at before/equal/one microsecond after cutoff 193ms
+   ✓ offline current native player qualification > allows future schedule/expiry/effective metadata and later local artifact creation without moving source cutoff 93ms
+   ✓ offline current native player qualification > rejects source evidence even one microsecond beyond the supplied cutoff 5ms
+   ✓ offline current native player qualification > never promotes a confirmed PP role to playing participation 94ms
+   ✓ offline current native player qualification > rejects missing receipts, incomplete exports, changed hashes and late nested source evidence 4ms
+   ✓ offline current native player qualification > fails closed if a native optional query swallows an unprovided input table 8ms
+   ✓ offline current native player qualification > rejects omitted retained columns even when a producer fallback catches the query error 8ms
+   ✓ offline current native player qualification > rejects later accepted-news evidence without backdating its receipt 6ms
+   ✓ offline current native player qualification > rejects missing/future as-of and target/roster mismatch 6ms
+   ✓ offline current native player qualification > blocks direct RPC, adapter mutations and unsupported/unrecorded reads 1ms
+   ✓ offline current native player qualification > rejects unsupported argument/options shape for limit 0ms
+   ✓ offline current native player qualification > rejects unsupported argument/options shape for limit 0ms
+   ✓ offline current native player qualification > rejects unsupported argument/options shape for select 0ms
+   ✓ offline current native player qualification > rejects unsupported argument/options shape for order 0ms
+   ✓ offline current native player qualification > rejects unsupported argument/options shape for order 0ms
+   ✓ offline current native player qualification > rejects unsupported argument/options shape for range 0ms
+   ✓ offline current native player qualification > rejects unsupported argument/options shape for eq 0ms
+   ✓ offline current native player qualification > rejects unsupported argument/options shape for or 0ms
+   ✓ offline current native player qualification > rejects unsupported argument/options shape for maybeSingle 0ms
+   ✓ offline current native player qualification > rejects unsupported argument/options shape for abortSignal 0ms
+   ✓ offline current native player qualification > rejects implicit predicate type coercion and compares zoned timestamp filters exactly 0ms
+   ✓ offline current native player qualification > implements native exact-count HEAD without returning rows 1ms
+   ✓ offline current native player qualification > blocks equivalent client paths and SDK entry points before inert config/sentinel access in a fresh process 249ms
+   ✓ offline current native player qualification > rejects future outcomes in rolling/team/goalie history and their referenced game 7ms
+   ✓ offline current native player qualification > checks aggregate and camel-case event times while allowing future schedule/expiry 7ms
+   ✓ offline current native player qualification > requires exact completion for cutoff-day history, and completion before the original publication 109ms
+   ✓ offline current native player qualification > rejects historical statistics whose referenced puck drop is still in the future 6ms
+   ✓ offline current native player qualification > cannot certify PPP from missing or zero PP exposure denominators 94ms
+   ✓ offline current native player qualification > keeps PPP missing and blocked when PP rows and aligned count support are absent 90ms
+   ✓ offline current native player qualification > cannot relabel the immutable fictional artifact as retained exports (replace strings=false) 5ms
+   ✓ offline current native player qualification > cannot relabel the immutable fictional artifact as retained exports (replace strings=true) 5ms
+   ✓ offline current native player qualification > blocks network primitives and process escapes before dispatch and restores them 1ms
+   ✓ offline current native player qualification > writes a new reproducible receipt without changing or overwriting original inputs  559ms
+ ✓ lib/projections/nativeGoalAccounting.test.ts (37 tests) 316ms
+ ✓ lib/projections/queries/skater-queries.test.ts (110 tests) 74ms
+ ✓ lib/projections/runProjectionV2.test.ts (112 tests) 25ms
+ ✓ lib/projections/uncertainty.test.ts (17 tests) 28ms
+ ✓ fallback-parity.test.ts (4 tests) 7ms
+ ✓ adversarial.test.ts (11 tests) 4ms
+ ✓ lib/projections/utils/market-output-builders.test.ts (9 tests) 3ms
+ ✓ lib/projections/goalie/goalieOutcomes.test.ts (13 tests) 3ms
+ ✓ lib/projections/utils/devig.test.ts (8 tests) 2ms
+ ✓ lib/projections/dispersion.test.ts (4 tests) 2ms
+ ✓ lib/projections/goalieModel.test.ts (13 tests) 3ms
+
+ Test Files  1 failed | 11 passed (12)
+      Tests  1 failed | 393 passed (394)
+   Start at  12:52:42
+   Duration  9.95s (transform 492ms, setup 21ms, collect 540ms, tests 6.74s, environment 1.46s, prepare 314ms)
+
+(node:79089) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:79091) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | lib/projections/queries/skater-queries.test.ts > counted rolling skater history (legacy window scan) > completes the exact bounded scope at 0 rows
+forge_latest_rolling_rows is not deployed (PGRST202); FORGE reads rolling rows by the legacy window scan.
+
+(node:79093) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:79095) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:79097) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:79099) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:79101) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:79103) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:79105) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:79109) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:79111) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  scripts/qualify-native-players-offline.test.ts > offline current native player qualification > reproduces current native calculations with genuine admission and zero live client/transport/writes
+AssertionError: expected 'af79349485a6e2e6ef26fa3db59a1eca352b2…' to be '566790293cb9b577555fdf4206e13d50861b1…' // Object.is equality
+
+Expected: "566790293cb9b577555fdf4206e13d50861b1ee22b9bd03cc027cfea5dc15e30"
+Received: "af79349485a6e2e6ef26fa3db59a1eca352b2a1d5c08db818058902c1b22ce4a"
+
+ ❯ scripts/qualify-native-players-offline.test.ts:40:30
+     38|     const first = await qualifyNativePlayersOffline(inputs, asOf);
+     39|     const second = await qualifyNativePlayersOffline(inputs, asOf);
+     40|     expect(first.resultHash).toBe(second.resultHash);
+       |                              ^
+     41|     expect(first.result.outputHash).toBe(second.result.outputHash);
+     42|     expect(first.result.blockers).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

@@ -1,0 +1,367 @@
+{
+  "at": "2026-10-24T18:49:59.291059+00:00",
+  "changes": {
+    "FPI-01": {
+      "fields": {
+        "children": [
+          {
+            "child_id": "FPI-01/retained-position-toi",
+            "title": "Define retained historical position and TOI inputs for missing ledger report slices",
+            "status": "Held/unassigned; supported released reporting preserved",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile the retained-input contract for F/D slices and TOI/PP-TOI opportunity-versus-rate reporting. Keep unsupported history visibly unavailable; do not infer historical position from current metadata.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+              "line": 71
+            },
+            "approval_gate": "No schema, historical population, provider read or production writer from audit. Exact owner/custody, provenance and independent review required.",
+            "existing_work_credit": "Paired/dressed-only FP, per-head bias, expected-FP deciles and goalie Brier infrastructure already released."
+          },
+          {
+            "child_id": "FPI-01/settled-week-audit",
+            "title": "Qualify the existing settled-cohort Q3/Q4 evaluation gate",
+            "status": "Held/unassigned; adequate outcomes and exact read authority required",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Identify the actual settled dressed-only cohort and frozen baseline before the existing Q3/Q4 evaluation. Around Oct29/30 is an estimate, not an automatic schedule or permission.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+              "line": 73
+            },
+            "approval_gate": "No new reads/capture/evaluation run or automation. Existing Q3/Q4 approval and exact cohort/admission limits remain.",
+            "existing_work_credit": "Do not reimplement pairing, Brier bins or the deployed supported scoreboard."
+          }
+        ]
+      },
+      "before_fields": {
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
+          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+          "line": 71,
+          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
+          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+          "line": 73,
+          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        }
+      ]
+    },
+    "FPI-06": {
+      "fields": {
+        "children": [
+          {
+            "child_id": "FPI-06/closing-market-evaluation",
+            "title": "Reconcile closing-line provenance and model-versus-market Brier evidence",
+            "status": "Partial code/schema credit retained; outcome qualification held",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "FPI-01"
+            ],
+            "next_action": "Reconcile exact market writer/flag/reader release compatibility and actual closing-price/outcome provenance before claiming model-versus-market Brier quality.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+              "line": 107
+            },
+            "approval_gate": "No migration99 reapply, fresh odds/provider/production reads, market-source rollout or fitted de-vig change. Preserve assumption labels and current rights gates.",
+            "existing_work_credit": "6.1/6.2 outputs shipped; later6.3 code/flag and migration99 already recorded implemented/applied."
+          },
+          {
+            "child_id": "FPI-06/team-total-blend-decision",
+            "title": "Retain the separate owner decision on blending implied team totals",
+            "status": "Parked owner decision; no implementation dispatch",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Present the surviving need and evidence for or against a team-goal blend with de-vigged implied totals. Any selected method needs its own scoped contract and evaluation; do not fold it into the completed probability flags.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+              "line": 108
+            },
+            "approval_gate": "Exact owner model/publication decision before a new blend; no fitting, provider calls or production activation.",
+            "existing_work_credit": "Completed probability/de-vig outputs are retained; neither deployment nor this child validates a blended team-goal model."
+          }
+        ]
+      },
+      "before_fields": {
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
+          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+          "line": 107,
+          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
+          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+          "line": 108,
+          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        }
+      ]
+    },
+    "FPI-09": {
+      "fields": {
+        "children": [
+          {
+            "child_id": "FPI-09/rink-physical-context",
+            "title": "Retain the later rink-adjusted hits/blocks research decision",
+            "status": "Parked/unassigned; no active experiment",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile later accepted source and attribution evidence before proposing rink-specific physical effects; avoid duplicate mean/uncertainty adjustments.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+              "line": 128
+            },
+            "approval_gate": "Parked research/owner decision only. No new formula, fit, capture, provider query or publication; any future scope needs separate attribution and frozen-cohort qualification.",
+            "existing_work_credit": "Variant-g was not cleared or shipped. Preserve the current single-effect retained-capture scope and all earlier model/admission holds."
+          },
+          {
+            "child_id": "FPI-09/aging-rookie-priors",
+            "title": "Retain the later aging-curve and rookie-prior decision",
+            "status": "Parked/unassigned; no implementation",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile the needed population/history and ownership of aging/rookie priors before any future proposal. Preserve accepted F/D priors and do not treat variant-g evidence as this evaluation.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+              "line": 128
+            },
+            "approval_gate": "Parked research/owner decision only. No new formula, fit, capture, provider query or publication; any future scope needs separate attribution and frozen-cohort qualification.",
+            "existing_work_credit": "Variant-g was not cleared or shipped. Preserve the current single-effect retained-capture scope and all earlier model/admission holds."
+          },
+          {
+            "child_id": "FPI-09/news-start-mapping",
+            "title": "Retain the later news-tier to starter-probability research decision",
+            "status": "Parked/unassigned; source presentation is not predictive qualification",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "NEWS-SOURCE-PRESENTATION"
+            ],
+            "next_action": "Require historical label timing, identity, outcome and rights provenance before any proposal to fit label-to-P(start) mapping; distinguish existing news presentation from a predictive model.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+              "line": 128
+            },
+            "approval_gate": "Parked research/owner decision only. No new formula, fit, capture, provider query or publication; any future scope needs separate attribution and frozen-cohort qualification.",
+            "existing_work_credit": "Variant-g was not cleared or shipped. Preserve the current single-effect retained-capture scope and all earlier model/admission holds."
+          }
+        ]
+      },
+      "before_fields": {
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
+          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+          "line": 128,
+          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        }
+      ]
+    },
+    "REPO-DOCUMENTATION": {
+      "fields": {
+        "children": [
+          {
+            "child_id": "REPO-DOCUMENTATION/forge-refresh-itinerary",
+            "title": "Reconcile the old full-refresh itinerary against approved bounded operating contracts",
+            "status": "Open documentary follow-up; no endpoint execution",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Correct or clearly mark the obsolete all-date/fullRefresh RPC-truncate itinerary, old page/schema authority and unqualified fallback guidance. Link current bounded README/runner/admission contracts without weakening existing full-refresh protections.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md",
+              "line": 210
+            },
+            "approval_gate": "Documentation-only under current exact file custody; no cron, SQL, refresh, truncate, provider call, or new remote verification.",
+            "existing_work_credit": "Existing full-refresh safety and writer fixes remain completed; stored instructions are not new authority."
+          }
+        ],
+        "verification": "Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority."
+      },
+      "before_fields": {
+        "children": null,
+        "verification": "Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/4f015e185732-FORGE_EXPLAINED.md",
+          "original_path": "tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md",
+          "line": 210,
+          "sha256": "4f015e18573239112cfe2e7ef3be6539adeb6aff8915d0a1d2d231121f55031c",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md",
+          "original_path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md",
+          "line": 106,
+          "sha256": "cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          "line": 56,
+          "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          "line": 196,
+          "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1c5b086e4ade-FORGE_ECOSYSTEM_ELI5_AUDIT.md",
+          "original_path": "tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md",
+          "line": 92,
+          "sha256": "1c5b086e4ade172656c0aa9eb301f319188fec725193d168f2ad7855e8cf979d",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        }
+      ]
+    },
+    "FPI-02": {
+      "fields": {
+        "verification": "Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments. Later task2 gate explicitly clears the S-G column drop: 20 cohort regulars/all five strengths were compared, with a detailed 3-player date/field rerun; rows since Oct7 were identical within 1e-6. Early Sep29/Sep30/Oct3/Oct6 stale/missing rows are a separate history issue. This is a dated documentary receipt, not new production reads or every-row independent audit. R2 cache failure is historical and was superseded by the existing per-run correction/recheck."
+      },
+      "before_fields": {
+        "verification": "Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md",
+          "original_path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
+          "line": 57,
+          "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md",
+          "original_path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
+          "line": 67,
+          "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md",
+          "original_path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
+          "line": 74,
+          "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        }
+      ]
+    },
+    "FORGE-HYDRATION-HB": {
+      "fields": {
+        "implementation": "Hydration, full S-F reader and paired-count/exposure F/D physical-head repair were shipped in Release B 40b17b572 with 721486d0f. The older components-only/unreleased description is superseded; existing cache correction/recheck credit remains. Literal predictive qualification was not fully met.",
+        "acceptance": "TJ explicitly selected variant-c release as an improvement despite the literal ±10% gate miss. That exception is not a universal calibration pass or native/pilot admission. Preserve surviving HIT/BLK and current accepted-contract qualifications.",
+        "release": "Supporting hydration/hits-blocks slice recorded released in B 40b17b572. Current predictive/admission qualification and separate history repair remain held where named; no fresh production observation.",
+        "next_action": "Use FPI-02 for the implemented/released slice and its residual physical-head gates. Do not reimplement hydration, rerun the old cache correction or repeat variant-c because of stale boxes. Keep early-season history in PIPE-ROLLING-HISTORY-REPAIR and current model/admission decisions separate.",
+        "verification": "Full task2 gate and later handover/primary task list reconcile the chronology: engineering/cache failure was corrected, real parity cleared the column drop for the dated supported scope, and explicit owner release preserved a calibration exception. Original historical failures remain evidence; no source/test/runtime work by audit.",
+        "dispatch_class": "Supporting implementation/release recorded; remaining qualification held; no new dispatch"
+      },
+      "before_fields": {
+        "implementation": "Components exist; final-c result not located",
+        "acceptance": "held",
+        "release": "unreleased",
+        "next_action": "Record legitimate input availability and exact final bytes; executor UNASSIGNED",
+        "verification": "Four-arm reconstruction is historical current-DB evidence, not prior availability",
+        "dispatch_class": "proposed staged packet; parent dispatch pending"
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
+          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+          "line": 76,
+          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/b27a0139d90a-2026-10-22-claude-forge-model-lane-handover.md",
+          "original_path": "tasks/artifacts/cross-platform/2026-10-22-claude-forge-model-lane-handover.md",
+          "line": 7,
+          "sha256": "b27a0139d90a18964583e3cc88c855276d2cf0ff711fee2b02e8bc9409b05413",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md",
+          "original_path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
+          "line": 3,
+          "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md",
+          "original_path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
+          "line": 70,
+          "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        }
+      ]
+    },
+    "XG-SERVING-DISPOSITION": {
+      "fields": {
+        "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test. Full living-audit 6.0/14.0 retains historical gradient-boosted training, approved-artifact scoring/calibration and downstream wiring credit. It does not establish a current leakage-clean champion, registry choice or daily scheduling decision; those later serving gates remain distinct."
+      },
+      "before_fields": {
+        "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md",
+          "original_path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md",
+          "line": 79,
+          "sha256": "cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md",
+          "original_path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md",
+          "line": 104,
+          "sha256": "cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4",
+          "observed_at": "2026-10-24T18:49:59.291059+00:00",
+          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+        }
+      ]
+    }
+  },
+  "added_ids": [],
+  "deduplication": {
+    "parent_ids_added": 0,
+    "readable_children_added": 8,
+    "explanation": "Existing FPI ranges explicitly include these commitments. Eight readable children expose them without new parallel IDs; three context children and the team-total choice remain parked. No parity task reopened: dated S-G parity closure retained; early history stays in existing PIPE-ROLLING-HISTORY-REPAIR.",
+    "status_correction": "FORGE-HYDRATION-HB supporting slice is released B, not universally unreleased; literal calibration exception and remaining admission gates preserved.",
+    "closed_credit": "Completed paging/error/cache/FUT/schedule/selected-game/observability/writer work not reopened."
+  }
+}

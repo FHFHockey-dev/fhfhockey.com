@@ -1,0 +1,50 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-review/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+(node:35063) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-review/boundaries.test.tsx (6 tests | 1 failed) 197ms
+   × Independent preview DOM boundaries > does not round unresolved work into a displayed 100 percent completion [S04-R1] 41ms
+     → expected <span></span> to be null
+   ✓ Independent preview DOM boundaries > keeps zero totals, pending outcomes and all-failed processing distinct from successful completion 13ms
+   ✓ Independent preview DOM boundaries > fails closed on HTML/score poison at every operational envelope level without reflecting JSON or markup 7ms
+   ✓ Independent preview DOM boundaries > renders health guidance as text even when a report string contains markup 13ms
+   ✓ Independent preview DOM boundaries > keeps no-report, blocked report, failed work and pending evaluation meanings separate 47ms
+   ✓ Independent preview DOM boundaries > performs no network, navigation or storage mutation across every labeled fixture and exposes only operational JSON 76ms
+(node:35068) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ web/lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx (8 tests) 327ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-review/boundaries.test.tsx > Independent preview DOM boundaries > does not round unresolved work into a displayed 100 percent completion [S04-R1]
+AssertionError: expected <span></span> to be null
+
+- Expected: 
+null
+
++ Received: 
+<span>
+  100.0% complete
+</span>
+
+ ❯ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-review/boundaries.test.tsx:23:85
+     21|     render(<OperationalProgressPanel snapshot={snapshot} now={fixtures…
+     22|     const bar = screen.getByRole("progressbar"); expect(bar.getAttribu…
+     23|     expect(within(stage("Player-game predictions")).queryByText("100.0…
+       |                                                                                     ^
+     24|   });
+     25|   it("keeps zero totals, pending outcomes and all-failed processing di…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 13 passed (14)
+   Start at  12:02:19
+   Duration  1.44s (transform 150ms, setup 4ms, collect 323ms, tests 524ms, environment 361ms, prepare 65ms)
+

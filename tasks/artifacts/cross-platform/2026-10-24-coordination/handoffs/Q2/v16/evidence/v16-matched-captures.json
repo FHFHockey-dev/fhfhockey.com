@@ -1,0 +1,497 @@
+{
+    "utc": "2026-10-24T16:22:48.5363780Z",
+    "failure": "",
+    "v15SHA256": "c5389bcadfe4e0b98003a82be080b547969a8d79b92b2842e03feef086973841",
+    "v16SHA256": "31115d60fafbf4718672224b23e0a6d47b667a7872e52290d1973c3047193ee5",
+    "passed": true,
+    "savedScenesUnchanged": true,
+    "method": "1600x900 Editor mono renders (URP SingleCameraRequest, two submissions, synchronous shaders) through a copy of the saved pilot camera. Spawn uses the saved pilot pose; route stations place the pilot at the v13 route waypoints (plus the probe's 0.2 m setup lift) facing the listed point, in Edit Mode only. Same stations and camera parameters for v15 and v16.",
+    "stations": [
+        {
+            "name": "spawn",
+            "feet": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "lookAt": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            }
+        },
+        {
+            "name": "lower-approach",
+            "feet": {
+                "x": -18.0,
+                "y": 0.550000011920929,
+                "z": 8.0
+            },
+            "lookAt": {
+                "x": -18.0,
+                "y": 5.0,
+                "z": 28.0
+            }
+        },
+        {
+            "name": "middle-ascent",
+            "feet": {
+                "x": -10.0,
+                "y": 10.550000190734863,
+                "z": 46.0
+            },
+            "lookAt": {
+                "x": -2.0,
+                "y": 14.0,
+                "z": 64.0
+            }
+        },
+        {
+            "name": "radar-arrival-descent",
+            "feet": {
+                "x": -2.0,
+                "y": 14.550000190734863,
+                "z": 66.0
+            },
+            "lookAt": {
+                "x": -10.0,
+                "y": 10.0,
+                "z": 46.0
+            }
+        }
+    ],
+    "images": [
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+            "file": "images/v15-before-cockpit-spawn-env.png",
+            "sha256": "d953ff842dd1ad0fa52064444831d9e4104a5bb50c3a146bb48fc35e8d8fab8d",
+            "station": "spawn",
+            "presentation": "env",
+            "cameraPosition": {
+                "x": -103.0,
+                "y": 2.75,
+                "z": 0.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 90.0,
+                "z": 0.0
+            },
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+            "file": "images/v15-before-cockpit-spawn-player.png",
+            "sha256": "c21bbdeb7b988f7192cd6d662d5d27a8bcddecf8222b6a999d828f8cafe84132",
+            "station": "spawn",
+            "presentation": "player",
+            "cameraPosition": {
+                "x": -103.0,
+                "y": 2.75,
+                "z": 0.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 90.0,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+            "file": "images/v15-before-cockpit-spawn-debug.png",
+            "sha256": "c21bbdeb7b988f7192cd6d662d5d27a8bcddecf8222b6a999d828f8cafe84132",
+            "station": "spawn",
+            "presentation": "debug",
+            "cameraPosition": {
+                "x": -103.0,
+                "y": 2.75,
+                "z": 0.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 90.0,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+            "file": "images/v15-before-cockpit-lower-approach-env.png",
+            "sha256": "d599311293c35485028d434abb6b8a9ff6141df73ca865a21fa3462995e129f9",
+            "station": "lower-approach",
+            "presentation": "env",
+            "cameraPosition": {
+                "x": -18.0,
+                "y": 2.8999998569488525,
+                "z": 8.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+            "file": "images/v15-before-cockpit-lower-approach-player.png",
+            "sha256": "055a261c53dd79dfc82110ac3d95d9891b5dad64cbd22bbaecd8827f93a1a0bd",
+            "station": "lower-approach",
+            "presentation": "player",
+            "cameraPosition": {
+                "x": -18.0,
+                "y": 2.8999998569488525,
+                "z": 8.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+            "file": "images/v15-before-cockpit-lower-approach-debug.png",
+            "sha256": "055a261c53dd79dfc82110ac3d95d9891b5dad64cbd22bbaecd8827f93a1a0bd",
+            "station": "lower-approach",
+            "presentation": "debug",
+            "cameraPosition": {
+                "x": -18.0,
+                "y": 2.8999998569488525,
+                "z": 8.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+            "file": "images/v15-before-cockpit-middle-ascent-env.png",
+            "sha256": "3f137247eea2a8dbe8dc43ff72845855b251e9f1f9e909b22ae68f294163295d",
+            "station": "middle-ascent",
+            "presentation": "env",
+            "cameraPosition": {
+                "x": -10.0,
+                "y": 12.899999618530273,
+                "z": 46.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 23.962486267089844,
+                "z": 0.0
+            },
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+            "file": "images/v15-before-cockpit-middle-ascent-player.png",
+            "sha256": "03e285603145c6c6c4f1727214132fd8d64687fd62def18e2aaa32c5562716bb",
+            "station": "middle-ascent",
+            "presentation": "player",
+            "cameraPosition": {
+                "x": -10.0,
+                "y": 12.899999618530273,
+                "z": 46.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 23.962486267089844,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+            "file": "images/v15-before-cockpit-middle-ascent-debug.png",
+            "sha256": "03e285603145c6c6c4f1727214132fd8d64687fd62def18e2aaa32c5562716bb",
+            "station": "middle-ascent",
+            "presentation": "debug",
+            "cameraPosition": {
+                "x": -10.0,
+                "y": 12.899999618530273,
+                "z": 46.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 23.962486267089844,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+            "file": "images/v15-before-cockpit-radar-arrival-descent-env.png",
+            "sha256": "2d8dad190b0009cb3c60e63cb02d874eae5401c31145ee58a11b27d17a8b54fe",
+            "station": "radar-arrival-descent",
+            "presentation": "env",
+            "cameraPosition": {
+                "x": -2.0,
+                "y": 16.899999618530273,
+                "z": 66.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 201.80140686035156,
+                "z": 0.0
+            },
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+            "file": "images/v15-before-cockpit-radar-arrival-descent-player.png",
+            "sha256": "7c011162ff4c52d2cf0ff3775de3f340e75536ffd91d4760a93e0157a6e578bf",
+            "station": "radar-arrival-descent",
+            "presentation": "player",
+            "cameraPosition": {
+                "x": -2.0,
+                "y": 16.899999618530273,
+                "z": 66.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 201.80140686035156,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+            "file": "images/v15-before-cockpit-radar-arrival-descent-debug.png",
+            "sha256": "7c011162ff4c52d2cf0ff3775de3f340e75536ffd91d4760a93e0157a6e578bf",
+            "station": "radar-arrival-descent",
+            "presentation": "debug",
+            "cameraPosition": {
+                "x": -2.0,
+                "y": 16.899999618530273,
+                "z": 66.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 201.80140686035156,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "file": "images/v16-after-cockpit-spawn-env.png",
+            "sha256": "d953ff842dd1ad0fa52064444831d9e4104a5bb50c3a146bb48fc35e8d8fab8d",
+            "station": "spawn",
+            "presentation": "env",
+            "cameraPosition": {
+                "x": -103.0,
+                "y": 2.75,
+                "z": 0.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 90.0,
+                "z": 0.0
+            },
+            "hiddenRenderers": 21
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "file": "images/v16-after-cockpit-spawn-player.png",
+            "sha256": "1ab00e9bf13f349c8e713da1bedfed07ab2de53957feb80ea84701a6115cb1d1",
+            "station": "spawn",
+            "presentation": "player",
+            "cameraPosition": {
+                "x": -103.0,
+                "y": 2.75,
+                "z": 0.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 90.0,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "file": "images/v16-after-cockpit-spawn-debug.png",
+            "sha256": "c21bbdeb7b988f7192cd6d662d5d27a8bcddecf8222b6a999d828f8cafe84132",
+            "station": "spawn",
+            "presentation": "debug",
+            "cameraPosition": {
+                "x": -103.0,
+                "y": 2.75,
+                "z": 0.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 90.0,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "file": "images/v16-after-cockpit-lower-approach-env.png",
+            "sha256": "d599311293c35485028d434abb6b8a9ff6141df73ca865a21fa3462995e129f9",
+            "station": "lower-approach",
+            "presentation": "env",
+            "cameraPosition": {
+                "x": -18.0,
+                "y": 2.8999998569488525,
+                "z": 8.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "hiddenRenderers": 21
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "file": "images/v16-after-cockpit-lower-approach-player.png",
+            "sha256": "3094323ead2ce09ba2284e1703c1f7a31c32420ef6c7f5aab4d21e913faa8210",
+            "station": "lower-approach",
+            "presentation": "player",
+            "cameraPosition": {
+                "x": -18.0,
+                "y": 2.8999998569488525,
+                "z": 8.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "file": "images/v16-after-cockpit-lower-approach-debug.png",
+            "sha256": "055a261c53dd79dfc82110ac3d95d9891b5dad64cbd22bbaecd8827f93a1a0bd",
+            "station": "lower-approach",
+            "presentation": "debug",
+            "cameraPosition": {
+                "x": -18.0,
+                "y": 2.8999998569488525,
+                "z": 8.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "file": "images/v16-after-cockpit-middle-ascent-env.png",
+            "sha256": "3f137247eea2a8dbe8dc43ff72845855b251e9f1f9e909b22ae68f294163295d",
+            "station": "middle-ascent",
+            "presentation": "env",
+            "cameraPosition": {
+                "x": -10.0,
+                "y": 12.899999618530273,
+                "z": 46.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 23.962486267089844,
+                "z": 0.0
+            },
+            "hiddenRenderers": 21
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "file": "images/v16-after-cockpit-middle-ascent-player.png",
+            "sha256": "8f93b0c172bd28064e1bc74fb56c80f1b595e6fcf99fcd89dc9e8de36286d93b",
+            "station": "middle-ascent",
+            "presentation": "player",
+            "cameraPosition": {
+                "x": -10.0,
+                "y": 12.899999618530273,
+                "z": 46.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 23.962486267089844,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "file": "images/v16-after-cockpit-middle-ascent-debug.png",
+            "sha256": "03e285603145c6c6c4f1727214132fd8d64687fd62def18e2aaa32c5562716bb",
+            "station": "middle-ascent",
+            "presentation": "debug",
+            "cameraPosition": {
+                "x": -10.0,
+                "y": 12.899999618530273,
+                "z": 46.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 23.962486267089844,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "file": "images/v16-after-cockpit-radar-arrival-descent-env.png",
+            "sha256": "2d8dad190b0009cb3c60e63cb02d874eae5401c31145ee58a11b27d17a8b54fe",
+            "station": "radar-arrival-descent",
+            "presentation": "env",
+            "cameraPosition": {
+                "x": -2.0,
+                "y": 16.899999618530273,
+                "z": 66.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 201.80140686035156,
+                "z": 0.0
+            },
+            "hiddenRenderers": 21
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "file": "images/v16-after-cockpit-radar-arrival-descent-player.png",
+            "sha256": "2a3e689b5711ab9552000264ba3b48e3e2e8777be3d5769cd82987d863a9dc37",
+            "station": "radar-arrival-descent",
+            "presentation": "player",
+            "cameraPosition": {
+                "x": -2.0,
+                "y": 16.899999618530273,
+                "z": 66.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 201.80140686035156,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "file": "images/v16-after-cockpit-radar-arrival-descent-debug.png",
+            "sha256": "7c011162ff4c52d2cf0ff3775de3f340e75536ffd91d4760a93e0157a6e578bf",
+            "station": "radar-arrival-descent",
+            "presentation": "debug",
+            "cameraPosition": {
+                "x": -2.0,
+                "y": 16.899999618530273,
+                "z": 66.0
+            },
+            "cameraEuler": {
+                "x": 0.0,
+                "y": 201.80140686035156,
+                "z": 0.0
+            },
+            "hiddenRenderers": 0
+        }
+    ]
+}

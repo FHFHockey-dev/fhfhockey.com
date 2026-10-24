@@ -1,0 +1,402 @@
+// C:\Users\timbr\Desktop\FHFH\fhfhockey.com-3\web\pages\api\v1\db\update-line-combinations\index.ts
+
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
+import { getCurrentSeason } from "lib/NHL/server";
+import adminOnly from "utils/adminOnlyMiddleware";
+import { SupabaseClient } from "@supabase/supabase-js";
+import { updateLineCombos } from "./[id]";
+
+type LineRepairMode = "recent_gap" | "historical_backfill";
+
+type HistoricalGameRow = {
+  id: number;
+  date?: string | null;
+  startTime?: string | null;
+};
+
+function parsePositiveCount(value: string | string[] | undefined, fallback: number) {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  const parsed = Number(rawValue ?? fallback);
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
+  return Math.max(1, Math.floor(parsed));
+}
+
+function parseRepairMode(value: string | string[] | undefined): LineRepairMode {
+  const rawValue = Array.isArray(value) ? value[0] : value;
+  return rawValue === "historical_backfill" ? "historical_backfill" : "recent_gap";
+}
+
+function parseGameIdsParam(value: string | string[] | undefined): number[] {
+  const rawValues = Array.isArray(value) ? value : value ? [value] : [];
+  return rawValues
+    .flatMap((entry) => entry.split(","))
+    .map((entry) => Number(entry.trim()))
+    .filter((entry) => Number.isFinite(entry) && entry > 0);
+}
+
+function isExternalFeedUnavailableError(
+  message: string,
+  allowRecentUnavailableStates = false
+): boolean {
+  if (/Gamecenter (boxscore|play-by-play) HTTP 404: Not Found/i.test(message)) {
+    return true;
+  }
+
+  if (!allowRecentUnavailableStates) return false;
+
+  // Offseason recent-gap healing can encounter archived games whose
+  // Gamecenter state is FUT/PRE or whose historical feed is temporarily
+  // unavailable (503). Treat those as bounded source skips; explicit
+  // historical backfills remain fail-closed below.
+  return (
+    /gameState for the game \d+ is (?:FUT|PRE)\b/i.test(message) ||
+    /Gamecenter (boxscore|play-by-play) HTTP 503\b/i.test(message)
+  );
+}
+
+function summarizeLineComboFailures(
+  settled: PromiseSettledResult<any[]>[],
+  games: Array<{ id: number }>,
+  options: { allowRecentUnavailableStates?: boolean } = {}
+) {
+  const succeededGameIds: number[] = [];
+  const skippedUnavailableFeeds: Array<{ gameId: number; message: string }> = [];
+  const failures: Array<{ gameId: number; message: string }> = [];
+
+  settled.forEach((result, index) => {
+    const game = games[index];
+    if (!game) return;
+
+    if (result.status === "fulfilled") {
+      const gameId = result.value[0]?.gameId;
+      succeededGameIds.push(Number.isFinite(gameId) ? gameId : game.id);
+      return;
+    }
+
+    const message = result.reason?.message ?? String(result.reason);
+    const entry = { gameId: game.id, message };
+    if (
+      isExternalFeedUnavailableError(
+        message,
+        options.allowRecentUnavailableStates === true
+      )
+    ) {
+      skippedUnavailableFeeds.push(entry);
+      return;
+    }
+    failures.push(entry);
+  });
+
+  return {
+    succeededGameIds,
+    skippedUnavailableFeeds,
+    failures
+  };
+}
+
+function formatFailureSummary(
+  failures: Array<{ gameId: number; message: string }>,
+  maxItems = 5
+) {
+  return failures
+    .slice(0, maxItems)
+    .map((failure) => `${failure.gameId}: ${failure.message}`)
+    .join("; ");
+}
+
+async function listGameTeamRows(args: {
+  supabase: SupabaseClient;
+  table: "teamGameStats" | "lineCombinations";
+  gameIds: number[];
+}): Promise<Array<{ gameId: number; teamId: number }>> {
+  const rows: Array<{ gameId: number; teamId: number }> = [];
+
+  for (let index = 0; index < args.gameIds.length; index += 400) {
+    const gameIds = args.gameIds.slice(index, index + 400);
+    const { data } = await args.supabase
+      .from(args.table)
+      .select("gameId, teamId")
+      .in("gameId", gameIds)
+      .throwOnError();
+    rows.push(...((data ?? []) as Array<{ gameId: number; teamId: number }>));
+  }
+
+  return rows;
+}
+
+async function listHistoricalGamesInRange(args: {
+  supabase: SupabaseClient;
+  startDate: string;
+  endDate: string;
+}) {
+  const { data } = await args.supabase
+    .from("games")
+    .select("id, date, startTime")
+    .gte("date", args.startDate)
+    .lte("date", args.endDate)
+    .order("date", { ascending: true })
+    .throwOnError();
+
+  return (data ?? []) as HistoricalGameRow[];
+}
+
+async function listHistoricalGamesByIds(args: {
+  supabase: SupabaseClient;
+  gameIds: number[];
+}) {
+  const { data } = await args.supabase
+    .from("games")
+    .select("id, date, startTime")
+    .in("id", args.gameIds)
+    .order("date", { ascending: true })
+    .throwOnError();
+
+  return (data ?? []) as HistoricalGameRow[];
+}
+
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) => {
+  const supabase = req.supabase;
+  const repairMode = parseRepairMode(req.query.repairMode);
+  const count = parsePositiveCount(req.query.count, 5);
+  const gameIds = parseGameIdsParam(req.query.gameIds);
+  const startDate =
+    typeof req.query.startDate === "string" ? req.query.startDate.slice(0, 10) : null;
+  const endDate =
+    typeof req.query.endDate === "string"
+      ? req.query.endDate.slice(0, 10)
+      : startDate;
+
+  try {
+    if (repairMode === "historical_backfill") {
+      if (gameIds.length === 0 && (!startDate || !endDate)) {
+        return res.status(400).json({
+          success: false,
+          repairMode,
+          message:
+            "Historical line-combination backfill requires gameIds or a startDate/endDate range."
+        });
+      }
+
+      const games =
+        gameIds.length > 0
+          ? await listHistoricalGamesByIds({ supabase, gameIds })
+          : await listHistoricalGamesInRange({
+              supabase,
+              startDate: startDate!,
+              endDate: endDate!
+            });
+
+      if (games.length === 0) {
+        return res.json({
+          success: true,
+          repairMode,
+          message: "No games matched the requested historical line-combination backfill scope.",
+          gameIds: [],
+          processed: 0,
+          failed: 0,
+          requestedScope:
+            gameIds.length > 0
+              ? { gameIds }
+              : { startDate: startDate!, endDate: endDate! }
+        });
+      }
+
+      const results = await Promise.allSettled(
+        games.map((game) => updateLineCombos(game.id, supabase))
+      );
+      const { succeededGameIds, skippedUnavailableFeeds, failures } =
+        summarizeLineComboFailures(results, games);
+
+      const payload = {
+        success: failures.length === 0,
+        repairMode,
+        message:
+          failures.length === 0
+            ? `Backfilled line combinations for ${succeededGameIds.length} game(s); skipped ${skippedUnavailableFeeds.length} unavailable Gamecenter feed(s).`
+            : `Backfilled line combinations for ${succeededGameIds.length} game(s). Failed ${failures.length} game(s): ${formatFailureSummary(failures)}.`,
+        gameIds: games.map((game) => game.id),
+        processed: succeededGameIds.length,
+        failed: failures.length,
+        skipped: skippedUnavailableFeeds.length,
+        skippedGameIds: skippedUnavailableFeeds
+          .slice(0, 20)
+          .map((failure) => failure.gameId),
+        requestedScope:
+          gameIds.length > 0
+            ? { gameIds }
+            : { startDate: startDate!, endDate: endDate! },
+        failures
+      };
+
+      if (failures.length > 0) {
+        return res.status(500).json(payload);
+      }
+
+      return res.json(payload);
+    }
+
+    const currentSeason = await getCurrentSeason();
+    const candidateWindow = Math.max(count * 20, 100);
+
+    const { data: recentGames } = await supabase
+      .from("games")
+      .select("id, startTime")
+      .eq("seasonId", currentSeason.seasonId)
+      .lte("startTime", new Date().toISOString())
+      .order("startTime", { ascending: false })
+      .limit(candidateWindow)
+      .throwOnError();
+
+    if (!recentGames || recentGames.length === 0) {
+      return res.json({
+        repairMode,
+        message: "No current-season games were eligible for line-combo updates.",
+        success: true
+      });
+    }
+
+    const scheduledCandidateIds = recentGames.map((game) => game.id);
+    const teamStatRows = await listGameTeamRows({
+      supabase,
+      table: "teamGameStats",
+      gameIds: scheduledCandidateIds
+    });
+    const completedTeamsByGame = new Map<number, Set<number>>();
+    teamStatRows.forEach((row) => {
+      if (!completedTeamsByGame.has(row.gameId)) {
+        completedTeamsByGame.set(row.gameId, new Set());
+      }
+      completedTeamsByGame.get(row.gameId)?.add(row.teamId);
+    });
+    const candidateIds = scheduledCandidateIds.filter(
+      (gameId) => (completedTeamsByGame.get(gameId)?.size ?? 0) >= 2
+    );
+    const existingLineCombos = await listGameTeamRows({
+      supabase,
+      table: "lineCombinations",
+      gameIds: candidateIds
+    });
+
+    const comboTeamsByGame = new Map<number, Set<number>>();
+    existingLineCombos.forEach((combo) => {
+      if (!comboTeamsByGame.has(combo.gameId)) {
+        comboTeamsByGame.set(combo.gameId, new Set());
+      }
+      comboTeamsByGame.get(combo.gameId)?.add(combo.teamId);
+    });
+
+    const repairCandidates = candidateIds
+      .filter((id) => (comboTeamsByGame.get(id)?.size ?? 0) < 2)
+      .map((id) => ({ id }));
+
+    if (repairCandidates.length === 0) {
+      return res.json({
+        repairMode,
+        message: "Recent current-season line combination data are up to date.",
+        success: true,
+        candidateWindow,
+        eligibleGames: candidateIds.length,
+        requestedScope: {
+          count,
+          seasonId: currentSeason.seasonId
+        }
+      });
+    }
+
+    const attemptLimit = Math.min(
+      repairCandidates.length,
+      Math.max(count * 3, count + 10)
+    );
+    const updatedGameIds: number[] = [];
+    const skippedUnavailableFeeds: Array<{ gameId: number; message: string }> = [];
+    const failures: Array<{ gameId: number; message: string }> = [];
+    let attemptedCount = 0;
+
+    while (updatedGameIds.length < count && attemptedCount < attemptLimit) {
+      const remainingSuccesses = count - updatedGameIds.length;
+      const batch = repairCandidates.slice(
+        attemptedCount,
+        Math.min(attemptedCount + remainingSuccesses, attemptLimit)
+      );
+      attemptedCount += batch.length;
+
+      const results = await Promise.allSettled(
+        batch.map((item) => updateLineCombos(item.id, supabase))
+      );
+      const summary = summarizeLineComboFailures(results, batch, {
+        allowRecentUnavailableStates: true
+      });
+      updatedGameIds.push(...summary.succeededGameIds);
+      skippedUnavailableFeeds.push(...summary.skippedUnavailableFeeds);
+      failures.push(...summary.failures);
+    }
+
+    failures.forEach((item) => console.error(item.message));
+
+    if (failures.length === 0 && skippedUnavailableFeeds.length > 0) {
+      return res.json({
+        success: true,
+        repairMode,
+        candidateWindow,
+        eligibleGames: candidateIds.length,
+        status: "skipped_external_feed_unavailable",
+        requestedScope: {
+          count,
+          seasonId: currentSeason.seasonId
+        },
+        processed: updatedGameIds.length,
+        attempted: attemptedCount,
+        skipped: skippedUnavailableFeeds.length,
+        skippedGameIds: skippedUnavailableFeeds
+          .slice(0, 20)
+          .map((failure) => failure.gameId),
+        message:
+          `Updated line combinations for ${updatedGameIds.length} game(s). ` +
+          `Skipped ${skippedUnavailableFeeds.length} game(s) because NHL Gamecenter feeds were unavailable.`
+      });
+    }
+
+    if (failures.length > 0) {
+      return res.status(500).json({
+        success: false,
+        repairMode,
+        candidateWindow,
+        eligibleGames: candidateIds.length,
+        requestedScope: {
+          count,
+          seasonId: currentSeason.seasonId
+        },
+        processed: updatedGameIds.length,
+        attempted: attemptedCount,
+        skipped: skippedUnavailableFeeds.length,
+        skippedGameIds: skippedUnavailableFeeds
+          .slice(0, 20)
+          .map((failure) => failure.gameId),
+        failed: failures.length,
+        failures: failures.slice(0, 10),
+        message:
+          `Updated line combinations for ${updatedGameIds.length} game(s). ` +
+          `Failed ${failures.length} game(s): ${formatFailureSummary(failures)}.`
+      });
+    }
+
+    res.json({
+      success: true,
+      repairMode,
+      candidateWindow,
+      eligibleGames: candidateIds.length,
+      requestedScope: {
+        count,
+        seasonId: currentSeason.seasonId
+      },
+      processed: updatedGameIds.length,
+      attempted: attemptedCount,
+      skipped: skippedUnavailableFeeds.length,
+      message: `Successfully updated the line combinations for these games [${updatedGameIds}]`
+    });
+  } catch (e: any) {
+    console.error(e);
+    res.status(400).json({ message: e.message, success: false });
+  }
+})));

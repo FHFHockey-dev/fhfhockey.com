@@ -1,0 +1,30 @@
+[
+  {
+    "name": "final-types",
+    "argv": [
+      "npm",
+      "exec",
+      "--offline",
+      "--no",
+      "--",
+      "tsc",
+      "--noEmit",
+      "--project",
+      "tsconfig.billing-check.json"
+    ],
+    "exit_code": 0
+  },
+  {
+    "name": "final-test-lint",
+    "argv": [
+      "npm",
+      "exec",
+      "--offline",
+      "--no",
+      "--",
+      "eslint",
+      "lib/integrations/providerSyncRolloutRoutes.test.ts"
+    ],
+    "exit_code": 0
+  }
+]

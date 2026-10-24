@@ -1,0 +1,13 @@
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-luna-r1-fixed-9al6ptig/web
+
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts (18 tests) 33ms
+ ✓ lib/sources/review-contracts.test.ts (11 tests) 23ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts (16 tests) 13ms
+
+ Test Files  3 passed (3)
+      Tests  45 passed (45)
+   Start at  09:35:25
+   Duration  507ms (transform 63ms, setup 0ms, collect 112ms, tests 70ms, environment 0ms, prepare 91ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/luna-application-correction-r1-2026-10-22/fixed-tests.json

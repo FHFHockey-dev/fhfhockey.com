@@ -1,0 +1,496 @@
+COMMAND: npm test -- --run lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx --maxWorkers=1 --no-file-parallelism
+
+> web@0.1.0 test
+> vitest --run lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:30783) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx (8 tests | 1 failed) 327ms
+   ✓ Testing Grounds synthetic monitoring shell > labels its local scope and shows completed units with separate denominators and counters 88ms
+   ✓ Testing Grounds synthetic monitoring shell > renders every scenario without network, jobs or result controls 122ms
+   ✓ Testing Grounds synthetic monitoring shell > uses elapsed time and heartbeat for fitting without a fake percentage or progressbar 14ms
+   ✓ Testing Grounds synthetic monitoring shell > reports stale heartbeat separately from the saved running state 20ms
+   × Testing Grounds synthetic monitoring shell > retains accepted counts through cancellation and never treats completion as reveal 38ms
+     → Found multiple elements with the text: Completed · results sealed
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<option[39m
+  [33mvalue[39m=[32m"sealed"[39m
+[36m>[39m
+  [0mCompleted · results sealed[0m
+[36m</option>[39m
+
+Ignored nodes: comments, script, style
+[36m<span[39m
+  [33mclass[39m=[32m"_badge_2decea"[39m
+[36m>[39m
+  [0mCompleted · results sealed[0m
+[36m</span>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"_preview_2decea"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_container_2decea"[39m
+      [36m>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_header_2decea"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"_eyebrow_2decea"[39m
+            [36m>[39m
+              [0mFORGE / Research workspace[0m
+            [36m</p>[39m
+            [36m<h1>[39m
+              [0mTesting Grounds[0m
+            [36m</h1>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"_subtitle_2decea"[39m
+            [36m>[39m
+              [0mFollow the work. Inspect the inputs. Keep results sealed.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_previewBadge_2decea"[39m
+          [36m>[39m
+            [0mSynthetic preview[0m
+          [36m</span>[39m
+        [36m</header>[39m
+        [36m<section[39m
+          [33maria-label[39m=[32m"Preview controls"[39m
+          [33mclass[39m=[32m"_previewBar_2decea"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mfor[39m=[32m":rg:"[39m
+            [36m>[39m
+              [0mPreview state[0m
+            [36m</label>[39m
+            [36m<select[39m
+              [33mid[39m=[32m":rg:"[39m
+            [36m>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"predicting"[39m
+              [36m>[39m
+                [0mPrediction in progress[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"fitting"[39m
+              [36m>[39m
+                [0mFitting · no percentage[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"blocked"[39m
+              [36m>[39m
+                [0mPreflight blocked[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"queued"[39m
+              [36m>[39m
+                [0mQueued[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"stale"[39m
+              [36m>[39m
+                [0mStale heartbeat[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"cancelling"[39m
+              [36m>[39m
+                [0mCancellation requested[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"cancelled"[39m
+              [36m>[39m
+                [0mCancelled[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"failed"[39m
+              [36m>[39m
+                [0mFailed work[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"sealed"[39m
+              [36m>[39m
+                [0mCompleted · results sealed[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"empty"[39m
+              [36m>[39m
+                [0mNo run selected[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</div>[39m
+          [36m<p>[39m
+            [0mThese fixed September fixtures stay in this tab. Changing the view runs no job and saves no data.[0m
+          [36m</p>[39m
+        [36m</section>[39m
+        [36m<section[39m
+          [33maria-label[39m=[32m"Experiment summary"[39m
+          [33mclass[39m=[32m"_runSummary_2decea"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"_eyebrow_2decea"[39m
+            [36m>[39m
+              [0mDisplay fixture / September 2026[0m
+            [36m</p>[39m
+            [36m<h2>[39m
+              [0mBaseline + candidate · operational preview[0m
+            [36m</h2>[39m
+            [36m<p>[39m
+              [0mImmutable version references and real model settings will appear after the approved model adapters are connected.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_launch_2decea"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-describedby[39m=[32m":rh:"[39m
+              [33mdisabled[39m=[32m""[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mLaunch unavailable[0m
+            [36m</button>[39m
+            [36m<p[39m
+              [33mid[39m=[32m":rh:"[39m
+            [36m>[39m
+              [0mHosted execution and owner access are not connected. Nothing continues after this preview closes.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</section>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_grid_2decea"[39m
+        [36m>[39m
+          [36m<section[39m
+            [33maria-labelledby[39m=[32m":ri:"[39m
+            [33mclass[39m=[32m"_panel_2decea"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_panelHeading_2decea"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"_eyebrow_2decea"[39m
+                [36m>[39m
+                  [0mOperational view[0m
+                [36m</p>[39m
+                [36m<h2[39m
+                  [33mid[39m=[32m":ri:"[39m
+                [36m>[39m
+                  [0mWork progress[0m
+                [36m</h2>[39m
+              [36m</div>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_badge_2decea"[39m
+              [36m>[39m
+                [0mCompleted · results sealed[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"_muted_2decea"[39m
+            [36m>[39m
+              [0mCompleted work units only. There is no overall percentage or live model score.[0m
+            [36m</p>[39m
+            [36m<ol[39m
+              [33mclass[39m=[32m"_stages_2decea"[39m
+            [36m>[39m
+              [36m<li[39m
+                [33mclass[39m=[32m"_stage_2decea"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"_stageHeading_2decea"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"_stepNumber_2decea"[39m
+                  [36m>[39m
+                    [0m1[0m
+                  [36m</span>[39m
+                  [36m<h3>[39m
+                    [0mHistorical inputs[0m
+                  [36m</h3>[39m
+        ...
+   ✓ Testing Grounds synthetic monitoring shell > distinguishes every health category and shows safe copyable IDs, never raw malformed inputs 22ms
+   ✓ Testing Grounds synthetic monitoring shell > rejects poisoned or inconsistent operational envelopes without reflecting values or errors 4ms
+   ✓ Testing Grounds synthetic monitoring shell > keeps queued work at zero and gives the empty state no fabricated health report 19ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx > Testing Grounds synthetic monitoring shell > retains accepted counts through cancellation and never treats completion as reveal
+TestingLibraryElementError: Found multiple elements with the text: Completed · results sealed
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<option[39m
+  [33mvalue[39m=[32m"sealed"[39m
+[36m>[39m
+  [0mCompleted · results sealed[0m
+[36m</option>[39m
+
+Ignored nodes: comments, script, style
+[36m<span[39m
+  [33mclass[39m=[32m"_badge_2decea"[39m
+[36m>[39m
+  [0mCompleted · results sealed[0m
+[36m</span>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<main[39m
+      [33mclass[39m=[32m"_preview_2decea"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_container_2decea"[39m
+      [36m>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_header_2decea"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"_eyebrow_2decea"[39m
+            [36m>[39m
+              [0mFORGE / Research workspace[0m
+            [36m</p>[39m
+            [36m<h1>[39m
+              [0mTesting Grounds[0m
+            [36m</h1>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"_subtitle_2decea"[39m
+            [36m>[39m
+              [0mFollow the work. Inspect the inputs. Keep results sealed.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_previewBadge_2decea"[39m
+          [36m>[39m
+            [0mSynthetic preview[0m
+          [36m</span>[39m
+        [36m</header>[39m
+        [36m<section[39m
+          [33maria-label[39m=[32m"Preview controls"[39m
+          [33mclass[39m=[32m"_previewBar_2decea"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<label[39m
+              [33mfor[39m=[32m":rg:"[39m
+            [36m>[39m
+              [0mPreview state[0m
+            [36m</label>[39m
+            [36m<select[39m
+              [33mid[39m=[32m":rg:"[39m
+            [36m>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"predicting"[39m
+              [36m>[39m
+                [0mPrediction in progress[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"fitting"[39m
+              [36m>[39m
+                [0mFitting · no percentage[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"blocked"[39m
+              [36m>[39m
+                [0mPreflight blocked[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"queued"[39m
+              [36m>[39m
+                [0mQueued[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"stale"[39m
+              [36m>[39m
+                [0mStale heartbeat[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"cancelling"[39m
+              [36m>[39m
+                [0mCancellation requested[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"cancelled"[39m
+              [36m>[39m
+                [0mCancelled[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"failed"[39m
+              [36m>[39m
+                [0mFailed work[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"sealed"[39m
+              [36m>[39m
+                [0mCompleted · results sealed[0m
+              [36m</option>[39m
+              [36m<option[39m
+                [33mvalue[39m=[32m"empty"[39m
+              [36m>[39m
+                [0mNo run selected[0m
+              [36m</option>[39m
+            [36m</select>[39m
+          [36m</div>[39m
+          [36m<p>[39m
+            [0mThese fixed September fixtures stay in this tab. Changing the view runs no job and saves no data.[0m
+          [36m</p>[39m
+        [36m</section>[39m
+        [36m<section[39m
+          [33maria-label[39m=[32m"Experiment summary"[39m
+          [33mclass[39m=[32m"_runSummary_2decea"[39m
+        [36m>[39m
+          [36m<div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"_eyebrow_2decea"[39m
+            [36m>[39m
+              [0mDisplay fixture / September 2026[0m
+            [36m</p>[39m
+            [36m<h2>[39m
+              [0mBaseline + candidate · operational preview[0m
+            [36m</h2>[39m
+            [36m<p>[39m
+              [0mImmutable version references and real model settings will appear after the approved model adapters are connected.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_launch_2decea"[39m
+          [36m>[39m
+            [36m<button[39m
+              [33maria-describedby[39m=[32m":rh:"[39m
+              [33mdisabled[39m=[32m""[39m
+              [33mtype[39m=[32m"button"[39m
+            [36m>[39m
+              [0mLaunch unavailable[0m
+            [36m</button>[39m
+            [36m<p[39m
+              [33mid[39m=[32m":rh:"[39m
+            [36m>[39m
+              [0mHosted execution and owner access are not connected. Nothing continues after this preview closes.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</section>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_grid_2decea"[39m
+        [36m>[39m
+          [36m<section[39m
+            [33maria-labelledby[39m=[32m":ri:"[39m
+            [33mclass[39m=[32m"_panel_2decea"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_panelHeading_2decea"[39m
+            [36m>[39m
+              [36m<div>[39m
+                [36m<p[39m
+                  [33mclass[39m=[32m"_eyebrow_2decea"[39m
+                [36m>[39m
+                  [0mOperational view[0m
+                [36m</p>[39m
+                [36m<h2[39m
+                  [33mid[39m=[32m":ri:"[39m
+                [36m>[39m
+                  [0mWork progress[0m
+                [36m</h2>[39m
+              [36m</div>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_badge_2decea"[39m
+              [36m>[39m
+                [0mCompleted · results sealed[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"_muted_2decea"[39m
+            [36m>[39m
+              [0mCompleted work units only. There is no overall percentage or live model score.[0m
+            [36m</p>[39m
+            [36m<ol[39m
+              [33mclass[39m=[32m"_stages_2decea"[39m
+            [36m>[39m
+              [36m<li[39m
+                [33mclass[39m=[32m"_stage_2decea"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"_stageHeading_2decea"[39m
+                [36m>[39m
+                  [36m<span[39m
+                    [33maria-hidden[39m=[32m"true"[39m
+                    [33mclass[39m=[32m"_stepNumber_2decea"[39m
+                  [36m>[39m
+                    [0m1[0m
+                  [36m</span>[39m
+                  [36m<h3>[39m
+                    [0mHistorical inputs[0m
+                  [36m</h3>[39m
+        ...
+ ❯ Object.getElementError node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx:65:19
+     63|     expect(stage("Player-game predictions").getByText("Elapsed: 3m 0s"…
+     64|     select("sealed");
+     65|     expect(screen.getByText("Completed · results sealed")).toBeTruthy(…
+       |                   ^
+     66|     expect(screen.getByText(/Completion alone does not authorize revea…
+     67|     expect(screen.queryByText(/AUC|Brier|accuracy|log loss/i)).toBeNul…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 7 passed (8)
+   Start at  11:39:14
+   Duration  877ms (transform 153ms, setup 3ms, collect 266ms, tests 327ms, environment 146ms, prepare 29ms)
+
+
+EXIT: 1; elapsedSeconds: 1.272
+COMMAND: npm test -- --run lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx --maxWorkers=1 --no-file-parallelism
+
+> web@0.1.0 test
+> vitest --run lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:31019) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx (8 tests) 330ms
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  11:39:46
+   Duration  849ms (transform 146ms, setup 3ms, collect 214ms, tests 330ms, environment 158ms, prepare 31ms)
+
+
+EXIT: 0; elapsedSeconds: 1.268
+COMMAND: node ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/render-preview.mjs
+{"artifact":"preview.html","bytes":235244,"inputCount":24,"applicationInputs":["lib/forge-testing-grounds/operationalProgress.ts","lib/projections/evidenceTime.ts","lib/forge-testing-grounds/dataHealth.ts","lib/forge-testing-grounds/preview/previewFixtures.ts","lib/forge-testing-grounds/preview/TestingGroundsPreview.module.scss","lib/forge-testing-grounds/preview/TestingGroundsPreview.tsx"],"externalRequests":0,"servers":0}
+
+EXIT: 0
+{"check":"standalone artifact execution in jsdom (no layout/browser validation)","heading":null,"errors":["Uncaught [ReferenceError: React is not defined]"]}
+COMMAND (corrected JSX runtime): node ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/render-preview.mjs
+{"artifact":"preview.html","bytes":236107,"inputCount":26,"applicationInputs":["lib/forge-testing-grounds/operationalProgress.ts","lib/projections/evidenceTime.ts","lib/forge-testing-grounds/dataHealth.ts","lib/forge-testing-grounds/preview/previewFixtures.ts","lib/forge-testing-grounds/preview/TestingGroundsPreview.module.scss","lib/forge-testing-grounds/preview/TestingGroundsPreview.tsx"],"externalRequests":0,"servers":0}
+
+EXIT: 0
+{"check":"standalone artifact execution + blocked/sealed scenario changes in jsdom (not layout/browser QA)","heading":"Testing Grounds","blockedHealth":true,"sealed":true,"launchDisabled":true,"requests":0,"externalResources":0,"errors":[]}
+COMMAND: npx --no-install tsc --noEmit --strict --skipLibCheck --target es2015 --lib dom,dom.iterable,esnext --module esnext --moduleResolution bundler --esModuleInterop --jsx react-jsx next-bootstrap.d.ts lib/forge-testing-grounds/preview/TestingGroundsPreview.tsx lib/forge-testing-grounds/preview/previewFixtures.ts lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx
+EXIT: 0; output: (none)
+
+COMMAND: npx --no-install eslint --report-unused-disable-directives-severity warn lib/forge-testing-grounds/preview/TestingGroundsPreview.tsx lib/forge-testing-grounds/preview/previewFixtures.ts lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx
+EXIT: 0; output: (none)

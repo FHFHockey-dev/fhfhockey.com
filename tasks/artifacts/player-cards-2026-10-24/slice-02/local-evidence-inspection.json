@@ -1,0 +1,62 @@
+{
+  "source": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2-rows.json",
+  "source_sha256": "52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+  "scope": "Previously approved one-player diagnostic only; offline reread, no new production access",
+  "player_id": 8476453,
+  "source_rows": 60,
+  "stored_frame_bound": "20 per source, complete-season history/completion signal not supplied",
+  "current_season_frames": [
+    {
+      "requested_n": 5,
+      "available_current_season_nhl_rows": 5,
+      "matched_nst": 5,
+      "missing": [],
+      "full_season_history_verified": false,
+      "completion_proof_available": false,
+      "league_population_verified": false
+    },
+    {
+      "requested_n": 10,
+      "available_current_season_nhl_rows": 10,
+      "matched_nst": 9,
+      "missing": [
+        {
+          "game_id": 2026020040,
+          "date": "2026-10-05",
+          "individual_matches": 0,
+          "on_ice_matches": 0
+        }
+      ],
+      "full_season_history_verified": false,
+      "completion_proof_available": false,
+      "league_population_verified": false
+    },
+    {
+      "requested_n": 20,
+      "available_current_season_nhl_rows": 10,
+      "matched_nst": 9,
+      "missing": [
+        {
+          "game_id": 2026020040,
+          "date": "2026-10-05",
+          "individual_matches": 0,
+          "on_ice_matches": 0
+        }
+      ],
+      "full_season_history_verified": false,
+      "completion_proof_available": false,
+      "league_population_verified": false
+    }
+  ],
+  "l5_pooled_arithmetic_only": {
+    "toi_seconds": 6313,
+    "sog": 21,
+    "ixg": 1.82,
+    "icf": 35,
+    "atoi_seconds": 1262.6,
+    "sog60": 11.975289086012989,
+    "ixg60": 1.0378583874544591,
+    "icf60": 19.958815143354983
+  },
+  "claim_limit": "Arithmetic can be reconciled; observed adapter must withhold readiness/ranks without completion/history/source-definition proof. Current-season L20 cannot be labeled honestly short from a bounded20row capture alone."
+}

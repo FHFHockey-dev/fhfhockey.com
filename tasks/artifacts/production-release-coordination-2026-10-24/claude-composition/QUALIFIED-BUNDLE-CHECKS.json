@@ -1,0 +1,63 @@
+{
+  "at": "2026-10-24T21:24:57.029979+00:00",
+  "checks": [
+    {
+      "log": "qualified-tests.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-qualified-release-bundle-zpic0uuj/web/node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "/tmp/fhfh-qualified-release-bundle-zpic0uuj/composition.vitest.config.mts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 5.242
+    },
+    {
+      "log": "qualified-app-types.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-qualified-release-bundle-zpic0uuj/web/node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 53.505
+    },
+    {
+      "log": "qualified-lint.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-qualified-release-bundle-zpic0uuj/web/node_modules/eslint/bin/eslint.js",
+        "utils/fetchWigoPlayerStats.ts",
+        "utils/fetchWigoPlayerStats.test.ts",
+        "components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+        "components/GoalieShareChart/index.tsx",
+        "components/LineCombinations/LineCombinationsGrid.tsx",
+        "components/ShotVisualization/ShotVisualization.tsx",
+        "components/TeamTabNavigation/TeamTabNavigation.test.tsx",
+        "components/TeamTabNavigation/TeamTabNavigation.tsx",
+        "hooks/useShotData.test.tsx",
+        "hooks/useShotData.ts",
+        "pages/stats/team/[teamAbbreviation].tsx",
+        "__tests__/pages/wigoCharts.test.tsx",
+        "pages/wigoCharts.tsx",
+        "__tests__/pages/stats/team/teamAbbreviation.test.tsx",
+        "components/GoalieShareChart/GoalieShareChart.test.ts",
+        "components/NewsFeed/NewsCard.tsx",
+        "components/NewsFeed/NewsCard.test.tsx",
+        "lib/supabase/browser-auth.ts",
+        "__tests__/contexts/AuthProviderContext.test.tsx"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.298
+    }
+  ],
+  "source_integrity_matches": true,
+  "canonical_edits": 0,
+  "hosted_requests": 0,
+  "environment_files_in_snapshot": 0
+}

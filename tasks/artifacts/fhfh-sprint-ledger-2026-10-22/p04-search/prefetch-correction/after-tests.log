@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run components/StatsPage/PlayerSearchBar.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:91517) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/StatsPage/PlayerSearchBar.test.tsx (20 tests) 148ms
+
+ Test Files  1 passed (1)
+      Tests  20 passed (20)
+   Start at  09:37:18
+   Duration  643ms (transform 43ms, setup 3ms, collect 131ms, tests 148ms, environment 164ms, prepare 40ms)
+

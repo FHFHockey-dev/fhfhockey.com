@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-24T20:20:11.636318+00:00",
+  "scope": "CCC/GDL contracts/tasks and directly linked ingestion decisions; no app/tests/Git/live/newworkers",
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "e129b880044db73f7537725da8cbca040ca5641cc537243aaf7f0177a8901db1",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "6f791ca5a313972beafc4c65c7c3b1f9481902e8a7b33d314d556b2cd1899992",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "889fc2f653d702a55faca193cdbc7a096a80409cd1a1743339f64ce57094000e"
+  },
+  "baseline_ids": 215,
+  "baseline_evidence": 1241,
+  "baseline_children": 60,
+  "library_version": 19,
+  "previous_continuation": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/CONTINUATION.json"
+}

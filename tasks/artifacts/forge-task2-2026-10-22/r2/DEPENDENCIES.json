@@ -1,0 +1,30 @@
+{
+  "node": "22.11.0",
+  "npm": "10.9.0",
+  "packageLockSha256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+  "existingNodeModules": "/Users/tim/Code/fhfhockey.com/web/node_modules",
+  "packages": {
+    "vitest": {
+      "version": "3.2.7",
+      "packageJsonSha256": "3f3dc1ef7acc6ffac8d0a7f10c4460f98e36026837b57f774426d962d546d740"
+    },
+    "vite": {
+      "version": "6.4.3",
+      "packageJsonSha256": "a1d0149fd986fd34b6d35503d2c0d8d9f743c4dbaaf94fbc11812bc84b05884d"
+    },
+    "typescript": {
+      "version": "5.7.3",
+      "packageJsonSha256": "1e03325943793f3bf11667b94fca412fe5ba617c85b84c16f0474933da156baa"
+    },
+    "@vitejs/plugin-react": {
+      "version": "4.7.0",
+      "packageJsonSha256": "d608755568d9d654c34e9e2da06659df9122fa89d2604ee09cdeda457a20c035"
+    },
+    "vite-tsconfig-paths": {
+      "version": "4.3.2",
+      "packageJsonSha256": "1ba359853927471b6242a351ab4ac8a182338c2783430bbd70a3d860349142bf"
+    }
+  },
+  "installationPerformed": false,
+  "installedLockSha256": "64bc83101e6f4b1043a5222b6141ff74bcb6b5478389ea6b884b972d3cd4de63"
+}

@@ -1,0 +1,157 @@
+{
+    "utc": "2026-10-24T16:21:45.5798420Z",
+    "v13SHA256": "077bd43b9bcaccd51a68e5d353b23cb2c701c7003c8eb21ea3c46c5ddd89aa80",
+    "v14SHA256": "450e21bf020bb2f579cfb468b1589909ea7ca43430be64e1dd31deb5333ec80a",
+    "v15SHA256": "c5389bcadfe4e0b98003a82be080b547969a8d79b92b2842e03feef086973841",
+    "v16SHA256": "80cc73daf727ad0b623d975c57706586295545fde23cd636058047e1ade801c2",
+    "hudPath": "Vesper Basin / First Slice/Mech test proxy / WASD/V16 player HUD",
+    "failure": "",
+    "passed": true,
+    "debugRendererFlags": 11,
+    "checks": [
+        {
+            "name": "v13 scene hash matches the v13 handoff",
+            "passed": true,
+            "detail": "077bd43b9bcaccd51a68e5d353b23cb2c701c7003c8eb21ea3c46c5ddd89aa80"
+        },
+        {
+            "name": "v14 scene hash matches the v14 receipt",
+            "passed": true,
+            "detail": "450e21bf020bb2f579cfb468b1589909ea7ca43430be64e1dd31deb5333ec80a"
+        },
+        {
+            "name": "v15 scene hash matches the v15 receipt",
+            "passed": true,
+            "detail": "c5389bcadfe4e0b98003a82be080b547969a8d79b92b2842e03feef086973841"
+        },
+        {
+            "name": "v16 is a separate saved scene",
+            "passed": true,
+            "detail": "80cc73daf727ad0b623d975c57706586295545fde23cd636058047e1ade801c2"
+        },
+        {
+            "name": "player HUD is wired to the live pilot, weapon, zone, lines and progress bar",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "saved presentation is player mode (debug flag off)",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "all player HUD renderers enabled and all 11 debug renderers disabled in the saved scene",
+            "passed": true,
+            "detail": "player=7 debug=11"
+        },
+        {
+            "name": "debug renderers are exactly the 8 cockpit readout panels/labels and the 3 target labels",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "every object outside the new HUD subtree exists in both scenes",
+            "passed": true,
+            "detail": "missing=0 extra=0 "
+        },
+        {
+            "name": "transforms, active states and component lists outside the new HUD are identical",
+            "passed": true,
+            "detail": "differences=0"
+        },
+        {
+            "name": "all serialized fields outside the new HUD are identical except the 11 debug renderer enable flags",
+            "passed": true,
+            "detail": "other differences=0, debug renderer flags changed=11"
+        },
+        {
+            "name": "gameplay components (pilot, weapon, targets, capture zones, recovery, cockpit readout) retained",
+            "passed": true,
+            "detail": "QuestPilotControls=1,QuestPracticeWeapon=1,PracticeTarget=3,CaptureZone=1"
+        },
+        {
+            "name": "debug readout and target-label objects and scripts all retained (only renderer flags differ)",
+            "passed": true,
+            "detail": "TextMesh outside HUD=20"
+        },
+        {
+            "name": "HUD subtree adds no colliders (cannot affect movement, cover or shots)",
+            "passed": true,
+            "detail": "objects=9"
+        },
+        {
+            "name": "new HUD materials live only in SprintAssets/v16 (font/label material reused)",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "route corridor samples hit saved collision in both scenes",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "route corridor collision surface identical (same collider path and height within 1 cm)",
+            "passed": true,
+            "detail": "samples=612"
+        },
+        {
+            "name": "route margin (5.4-12 m) collision surface identical",
+            "passed": true,
+            "detail": "samples=816"
+        },
+        {
+            "name": "ground and paths around every compound are identical (outside roof footprints)",
+            "passed": true,
+            "detail": "samples=3803"
+        },
+        {
+            "name": "all lateral cover rays along the route are identical",
+            "passed": true,
+            "detail": "changedRays=0/80"
+        },
+        {
+            "name": "saved scenes unchanged by validation",
+            "passed": true,
+            "detail": ""
+        }
+    ],
+    "v15": {
+        "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+        "renderers": 640,
+        "enabledRenderers": 539,
+        "colliders": 248,
+        "enabledColliders": 210,
+        "meshColliders": 94,
+        "uniqueMaterials": 76,
+        "textures": 3,
+        "enabledTriangles": 134002
+    },
+    "v16": {
+        "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+        "renderers": 647,
+        "enabledRenderers": 535,
+        "colliders": 248,
+        "enabledColliders": 210,
+        "meshColliders": 94,
+        "uniqueMaterials": 80,
+        "textures": 3,
+        "enabledTriangles": 134000
+    },
+    "corridorSamples": 612,
+    "corridorDifferences": 0,
+    "marginSamples": 816,
+    "marginTerrainDifferences": 0,
+    "marginOtherDifferences": 0,
+    "coverSamples": 80,
+    "coverChanged": 0,
+    "groundSamples": 3803,
+    "groundDifferences": 0,
+    "features": 0,
+    "featuresInside": 0,
+    "maxMarginTerrainDelta": 0.0,
+    "maxEmergentRise": 0.0,
+    "marginTerrainEmergent": 0,
+    "coverChanges": [],
+    "differences": [],
+    "method": "Opens saved v15 then v16 in the Editor (no Play Mode, no saves). Objects are matched by name path plus occurrence ordinal so added roots cannot mask changes. Serialized fields are compared through SerializedProperty values, object references by scene path or asset path. Collision uses edit-mode Physics raycasts against saved colliders; route corridor = v13 route profile at +/-5.4 m (8.8 m deck plus margin), margin band = 5.4-12 m; cover = horizontal rays at 1.0 m and 2.5 m above the route surface out to 25 m; compound ground = downward rays every 1 m within 8 m around each roof footprint, outside it."
+}

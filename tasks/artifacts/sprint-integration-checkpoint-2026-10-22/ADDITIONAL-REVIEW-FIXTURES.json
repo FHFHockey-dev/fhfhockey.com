@@ -1,0 +1,14 @@
+{
+  "components/RosterScheduleOptimizer/p07Task10Independent.test.tsx": {
+    "source": "p07-task10-independent-review-2026-10-22/p07Task10Independent.test.tsx",
+    "sha256": "b2ecdcb1e667c126b5507869ea2a6e19cdedc0573a2ed6214ba917c6afbe68c3"
+  },
+  "lib/rosterScheduleOptimizer/p07Task10Serialization.test.ts": {
+    "source": "p07-task10-independent-review-2026-10-22/p07Task10Serialization.test.ts",
+    "sha256": "c015bf95740c749700e04f175324a0bd1c96207d84a30fa177a731e218f37e4f"
+  },
+  "lib/rosterScheduleOptimizer/p07R2IndependentCorrelation.test.ts": {
+    "source": "p07-r2-independent-review-2026-10-22/p07R2IndependentCorrelation.test.ts",
+    "sha256": "d7575c6b57d81f9333edbf37f7ec4eab56180a6ec87a2fe3d392b913b270c562"
+  }
+}

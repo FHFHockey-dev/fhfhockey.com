@@ -1,0 +1,8 @@
+  it.each(['noun','predicate'] as const)('requires the outgoing occurrence to occupy the grammatical slot, not the repeated %s', kind => {
+    const e=evidence();
+    const text=kind==='noun' ? "Milo North will take spot's spot" : "Milo North will take will's spot";
+    if(kind==='predicate'){e.players[1]!.fullName='Riley Will';e.players[1]!.lastName='Will';}
+    const wrong=kind==='noun' ? text.lastIndexOf('spot') : text.indexOf('will');
+    const result=prepareTweetIdentityReplacementReview(fixture(text,wrong,e));
+    expect(result.status).toBe('held');
+  });

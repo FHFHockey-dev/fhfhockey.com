@@ -1,0 +1,61 @@
+{
+  "at": "2026-10-24T19:15:27.950610+00:00",
+  "before_ids": 211,
+  "after_ids": 213,
+  "before_evidence": 1102,
+  "after_evidence": 1123,
+  "added_ids": [
+    "FORGE-COMPARISON-PROGRAM",
+    "SITE-FORGE-RANGE-PRESENTATION"
+  ],
+  "changed_existing_ids": [
+    "REPO-DOCUMENTATION",
+    "SITE-FORGE-TESTING-GROUNDS",
+    "FPI-03"
+  ],
+  "all_prior_ids_scopes_evidence_prefixes_preserved": true,
+  "legacy_blocks_byte_identical": 32,
+  "unchanged_existing_rows_identical": 208,
+  "readable_children_before": 20,
+  "readable_children_after": 30,
+  "scalar_label_checks": [
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-FORGE-TESTING-GROUNDS",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-FORGE-TESTING-GROUNDS",
+      "field": "verification",
+      "label_value_matched": true
+    }
+  ],
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "d6b5da4dc78ba3cf83c088603cfb796cb565bcdf44e1e187c1ba30de8410bac1",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "1c6ab83284a1448b22d48034210318482a2db3e23816f2c6b844e2aaf1b654e3",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "b7e8654b37f05d682fa29c9a2dbfeda03eedec215146afd25c4b75741472d9d4"
+  },
+  "candidate_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "288b318523c21dc69946b5e3e58a2ee49733e3d147f7e8f3a5167b1cec806fc4",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "6d8966eab0a09aa494aea732938f63c3f372e7eb266ee2c8eb323b59d2b521b3",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "1b06be8634de0ee07e8e27343d61799e8e833efd8c029e187758f51d513554ac"
+  },
+  "no_added_trailing_whitespace": true,
+  "application_tests_git_or_external_operations": 0,
+  "whole_tree_content_audit_complete": false,
+  "canonical_written": true
+}

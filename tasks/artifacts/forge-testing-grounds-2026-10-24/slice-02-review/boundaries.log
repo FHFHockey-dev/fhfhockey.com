@@ -1,0 +1,55 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02-review/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+ ❯ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02-review/boundaries.test.ts (12 tests | 1 failed) 8ms
+   × Independent TJ-only policy boundary > canonicalizes an exact UUID but does not coerce invalid owner config or run authentication for it 5ms
+     → expected { allowed: true, …(1) } to deeply equal { allowed: false, status: 503, …(1) }
+   ✓ Independent TJ-only policy boundary > rejects owner configuration with trailing line terminators before authentication 1ms
+   ✓ Independent TJ-only policy boundary > rejects malformed principal IDs without coercion, including matching malformed config/principal pairs 0ms
+   ✓ Independent TJ-only policy boundary > does not grant access to a different verified admin, cron/service claim or localhost request 0ms
+   ✓ Independent TJ-only policy boundary > ignores caller-provided authorization arguments and boolean-only principal claims 0ms
+   ✓ Independent TJ-only policy boundary > treats the injected resolver as its trust root and cannot itself verify a session 0ms
+   ✓ Independent TJ-only policy boundary > denies a missing/nonfunction verifier and normalizes synchronous/asynchronous failures 0ms
+   ✓ Independent TJ-only policy boundary > does not disclose resource owner or verifier errors in any denial 0ms
+   ✓ Independent TJ-only policy boundary > requires trusted stored owner equality and never grants mismatched/malformed resources 0ms
+   ✓ Independent TJ-only policy boundary > re-verifies on every owner/resource call and survives session loss or verifier outage without a cached allow 0ms
+   ✓ Independent TJ-only policy boundary > denies defined browser window values before invoking the verifier 0ms
+   ✓ Independent TJ-only policy boundary > captures request-scoped configuration/verifier and returns frozen minimal allow decisions 0ms
+ ✓ web/lib/forge-testing-grounds/ownerPolicy.test.ts (10 tests) 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02-review/boundaries.test.ts > Independent TJ-only policy boundary > canonicalizes an exact UUID but does not coerce invalid owner config or run authentication for it
+AssertionError: expected { allowed: true, …(1) } to deeply equal { allowed: false, status: 503, …(1) }
+
+- Expected
++ Received
+
+  {
+-   "allowed": false,
+-   "code": "owner_not_configured",
+-   "status": 503,
++   "allowed": true,
++   "ownerUserId": "abcdefab-cdef-4abc-8def-abcdefabcdef",
+  }
+
+ ❯ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02-review/boundaries.test.ts:16:70
+     14|     for (const configuredOwner of invalid) {
+     15|       const resolver = vi.fn(async () => ({ userId: OWNER }));
+     16|       expect(await make(resolver, configuredOwner).authorizeOwner()).t…
+       |                                                                      ^
+     17|       expect(resolver).not.toHaveBeenCalled();
+     18|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 21 passed (22)
+   Start at  11:00:33
+   Duration  264ms (transform 29ms, setup 3ms, collect 30ms, tests 12ms, environment 0ms, prepare 62ms)
+

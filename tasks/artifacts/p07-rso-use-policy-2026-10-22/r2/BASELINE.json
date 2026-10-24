@@ -1,0 +1,14 @@
+{
+  "head": "84cb1229cd1c1cdd037c43e660d2a181304ada51",
+  "all_r1_pins_match": true,
+  "files": {
+    "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "12607b7951226ed6ba8b760c1cfde01278693a84f212e67f385775e64c1c2433",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.ts": "9b37ea3a3d7ba0a46ef5b1a8204ec9500e1677f60e04e03a8681063f39fa6e6f",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts": "9a5b8c4380ceab54e2c59ef92e9a270f3d2588851613750269d68ebe2f8a37fe",
+    "web/lib/player-forecasts/planningContributions.ts": "b0837ce323c1815687c76426e98234296f5fc74568404e69a8de935d537453d1",
+    "web/pages/api/v1/roster-schedule-optimizer/data.ts": "dc7f5814046448fa23a201401b1ab0d1f744908b5330cee21177459594cb16ce",
+    "web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts": "a1ce00fc369634c8642115113b213daa416f312ddc4ca17e449426a1c502872e",
+    "web/hooks/useRosterPlanning.ts": "339bb37a2885a2c2fb5b84c0f3743196607e5e586f772f54cd54e24d88a1b9f3",
+    "web/hooks/useRosterPlanning.test.tsx": "40f5ab5d18cfaa445cbc60e3fb4dd69dfaecb5e891b28b173f90bf7b7e72d4fc"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "kind": "synthetic semantics; no SQL or runtime calls",
+  "passed": 7,
+  "checks": [
+    "job and exact scope exclude newer unrelated receipts",
+    "latest failed/blocked receipt must remain visible",
+    "success-only filter wrongly selects older acknowledgement",
+    "unbounded explicit scope retains old acknowledgement",
+    "arbitrary TTL removes explicit acknowledgement",
+    "two newest preserve ambiguity signal",
+    "narrow JSON projection preserves needed progress content"
+  ]
+}

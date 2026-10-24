@@ -1,0 +1,197 @@
+{
+  "at": "2026-10-24T18:23:21.012973+00:00",
+  "files": [
+    {
+      "path": "tasks/handoff-2026-10-20/HANDOFF-2026-10-20.md",
+      "sha256": "506f474120a8c4ded6be1015dcfe69ec4c08b75d2f4a3f3227f873e62fedf091",
+      "bytes": 107743,
+      "lines": 838,
+      "coverage": "partially-inspected",
+      "method": "Exact named scope lookup only; no full content credit",
+      "hits": [
+        {
+          "line": 133,
+          "text": "**Open / defects (all real; map to master list R1\u2013R3)**"
+        },
+        {
+          "line": 136,
+          "text": "- **R3:** the `lineupGaps.ts` DROP chip lacks the planner's no-auto-drop injury predicate."
+        },
+        {
+          "line": 286,
+          "text": "1. **Release scope and order.** The next candidate: F2 null-win port, R1\u2013R3 RSO fixes, S-09. Optionally the hits/blocks model (`b8fe1072e` + lgTD) and its migration 88, which must be renumbered against IFTTT 89\u201391."
+        },
+        {
+          "line": 318,
+          "text": "5. **RSO correctness, in parallel** (exact file ownership: `planning.ts`, `planningTimeline.ts`, `lineupGaps.ts`): R1/R2/R3 with failing regressions first."
+        },
+        {
+          "line": 319,
+          "text": "6. **Then** cut one batched master candidate: F2 + R1\u2013R3 + S-09 (+ hits/blocks if approved). Gate it and get TJ's direct go in the Chef/release session."
+        },
+        {
+          "line": 344,
+          "text": "- **R1/R2/R3:** confirmed. R2 is a regression introduced by `ed949622d` (IR/O skip in `prepareEvaluation`). R1 is not covered by `a855c9fe6`, which handled only assignment occupancy for started games."
+        },
+        {
+          "line": 424,
+          "text": "2. **Fix Codex audit items in my area** (`FHFH-TASKLIST` R1\u2013R3); all three are real:"
+        },
+        {
+          "line": 427,
+          "text": "   - **R3:** `lineupGaps.ts` DROP chip lacks the injured/no-auto-drop predicate the planner uses."
+        },
+        {
+          "line": 435,
+          "text": "- **Next release scope:** F2 null-win port, then R1\u2013R3."
+        },
+        {
+          "line": 595,
+          "text": "### R3 \u2014 Remove injured players from automatic DROP suggestions [proven]"
+        },
+        {
+          "line": 691,
+          "text": "- Scope: preserve dated provider/season ownership provenance and reject stale/future/mismatched ranking evidence; unknown is not zero. Propose one shared retention policy, caution for high-demand releases even with zero remaining games, and lower-ownership tie-breaking among supported equivalent legal plans. Preserve objective values, manager protection, fewer unnecessary moves and category tradeoffs; do not map ownership percentage directly to claim probability or subtract an arbitrary fantasy-point penalty. Align R3 injury exclusions and exact-equivalent pruning. Longer-horizon retained value is a later, explicitly separate term outside the already-scored window."
+        },
+        {
+          "line": 696,
+          "text": "- Dependencies: R1/R2/R3 legality and shared ownership provenance; league depth/waiver/reclaim/keeper context is currently incomplete. Approval: design/research now; implementation policy/wording review before changing advice; Release for hosted activation. Size M."
+        },
+        {
+          "line": 731,
+          "text": "- Dependencies: R1\u2013R3 legality, G1/F6 qualified category heads, league rules, R7 retention caution displayed separately; A1 is optional context, never a prerequisite or substitute for FORGE values. Approval: analysis now; review implementation scope before changing advice; Release separately. Size M for explanation-only slice."
+        },
+        {
+          "line": 766,
+          "text": "- **Then:** R1/R2/R3 after new regressions pass; F1 only with explicit local-run admission tests. Batch compatible fixes to avoid needless remote builds."
+        },
+        {
+          "line": 822,
+          "text": "- Pure synthetic reproduction outside the repository: `NODE_PATH=$PWD NODE22 --require=/tmp/fhfh-scan-no-network.cjs node_modules/ts-node/dist/bin.js --transpile-only --compiler-options '{\"module\":\"commonjs\",\"moduleResolution\":\"node\"}' /tmp/rso-audit-repro.ts`, where NODE22 is the absolute Node binary above. Reproduced R1, R2 and R3; no real league data or network. Reproduction is evidence, not a checked-in regression fix."
+        }
+      ]
+    },
+    {
+      "path": "tasks/handoff-2026-10-20/CONSOLIDATED-CHECKPOINTS-2026-10-20.md",
+      "sha256": "65da29eb193bd61f2007dd4004a600e90499461b3971dfae92fb9aac5b980b51",
+      "bytes": 25665,
+      "lines": 331,
+      "coverage": "partially-inspected",
+      "method": "Exact named scope lookup only; no full content credit",
+      "hits": [
+        {
+          "line": 113,
+          "text": "**Open / defects (all real; map to master list R1\u2013R3)**"
+        },
+        {
+          "line": 116,
+          "text": "- **R3:** the `lineupGaps.ts` DROP chip lacks the planner's no-auto-drop injury predicate."
+        },
+        {
+          "line": 266,
+          "text": "1. **Release scope and order.** The next candidate: F2 null-win port, R1\u2013R3 RSO fixes, S-09. Optionally the hits/blocks model (`b8fe1072e` + lgTD) and its migration 88, which must be renumbered against IFTTT 89\u201391."
+        },
+        {
+          "line": 298,
+          "text": "5. **RSO correctness, in parallel** (exact file ownership: `planning.ts`, `planningTimeline.ts`, `lineupGaps.ts`): R1/R2/R3 with failing regressions first."
+        },
+        {
+          "line": 299,
+          "text": "6. **Then** cut one batched master candidate: F2 + R1\u2013R3 + S-09 (+ hits/blocks if approved). Gate it and get TJ's direct go in the Chef/release session."
+        },
+        {
+          "line": 324,
+          "text": "- **R1/R2/R3:** confirmed. R2 is a regression introduced by `ed949622d` (IR/O skip in `prepareEvaluation`). R1 is not covered by `a855c9fe6`, which handled only assignment occupancy for started games."
+        }
+      ]
+    },
+    {
+      "path": "tasks/sprint-2026-10-18/CHEF-REGISTER-2026-10-19.md",
+      "sha256": "21cd27576dc057528c9ad4a40ff733072cf5379793b871ade0fd8b40b5277b90",
+      "bytes": 78947,
+      "lines": 584,
+      "coverage": "partially-inspected",
+      "method": "Exact named scope lookup only; no full content credit",
+      "hits": [
+        {
+          "line": 86,
+          "text": "  - C15 goalie-power is left for R3: it is outside the approved C05\u2013C09 scope, and its redaction can't be split from the paging change."
+        },
+        {
+          "line": 159,
+          "text": "    - \u2753 TJ: release it (R3), approve production reads R-1 to R-3, and approve a bounded catch-up of about 80 pending regular-season games."
+        },
+        {
+          "line": 171,
+          "text": "- ~13:55Z: **R-1 to R-3 done** (TJ: \"Read only checks: yes\"). Results are in PROD-READS:"
+        },
+        {
+          "line": 178,
+          "text": "  - The catch-up is therefore held until the revised fix is released (R3, which needs TJ's release go)."
+        },
+        {
+          "line": 179,
+          "text": "  - The R3 file set must exclude TJ's own uncommitted cron-route changes."
+        },
+        {
+          "line": 180,
+          "text": "- ~14:20Z: **R3 shift-charts fix reviewed by Chef** (`shift-charts-scope` revision)."
+        },
+        {
+          "line": 187,
+          "text": "  - \u2753 TJ: release go for R3."
+        },
+        {
+          "line": 188,
+          "text": "  - After R3 is live: the approved catch-up (`update-shift-charts?maxGames=50`, sequential, outside scheduled times; bound proposed at \u22643 runs)."
+        },
+        {
+          "line": 189,
+          "text": "- 13:09:12Z: **R3 released** (TJ: \"Yes: build R3 as a curated candidate on master (those 4 files), run the gate, push to master with the Vercel check\u2026\")."
+        },
+        {
+          "line": 198,
+          "text": "- \u26a0\ufe0f **INCIDENT, Chef error, 13:08Z.** Chef ran the R3 full Vitest in the export with `GIT_DIR=/Users/tim/Code/fhfhockey.com/.git`, so 4 receipt tests could call `git rev-parse`."
+        },
+        {
+          "line": 209,
+          "text": "- ~13:25Z: **Git pause.** TJ approved, relayed by `local_08a0bf1c`: \"Rebuild octoberBranch without the 16 Fixture commits and the 10k/20k restore commits: keep a backup branch, re-commit the same final tree (re-adding web/next-env.d.ts) as one commit after 79492e495, redo the R3 sync merge, and force-push with lease after the Vercel check.\""
+        },
+        {
+          "line": 213,
+          "text": "  - octoberBranch is `79492e495` \u2192 `cc3be5c09` (restore) \u2192 `423b57511` (R3 sync merge), equal to origin. 0 Fixture commits remain, and `7294e3847` is an ancestor."
+        },
+        {
+          "line": 217,
+          "text": "- ~13:55Z: **Root cause of the roster-hash failure** (`shift-charts-scope`, `R3-ROSTER-HASH.md`)."
+        },
+        {
+          "line": 221,
+          "text": "  - **Proposed R4:** `PROPOSED-gamecenter-renormalization-vs-R3.patch`, 6 files, +877/\u221231, applied to master `7294e3847`. It leaves out the `withNhlOffSeasonSkip` wrapper, whose module isn't in production. It passes `--check` on R3 and 64 tests."
+        },
+        {
+          "line": 234,
+          "text": "- 13:37:27Z: **R4 live.** `dpl_6iWwUALMRsg4Am9jQYUMYi4EqbLT` is READY and aliased. Smoke test: `/` 200, `/rankings` 200. Rollback target: `dpl_FEZB6qP\u2026` (R3)."
+        }
+      ]
+    },
+    {
+      "path": "tasks/TASKS/super-goal/super-goal-final-summary.md",
+      "sha256": "b99e7bfde3fd4579acf9ae870b85a855b79deb1ee8a072da9978a2d2278acf82",
+      "bytes": 342964,
+      "lines": 1124,
+      "coverage": "partially-inspected",
+      "method": "Exact named scope lookup only; no full content credit",
+      "hits": [
+        {
+          "line": 606,
+          "text": "- **Remaining promotion condition:** Top Adds remains red until the first prospective non-zero in-season horizon-5 run proves data coverage. This is the owner-selected truthful promotion gate, not unfinished writer, credential, deployment, or cron ownership work."
+        },
+        {
+          "line": 609,
+          "text": "- **Component-health audit:** C-FORGE `5.4.4` closes with source/master 47/47. The authoritative matrix remains deliberately 4 green / 3 yellow / 3 red; no retained historical/prospective gate was promoted. P3 NEW 7.0 distinguishes original component audit/quarantine baselines from current matrix/closeout authority and corrects the stale claim that Top Adds still awaited already-completed credential rotation/activation. All 37 matrix evidence links resolve."
+        }
+      ]
+    }
+  ]
+}

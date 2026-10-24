@@ -1,0 +1,85 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+(node:17291) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/boundaries.test.ts (20 tests | 2 failed) 15ms
+   ✓ Independent operational boundary controls > uses the eligible stage denominator, keeps exclusions separate, and labels work versus success 3ms
+   ✓ Independent operational boundary controls > rejects unknown counted totals and provides no percent for unknown-total fitting or zero work 1ms
+   ✓ Independent operational boundary controls > rejects nonfinite, negative, fractional, overflow and contradictory counters/denominators 1ms
+   ✓ Independent operational boundary controls > handles the largest safe denominator without reporting 100 percent while one unit is pending 0ms
+   ✓ Independent operational boundary controls > does not promote all processed failures to success or reject unavailable future outcomes as failed 0ms
+   ✓ Independent operational boundary controls > does not deduplicate retry identities that this aggregate schema does not represent 0ms
+   ✓ Independent operational boundary controls > rejects outcome/performance/operational-text additions at all serialized levels 0ms
+   ✓ Independent operational boundary controls > preserves stale/cancellation distinctions and rejects malformed clocks and impossible stage combinations 1ms
+   × Independent operational boundary controls > rejects a heartbeat preceding its stage start at supported microsecond timestamp precision [R1] 4ms
+     → expected true to be false // Object.is equality
+   × Independent operational boundary controls > rejects a stage event later than the saved snapshot at supported microsecond precision [R1] 0ms
+     → expected true to be false // Object.is equality
+   ✓ Independent input-health boundary controls > keeps zero, fractional, absent and explicit null observations separate without coercion 1ms
+   ✓ Independent input-health boundary controls > rejects invalid values against explicit bounds and whole-number policy 1ms
+   ✓ Independent input-health boundary controls > counts all duplicate rows and overlapping defects without exclusions or aggregate double counting 0ms
+   ✓ Independent input-health boundary controls > uses declared blocking severity and retains affected report cohort/field without claiming membership validation 0ms
+   ✓ Independent input-health boundary controls > blocks future knowledge and invalid clocks independently of discretionary severity 0ms
+   ✓ Independent input-health boundary controls > honors freshness inclusivity and submillisecond cutoff ordering with equivalent offsets 0ms
+   ✓ Independent input-health boundary controls > makes unknown history/capture/revision explicit and escalates it for authentic-history policy 0ms
+   ✓ Independent input-health boundary controls > does not reflect hostile raw fields or values in samples, guidance or serialized reports 0ms
+   ✓ Independent input-health boundary controls > rejects malformed specifications and nonarray collections, while malformed source rows stay diagnosed 1ms
+   ✓ Independent input-health boundary controls > copies report inputs/safe identities and requires distinct recheck IDs without repairing or mutating originals 0ms
+(node:17293) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ web/lib/forge-testing-grounds/dataHealth.test.ts (10 tests) 7ms
+(node:17295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ web/lib/forge-testing-grounds/operationalProgress.test.ts (10 tests) 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/boundaries.test.ts > Independent operational boundary controls > rejects a heartbeat preceding its stage start at supported microsecond timestamp precision [R1]
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/boundaries.test.ts:92:50
+     90|   it("rejects a heartbeat preceding its stage start at supported micro…
+     91|     const s = { ...stage(), startedAt: "2026-09-05T11:59:00.000002Z", …
+     92|     expect(workStageSchema.safeParse(s).success).toBe(false);
+       |                                                  ^
+     93|   });
+     94|   it("rejects a stage event later than the saved snapshot at supported…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/boundaries.test.ts > Independent operational boundary controls > rejects a stage event later than the saved snapshot at supported microsecond precision [R1]
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/boundaries.test.ts:97:64
+     95|     const s = { ...stage(), heartbeatAt: "2026-09-05T12:00:00.000002Z"…
+     96|     const value = { ...snapshot(s), recordedAt: "2026-09-05T12:00:00.0…
+     97|     expect(operationalSnapshotSchema.safeParse(value).success).toBe(fa…
+       |                                                                ^
+     98|   });
+     99| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  2 failed | 38 passed (40)
+   Start at  10:49:44
+   Duration  831ms (transform 44ms, setup 5ms, collect 67ms, tests 28ms, environment 418ms, prepare 88ms)
+

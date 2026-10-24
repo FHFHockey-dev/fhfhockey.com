@@ -1,0 +1,33 @@
+{
+  "head": "d77602cf7fbdd4549588127603ebf0b535138b99",
+  "branch": "octoberBranch",
+  "files": [
+    {
+      "file": "web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx",
+      "sha256": "a8514752a748ff9cd39e18037a2a2648e4290e684c96e3398901aac3cc8e85a3",
+      "matches_tested_snapshot": true
+    },
+    {
+      "file": "web/components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx",
+      "sha256": "ee6424542b502ec0448eb70f7bf21e590d91837b56d2adb1bad5ace2cb2ae124",
+      "matches_tested_snapshot": true
+    },
+    {
+      "file": "web/hooks/useTeamSchedule.ts",
+      "sha256": "c526df196651bb5c94ffba17b54bbc70133754bafc77b26c3bfb27602ba47826",
+      "matches_tested_snapshot": true
+    },
+    {
+      "file": "web/hooks/useTeamStatsHeaderData.ts",
+      "sha256": "1a493766a110a9f2905ebc4a6ca4251cb87dbb360de3547d643c5d8c514ed9b2",
+      "matches_tested_snapshot": true
+    },
+    {
+      "file": "web/hooks/useTeamScheduleWgoStats.ts",
+      "sha256": "d98958762c6dc037c97ba1d6decf05a5082aaa04f128b41605f71ffed7497158",
+      "matches_tested_snapshot": true
+    }
+  ],
+  "patch_sha256": "7382e2448afac5f3894c2bbf9e88ff0728c5a7497f733deafa94598b289671f1",
+  "diff_check": 0
+}

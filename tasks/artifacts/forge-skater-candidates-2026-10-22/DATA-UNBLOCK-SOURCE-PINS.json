@@ -1,0 +1,23 @@
+{
+  "baseHead": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+  "branch": "octoberBranch",
+  "ownedSources": {
+    "web/lib/projections/research/skater-candidates/accounting.test.ts": "6722730a185d97abc8026319fedd0d3b17d56253f91f6ff0b208c6e9327479d6",
+    "web/lib/projections/research/skater-candidates/accounting.ts": "aa28320f5696a85bcdc18e8d9f08593720cee6dfcd356b6293784facbaede390",
+    "web/lib/projections/research/skater-candidates/context.test.ts": "94cabee98752c3805db8b4b9ae32a22be13687a7b48bf63ea2dbb5f92895ac99",
+    "web/lib/projections/research/skater-candidates/context.ts": "88683c176378204709080f22779729a8ec38c10a47f2fdcdc63d22a44afefdff",
+    "web/lib/projections/research/skater-candidates/priors.test.ts": "34e524451770ea2d4a86419b3d6d876e2f7e9e8b624702e641c58ce5468ddd4d",
+    "web/lib/projections/research/skater-candidates/priors.ts": "0fec69e252418950d4aeae8ffbdf83eaefdb6e4b5e6d81a74655424684267fa8",
+    "web/scripts/forge-skater-candidate-ablation.ts": "1a1b6d7f0db96c02bba864fd58e033d0549658dc5dc49ea4fddd999ee6d2513a",
+    "web/scripts/forge-skater-candidate-ablation.test.ts": "cf6e664e7d0a4fb98c3fa99ff6f13ec7428426ad9ce85e31db7b1eba1b14cb68",
+    "web/scripts/forge-assist-export.ts": "c2e1fb4ed19bf0f918a1b65688690564b5e634fba14f4895e0914b8866afa74d",
+    "web/scripts/forge-assist-export.test.ts": "d445e98d59cf75d64b9edb067b4edf1f96c0c65e9462864882c7fba39c554eee",
+    "tasks/artifacts/forge-skater-candidates-2026-10-22/task3-pilot-export.sql": "363ce0994cf92c31719169e4df6083b8e15012b9e8d6583db2fb36a1773b7cc2",
+    "tasks/artifacts/forge-skater-candidates-2026-10-22/inspect-task3-local.cjs": "4b7bd8090a68c3eb3e55bb0c027a29626b7e894323734102fc00740819043fcb",
+    "tasks/artifacts/forge-skater-candidates-2026-10-22/TASK3-DATA-ASK.md": "d3ac67df73be0ad38786ef7d95b3ce463bdd9a1843adaca9b653538f102872a8"
+  },
+  "archiveSha256": "52e55af8fe0dbd7555be16168b5425640e6efabb4aa85a87b083bd30126231aa",
+  "priorSnapshot": "candidate-source.tar.gz and SOURCE-PINS.json retained unchanged",
+  "stageAndCalculatorEdited": false,
+  "releaseQualified": false
+}

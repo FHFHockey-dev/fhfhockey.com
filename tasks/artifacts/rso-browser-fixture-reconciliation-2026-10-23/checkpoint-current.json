@@ -1,0 +1,202 @@
+{
+  "at": "2026-10-23T16:51:16.825958+00:00",
+  "runs": [
+    {
+      "run": "affected-spec-01",
+      "pass": 16,
+      "fail": 28,
+      "stats": {
+        "startTime": "2026-10-23T16:04:06.348Z",
+        "duration": 583707.0909999999,
+        "expected": 16,
+        "skipped": 0,
+        "unexpected": 28,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "failed-families-01",
+      "pass": 7,
+      "fail": 10,
+      "stats": {
+        "startTime": "2026-10-23T16:15:29.334Z",
+        "duration": 194657.719,
+        "expected": 7,
+        "skipped": 0,
+        "unexpected": 10,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "commandbar-and-oracles-01",
+      "pass": 8,
+      "fail": 2,
+      "stats": {
+        "startTime": "2026-10-23T16:21:35.567Z",
+        "duration": 102686.511,
+        "expected": 8,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "remaining-controls-01",
+      "pass": 3,
+      "fail": 3,
+      "stats": {
+        "startTime": "2026-10-23T16:24:06.207Z",
+        "duration": 38764.935,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "disclosure-controls-01",
+      "pass": 1,
+      "fail": 2,
+      "stats": {
+        "startTime": "2026-10-23T16:27:47.857Z",
+        "duration": 130348.03199999999,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "adjudicated-controls-01",
+      "pass": 3,
+      "fail": 2,
+      "stats": {
+        "startTime": "2026-10-23T16:31:13.649Z",
+        "duration": 74754.31300000001,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "account-and-partial-01",
+      "pass": 0,
+      "fail": 2,
+      "stats": {
+        "startTime": "2026-10-23T16:33:49.411Z",
+        "duration": 78372.727,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "alignment-and-account-01",
+      "pass": 3,
+      "fail": 3,
+      "stats": {
+        "startTime": "2026-10-23T16:36:23.753Z",
+        "duration": 43734.429000000004,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "final-disclosure-controls-01",
+      "pass": 1,
+      "fail": 1,
+      "stats": {
+        "startTime": "2026-10-23T16:38:32.048Z",
+        "duration": 25452.176,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "horizontal-and-bench-01",
+      "pass": 1,
+      "fail": 1,
+      "stats": {
+        "startTime": "2026-10-23T16:41:39.064Z",
+        "duration": 27818.6,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "final-contract-controls-01",
+      "pass": 1,
+      "fail": 2,
+      "stats": {
+        "startTime": "2026-10-23T16:43:24.072Z",
+        "duration": 38576.289000000004,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "retained-yahoo-final-01",
+      "pass": 0,
+      "fail": 1,
+      "stats": {
+        "startTime": "2026-10-23T16:45:30.533Z",
+        "duration": 16965.459,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "final-unknown-contracts-01",
+      "pass": 2,
+      "fail": 0,
+      "stats": {
+        "startTime": "2026-10-23T16:47:27.682Z",
+        "duration": 5002.823,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    }
+  ],
+  "latestPass": 44,
+  "remaining": 0,
+  "pins": {
+    "web/e2e/roster-schedule-optimizer.spec.ts": "6681805aeefaa3bfe81ce47660766500c6b2aa53bee0b78572443723a43dec13",
+    "web/e2e/roster-schedule-optimizer-fixtures.ts": "7de8756a3bfb9c322386dc5bbd6250992c1e4f0a0e1e408d7a14fd76095ee87d",
+    "FIXTURE-CANDIDATE.patch": "7f2b99d9d756d68b46587fa30778cd634078a7f2853fa3cf48498de632aeaf29",
+    "ACCEPTANCE-HARNESS.patch": "2c4d9e01ab571b4bf786b01a79730aeb3b17bf380c1cd4911a5d4b9b740d4d5b",
+    "harness-v2/rso-p07-acceptance.spec.ts": "a7ba4795d0d9ee66ab0a9c4e0369f045341d3eb18ff847537159015286a265cc"
+  },
+  "unchangedOriginals": {
+    "web/e2e/draft-pro-fixtures.ts": true,
+    "tasks/artifacts/rso-browser-acceptance-2026-10-23/harness/rso-p07-acceptance.spec.ts": true,
+    "tasks/artifacts/rso-browser-acceptance-2026-10-23/harness-validation/RECEIPT-2a5092d37cb8.json": true
+  },
+  "snapshotDrift": {
+    "web/next-env.d.ts": {
+      "before": "95c5e6b31f13db907e9fe5d7cd72edd186321a0c7a8fb2d89129029fb289c276",
+      "after": "ced3cb1bdbb8082cae388902481ba6a8a1e454ec7daed6125b368118f06e4a77"
+    },
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss": {
+      "before": "2146ff48eb395978d485b692b91f87949b8efaf7c530e82f9b6ef3b20edd9f61",
+      "after": "4e40feb952963ba192e4bb7d0568983e8d1cc3d0bcaa292b8c79627355be22a2"
+    },
+    "web/components/RosterScheduleOptimizer/CompactSchedule.tsx": {
+      "before": "e203017397116abb2a0cf1b3e98b41cff44f01cd6fad916c1ed96e6b5e8f1ec9",
+      "after": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e"
+    }
+  }
+}

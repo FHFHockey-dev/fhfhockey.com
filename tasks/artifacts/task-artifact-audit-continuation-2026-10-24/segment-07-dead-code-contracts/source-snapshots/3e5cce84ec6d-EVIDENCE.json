@@ -1,0 +1,277 @@
+{
+  "scope": "synthetic-only local slice01; worker evidence, independent acceptance pending",
+  "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "lease": "CODEX-PLAYER-CARDS-S01-20261024",
+  "source_files": [
+    {
+      "path": "web/lib/player-cards/contracts.ts",
+      "size_bytes": 2213,
+      "sha256": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d"
+    },
+    {
+      "path": "web/lib/player-cards/registry.ts",
+      "size_bytes": 3382,
+      "sha256": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29"
+    },
+    {
+      "path": "web/lib/player-cards/ranking.ts",
+      "size_bytes": 1716,
+      "sha256": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338"
+    },
+    {
+      "path": "web/lib/player-cards/ranking.test.ts",
+      "size_bytes": 2413,
+      "sha256": "b6177f53c26acde7f03e9afcdc5a3bbe4cdf2be071aea5a6e8be455e7375c027"
+    },
+    {
+      "path": "web/lib/player-cards/fixtures.ts",
+      "size_bytes": 2715,
+      "sha256": "00ac0c5bc1194427c2aecb7981c0f228b22b51fef16b343a72ec0f47a4405f65"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCard.tsx",
+      "size_bytes": 5788,
+      "sha256": "917edf84256f3153459bc02302ff9a804a3847838eaaf8192bd000fb21f9cdfc"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCard.module.scss",
+      "size_bytes": 3568,
+      "sha256": "cec892e73d5642253435108e81c91ab0f6fb6b9bedacee849ffd10808e792b77"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardPreview.tsx",
+      "size_bytes": 8174,
+      "sha256": "f58bdd545fa121be6ca79ffab03f52aeff8ca9d18a74e3e608b4addf7ae1a4b6"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardPreview.test.tsx",
+      "size_bytes": 3784,
+      "sha256": "5309f794268f88a670c19efe98939ca008b2439fd07c700c223bc832799b7e8f"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/HANDOFF.md",
+      "size_bytes": 7284,
+      "sha256": "bb9f859362d971ffd012b5ecc05f207769d18d25f24210bf55773859a36f8cf7"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/OWNERSHIP.json",
+      "size_bytes": 2470,
+      "sha256": "3b2bbc5fa66cbb99bb7a6a4ebea3c777b165e13775e94013a8c365629cd1d88d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-failure.json",
+      "size_bytes": 2182,
+      "sha256": "de95bebd7d3bd771c7a682f86f86077a8c22ee99a54d63d57abd4d052a58243c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-final.log",
+      "size_bytes": 74,
+      "sha256": "cc31c6e1ac5aa04761813d9724c46e3742acb7d18726321f8281f585e21c3ecf"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-results.json",
+      "size_bytes": 9000,
+      "sha256": "7b684a738f3a375b3a535eb224ddd7233d0f612f31dcb633a2859b39374ac813"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser.log",
+      "size_bytes": 389,
+      "sha256": "ea7378d4eefc04bad81ba3aa7d4a81315562262b55d5fbf3c609a10ce6118a29"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/checks-final.log",
+      "size_bytes": 874,
+      "sha256": "ca982d9c780a41748d56e708892ef8491c4e3eea9af834b345193d3ab7c4c382"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/checks.log",
+      "size_bytes": 874,
+      "sha256": "e16f2568a292297cd04b7b267e72c149fe2a099790fe67e003649875848e5546"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/lint-final.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/lint.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/local-http.json",
+      "size_bytes": 249,
+      "sha256": "fb65ea1167cfa3115fe3e7d4997d37c3708d038acc3a5ce41d27926be65c1e4c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/manifest.json",
+      "size_bytes": 4423,
+      "sha256": "bfa316174940dcfe6970aac7f1937f989ce60946ec406d6f517bc1ad85630807"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/preview-entry.tsx",
+      "size_bytes": 243,
+      "sha256": "3cc4b5219e554afba784f70567686f0c9ae8638eacb0e8850f374ab8db8ff679"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/preview.html",
+      "size_bytes": 290437,
+      "sha256": "12ea13e78fb64cfc136292f1d9c1babb8189ad034da2151b4473a6b030d7c2bf"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/preview.png",
+      "size_bytes": 256144,
+      "sha256": "582677f8ae867b46a6cbb83f242e6e92388d2ab3b782421cde7180e3dfd710e8"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-desktop.png",
+      "size_bytes": 268517,
+      "sha256": "e7944b7e8282b1bc6c055cd912ca4f0224bd25884f56e12d92fe4e21982fd7f8"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-extra.png",
+      "size_bytes": 272641,
+      "sha256": "96c324f06d26f423c9c0da47ff2a7a0bf5a08d255988b6f308c5cc520e970a3d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-long-name.png",
+      "size_bytes": 273436,
+      "sha256": "e74b2189318d15dadf50c273893b1fd2e7dcd4f2b14e40a04b54eff70939c48e"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-missing.png",
+      "size_bytes": 272694,
+      "sha256": "a036cc6c1bcb672c404049d6d5879524a3efe847f311d110a569d99ff56a0579"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-mobile.png",
+      "size_bytes": 145031,
+      "sha256": "ceccb748599091f0ca4d0fc0e60c3e5f3c7f9657264225687c4894e40b6b81d1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-partial.png",
+      "size_bytes": 269122,
+      "sha256": "c27781129b30f59f412f2221ce5384a498f124fe50bc1a9c874ae0f17800c6b3"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-preview.mjs",
+      "size_bytes": 4279,
+      "sha256": "581229089809b668669e396d2bff7e52b2463348f43cd64d0d344f4ba351f8d6"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/render-preview.mjs",
+      "size_bytes": 2402,
+      "sha256": "b8f7ae4b0613daf3735f198334df9aa1e60232089380af72168630b15128eb4d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/serve-preview.mjs",
+      "size_bytes": 732,
+      "sha256": "1cc849c592fff0008f69824571f82c66eb07eea5da0cd2301ccbc3c54d3c0610"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/source.patch",
+      "size_bytes": 34850,
+      "sha256": "5f88e8e7220b7bf14ce7ea2b16f821c0b2387277f0e9b1f2accb7da3d316987e"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/tsconfig.json",
+      "size_bytes": 293,
+      "sha256": "1068e4333c98159ed7bf264052ddec861936703fa4b5a29806435daccf456c8a"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/types-final.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/types.log",
+      "size_bytes": 299,
+      "sha256": "ccd0c0c7ea58e9b69f678c94e0a2e98b4ac8bbcd46ba245dba8f3d75051d1cb0"
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "web/styles/vars.scss",
+      "size_bytes": 28850,
+      "sha256": "69b7ac0ea0bcd4504b60dd698f4d747daceddef80636de748e816f26a4112f1f"
+    },
+    {
+      "path": "web/next-bootstrap.d.ts",
+      "size_bytes": 196,
+      "sha256": "fbbabe3d21600eac77a1bf714dfdbb22e49736840d31597ce29160c331375ada"
+    },
+    {
+      "path": "web/package.json",
+      "size_bytes": 14058,
+      "sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba"
+    },
+    {
+      "path": "web/package-lock.json",
+      "size_bytes": 809830,
+      "sha256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378"
+    },
+    {
+      "path": "web/vitest.config.mts",
+      "size_bytes": 608,
+      "sha256": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b"
+    },
+    {
+      "path": "web/__tests__/vitest.setup.js",
+      "size_bytes": 458,
+      "sha256": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63"
+    }
+  ],
+  "checks": {
+    "vitest": {
+      "files": 2,
+      "passed": 10
+    },
+    "scoped_types": "passed",
+    "scoped_lint": "passed",
+    "offline_browser": {
+      "passed": 10,
+      "external_requests": 0,
+      "errors": 0
+    },
+    "export_png": {
+      "width": 1080,
+      "height": 1080
+    },
+    "local_static_http": {
+      "route": "http://127.0.0.1:3125/player-cards",
+      "status": 200,
+      "bytes": 290437,
+      "sha256": "12ea13e78fb64cfc136292f1d9c1babb8189ad034da2151b4473a6b030d7c2bf",
+      "equalsFrozenHtml": true,
+      "applicationRequests": 1,
+      "externalRequests": 0
+    },
+    "production_requests": 0,
+    "deployments": 0,
+    "new_workers": 0
+  },
+  "runtime": {
+    "lease": "CODEX-PLAYER-CARDS-3125-20261024",
+    "pid": 54140,
+    "host": "127.0.0.1",
+    "port": 3125,
+    "purpose": "static fixture-only preview; buffer read once; GET / and /player-cards only; no auth/cache/upstream access"
+  },
+  "library_output": {
+    "status": "blocked before upload preparation",
+    "sandbox_failure": "hosted apps tools/list DNS",
+    "escalated_failure": "hosted apps tools/list TLS",
+    "library_file_ids": [],
+    "uncertain_write": false
+  },
+  "remaining": [
+    "Pure window and pooled aggregation contracts",
+    "Observed adapter/source coverage/completion/right proofs",
+    "Safe real search and route lease",
+    "Product defaults and paid allocation",
+    "Protected premium boundary review"
+  ],
+  "source_import_boundary": "Only React, local namespace modules and existing styles/vars.scss; no shared auth/service/provider/forecast/export imports"
+}

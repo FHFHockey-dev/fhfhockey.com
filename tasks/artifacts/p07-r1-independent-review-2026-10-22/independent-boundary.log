@@ -1,0 +1,47 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-p07-r1-review-3mw_5nd7/web
+
+(node:38171) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts (5 tests | 2 failed) 26ms
+   × accepts a real current response when browser clock differs by -5000ms 18ms
+     → expected 'Current read does not match this plan…' to be null
+   × accepts a real current response when browser clock differs by 5000ms 2ms
+     → expected 'Current read does not match this plan…' to be null
+   ✓ binds authority to actual current immutable rows, not transplanted IDs/means/lineage 2ms
+   ✓ ends authority before asynchronous continuation even if a callback returns a promise 1ms
+   ✓ clears results if source expiry passes during synchronous search 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts > accepts a real current response when browser clock differs by -5000ms
+ FAIL  lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts > accepts a real current response when browser clock differs by 5000ms
+AssertionError: expected 'Current read does not match this plan…' to be null
+
+- Expected: 
+null
+
++ Received: 
+"Current read does not match this planning generation."
+
+ ❯ lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts:19:27
+     17|   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respond(body)));
+     18|   const value = await executeRosterPlanning(snapshot, intent);
+     19|   expect(value.readError).toBeNull();
+       |                           ^
+     20|   expect(value.result.selected.projectedValue).toBe(7);
+     21| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 3 passed (5)
+   Start at  11:47:10
+   Duration  385ms (transform 109ms, setup 8ms, collect 119ms, tests 26ms, environment 130ms, prepare 29ms)
+
+

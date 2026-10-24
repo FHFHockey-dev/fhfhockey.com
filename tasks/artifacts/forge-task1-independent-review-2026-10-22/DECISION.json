@@ -1,0 +1,31 @@
+{
+  "decision": "accept_local_implemented_candidate",
+  "blockingFindings": [],
+  "baseHead": "84cb1229cd1c1cdd037c43e660d2a181304ada51",
+  "ownerPinsMatched": 8,
+  "frozenFiles": 23,
+  "independentExecution": {
+    "status": "passed",
+    "files": 4,
+    "tests": 35,
+    "existingCandidateTests": 25,
+    "newAdversarialTests": 10,
+    "heavyLockAcquiredAndReleased": true,
+    "networkDenied": true
+  },
+  "reusedOwnerEvidence": ["32 offline tests", "scoped TypeScript exit 0", "scoped ESLint exit 0"],
+  "remainingGates": [
+    "Task 1.2 historical F/D slices unavailable",
+    "Task 1.2 historical TOI/PP-TOI opportunity-rate decomposition unavailable",
+    "A4 durable independent universe unavailable",
+    "Complete-population start calibration unsupported",
+    "Task 1.4 Q3/Q4 and R23 predictive qualification unrun"
+  ],
+  "applicationEdits": 0,
+  "productionRequests": 0,
+  "deployments": 0,
+  "commits": 0,
+  "deniedActions": [],
+  "pendingApprovals": [],
+  "uncertainActions": []
+}

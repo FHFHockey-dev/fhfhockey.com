@@ -42,6 +42,7 @@ vi.mock("lib/user-settings/ensureUserRecords", () => ({
 
 import AuthProvider, { useAuth } from "contexts/AuthProviderContext";
 import UserMenu from "components/auth/UserMenu";
+import AdminPageGate from "components/Admin/AdminPageGate";
 
 function AuthProbe() {
   const { user, isLoading, signOut, refreshProfileAvatar } = useAuth();
@@ -50,6 +51,7 @@ function AuthProbe() {
     <div>
       <div>{isLoading ? "loading" : user?.email || "signed-out"}</div>
       <div data-testid="avatar-url">{user?.avatarUrl || "none"}</div>
+      <div data-testid="stored-role">{user?.role ?? "none"}</div>
       <UserMenu />
       <button type="button" onClick={() => user && void refreshProfileAvatar(user.id)}>Refresh avatar</button>
       <button type="button" onClick={() => void signOut()}>
@@ -93,6 +95,51 @@ describe("AuthProviderContext", () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it("preserves social_editor as its own role while admin pages remain prohibited", async () => {
+    authState.maybeSingle.mockResolvedValue({ data: { role: "social_editor" }, error: null });
+    render(<AuthProvider><AuthProbe /><AdminPageGate><p>Administrator tools</p></AdminPageGate></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("stored-role").textContent).toBe("social_editor"));
+    expect(screen.queryByText("Administrator tools")).toBeNull();
+    expect(screen.getByRole("alert").textContent).toContain("not an administrator");
+  });
+
+  it("ignores editable metadata roles and unrecognized stored roles", async () => {
+    const session = (await authState.getSession()).data.session;
+    session.user.user_metadata.role = "admin";
+    session.user.app_metadata.role = "social_editor";
+    authState.maybeSingle.mockResolvedValue({ data: { role: "developer" }, error: null });
+    render(<AuthProvider><AuthProbe /></AuthProvider>);
+    await screen.findByText("tim@example.com");
+    expect(screen.getByTestId("stored-role").textContent).toBe("none");
+  });
+
+  it.each(["returned", "rejected"])("withdraws a previously known role on a %s lookup failure", async mode => {
+    authState.maybeSingle.mockResolvedValue({ data: { role: "social_editor" }, error: null });
+    render(<AuthProvider><AuthProbe /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("stored-role").textContent).toBe("social_editor"));
+    if (mode === "returned") authState.maybeSingle.mockResolvedValueOnce({ data: { role: "social_editor" }, error: new Error("unavailable") });
+    else authState.maybeSingle.mockRejectedValueOnce(new Error("unavailable"));
+    const session = (await authState.getSession()).data.session;
+    await act(async () => authState.onAuthStateChange.mock.calls[0][0]("TOKEN_REFRESHED", session));
+    await waitFor(() => expect(screen.getByTestId("stored-role").textContent).toBe("none"));
+  });
+
+  it("ignores an older same-user role grant that resolves after a newer denial", async () => {
+    authState.maybeSingle.mockResolvedValue({ data: { role: "social_editor" }, error: null });
+    render(<AuthProvider><AuthProbe /></AuthProvider>);
+    await waitFor(() => expect(screen.getByTestId("stored-role").textContent).toBe("social_editor"));
+    let resolve!: (value: any) => void;
+    authState.maybeSingle.mockReturnValueOnce(new Promise(res => { resolve = res; }));
+    const session = (await authState.getSession()).data.session;
+    const sync = authState.onAuthStateChange.mock.calls[0][0];
+    await act(async () => sync("TOKEN_REFRESHED", session));
+    authState.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    await act(async () => sync("TOKEN_REFRESHED", session));
+    await waitFor(() => expect(screen.getByTestId("stored-role").textContent).toBe("none"));
+    await act(async () => resolve({ data: { role: "social_editor" }, error: null }));
+    expect(screen.getByTestId("stored-role").textContent).toBe("none");
   });
 
   function renderProvider() {

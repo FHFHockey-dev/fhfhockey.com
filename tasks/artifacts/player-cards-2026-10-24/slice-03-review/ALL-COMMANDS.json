@@ -1,0 +1,193 @@
+[
+  {
+    "receipt": "COMMANDS.json",
+    "recordedAt": "2026-10-24T17:42:15.994647+00:00",
+    "environmentOverrides": {
+      "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-cache",
+      "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-logs",
+      "NO_UPDATE_NOTIFIER": "1",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    },
+    "checks": [
+      {
+        "label": "focused-ui",
+        "command": [
+          "npm",
+          "test",
+          "--",
+          "--run",
+          "--config",
+          "../tasks/artifacts/player-cards-2026-10-24/slice-03-review/review.vitest.config.mts",
+          "--maxWorkers=1",
+          "--no-file-parallelism"
+        ],
+        "cwd": "web",
+        "exitCode": 1,
+        "elapsedSeconds": 1.685,
+        "log": "focused-ui.log"
+      },
+      {
+        "label": "scoped-types",
+        "command": [
+          "npx",
+          "--no-install",
+          "tsc",
+          "--noEmit",
+          "--project",
+          "../tasks/artifacts/player-cards-2026-10-24/slice-03/tsconfig.json"
+        ],
+        "cwd": "web",
+        "exitCode": 0,
+        "elapsedSeconds": 1.151,
+        "log": "scoped-types.log"
+      },
+      {
+        "label": "scoped-lint",
+        "command": [
+          "npx",
+          "--no-install",
+          "eslint",
+          "lib/player-cards/interactionFixtures.ts",
+          "lib/player-cards/interactionSnapshot.ts",
+          "components/player-cards/PlayerCardFlow.tsx",
+          "components/player-cards/InteractiveCard.tsx",
+          "components/player-cards/PlayerCardFlow.test.tsx"
+        ],
+        "cwd": "web",
+        "exitCode": 0,
+        "elapsedSeconds": 0.874,
+        "log": "scoped-lint.log"
+      },
+      {
+        "label": "browser-sandbox",
+        "command": [
+          "node",
+          "../tasks/artifacts/player-cards-2026-10-24/slice-03-review/browser-controls.mjs"
+        ],
+        "cwd": "web",
+        "exitCode": 1,
+        "elapsedSeconds": 0.461,
+        "log": "browser-sandbox.log"
+      }
+    ]
+  },
+  {
+    "receipt": "COMMANDS.browser-lock-refusal.json",
+    "recordedAt": "2026-10-24T17:43:20.303196+00:00",
+    "environmentOverrides": {
+      "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-cache",
+      "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-logs",
+      "NO_UPDATE_NOTIFIER": "1",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    },
+    "checks": [
+      {
+        "label": "browser-offline",
+        "command": [
+          "node",
+          "../tasks/artifacts/player-cards-2026-10-24/slice-03-review/browser-controls.mjs"
+        ],
+        "cwd": "web",
+        "blocked": "Shared heavy lock already exists; not stolen."
+      }
+    ]
+  },
+  {
+    "receipt": "COMMANDS.browser-first.json",
+    "recordedAt": "2026-10-24T17:44:52.474478+00:00",
+    "environmentOverrides": {
+      "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-cache",
+      "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-logs",
+      "NO_UPDATE_NOTIFIER": "1",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    },
+    "checks": [
+      {
+        "label": "browser-offline",
+        "command": [
+          "node",
+          "../tasks/artifacts/player-cards-2026-10-24/slice-03-review/browser-controls.mjs"
+        ],
+        "cwd": "web",
+        "exitCode": 1,
+        "elapsedSeconds": 5.843,
+        "log": "browser-offline.log"
+      }
+    ]
+  },
+  {
+    "receipt": "COMMANDS.browser-lock-refusal-2.json",
+    "recordedAt": "2026-10-24T17:46:32.068221+00:00",
+    "environmentOverrides": {
+      "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-cache",
+      "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-logs",
+      "NO_UPDATE_NOTIFIER": "1",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    },
+    "checks": [
+      {
+        "label": "browser-offline",
+        "command": [
+          "node",
+          "../tasks/artifacts/player-cards-2026-10-24/slice-03-review/browser-controls.mjs"
+        ],
+        "cwd": "web",
+        "blocked": "Shared heavy lock already exists; not stolen."
+      }
+    ]
+  },
+  {
+    "receipt": "COMMANDS.browser.json",
+    "recordedAt": "2026-10-24T17:47:13.333361+00:00",
+    "environmentOverrides": {
+      "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-cache",
+      "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-logs",
+      "NO_UPDATE_NOTIFIER": "1",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    },
+    "checks": [
+      {
+        "label": "browser-offline",
+        "command": [
+          "node",
+          "../tasks/artifacts/player-cards-2026-10-24/slice-03-review/browser-controls.mjs"
+        ],
+        "cwd": "web",
+        "exitCode": 1,
+        "elapsedSeconds": 1.838,
+        "log": "browser-offline.log"
+      }
+    ]
+  },
+  {
+    "receipt": "COMMANDS.banner.json",
+    "recordedAt": "2026-10-24T17:49:07.590645+00:00",
+    "environmentOverrides": {
+      "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-cache",
+      "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-review/.npm-logs",
+      "NO_UPDATE_NOTIFIER": "1",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    },
+    "checks": [
+      {
+        "label": "zero-state-banner",
+        "command": [
+          "npm",
+          "test",
+          "--",
+          "--run",
+          "--config",
+          "../tasks/artifacts/player-cards-2026-10-24/slice-03-review/review.vitest.config.mts",
+          "-t",
+          "PC-S03-02-zero",
+          "--maxWorkers=1",
+          "--no-file-parallelism"
+        ],
+        "cwd": "web",
+        "exitCode": 1,
+        "elapsedSeconds": 1.454,
+        "log": "zero-state-banner.log"
+      }
+    ]
+  }
+]

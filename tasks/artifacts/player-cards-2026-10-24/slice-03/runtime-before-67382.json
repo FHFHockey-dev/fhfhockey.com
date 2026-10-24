@@ -1,0 +1,9 @@
+{
+  "fromPid": 67382,
+  "fromCommand": "/usr/local/bin/node /Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03/serve-preview.mjs",
+  "toScript": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03/serve-preview.mjs",
+  "toHtmlSha256": "e8f5d140bd7d6ee5823a836249debde8c0cee06d2be6cc715d8f25cad402715f",
+  "toHtmlBytes": 317075,
+  "bind": "127.0.0.1:3125",
+  "action": "authorized own static preview handoff after offline QA"
+}

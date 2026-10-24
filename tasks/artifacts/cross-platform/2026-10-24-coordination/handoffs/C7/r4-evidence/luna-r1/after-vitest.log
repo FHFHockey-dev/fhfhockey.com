@@ -1,0 +1,107 @@
+
+ RUN  v3.2.7 /private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/luna-r1/web
+
+ ✓ ../../controls/c7LunaR1.test.ts > R1 F1: an unusable Decisions leg is held, never review_only > R1-01 Decisions timeout (my C07) → held with luna_attempt_held_no_retry; reservation retained 89ms
+ ✓ ../../controls/c7LunaR1.test.ts > R1 F1: an unusable Decisions leg is held, never review_only > R1-02 kill switch flips between legs (my C06) → held luna_dispatch_disabled 26ms
+ ✓ ../../controls/c7LunaR1.test.ts > R1 F1: an unusable Decisions leg is held, never review_only > R1-03 settled Decisions reply the adapter cannot use (no answers) → held decisions_reference_unavailable 44ms
+ ✓ ../../controls/c7LunaR1.test.ts > R1 F1: an unusable Decisions leg is held, never review_only > R1-04 Decisions-leg budget refusal (cap fits one call) → held luna_budget_exhausted, ledger not blocked 22ms
+ ✓ ../../controls/c7LunaR1.test.ts > R1 F2: attempts = fresh admitted reservations > R1-05 kill switch 3ms
+ ✓ ../../controls/c7LunaR1.test.ts > R1 F2: attempts = fresh admitted reservations > R1-05 ledger stopped 2ms
+ ✓ ../../controls/c7LunaR1.test.ts > R1 F2: attempts = fresh admitted reservations > R1-05 maxCalls 0 2ms
+ ✓ ../../controls/c7LunaR1.test.ts > R1 F2: attempts = fresh admitted reservations > R1-05 unsettled leftover 3ms
+ ✓ ../../controls/c7LunaR1.test.ts > R1 F2: attempts = fresh admitted reservations > R1-05 missing key after admission 22ms
+ ✓ ../../controls/c7LunaR1.test.ts > R1 F2: attempts = fresh admitted reservations > R1-05 normal two legs 43ms
+ ✓ ../../controls/c7LunaR1.test.ts > R1 F2: attempts = fresh admitted reservations > R1-06 replay of settled receipts reports 0 attempts and makes no fetch 62ms
+ ✓ ../../controls/c7LunaR1.test.ts > R1 F2: attempts = fresh admitted reservations > R1-07 attempts equals new ledger rows on every path above 61ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 environment > C01 network guard is active inside the forked worker 1ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 disabled / zero-attempt paths > C02 disabled never touches transport, key, admission or a missing ledger 19ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 disabled / zero-attempt paths > C03 enabled=string true is not enabled 2ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 disabled / zero-attempt paths > C03 enabled=1 is not enabled 2ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 disabled / zero-attempt paths > C03 enabled=truthy object is not enabled 2ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 disabled / zero-attempt paths > C04 enabled without a transport holds with zero attempts 3ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 disabled / zero-attempt paths > C05 kill switch on with dispatch: no fetch/key/admission (records reported attempts) 9ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 disabled / zero-attempt paths > C06 kill switch flips on after Responses: Decisions not dispatched (records surfaced status) 27ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C07 Decisions-leg timeout retains reservation and blocks ledger (records surfaced status) 63ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C08 missing key after admission: no fetch, reservation held conservatively 22ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C09 leftover reserved row without blockedReason blocks new admission 3ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C09 leftover uncertain row without blockedReason blocks new admission 2ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C10 stale lock is never stolen; ledger bytes unchanged 2ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C11 expired admits nothing 3ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C11 disabled ledger admits nothing 2ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C11 maxCalls zero admits nothing 2ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C11 cap below one reservation admits nothing 2ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C12 aggregate counts prior exposure + settled charges, not just reservations 2ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C13 lock contention at settle: reservation never silently freed, next run blocked 13ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C14 unresolved billing (cached tokens) is held uncertain, never settled 22ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C14 unresolved billing (negative input) is held uncertain, never settled 20ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C14 unresolved billing (priority tier) is held uncertain, never settled 24ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C15 oversize (>256KiB) and HTTP 500 responses are held uncertain 41ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C14 unresolved billing (dated model alias) is held uncertain, never settled 20ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C16 caller cannot widen the wire (tools/store/tokens/tier/extra fields) 20ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C14 unresolved billing (missing usage) is held uncertain, never settled 20ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C17 provider error text and key never reach the review artifact 20ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C14 unresolved billing (output over cap) is held uncertain, never settled 20ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 uncertain-spend reservation > C18 reservation ceiling arithmetic 0ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 source / time / occurrence binding > C19 same source instant in another valid format is accepted; 1 ms later is held pre-dispatch 40ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 source / time / occurrence binding > C20 asOf before publish held pre-dispatch 1ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 source / time / occurrence binding > C20 asOf after now held pre-dispatch 1ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 source / time / occurrence binding > C21 review clock before ingestion is held pre-dispatch 1ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 source / time / occurrence binding > C22 alias known after publish is excluded in causal mode; retrospective mode is explicitly marked 22ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 source / time / occurrence binding > C23 goalie evidence spanning another occurrence is rejected 21ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 source / time / occurrence binding > C24 goalie status on a non-goalie subject is rejected 22ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 source / time / occurrence binding > C25 goalie canonicalId differing from the identity match is rejected; duplicate occurrence rejected 41ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 source / time / occurrence binding > C26 likely on not-starting wording (observation: soft statuses are not wording-checked) 21ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 source / time / occurrence binding > C26 projected on ruled-out wording (observation: soft statuses are not wording-checked) 24ms
+ ✓ ../../controls/c7LunaAdversarial.test.ts > C7 source / time / occurrence binding > C27 Decisions wire is identical with and without the Luna identity leg (proposals never become reviewer facts) 62ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > defaults off before reading input or invoking transport 19ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > runs the real caller through mocked Responses then pinned Decisions without promoting facts 53ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > holds missing original publishedAt before dispatch 2ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > holds missing original author before dispatch 1ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > holds missing original originalPostId before dispatch 1ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > rebuilds the snapshot for the exact source publication instant 1ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > holds unavailable historical identity evidence without a paid request 2ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > rejects injected id and stops before downstream fan-out 23ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > rejects injected span and stops before downstream fan-out 21ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > rejects injected authority and stops before downstream fan-out 22ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > keeps missing/ambiguous candidates as abstentions without paid widening 23ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > rejects a forced choice across colliding surnames 24ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > rejects practice certainty inflation to confirmed 21ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > rejects practice certainty inflation to ruled_out 24ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > keeps proposed projected separate from applied start probabilities 21ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > keeps proposed likely separate from applied start probabilities 20ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > keeps proposed unknown separate from applied start probabilities 21ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > keeps proposed confirmed separate from applied start probabilities 20ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > keeps proposed ruled_out separate from applied start probabilities 21ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > reuses settled responses across processes without new dispatch 59ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > keeps a retraction/version separate and applies neither interpretation 77ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > rejects a confirmed proposal that contradicts explicit not-starting wording 21ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > retains timeout reservation, blocks replay and performs no retries 30ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > preserves the historical global stop regardless of apparent headroom 2ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > enforces aggregate exposure before key lookup 2ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > honors kill switch before admission or key lookup 2ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > holds a Decisions-only kill-switch stop with zero attempts 2ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > holds a kill switch that stops the Decisions leg after Responses 19ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > holds a Decisions-leg timeout and keeps both admitted reservations counted 48ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > counts a reservation admitted before a missing key as an attempt without dispatch 20ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > leaves a partial Decisions review as review_only with its hold 45ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > blocks unknown model billing without saving a successful receipt 21ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > does not mistake review proposals for the homepage's versioned event contract 46ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > serializes admissions from independent store instances 12ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > reserves above the full-context long-rate regional ceiling 0ms
+ ✓ lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > preserves retained reference bytes 0ms
+ ✓ lib/sources/tweetLunaReview.test.ts > provenance-preserving S01–S10 development library > retains 'S01' source lineage and separates labels from facts 1ms
+ ✓ lib/sources/tweetLunaReview.test.ts > provenance-preserving S01–S10 development library > retains 'S02' source lineage and separates labels from facts 1ms
+ ✓ lib/sources/tweetLunaReview.test.ts > provenance-preserving S01–S10 development library > retains 'S03' source lineage and separates labels from facts 0ms
+ ✓ lib/sources/tweetLunaReview.test.ts > provenance-preserving S01–S10 development library > retains 'S04' source lineage and separates labels from facts 0ms
+ ✓ lib/sources/tweetLunaReview.test.ts > provenance-preserving S01–S10 development library > retains 'S05' source lineage and separates labels from facts 0ms
+ ✓ lib/sources/tweetLunaReview.test.ts > provenance-preserving S01–S10 development library > retains 'S06' source lineage and separates labels from facts 0ms
+ ✓ lib/sources/tweetLunaReview.test.ts > provenance-preserving S01–S10 development library > retains 'S07' source lineage and separates labels from facts 0ms
+ ✓ lib/sources/tweetLunaReview.test.ts > provenance-preserving S01–S10 development library > retains 'S08' source lineage and separates labels from facts 0ms
+ ✓ lib/sources/tweetLunaReview.test.ts > provenance-preserving S01–S10 development library > retains 'S09' source lineage and separates labels from facts 0ms
+ ✓ lib/sources/tweetLunaReview.test.ts > provenance-preserving S01–S10 development library > retains 'S10' source lineage and separates labels from facts 0ms
+
+ Test Files  3 passed (3)
+      Tests  98 passed (98)
+   Start at  12:47:27
+   Duration  2.62s (transform 174ms, setup 0ms, collect 476ms, tests 1.77s, environment 0ms, prepare 97ms)
+

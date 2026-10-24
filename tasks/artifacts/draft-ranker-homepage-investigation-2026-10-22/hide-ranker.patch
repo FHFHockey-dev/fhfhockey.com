@@ -1,0 +1,40 @@
+diff --git a/web/__tests__/index.test.tsx b/web/__tests__/index.test.tsx
+index b6f3dad71b..49217e212b 100644
+--- a/web/__tests__/index.test.tsx
++++ b/web/__tests__/index.test.tsx
+@@ -150,6 +150,22 @@ describe("homepage fantasy tool switcher", () => {
+     expect(screen.getByTestId("homepage-draft-ranker")).toBeTruthy();
+   });
+ 
++  it("hides the draft ranker during the season even when enabled", () => {
++    render(
++      <Home
++        {...(baseProps as any)}
++        draftRankerHomepageEnabled
++        isOffseason={false}
++        latestNews={[]}
++      />,
++    );
++
++    expect(screen.queryByRole("tablist")).toBeNull();
++    expect(screen.queryByText("Draft Ranker")).toBeNull();
++    expect(screen.queryByTestId("homepage-draft-ranker")).toBeNull();
++    expect(screen.getByTestId("transaction-trends").textContent).toBe("ownership");
++  });
++
+   it("keeps transaction trends as the only module when the ranker is disabled", () => {
+     render(<Home {...(baseProps as any)} latestNews={[]} />);
+ 
+diff --git a/web/pages/index.tsx b/web/pages/index.tsx
+index 226a2683ee..e7e495d0e2 100755
+--- a/web/pages/index.tsx
++++ b/web/pages/index.tsx
+@@ -193,7 +193,7 @@ const Home: NextPage = ({
+           </section>
+         ) : null}
+         <ClientOnly>
+-          {draftRankerHomepageEnabled ? (
++          {draftRankerHomepageEnabled && isOffseason ? (
+             <div className={styles.homepageToolSwitcher}>
+               <div
+                 className={styles.homepageToolTabs}

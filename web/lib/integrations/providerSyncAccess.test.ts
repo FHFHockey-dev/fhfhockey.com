@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resolveInSeasonAccess, type InSeasonGrant } from "lib/in-season/access";
 import { isMonthlyFailureGraceActive, monthlyFailureWindow, purchasedCoverageAfterCancellation, seasonPassCoverage } from "lib/in-season/commerce";
 import { resolveDraftProAccess, type DraftProEntitlement } from "lib/draft-pro/access";
-import { loadProviderSyncAccess, requireProviderSyncAccess } from "./providerSyncAccessServer";
+import { isProviderSyncPremiumEnforced, loadProviderSyncAccess, requireProviderSyncAccess } from "./providerSyncAccessServer";
 import { providerSyncAccessMessage } from "./providerSyncAccess";
 
 const mocks = vi.hoisted(() => ({ season: vi.fn(), draft: vi.fn() }));
@@ -13,8 +13,8 @@ const flags = { checkout: false, recommendations: false, dust: false, blended_cs
 const paid: InSeasonGrant = { source: "purchase", reference: "verified-purchase", status: "active", effectiveFrom: "2026-10-01T04:00:00Z", effectiveTo: "2026-11-01T04:00:00Z" };
 function season(grants: InSeasonGrant[]) { mocks.season.mockResolvedValue(resolveInSeasonAccess(grants, now)); }
 function draft(grants: DraftProEntitlement[]) { mocks.draft.mockResolvedValue(resolveDraftProAccess({ now, userId: "owner", entitlements: grants, flags, patreonVerificationAvailable: true })); }
-beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(now); vi.resetAllMocks(); season([]); draft([]); });
-afterEach(() => vi.useRealTimers());
+beforeEach(() => { vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", "true"); vi.useFakeTimers(); vi.setSystemTime(now); vi.resetAllMocks(); season([]); draft([]); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
 
 describe("shared provider sync entitlement", () => {
   it("rejects anonymous callers before any entitlement lookup", async () => {
@@ -72,5 +72,25 @@ describe("shared provider sync entitlement", () => {
     expect(providerSyncAccessMessage("loading", null)).toContain("Checking");
     expect(providerSyncAccessMessage("ready", null)).toContain("season pass");
     expect(providerSyncAccessMessage("error", null)).toContain("could not be verified");
+  });
+});
+
+
+describe("paid sync rollout", () => {
+  it.each([undefined, "false", "TRUE", "1", " true "])("keeps enforcement off for %s", async value => {
+    vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", value);
+    expect(isProviderSyncPremiumEnforced()).toBe(false);
+    mocks.season.mockRejectedValue(new Error("billing unavailable"));
+    expect(await requireProviderSyncAccess("owner")).toEqual({ eligible: true, reason: "rollout_free", expiresAt: null, nextVerificationAt: null });
+    expect(mocks.season).not.toHaveBeenCalled(); expect(mocks.draft).not.toHaveBeenCalled();
+    await expect(requireProviderSyncAccess(null)).rejects.toMatchObject({ statusCode: 401 });
+  });
+  it.each(["free", "paid", "legacy", "unavailable"])("keeps %s billing entitlement truthful while sync is free", async kind => {
+    vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", undefined);
+    if (kind === "paid") season([paid]);
+    if (kind === "legacy") draft([{ source: "purchase", status: "active", effectiveFrom: paid.effectiveFrom, effectiveTo: paid.effectiveTo }]);
+    if (kind === "unavailable") mocks.season.mockRejectedValue(new Error("offline"));
+    expect((await requireProviderSyncAccess("owner")).reason).toBe("rollout_free");
+    expect(await loadProviderSyncAccess("owner", { entitlementOnly: true })).toMatchObject({ eligible: ["paid", "legacy"].includes(kind), reason: kind === "unavailable" ? "verification_unavailable" : kind === "free" ? "no_active_grant" : "eligible" });
   });
 });

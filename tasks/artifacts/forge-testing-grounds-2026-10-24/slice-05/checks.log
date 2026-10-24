@@ -1,0 +1,72 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05/slice05.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+✘ [ERROR] Could not resolve "../../../../web/node_modules/vitest/config"
+
+    ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05/slice05.vitest.config.mts:1:490:
+      1 │ ...{ defineConfig } from "../../../../web/node_modules/vitest/config";
+        ╵                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+failed to load config from /Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05/slice05.vitest.config.mts
+
+⎯⎯⎯⎯⎯⎯⎯ Startup Error ⎯⎯⎯⎯⎯⎯⎯⎯
+Error: Build failed with 1 error:
+../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05/slice05.vitest.config.mts:1:490: ERROR: Could not resolve "../../../../web/node_modules/vitest/config"
+    at failureErrorWithLog (/Users/tim/Code/fhfhockey.com/web/node_modules/esbuild/lib/main.js:1467:15)
+    at /Users/tim/Code/fhfhockey.com/web/node_modules/esbuild/lib/main.js:926:25
+    at runOnEndCallbacks (/Users/tim/Code/fhfhockey.com/web/node_modules/esbuild/lib/main.js:1307:45)
+    at buildResponseToResult (/Users/tim/Code/fhfhockey.com/web/node_modules/esbuild/lib/main.js:924:7)
+    at /Users/tim/Code/fhfhockey.com/web/node_modules/esbuild/lib/main.js:951:16
+    at responseCallbacks.<computed> (/Users/tim/Code/fhfhockey.com/web/node_modules/esbuild/lib/main.js:603:9)
+    at handleIncomingPacket (/Users/tim/Code/fhfhockey.com/web/node_modules/esbuild/lib/main.js:658:12)
+    at Socket.readFromStdout (/Users/tim/Code/fhfhockey.com/web/node_modules/esbuild/lib/main.js:581:7)
+    at Socket.emit (node:events:518:28)
+    at addChunk (node:internal/streams/readable:561:12) {
+  errors: [Getter/Setter],
+  warnings: [Getter/Setter]
+}
+
+
+
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05/slice05.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/forge-testing-grounds/ownerRoutes.test.ts (32 tests) 10ms
+ ✓ lib/forge-testing-grounds/serverOwnerBoundary.test.ts (19 tests) 10ms
+(node:46466) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx > owner workspace lifecycle > renders only a generic locked SSR frame with no private props or data hooks
+Warning: useLayoutEffect does nothing on the server, because its effect cannot be encoded into the server renderer's output format. This will lead to a mismatch between the initial, non-hydrated UI and the intended UI. To avoid this, useLayoutEffect should only be used in components that render exclusively on the client. See https://reactjs.org/link/uselayouteffect-ssr for common fixes.
+    at SideEffect (/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/shared/lib/side-effect.js:16:13)
+    at Head (/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/shared/lib/head.js:154:11)
+    at TestingGroundsPage
+Warning: useLayoutEffect does nothing on the server, because its effect cannot be encoded into the server renderer's output format. This will lead to a mismatch between the initial, non-hydrated UI and the intended UI. To avoid this, useLayoutEffect should only be used in components that render exclusively on the client. See https://reactjs.org/link/uselayouteffect-ssr for common fixes.
+    at SideEffect (/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/shared/lib/side-effect.js:16:13)
+    at Head (/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/shared/lib/head.js:154:11)
+    at TestingGroundsPage
+
+ ✓ lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx (10 tests) 350ms
+
+ Test Files  3 passed (3)
+      Tests  61 passed (61)
+   Start at  12:22:17
+   Duration  1.19s (transform 189ms, setup 0ms, collect 196ms, tests 371ms, environment 282ms, prepare 95ms)
+
+
+COMMAND: npx --no-install tsc --noEmit --project ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05/tsconfig.json
+EXIT: 0; output: (none)
+COMMAND: npx --no-install eslint --report-unused-disable-directives-severity warn [exact ten paths in OWNERSHIP.md]
+EXIT: 0; output: (none)
+CHECK: direct whitespace scan of the ten new sources
+RESULT: zero trailing-whitespace failures
+CHECK: offline-network.mjs fetch/socket controls against blocked.invalid
+RESULT: two denials before connection; no real network requests
+STARTUP: proposed Next harness exited1 at occupied shared lock EEXIST before app/runtime setup; original dev-view.log preserved
+STARTUP: static loopback viewer failed EPERM; escalated start rejected before execution by automatic approval review; exact reason in LOCAL-VIEW.md
+DIAGNOSIS: first sandbox curl exit7; separately approved escalated credential-free local GET exit0; HTTP503 owner_not_configured; no provider path reached
+NOT RUN: full suite/build, browser/visual/native-accessibility QA, real owner/session verification, persistence, model or actual pilot

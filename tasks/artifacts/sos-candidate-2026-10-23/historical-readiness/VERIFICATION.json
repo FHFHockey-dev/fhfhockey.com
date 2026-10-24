@@ -1,0 +1,19 @@
+{
+  "local_inventory": "completed once; descriptive data-readiness evidence only",
+  "python_ast": "PASS",
+  "json_parse": "PASS",
+  "sql_mutation_keyword_guard": "PASS",
+  "sql_readonly_transaction_and_caps": "PASS",
+  "sql_selected_columns_vs_checked_in_schema": "PASS",
+  "sql_runtime_or_query_plan": "NOT RUN",
+  "production_reads": 0,
+  "new_model_experiments": 0,
+  "new_synthetic_tests": 0,
+  "candidate_manifest_unchanged": true,
+  "queries": 3,
+  "selected_relations": [
+    "games",
+    "nhl_api_game_payloads_raw",
+    "player_forecast_season_schedule_snapshots"
+  ]
+}

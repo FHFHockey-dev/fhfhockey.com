@@ -1,0 +1,83 @@
+{
+  "at": "2026-10-24T16:38:34.939754+00:00",
+  "method": "Read-only parsing of retained artifacts; no SQL/app/API executed. Review all68 row identities/source groups and join/arithmetic fields; no claim every numeric payload field was visually reviewed.",
+  "query1_rows": 8,
+  "query1_sources": {
+    "player": 1,
+    "season": 2,
+    "wigo_career": 1,
+    "wigo_recent": 1,
+    "nhl_totals": 3
+  },
+  "query2_rows": 60,
+  "query2_sources": {
+    "nhl_log": 20,
+    "nst_individual_log": 20,
+    "nst_on_ice_log": 20
+  },
+  "query2_unique_date_season_keys": {
+    "nhl_log": 20,
+    "nst_individual_log": 20,
+    "nst_on_ice_log": 20
+  },
+  "window_matching": [
+    {
+      "window": 5,
+      "nhl": 5,
+      "individual": 5,
+      "on_ice": 5
+    },
+    {
+      "window": 10,
+      "nhl": 10,
+      "individual": 9,
+      "on_ice": 9
+    },
+    {
+      "window": 20,
+      "nhl": 20,
+      "individual": 13,
+      "on_ice": 13
+    }
+  ],
+  "current_l5_sums": {
+    "toi": 6313.0,
+    "ixg": 1.82,
+    "icf": 35.0
+  },
+  "receipts": [
+    {
+      "query": 1,
+      "maximum_rows": 9,
+      "tool_wall_ms": 6243,
+      "result_keys": [
+        "content",
+        "structuredContent",
+        "isError"
+      ],
+      "result_error_flag": false
+    },
+    {
+      "query": 2,
+      "maximum_rows": 60,
+      "tool_wall_ms": 5054,
+      "result_keys": [
+        "content",
+        "structuredContent",
+        "isError"
+      ],
+      "result_error_flag": false
+    }
+  ],
+  "source_pins": {
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/REPORT.md": "12cae6a38cdae65b454fe76271a329b46759ab130654ed14691da3bc6373ed8b",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-1-result.json": "c96d5313d229ebae383dc8f925acf02f672a671fb29f053e28dc9c5b1136994a",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-1-rows.json": "38804083b42d7a8a62104bf3f881069f03754a34b899feca55edc68500506736",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-1.sql": "67fc2dfd7746694c5a35110124da204d424e795420340fe248f56621ac0e994e",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2-result.json": "f2d2fdd13fdf07519e87d7cfa4811c2a3cffe318c02b6e09d6b753fa147f59d5",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2-rows.json": "52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2.sql": "6e5fb9e681829404dbdbbfbb7b35ff56e93b81b714200dfdec5b805fb90887aa",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/summary.json": "fe17c8310839e30c7bc57c725ef4db6f9f27522752b2da51b64e92397c28f8e1"
+  },
+  "limits": "One-player diagnostic only. SQL wrappers/static receipt bounds inspected, not a fresh hosted call or league coverage. No generic inference that absent older selected NST dates are absent deeper in tables."
+}

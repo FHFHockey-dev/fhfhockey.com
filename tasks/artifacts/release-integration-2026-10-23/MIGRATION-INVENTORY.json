@@ -1,0 +1,175 @@
+{
+  "registry_sha256": "5fd219106624bc33906dd5d6c1308db632b08b8a839e90eacaef4fcac9f6c35a",
+  "registered": 99,
+  "active": 99,
+  "unregistered_active": [],
+  "registered_missing": [],
+  "hash_mismatches": [],
+  "unapplied_or_unknown": [
+    {
+      "path": "supabase/migrations/20260818150256_player_forecast_season_v4_integrity.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260820013120_revoke_execute_sql_browser_roles.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260820013124_revoke_truncate_rolling_metrics_browser_roles.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260820014700_player_forecast_season_queue_compaction.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260820031500_player_forecast_v4_contract_checksum.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260820041500_player_forecast_v5_contract_checksum.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260820050000_player_forecast_v5_team_metrics.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260820052000_player_forecast_copy_on_write_runs.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260820053000_player_forecast_v5_release_lineage.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260826123000_schedule_player_forecast_season_roster_refresh.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260826131500_require_editor_for_player_forecast_opening_release.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260826133000_inherit_player_forecast_season_assumptions.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260828130824_start_chart_yahoo_overlay_reader.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260828142331_recent_team_form_nullable_components.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260828162000_add_sustainability_repair_versions.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260907143356_draft_pro_foundation.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260907145602_draft_pro_stripe_fulfillment.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260907182507_draft_pro_saved_drafts_transactions.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260909120000_draft_pro_complimentary_access_codes.sql",
+      "deploymentState": "unknown",
+      "gate": "Separate deployment authorization and an exact environment receipt are required."
+    },
+    {
+      "path": "supabase/migrations/20260917133519_mock_draft_adp.sql",
+      "deploymentState": "pending",
+      "gate": "Keep rollout flags disabled until feature activation is authorized."
+    },
+    {
+      "path": "supabase/migrations/20260919005608_tweet_pipeline_reports_and_review.sql",
+      "deploymentState": "unknown",
+      "gate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run."
+    },
+    {
+      "path": "supabase/migrations/20260919005622_nhl_draft_identity_ingestion.sql",
+      "deploymentState": "unknown",
+      "gate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run."
+    },
+    {
+      "path": "supabase/migrations/20260919005852_nhl_prospect_verification_actor.sql",
+      "deploymentState": "unknown",
+      "gate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run."
+    },
+    {
+      "path": "supabase/migrations/20260923184653_fantrax_live_draft_sessions.sql",
+      "deploymentState": "unknown",
+      "gate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run."
+    },
+    {
+      "path": "supabase/migrations/20260927104934_in_season_access_workspace.sql",
+      "deploymentState": "unknown",
+      "gate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run."
+    },
+    {
+      "path": "supabase/migrations/20261002021651_forge_local_execution_fence.sql",
+      "deploymentState": "pending",
+      "gate": "FE-05f local attempt/recovery contract only; hosted apply, horizon generation and serving retain the existing scope, capacity and release gates. No hosted migration command was run."
+    },
+    {
+      "path": "supabase/migrations/20261002134400_game_line_snapshots.sql",
+      "deploymentState": "unknown",
+      "gate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run."
+    },
+    {
+      "path": "supabase/migrations/20261002140500_resolve_goalie_unified_game_team.sql",
+      "deploymentState": "unknown",
+      "gate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run."
+    },
+    {
+      "path": "supabase/migrations/20261004181455_forge_public_revision_reader.sql",
+      "deploymentState": "unknown",
+      "gate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run."
+    },
+    {
+      "path": "supabase/migrations/20261011160000_preserve_nst_pk_fractional_start_rates.sql",
+      "deploymentState": "unknown",
+      "gate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run."
+    },
+    {
+      "path": "supabase/migrations/20261020211500_forge_league_skater_physical_totals.sql",
+      "deploymentState": "pending",
+      "gate": "Drafted 2026-10-20 at TJ's request (FORGE hits/blocks league-to-date rescale): read-only STABLE SECURITY INVOKER function public.forge_league_skater_physical_totals(p_season_id, p_cutoff) returning league all-situation hits, blocks and TOI by F/D for this season to date and the two prior seasons from wgo_skater_stats, every scope bounded by game date as well as season_id; EXECUTE for service_role only. FORGE falls back to constant priors if the function is absent, so code may ship first. Hosted apply needs TJ's separate explicit approval; no migration command was run."
+    },
+    {
+      "path": "supabase/migrations/20261020224500_data_api_explicit_default_privileges.sql",
+      "deploymentState": "pending",
+      "gate": "Drafted 2026-10-20 for ticket D4 (Supabase stops auto-granting new public objects on 2026-10-30). Revokes the baseline's replayable ALTER DEFAULT PRIVILEGES for postgres in public (ALL on tables, sequences and functions to anon, authenticated and service_role) and postgres's global PUBLIC EXECUTE default on new functions. Existing objects are unchanged; every later migration must grant explicitly (the IFTTT SQL6-SQL8 drafts already do). Apply before or with 20261020224600; hosted apply needs TJ's separate explicit approval and no migration command was run."
+    },
+    {
+      "path": "supabase/migrations/20261020224600_data_api_reviewed_object_grants.sql",
+      "deploymentState": "pending",
+      "gate": "Drafted 2026-10-20 for ticket D4. Resets and re-grants the ACLs of the 76 reviewed tables, one identity sequence and 46 RPCs to exactly the operations traced callers use: browser access stays only on the owner-scoped provider-linkage SELECT and the deliberate public-read RSO schedule; service_role loses unused TRUNCATE/REFERENCES/TRIGGER everywhere, unused DELETE on Draft Pro/in-season/provider_sync_runs, the ALL grants on three forecast tables, and EXECUTE on the uncalled promote_player_forecast_model_atomic. Narrows privileges only; no RLS, policy or body change. Hosted apply needs TJ's separate explicit approval and no migration command was run."
+    }
+  ]
+}

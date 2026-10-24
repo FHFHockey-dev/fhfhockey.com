@@ -1,0 +1,271 @@
+{
+  "at": "2026-10-24T20:18:35.075266+00:00",
+  "content_reviewed": [
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-averages.md",
+      "sha256": "16a41037e6a43c79d924365d6beb79390165af5525edc39247ab94b8776445a3",
+      "bytes": 9343,
+      "lines": 98,
+      "mtime_ns": 1785605126576865220,
+      "kind": "unique-task-document",
+      "inventory_sha256": "16a41037e6a43c79d924365d6beb79390165af5525edc39247ab94b8776445a3",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          98
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-audit-pass-2-trends-debug.md",
+      "sha256": "324cab5c13b737eface68558f60852ee2ac35f29d19451ab38f1159fd6b1c802",
+      "bytes": 62076,
+      "lines": 667,
+      "mtime_ns": 1785605126577420902,
+      "kind": "unique-task-document",
+      "inventory_sha256": "324cab5c13b737eface68558f60852ee2ac35f29d19451ab38f1159fd6b1c802",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          667
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-audit.md",
+      "sha256": "6c6e2aad3f7803bec98ba7a4418abe5f8e7dcfd798a29665c6b1948498cbd27b",
+      "bytes": 15231,
+      "lines": 289,
+      "mtime_ns": 1785197963743629642,
+      "kind": "unique-task-document",
+      "inventory_sha256": "6c6e2aad3f7803bec98ba7a4418abe5f8e7dcfd798a29665c6b1948498cbd27b",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          289
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation-blueprint.md",
+      "sha256": "de2f4f65f8d63e81cf607f98d5c71f4a3b8b18a42748660d97fd7c2f3359da49",
+      "bytes": 43935,
+      "lines": 973,
+      "mtime_ns": 1785197963743912358,
+      "kind": "unique-task-document",
+      "inventory_sha256": "de2f4f65f8d63e81cf607f98d5c71f4a3b8b18a42748660d97fd7c2f3359da49",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          973
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation.md",
+      "sha256": "22fead93f9601c9b884007440d98dfc08cd474b57b0458fbee35d3211265b05f",
+      "bytes": 9765,
+      "lines": 93,
+      "mtime_ns": 1785197963744045695,
+      "kind": "unique-task-document",
+      "inventory_sha256": "22fead93f9601c9b884007440d98dfc08cd474b57b0458fbee35d3211265b05f",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          93
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md",
+      "sha256": "97f0c4a879f10408d86a15a443cf7ec303d36c2eb8a1957086946e3c0476e53f",
+      "bytes": 38973,
+      "lines": 416,
+      "mtime_ns": 1787197573903295393,
+      "kind": "unique-task-document",
+      "inventory_sha256": "97f0c4a879f10408d86a15a443cf7ec303d36c2eb8a1957086946e3c0476e53f",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          416
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md",
+      "sha256": "d5259df5564657288c12bbac6a5d372e6ffd145e74b00641f34bb42a560a6373",
+      "bytes": 9941,
+      "lines": 296,
+      "mtime_ns": 1785197963745873496,
+      "kind": "unique-task-document",
+      "inventory_sha256": "d5259df5564657288c12bbac6a5d372e6ffd145e74b00641f34bb42a560a6373",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          296
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-audit-pass-2-trends-debug.md",
+      "sha256": "5923588348bde884eb2c087e3c42d3f20c2531e1302ad53cc3fad108cce17a76",
+      "bytes": 28835,
+      "lines": 147,
+      "mtime_ns": 1785197963745969249,
+      "kind": "unique-task-document",
+      "inventory_sha256": "5923588348bde884eb2c087e3c42d3f20c2531e1302ad53cc3fad108cce17a76",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          147
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-audit.md",
+      "sha256": "f9d571d46c4dd964c99fe384543229caac749e42d6d6355ba43723cee618a72c",
+      "bytes": 7393,
+      "lines": 65,
+      "mtime_ns": 1785197963746059418,
+      "kind": "unique-task-document",
+      "inventory_sha256": "f9d571d46c4dd964c99fe384543229caac749e42d6d6355ba43723cee618a72c",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          65
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-remediation-blueprint.md",
+      "sha256": "b83738e8e305ad5e3fe951465f05b74b457e34f1e16ae380d896cd84de5b78b8",
+      "bytes": 15998,
+      "lines": 112,
+      "mtime_ns": 1792348998386941082,
+      "kind": "unique-task-document",
+      "inventory_sha256": "b83738e8e305ad5e3fe951465f05b74b457e34f1e16ae380d896cd84de5b78b8",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          112
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-remediation.md",
+      "sha256": "d61030899141516660d082597dc3858d9d635dbce90f4c4293ac17306879422a",
+      "bytes": 8615,
+      "lines": 66,
+      "mtime_ns": 1792452205094736092,
+      "kind": "unique-task-document",
+      "inventory_sha256": "d61030899141516660d082597dc3858d9d635dbce90f4c4293ac17306879422a",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          66
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md",
+      "sha256": "059fe8e750a5497c0372f3785add66d24c4ee228a65b4df3af5c23339b2c0637",
+      "bytes": 20769,
+      "lines": 116,
+      "mtime_ns": 1792348998385438210,
+      "kind": "unique-task-document",
+      "inventory_sha256": "059fe8e750a5497c0372f3785add66d24c4ee228a65b4df3af5c23339b2c0637",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          116
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rpm-audit-action-items-pass-2.md",
+      "sha256": "b981cfde9e422e24d187573f8c5519516c41f8cd23efc4d67c21b7538edcfff8",
+      "bytes": 17848,
+      "lines": 116,
+      "mtime_ns": 1787197577758954960,
+      "kind": "unique-task-document",
+      "inventory_sha256": "b981cfde9e422e24d187573f8c5519516c41f8cd23efc4d67c21b7538edcfff8",
+      "changed_since_inventory": false,
+      "reviewed_ranges": [
+        [
+          1,
+          116
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/repository-audit-remediation/rolling-player-pass-2-status-reconciliation.md",
+      "sha256": "10c4b8abc0b34190f7012901e5ca166e759b88fda453aa9423f685cda4add7d4",
+      "bytes": 3994,
+      "lines": 46,
+      "reviewed_ranges": [
+        [
+          1,
+          46
+        ]
+      ],
+      "kind": "direct-decision-or-conflicting-receipt",
+      "mtime_ns": 1787197548482936950
+    },
+    {
+      "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md",
+      "sha256": "5d8c5dc5b279357673b380b6ed0ce711df4f65e16ee47531c5bde6c128b3adda",
+      "bytes": 24384,
+      "lines": 186,
+      "reviewed_ranges": [
+        [
+          1,
+          186
+        ]
+      ],
+      "kind": "direct-decision-or-conflicting-receipt",
+      "mtime_ns": 1792278068298411626
+    }
+  ],
+  "remaining_paths": [
+    "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md"
+  ],
+  "next_cursor": "tasks/TASKS/lines-ccc-ingestion/prd-lines-ccc-ingestion.md",
+  "findings": [
+    "Initial audit/remediation/blueprint tasklists are checked; preserve availability/window/PP/helper/schema/diagnostics closure.",
+    "Original expected-shooting and PP percentageOfPP drafts are historical and do not override later authority.",
+    "FullRefresh defect is explicitly closed locally and should not be reopened; downstream blueprint4.6 superseded by pass2mainNEW7 needs later mapping.",
+    "Freshness/live/history and cron completion are separate from local/schema code completion; no stored refresh or test commands executed.",
+    "August19 owner decision closes21/22 backlog and defers alias retirement plus separatePKsource-tail; do not reactivate.",
+    "Pass2NEW7 is later October17 compacted-null reader regression, superseding2.4/4.2/blueprint4.6/master5.2.7. Dedicated canonical scope not found; later closure check pending.",
+    "All-warning formula ledger is a dated status/formula snapshot, not proof of98 current active defects or global live readiness."
+  ],
+  "canonical_unchanged": false,
+  "continue_within_group": false,
+  "read_failures": [
+    {
+      "operation": "read two independent task tails in one response",
+      "outcome": "output truncated; no mutation/pending process",
+      "resolution": "Both tails fully reread separately (main68-116,action67-116). No truncated attempt counted."
+    },
+    {
+      "operation": "heading/keyword index command",
+      "outcome": "truncated structure output, no mutation",
+      "resolution": "Not counted as body review; precise primary body reads completed separately. Long notes remains partial."
+    }
+  ],
+  "group_boundary_reached": true,
+  "coverage_receipt": "COVERAGE.json",
+  "canonical_checkpoint": "FINAL-CHECKPOINT.json"
+}

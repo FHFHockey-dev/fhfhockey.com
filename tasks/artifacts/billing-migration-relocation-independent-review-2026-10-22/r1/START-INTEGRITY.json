@@ -1,0 +1,102 @@
+{
+  "checkedAt": "2026-10-22T14:30:16.777039+00:00",
+  "head": "67b9efda5901a5f8c25a25889572e85527056f7a",
+  "reviewedFiles": [
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql",
+      "sha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12"
+    },
+    {
+      "path": "web/lib/in-season/monthlyIntegration.test.ts",
+      "sha256": "778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025"
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-SQL-CHECK.cjs",
+      "sha256": "2236b42e5f0fde9ac4ef184831638502bca58a160c0b5185c6e094b73ac5b454"
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs",
+      "sha256": "fe5e21a26ce2ac31a3bee44eb5ca45a408cca1e4b1ed3b1d72620ad58ae4bbe1"
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-AUTH-CHECK.cjs",
+      "sha256": "a786b95ff5aee13a77e682d0edfbbffe71a26ef9a5aa18f566d68dccb664c7d9"
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/REPORT.md",
+      "sha256": "4402a394a5df14dd4519f55311b7e48f083a3877eaeccc99521cbade3d6568c3"
+    },
+    {
+      "path": "tasks/TASKS/repository-audit-remediation/migration-authority.json",
+      "sha256": "1918938309958c4cae037b83cd5a877d6fb7b4bcb972df9c74f9960969a3081d"
+    },
+    {
+      "path": "web/lib/supabase/supportedBaselineMigration.test.ts",
+      "sha256": "3747a2ab91813cc3cacdb10db02ba6bd25fc6e61fef6113b9f969b1cc36ebfc1"
+    },
+    {
+      "path": "tasks/TASKS/super-goal/super-goal-final-summary.md",
+      "sha256": "8ac0643823ed6e7ad334bc1e772ac0b5a80173e773b5ac7961713c06ba650925"
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-HASHES-BEFORE.json",
+      "sha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659"
+    },
+    {
+      "path": "tasks/artifacts/billing-migration-authority-2026-10-22/PROPOSED-RELOCATION.patch",
+      "sha256": "d990b7f1c8e977c05232a8bf0e01a301eee061130abc79bee6958bb82a5b34b2"
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-RELOCATION.v1.json",
+      "sha256": "54b33decfb7dbf1173bb67c154665ff9c154982961be754c0eb7000b0e96efb2"
+    },
+    {
+      "path": "tasks/artifacts/billing-migration-authority-2026-10-22/queue-preflight-fix/VERIFY-QUEUE-PREFLIGHT.test.cjs",
+      "sha256": "fbe30bcb953eb18f2cb3a6d698904393c30821da045db914f5de83d705a87aad"
+    },
+    {
+      "path": "tasks/artifacts/billing-migration-authority-2026-10-22/CHANGED-FILES.json",
+      "sha256": "df600ab1c920958a8c869978cd3ed1cd1aedf1744aae399b39e400ddd23b7ef1"
+    }
+  ],
+  "historicalFiles": [
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-HASHES-BEFORE.json",
+      "sha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659",
+      "matchesOriginalBase": true
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-HASHES-AFTER.json",
+      "sha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659",
+      "matchesOriginalBase": true
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/RESULTS.json",
+      "sha256": "9f3f842acb965de4bf209a7527b3a463ff8c7e82161268ee51d235116914e254",
+      "matchesOriginalBase": true
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/FAILED-RESULT.json",
+      "sha256": "270644e7c59f9d8beb0dd2a474f69f7e35a400ff53a8f41167e83fc4ae32a6e2",
+      "matchesOriginalBase": true
+    },
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/CLEANUP.json",
+      "sha256": "ca2646cfc69c7941a0b5237a6f294cec144069541e65f68ad3e1abd13b3deaa8",
+      "matchesOriginalBase": true
+    }
+  ],
+  "originalReviewEvidence": {
+    "historical-tracked-diff.json": "79e76eda7eded147a8dd5deac8537f203ca9bb938f8a9b4fcb9a0d8016971334",
+    "diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "syntax-checks.json": "b9eb8a72915aef95a59a765391c94c7e0698540fec7471b3f7354770db75e9bf",
+    "CHECKS.json": "061055714902fa9cff42f6b837f0bf1eb6488f27650116ca23317e19cbf31e8f",
+    "queue-preflight-reproduction.json": "741e34c48240caf3621e5c24b8a60f1e2d6ba50fb6109fea655c8fef55cd1c0b",
+    "REVIEWED-HASHES.json": "afac1b6f521f3e7e7060c4726b93fe1424e0939210df08741430faef269727bf",
+    "REVIEW.md": "4c87c91bf0fa4c789d66444319238001f1c0b6da80ada55b4d758dabd8a37e44",
+    "reverse-patch-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "node": "v22.11.0",
+  "npm": "10.9.0",
+  "oldSqlPathAbsent": true
+}

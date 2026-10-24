@@ -1,0 +1,21 @@
+{
+  "canonical_drift": [
+    {
+      "path": "web/lib/projections/queries/skater-queries.ts",
+      "expected": {
+        "sha256": "9dfcff408d4cd5f9bdb266a3380a8beacc557a584002e44d5b75e0639d74606a",
+        "packet": "A1-A10 and NST R1"
+      },
+      "current": "4589f8d79dd6c30be4c2653fe82af1166535b97450eaaa5fd049459c54441893"
+    },
+    {
+      "path": "web/lib/projections/queries/skater-queries.test.ts",
+      "expected": {
+        "sha256": "a417087529e6ed4319769699bb4f443c1873263fbdb738624c817c1861c732e2",
+        "packet": "A1-A10 and NST R1"
+      },
+      "current": "cdc0a351a4c71db1d30879c25763023fc4da36f148ab0313e317af1346ac9c15"
+    }
+  ],
+  "unavailable": []
+}

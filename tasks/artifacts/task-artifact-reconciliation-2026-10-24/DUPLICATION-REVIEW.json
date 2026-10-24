@@ -1,0 +1,421 @@
+{
+  "method": "All189 baseline row scopes compared; nearest active scope and superseding receipts checked. Proposed obligations stay unverified/held. No current production defect inferred.",
+  "rows": [
+    {
+      "taskID": "SITE-PRIVACY-POLICY",
+      "nearest_existing_ids": "LEAGUE-CONFIG-ANALYTICS",
+      "distinct_scope_reason": "Analytics consent design is narrower than final sitewide policy facts/copy/indexing.",
+      "classification": "Proposed carry-forward; current completion unverified",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/seo-audit-2026-09-25.md",
+          "line": 43,
+          "sha256": "6022c3eddbea50d452cf9f4aab6057d92b65ea0cfa887575c240bf6c6bc8f05c",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/master-scope-index.json",
+          "line": 1,
+          "sha256": "0725d73b7d70ca02902b8af2f05d4dafb71d2e9a541effbcd57b30f56d66060f",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "AUTH-PKCE-COMPLETION",
+      "nearest_existing_ids": "PAID-SYNC",
+      "distinct_scope_reason": "Paid feature admission does not verify the auth callback/Google PKCE lifecycle.",
+      "classification": "Proposed carry-forward; current completion unverified",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 344,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 245,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "AUTH-LEGACY-CONTAINMENT",
+      "nearest_existing_ids": "IFTTT-ACTIVATION",
+      "distinct_scope_reason": "Feed key retirement is separate from the held cross-system owner map and historical mailbox policy. Completed Yahoo/FHFH containment stays closed.",
+      "classification": "Held owner evidence; no containment, rotation or deletion dispatch",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 199,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 351,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 357,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 19,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "SECURITY-RESIDUAL-ACL",
+      "nearest_existing_ids": "MASTER-D4",
+      "distinct_scope_reason": "D4 explicitly excludes the broader object set; four provider-link tables are already repaired. Two named residual tables and catalog-only destructive-RPC receipt remain evidence reconciliation, not a current exposure claim.",
+      "classification": "Proposed carry-forward; current completion unverified",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 362,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-RECEIPTS.md",
+          "line": 19,
+          "sha256": "4bd572d4d018581c95ce5f5dcf3b2a01cd85a8bd0aca52e804d3e02d4a39d405",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 186,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/artifacts/d4-grants-2026-10-20/README.md",
+          "line": 125,
+          "sha256": "7df94ba358423e81bb8e9aaf957ef6fb327ef78c124052b4b94a4ef2b24338e5",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "REPO-ADVISORY-CI",
+      "nearest_existing_ids": "SPRINT-INTEGRATE",
+      "distinct_scope_reason": "One release candidate verification is not the approved continuous advisory workflow; hosted AUDIT004 dependency remains.",
+      "classification": "Proposed carry-forward; current completion unverified",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 1805,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 1831,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 1857,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 47,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "REPO-IMPORT-SAFETY",
+      "nearest_existing_ids": "REPO-DOCUMENTATION / REPO-GENERATED-TRACKING",
+      "distinct_scope_reason": "An unresolved legacy executable entrypoint decision is distinct from documentation pointers/cache untracking; module was never imported.",
+      "classification": "Proposed carry-forward; current completion unverified",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 1693,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 1703,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+          "line": 1724,
+          "sha256": "8331d3c3efedea28b969c0adb05e14aeac4de4258f986a561088182d71099cc3",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "PIPE-DRM-NATURAL",
+      "nearest_existing_ids": "PIPE-NATURAL / MASTER-D3",
+      "distinct_scope_reason": "Explicit legacy writer/input-version/stage-cursor scopes are not the newer forecast natural-run or wrapper-timeout gates. Completed game repairs and NEW49/50 remain closed.",
+      "classification": "Proposed carry-forward; current completion unverified",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          "line": 113,
+          "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          "line": 120,
+          "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          "line": 125,
+          "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 175,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "YAHOO-HISTORY-RETIREMENT",
+      "nearest_existing_ids": "PAID-SYNC / MASTER-R7",
+      "distinct_scope_reason": "Provider access/ownership semantics do not establish historical league equivalence or legacy global-writer retirement.",
+      "classification": "Proposed carry-forward; current completion unverified",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+          "line": 105,
+          "sha256": "ccd494110fe8374e47cc41710feaa8633f5e33b9ac81b7353ee1b5443184202b",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+          "line": 139,
+          "sha256": "ccd494110fe8374e47cc41710feaa8633f5e33b9ac81b7353ee1b5443184202b",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 191,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "SITE-PARLAY-PROPS",
+      "nearest_existing_ids": "FPI-06 / SITE-ESPN",
+      "distinct_scope_reason": "Named actual player-prop ingestion/identity acceptance is distinct from forecast probability output/de-vig/market-ledger code and ESPN access. Retained featured-market acceptance stays closed.",
+      "classification": "Held provider acceptance; no new market/research dispatch",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md",
+          "line": 156,
+          "sha256": "8e08a6572aac1c261a329eef7c279b3d297d5fb96011c4ee27066e5f62aa9e24",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 233,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "SUSTAINABILITY-MATURED-EVIDENCE",
+      "nearest_existing_ids": "SUSTAINABILITY-NATURAL",
+      "distinct_scope_reason": "Operational batch completion does not qualify predictive quality. This is preserved as intentionally parked, without research dispatch.",
+      "classification": "Intentionally parked qualification gate; retain without dispatch",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+          "line": 173,
+          "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+          "line": 194,
+          "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/PRIOR-19.md",
+          "line": 219,
+          "sha256": "926c250ecfab6e15d3d1f01508d21007e2e58b4321b81fe386583e7382d0f4f5",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "SITE-HOMEPAGE-PLAN",
+      "nearest_existing_ids": "NEWS-SOURCE-PRESENTATION / SITE-DRAFTRANKER-HOMEPAGE",
+      "distinct_scope_reason": "Owner plan-only Slate link/standings selector scope differs from source attribution and seasonal sales guard. Current rendered completion remains unverified.",
+      "classification": "Proposed carry-forward; current completion unverified",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/FINDINGS.md",
+          "line": 59,
+          "sha256": "d26c441cce903fc724c2773c0a8585767343cf94fdea31ec22e1427a858bca31",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "web/prep-chef/home.md",
+          "line": 47,
+          "sha256": "3cfd2f7ad522d86212471b738af117d055ec2547dd362c065bd643fb288d9fbf",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "TRENDS-HISTORICAL-REPAIRS",
+      "nearest_existing_ids": "SUSTAINABILITY-NATURAL / MASTER-F9",
+      "distinct_scope_reason": "Existing-row units/cutoff/provenance repair cohorts differ from current batch markers and SoS definitions. Forward fixes retain credit.",
+      "classification": "Proposed carry-forward; current completion unverified",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 174,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 178,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 179,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 180,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 181,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "PIPE-ROLLING-HISTORY-REPAIR",
+      "nearest_existing_ids": "PIPE-ROLLING-DROP / MASTER-F5",
+      "distinct_scope_reason": "Full-history reconstruction/source-tail repair is not column-drop/storage parity or the later bounded hydration/model candidate.",
+      "classification": "Proposed carry-forward; current completion unverified",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 182,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "FORGE-RESULTS-COVERAGE",
+      "nearest_existing_ids": "FPI-01 / LEDGER-COMPLETENESS",
+      "distinct_scope_reason": "Legacy eligible-run result/accuracy replacement migration differs from served-forecast scoreboard and dressed/finality producer contracts.",
+      "classification": "Proposed carry-forward; current completion unverified",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+          "line": 185,
+          "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "CRON-SCHEDULE-DISPOSITION",
+      "nearest_existing_ids": "CRON-AUDIT-COVERAGE / CRON-REPORT",
+      "distinct_scope_reason": "Route audit wrappers/report formatting do not settle exact daily-floor policy or current scheduler inventory. Freshness exceptions preserved.",
+      "classification": "Proposed carry-forward; current completion unverified",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+          "line": 138,
+          "sha256": "6991c42129c8c9c2375dddf34fe335eb7f6d5d23a93a1bd9e70ccf3151b6e925",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+          "line": 139,
+          "sha256": "6991c42129c8c9c2375dddf34fe335eb7f6d5d23a93a1bd9e70ccf3151b6e925",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+          "line": 208,
+          "sha256": "97e857115518a7c92dde1922f398cf2b3cee1838c1fbc3234c1a975959489572",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CRON-FLOOR-PROPOSAL.md",
+          "line": 1,
+          "sha256": "9bceec2d49b83ce96de30a28991504a1d3ee3e9d5695f1327e4aff8501ad4279",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    },
+    {
+      "taskID": "XG-SERVING-DISPOSITION",
+      "nearest_existing_ids": "FORGE-Q7-Q8 / FPI-06",
+      "distinct_scope_reason": "Different xG artifact/registry/daily-operation boundary. Local forbidden-feature implementation is complete; no new gate code, promotion or fitting requested.",
+      "classification": "Held serving/operations decision; no model or schedule dispatch",
+      "reviewed_evidence": [
+        {
+          "path": "tasks/artifacts/xg-gate-lane-2026-10-18/S-18-report.md",
+          "line": 32,
+          "sha256": "db655d602c960af782c8595ce1f0a64f63bf3fa1d2b3c631d3bfd4c71fa5f2fc",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-OPEN-LOCAL-PARTS.md",
+          "line": 61,
+          "sha256": "192ef4e0e5e29ddf62eed98fd90ee7fbc03d836c33932b8a4600e27160c23f51",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md",
+          "line": 535,
+          "sha256": "e2a75a530dbe575ad12590a415aa5901a67848316f975c730caa228b9282d406",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        },
+        {
+          "path": "tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md",
+          "line": 536,
+          "sha256": "e2a75a530dbe575ad12590a415aa5901a67848316f975c730caa228b9282d406",
+          "review_scope": "Selected current source clause and dated supporting receipt; not full source health or live completion."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "/usr/local/bin/npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "review-vitest.config.mts",
+    "fallback-parity.test.ts"
+  ],
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-r1-independent-ksvb02so/web",
+  "exitCode": 0,
+  "seconds": 0.7,
+  "matrix": "F/D x hits/blocks, two league modes, current/stale seasons, 16 complete pairs per season/mode, five missing/invalid values in either pair member"
+}

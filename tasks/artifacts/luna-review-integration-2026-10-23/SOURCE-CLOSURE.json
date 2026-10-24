@@ -1,0 +1,271 @@
+{
+  "purpose": "Dependency pins, not acceptance of all dependency diffs or permission to release them.",
+  "files": [
+    {
+      "path": "web/lib/NHL/types.ts",
+      "sha256": "805b62b040a2e46b18e863815eeccaa175a01b9c4e770f679f2e483fb09c1fce",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": true
+    },
+    {
+      "path": "web/lib/dashboard/teamMetadata.ts",
+      "sha256": "7cfb169e7ef476e21eac9ce49ac7a590e31f6e888bbb66c911c1285d67ad903b",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": true
+    },
+    {
+      "path": "web/lib/images.ts",
+      "sha256": "3cc58b704a604e2fe043dd80bb832418b15f54212b6013bdf347a1aeb8aa0dcd",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": true
+    },
+    {
+      "path": "web/lib/newsFeed.ts",
+      "sha256": "fc5466e95cba33a833831aff27fbdc3c8a3cc4827968f39631d66783cc1275d1",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "sha256": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": true
+    },
+    {
+      "path": "web/lib/sources/decisionsReference/adapter.d.mts",
+      "sha256": "ed9ab39181c51e89d74c2b865bba0ed5244b211af8de53e78995b749fe8d5dfb",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/decisionsReference/adapter.mjs",
+      "sha256": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/fixtures/tweetClaimQualificationFixture.ts",
+      "sha256": "82555df4e3643e551f266a1d42b9d83b30e87eadab62669db3fc84c649e2405a",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json",
+      "sha256": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+      "newInThisPacket": true,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/linesCccIngestion.ts",
+      "sha256": "3b9a29f70d9a95f6657f62b9154459e801d8cb3eb0d96f6a143ca2956f7080c0",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/lineupSourceIngestion.ts",
+      "sha256": "a5b4f72ab280921453830e4ee7fabda9175ab0ef46d56d02848554b82d60cea3",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/playerIdentity.ts",
+      "sha256": "af843bd6df9ec932ff67bdfd08dba337224d133ac87b1fe94113e0f5ec75bcb4",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": true
+    },
+    {
+      "path": "web/lib/sources/playerIdentitySnapshot.ts",
+      "sha256": "bd1266de847aeffdc442205a307d2aadefda5da7cec79b76616c34db2a222901",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/playerIdentitySnapshotEvidence.ts",
+      "sha256": "390ed603af2cf2ca742ac36ec81c4973d2543684dfb42efbc9c9afeed84c7d4b",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/projectedLineups.ts",
+      "sha256": "a8c56efe284409dcf0f4badf07a08ba8268f16ebf215ab1b247b9d7ee45104b6",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": true
+    },
+    {
+      "path": "web/lib/sources/tweetClaimApplicability.ts",
+      "sha256": "ce35b6a326cb3bad5ce4a560b7b4664d97de2e43421200b04be2f4b98ea43a94",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetClaimEvidence.ts",
+      "sha256": "131e85075d980ce68ad364868a65c67e8f62cde4b04668fcf007464ca013ddb9",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetClaimExtraction.ts",
+      "sha256": "e5cfd481dcf357ddbc36ef4b09f8ac45c2dad0a368acdbddb7f3800bb72660fe",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetClaimReducerAdapter.ts",
+      "sha256": "78a0e2cce23be93a07f781477657dad6bfa1cd74dfb6a73ffe68a082724b2332",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetDecisionReviewMapping.ts",
+      "sha256": "dbb91326550a9a2140139f8399f0ef21fa14fe1bb525a8d9990893090c52b0c0",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetDecisionReviewResults.ts",
+      "sha256": "869e6f7c34ffad7fc285b4e716118c91a9bd5bb59c51d6e40110bd235709e587",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityCandidates.ts",
+      "sha256": "f434ab86169e9cc090042aa009d3746cb0871508e457bb09b8cbca39cefbcfb0",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityProposal.ts",
+      "sha256": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetInterpretation.ts",
+      "sha256": "a72e39f1c9bea27297ad67b475d1f8d62cf082e70ede613835eff339bded0c55",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetLineupParsing.ts",
+      "sha256": "7c33fdbc77256d9736a847bdfcf630164713324db679636e3ec5baf6b350195f",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": true
+    },
+    {
+      "path": "web/lib/sources/tweetLunaLocalStore.ts",
+      "sha256": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+      "newInThisPacket": true,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetLunaReview.test.ts",
+      "sha256": "8a3e8adacd888215aa9ba4226331b3e3576c98e8d2fcc113e01a305a22074ce2",
+      "newInThisPacket": true,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetLunaReview.ts",
+      "sha256": "1dc24189c12333628eb536f37556fe7fc958c2cac16163d77fd80b0a2dba2b94",
+      "newInThisPacket": true,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetLunaTransport.ts",
+      "sha256": "129dfdf337fee692fbf07959a5041651222108836631ecc192436edee988ada2",
+      "newInThisPacket": true,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetNewsPhraseDictionary.ts",
+      "sha256": "a39b54bcc5243909446353db31d1a54c6d88e467b3f7f838d0ea8d52da110ba1",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": true
+    },
+    {
+      "path": "web/lib/sources/tweetPlayerEvents.ts",
+      "sha256": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetReviewSidecar.ts",
+      "sha256": "e568b7673dc1b8dfa16e2988d61adce09e74a21bc1d188043ba2bfa6166981b8",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetSemanticEvents.ts",
+      "sha256": "fd043fee124efd23285770e982182c0d6d7b64bb59d61126d1b7dc4e71395df2",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetSourceClaimRegistry.ts",
+      "sha256": "03f58f5793b5083dd48935ab525f869205e338798b45d768c9008c0b55004468",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/sources/tweetSourceDirectory.ts",
+      "sha256": "499b5ffe8727342346ec6e16336140c1e38f4c89bbaebf1c799426bdd0041684",
+      "newInThisPacket": false,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    },
+    {
+      "path": "web/lib/supabase/pagination.ts",
+      "sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": true
+    },
+    {
+      "path": "web/lib/teamsInfo.ts",
+      "sha256": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584",
+      "newInThisPacket": false,
+      "inRecordedRelease": true,
+      "matchesRecordedRelease": true
+    },
+    {
+      "path": "web/scripts/review-ifttt-luna.ts",
+      "sha256": "03d37708a0ed6902162459cd61e82f70a1828c581e806e30eef4854bf9fa532d",
+      "newInThisPacket": true,
+      "inRecordedRelease": false,
+      "matchesRecordedRelease": false
+    }
+  ]
+}

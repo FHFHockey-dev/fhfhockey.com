@@ -1,0 +1,17 @@
+{
+  "X1": [
+    "lines_ccc|cccmiddleton:ccc-cap",
+    "line_source_ifttt_events|gamedaynewsnhl:evt-1"
+  ],
+  "X2": [
+    "line_source_snapshots|gamedaynewsnhl:cap-a",
+    "line_source_snapshots|gamedaynewsnhl:cap-b"
+  ],
+  "X3": [
+    "line_source_snapshots|gamedaynewsnhl:cap-c",
+    "line_source_ifttt_events|gamedaynewsnhl:evt-10"
+  ],
+  "X4": [
+    "line_source_snapshots|gamedaynewsnhl:333"
+  ]
+}

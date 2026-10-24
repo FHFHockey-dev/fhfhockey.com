@@ -1,0 +1,159 @@
+{
+    "utc": "2026-10-24T18:25:59.2609730Z",
+    "v13SHA256": "077bd43b9bcaccd51a68e5d353b23cb2c701c7003c8eb21ea3c46c5ddd89aa80",
+    "v14SHA256": "450e21bf020bb2f579cfb468b1589909ea7ca43430be64e1dd31deb5333ec80a",
+    "v15SHA256": "c5389bcadfe4e0b98003a82be080b547969a8d79b92b2842e03feef086973841",
+    "v16SHA256": "31115d60fafbf4718672224b23e0a6d47b667a7872e52290d1973c3047193ee5",
+    "v17SHA256": "8ff8531db0a73e4d24262f042b3bd2e2bd68c30abc09a96238a9b46cc9771765",
+    "v18SHA256": "e2ec09d62780cecd391b7b8628049610ba2de5838157c8baf6959d5070812e47",
+    "failure": "",
+    "passed": true,
+    "minClusterDistanceFromIslands": 32.01348876953125,
+    "minClusterDistanceFromRoute": 124.19778442382813,
+    "checks": [
+        {
+            "name": "v13 scene hash matches the v13 handoff",
+            "passed": true,
+            "detail": "077bd43b9bcaccd51a68e5d353b23cb2c701c7003c8eb21ea3c46c5ddd89aa80"
+        },
+        {
+            "name": "v14 scene hash matches the v14 receipt",
+            "passed": true,
+            "detail": "450e21bf020bb2f579cfb468b1589909ea7ca43430be64e1dd31deb5333ec80a"
+        },
+        {
+            "name": "v15 scene hash matches the v15 receipt",
+            "passed": true,
+            "detail": "c5389bcadfe4e0b98003a82be080b547969a8d79b92b2842e03feef086973841"
+        },
+        {
+            "name": "v16 scene hash matches the v16 receipt",
+            "passed": true,
+            "detail": "31115d60fafbf4718672224b23e0a6d47b667a7872e52290d1973c3047193ee5"
+        },
+        {
+            "name": "v17 scene hash matches the v17 receipt",
+            "passed": true,
+            "detail": "8ff8531db0a73e4d24262f042b3bd2e2bd68c30abc09a96238a9b46cc9771765"
+        },
+        {
+            "name": "v18 is a separate saved scene",
+            "passed": true,
+            "detail": "e2ec09d62780cecd391b7b8628049610ba2de5838157c8baf6959d5070812e47"
+        },
+        {
+            "name": "every cluster lies outside the playable islands (>= 25 m beyond their bounds) and >= 120 m from the ascent route",
+            "passed": true,
+            "detail": "islands 32.0 m, route 124.2 m"
+        },
+        {
+            "name": "skyline renderers cast no shadows",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "every object outside the new skyline root exists in both scenes",
+            "passed": true,
+            "detail": "missing=0 extra=0 "
+        },
+        {
+            "name": "all transforms, active states and component lists outside the new root are identical",
+            "passed": true,
+            "detail": "differences=0"
+        },
+        {
+            "name": "all serialized fields outside the new root are identical (no material, collider or gameplay change)",
+            "passed": true,
+            "detail": "differences=0"
+        },
+        {
+            "name": "gameplay components (pilot, weapon, targets, capture zones, recovery, cockpit readout) retained",
+            "passed": true,
+            "detail": "QuestPilotControls=1,QuestPracticeWeapon=1,PracticeTarget=3,CaptureZone=1"
+        },
+        {
+            "name": "v16 player HUD, v17 deck, debug readout and all text labels are untouched",
+            "passed": true,
+            "detail": "TextMesh=23"
+        },
+        {
+            "name": "skyline root adds 7 cluster renderers and no colliders",
+            "passed": true,
+            "detail": "objects=8"
+        },
+        {
+            "name": "skyline meshes/materials live only in SprintAssets/v18",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "route corridor samples hit saved collision in both scenes",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "route corridor collision surface identical (same collider path and height within 1 cm)",
+            "passed": true,
+            "detail": "samples=612"
+        },
+        {
+            "name": "route margin (5.4-12 m) collision surface identical",
+            "passed": true,
+            "detail": "samples=816"
+        },
+        {
+            "name": "ground and paths around every compound are identical (outside roof footprints)",
+            "passed": true,
+            "detail": "samples=3803"
+        },
+        {
+            "name": "all lateral cover rays along the route are identical",
+            "passed": true,
+            "detail": "changedRays=0/80"
+        },
+        {
+            "name": "saved scenes unchanged by validation",
+            "passed": true,
+            "detail": ""
+        }
+    ],
+    "v17": {
+        "scene": "Assets/MapPrototype/Scenes/VesperBasin_v17_IndustrialDeck.unity",
+        "renderers": 647,
+        "enabledRenderers": 535,
+        "colliders": 248,
+        "enabledColliders": 210,
+        "meshColliders": 94,
+        "uniqueMaterials": 80,
+        "textures": 5,
+        "enabledTriangles": 134000
+    },
+    "v18": {
+        "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+        "renderers": 654,
+        "enabledRenderers": 542,
+        "colliders": 248,
+        "enabledColliders": 210,
+        "meshColliders": 94,
+        "uniqueMaterials": 85,
+        "textures": 5,
+        "enabledTriangles": 153464
+    },
+    "corridorSamples": 612,
+    "corridorDifferences": 0,
+    "marginSamples": 816,
+    "marginTerrainDifferences": 0,
+    "marginOtherDifferences": 0,
+    "coverSamples": 80,
+    "coverChanged": 0,
+    "groundSamples": 3803,
+    "groundDifferences": 0,
+    "features": 0,
+    "featuresInside": 0,
+    "maxMarginTerrainDelta": 0.0,
+    "maxEmergentRise": 0.0,
+    "marginTerrainEmergent": 0,
+    "coverChanges": [],
+    "differences": [],
+    "method": "Opens saved v17 then v18 in the Editor (no Play Mode, no saves). Objects are matched by name path plus occurrence ordinal so added roots cannot mask changes. Serialized fields are compared through SerializedProperty values, object references by scene path or asset path. Collision uses edit-mode Physics raycasts against saved colliders; route corridor = v13 route profile at +/-5.4 m (8.8 m deck plus margin), margin band = 5.4-12 m; cover = horizontal rays at 1.0 m and 2.5 m above the route surface out to 25 m; compound ground = downward rays every 1 m within 8 m around each roof footprint, outside it."
+}

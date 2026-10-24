@@ -1,0 +1,166 @@
+{
+  "at": "2026-10-24T20:18:35.075266+00:00",
+  "checks": [
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-averages.md",
+      "sha256": "16a41037e6a43c79d924365d6beb79390165af5525edc39247ab94b8776445a3",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-audit-pass-2-trends-debug.md",
+      "sha256": "324cab5c13b737eface68558f60852ee2ac35f29d19451ab38f1159fd6b1c802",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-audit.md",
+      "sha256": "6c6e2aad3f7803bec98ba7a4418abe5f8e7dcfd798a29665c6b1948498cbd27b",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation-blueprint.md",
+      "sha256": "de2f4f65f8d63e81cf607f98d5c71f4a3b8b18a42748660d97fd7c2f3359da49",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation.md",
+      "sha256": "22fead93f9601c9b884007440d98dfc08cd474b57b0458fbee35d3211265b05f",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-action-items-pass-2.md",
+      "sha256": "97f0c4a879f10408d86a15a443cf7ec303d36c2eb8a1957086946e3c0476e53f",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rpm-audit-notes-pass-2.md",
+      "sha256": "d5259df5564657288c12bbac6a5d372e6ffd145e74b00641f34bb42a560a6373",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-audit-pass-2-trends-debug.md",
+      "sha256": "5923588348bde884eb2c087e3c42d3f20c2531e1302ad53cc3fad108cce17a76",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-audit.md",
+      "sha256": "f9d571d46c4dd964c99fe384543229caac749e42d6d6355ba43723cee618a72c",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-remediation-blueprint.md",
+      "sha256": "b83738e8e305ad5e3fe951465f05b74b457e34f1e16ae380d896cd84de5b78b8",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-remediation.md",
+      "sha256": "d61030899141516660d082597dc3858d9d635dbce90f4c4293ac17306879422a",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md",
+      "sha256": "059fe8e750a5497c0372f3785add66d24c4ee228a65b4df3af5c23339b2c0637",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rpm-audit-action-items-pass-2.md",
+      "sha256": "b981cfde9e422e24d187573f8c5519516c41f8cd23efc4d67c21b7538edcfff8",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/repository-audit-remediation/rolling-player-pass-2-status-reconciliation.md",
+      "sha256": "10c4b8abc0b34190f7012901e5ca166e759b88fda453aa9423f685cda4add7d4",
+      "matched": true
+    },
+    {
+      "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md",
+      "sha256": "5d8c5dc5b279357673b380b6ed0ce711df4f65e16ee47531c5bde6c128b3adda",
+      "matched": true
+    },
+    {
+      "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-alias-freeze-stage-1-2026-03-12.md",
+      "sha256": "b552531e8719f2763b67e406c715e81685ea1cbfe81f78e5ca77da518cf41ac7",
+      "matched": true
+    },
+    {
+      "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-operator-runbook-2026-03-14.md",
+      "sha256": "863180332bfeb8ff7666329d4f8b7906e6724110dbfffa4302dc16e53a9889f5",
+      "matched": true
+    },
+    {
+      "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-organization-efficiency-closeout-2026-03-14.md",
+      "sha256": "0cb857b6c5a28dbd44cb2ecdae144c6c41dd7285bb55319c01edc8ba59c5cd11",
+      "matched": true
+    },
+    {
+      "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-refresh-dependency-graph-2026-03-14.md",
+      "sha256": "43da43843c6d8424ef966621d529e32610b1204fc742e9889695708c92e667b9",
+      "matched": true
+    },
+    {
+      "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-operational-surface-decision-2026-03-14.md",
+      "sha256": "637daeedfbdb16a412004d890bc38e3c654a81b5149707f9b60c3222ef3fcd04",
+      "matched": true
+    },
+    {
+      "path": "tasks/artifacts/archive/rpgm-pass-history/rolling-player-pass-2-main-audit.md",
+      "sha256": "cb08d02f4aff85f90877107a0dbd5438d1f81ad71b9c7a01f04b57c81de4925c",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md",
+      "sha256": "56d54c886d3aeebb2aabb73ba30e449378166a57d086a1821dd8b75d6eff7a1c",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/prd/prd-cron-failed-jobs-remediation.md",
+      "sha256": "35b51d67c821656bc5b37eff913d34b2c907749b09b6f9ef2e12de97dda420cd",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md",
+      "sha256": "6419f112194d3d433fdb1b8af1e8635718edc90f51d781c251c4b7df34ce8995",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+      "sha256": "6991c42129c8c9c2375dddf34fe335eb7f6d5d23a93a1bd9e70ccf3151b6e925",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md",
+      "sha256": "6cf6c453c7fdd9bde677bbb916b70fbf51a567555da2f89f9684563a58325bf0",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md",
+      "sha256": "6125fcba20456d11522b389c995327779b96eae9f4ce7d82f04f2e2947f79d4f",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/prd/prd-cron-nst-audit-remediation.md",
+      "sha256": "4f36ba3e9b2c1e8aed8c37d7602518f2be5e4d9d86ad66ba44a5756c7b1a6b69",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+      "sha256": "844403dc2edf97cbf36db6684d4488955e681ebfa67cc82d69231c4c1abcbefe",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+      "sha256": "97e857115518a7c92dde1922f398cf2b3cee1838c1fbc3234c1a975959489572",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+      "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be",
+      "matched": true
+    },
+    {
+      "path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
+      "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
+      "matched": true
+    }
+  ],
+  "all_matched": true
+}

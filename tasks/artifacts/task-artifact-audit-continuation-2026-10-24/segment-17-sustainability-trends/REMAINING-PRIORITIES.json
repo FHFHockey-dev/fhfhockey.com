@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-24T19:37:32.910364+00:00",
+  "source": "Saved inventory and exact hash/role overlays only",
+  "remaining_unique_text_candidates": 1640,
+  "remaining_by_kind": {
+    "unique-task-document": 1640,
+    "structured-evidence": 2524,
+    "binary-or-supporting-snapshot": 3814,
+    "duplicate-scope-check": 4088
+  },
+  "not_all_candidates_need_deep_read": true,
+  "completed_captured_family": "tasks/TASKS/three-pillars-analytics/sustainability/",
+  "next_task_bearing_group": [
+    "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+    "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+    "tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md",
+    "tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md"
+  ],
+  "do_not_start_before_handback": true
+}

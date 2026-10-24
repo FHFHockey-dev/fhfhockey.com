@@ -1,0 +1,241 @@
+{
+  "at": "2026-10-24T18:39:49.093535+00:00",
+  "outputs": [
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/BASELINE-LEDGER.json",
+      "bytes": 1254549,
+      "sha256": "2b4265ce9f77f1eff4f59df1737474ea244b22c916e3cf51635de67dc174fe75"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/BASELINE-LEDGER.md",
+      "bytes": 588241,
+      "sha256": "6758a380de00ec854622e2769b9a97cb32b347c4b1e3a5bd0f29a16fb491b7ba"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 551897,
+      "sha256": "493e31e256b456e724ce5e76600c3132f874a44bf879528ba967be5aa3fd9925"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/CANDIDATE-LEDGER.json",
+      "bytes": 1286282,
+      "sha256": "894cb6a63fcf63244b10a08e610c93276c8e713b223ff7f53616f074c6c4190d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/CANDIDATE-LEDGER.md",
+      "bytes": 605472,
+      "sha256": "51c7962014116573f65538c640ab977dcbfe09d4ef58360bf6a70baabc7e2abf"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 569128,
+      "sha256": "415d918354a7f40ceb6410aa732e8feebd6bc8c188631e282f49f128bb2f0b81"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/CANDIDATE-RESOLUTION.json",
+      "bytes": 770,
+      "sha256": "c2aba27be2e6a83dfb0b0267ae70ab07523e4476fd5edaee0d28b14011d3118d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/CANONICAL-CHECKPOINT.patch",
+      "bytes": 159359,
+      "sha256": "cf8512c70979d90bd5e62cbe9566e9b9517264bb95b2f46636a14e82d90c524b"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/CHANGELOG.json",
+      "bytes": 28894,
+      "sha256": "89c08fae8535f0710974a7631b1c6e1b503e96bf454a600cb7d1b6f5b04ebd6e"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/CHECKPOINT-TIME.txt",
+      "bytes": 33,
+      "sha256": "e65cf0058b81b3ddfb87740f3237e1bd8600c1b613a4eaad3c852fc4d09698b7"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/CONTINUATION.json",
+      "bytes": 63328,
+      "sha256": "56155dddf95e1c9f86ea3b57b427540bd1823616efb4df5d74a6295fac1e7670"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/COORDINATION-READ.json",
+      "bytes": 670,
+      "sha256": "adbb7b0771654b489ccc708129a6a5f9007d2667b5e1c63f33adc7e4a95c7ec4"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/COVERAGE.json",
+      "bytes": 12889,
+      "sha256": "2bfa3f0311db4e46e9b01d5525ed748580af24e5e2be163d938552196476cd23"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/DIAGNOSTICS.json",
+      "bytes": 1839,
+      "sha256": "88cd36257d418551e7598b94bc40d8b45fb922a5ae10ba1ad9fca169be70107e"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/EXISTING-SCOPE-COMPARISON.json",
+      "bytes": 4815,
+      "sha256": "65ae3bc6da99e16e3afd1142bf8a0781f1145668b96e9433df230a24856bf4be"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/FINAL-CHECKPOINT.json",
+      "bytes": 2403,
+      "sha256": "99b493ade3dd50bc65cca976c55eb4cdea96027ac5d60d0f426d194b2c4ba89d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/FOLDERS.json",
+      "bytes": 560193,
+      "sha256": "95112e6503a0cd404d64635ecd378c872087df3b912abc7d494419c8d97ba5e4"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/LATER-SCOPE-LOOKUPS.json",
+      "bytes": 10788,
+      "sha256": "7ebfaf25a5d08b021f4fe7acc7ac5b20440ede30224bb41b7188d6103432703d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/LIBRARY-DELIVERY.json",
+      "bytes": 995,
+      "sha256": "ad49ab80f604da209dc3c92ad2c645a950690032bc5a15c59012e2cc6bd5ce15"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/LIVE-CHANGES.json",
+      "bytes": 716,
+      "sha256": "12762fb7648d0311f2f4b21bbddd40cb296afa0096ca3e08d4ae2cdeaebbf7df"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/PROPOSED-CHANGES.json",
+      "bytes": 15458,
+      "sha256": "27f70aa04e5b5859dbc9ec8154288d45ca1fc86ab780f747d77a42249a7fa644"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/REPORT.md",
+      "bytes": 5051,
+      "sha256": "3af427d0f85a9d05eefe6b82266f696579d18cd20e6d43ed749ccadea0718533"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/SOURCE-PINS-START.json",
+      "bytes": 2124,
+      "sha256": "5a65dcabf6f5c922fd9f959023e0be045046dcc1d062552bd651cfc2f72aa625"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/SOURCE-PINS.json",
+      "bytes": 3510,
+      "sha256": "d08d48338422a6c5ee122375f33eda7371fa08fe111e07c2d5d12be0d8a23f76"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/SOURCE-SNAPSHOT-INDEX.json",
+      "bytes": 7895,
+      "sha256": "c4f74568872f03ddd5dbac7bfa621e62ed5c42b8693954fdf47388527bfb2b55"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/START.json",
+      "bytes": 931,
+      "sha256": "384411a9d3af1f1bde5d6d6eb876689639e2116c0dbf2e36c1555c4767516aaa"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/VALIDATION-CANONICAL.json",
+      "bytes": 1654,
+      "sha256": "f57ea8adb7a4e94e2d0b06df33c7e623c702c73e9542cc5a345e9c51b3ce797f"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/VALIDATION-PREPARED.json",
+      "bytes": 1625,
+      "sha256": "3ebb5e18f3b6c45b1f7f0ab225e6bc4089fb2e7e0c3757ae701e3be8b1bc8395"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/finalize.py",
+      "bytes": 8692,
+      "sha256": "ac270281ef8f8942e77512645b47705ef03798b957ad1d2a0378f151cc11adac"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/prepare.py",
+      "bytes": 17380,
+      "sha256": "5cb7e7bdb85eb9993ec174fbe72a533cf775c91f3697fd8244431594678ee942"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/reconcile.py",
+      "bytes": 10614,
+      "sha256": "8172fbe2405ec46b9837c8b5fe8a6150013bb3c94ee470e6ec0bfc5e96094831"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/035acc6b8851-forge-dashboard-freshness-policy.md",
+      "bytes": 1518,
+      "sha256": "035acc6b8851cc2fdf769070c643c36eae8a6c4099e7f71fa4ce2da9b0f53bda"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/401ac54a9bd9-tasks-forge-dashboard-component-remediation.md",
+      "bytes": 34998,
+      "sha256": "401ac54a9bd9213099efd9e8e6eba45bb115c0a156fe9d557a34c976b6052493"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/4b387ed6ffe2-forge-trends-combo-architecture.md",
+      "bytes": 10511,
+      "sha256": "4b387ed6ffe2d5ffd2da8ef879c1647ad84019f2894958673dd8e347ca0fb97b"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5941db83cadb-forge-dashboard-observability-followups.md",
+      "bytes": 1920,
+      "sha256": "5941db83cadb439b7ea265f1fc12cc2a7c1cd1142bb219e2c3b77a6f31323875"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5a28ac3a1541-HANDOFF.md",
+      "bytes": 3705,
+      "sha256": "5a28ac3a15416a071174b6f8fd299e01193ac5b9818bb1df2733f8f21cb7b151"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5d7a33e87c3a-HANDOFF.md",
+      "bytes": 4681,
+      "sha256": "5d7a33e87c3acc8ea973f9a895f5201d54d7737e6d46b367fb38dd1397a8a715"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/644fe30a5cd1-forge-dashboard-component-health-remediation-backlog.md",
+      "bytes": 12982,
+      "sha256": "644fe30a5cd1e7b0d5479afa04d62a7079341f5b0e4d026f5f439c4ff8834a65"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/743f09fe929c-prd-forge-dashboard.md",
+      "bytes": 18696,
+      "sha256": "743f09fe929cff0f26f5a30ab7ab9fa10802a5759e379d7bcf610cf3068ecc64"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/89b21a4aba22-forge-dashboard-component-remediation-closeout.md",
+      "bytes": 6518,
+      "sha256": "89b21a4aba22132d4e29ed78d57948873759d5d28df77594dd391a42e96f0166"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/980e15291033-S-19-command-center-errors.md",
+      "bytes": 2441,
+      "sha256": "980e15291033ff101b77ee7e12d2a3d80faafb7bfc77dbfe90bd0543f089949e"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/b99e7bfde3fd-super-goal-final-summary.md",
+      "bytes": 342964,
+      "sha256": "b99e7bfde3fd4579acf9ae870b85a855b79deb1ee8a072da9978a2d2278acf82"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/c32cfde11345-COMMIT-PLAN-2026-10-18.md",
+      "bytes": 20094,
+      "sha256": "c32cfde11345a1c06497fdf7c28d8a99e63f67128f6aa6e95ce06b14a03263cd"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/d89550cc0efe-CODEX-TO-CLAUDE.md",
+      "bytes": 79565,
+      "sha256": "d89550cc0efeb197c888287bfde38f0d577ed89354f4b075dafc72f92f1199e9"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/db3d4c067039-runtime.json",
+      "bytes": 1295,
+      "sha256": "db3d4c067039770828743e1eb4ec611fa6ac1c9f9889d88ff34df4c47fe1fbaa"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/dbc948491401-REVIEW.md",
+      "bytes": 6840,
+      "sha256": "dbc948491401f7ab9c1f5e89201e39d6d05040f7f38a3f567c9ba29bf7fa2fb8"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/dbcc5358b6e0-tasks-prd-forge-dashboard.md",
+      "bytes": 22000,
+      "sha256": "dbcc5358b6e0c4b06fd5d150e060070a00b32025ba9ffa52aa830c8e77b58381"
+    }
+  ],
+  "excluded_from_recursive_reaudit": true
+}

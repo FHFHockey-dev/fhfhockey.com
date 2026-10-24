@@ -1,0 +1,26 @@
+{
+  "extends": "/Users/tim/Code/fhfhockey.com/web/tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false
+  },
+  "include": [
+    "/Users/tim/Code/fhfhockey.com/web/next-bootstrap.d.ts",
+    "/Users/tim/Code/fhfhockey.com/web/yahoo-fantasy.d.ts",
+    "/Users/tim/Code/fhfhockey.com/web/contexts/AuthProviderContext/index.tsx",
+    "/Users/tim/Code/fhfhockey.com/web/__tests__/contexts/AuthProviderContext.test.tsx",
+    "/Users/tim/Code/fhfhockey.com/web/pages/social-share/[format].tsx",
+    "/Users/tim/Code/fhfhockey.com/web/pages/api/v1/social-share/[format].ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/socialShare/editionFetch.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/socialShare/editionFetch.test.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/socialShare/schedule.test.ts",
+    "/Users/tim/Code/fhfhockey.com/web/components/SocialShare/SocialShare.test.tsx",
+    "/Users/tim/Code/fhfhockey.com/web/lib/socialShare/access.ts",
+    "/Users/tim/Code/fhfhockey.com/web/lib/socialShare/access.test.ts",
+    "/Users/tim/Code/fhfhockey.com/web/components/SocialShare/SocialShareAccessGate.tsx",
+    "/Users/tim/Code/fhfhockey.com/web/components/SocialShare/SocialShareAccessGate.test.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

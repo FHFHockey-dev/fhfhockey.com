@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "banner": "Some metrics undefined: zero denominator or selected period policy.",
+  "svg": "Synthetic player card · Alex MorganFHFH / PLAYER CARDSYNTHETIC FIXTUREAlex MorganHarbour · example · RW · Example ID 1001OPPORTUNITYTime on ice per NHL appearanceATOI0:00min:sec per appearanceT-1 of 14 · 50.0 pctINDIVIDUAL GENERATIONIndividual shots on goal per 60 minutesSOG/60—shots/60Undefined · zero denominatorIndividual scoring chances per 60 minutesiSCF/60—chances/60Undefined · zero denominatorIndividual expected goals per 60 minutesixG/60—xG/60Undefined · zero denominatorON-ICE CONTEXTTeam expected goals for while on iceOn-ice xGF/60—xG/60Undefined · zero denominatorShare of expected goals for while on iceOn-ice xG%—%Undefined · zero denominatorFINISHING & INVOLVEMENTShare of on-ice goals involving a player pointIPP—%Undefined · zero denominatorIndividual goals divided by shots on goalSH%—%Undefined · zero denominator2026-10-01 to 2026-10-01 · UTC · Power play1 GP · 0.0 min TOI · 2026-10-01 → 2026-10-01Undefined metricsCutoff: 2026-10-24 00:00:00Z · Capture: 10-24 02:00 UTCFabricated 18-player cohort · per-metric valid N · no GP, TOI or position filterSource/identities/games are synthetic · numeric magnitude is not quality or a forecastProposed season/short-N policy, competition ties and midrank percentiles · fhfhockey.com",
+  "measuredBeforeAnyExport": true,
+  "network": [],
+  "errors": []
+}

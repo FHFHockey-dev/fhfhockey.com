@@ -1,0 +1,124 @@
+
+Running 6 tests using 1 worker
+
+[1A[2K[1/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:199:5 › readiness controls reach existing inputs across the required viewports
+[1A[2K[2/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:412:5 › provider refresh proposes repairs while keeping a selected move
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:412:5 › provider refresh proposes repairs while keeping a selected move 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('ADD Alpha Center')
+    Expected: visible
+    Error: strict mode violation: getByText('ADD Alpha Center') resolved to 2 elements:
+        1) <strong>Next selected action: ADD Alpha Center</strong> aka getByText('Next selected action: ADD')
+        2) <strong>ADD Alpha Center</strong> aka getByText('ADD Alpha Center', { exact: true })
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByText('ADD Alpha Center')[22m
+
+
+      477 |   await page.getByRole("button", { name: "All players", exact: true }).click();
+      478 |   await page.getByRole("button", { name: "Select add" }).click();
+    > 479 |   await expect(page.getByText("ADD Alpha Center")).toBeVisible();
+          |                                                    ^
+      480 |   const selected = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent);
+      481 |   await openPlanningSetup(page);
+      482 |   holdRefresh = true;
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:479:52
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../remaining-controls-01/results/roster-schedule-optimizer--b34fb-ile-keeping-a-selected-move-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../remaining-controls-01/results/roster-schedule-optimizer--b34fb-ile-keeping-a-selected-move-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../remaining-controls-01/results/roster-schedule-optimizer--b34fb-ile-keeping-a-selected-move-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../remaining-controls-01/results/roster-schedule-optimizer--b34fb-ile-keeping-a-selected-move-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:532:5 › connected manager bench locks constrain the worker and preserve provider authority through undo and reload
+[1A[2K[4/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:739:5 › mixed Kaprizov coverage stays unresolved until complete evidence supports the bench decision
+[1A[2K  2) [chromium] › e2e/roster-schedule-optimizer.spec.ts:739:5 › mixed Kaprizov coverage stays unresolved until complete evidence supports the bench decision 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator:  getByText('Inputs reviewed for this session. Unknown values still need verification.')
+    Expected: visible
+    Received: hidden
+    Timeout:  15000ms
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByText('Inputs reviewed for this session. Unknown values still need verification.')[22m
+    [2m    33 × locator resolved to <p>…</p>[22m
+    [2m       - unexpected value "hidden"[22m
+
+
+      780 |     await page.getByRole("button", { name: "View plan", exact: true }).click();
+      781 |     await openDisclosure(page, /^League rules and scoring$/);
+    > 782 |     await expect(page.getByText("Inputs reviewed for this session. Unknown values still need verification.", { exact: false })).toBeVisible();
+          |                                                                                                                                 ^
+      783 |     await page.locator("#rso-rule-settings > summary").click();
+      784 |     await openPlanDetails(page);
+      785 |     await page.getByText("Why players are outside this assignment", { exact: true }).click();
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:782:129
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../remaining-controls-01/results/roster-schedule-optimizer--3af4a-supports-the-bench-decision-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../remaining-controls-01/results/roster-schedule-optimizer--3af4a-supports-the-bench-decision-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../remaining-controls-01/results/roster-schedule-optimizer--3af4a-supports-the-bench-decision-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../remaining-controls-01/results/roster-schedule-optimizer--3af4a-supports-the-bench-decision-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[5/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1115:5 › points goalie coverage survives worker reload and benches harmful starts once credited
+[1A[2K[6/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1560:5 › candidate worker ranks the complete population without blocking filters and retains zero AGP
+[1A[2K  3) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1560:5 › candidate worker ranks the complete population without blocking filters and retains zero AGP 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBe[2m([22m[32mexpected[39m[2m) // Object.is equality[22m
+
+    Expected: [32mtrue[39m
+    Received: [31mfalse[39m
+
+      1602 |   const metrics = await page.evaluate(() => (window as any).__candidatePerformance);
+      1603 |   await writeFile(testInfo.outputPath("candidate-performance.json"), JSON.stringify(metrics, null, 2));
+    > 1604 |   expect(metrics.some((row: any) => row.evaluated === 999 && row.ticks > 0 && row.maxGapMs < 500)).toBe(true);
+           |                                                                                                    ^
+      1605 |   await browser.getByRole("searchbox", { name: "Find candidate" }).fill("");
+      1606 |   await page.screenshot({ path: testInfo.outputPath("rso-worker-zero-agp.png"), fullPage: true });
+      1607 | });
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1604:100
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../remaining-controls-01/results/roster-schedule-optimizer--71296-ilters-and-retains-zero-AGP-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../remaining-controls-01/results/roster-schedule-optimizer--71296-ilters-and-retains-zero-AGP-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../remaining-controls-01/results/roster-schedule-optimizer--71296-ilters-and-retains-zero-AGP-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../remaining-controls-01/results/roster-schedule-optimizer--71296-ilters-and-retains-zero-AGP-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  3 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:412:5 › provider refresh proposes repairs while keeping a selected move 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:739:5 › mixed Kaprizov coverage stays unresolved until complete evidence supports the bench decision 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1560:5 › candidate worker ranks the complete population without blocking filters and retains zero AGP 
+  3 passed (38.8s)

@@ -1,0 +1,460 @@
+{
+  "at": "2026-10-24T17:09:19.664327+00:00",
+  "source_queue": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/CONTINUATION.json",
+  "source_queue_sha256": "35f667361b65d99a53f65ed476587f17d38dab7f963dceda8faa3ac56758a21c",
+  "no_new_tree_inventory": true,
+  "remaining_records_by_original_kind": {
+    "unique-task-document": 1724,
+    "structured-evidence": 2527,
+    "binary-or-supporting-snapshot": 3814,
+    "duplicate-scope-check": 4088
+  },
+  "workload_class_rules": {
+    "unique-task-document": "Unique text candidates for substantive read or explicit document-role disposition; not all are proven substantive by filename alone.",
+    "structured-evidence": "Claim-dependent bounded schema/coverage/receipt review, not automatically a full text-document read.",
+    "binary-or-supporting-snapshot": "Role/metadata disposition plus visual/binary inspection only where needed to adjudicate a named claim. Metadata does not establish content or visual acceptance.",
+    "duplicate-scope-check": "Exact representative hash and its reviewed scope must be resolved; copies do not each create a new deep-document obligation."
+  },
+  "historical_index_disposition": {
+    "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+    "sha256": "0b0a198c946c4eb01fbcc9169d5d46a92db61a813937d95da0d45717c855708c",
+    "generated_tree_lines": 1025,
+    "unparsed_tree_line_numbers": [],
+    "flat_rows": 843,
+    "unique_flat_rows": 843,
+    "non_record_flat_lines": [],
+    "declared_historical_total": 845,
+    "conclusion": "Declared845 versus843 unique flat records is historical index drift, not current missing-file/task evidence. Tree/list support provenance; unique prose/closure overlays read. No current file inventory or contents of referenced paths asserted."
+  },
+  "exact_duplicate_scope_resolutions": [],
+  "known_supporting_entries": [
+    {
+      "path": "tasks/artifacts/shift-charts-scope-2026-10-19/R4-SHIFT-FINGERPRINT.md",
+      "sha256": "6799979c357583deb1d7b7409f06e94062b4d78cc7f82ea653de560cc90f6f96",
+      "coverage": "metadata-only",
+      "role": "Task-bearing report candidate",
+      "disposition": "Unique substantive report remains queued; do not discharge from metadata.",
+      "deep_document_review_required": true,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/shift-charts-scope-2026-10-19/HTML-FALLBACK-BUILD.md",
+      "sha256": "4846834692b63c29ebcea78933cf5be7f923cb265e0a1dff5386677be7658fb7",
+      "coverage": "metadata-only",
+      "role": "Task-bearing report candidate",
+      "disposition": "Unique substantive report remains queued; do not discharge from metadata.",
+      "deep_document_review_required": true,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/shift-charts-scope-2026-10-19/HTML-SHIFT-FALLBACK.md",
+      "sha256": "a4db1e08bc0149c23c7bed3f36eb968ce3ab11c5e734f8c837942c291fee11de",
+      "coverage": "metadata-only",
+      "role": "Task-bearing report candidate",
+      "disposition": "Unique substantive report remains queued; do not discharge from metadata.",
+      "deep_document_review_required": true,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/shift-charts-scope-2026-10-19/SKIP-ISOLATION.md",
+      "sha256": "4b1f7ea9e3eaf1b1ae2af684501ac1e5ecf6b330511253ddebf341ef21ecc018",
+      "coverage": "metadata-only",
+      "role": "Task-bearing report candidate",
+      "disposition": "Unique substantive report remains queued; do not discharge from metadata.",
+      "deep_document_review_required": true,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/shift-charts-scope-2026-10-19/html-fallback-migration-pg-verify.py",
+      "sha256": "f5542866a3d4465c4d007239a2c9f91e74c570c1b6adaa154fd95315b5b7c783",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/shift-charts-scope-2026-10-19/HTML-FALLBACK-BLOCKER.md",
+      "sha256": "e082a8a64345c19df7da3d1ff03ac33cde74df12e499ee19fdd85f4335ba480f",
+      "coverage": "metadata-only",
+      "role": "Task-bearing report candidate",
+      "disposition": "Unique substantive report remains queued; do not discharge from metadata.",
+      "deep_document_review_required": true,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/shift-charts-scope-2026-10-19/OPTION-A-STORED-SNAPSHOTS.md",
+      "sha256": "e101fab156cd5d3e65a183ef6bfe9ceede72b8ce311dd364f114c0def92ecfaf",
+      "coverage": "metadata-only",
+      "role": "Task-bearing report candidate",
+      "disposition": "Unique substantive report remains queued; do not discharge from metadata.",
+      "deep_document_review_required": true,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/shift-charts-scope-2026-10-19/PROPOSED-gamecenter-renormalization-vs-R3.patch",
+      "sha256": "a252b39620993fe8ec41f98d1142284d21ee6395d28b21f978aa021fe7ac5109",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/shift-charts-scope-2026-10-19/DIAGNOSIS.md",
+      "sha256": "a8bf1d43f893b4b29ee4e7972bbf77eeb28dff1547e02c35841565241c64c8ee",
+      "coverage": "metadata-only",
+      "role": "Task-bearing report candidate",
+      "disposition": "Unique substantive report remains queued; do not discharge from metadata.",
+      "deep_document_review_required": true,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/shift-charts-scope-2026-10-19/R3-ROSTER-HASH.md",
+      "sha256": "db9f19a330262e251f597d913f6c171b7086acfbb7b2d536398765126f4d9290",
+      "coverage": "metadata-only",
+      "role": "Task-bearing report candidate",
+      "disposition": "Unique substantive report remains queued; do not discharge from metadata.",
+      "deep_document_review_required": true,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/shift-charts-scope-2026-10-19/html-fallback-migration-pg-result-v1.json",
+      "sha256": "6b7a5510dc72502fc72d6d3936842903b53bec413bcce1814727bddd5cb5fe3c",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/types.log",
+      "sha256": "ccd0c0c7ea58e9b69f678c94e0a2e98b4ac8bbcd46ba245dba8f3d75051d1cb0",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/checks-final.log",
+      "sha256": "ca982d9c780a41748d56e708892ef8491c4e3eea9af834b345193d3ab7c4c382",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser.log",
+      "sha256": "ea7378d4eefc04bad81ba3aa7d4a81315562262b55d5fbf3c609a10ce6118a29",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/preview.html",
+      "sha256": "12ea13e78fb64cfc136292f1d9c1babb8189ad034da2151b4473a6b030d7c2bf",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-long-name.png",
+      "sha256": "e74b2189318d15dadf50c273893b1fd2e7dcd4f2b14e40a04b54eff70939c48e",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-missing.png",
+      "sha256": "a036cc6c1bcb672c404049d6d5879524a3efe847f311d110a569d99ff56a0579",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/preview.png",
+      "sha256": "582677f8ae867b46a6cbb83f242e6e92388d2ab3b782421cde7180e3dfd710e8",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/render-preview.mjs",
+      "sha256": "b8f7ae4b0613daf3735f198334df9aa1e60232089380af72168630b15128eb4d",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-failure.json",
+      "sha256": "de95bebd7d3bd771c7a682f86f86077a8c22ee99a54d63d57abd4d052a58243c",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/types-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/serve-preview.mjs",
+      "sha256": "1cc849c592fff0008f69824571f82c66eb07eea5da0cd2301ccbc3c54d3c0610",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/checks.log",
+      "sha256": "e16f2568a292297cd04b7b267e72c149fe2a099790fe67e003649875848e5546",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/preview-entry.tsx",
+      "sha256": "3cc4b5219e554afba784f70567686f0c9ae8638eacb0e8850f374ab8db8ff679",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-preview.mjs",
+      "sha256": "581229089809b668669e396d2bff7e52b2463348f43cd64d0d344f4ba351f8d6",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-partial.png",
+      "sha256": "c27781129b30f59f412f2221ce5384a498f124fe50bc1a9c874ae0f17800c6b3",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-final.log",
+      "sha256": "cc31c6e1ac5aa04761813d9724c46e3742acb7d18726321f8281f585e21c3ecf",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-results.json",
+      "sha256": "7b684a738f3a375b3a535eb224ddd7233d0f612f31dcb633a2859b39374ac813",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/manifest.json",
+      "sha256": "bfa316174940dcfe6970aac7f1937f989ce60946ec406d6f517bc1ad85630807",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/lint-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/tsconfig.json",
+      "sha256": "1068e4333c98159ed7bf264052ddec861936703fa4b5a29806435daccf456c8a",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-desktop.png",
+      "sha256": "e7944b7e8282b1bc6c055cd912ca4f0224bd25884f56e12d92fe4e21982fd7f8",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-mobile.png",
+      "sha256": "ceccb748599091f0ca4d0fc0e60c3e5f3c7f9657264225687c4894e40b6b81d1",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-extra.png",
+      "sha256": "96c324f06d26f423c9c0da47ff2a7a0bf5a08d255988b6f308c5cc520e970a3d",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/typescript.log",
+      "sha256": "1b23794cfb9de88241ed38bf05c0be38f72b06afa74735e4d7463cb9dc0a2746",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/eslint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/02-recent-rate-authority.patch",
+      "sha256": "34e0442afaae5987bd03901631143de3d8e77dccfe487d6712851f885d63dd1f",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/focused-tests.log",
+      "sha256": "d6b5877bf589532b3312f055f7f7712293362c18975186dcd34ce3106c27ce84",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/typescript-result.json",
+      "sha256": "271568a30ef6bce5305c8da49d6d199bf5002ebdec8c1ffd87a00cd868d7c33e",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/WIGO-DATA-FIX.patch",
+      "sha256": "a63ef5a4e6dde4ee1255661a612f01b79a4e4306c5822f8d4fe078f89fbb394e",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/SOURCE-PINS.json",
+      "sha256": "37a4435a7ee5f8d9e86b9967237e19cef4f00ab02ee500691d04248c0b73e943",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/01-builder-window-and-errors.patch",
+      "sha256": "b25bc1a038b01b83d78937d440311c3ec8268d546327698a1f91568e771c0022",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/green-tests-1.log",
+      "sha256": "ad9b9b712069bacedd24655a691dac5bd701b1ec1f8f1c3e8f071268f6528686",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/red-tests.log",
+      "sha256": "b0a7d08514ebaf632e7080d8dcd5f46eda110254baae07d403af16f211d3f470",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/local-http.json",
+      "sha256": "fb65ea1167cfa3115fe3e7d4997d37c3708d038acc3a5ce41d27926be65c1e4c",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/source.patch",
+      "sha256": "5f88e8e7220b7bf14ce7ea2b16f821c0b2387277f0e9b1f2accb7da3d316987e",
+      "coverage": "metadata-only",
+      "role": "Known implementation/test/visual support from reviewed owner packets",
+      "disposition": "Metadata role disposition sufficient for this documentary claim; bodies/pixels remain unverified. Escalate only if needed to adjudicate a named contradiction.",
+      "deep_document_review_required": false,
+      "full_content_review": false
+    }
+  ],
+  "known_support_counts": {
+    "unique_report_still_pending": 8,
+    "support_role_disposed_metadata_only": 39
+  },
+  "warning": "No bulk full-content acceptance, binary erasure or claim all folders reviewed. All original inventory/duplicate mappings retained."
+}

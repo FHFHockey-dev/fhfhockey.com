@@ -1,0 +1,84 @@
+{
+  "at": "2026-10-24T20:02:15.253192+00:00",
+  "canonical_changes_justified": false,
+  "added_ids": [],
+  "added_children": [],
+  "changed_statuses": [],
+  "findings": [
+    {
+      "id": "S20-F1",
+      "disposition": "already-tracked-open",
+      "stable_id": "SITE-PARLAY-PROPS",
+      "source": "tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md",
+      "lines": [
+        156,
+        159
+      ],
+      "finding": "Only explicit remaining umbrella checkbox is actual prop-market/player-matching acceptance. Key provision/featured markets are already checked. Existing stable row exactly preserves13.3; no duplicate task or provider call."
+    },
+    {
+      "id": "S20-F2",
+      "disposition": "closure-and-scope-distinction",
+      "stable_ids": [
+        "STATS-S13",
+        "STATS-S14",
+        "REPO-DOCUMENTATION"
+      ],
+      "source": "tasks/TASKS/three-pillars-analytics/trends/prd-trends.md",
+      "lines": [
+        5,
+        66,
+        68,
+        69
+      ],
+      "finding": "Public Trends PRD records53/53 movement/resilience/typed-warning/mixed-recency/browser/workload-fanout closure. Same-hash task list already fully reviewed. P06/S13/S14 granularity/cohort scope remains proposed; no equivalence or whole-slice acceptance is established by the public-route closure.",
+      "counter_source": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/WORK-PACKETS.md",
+      "counter_lines": [
+        21,
+        24
+      ]
+    },
+    {
+      "id": "S20-F3",
+      "disposition": "historical-blocker-superseded",
+      "source": "tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md",
+      "lines": [
+        166,
+        168,
+        171,
+        173,
+        175,
+        177,
+        179,
+        181,
+        183
+      ],
+      "finding": "Earlier Chrome attachment blocker is superseded by recorded July11 browser inventory/typed-contract evidence. Edge and lineup histories are prospective/archive-limited; completed bounded sweeps are not full reconstructable past truth. No discovery rerun, source fetch or historical replay proposed."
+    },
+    {
+      "id": "S20-F4",
+      "disposition": "intentionally-deferred",
+      "source": "tasks/TASKS/three-pillars-analytics/prd-three-pillars-analytics.md",
+      "lines": [
+        193,
+        195,
+        299,
+        305
+      ],
+      "related_source": "tasks/TASKS/three-pillars-analytics/trends/prd-trends.md",
+      "related_lines": [
+        62,
+        110,
+        111,
+        112
+      ],
+      "finding": "Predictions-vs-actual/candlestick work is explicitly deferred; optional graduated sustainability badges need approved entity coverage. Umbrella launch language does not revive held market/model/publication/rights decisions."
+    }
+  ],
+  "limitations": [
+    "No current app/provider/browser/production validation.",
+    "Existing public Trends completion remains dated documentary credit, not fresh53-test execution.",
+    "External Claude plan referenced by STATS-S13 was not opened; repository P06 receipt used.",
+    "Narrow queue/packet content outside reviewed ranges remains unreviewed; older A1\u2013A10/Job79 statements were not adopted."
+  ]
+}

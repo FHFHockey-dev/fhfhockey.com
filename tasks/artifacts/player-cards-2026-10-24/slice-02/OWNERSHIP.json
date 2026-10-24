@@ -1,0 +1,53 @@
+{
+  "source_paths": [
+    {
+      "path": "web/lib/player-cards/windows.ts",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/aggregation.ts",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/adapter.ts",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/domain.test.ts",
+      "baseline": "absent"
+    }
+  ],
+  "scope": "Pure supplied-record domain contracts only; no fetch/service/WiGO repair or UI activation",
+  "status": "Implemented and frozen for independent review under granted CODEX-PLAYER-CARDS-S02-20261024",
+  "artifacts": "tasks/artifacts/player-cards-2026-10-24/slice-02/",
+  "source_dependencies": [
+    "web/lib/player-cards/contracts.ts",
+    "web/lib/player-cards/registry.ts",
+    "web/lib/player-cards/ranking.ts"
+  ],
+  "excluded": [
+    "S01 UI modifications",
+    "shared source/auth/export",
+    "candidate page route",
+    "production/services",
+    "Git/index",
+    "dependencies/migrations"
+  ],
+  "artifact_files": [
+    "OWNERSHIP.json",
+    "tsconfig.json",
+    "tests-initial.log",
+    "tests-final.log",
+    "types-initial.log",
+    "types-final.log",
+    "lint-initial.log",
+    "lint-final.log",
+    "local-evidence-inspection.json",
+    "HANDOFF.md",
+    "EVIDENCE.json",
+    "source.patch",
+    "verify-local-evidence.cjs",
+    "local-evidence-results.json",
+    "local-evidence.log"
+  ]
+}

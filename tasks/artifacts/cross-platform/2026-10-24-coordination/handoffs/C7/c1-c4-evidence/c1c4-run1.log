@@ -1,0 +1,33 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:43708) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 LineCombinationsGrid placement > L1 12F/6D 42ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 LineCombinationsGrid placement > L1 11F/7D 15ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 LineCombinationsGrid placement > L1 13F/5D 14ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 LineCombinationsGrid placement > L1 14F/4D 13ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 LineCombinationsGrid placement > L1 10F/8D 14ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 LineCombinationsGrid placement > L1 13F/6D (19 skaters) 13ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 LineCombinationsGrid placement > L1 12F/7D (19 skaters) 12ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 LineCombinationsGrid placement > L2 13F/5D with no player-map row: the extra forward's card under 'Defense' carries no position cue 8ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 inactive-tab read gating and stale-team guard > G1 non-stats tabs make zero lineCombinations / player-map reads 7ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 inactive-tab read gating and stale-team guard > G2 stats tab reads once; leaving and returning for the same team reuses the result 9ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 inactive-tab read gating and stale-team guard > G3 late line response for team A after switching to B is discarded and never triggers A's player-map read 22ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 inactive-tab read gating and stale-team guard > G4 late player-map response for A after switching to B does not render A 5ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 inactive-tab read gating and stale-team guard > G5 leaving the tab mid-flight drops the response; returning refetches and renders correctly 6ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 inactive-tab read gating and stale-team guard > G6 an error is shown, and re-entering the tab retries 6ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c1S06.test.tsx > C1 inactive-tab read gating and stale-team guard > G7 null / blank / nested IDs never become player links 9ms
+(node:43710) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c4Wigo.test.tsx > C4 WiGO links: IDs, context, Back > W1 every teamsInfo team round-trips id → name → abbreviation → route-valid key 1ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c4Wigo.test.tsx > C4 WiGO links: IDs, context, Back > W2 league-wide links carry no player/team context although their copy promises it 33ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c4Wigo.test.tsx > C4 WiGO links: IDs, context, Back > W3 player selected but team unresolved: heading names the player while copy says 'Select a player' 3ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c4Wigo.test.tsx > C4 WiGO links: IDs, context, Back > W4 links are plain push anchors (no replace / target / rel tricks); URL already holds playerId+tab 7ms
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls2/c4Wigo.test.tsx > C4 WiGO links: IDs, context, Back > W5 exactly one workflow section at desktop and at mobile widths 7ms
+
+ Test Files  2 passed (2)
+      Tests  20 passed (20)
+   Start at  12:17:14
+   Duration  1.19s (transform 191ms, setup 5ms, collect 390ms, tests 247ms, environment 313ms, prepare 58ms)
+

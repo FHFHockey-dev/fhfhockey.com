@@ -1,0 +1,7 @@
+{
+  "status": "failed",
+  "checks": 10,
+  "requests": 6,
+  "aborted": 0,
+  "error": "expect(locator).toHaveText(expected) failed\n\nLocator: getByRole('status')\nExpected: \"Checking share studio access…\"\nError: strict mode violation: getByRole('status') resolved to 2 elements:\n    1) <output id=\"fixture-auth\">old:none</output> aka getByText('old:none')\n    2) <p role=\"status\">Checking share studio access…</p> aka getByText('Checking share studio access…')\n\nCall log:\n  - Expect \"to.have.text\" with timeout 5000ms\n  - waiting for getByRole('status')\n"
+}

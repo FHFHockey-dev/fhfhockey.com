@@ -1,0 +1,633 @@
+{
+  "time": "2026-10-22T13:42:24.091272+00:00",
+  "head": "a6e9f8b61903ed4bb2bba6b21bf8597f51ac85d0",
+  "branch": "octoberBranch",
+  "scratch": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-luna-r1-rereview-8nj64c6s",
+  "pins": [
+    {
+      "path": "web/lib/sources/playerIdentitySnapshotEvidence.ts",
+      "category": "candidate",
+      "priorExpected": "390ed603af2cf2ca742ac36ec81c4973d2543684dfb42efbc9c9afeed84c7d4b",
+      "expected": "390ed603af2cf2ca742ac36ec81c4973d2543684dfb42efbc9c9afeed84c7d4b",
+      "actual": "390ed603af2cf2ca742ac36ec81c4973d2543684dfb42efbc9c9afeed84c7d4b",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/playerIdentitySnapshotEvidence.test.ts",
+      "category": "candidate",
+      "priorExpected": "77b834b8c011222d60360c5b8ab111bed4b1dfe8e44eb3cbd238f6c322bbaaaf",
+      "expected": "77b834b8c011222d60360c5b8ab111bed4b1dfe8e44eb3cbd238f6c322bbaaaf",
+      "actual": "77b834b8c011222d60360c5b8ab111bed4b1dfe8e44eb3cbd238f6c322bbaaaf",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.ts",
+      "category": "candidate",
+      "priorExpected": "23131921ff0d8caea93c4302f01bb3377bb823611c9410108973e0cab09b1124",
+      "expected": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a",
+      "actual": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a",
+      "match": true,
+      "intentionallyChanged": true
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.test.ts",
+      "category": "candidate",
+      "priorExpected": "620479333f55017fcc7749535cd09fa893e2772ac8ff4f2371716df8a3640ee2",
+      "expected": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451",
+      "actual": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451",
+      "match": true,
+      "intentionallyChanged": true
+    },
+    {
+      "path": "web/lib/sources/fixtures/tweetIdentitySavedEvidence.json",
+      "category": "candidate",
+      "priorExpected": "a6ed14b24e05ffdadd0d0de9593c12e5c8aad92bd8a8168d0cf91532598f0a2d",
+      "expected": "a6ed14b24e05ffdadd0d0de9593c12e5c8aad92bd8a8168d0cf91532598f0a2d",
+      "actual": "a6ed14b24e05ffdadd0d0de9593c12e5c8aad92bd8a8168d0cf91532598f0a2d",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/acronym-continuation/run-once.py",
+      "category": "trial",
+      "priorExpected": "7d9fc7bbbc20f81385f06d8086503e0ca3df29c7ef3d522b1fb1d0cc4a3ab3a3",
+      "expected": "7d9fc7bbbc20f81385f06d8086503e0ca3df29c7ef3d522b1fb1d0cc4a3ab3a3",
+      "actual": "7d9fc7bbbc20f81385f06d8086503e0ca3df29c7ef3d522b1fb1d0cc4a3ab3a3",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/acronym-continuation/test-admission.py",
+      "category": "trial",
+      "priorExpected": "b81ca088bb85fc01d17738b6424da8c6ecc4ed4248afce5c445167d6a5397e9c",
+      "expected": "b81ca088bb85fc01d17738b6424da8c6ecc4ed4248afce5c445167d6a5397e9c",
+      "actual": "b81ca088bb85fc01d17738b6424da8c6ecc4ed4248afce5c445167d6a5397e9c",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/acronym-continuation/prepare-and-validate.ts",
+      "category": "trial",
+      "priorExpected": "a79322106d8c1de3d454d3efbb9f37cb64ffd6c4bf2e0874a9a0773dc66bbe52",
+      "expected": "a79322106d8c1de3d454d3efbb9f37cb64ffd6c4bf2e0874a9a0773dc66bbe52",
+      "actual": "a79322106d8c1de3d454d3efbb9f37cb64ffd6c4bf2e0874a9a0773dc66bbe52",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/acronym-continuation/WIRE.json",
+      "category": "trial",
+      "priorExpected": "ae76f5010c1c1492a71f45c6780dd6b95e88ef21f7e88f601d108449176e164e",
+      "expected": "ae76f5010c1c1492a71f45c6780dd6b95e88ef21f7e88f601d108449176e164e",
+      "actual": "ae76f5010c1c1492a71f45c6780dd6b95e88ef21f7e88f601d108449176e164e",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/acronym-continuation/PREPARED-INPUT.json",
+      "category": "trial",
+      "priorExpected": "1b155333f307ef31e50661f51f91937cb879dc1f4131925a1a1bb66127027d47",
+      "expected": "1b155333f307ef31e50661f51f91937cb879dc1f4131925a1a1bb66127027d47",
+      "actual": "1b155333f307ef31e50661f51f91937cb879dc1f4131925a1a1bb66127027d47",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/acronym-continuation/OUTPUT-SCHEMA.json",
+      "category": "trial",
+      "priorExpected": "9ad2f05410e4d61c650655f9674f58eebaf790013144f615e9c4c5f226dbd67a",
+      "expected": "9ad2f05410e4d61c650655f9674f58eebaf790013144f615e9c4c5f226dbd67a",
+      "actual": "9ad2f05410e4d61c650655f9674f58eebaf790013144f615e9c4c5f226dbd67a",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/acronym-continuation/LOCAL-BASELINE.json",
+      "category": "trial",
+      "priorExpected": "b54566314af90cbad4f8e15f4b204f1aed35586bd4ab4937412d219889db1012",
+      "expected": "b54566314af90cbad4f8e15f4b204f1aed35586bd4ab4937412d219889db1012",
+      "actual": "b54566314af90cbad4f8e15f4b204f1aed35586bd4ab4937412d219889db1012",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/acronym-continuation/GRADING-BINDINGS.json",
+      "category": "trial",
+      "priorExpected": "c8452bf45f76c1b5caaa94f082f2efb379add05b890eebb0752723566d8f6008",
+      "expected": "c8452bf45f76c1b5caaa94f082f2efb379add05b890eebb0752723566d8f6008",
+      "actual": "c8452bf45f76c1b5caaa94f082f2efb379add05b890eebb0752723566d8f6008",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/acronym-continuation/AUTHORIZATION.json",
+      "category": "trial",
+      "priorExpected": "6326b6a2e1e2983c9fa656117dce27955fa497326498a6f9ede763b6e1c57909",
+      "expected": "6326b6a2e1e2983c9fa656117dce27955fa497326498a6f9ede763b6e1c57909",
+      "actual": "6326b6a2e1e2983c9fa656117dce27955fa497326498a6f9ede763b6e1c57909",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/playerIdentitySnapshot.ts",
+      "category": "trial",
+      "priorExpected": "bd1266de847aeffdc442205a307d2aadefda5da7cec79b76616c34db2a222901",
+      "expected": "bd1266de847aeffdc442205a307d2aadefda5da7cec79b76616c34db2a222901",
+      "actual": "bd1266de847aeffdc442205a307d2aadefda5da7cec79b76616c34db2a222901",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityCandidates.ts",
+      "category": "trial",
+      "priorExpected": "f434ab86169e9cc090042aa009d3746cb0871508e457bb09b8cbca39cefbcfb0",
+      "expected": "f434ab86169e9cc090042aa009d3746cb0871508e457bb09b8cbca39cefbcfb0",
+      "actual": "f434ab86169e9cc090042aa009d3746cb0871508e457bb09b8cbca39cefbcfb0",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityProposal.ts",
+      "category": "trial",
+      "priorExpected": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+      "expected": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+      "actual": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityLocalReview.ts",
+      "category": "trial",
+      "priorExpected": "4495d00e237886fa7d4ca9065d96ab4e68f9ea698674f64bf11e26df5dd5677f",
+      "expected": "4495d00e237886fa7d4ca9065d96ab4e68f9ea698674f64bf11e26df5dd5677f",
+      "actual": "4495d00e237886fa7d4ca9065d96ab4e68f9ea698674f64bf11e26df5dd5677f",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/tweetNewsInference.ts",
+      "category": "trial",
+      "priorExpected": "c7d86a9a6471ccf970e759e54ad65a3fddbcb83dac11bb9f0064a4a51be6beda",
+      "expected": "c7d86a9a6471ccf970e759e54ad65a3fddbcb83dac11bb9f0064a4a51be6beda",
+      "actual": "c7d86a9a6471ccf970e759e54ad65a3fddbcb83dac11bb9f0064a4a51be6beda",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/playerAliasReview.ts",
+      "category": "trial",
+      "priorExpected": "410f0a4efefc903cdfed6aa98794232e2558bca5598fcf7e4e6c1e9a5d64f8c5",
+      "expected": "410f0a4efefc903cdfed6aa98794232e2558bca5598fcf7e4e6c1e9a5d64f8c5",
+      "actual": "410f0a4efefc903cdfed6aa98794232e2558bca5598fcf7e4e6c1e9a5d64f8c5",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/tweetNewsPhraseDictionary.ts",
+      "category": "trial",
+      "priorExpected": "a39b54bcc5243909446353db31d1a54c6d88e467b3f7f838d0ea8d52da110ba1",
+      "expected": "a39b54bcc5243909446353db31d1a54c6d88e467b3f7f838d0ea8d52da110ba1",
+      "actual": "a39b54bcc5243909446353db31d1a54c6d88e467b3f7f838d0ea8d52da110ba1",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-2026-10-20/DIRECTORY.json",
+      "category": "trial",
+      "priorExpected": "57424ff5ded22c6f4f299270920f676d1b74ebed41dedd470063f7ef32c1adf1",
+      "expected": "57424ff5ded22c6f4f299270920f676d1b74ebed41dedd470063f7ef32c1adf1",
+      "actual": "57424ff5ded22c6f4f299270920f676d1b74ebed41dedd470063f7ef32c1adf1",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-2026-10-20/APPROVED-EXPORT.json",
+      "category": "trial",
+      "priorExpected": "5d12304f908740f84a580ab5314ffd592174cbf0dbb900bacb65196b3a553918",
+      "expected": "5d12304f908740f84a580ab5314ffd592174cbf0dbb900bacb65196b3a553918",
+      "actual": "5d12304f908740f84a580ab5314ffd592174cbf0dbb900bacb65196b3a553918",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-2026-10-20/OWNER-BINDINGS.json",
+      "category": "trial",
+      "priorExpected": "5f5f8b25d855f45ac3c6ecb8862681b00d6ab9d44891acd87078fb693346c2b9",
+      "expected": "5f5f8b25d855f45ac3c6ecb8862681b00d6ab9d44891acd87078fb693346c2b9",
+      "actual": "5f5f8b25d855f45ac3c6ecb8862681b00d6ab9d44891acd87078fb693346c2b9",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-preflight/PUBLIC-PRICING-AND-BOUND.json",
+      "category": "trial",
+      "priorExpected": "ac05206f51d17cc43c898f7eec5aaf4bf292ea9544be559d9e17356aafe8414e",
+      "expected": "ac05206f51d17cc43c898f7eec5aaf4bf292ea9544be559d9e17356aafe8414e",
+      "actual": "ac05206f51d17cc43c898f7eec5aaf4bf292ea9544be559d9e17356aafe8414e",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-identity-offline-2026-10-20/real-trial-preflight/WIRE-PARAMETERS.json",
+      "category": "trial",
+      "priorExpected": "b6a09a16d875b141b2d0cc12dd97b8f0d28b56595fe5580c79e721926500f175",
+      "expected": "b6a09a16d875b141b2d0cc12dd97b8f0d28b56595fe5580c79e721926500f175",
+      "actual": "b6a09a16d875b141b2d0cc12dd97b8f0d28b56595fe5580c79e721926500f175",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/fixtures/iftttComparisonObservations.json",
+      "category": "trial",
+      "priorExpected": "a12f0646e8f640f6eb0ebe5026ee4be31c519257e3fb9731ab586b2214053add",
+      "expected": "a12f0646e8f640f6eb0ebe5026ee4be31c519257e3fb9731ab586b2214053add",
+      "actual": "a12f0646e8f640f6eb0ebe5026ee4be31c519257e3fb9731ab586b2214053add",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/decisionsReference/adapter.mjs",
+      "category": "trial",
+      "priorExpected": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+      "expected": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+      "actual": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "/tmp/fhfh-luna-offline-network-guard.cjs",
+      "category": "trial",
+      "priorExpected": "dd8f7fca830b292a8fc0a9dbe4212b21ff67ddf1674632e52daa51662cad7ad8",
+      "expected": "dd8f7fca830b292a8fc0a9dbe4212b21ff67ddf1674632e52daa51662cad7ad8",
+      "actual": "dd8f7fca830b292a8fc0a9dbe4212b21ff67ddf1674632e52daa51662cad7ad8",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-sequential-pilot-2026-10-19/pilot.py",
+      "category": "trial",
+      "priorExpected": "f51cad6f6dc67feed2b988c2451c92be216b34bd8c2269eef8d982e3b492913b",
+      "expected": "f51cad6f6dc67feed2b988c2451c92be216b34bd8c2269eef8d982e3b492913b",
+      "actual": "f51cad6f6dc67feed2b988c2451c92be216b34bd8c2269eef8d982e3b492913b",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-sequential-pilot-2026-10-19/amendment.json",
+      "category": "trial",
+      "priorExpected": "3573b0886f00ee0ac7a50c9df1ac02f4eddb44929d51754b4a70fa4908093c82",
+      "expected": "3573b0886f00ee0ac7a50c9df1ac02f4eddb44929d51754b4a70fa4908093c82",
+      "actual": "3573b0886f00ee0ac7a50c9df1ac02f4eddb44929d51754b4a70fa4908093c82",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-preflight-2026-10-19/comparison.py",
+      "category": "trial",
+      "priorExpected": "a6f8ac8f8c32c9530e4790a582a89d7f10e8805249c472e3f92c047d11b78a26",
+      "expected": "a6f8ac8f8c32c9530e4790a582a89d7f10e8805249c472e3f92c047d11b78a26",
+      "actual": "a6f8ac8f8c32c9530e4790a582a89d7f10e8805249c472e3f92c047d11b78a26",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-preflight-2026-10-19/claim-schema.json",
+      "category": "trial",
+      "priorExpected": "fbff7c3e6061738a2b314ae924fddd42bf29399679f45214ff22b3a93f834b2f",
+      "expected": "fbff7c3e6061738a2b314ae924fddd42bf29399679f45214ff22b3a93f834b2f",
+      "actual": "fbff7c3e6061738a2b314ae924fddd42bf29399679f45214ff22b3a93f834b2f",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-preflight-2026-10-19/rules-adapter.ts",
+      "category": "trial",
+      "priorExpected": "91e29a670ab63f39d7841ae0b2c8659d564eda5608e45fb0531d5220351f7881",
+      "expected": "91e29a670ab63f39d7841ae0b2c8659d564eda5608e45fb0531d5220351f7881",
+      "actual": "91e29a670ab63f39d7841ae0b2c8659d564eda5608e45fb0531d5220351f7881",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-pilot-rules-2026-10-19/pilot-rules.json",
+      "category": "trial",
+      "priorExpected": "7f5c16e26fb1802d375950308bffb6e14950b57f4f89fa48e9761c9e56cd0d51",
+      "expected": "7f5c16e26fb1802d375950308bffb6e14950b57f4f89fa48e9761c9e56cd0d51",
+      "actual": "7f5c16e26fb1802d375950308bffb6e14950b57f4f89fa48e9761c9e56cd0d51",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-pilot-rules-2026-10-19/pilot-extraction-request.json",
+      "category": "trial",
+      "priorExpected": "2e3581b2e3d7f402dc1a3bf43c3240d4ad733af84b7c0254e95ebce59286ad95",
+      "expected": "2e3581b2e3d7f402dc1a3bf43c3240d4ad733af84b7c0254e95ebce59286ad95",
+      "actual": "2e3581b2e3d7f402dc1a3bf43c3240d4ad733af84b7c0254e95ebce59286ad95",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-pilot-rules-2026-10-19/pilot-extraction-prompt.txt",
+      "category": "trial",
+      "priorExpected": "654fb86127fee0a1dbc38f06e0ea0834b762699301843f327bd9147facd65ffd",
+      "expected": "654fb86127fee0a1dbc38f06e0ea0834b762699301843f327bd9147facd65ffd",
+      "actual": "654fb86127fee0a1dbc38f06e0ea0834b762699301843f327bd9147facd65ffd",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-live-binding-2026-10-19/evidence/actual-lindgren-rules.json",
+      "category": "trial",
+      "priorExpected": "dbf6114c10a5c80a6e02431c0684ad051f9c490661a687e897c8cd57f7914cc5",
+      "expected": "dbf6114c10a5c80a6e02431c0684ad051f9c490661a687e897c8cd57f7914cc5",
+      "actual": "dbf6114c10a5c80a6e02431c0684ad051f9c490661a687e897c8cd57f7914cc5",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/tweetPlayerEvents.ts",
+      "category": "trial",
+      "priorExpected": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c",
+      "expected": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c",
+      "actual": "14c421d37506f33df08cac5914e30c38a578b2588ae46f3c6e461b70efadc88c",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/tweetInterpretation.ts",
+      "category": "trial",
+      "priorExpected": "a72e39f1c9bea27297ad67b475d1f8d62cf082e70ede613835eff339bded0c55",
+      "expected": "a72e39f1c9bea27297ad67b475d1f8d62cf082e70ede613835eff339bded0c55",
+      "actual": "a72e39f1c9bea27297ad67b475d1f8d62cf082e70ede613835eff339bded0c55",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/sources/playerIdentity.ts",
+      "category": "trial",
+      "priorExpected": "af843bd6df9ec932ff67bdfd08dba337224d133ac87b1fe94113e0f5ec75bcb4",
+      "expected": "af843bd6df9ec932ff67bdfd08dba337224d133ac87b1fe94113e0f5ec75bcb4",
+      "actual": "af843bd6df9ec932ff67bdfd08dba337224d133ac87b1fe94113e0f5ec75bcb4",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "web/lib/supabase/pagination.ts",
+      "category": "trial",
+      "priorExpected": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "expected": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "actual": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/certifi/__init__.py",
+      "category": "trial",
+      "priorExpected": "a7f19866b8d4c0f0548692e5099a066f49a2281292a83032642e43bc8baa6c74",
+      "expected": "a7f19866b8d4c0f0548692e5099a066f49a2281292a83032642e43bc8baa6c74",
+      "actual": "a7f19866b8d4c0f0548692e5099a066f49a2281292a83032642e43bc8baa6c74",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/certifi/core.py",
+      "category": "trial",
+      "priorExpected": "a910c31725d52704c1fc49a81a9a5a5d4fd1f6a099be197e133c4f32e5779d30",
+      "expected": "a910c31725d52704c1fc49a81a9a5a5d4fd1f6a099be197e133c4f32e5779d30",
+      "actual": "a910c31725d52704c1fc49a81a9a5a5d4fd1f6a099be197e133c4f32e5779d30",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages/certifi/cacert.pem",
+      "category": "trial",
+      "priorExpected": "94edeb66e91774fcae93a05650914e29096259a5c7e871a1f65d461ab5201b47",
+      "expected": "94edeb66e91774fcae93a05650914e29096259a5c7e871a1f65d461ab5201b47",
+      "actual": "94edeb66e91774fcae93a05650914e29096259a5c7e871a1f65d461ab5201b47",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-ifttt-readiness-2026-10-22/network-guard.cjs",
+      "category": "recipe",
+      "priorExpected": "d5ff07c8bf758164bef09d8e9990e56f5ecf733134b9b53f8b22ee2038a79c79",
+      "expected": "d5ff07c8bf758164bef09d8e9990e56f5ecf733134b9b53f8b22ee2038a79c79",
+      "actual": "d5ff07c8bf758164bef09d8e9990e56f5ecf733134b9b53f8b22ee2038a79c79",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-ifttt-readiness-2026-10-22/vitest.config.mjs",
+      "category": "recipe",
+      "priorExpected": "292dbdb08a3d6bcaae6199210f3b3f66693de5adf4f878f5c4e8e2d045971ace",
+      "expected": "292dbdb08a3d6bcaae6199210f3b3f66693de5adf4f878f5c4e8e2d045971ace",
+      "actual": "292dbdb08a3d6bcaae6199210f3b3f66693de5adf4f878f5c4e8e2d045971ace",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-ifttt-readiness-2026-10-22/empty-global.npmrc",
+      "category": "recipe",
+      "priorExpected": "eb9ecf6aa820feb8e15ce8167249164b73acb496882c00cc382b634abf5143c5",
+      "expected": "eb9ecf6aa820feb8e15ce8167249164b73acb496882c00cc382b634abf5143c5",
+      "actual": "eb9ecf6aa820feb8e15ce8167249164b73acb496882c00cc382b634abf5143c5",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/tsconfig.json",
+      "category": "recipe",
+      "priorExpected": "dc2898184db8f034e85f131c5f79ab67c396ddb4c897eb65ca47fb2196198cbf",
+      "expected": "dc2898184db8f034e85f131c5f79ab67c396ddb4c897eb65ca47fb2196198cbf",
+      "actual": "dc2898184db8f034e85f131c5f79ab67c396ddb4c897eb65ca47fb2196198cbf",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/VERIFY.sh",
+      "category": "recipe",
+      "priorExpected": "40eaa60a9ed8030a83d00bf87afa2ae4e96a7d712db401addaaf43c7cac3cb14",
+      "expected": "40eaa60a9ed8030a83d00bf87afa2ae4e96a7d712db401addaaf43c7cac3cb14",
+      "actual": "40eaa60a9ed8030a83d00bf87afa2ae4e96a7d712db401addaaf43c7cac3cb14",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/test-results.json",
+      "category": "owner_receipt",
+      "priorExpected": "3a1964d1fc2cdc3f85c2ef04d6063df62d765dd0a7b6a010b907b8c38764ff9b",
+      "expected": "3a1964d1fc2cdc3f85c2ef04d6063df62d765dd0a7b6a010b907b8c38764ff9b",
+      "actual": "3a1964d1fc2cdc3f85c2ef04d6063df62d765dd0a7b6a010b907b8c38764ff9b",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/tests.log",
+      "category": "owner_receipt",
+      "priorExpected": "ec5410c6efd214d3155b65ab9fe81601484576dbd2f96f5a43fed9063d2c5cd5",
+      "expected": "ec5410c6efd214d3155b65ab9fe81601484576dbd2f96f5a43fed9063d2c5cd5",
+      "actual": "ec5410c6efd214d3155b65ab9fe81601484576dbd2f96f5a43fed9063d2c5cd5",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/tsc.log",
+      "category": "owner_receipt",
+      "priorExpected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/lint.log",
+      "category": "owner_receipt",
+      "priorExpected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "match": true,
+      "intentionallyChanged": false
+    },
+    {
+      "path": "tasks/artifacts/luna-application-contracts-2026-10-22/application.patch",
+      "category": "patch",
+      "priorExpected": "f918be644677718b90e59962345196ff44544cc081c1559afa794859d28c340d",
+      "expected": "f918be644677718b90e59962345196ff44544cc081c1559afa794859d28c340d",
+      "actual": "f918be644677718b90e59962345196ff44544cc081c1559afa794859d28c340d",
+      "match": true,
+      "intentionallyChanged": false
+    }
+  ],
+  "snapshot": [
+    {
+      "path": "web/lib/sources/playerIdentitySnapshotEvidence.ts",
+      "expected": "390ed603af2cf2ca742ac36ec81c4973d2543684dfb42efbc9c9afeed84c7d4b",
+      "canonical": "390ed603af2cf2ca742ac36ec81c4973d2543684dfb42efbc9c9afeed84c7d4b",
+      "scratch": "390ed603af2cf2ca742ac36ec81c4973d2543684dfb42efbc9c9afeed84c7d4b",
+      "match": true
+    },
+    {
+      "path": "web/lib/sources/playerIdentitySnapshotEvidence.test.ts",
+      "expected": "77b834b8c011222d60360c5b8ab111bed4b1dfe8e44eb3cbd238f6c322bbaaaf",
+      "canonical": "77b834b8c011222d60360c5b8ab111bed4b1dfe8e44eb3cbd238f6c322bbaaaf",
+      "scratch": "77b834b8c011222d60360c5b8ab111bed4b1dfe8e44eb3cbd238f6c322bbaaaf",
+      "match": true
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.ts",
+      "expected": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a",
+      "canonical": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a",
+      "scratch": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a",
+      "match": true
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.test.ts",
+      "expected": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451",
+      "canonical": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451",
+      "scratch": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451",
+      "match": true
+    },
+    {
+      "path": "web/lib/sources/fixtures/tweetIdentitySavedEvidence.json",
+      "expected": "a6ed14b24e05ffdadd0d0de9593c12e5c8aad92bd8a8168d0cf91532598f0a2d",
+      "canonical": "a6ed14b24e05ffdadd0d0de9593c12e5c8aad92bd8a8168d0cf91532598f0a2d",
+      "scratch": "a6ed14b24e05ffdadd0d0de9593c12e5c8aad92bd8a8168d0cf91532598f0a2d",
+      "match": true
+    },
+    {
+      "path": "web/lib/projections/evidenceTime.ts",
+      "expected": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+      "canonical": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+      "scratch": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+      "match": true
+    },
+    {
+      "path": "web/lib/supabase/pagination.ts",
+      "expected": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "canonical": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "scratch": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "match": true
+    },
+    {
+      "path": "web/lib/sources/playerIdentity.ts",
+      "expected": "af843bd6df9ec932ff67bdfd08dba337224d133ac87b1fe94113e0f5ec75bcb4",
+      "canonical": "af843bd6df9ec932ff67bdfd08dba337224d133ac87b1fe94113e0f5ec75bcb4",
+      "scratch": "af843bd6df9ec932ff67bdfd08dba337224d133ac87b1fe94113e0f5ec75bcb4",
+      "match": true
+    },
+    {
+      "path": "web/lib/sources/playerIdentitySnapshot.ts",
+      "expected": "bd1266de847aeffdc442205a307d2aadefda5da7cec79b76616c34db2a222901",
+      "canonical": "bd1266de847aeffdc442205a307d2aadefda5da7cec79b76616c34db2a222901",
+      "scratch": "bd1266de847aeffdc442205a307d2aadefda5da7cec79b76616c34db2a222901",
+      "match": true
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityCandidates.ts",
+      "expected": "f434ab86169e9cc090042aa009d3746cb0871508e457bb09b8cbca39cefbcfb0",
+      "canonical": "f434ab86169e9cc090042aa009d3746cb0871508e457bb09b8cbca39cefbcfb0",
+      "scratch": "f434ab86169e9cc090042aa009d3746cb0871508e457bb09b8cbca39cefbcfb0",
+      "match": true
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityProposal.ts",
+      "expected": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+      "canonical": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+      "scratch": "a73df0483313bc75e94b36bc3fcf9087e1adb7d96afd0895db7a9c8bad7c9a27",
+      "match": true
+    },
+    {
+      "path": "web/lib/sources/tweetNewsPhraseDictionary.ts",
+      "expected": "a39b54bcc5243909446353db31d1a54c6d88e467b3f7f838d0ea8d52da110ba1",
+      "canonical": "a39b54bcc5243909446353db31d1a54c6d88e467b3f7f838d0ea8d52da110ba1",
+      "scratch": "a39b54bcc5243909446353db31d1a54c6d88e467b3f7f838d0ea8d52da110ba1",
+      "match": true
+    },
+    {
+      "path": "web/lib/sources/fixtures/tweetIdentityOfflineFixture.ts",
+      "expected": "2e09d8adb74d8eba76c68f47f094cadaf34da127bc68a068854e71d0be1881ae",
+      "canonical": "2e09d8adb74d8eba76c68f47f094cadaf34da127bc68a068854e71d0be1881ae",
+      "scratch": "2e09d8adb74d8eba76c68f47f094cadaf34da127bc68a068854e71d0be1881ae",
+      "match": true
+    },
+    {
+      "path": "web/lib/sources/fixtures/iftttComparisonObservations.json",
+      "expected": "a12f0646e8f640f6eb0ebe5026ee4be31c519257e3fb9731ab586b2214053add",
+      "canonical": "a12f0646e8f640f6eb0ebe5026ee4be31c519257e3fb9731ab586b2214053add",
+      "scratch": "a12f0646e8f640f6eb0ebe5026ee4be31c519257e3fb9731ab586b2214053add",
+      "match": true
+    },
+    {
+      "path": "web/package.json",
+      "expected": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "canonical": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "scratch": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "match": true
+    },
+    {
+      "path": "web/tsconfig.json",
+      "expected": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "canonical": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "scratch": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "match": true
+    },
+    {
+      "path": "web/eslint.config.mjs",
+      "expected": "47974c70d20250ef3a11d698318026e2bd172589074956e7b89885520b623af6",
+      "canonical": "47974c70d20250ef3a11d698318026e2bd172589074956e7b89885520b623af6",
+      "scratch": "47974c70d20250ef3a11d698318026e2bd172589074956e7b89885520b623af6",
+      "match": true
+    }
+  ],
+  "correctionPatchSha256": "ed584d5e242458530c23e4e1eeb835bcfd09a37b9835d7b857d857115c18b5f6",
+  "originalReviewTestSha256": "2eb47699a268abdaffe8043e8d4aad540fa6600f8565f9abb4981939332b53cb",
+  "headSourceHashes": {
+    "web/lib/sources/tweetIdentityReplacementReview.ts": "23131921ff0d8caea93c4302f01bb3377bb823611c9410108973e0cab09b1124",
+    "web/lib/sources/tweetIdentityReplacementReview.test.ts": "620479333f55017fcc7749535cd09fa893e2772ac8ff4f2371716df8a3640ee2"
+  },
+  "scopedGitStatus": " M web/lib/sources/tweetIdentityReplacementReview.test.ts\n M web/lib/sources/tweetIdentityReplacementReview.ts\n",
+  "originalRegressionSetupVerbatim": true,
+  "originalRegressionBodiesVerbatim": true
+}

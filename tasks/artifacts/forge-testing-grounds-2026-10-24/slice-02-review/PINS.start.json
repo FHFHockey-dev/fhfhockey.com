@@ -1,0 +1,279 @@
+{
+  "recordedAt": "2026-10-24T14:59:40.388976+00:00",
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "checks": [
+    {
+      "group": "candidateHashes",
+      "path": "web/lib/forge-testing-grounds/ownerPolicy.ts",
+      "expected": "b0de88d27e731856e37470aee46cde57cf50af351fa6cc8ebeacb070842748c5",
+      "actual": "b0de88d27e731856e37470aee46cde57cf50af351fa6cc8ebeacb070842748c5",
+      "matches": true
+    },
+    {
+      "group": "candidateHashes",
+      "path": "web/lib/forge-testing-grounds/ownerPolicy.test.ts",
+      "expected": "9d715c4577c2e98d28f641b96c7e46c3a08d1234db62e8bf7059a89f18fc776d",
+      "actual": "9d715c4577c2e98d28f641b96c7e46c3a08d1234db62e8bf7059a89f18fc776d",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "AGENTS.md",
+      "expected": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b",
+      "actual": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "mise-en-place.md",
+      "expected": "29ea87cbf4c9addcf1d6ef6225884606ea3d7f33b36dc19377d8012f2aedd9af",
+      "actual": "29ea87cbf4c9addcf1d6ef6225884606ea3d7f33b36dc19377d8012f2aedd9af",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "tasks/TASKS/prd-forge-testing-grounds.md",
+      "expected": "33f74b0c7df68483821bcf41e3c446d0eee26f788bbd101c3a92a0087cfbdaa5",
+      "actual": "33f74b0c7df68483821bcf41e3c446d0eee26f788bbd101c3a92a0087cfbdaa5",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "tasks/tasks-prd-forge-testing-grounds.md",
+      "expected": "a0a760cabc61fe15a496b768634858171b32d6673999f3abaf4d8cbcb321c9b2",
+      "actual": "a0a760cabc61fe15a496b768634858171b32d6673999f3abaf4d8cbcb321c9b2",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/utils/adminOnlyMiddleware.ts",
+      "expected": "de749fa9e811aacbbd1c85a080140f380fd8c3d3794ad378caa9dd4025f444c5",
+      "actual": "de749fa9e811aacbbd1c85a080140f380fd8c3d3794ad378caa9dd4025f444c5",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/lib/routeRunner/store.ts",
+      "expected": "895d850d59b632b07017ed6b974e5909e3906320be3eb8a4c2fa367ab7cfb033",
+      "actual": "895d850d59b632b07017ed6b974e5909e3906320be3eb8a4c2fa367ab7cfb033",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/pages/api/v1/db/route-runner-tick.ts",
+      "expected": "2847f34e0544a0f05557ddc61fd2498aa29cbb4219b2896a7799ff91830b153c",
+      "actual": "2847f34e0544a0f05557ddc61fd2498aa29cbb4219b2896a7799ff91830b153c",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/lib/player-forecasts/rollingWindowParticipation.ts",
+      "expected": "b083fc00c982985d586e45e33d42214251657e19d0a854b6bbcfda44858e28df",
+      "actual": "b083fc00c982985d586e45e33d42214251657e19d0a854b6bbcfda44858e28df",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/lib/player-forecasts/rollingWindowParticipation.test.ts",
+      "expected": "942d0474a08a09ae892c7ae99c7636761106827f2610e8f835264c540a5df937",
+      "actual": "942d0474a08a09ae892c7ae99c7636761106827f2610e8f835264c540a5df937",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/lib/player-forecasts/modeledGoalieParticipation.ts",
+      "expected": "f2d08511647d7de7e19bea506f412ee39154903212440805d28766184755b00e",
+      "actual": "f2d08511647d7de7e19bea506f412ee39154903212440805d28766184755b00e",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/lib/projections/constants/projection-weights.ts",
+      "expected": "e98611fbd96d10c248951f14be15d6dcf56272a72beb90b6112f3ac0d023d035",
+      "actual": "e98611fbd96d10c248951f14be15d6dcf56272a72beb90b6112f3ac0d023d035",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/lib/projections/calculators/skater-adjustments.ts",
+      "expected": "258e9b4699d01ccdc89a30d746cc6332f3c708210c4598c69fe7c8f47f2ba9b6",
+      "actual": "258e9b4699d01ccdc89a30d746cc6332f3c708210c4598c69fe7c8f47f2ba9b6",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/lib/projections/stages/skater-stage.ts",
+      "expected": "6adc2f970899251775587c08c906a8121eb8f38ed3394549abf2bc9774086b56",
+      "actual": "6adc2f970899251775587c08c906a8121eb8f38ed3394549abf2bc9774086b56",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "tasks/artifacts/forge-f6-ledger-week-2026-10-23/BASELINE-RECEIPTS.json",
+      "expected": "2ba6cffb2f949ccd8236ed68fd9e52c3b2daedefc5d89fd42e379717facb74d5",
+      "actual": "2ba6cffb2f949ccd8236ed68fd9e52c3b2daedefc5d89fd42e379717facb74d5",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "tasks/artifacts/forge-f6-ledger-week-2026-10-23/FUTURE-APPROVAL.md",
+      "expected": "de4f3b0672741f062966ae2449dc36cb3513db0d4a356cfc6fd488a40a902ee9",
+      "actual": "de4f3b0672741f062966ae2449dc36cb3513db0d4a356cfc6fd488a40a902ee9",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "tasks/artifacts/forge-f6-ledger-week-2026-10-23/README.md",
+      "expected": "4946f76681e29687f77df7a6eff1fd7c6589434578bf28681305acead24e7128",
+      "actual": "4946f76681e29687f77df7a6eff1fd7c6589434578bf28681305acead24e7128",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/package.json",
+      "expected": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "actual": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/vitest.config.mts",
+      "expected": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+      "actual": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/__tests__/vitest.setup.js",
+      "expected": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+      "actual": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/tsconfig.json",
+      "expected": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "actual": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "matches": true
+    },
+    {
+      "group": "artifactHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/checks.log",
+      "expected": "25f7c0277f7851ee593d0f7b428acbca172bd1f3e420c2498b6909d2f955d13b",
+      "actual": "25f7c0277f7851ee593d0f7b428acbca172bd1f3e420c2498b6909d2f955d13b",
+      "matches": true
+    },
+    {
+      "group": "artifactHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/OWNERSHIP.md",
+      "expected": "fac13a76ad7fa4441a82481c934f71eb885a801f89e11a67d9227838018310bd",
+      "actual": "fac13a76ad7fa4441a82481c934f71eb885a801f89e11a67d9227838018310bd",
+      "matches": true
+    },
+    {
+      "group": "artifactHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/HANDOFF.md",
+      "expected": "ee728acb3accea0c55fe470875ed51bcd53695cfe4c4573765bc4d56318d554e",
+      "actual": "ee728acb3accea0c55fe470875ed51bcd53695cfe4c4573765bc4d56318d554e",
+      "matches": true
+    },
+    {
+      "group": "artifactHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/DECISIONS.md",
+      "expected": "63ac92e56275363d23cd5a222264d8fea0619213cda6734794b579b7eceb89e9",
+      "actual": "63ac92e56275363d23cd5a222264d8fea0619213cda6734794b579b7eceb89e9",
+      "matches": true
+    }
+  ],
+  "additionalPins": {
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/EVIDENCE.json": {
+      "sha256": "145aff086b26bfa3704bc5439c92af8a3db50a101e9766af0066215f56178b0b"
+    },
+    "web/package-lock.json": {
+      "sha256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378"
+    },
+    "web/.nvmrc": {
+      "sha256": "6f7ebb0460b61089c4413e5740b5e2fa196a19281886e50ab1f99b15e0aeeb21"
+    },
+    "web/node_modules/vitest/package.json": {
+      "sha256": "3f3dc1ef7acc6ffac8d0a7f10c4460f98e36026837b57f774426d962d546d740",
+      "version": "3.2.7"
+    },
+    "web/node_modules/typescript/package.json": {
+      "sha256": "1e03325943793f3bf11667b94fca412fe5ba617c85b84c16f0474933da156baa",
+      "version": "5.7.3"
+    },
+    "web/eslint.config.mjs": {
+      "sha256": "47974c70d20250ef3a11d698318026e2bd172589074956e7b89885520b623af6"
+    },
+    "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json": {
+      "sha256": "56fb742475a2af45901051387c8a031029367cb5b7ca645a449f3226f9406912"
+    },
+    "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-LEASES.json": {
+      "sha256": "4b7b1eb3337353d3c7a4666fdceffe1784bf9a21c5197c6847459b6bb9d94949"
+    }
+  },
+  "slice01ReviewerArtifactsIntegrity": [
+    {
+      "name": "COMMANDS.json",
+      "sha256": "dea06ea812b2a7017a2476b221a764fcfa143c9d43b3b95a7f0512300a01fa9f",
+      "matches": true
+    },
+    {
+      "name": "DECISION-RELAY.md",
+      "sha256": "adb81537d05e0dae54e4b5bae3fea89c5e73845f313be6b214d2576309fe7b8a",
+      "matches": true
+    },
+    {
+      "name": "DISCOVERY-NOTES.md",
+      "sha256": "e689b63d18073b37075e4ca5d517a199603010fb772b24b1ca33dc1744878472",
+      "matches": true
+    },
+    {
+      "name": "PINS.end.json",
+      "sha256": "8eaa70a64e60bbe47d685628b2224c1cdf320da26346c564897af9ff29c45bb5",
+      "matches": true
+    },
+    {
+      "name": "PINS.start.json",
+      "sha256": "a488844752b035c9d28185398ceb79fe7ed3251aa19a926e2bf7e88483f5e991",
+      "matches": true
+    },
+    {
+      "name": "REVIEW-EVIDENCE.json",
+      "sha256": "7b004f7ded85745cc4d09ff60b9f0f42236e1f34f00e415e970fd3c1ef0dfb5c",
+      "matches": true
+    },
+    {
+      "name": "REVIEW.md",
+      "sha256": "c0fdf08158476c3a4de4bc249c63f4c51f3e4b04271b516512ac28b773f11dcb",
+      "matches": true
+    },
+    {
+      "name": "boundaries.log",
+      "sha256": "a28ceadc98cb8e792e909544c5f79735ad8322e232f5b813a8bbea18356ba4a3",
+      "matches": true
+    },
+    {
+      "name": "boundaries.test.ts",
+      "sha256": "3dbf09778bfcf4aab35f37c58277722ace196a7e69245b383728961a7835b8a1",
+      "matches": true
+    },
+    {
+      "name": "review.vitest.config.mts",
+      "sha256": "7657007ee7dd216f04fc03de1f912d3b31b75aa829c3f88d42b40bf051f4cf51",
+      "matches": true
+    },
+    {
+      "name": "scoped-lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matches": true
+    },
+    {
+      "name": "scoped-ts.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matches": true
+    }
+  ],
+  "frozenSlice01OwnerPins": "Historical record only; moving slice-01 application correction not inspected/tested in this review."
+}

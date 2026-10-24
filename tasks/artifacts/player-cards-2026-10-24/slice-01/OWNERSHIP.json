@@ -1,0 +1,92 @@
+{
+  "status": "Coordinator granted CODEX-PLAYER-CARDS-S01-20261024 at2026-10-24T16:39:39.794196+00:00; exact nine-path ownership recorded CODEX-023",
+  "canonical_branch": "octoberBranch",
+  "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "source_paths": [
+    {
+      "path": "web/lib/player-cards/contracts.ts",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/registry.ts",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/ranking.ts",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/ranking.test.ts",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/fixtures.ts",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCard.tsx",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCard.module.scss",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardPreview.tsx",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardPreview.test.tsx",
+      "baseline": "absent"
+    }
+  ],
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-24/slice-01/",
+  "artifact_files": [
+    "OWNERSHIP.json",
+    "render-preview.mjs",
+    "preview-entry.tsx",
+    "preview.html",
+    "serve-preview.mjs",
+    "qa-preview.mjs",
+    "checks.log",
+    "tsconfig.json",
+    "HANDOFF.md",
+    "EVIDENCE.json",
+    "source.patch",
+    "preview.png",
+    "manifest.json",
+    "types.log",
+    "types-final.log",
+    "lint.log",
+    "lint-final.log",
+    "checks-final.log",
+    "browser.log",
+    "browser-final.log",
+    "browser-failure.json",
+    "browser-results.json",
+    "qa-desktop.png",
+    "qa-mobile.png",
+    "qa-extra.png",
+    "qa-long-name.png",
+    "qa-partial.png",
+    "qa-missing.png"
+  ],
+  "resource_request": "127.0.0.1:3125 static self-contained fixture only; no cache or shared auth",
+  "excluded": [
+    "web/pages/player-cards.tsx",
+    "all shared auth/entitlement/export",
+    "WiGO/source repairs",
+    "FORGE/RSO/Testing Grounds",
+    "news/Claude UI",
+    "Git/index",
+    "production/services",
+    "dependencies/migrations"
+  ],
+  "runtime": {
+    "lease": "CODEX-PLAYER-CARDS-3125-20261024",
+    "pid": 54140,
+    "host": "127.0.0.1",
+    "port": 3125,
+    "purpose": "static fixture-only preview; buffer read once; GET / and /player-cards only; no auth/cache/upstream access"
+  }
+}

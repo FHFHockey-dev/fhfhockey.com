@@ -1,0 +1,42 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-wigo-reader-release-xx5wxns_/web
+
+stderr | utils/fetchWigoPlayerStats.test.ts > shared points and consistency game log > surfaces conflicting duplicates instead of choosing a score
+Unexpected error in fetchPlayerGameLogConsistencyData for player 1, season 20252026: Error: Game log contains conflicting rows for the same game.
+    at Module.fetchPlayerGameLogConsistencyData (/private/tmp/fhfh-wigo-reader-release-xx5wxns_/web/utils/fetchWigoPlayerStats.ts:915:15)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at /private/tmp/fhfh-wigo-reader-release-xx5wxns_/web/utils/fetchWigoPlayerStats.test.ts:42:5
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+stderr | utils/fetchWigoPlayerStats.test.ts > shared points and consistency game log > rejects unknown game identities rather than silently merging them
+Unexpected error in fetchPlayerGameLogConsistencyData for player 1, season 20252026: Error: Game log contains a missing or invalid game identity.
+    at Module.fetchPlayerGameLogConsistencyData (/private/tmp/fhfh-wigo-reader-release-xx5wxns_/web/utils/fetchWigoPlayerStats.ts:910:15)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at /private/tmp/fhfh-wigo-reader-release-xx5wxns_/web/utils/fetchWigoPlayerStats.test.ts:47:5
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > preserves a source failure as an error instead of an empty game log
+Workspaceing game log for Goals (Player 1, Season 20252026) from wgo_skater_stats.goals using date='date' and season='season_id'
+
+stderr | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > preserves a source failure as an error instead of an empty game log
+Supabase error fetching game log for Goals (Player 1, Season 20252026): source unavailable
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > uses numeric season_id and date for WGO game logs
+Workspaceing game log for Goals (Player 8478402, Season 20252026) from wgo_skater_stats.goals using date='date' and season='season_id'
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > uses numeric season_id and date for WGO game logs
+Workspaceed data for Goals: 1 rows
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > uses the numeric season column and date_scraped for NST game logs
+Workspaceing game log for ixG (Player 8478402, Season 20252026) from nst_gamelog_as_counts.ixg using date='date_scraped' and season='season'
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > uses the numeric season column and date_scraped for NST game logs
+Workspaceed data for ixG: 1 rows
+
+ ✓ utils/fetchWigoPlayerStats.test.ts (25 tests) 11ms
+
+ Test Files  1 passed (1)
+      Tests  25 passed (25)
+   Start at  16:56:55
+   Duration  203ms (transform 53ms, setup 6ms, collect 55ms, tests 11ms, environment 0ms, prepare 34ms)
+

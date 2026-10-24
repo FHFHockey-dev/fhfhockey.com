@@ -76,7 +76,10 @@ export function forecastFromContributions(original: GameForecast, contributions:
     // Preserve admitted confirmation independently of the issued model weight.
     // Rejected or expired source/participation inputs cannot retain that claim.
     confirmedStart: original.confirmedStart && (detailUsed || start !== undefined),
-    modelVersion: sources.find(source => source.kind === "detailed")?.policyVersion ?? sources[0]?.policyVersion ?? original.modelVersion,
+    // A baseline can borrow the issued row's participation without its means.
+    // Keep that code identity for target-use rechecks; rate policies stay in inputs.
+    modelVersion: sources.find(source => source.kind === "detailed")?.policyVersion
+      ?? (participation.some(row => !row.model) ? original.modelVersion : sources[0]?.policyVersion ?? original.modelVersion),
     limitations: [...new Set([...original.limitations, ...Object.values(contributions).flatMap(row => row.limitations),
       ...(modeledStart?.model?.limitations ?? [])])] };
 }

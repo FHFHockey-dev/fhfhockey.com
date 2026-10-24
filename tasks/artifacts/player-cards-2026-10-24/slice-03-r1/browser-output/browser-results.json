@@ -1,0 +1,56 @@
+{
+  "checks": [
+    {
+      "name": "zero-PP exposure retains one appearance; undefined ratios and PNG/manifest agree",
+      "passed": true,
+      "snapshotId": "synthetic-flow-v1-1001-2026-10-01-2026-10-01-pp-allow-known-short-proposed-complete",
+      "pngSha256": "31b8f3c11bab114cbea5b92e2880fcbc66acc5d2653c87e3d75d3a75ba26d82a"
+    },
+    {
+      "name": "PC-S03-02: known undefined zero-exposure ratios are not labeled missing source",
+      "passed": true,
+      "observed": [
+        "Synthetic PNG downloaded from the displayed snapshot."
+      ],
+      "coverage": {
+        "expectedPlayers": 18,
+        "suppliedPlayers": 18,
+        "valid": 0,
+        "knownUndefined": 18,
+        "missingIncomplete": 0,
+        "knownShort": 0,
+        "fullEligiblePopulationVerified": true
+      }
+    },
+    {
+      "name": "duplicate identity, period/strength and actual Back/Forward keep one consistent snapshot",
+      "passed": true,
+      "snapshotId": "synthetic-flow-v1-1002-L20-5v5-allow-known-short-proposed-complete"
+    },
+    {
+      "name": "PC-S03-01: accessible unverified GP state",
+      "passed": true,
+      "observed": "Alex Morgan. Synthetic fixture. Own L20 appearances. 5v5. GP unverified."
+    },
+    {
+      "name": "unknown rank coverage retains values; history/stale/source-error cannot export fabricated zero",
+      "passed": true
+    },
+    {
+      "name": "PC-S03-02: exported partial SVG retains missing-input explanation",
+      "passed": true,
+      "cardText": "Synthetic player card · Jamie ChenFHFH / PLAYER CARDSYNTHETIC FIXTUREJamie ChenHarbour · example · LW · Example ID 1004OPPORTUNITYTime on ice per NHL appearanceATOI17:38min:sec per appearance18 of 18 · 2.8 pctINDIVIDUAL GENERATIONIndividual shots on goal per 60 minutesSOG/6013.61shots/601 of 18 · 97.2 pctIndividual scoring chances per 60 minutesiSCF/6010.21chances/601 of 18 · 97.2 pctIndividual expected goals per 60 minutesixG/60—xG/60Missing source · incomplete inputsON-ICE CONTEXTTeam expected goals for while on iceOn-ice xGF/604.11xG/601 of 18 · 97.2 pctShare of expected goals for while on iceOn-ice xG%54.0%%1 of 18 · 97.2 pctFINISHING & INVOLVEMENTShare of on-ice goals involving a player pointIPP11.1%%T-15 of 18 · 11.1 pctIndividual goals divided by shots on goalSH%8.3%%5 of 18 · 75.0 pctOwn L10 appearances · All Strengths3 of 10 GP · 52.9 min TOI · 2026-10-17 → 2026-10-23Known short season · proposed policy · Missing sourceCutoff: 2026-10-24 00:00:00Z · Capture: 10-24 02:00 UTCFabricated 18-player cohort · per-metric valid N · no GP, TOI or position filterSource/identities/games are synthetic · numeric magnitude is not quality or a forecastProposed season/short-N policy, competition ties and midrank percentiles · fhfhockey.com",
+      "manifestReason": "Required component is missing, invalid or has incompatible TOI units",
+      "pngSha256": "1a2705e9210a9f3921311822ca2ddd016a2b557d238b2adfb9803cf46621a794"
+    },
+    {
+      "name": "file-only browser context: zero HTTP(S) attempts and page errors",
+      "passed": true
+    }
+  ],
+  "network": [],
+  "errors": [],
+  "PNGexports": 2,
+  "source": "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-player-cards-s03-r1-browser-kjm7kawk/tasks/artifacts/player-cards-2026-10-24/slice-03/preview.html",
+  "serverActions": 0
+}

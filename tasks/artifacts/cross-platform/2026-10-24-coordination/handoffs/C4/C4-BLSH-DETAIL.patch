@@ -1,0 +1,286 @@
+diff --git a/web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx b/web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx
+index c96d978d7..6a82aef4a 100644
+--- a/web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx
++++ b/web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx
+@@ -76,4 +76,73 @@ describe("BuyLowSellHighPreview", () => {
+     expect(within(after).getByText("Market reference unavailable")).toBeTruthy();
+     expect(within(after).getByText("horizon mismatch")).toBeTruthy();
+   });
++
++  it("opens a candidate detail with passed-through opportunity, duration, variability and source clocks", () => {
++    render(<BuyLowSellHighPreview storage={memory()} />);
++    const toggle = screen.getByRole("button", { name: "Details for Fixture Forward Three" });
++    expect(toggle.getAttribute("aria-expanded")).toBe("false");
++    fireEvent.click(toggle);
++    expect(toggle.getAttribute("aria-expanded")).toBe("true");
++    expect(toggle.getAttribute("aria-controls")).toBe("blsh-player-detail");
++    const detail = screen.getByRole("region", { name: "Fixture Forward Three" });
++    expect(document.activeElement).toBe(within(detail).getByRole("heading", { name: "Fixture Forward Three" }));
++    expect(within(detail).getByText(/Observed duration: 10 appearances .*History only; not a forecast of how long it lasts\./)).toBeTruthy();
++    expect(within(detail).getByText(/Observed game-to-game SD \(Points\): \d+\.\d{2}\. Recent history, not forecast volatility\./)).toBeTruthy();
++    expect(within(detail).getByText("Predictive spread: Unavailable (not supplied by forge v1).")).toBeTruthy();
++    expect(within(detail).getByText(/Confidence: not supplied/)).toBeTruthy();
++    expect(within(detail).getByText(/Fixture record \(synthetic\) as of 2026-10-18T15:00:00.000Z; contract sko-interpretation-v0.1/)).toBeTruthy();
++    expect(within(detail).getByText(/Horizon: 10 of 10 requested team games scheduled/)).toBeTruthy();
++    expect(within(detail).getByRole("heading", { name: "Limitations" })).toBeTruthy();
++    expect(within(detail).queryByText(/\b(buy|sell) now\b/i)).toBeNull();
++  });
++
++  it("closes with Escape or Close and returns focus to the row toggle", () => {
++    render(<BuyLowSellHighPreview storage={memory()} />);
++    const toggle = screen.getByRole("button", { name: "Details for Fixture Defense Two" });
++    fireEvent.click(toggle);
++    const detail = screen.getByRole("region", { name: "Fixture Defense Two" });
++    expect(within(detail).getByText(/sparse sample/)).toBeTruthy();
++    fireEvent.keyDown(within(detail).getByRole("heading", { name: "Fixture Defense Two" }), { key: "Escape" });
++    expect(screen.queryByRole("region", { name: "Fixture Defense Two" })).toBeNull();
++    expect(document.activeElement).toBe(toggle);
++    fireEvent.click(toggle);
++    fireEvent.click(within(screen.getByRole("region", { name: "Fixture Defense Two" })).getByRole("button", { name: /Close details for Fixture Defense Two/ }));
++    expect(screen.queryByRole("region", { name: "Fixture Defense Two" })).toBeNull();
++    expect(document.activeElement).toBe(toggle);
++  });
++
++  it("keeps the detail honest when the horizon leaves the player unranked", () => {
++    render(<BuyLowSellHighPreview storage={memory()} />);
++    fireEvent.click(screen.getByRole("button", { name: "Details for Fixture Forward Three" }));
++    fireEvent.change(screen.getByLabelText(/^Horizon \(scheduled/), { target: { value: "20" } });
++    const detail = screen.getByRole("region", { name: "Fixture Forward Three" });
++    expect(within(detail).getByText(/Not in the current list/)).toBeTruthy();
++    expect(within(detail).getByText(/Horizon: 14 of 20 requested team games scheduled/)).toBeTruthy();
++    expect(within(detail).getByText(/^Unavailable \(expected incomplete horizon\) · Gap unavailable$/)).toBeTruthy();
++  });
++
++  it("reaches stale, conflicting and goalie records from the unranked list without inventing values", () => {
++    render(<BuyLowSellHighPreview storage={memory()} />);
++    fireEvent.click(screen.getByRole("button", { name: "Details for Fixture Defense Three" }));
++    expect(within(screen.getByRole("region", { name: "Fixture Defense Three" })).getByText(/\(stale\)/)).toBeTruthy();
++    fireEvent.click(screen.getByRole("button", { name: "Details for Fixture Forward Nine" }));
++    expect(screen.queryByRole("region", { name: "Fixture Defense Three" })).toBeNull();
++    expect(within(screen.getByRole("region", { name: "Fixture Forward Nine" })).getByText(/1 conflicting games/)).toBeTruthy();
++    fireEvent.click(screen.getByRole("button", { name: "Details for Fixture Goalie One" }));
++    const goalie = screen.getByRole("region", { name: "Fixture Goalie One" });
++    expect(within(goalie).getByText("Opportunity unavailable for this record.")).toBeTruthy();
++    expect(within(goalie).getByText("Observed game-to-game SD: unavailable for this record.")).toBeTruthy();
++    expect(within(goalie).getAllByText(/Unavailable \(pending goalie adapter\)/).length).toBeGreaterThan(0);
++  });
++
++  it("lists per-category observed SD for weighted league points instead of deriving one", () => {
++    render(<BuyLowSellHighPreview storage={memory()} />);
++    fireEvent.change(screen.getByLabelText("Ranked by"), { target: { value: "LEAGUE_POINTS" } });
++    const toggle = screen.getAllByRole("button", { name: /^Details for Fixture Forward/ })[0];
++    const name = toggle.textContent!.replace(/^Details for /, "");
++    fireEvent.click(toggle);
++    const detail = screen.getByRole("region", { name });
++    expect(within(detail).getByText(/Observed game-to-game SD \(per category\): Points \d/)).toBeTruthy();
++    expect(within(detail).getByRole("heading", { name: /Gap \(fixture league points, next 10\)/ })).toBeTruthy();
++  });
+ });
+diff --git a/web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx b/web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx
+index 442c2e23f..d548918f9 100644
+--- a/web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx
++++ b/web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx
+@@ -1,4 +1,4 @@
+-import React, { useEffect, useMemo, useState } from "react";
++import React, { useEffect, useMemo, useRef, useState } from "react";
+ 
+ import { buildWatchlists, compareMarketReference, type MarketReference, type WatchTarget } from "lib/buyLowSellHigh/market";
+ import { emptyBlshState, loadBlshState, resetBlshState, saveBlshState, type BlshLocalState } from "lib/buyLowSellHigh/storage";
+@@ -7,6 +7,8 @@ import { DEFAULT_HORIZON, HORIZON_OPTIONS, SKATER_TARGETS, TARGET_LABELS, type H
+ import { FIXTURE_AS_OF, FIXTURE_DISCLAIMER, fixtureRecords } from "lib/skoElement/fixtures";
+ import { DIRECTION_TEXT, formatMeasured, reasonText } from "components/skoElement/format";
+ import styles from "components/skoElement/SkoElement.module.scss";
++import BlshPlayerDetail from "./BlshPlayerDetail";
++import detailStyles from "./BlshPlayerDetail.module.scss";
+ 
+ /** Illustrative fixture league. PPP is an intentional bonus on top of goals and assists. */
+ export const FIXTURE_LEAGUE: Extract<TradeScoring, { mode: "points" }> = {
+@@ -19,6 +21,7 @@ const CATEGORIES = ["GOALS", "ASSISTS", "POINTS", "PP_POINTS", "SHOTS_ON_GOAL",
+ const MARKET_MAX_AGE_HOURS = 72;
+ 
+ type ListName = "rebound" | "cooling";
++const DETAIL_ID = "blsh-player-detail";
+ 
+ function defaultStorage(): Storage | null {
+   try { return typeof window === "undefined" ? null : window.localStorage; } catch { return null; }
+@@ -33,6 +36,8 @@ export default function BuyLowSellHighPreview({ storage }: { storage?: Storage |
+   const [loaded, setLoaded] = useState<{ ready: boolean; recovered: boolean }>({ ready: false, recovered: false });
+   const [giveChoice, setGiveChoice] = useState("");
+   const [receiveChoice, setReceiveChoice] = useState("");
++  const [detailId, setDetailId] = useState<string | null>(null);
++  const toggles = useRef(new Map<string, HTMLButtonElement>());
+   const [refDraft, setRefDraft] = useState({ playerId: "", source: "", value: "", capturedAt: "", horizon: String(DEFAULT_HORIZON) });
+   const store = storage === undefined ? defaultStorage() : storage;
+ 
+@@ -51,6 +56,19 @@ export default function BuyLowSellHighPreview({ storage }: { storage?: Storage |
+   const tradeResult = compareTrade({ ...local.draft, scoring }, records);
+   const allRows = [...lists.rebound, ...lists.cooling, ...lists.level, ...lists.unranked];
+ 
++  const detailRecord = detailId ? byId.get(detailId) ?? null : null;
++  const closeDetail = () => {
++    const id = detailId;
++    setDetailId(null);
++    if (id) toggles.current.get(id)?.focus();
++  };
++
++  const detailToggle = (row: { playerId: string; name: string }) => (
++    <button type="button" ref={node => { if (node) toggles.current.set(row.playerId, node); else toggles.current.delete(row.playerId); }}
++      className={`${styles.rowButton} ${detailStyles.touchButton}`} aria-expanded={detailId === row.playerId} aria-controls={detailId === row.playerId ? DETAIL_ID : undefined}
++      onClick={() => (detailId === row.playerId ? closeDetail() : setDetailId(row.playerId))}>
++      {detailId === row.playerId ? "Hide details" : "Details"}<span className={styles.visuallyHidden}> for {row.name}</span></button>);
++
+   const update = (patch: Partial<BlshLocalState>) => setLocal(current => ({ ...current, ...patch }));
+   const watched = (playerId: string) => local.watchlist.some(entry => entry.playerId === playerId && entry.target === target && entry.horizon === horizon);
+   const toggleWatch = (playerId: string, gap: number | null) => update({ watchlist: watched(playerId)
+@@ -105,7 +123,7 @@ export default function BuyLowSellHighPreview({ storage }: { storage?: Storage |
+               local.marketReferences[row.playerId], { asOf: FIXTURE_AS_OF, maxAgeHours: MARKET_MAX_AGE_HOURS });
+             return (
+               <tr key={row.playerId}>
+-                <th scope="row">{row.name}<br /><span className={styles.muted}>{row.team} · {row.modelClass}</span></th>
++                <th scope="row">{row.name}<br /><span className={styles.muted}>{row.team} · {row.modelClass}</span><br />{detailToggle(row)}</th>
+                 <td className={styles.num}>{formatMeasured(row.observed)}</td>
+                 <td className={styles.num}>{formatMeasured(row.expected)}</td>
+                 <td className={`${styles.num} ${styles[row.direction]}`}>{formatMeasured(row.gap, 2, true)}<br /><span>{DIRECTION_TEXT[row.direction]}</span></td>
+@@ -119,11 +137,14 @@ export default function BuyLowSellHighPreview({ storage }: { storage?: Storage |
+         </table>
+       </div>
+       {!rows.length ? <p className={styles.muted}>No players in this list for these settings.</p> : null}
++      {detailRecord ? (
++        <BlshPlayerDetail id={DETAIL_ID} record={detailRecord} row={allRows.find(row => row.playerId === detailRecord.identity.playerId) ?? null}
++          target={target} inCurrentList={rows.some(row => row.playerId === detailRecord.identity.playerId)} onClose={closeDetail} />) : null}
+       <details>
+         <summary>Unranked ({lists.unranked.length}) and level ({lists.level.length}) players</summary>
+         <ul className={styles.list}>
+-          {lists.unranked.map(row => <li key={row.playerId}>{row.name}: gap unavailable ({reasonText(row.reason)})</li>)}
+-          {lists.level.map(row => <li key={row.playerId}>{row.name}: {DIRECTION_TEXT.level}</li>)}
++          {lists.unranked.map(row => <li key={row.playerId}>{row.name}: gap unavailable ({reasonText(row.reason)}) {detailToggle(row)}</li>)}
++          {lists.level.map(row => <li key={row.playerId}>{row.name}: {DIRECTION_TEXT.level} {detailToggle(row)}</li>)}
+         </ul>
+       </details>
+ 
+diff --git a/web/components/buyLowSellHigh/BlshPlayerDetail.tsx b/web/components/buyLowSellHigh/BlshPlayerDetail.tsx
+new file mode 100644
+index 000000000..41f8321a8
+--- /dev/null
++++ b/web/components/buyLowSellHigh/BlshPlayerDetail.tsx
+@@ -0,0 +1,96 @@
++import React, { useEffect, useRef } from "react";
++
++import type { WatchRow, WatchTarget } from "lib/buyLowSellHigh/market";
++import { TARGET_LABELS, type InterpretationRecord, type SkaterTarget } from "lib/skoElement/contract";
++import { DIRECTION_TEXT, formatMeasured, reasonText } from "components/skoElement/format";
++import shared from "components/skoElement/SkoElement.module.scss";
++import styles from "./BlshPlayerDetail.module.scss";
++
++const status = (value: string) => value.replace(/_/g, " ");
++
++/**
++ * Read-only detail for one watchlist candidate. Every value is passed through from the shared
++ * interpretation record; nothing here derives volatility, confidence or duration.
++ */
++export default function BlshPlayerDetail({ id, record, row, target, inCurrentList, onClose }: {
++  id: string; record: InterpretationRecord; row: WatchRow | null; target: WatchTarget; inCurrentList: boolean; onClose: () => void;
++}) {
++  const headingRef = useRef<HTMLHeadingElement>(null);
++  useEffect(() => { headingRef.current?.focus(); }, [record.identity.playerId]);
++
++  const opportunity = record.opportunity;
++  const metric = target === "LEAGUE_POINTS" ? null : record.metrics.find(item => item.target === target) ?? null;
++  const targetLabel = target === "LEAGUE_POINTS" ? "fixture league points" : TARGET_LABELS[target as SkaterTarget];
++  const headingId = `${id}-heading`;
++
++  return (
++    <section id={id} className={`${shared.detail} ${styles.detail}`} aria-labelledby={headingId}
++      onKeyDown={event => { if (event.key === "Escape") { event.stopPropagation(); onClose(); } }}>
++      <div className={styles.detailHeader}>
++        <div>
++          <h2 id={headingId} ref={headingRef} tabIndex={-1} className={styles.heading}>{record.identity.name}</h2>
++          <p className={shared.muted}>{record.identity.team ?? "Team unavailable"} · {record.identity.modelClass} · {record.identity.eligibility.join("/") || "eligibility unavailable"}</p>
++        </div>
++        <button type="button" className={`${shared.smallButton} ${styles.touchButton}`} onClick={onClose}>
++          Close<span className={shared.visuallyHidden}> details for {record.identity.name}</span>
++        </button>
++      </div>
++      {!inCurrentList ? <p className={shared.warn}>Not in the current list for these settings; details still reflect the selected horizon.</p> : null}
++
++      <div className={shared.grid}>
++        <div className={shared.panel}>
++          <h3>Gap ({targetLabel}, next {record.horizon.requestedGames})</h3>
++          {row ? (
++            <ul className={shared.list}>
++              <li>Recent per team game: {formatMeasured(row.observed)}</li>
++              <li>Expected per team game: {formatMeasured(row.expected)}</li>
++              <li>Gap: <span className={shared[row.direction]}>{formatMeasured(row.gap, 2, true)} · {DIRECTION_TEXT[row.direction]}</span></li>
++            </ul>) : <p className={shared.muted}>Gap unavailable for this player.</p>}
++          <p className={shared.muted}>Included by the sign of the shared gap only; not a buy or sell recommendation.</p>
++        </div>
++
++        <div className={shared.panel}>
++          <h3>Opportunity and observed duration</h3>
++          {opportunity ? (
++            <ul className={shared.list}>
++              <li>{opportunity.label}</li>
++              <li>Recent block {opportunity.recent.startDate ?? "unknown"} to {opportunity.recent.endDate ?? "unknown"}: {opportunity.recent.appearances} appearances in {opportunity.recent.teamGames} team games, TOI {formatMeasured(opportunity.recent.toiPerAppearance)} min per appearance.</li>
++              <li>Change versus prior block: TOI {formatMeasured(opportunity.toiChangeMinutes, 2, true)} min, PP TOI {formatMeasured(opportunity.ppToiChangeMinutes, 2, true)} min per appearance.</li>
++              <li>PP role: {opportunity.powerPlayRole.status === "sourced" ? `${opportunity.powerPlayRole.value} (${opportunity.powerPlayRole.source})` : "Unavailable: no dated role source"}.</li>
++              <li>Observed duration: {opportunity.observedDuration.appearances} appearances ({opportunity.observedDuration.startDate ?? "unknown"} to {opportunity.observedDuration.endDate ?? "unknown"}). History only; not a forecast of how long it lasts.</li>
++              <li>Rule: {opportunity.ruleId ?? "none accepted"} ({status(opportunity.ruleStatus)}).</li>
++            </ul>) : <p className={shared.muted}>Opportunity unavailable for this record.</p>}
++        </div>
++
++        <div className={shared.panel}>
++          <h3>Variability and confidence</h3>
++          <ul className={shared.list}>
++            {metric || record.metrics.length ? (
++              <li>Observed game-to-game SD ({metric ? metric.label : "per category"}): {metric
++                ? `${formatMeasured(metric.observedVariability)}${metric.sparse ? " · sparse sample" : ""}`
++                : record.metrics.map(item => `${item.label} ${formatMeasured(item.observedVariability)}`).join("; ")}. Recent history, not forecast volatility.</li>
++            ) : <li>Observed game-to-game SD: unavailable for this record.</li>}
++            <li>Predictive spread: {formatMeasured(record.uncertainty.predictiveSpread)}.</li>
++            <li>Mean uncertainty: {formatMeasured(record.uncertainty.meanUncertainty)}.</li>
++            <li>Confidence: not supplied. No confidence rating is derived on this page.</li>
++          </ul>
++        </div>
++      </div>
++
++      <div className={shared.panel}>
++        <h3>Source, as-of and coverage</h3>
++        <ul className={shared.list}>
++          <li>{record.fixture ? "Fixture record (synthetic)" : "Supplied record"} as of {record.asOf}; contract {record.contractVersion}; config {record.config.configId} v{record.config.version} ({status(record.config.status)}).</li>
++          <li>Evidence {record.identity.evidenceSnapshotId}: cutoff {record.freshness.evidenceCutoffAt}, age {record.freshness.evidenceAgeHours?.toFixed(0) ?? "unknown"} h ({record.freshness.evidenceStatus}){record.diagnostics.retrospective ? ", retrospective availability" : ""}.</li>
++          <li>Forecast {record.identity.forecastVersion}, manifest {record.identity.forecastManifestId ?? "unknown"}, read {record.identity.forecastReadAsOf}, expires {record.freshness.forecastExpiresAt ?? "unknown"} ({record.freshness.forecastStatus}).</li>
++          <li>Horizon: {record.horizon.scheduledGames} of {record.horizon.requestedGames} requested team games scheduled ({record.horizon.startDate ?? "unknown"} to {record.horizon.endDate ?? "unknown"}){record.horizon.reason ? `: ${reasonText(record.horizon.reason)}` : ""}.</li>
++          <li>Recent window: {record.recentWindow.appearances} appearances, {record.recentWindow.confirmedAbsences} confirmed absences and {record.recentWindow.unknownGames} unknown of {record.recentWindow.teamGames} team games.</li>
++          {record.diagnostics.duplicateRows || record.diagnostics.conflictingGameIds.length || record.diagnostics.invalidRows ? (
++            <li className={shared.warn}>Source rows: {record.diagnostics.duplicateRows} duplicate, {record.diagnostics.invalidRows} invalid, {record.diagnostics.conflictingGameIds.length} conflicting games.</li>) : null}
++        </ul>
++        <h3>Limitations</h3>
++        <ul className={shared.list}>{record.limitations.map(item => <li key={item}>{item}</li>)}</ul>
++      </div>
++    </section>
++  );
++}
+diff --git a/web/components/buyLowSellHigh/BlshPlayerDetail.module.scss b/web/components/buyLowSellHigh/BlshPlayerDetail.module.scss
+new file mode 100644
+index 000000000..4a94130fe
+--- /dev/null
++++ b/web/components/buyLowSellHigh/BlshPlayerDetail.module.scss
+@@ -0,0 +1,18 @@
++@use "styles/vars" as v;
++
++.detail { scroll-margin-top: 80px; }
++
++.detailHeader {
++  display: flex;
++  flex-wrap: wrap;
++  gap: 8px;
++  align-items: flex-start;
++  justify-content: space-between;
++}
++
++.heading { margin: 0; font-size: 1rem; }
++.heading:focus-visible { outline: 2px solid v.$focus-color; outline-offset: 2px; }
++
++/* Touch-sized disclosure and close controls. */
++.touchButton { min-height: 44px; min-width: 44px; }
++.touchButton:focus-visible { outline: 2px solid v.$focus-color; outline-offset: 2px; }

@@ -1,0 +1,10 @@
+{
+  "base_head": "86ddf9f585a25d79fcf94a86d9fecccc31a254d0",
+  "files": {
+    "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "9f2f29c50a6af4e7d6c12265e4ed1552ffa52e79b171f568cf7230aac046daab",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts": "9ef4199fb8dd678df9d8e152460790bcb0b3e467308e398aacb8e71116b5dd4d",
+    "web/lib/rosterScheduleData/forgeDailyBridge.test.ts": "fa27e06bd7d3dca46cce6c1c27ed74288dea7b573d14abca6d150a41326e5fc8"
+  },
+  "canonical_drift": [],
+  "independent_review": "pending final receipt from parent-assigned Yahoo/baseline investigator; reported four adversarial checks pass"
+}

@@ -1,0 +1,8 @@
+{
+  "isolated_test_files": {
+    "web/e2e/social-share.spec.ts": "6815bfcd169a462bf12b29381d9ea528d21db7dd716a8816b05639ee0d0689ab",
+    "web/e2e/fixtures/socialEditorSession.ts": "ad3992ece8525016566a9e6ab3b889993a316b541305efc457abe814c96e91fa"
+  },
+  "release_spec_sha256": "a3da9fa1ef2170d11fe6a75f6bd9ec244f534b872709e86362de3d21e67955ae",
+  "diagnostic_only": true
+}

@@ -1,0 +1,260 @@
+{
+  "at": "2026-10-24T17:09:19.664327+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+      "bytes": 88067,
+      "lines": 274,
+      "sha256": "89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          274
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          93
+        ],
+        [
+          94,
+          129
+        ],
+        [
+          130,
+          166
+        ],
+        [
+          167,
+          213
+        ],
+        [
+          214,
+          252
+        ],
+        [
+          253,
+          274
+        ]
+      ],
+      "scope": "Entire unique task list read in bounded chunks. Old commands/runbooks are evidence only. Completed narrower changes and explicit held/historical scopes retained; no current hosted state inferred."
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+      "bytes": 74419,
+      "lines": 185,
+      "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          185
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          80
+        ],
+        [
+          81,
+          111
+        ],
+        [
+          112,
+          134
+        ],
+        [
+          135,
+          160
+        ],
+        [
+          161,
+          185
+        ]
+      ],
+      "scope": "Entire unique task list read in bounded chunks. Old commands/runbooks are evidence only. Completed narrower changes and explicit held/historical scopes retained; no current hosted state inferred."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md",
+      "bytes": 9593,
+      "lines": 132,
+      "sha256": "65f143fa43c8b3eaadde4c2c5f273448ef3206307bb5546b1df3191fdff5c497",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          132
+        ]
+      ],
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+      "bytes": 5957,
+      "lines": 36,
+      "sha256": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          36
+        ]
+      ],
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-live-draft-backlog.md",
+      "bytes": 2272,
+      "lines": 15,
+      "sha256": "fc43f5343286440c25bd31490d2f8b325a2214c1467172a63c1513e616f33225",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          15
+        ]
+      ],
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md",
+      "bytes": 6901,
+      "lines": 88,
+      "sha256": "8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          88
+        ]
+      ],
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+      "bytes": 15977,
+      "lines": 87,
+      "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          87
+        ]
+      ],
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md",
+      "bytes": 9428,
+      "lines": 179,
+      "sha256": "3b8988c67e1ac72c5d9674e978cea2f7febc71ae41aefa7da538864b8accbb06",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          179
+        ]
+      ],
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW.md",
+      "bytes": 8202,
+      "lines": 54,
+      "sha256": "43a8edca387fa4d4b3742c03c98bdb2b097a7f27c262494aba7cdc6f4486e8e1",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          54
+        ]
+      ],
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW-EVIDENCE.json",
+      "bytes": 3888,
+      "lines": 76,
+      "sha256": "726b59e90abb89a410a98d78507f82859a38b2123825557e8da4d18cf158d4d8",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          76
+        ]
+      ],
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW.md",
+      "bytes": 10177,
+      "lines": 68,
+      "sha256": "ca0670df6439d44cbbdcdc75c1c873ad09f88b6cc445ef4a8d3364e05f57a47b",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          68
+        ]
+      ],
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW-EVIDENCE.json",
+      "bytes": 2077,
+      "lines": 61,
+      "sha256": "7a5ac23ec40bb5bd4c6d832023b3245ac14e2b18952b1ddfb08330b54e7d8e05",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          61
+        ]
+      ],
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1/HANDOFF.md",
+      "bytes": 3956,
+      "lines": 25,
+      "sha256": "5cbacd13d0b30702533370bd6d4e5cb3b16123344ac40670816bd7d4d575d9f7",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          25
+        ]
+      ],
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+      "bytes": 80369,
+      "lines": 1927,
+      "sha256": "0b0a198c946c4eb01fbcc9169d5d46a92db61a813937d95da0d45717c855708c",
+      "status": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          1,
+          47
+        ],
+        [
+          1912,
+          1927
+        ]
+      ],
+      "scope": "Prior segment07 exact prose ranges inherited by unchanged hash; all843 flat records and1025 tree lines checked structurally here. Generated path bodies not visually read as task prose.",
+      "disposition": "settled-historical-generated-index",
+      "remaining_deep_document_read_required": false,
+      "limitations": "No task-bearing source contents or live path claims inherited from this index. Original lists/hashes preserved;845/843 count drift remains explicit."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 13,
+    "partially-inspected": 1
+  }
+}

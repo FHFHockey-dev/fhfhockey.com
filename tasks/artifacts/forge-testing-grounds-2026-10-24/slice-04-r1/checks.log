@@ -1,0 +1,32 @@
+COMMAND: npm test -- --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-r1/r1.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-r1/r1.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+(node:36070) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ web/lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx (12 tests | 8 skipped) 52ms
+(node:36072) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-review/boundaries.test.tsx (6 tests | 4 skipped) 52ms
+
+ Test Files  2 passed (2)
+      Tests  6 passed | 12 skipped (18)
+   Start at  12:09:58
+   Duration  871ms (transform 142ms, setup 3ms, collect 269ms, tests 104ms, environment 285ms, prepare 57ms)
+
+
+EXIT: 0; elapsedSeconds: 1.219
+COMMAND: node ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-r1/render-preview.mjs
+{"artifact":"preview.html","bytes":236446,"inputCount":26,"applicationInputs":["lib/forge-testing-grounds/operationalProgress.ts","lib/projections/evidenceTime.ts","lib/forge-testing-grounds/dataHealth.ts","lib/forge-testing-grounds/preview/previewFixtures.ts","lib/forge-testing-grounds/preview/TestingGroundsPreview.module.scss","lib/forge-testing-grounds/preview/TestingGroundsPreview.tsx"],"externalRequests":0,"servers":0}
+
+EXIT: 0
+{"check":"actual revised artifact jsdom execution (not visual QA)","heading":"Testing Grounds","accessibleValue":"432 of 720 player-games processed; 288 pending. Work is incomplete.","launchDisabled":true,"externalResources":0,"requests":0,"errors":[]}
+COMMAND: npx --no-install tsc --noEmit --strict --skipLibCheck --target es2015 --lib dom,dom.iterable,esnext --module esnext --moduleResolution bundler --esModuleInterop --jsx react-jsx next-bootstrap.d.ts lib/forge-testing-grounds/preview/TestingGroundsPreview.tsx lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx
+EXIT: 0; output: (none)
+
+COMMAND: npx --no-install eslint --report-unused-disable-directives-severity warn lib/forge-testing-grounds/preview/TestingGroundsPreview.tsx lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx
+EXIT: 0; output: (none)

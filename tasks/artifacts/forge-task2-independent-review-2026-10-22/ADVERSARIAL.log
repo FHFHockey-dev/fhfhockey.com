@@ -1,0 +1,56 @@
+
+> web@0.1.0 test
+> vitest --run --config review-vitest.config.mts adversarial.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-task2-review-et29jk5z/web
+
+(node:54361) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ adversarial.test.ts (11 tests | 2 failed) 6ms
+   ✓ independent task-2 physical-history checks > keeps unknown history null and uses C priors 1ms
+   ✓ independent task-2 physical-history checks > keeps unknown history null and uses D priors 0ms
+   ✓ independent task-2 physical-history checks > retains an observed zero while distinguishing it from absent history 0ms
+   ✓ independent task-2 physical-history checks > uses seconds, current full weight and prior half weight for C 0ms
+   ✓ independent task-2 physical-history checks > uses seconds, current full weight and prior half weight for D 0ms
+   ✓ independent task-2 physical-history checks > rejects mismatched sidecar identity {"strength_state":"ev"} 0ms
+   ✓ independent task-2 physical-history checks > rejects mismatched sidecar identity {"season":20252026} 0ms
+   ✓ independent task-2 physical-history checks > rejects mismatched sidecar identity {"game_id":2026020031} 0ms
+   ✓ independent task-2 physical-history checks > does not even obtain the RPC property in an awaited read-only capture 1ms
+   × independent task-2 physical-history checks > does not treat unknown current-season hits counts as observed zero 2ms
+     → expected 2.0475409836065572 not to be 2.0475409836065572 // Object.is equality
+   × independent task-2 physical-history checks > does not treat unknown current-season blocks counts as observed zero 0ms
+     → expected 2.0090909090909093 not to be 2.0090909090909093 // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  adversarial.test.ts > independent task-2 physical-history checks > does not treat unknown current-season hits counts as observed zero
+AssertionError: expected 2.0475409836065572 not to be 2.0475409836065572 // Object.is equality
+ ❯ adversarial.test.ts:68:25
+     66|     const unknown = rates(hydrated)[`${metric}Per60`];
+     67|     const knownZero = rates({ ...hydrated, [`${metric}_per_60_${metric…
+     68|     expect(unknown).not.toBe(knownZero);
+       |                         ^
+     69|   });
+     70| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  adversarial.test.ts > independent task-2 physical-history checks > does not treat unknown current-season blocks counts as observed zero
+AssertionError: expected 2.0090909090909093 not to be 2.0090909090909093 // Object.is equality
+ ❯ adversarial.test.ts:68:25
+     66|     const unknown = rates(hydrated)[`${metric}Per60`];
+     67|     const knownZero = rates({ ...hydrated, [`${metric}_per_60_${metric…
+     68|     expect(unknown).not.toBe(knownZero);
+       |                         ^
+     69|   });
+     70| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 9 passed (11)
+   Start at  12:21:20
+   Duration  337ms (transform 65ms, setup 3ms, collect 76ms, tests 6ms, environment 132ms, prepare 29ms)
+

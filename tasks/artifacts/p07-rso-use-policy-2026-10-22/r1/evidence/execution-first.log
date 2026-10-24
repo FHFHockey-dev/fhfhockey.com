@@ -1,0 +1,120 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/executionAdapter.test.ts lib/player-forecasts/p07BridgeClaimOracle.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web
+
+(node:27722) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/rosterScheduleOptimizer/executionAdapter.test.ts (19 tests | 8 failed) 63ms
+   ✓ fresh RSO execution authority > uses one current GET for planning, candidates and display, and ends authority before serialization 18ms
+   × fresh RSO execution authority > replaces the entire mean saved forecast graph 5ms
+     → expected 1004 to be 7 // Object.is equality
+   × fresh RSO execution authority > replaces the entire participation saved forecast graph 2ms
+     → expected 1004 to be 7 // Object.is equality
+   × fresh RSO execution authority > replaces the entire bridge_claim saved forecast graph 2ms
+     → expected 1004 to be 7 // Object.is equality
+   × fresh RSO execution authority > replaces the entire binding saved forecast graph 3ms
+     → expected 1004 to be 7 // Object.is equality
+   × fresh RSO execution authority > replaces the entire retained saved forecast graph 2ms
+     → expected 1004 to be 7 // Object.is equality
+   × fresh RSO execution authority > replaces the entire packed saved forecast graph 2ms
+     → expected 1004 to be 7 // Object.is equality
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on failure read 1ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on suspended read 2ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on old read 1ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on future read 1ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on season read 1ms
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on policy read 1ms
+   × fresh RSO execution authority > preserves manager capacity without old numerical fallback on range read 3ms
+     → expected { assignmentValue: +0, …(18) } to match object { legal: true, activeGames: 1, …(2) }
+(29 matching properties omitted from actual)
+   ✓ fresh RSO execution authority > preserves manager capacity without old numerical fallback on oversize read 10ms
+   × fresh RSO execution authority > does not relabel retained game identity to make fresh evidence fit 1ms
+     → expected 7 to be null
+   ✓ fresh RSO execution authority > rechecks revocation on the next generation with unchanged source counts 2ms
+   ✓ fresh RSO execution authority > aborts obsolete reads and never publishes their result 1ms
+   ✓ fresh RSO execution authority > runs the actual worker through the same mocked GET boundary as fallback 5ms
+(node:27722) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/p07BridgeClaimOracle.test.ts (1 test) 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleOptimizer/executionAdapter.test.ts > fresh RSO execution authority > replaces the entire mean saved forecast graph
+ FAIL  lib/rosterScheduleOptimizer/executionAdapter.test.ts > fresh RSO execution authority > replaces the entire participation saved forecast graph
+ FAIL  lib/rosterScheduleOptimizer/executionAdapter.test.ts > fresh RSO execution authority > replaces the entire bridge_claim saved forecast graph
+ FAIL  lib/rosterScheduleOptimizer/executionAdapter.test.ts > fresh RSO execution authority > replaces the entire binding saved forecast graph
+ FAIL  lib/rosterScheduleOptimizer/executionAdapter.test.ts > fresh RSO execution authority > replaces the entire retained saved forecast graph
+ FAIL  lib/rosterScheduleOptimizer/executionAdapter.test.ts > fresh RSO execution authority > replaces the entire packed saved forecast graph
+AssertionError: expected 1004 to be 7 // Object.is equality
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 7[39m
+[31m+ 1004[39m
+
+ ❯ lib/rosterScheduleOptimizer/executionAdapter.test.ts:72:51
+     70|     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respond(body)));
+     71|     const result = await executeRosterPlanning(saved, intent);
+     72|     expect(result.result.selected.projectedValue).toBe(7);
+       |                                                   ^
+     73|     expect(result.displaySnapshot.forecasts[0].stats.GOALS).toBe(2);
+     74|     expect(result.displaySnapshot.forecasts[0].startProbability).toBeN…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/executionAdapter.test.ts > fresh RSO execution authority > preserves manager capacity without old numerical fallback on range read
+AssertionError: expected { assignmentValue: +0, …(18) } to match object { legal: true, activeGames: 1, …(2) }
+(29 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "activeGames": 1,[39m
+[32m-   "comparisonEligible": false,[39m
+[31m+   "activeGames": 0,[39m
+[31m+   "comparisonEligible": true,[39m
+[2m    "legal": true,[22m
+[32m-   "projectedValue": null,[39m
+[31m+   "projectedValue": 5,[39m
+[2m  }[22m
+
+ ❯ lib/rosterScheduleOptimizer/executionAdapter.test.ts:89:36
+     87|     expect(result.data).toBeNull(); expect(result.displaySnapshot.fore…
+     88|     expect(result.displaySnapshot.baselineSources).toEqual([]); expect…
+     89|     expect(result.result.selected).toMatchObject({ legal: true, active…
+       |                                    ^
+     90|     expect(result.result.selected.assignments[0].locked).toBe(true);
+     91|     expect(result.displaySnapshot.realized).toEqual({ GOALS: 5 }); exp…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+ FAIL  lib/rosterScheduleOptimizer/executionAdapter.test.ts > fresh RSO execution authority > does not relabel retained game identity to make fresh evidence fit
+AssertionError: expected 7 to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+7
+
+ ❯ lib/rosterScheduleOptimizer/executionAdapter.test.ts:98:51
+     96|     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respond(body)));
+     97|     const result = await executeRosterPlanning(snapshot, intent);
+     98|     expect(result.result.selected.projectedValue).toBeNull();
+       |                                                   ^
+     99|     expect(result.displaySnapshot.games[0].scheduleRevision).toBe("old…
+    100|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/8]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  8 failed | 12 passed (20)
+   Start at  11:12:48
+   Duration  762ms (transform 124ms, setup 13ms, collect 140ms, tests 64ms, environment 379ms, prepare 57ms)
+

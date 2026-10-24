@@ -1,0 +1,321 @@
+{
+  "as_of": "2026-10-24T15:24:18.329355+00:00",
+  "status": "Continuation-only proposals and exact documentary conflicts; canonical205rows/frozen checkpoint/Library unchanged.",
+  "source_read_scope": {
+    "files": 9,
+    "bytes": 200453,
+    "lines": 1264
+  },
+  "findings": [
+    {
+      "finding_id": "SEG01-DOC-01",
+      "title": "Current auth manual checklist contradicts its own later completion receipts",
+      "classification": "confirmed_documentary_status_conflict",
+      "existing_stable_ids": [
+        "REPO-DOCUMENTATION",
+        "AUTH-PKCE-COMPLETION"
+      ],
+      "user_impact": "Stale open checklist entries can cause repeated provider/email verification or compatibility changes under the wrong scope.",
+      "conclusion": "Manual lines146/152/159/165\u2013171 still call localhost and email callback/recovery work open. Its own lines7/9 and task-list5/165\u2013167 establish narrower completed historical milestones. Full current Google PKCE completion remains intentionally open at task344; the July31 Google receipt is not a later PKCE completion.",
+      "bounded_next_action": "After the frozen review, reconcile only current manual/PRD summary/checklist wording to dated receipts. Preserve chronological historical paragraphs and the distinct Google PKCE gate. No new auth test or provider action.",
+      "dependencies": "Auth NEW9/10/14/46/49/50; exact deployment/flow identity and dates.",
+      "owner": "UNASSIGNED unless current parent assigns after frozen review",
+      "required_approvals": "No new provider/session/production authority; ordinary documentary correction only after canonical review freeze ends.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/docs/auth-provider-manual-config.md",
+          "line": 7,
+          "end_line": 9,
+          "sha256": "05b8f6fe4e9bf4ca058c0d9152240aef3736376893a84522e6ede98f283f16aa",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/docs/auth-provider-manual-config.md",
+          "line": 140,
+          "end_line": 171,
+          "sha256": "05b8f6fe4e9bf4ca058c0d9152240aef3736376893a84522e6ede98f283f16aa",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 5,
+          "end_line": 5,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 155,
+          "end_line": 167,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 344,
+          "end_line": 344,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        }
+      ],
+      "current_production_state": "unverified; no live access",
+      "canonical_change_applied": false
+    },
+    {
+      "finding_id": "SEG01-DOC-02",
+      "title": "Auth PRD still presents superseded provider-storage and Patreon-feature policy as current",
+      "classification": "confirmed_documentary_policy_conflict",
+      "existing_stable_ids": [
+        "REPO-DOCUMENTATION",
+        "SITE-PRIVACY-POLICY"
+      ],
+      "user_impact": "A future editor may remove approved integration behavior or document an incorrect data/access contract.",
+      "conclusion": "PRD15/76/86/131/133/296/318 retains credential-free ESPN/Fantrax and no-concrete-Patreon-feature claims. Current task-list249\u2013256/263/323\u2013330/360\u2013361 explicitly records October19 owner supersession; full R-SECURITY-MATRIX46\u201352 and R-CREDENTIALS-PROPOSAL63\u201367 confirm the kept existing paid mapping and named linked-lifetime storage contract. These accepted decisions must not be reopened.",
+      "bounded_next_action": "After freeze, append an exact current-policy overlay/cross-reference to the PRD and factual privacy inventory. Preserve historical decisions and no new tiers/purpose/retention promises.",
+      "dependencies": "Auth NEW53/54; approved existing consent/lifetime/local deletion/upstream-responsibility contract; independent current hosted facts still unknown.",
+      "owner": "UNASSIGNED unless current parent assigns after frozen review",
+      "required_approvals": "No credential value handling, rotation, provider operation, entitlement change or deletion. New policy choices require direct owner authority; this correction simply preserves recorded choices.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/prd/prd-auth-user-settings-platform.md",
+          "line": 15,
+          "end_line": 15,
+          "sha256": "9b2b743962f86b50b74a3c34ddf571d6f183d41463aa2d792a6b21bc4b5c9851",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/prd/prd-auth-user-settings-platform.md",
+          "line": 76,
+          "end_line": 86,
+          "sha256": "9b2b743962f86b50b74a3c34ddf571d6f183d41463aa2d792a6b21bc4b5c9851",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/prd/prd-auth-user-settings-platform.md",
+          "line": 128,
+          "end_line": 135,
+          "sha256": "9b2b743962f86b50b74a3c34ddf571d6f183d41463aa2d792a6b21bc4b5c9851",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/prd/prd-auth-user-settings-platform.md",
+          "line": 287,
+          "end_line": 318,
+          "sha256": "9b2b743962f86b50b74a3c34ddf571d6f183d41463aa2d792a6b21bc4b5c9851",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 249,
+          "end_line": 263,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 323,
+          "end_line": 330,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+          "line": 360,
+          "end_line": 361,
+          "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SECURITY-MATRIX.md",
+          "line": 46,
+          "end_line": 52,
+          "sha256": "35a4ffe308ada5d9706dd61fe5b60eeab09ecaa15e02f5e7af9259994efb70bd",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CREDENTIALS-PROPOSAL.md",
+          "line": 63,
+          "end_line": 67,
+          "sha256": "e154bbdd62968d7eb2013bd9b7dad5b7268914aa8bd951c720d80e5dbddc194c",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        }
+      ],
+      "current_production_state": "unverified; no live access",
+      "canonical_change_applied": false
+    },
+    {
+      "finding_id": "SEG01-AUTH-03",
+      "title": "Durable, browser-bound Patreon OAuth transaction gate has no explicit205-ID home",
+      "classification": "proposed_missing_gate_unverified_current",
+      "existing_stable_ids": [],
+      "user_impact": "Transferred or replayed callback state needs an exact owner-approved account-linking boundary; a safe return-path patch does not establish one-use transaction protection.",
+      "conclusion": "C-PATREON3/29\u201344 explicitly leaves F4 durable consume/browser binding/authenticated-user comparison open while crediting F5 return-path fixes. R-SECURITY-MATRIX44/48/52 and master-local27 retain that schema-fenced dependency. No explicit Patreon/OAuth transaction scope is present in current205row fields or the whole master text. Current implementation/hosted state has not been re-audited, so this is a retained gate proposal, not a newly proven vulnerability.",
+      "bounded_next_action": "Parent first reconciles any later source/receipt supersession. If still open, give the exact transaction/consume/auth-binding contract a stable row and reviewable local implementation proposal, preserving F5 and the approved paid-feature mapping.",
+      "dependencies": "Schema/type/current provider-file ownership; exact provider/user/browser/state/expiry/replay/cancellation contract; auth/provider owner; source migration fence.",
+      "owner": "UNASSIGNED unless current parent assigns after frozen review",
+      "required_approvals": "Exact local source/schema/type lease before implementation; separately approved isolated DB concurrency setup, migration application, hosted/provider lifecycle and release. No provider PKCE capability assumed.",
+      "evidence": [
+        {
+          "path": "tasks/codex-sprint-2026-10-19/security-patreon/HANDOFF.md",
+          "line": 3,
+          "end_line": 3,
+          "sha256": "f2c2ba189e6438603b40a6df147a63279251370046b1e7dc9fb55e006b3ba9b7",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/security-patreon/HANDOFF.md",
+          "line": 29,
+          "end_line": 44,
+          "sha256": "f2c2ba189e6438603b40a6df147a63279251370046b1e7dc9fb55e006b3ba9b7",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SECURITY-MATRIX.md",
+          "line": 44,
+          "end_line": 52,
+          "sha256": "35a4ffe308ada5d9706dd61fe5b60eeab09ecaa15e02f5e7af9259994efb70bd",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/master-local/MASTER-RECONCILIATION.md",
+          "line": 27,
+          "end_line": 27,
+          "sha256": "77e611c0c7a0cee164561e7a31cac3d53019c46e98cf795b0597e07426dc7c92",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        }
+      ],
+      "current_production_state": "unverified; no live access",
+      "canonical_change_applied": false,
+      "proposed_stable_id": "AUTH-PATREON-TRANSACTION"
+    },
+    {
+      "finding_id": "SEG01-ACL-04",
+      "title": "Three ranking-table ACL scopes are distinct from the current two-table residual",
+      "classification": "proposed_existing_id_scope_refinement",
+      "existing_stable_ids": [
+        "SECURITY-RESIDUAL-ACL",
+        "MASTER-D4"
+      ],
+      "user_impact": "Historical ranking-table browser privileges must not disappear behind a narrower provider-table repair or D4 object-set closure.",
+      "conclusion": "The fully read October19 security matrix separately retains entity_metric_rankings, metric_definitions and skater_composite_ratings at lines12/24\u201336. R-RECEIPTS21\u201334 repairs exactly four provider-linkage tables and keeps two other provider tables open. Current SECURITY-RESIDUAL-ACL names those two plus a destructive-RPC receipt, and neither its text nor another205row explicitly retains the three ranking tables. This source-only dated claim is not current effective-privilege proof.",
+      "bounded_next_action": "After freeze, parent reviews an explicit related child scope under SECURITY-RESIDUAL-ACL (or deliberately chooses a separate stable ID). First reconcile any later D4/migration/closure receipt; preserve intended public reads/service writers and all already repaired tables.",
+      "dependencies": "Ranking/schema owner; actual caller inventory; D4 reviewed-object boundary and inherited effective grants.",
+      "owner": "UNASSIGNED unless current parent assigns after frozen review",
+      "required_approvals": "No schema or production query from audit. Any future forward migration/local SQL fixture/hosted catalog read/application requires exact assigned scope and separate authority.",
+      "evidence": [
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SECURITY-MATRIX.md",
+          "line": 12,
+          "end_line": 12,
+          "sha256": "35a4ffe308ada5d9706dd61fe5b60eeab09ecaa15e02f5e7af9259994efb70bd",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SECURITY-MATRIX.md",
+          "line": 24,
+          "end_line": 36,
+          "sha256": "35a4ffe308ada5d9706dd61fe5b60eeab09ecaa15e02f5e7af9259994efb70bd",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-RECEIPTS.md",
+          "line": 19,
+          "end_line": 34,
+          "sha256": "4bd572d4d018581c95ce5f5dcf3b2a01cd85a8bd0aca52e804d3e02d4a39d405",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        }
+      ],
+      "current_production_state": "unverified; no live access",
+      "canonical_change_applied": false
+    },
+    {
+      "finding_id": "SEG01-IFTTT-05",
+      "title": "Header-only receiver transition is a separately retained IFTTT activation gate",
+      "classification": "proposed_existing_id_scope_refinement",
+      "existing_stable_ids": [
+        "IFTTT-ACTIVATION"
+      ],
+      "user_impact": "A header-authenticated local fixture or retired-key receipt alone would not establish that URL-secret admission was safely migrated.",
+      "conclusion": "The full October19 security matrix16/60\u201362 separately retains query-secret fallback and header-only migration/provider proof under the existing IFTTT owner. The205master has no explicit query-secret/header-only clause. Current receiver implementation and applet state were not inspected in this segment. Do not manufacture a current credential disclosure from this dated source.",
+      "bounded_next_action": "Retain the exact transition/compatibility/owner-evidence clause under IFTTT-ACTIVATION after frozen review. Reconcile newer receiver/app-wrapper receipts before proposing work; keep historical-key retirement and no-new-event holds distinct.",
+      "dependencies": "IFTTT/Claude current receiver ownership; provider/header compatibility; historical key-retirement and authentic-source gates.",
+      "owner": "UNASSIGNED unless current parent assigns after frozen review",
+      "required_approvals": "No receiver edit, applet change, key probe, secret read, provider event or live capture in audit. Any migration/live acceptance needs exact owner scope.",
+      "evidence": [
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SECURITY-MATRIX.md",
+          "line": 16,
+          "end_line": 16,
+          "sha256": "35a4ffe308ada5d9706dd61fe5b60eeab09ecaa15e02f5e7af9259994efb70bd",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SECURITY-MATRIX.md",
+          "line": 60,
+          "end_line": 62,
+          "sha256": "35a4ffe308ada5d9706dd61fe5b60eeab09ecaa15e02f5e7af9259994efb70bd",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        }
+      ],
+      "current_production_state": "unverified; no live access",
+      "canonical_change_applied": false
+    },
+    {
+      "finding_id": "SEG01-PRIVACY-06",
+      "title": "Approved credential storage does not supply account-deletion UX or universal-erasure proof",
+      "classification": "scope_qualification_existing_id",
+      "existing_stable_ids": [
+        "SITE-PRIVACY-POLICY"
+      ],
+      "user_impact": "Privacy copy must distinguish local credential cleanup, actual account deletion, retained derived/backed-up data and upstream credential invalidation.",
+      "conclusion": "Full policy receipt27\u201331/57\u201359/65\u201367 approves linked-lifetime use and same-purpose replacement under its exact contract, while explicitly leaving user-facing account-deletion workflow, hosted cleanup parity, backups/logs/derived-data removal and provider rights unqualified. This is not a request to add a new account-deletion feature or change accepted lifetime policy.",
+      "bounded_next_action": "Carry these exact unknown factual questions into the existing privacy owner fact sheet; remove no data, change no retention period, and make no verified-total-erasure promise.",
+      "dependencies": "Existing approved contract; actual owner-supplied account/disconnect/deletion/backup/provider facts.",
+      "owner": "UNASSIGNED unless current parent assigns after frozen review",
+      "required_approvals": "No credential/account access or provider/production/deletion operation; new legal/privacy/rights policy choices remain owner-held.",
+      "evidence": [
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CREDENTIALS-PROPOSAL.md",
+          "line": 22,
+          "end_line": 31,
+          "sha256": "e154bbdd62968d7eb2013bd9b7dad5b7268914aa8bd951c720d80e5dbddc194c",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CREDENTIALS-PROPOSAL.md",
+          "line": 55,
+          "end_line": 67,
+          "sha256": "e154bbdd62968d7eb2013bd9b7dad5b7268914aa8bd951c720d80e5dbddc194c",
+          "reviewed": "whole document at this exact hash; selected supporting clause identified",
+          "review_scope": "Documentary claim and chronology; not current code, database or provider acceptance."
+        }
+      ],
+      "current_production_state": "unverified; no live access",
+      "canonical_change_applied": false
+    }
+  ]
+}

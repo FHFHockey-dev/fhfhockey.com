@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts lib/trends/ctpi.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-ctpi-independent-review-mskfkylx/isolation/snapshot/web
+
+ ✓ lib/trends/ctpi.test.ts (14 tests) 15ms
+ ✓ __tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts (8 tests) 8ms
+
+ Test Files  2 passed (2)
+      Tests  22 passed (22)
+   Start at  09:30:09
+   Duration  261ms (transform 77ms, setup 13ms, collect 77ms, tests 24ms, environment 0ms, prepare 58ms)
+

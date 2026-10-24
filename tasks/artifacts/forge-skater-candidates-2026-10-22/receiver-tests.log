@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest --run scripts/forge-assist-export.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ scripts/forge-assist-export.test.ts (13 tests) 20ms
+
+ Test Files  1 passed (1)
+      Tests  13 passed (13)
+   Start at  12:50:33
+   Duration  224ms (transform 32ms, setup 3ms, collect 37ms, tests 20ms, environment 0ms, prepare 29ms)
+

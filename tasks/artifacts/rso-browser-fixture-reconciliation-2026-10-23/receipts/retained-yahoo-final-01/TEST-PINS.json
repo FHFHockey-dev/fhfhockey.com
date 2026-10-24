@@ -1,0 +1,7 @@
+{
+  "provenance": "Exact source bytes embedded in this run Playwright trace; recovered at final packaging",
+  "pins": {
+    "web/e2e/roster-schedule-optimizer.spec.ts": "eb535985cc32433a025dd44fd73bc41ca8408268edefc2765061d3d815bdc5f3",
+    "web/e2e/roster-schedule-optimizer-fixtures.ts": "19d271e27a97fe2025b8ba0e3f43ded1c34bf9c883c2be4216af939648cb3a2f"
+  }
+}

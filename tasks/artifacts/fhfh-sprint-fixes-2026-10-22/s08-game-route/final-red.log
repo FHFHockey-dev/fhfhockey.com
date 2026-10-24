@@ -1,0 +1,3639 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts __tests__/pages/statsGame.test.tsx
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-me82zd3l/isolation/snapshot/web
+
+(node:23005) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ __tests__/pages/statsGame.test.tsx (37 tests | 33 failed) 2273ms
+   × stats game route admission and envelopes > does not fetch an invalid or ambiguous route ID: undefined 19ms
+     → Unable to find an element with the text: Invalid game ID.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mAway[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_gameStatus_280e58"[39m
+            [36m>[39m
+              [0mLoading...[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_gameTime_280e58"[39m
+            [36m>[39m
+              [0m-[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_venue_280e58"[39m
+            [36m>[39m
+              [0mNHL GameCenter[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamHome_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mHome ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mHome[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × stats game route admission and envelopes > does not fetch an invalid or ambiguous route ID: 'abc' 18ms
+     → expected "spy" to not be called at all, but actually been called 3 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      "/api/v1/game/abc/right-rail",
+    ]
+
+[1m  2nd spy call:
+
+[22m    Array [
+      "/api/v1/game/abc/boxscore",
+    ]
+
+[1m  3rd spy call:
+
+[22m    Array [
+      "/api/v1/schedule/date/2026-10-15",
+    ]
+[39m[90m
+
+Number of calls: [1m3[22m
+[39m
+   × stats game route admission and envelopes > does not fetch an invalid or ambiguous route ID: '0' 6ms
+     → expected "spy" to not be called at all, but actually been called 3 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      "/api/v1/game/0/right-rail",
+    ]
+
+[1m  2nd spy call:
+
+[22m    Array [
+      "/api/v1/game/0/boxscore",
+    ]
+
+[1m  3rd spy call:
+
+[22m    Array [
+      "/api/v1/schedule/date/2026-10-15",
+    ]
+[39m[90m
+
+Number of calls: [1m3[22m
+[39m
+   × stats game route admission and envelopes > does not fetch an invalid or ambiguous route ID: ' 2026020001' 6ms
+     → expected "spy" to not be called at all, but actually been called 3 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      "/api/v1/game/ 2026020001/right-rail",
+    ]
+
+[1m  2nd spy call:
+
+[22m    Array [
+      "/api/v1/game/ 2026020001/boxscore",
+    ]
+
+[1m  3rd spy call:
+
+[22m    Array [
+      "/api/v1/schedule/date/2026-10-15",
+    ]
+[39m[90m
+
+Number of calls: [1m3[22m
+[39m
+   × stats game route admission and envelopes > does not fetch an invalid or ambiguous route ID: '2026020001/../x' 4ms
+     → expected "spy" to not be called at all, but actually been called 3 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      "/api/v1/game/2026020001/../x/right-rail",
+    ]
+
+[1m  2nd spy call:
+
+[22m    Array [
+      "/api/v1/game/2026020001/../x/boxscore",
+    ]
+
+[1m  3rd spy call:
+
+[22m    Array [
+      "/api/v1/schedule/date/2026-10-15",
+    ]
+[39m[90m
+
+Number of calls: [1m3[22m
+[39m
+   × stats game route admission and envelopes > does not fetch an invalid or ambiguous route ID: [ '2026020001', '2026020002' ] 4ms
+     → expected "spy" to not be called at all, but actually been called 3 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      "/api/v1/game/2026020001,2026020002/right-rail",
+    ]
+
+[1m  2nd spy call:
+
+[22m    Array [
+      "/api/v1/game/2026020001,2026020002/boxscore",
+    ]
+
+[1m  3rd spy call:
+
+[22m    Array [
+      "/api/v1/schedule/date/2026-10-15",
+    ]
+[39m[90m
+
+Number of calls: [1m3[22m
+[39m
+   × stats game route admission and envelopes > returns notFound for an invalid server route before any request 2ms
+     → expected { props: {} } to deeply equal { notFound: true }
+   ✓ stats game route admission and envelopes > admits the valid server route without fetching on the server 0ms
+   × stats game route admission and envelopes > recognizes the API's HTTP-200 failure envelope and preserves the independent rail panel 9ms
+     → Unable to find an element with the text: Boxscore could not be loaded.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   × stats game route admission and envelopes > settles a successful empty boxscore: null 1005ms
+     → expected <div class="_gameStatus_280e58"></div> to be null
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageShell_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_pageStack_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_controlBar_280e58"[39m
+          [36m/>[39m
+          [36m<header[39m
+            [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamAway_280e58"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+              [36m>[39m
+                [0mAway ([0m
+                [0m0-0-0[0m
+                [0m)[0m
+              [36m</span>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_teamName_280e58"[39m
+              [36m>[39m
+                [0mAway[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_teamRecord_280e58"[39m
+              [36m>[39m
+                [0m [0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_gameInfo_280e58"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_gameStatus_280e58"[39m
+              [36m>[39m
+                [0mLoading...[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_gameTime_280e58"[39m
+              [36m>[39m
+                [0m-[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_venue_280e58"[39m
+              [36m>[39m
+                [0mNHL GameCenter[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamHome_280e58"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+              [36m>[39m
+                [0mHome ([0m
+                [0m0-0-0[0m
+                [0m)[0m
+              [36m</span>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_teamName_280e58"[39m
+              [36m>[39m
+                [0mHome[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_teamRecord_280e58"[39m
+              [36m>[39m
+                [0m [0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</header>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+   ✓ stats game route admission and envelopes > settles a successful empty boxscore: {} 6ms
+   ✓ stats game route admission and envelopes > settles a successful empty boxscore: {"success":true,"data":null} 4ms
+   × stats game route admission and envelopes > keeps a valid boxscore visible while the optional right rail is pending 1005ms
+     → Unable to find an element with the text: Final. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   × stats game route admission and envelopes > keeps boxscore players when right rail fails and does not invent context records 11ms
+     → Unable to find an element with the text: Team game context could not be loaded.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   × stats game route admission and envelopes > uses rail identity with a partial boxscore while preserving known player IDs 8ms
+     → Unable to find an element with the text: Live. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   × stats game route admission and envelopes > reports failures rather than a successful empty game when both sources fail 4ms
+     → Unable to find an element with the text: Game data could not be loaded.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mAway[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_gameStatus_280e58"[39m
+            [36m>[39m
+              [0mUnavailable[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_gameTime_280e58"[39m
+            [36m>[39m
+              [0m-[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_venue_280e58"[39m
+            [36m>[39m
+              [0mNHL GameCenter[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamHome_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mHome ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mHome[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_dataPanel_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_panelBody_280e58"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_placeholderText_280e58"[39m
+            [36m>[39m
+              [0mGame data is unavailable for this id.[0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × stats game route admission and envelopes > does not admit another game's boxscore or query its date 6ms
+     → Unable to find an element with the text: Game data is unavailable for this id.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   ✓ stats game route state and missing values > labels FUT explicitly as Scheduled 6ms
+   × stats game route state and missing values > labels PRE explicitly as Pregame 5ms
+     → Unable to find an element with the text: Pregame. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   × stats game route state and missing values > labels LIVE explicitly as Live 6ms
+     → Unable to find an element with the text: Live. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   × stats game route state and missing values > labels CRIT explicitly as Live 4ms
+     → Unable to find an element with the text: Live. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   × stats game route state and missing values > labels OFF explicitly as Final 5ms
+     → Unable to find an element with the text: Final. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   × stats game route state and missing values > labels OVER explicitly as Final 5ms
+     → Unable to find an element with the text: Final. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   × stats game route state and missing values > labels FINAL explicitly as Final 5ms
+     → Unable to find an element with the text: Final. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   × stats game route state and missing values > labels unknown explicitly as Status unavailable 5ms
+     → Unable to find an element with the text: Status unavailable. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   × stats game route state and missing values > uses the current boxscore state ahead of a season-series snapshot 5ms
+     → Unable to find an element with the text: Final. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+   × stats game route state and missing values > preserves zero scores without presenting them as market probabilities or a home win 20ms
+     → expected <span class="_probAway_280e58"></span> to be null
+   × stats game route state and missing values > includes OVER results and requires both scores before naming a winner 10ms
+     → Unable to find an element with the text: Result unavailable. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelH2H_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mRecent Head-to-Head[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_h2hList_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_h2hCard_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_h2hDate_280e58"[39m
+        [36m>[39m
+          [0mOct 14, 2026[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_h2hScore_280e58"[39m
+        [36m>[39m
+          [0mBOS[0m
+          [0m [0m
+          [0m - [0m
+          [0m0[0m
+          [0m [0m
+          [0mTOR[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_h2hWinnerHome_280e58"[39m
+        [36m>[39m
+          [0mTOR[0m
+          [0m Win[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+   × stats game route state and missing values > does not paint equal-strength bars for absent statistics 6ms
+     → expected <div …(2)></div>
+<div …(2)></div>
+…(4) to have a length of +0 but got 6
+   × stats game route state and missing values > retains valid market probabilities from -150 / +130 11ms
+     → Unable to find an element with the text: Score: 0. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m58[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m42[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 58%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 42%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+   × stats game route state and missing values > retains valid market probabilities from 2.0 / 3.0 11ms
+     → Unable to find an element with the text: Score: 0. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m60[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m40[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 60%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 40%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+   × stats game route state and missing values > does not substitute a probability for absent/invalid odds: undefined 10ms
+     → Unable to find an element with the text: Market odds unavailable.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m50[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m50[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 50%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 50%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mScore[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mScore[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+   × stats game route state and missing values > does not substitute a probability for absent/invalid odds: invalid 8ms
+     → Unable to find an element with the text: Market odds unavailable.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m53[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m47[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 53%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 47%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+   × stats game route state and missing values > does not substitute a probability for absent/invalid odds: +120junk 8ms
+     → Unable to find an element with the text: Market odds unavailable.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m51[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m49[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 51%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 49%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+   × stats game route state and missing values > does not substitute a probability for absent/invalid odds: 1 6ms
+     → Unable to find an element with the text: Market odds unavailable.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m70[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m30[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 70%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 30%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+   × stats game route state and missing values > does not substitute a probability for absent/invalid odds: -0 8ms
+     → Unable to find an element with the text: Market odds unavailable.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m0[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m100[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 0%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 100%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+   × stats game route state and missing values > preserves separate same-name players by ID and distinguishes zero from unknown counts 9ms
+     → Found multiple elements with the text: 0P / 0 SOG
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_playerTrend_280e58"[39m
+[36m>[39m
+  [0m0[0m
+  [0mP / [0m
+  [0m0[0m
+  [0m SOG[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_playerTrend_280e58"[39m
+[36m>[39m
+  [0m0[0m
+  [0mP / [0m
+  [0m0[0m
+  [0m SOG[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelTrends_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mTop Skaters[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_playerList_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_playerItem_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_playerInfo_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_playerPos_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_playerName_280e58"[39m
+          [36m>[39m
+            [0mSame Name[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_playerTrend_280e58"[39m
+        [36m>[39m
+          [0m0[0m
+          [0mP / [0m
+          [0m0[0m
+          [0m SOG[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_playerItem_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_playerInfo_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_playerPos_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_playerName_280e58"[39m
+          [36m>[39m
+            [0mSame Name[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_playerTrend_280e58"[39m
+        [36m>[39m
+          [0m0[0m
+          [0mP / [0m
+          [0m0[0m
+          [0m SOG[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 33 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > does not fetch an invalid or ambiguous route ID: undefined
+TestingLibraryElementError: Unable to find an element with the text: Invalid game ID.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mAway[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_gameStatus_280e58"[39m
+            [36m>[39m
+              [0mLoading...[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_gameTime_280e58"[39m
+            [36m>[39m
+              [0m-[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_venue_280e58"[39m
+            [36m>[39m
+              [0mNHL GameCenter[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamHome_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mHome ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mHome[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:58:21
+     56|       await act(async () => {});
+     57|       expect(fetchMock).not.toHaveBeenCalled();
+     58|       expect(screen.getByText("Invalid game ID.")).toBeTruthy();
+       |                     ^
+     59|     },
+     60|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > does not fetch an invalid or ambiguous route ID: 'abc'
+AssertionError: expected "spy" to not be called at all, but actually been called 3 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      "/api/v1/game/abc/right-rail",
+    ]
+
+[1m  2nd spy call:
+
+[22m    Array [
+      "/api/v1/game/abc/boxscore",
+    ]
+
+[1m  3rd spy call:
+
+[22m    Array [
+      "/api/v1/schedule/date/2026-10-15",
+    ]
+[39m[90m
+
+Number of calls: [1m3[22m
+[39m
+ ❯ __tests__/pages/statsGame.test.tsx:57:29
+     55|       mount();
+     56|       await act(async () => {});
+     57|       expect(fetchMock).not.toHaveBeenCalled();
+       |                             ^
+     58|       expect(screen.getByText("Invalid game ID.")).toBeTruthy();
+     59|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > does not fetch an invalid or ambiguous route ID: '0'
+AssertionError: expected "spy" to not be called at all, but actually been called 3 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      "/api/v1/game/0/right-rail",
+    ]
+
+[1m  2nd spy call:
+
+[22m    Array [
+      "/api/v1/game/0/boxscore",
+    ]
+
+[1m  3rd spy call:
+
+[22m    Array [
+      "/api/v1/schedule/date/2026-10-15",
+    ]
+[39m[90m
+
+Number of calls: [1m3[22m
+[39m
+ ❯ __tests__/pages/statsGame.test.tsx:57:29
+     55|       mount();
+     56|       await act(async () => {});
+     57|       expect(fetchMock).not.toHaveBeenCalled();
+       |                             ^
+     58|       expect(screen.getByText("Invalid game ID.")).toBeTruthy();
+     59|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > does not fetch an invalid or ambiguous route ID: ' 2026020001'
+AssertionError: expected "spy" to not be called at all, but actually been called 3 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      "/api/v1/game/ 2026020001/right-rail",
+    ]
+
+[1m  2nd spy call:
+
+[22m    Array [
+      "/api/v1/game/ 2026020001/boxscore",
+    ]
+
+[1m  3rd spy call:
+
+[22m    Array [
+      "/api/v1/schedule/date/2026-10-15",
+    ]
+[39m[90m
+
+Number of calls: [1m3[22m
+[39m
+ ❯ __tests__/pages/statsGame.test.tsx:57:29
+     55|       mount();
+     56|       await act(async () => {});
+     57|       expect(fetchMock).not.toHaveBeenCalled();
+       |                             ^
+     58|       expect(screen.getByText("Invalid game ID.")).toBeTruthy();
+     59|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > does not fetch an invalid or ambiguous route ID: '2026020001/../x'
+AssertionError: expected "spy" to not be called at all, but actually been called 3 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      "/api/v1/game/2026020001/../x/right-rail",
+    ]
+
+[1m  2nd spy call:
+
+[22m    Array [
+      "/api/v1/game/2026020001/../x/boxscore",
+    ]
+
+[1m  3rd spy call:
+
+[22m    Array [
+      "/api/v1/schedule/date/2026-10-15",
+    ]
+[39m[90m
+
+Number of calls: [1m3[22m
+[39m
+ ❯ __tests__/pages/statsGame.test.tsx:57:29
+     55|       mount();
+     56|       await act(async () => {});
+     57|       expect(fetchMock).not.toHaveBeenCalled();
+       |                             ^
+     58|       expect(screen.getByText("Invalid game ID.")).toBeTruthy();
+     59|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > does not fetch an invalid or ambiguous route ID: [ '2026020001', '2026020002' ]
+AssertionError: expected "spy" to not be called at all, but actually been called 3 times[90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m    Array [
+      "/api/v1/game/2026020001,2026020002/right-rail",
+    ]
+
+[1m  2nd spy call:
+
+[22m    Array [
+      "/api/v1/game/2026020001,2026020002/boxscore",
+    ]
+
+[1m  3rd spy call:
+
+[22m    Array [
+      "/api/v1/schedule/date/2026-10-15",
+    ]
+[39m[90m
+
+Number of calls: [1m3[22m
+[39m
+ ❯ __tests__/pages/statsGame.test.tsx:57:29
+     55|       mount();
+     56|       await act(async () => {});
+     57|       expect(fetchMock).not.toHaveBeenCalled();
+       |                             ^
+     58|       expect(screen.getByText("Invalid game ID.")).toBeTruthy();
+     59|     },
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > returns notFound for an invalid server route before any request
+AssertionError: expected { props: {} } to deeply equal { notFound: true }
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "notFound": true,[39m
+[31m+   "props": {},[39m
+[2m  }[22m
+
+ ❯ __tests__/pages/statsGame.test.tsx:64:20
+     62|   it("returns notFound for an invalid server route before any request"…
+     63|     const result = await getServerSideProps({ params: { gameId: "not-a…
+     64|     expect(result).toEqual({ notFound: true });
+       |                    ^
+     65|     expect(fetchMock).not.toHaveBeenCalled();
+     66|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > recognizes the API's HTTP-200 failure envelope and preserves the independent rail panel
+TestingLibraryElementError: Unable to find an element with the text: Boxscore could not be loaded.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:78:19
+     76|     mount();
+     77|     await settled();
+     78|     expect(screen.getByText("Boxscore could not be loaded.")).toBeTrut…
+       |                   ^
+     79|     expect(panel("Team Game Stats").getByText("Shots on Goal")).toBeTr…
+     80|     expect(panel("Team Game Stats").getByText("0")).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > settles a successful empty boxscore: null
+AssertionError: expected <div class="_gameStatus_280e58"></div> to be null
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageShell_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_pageStack_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_controlBar_280e58"[39m
+          [36m/>[39m
+          [36m<header[39m
+            [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamAway_280e58"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+              [36m>[39m
+                [0mAway ([0m
+                [0m0-0-0[0m
+                [0m)[0m
+              [36m</span>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_teamName_280e58"[39m
+              [36m>[39m
+                [0mAway[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_teamRecord_280e58"[39m
+              [36m>[39m
+                [0m [0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_gameInfo_280e58"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_gameStatus_280e58"[39m
+              [36m>[39m
+                [0mLoading...[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_gameTime_280e58"[39m
+              [36m>[39m
+                [0m-[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_venue_280e58"[39m
+              [36m>[39m
+                [0mNHL GameCenter[0m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamHome_280e58"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+              [36m>[39m
+                [0mHome ([0m
+                [0m0-0-0[0m
+                [0m)[0m
+              [36m</span>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_teamName_280e58"[39m
+              [36m>[39m
+                [0mHome[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_teamRecord_280e58"[39m
+              [36m>[39m
+                [0m [0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</header>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+<div
+  class="_gameStatus_280e58"
+>
+  Loading...
+</div>
+
+ ❯ __tests__/pages/statsGame.test.tsx:45:64
+     43| }
+     44| async function settled() {
+     45|   await waitFor(() => expect(screen.queryByText("Loading...")).toBeNul…
+       |                                                                ^
+     46| }
+     47| function panel(name: string) {
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > keeps a valid boxscore visible while the optional right rail is pending
+TestingLibraryElementError: Unable to find an element with the text: Final. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+ ❯ waitForWrapper ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ __tests__/pages/statsGame.test.tsx:96:25
+     94|       : Promise.resolve(response(url.endsWith("/boxscore") ? boxscore …
+     95|     mount();
+     96|     expect(await screen.findByText("Final")).toBeTruthy();
+       |                         ^
+     97|     expect(screen.queryByText("Loading...")).toBeNull();
+     98|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > keeps boxscore players when right rail fails and does not invent context records
+TestingLibraryElementError: Unable to find an element with the text: Team game context could not be loaded.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:106:19
+    104|     await settled();
+    105|     expect(screen.getByText("Known Player")).toBeTruthy();
+    106|     expect(screen.getByText("Team game context could not be loaded."))…
+       |                   ^
+    107|     expect(screen.queryByText("Away (0-0-0)")).toBeNull();
+    108|     expect(screen.queryByText("First meeting of the season.")).toBeNul…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > uses rail identity with a partial boxscore while preserving known player IDs
+TestingLibraryElementError: Unable to find an element with the text: Live. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:117:19
+    115|     await settled();
+    116|     expect(screen.getByText("Known Player")).toBeTruthy();
+    117|     expect(screen.getByText("Live")).toBeTruthy();
+       |                   ^
+    118|   });
+    119| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > reports failures rather than a successful empty game when both sources fail
+TestingLibraryElementError: Unable to find an element with the text: Game data could not be loaded.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mAway[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_gameStatus_280e58"[39m
+            [36m>[39m
+              [0mUnavailable[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_gameTime_280e58"[39m
+            [36m>[39m
+              [0m-[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_venue_280e58"[39m
+            [36m>[39m
+              [0mNHL GameCenter[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamHome_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mHome ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mHome[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</header>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_dataPanel_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_panelBody_280e58"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_placeholderText_280e58"[39m
+            [36m>[39m
+              [0mGame data is unavailable for this id.[0m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:124:19
+    122|     mount();
+    123|     await settled();
+    124|     expect(screen.getByText("Game data could not be loaded.")).toBeTru…
+       |                   ^
+    125|     expect(screen.queryByText("Game data is unavailable for this id.")…
+    126|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route admission and envelopes > does not admit another game's boxscore or query its date
+TestingLibraryElementError: Unable to find an element with the text: Game data is unavailable for this id.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:132:19
+    130|     mount();
+    131|     await settled();
+    132|     expect(screen.getByText("Game data is unavailable for this id.")).…
+       |                   ^
+    133|     expect(fetchMock.mock.calls.some(([url]) => url.includes("/schedul…
+    134|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > labels PRE explicitly as Pregame
+TestingLibraryElementError: Unable to find an element with the text: Pregame. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:145:19
+    143|     mount();
+    144|     await settled();
+    145|     expect(screen.getByText(label)).toBeTruthy();
+       |                   ^
+    146|   });
+    147| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > labels LIVE explicitly as Live
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > labels CRIT explicitly as Live
+TestingLibraryElementError: Unable to find an element with the text: Live. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:145:19
+    143|     mount();
+    144|     await settled();
+    145|     expect(screen.getByText(label)).toBeTruthy();
+       |                   ^
+    146|   });
+    147| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > labels OFF explicitly as Final
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > labels OVER explicitly as Final
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > labels FINAL explicitly as Final
+TestingLibraryElementError: Unable to find an element with the text: Final. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:145:19
+    143|     mount();
+    144|     await settled();
+    145|     expect(screen.getByText(label)).toBeTruthy();
+       |                   ^
+    146|   });
+    147| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > labels unknown explicitly as Status unavailable
+TestingLibraryElementError: Unable to find an element with the text: Status unavailable. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:145:19
+    143|     mount();
+    144|     await settled();
+    145|     expect(screen.getByText(label)).toBeTruthy();
+       |                   ^
+    146|   });
+    147| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > uses the current boxscore state ahead of a season-series snapshot
+TestingLibraryElementError: Unable to find an element with the text: Final. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_pageShell_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_pageStack_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_controlBar_280e58"[39m
+        [36m/>[39m
+        [36m<header[39m
+          [33mclass[39m=[32m"_matchupHeader_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_teamAway_280e58"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_teamEyebrow_280e58"[39m
+            [36m>[39m
+              [0mAway ([0m
+              [0m0-0-0[0m
+              [0m)[0m
+            [36m</span>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamName_280e58"[39m
+            [36m>[39m
+              [0mBOS[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_teamRecord_280e58"[39m
+            [36m>[39m
+              [0m [0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_gameInfo_280e58"[39m
+          ...
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:152:19
+    150|     mount();
+    151|     await settled();
+    152|     expect(screen.getByText("Final")).toBeTruthy();
+       |                   ^
+    153|   });
+    154| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > preserves zero scores without presenting them as market probabilities or a home win
+AssertionError: expected <span class="_probAway_280e58"></span> to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+<span
+  class="_probAway_280e58"
+>
+  BOS
+   
+  50
+  %
+</span>
+
+ ❯ __tests__/pages/statsGame.test.tsx:160:69
+    158|     await settled();
+    159|     expect(panel("Implied Win Probability").getAllByText("Score: 0")).…
+    160|     expect(panel("Implied Win Probability").queryByText("BOS 50%")).to…
+       |                                                                     ^
+    161|     expect(panel("Implied Win Probability").getByText("Market odds una…
+    162|     expect(panel("Recent Head-to-Head").queryByText("TOR Win")).toBeNu…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[20/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > includes OVER results and requires both scores before naming a winner
+TestingLibraryElementError: Unable to find an element with the text: Result unavailable. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelH2H_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mRecent Head-to-Head[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_h2hList_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_h2hCard_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_h2hDate_280e58"[39m
+        [36m>[39m
+          [0mOct 14, 2026[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_h2hScore_280e58"[39m
+        [36m>[39m
+          [0mBOS[0m
+          [0m [0m
+          [0m - [0m
+          [0m0[0m
+          [0m [0m
+          [0mTOR[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_h2hWinnerHome_280e58"[39m
+        [36m>[39m
+          [0mTOR[0m
+          [0m Win[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:174:41
+    172|     await settled();
+    173|     expect(panel("Recent Head-to-Head").getAllByText("TOR Win")).toHav…
+    174|     expect(panel("Recent Head-to-Head").getByText("Result unavailable"…
+       |                                         ^
+    175|   });
+    176| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[21/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > does not paint equal-strength bars for absent statistics
+AssertionError: expected <div …(2)></div>
+<div …(2)></div>
+…(4) to have a length of +0 but got 6
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 0[39m
+[31m+ 6[39m
+
+ ❯ __tests__/pages/statsGame.test.tsx:181:65
+    179|     await settled();
+    180|     const strengths = screen.getByRole("heading", { name: "Team Streng…
+    181|     expect(strengths.querySelectorAll('[style*="width: 50%"]')).toHave…
+       |                                                                 ^
+    182|   });
+    183| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[22/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > retains valid market probabilities from -150 / +130
+TestingLibraryElementError: Unable to find an element with the text: Score: 0. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m58[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m42[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 58%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 42%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:109:15
+ ❯ __tests__/pages/statsGame.test.tsx:192:45
+    190|     expect(await screen.findByText(awayLabel)).toBeTruthy();
+    191|     expect(panel("Implied Win Probability").getByText(homeLabel)).toBe…
+    192|     expect(panel("Implied Win Probability").getAllByText("Score: 0")).…
+       |                                             ^
+    193|   });
+    194| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[23/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > retains valid market probabilities from 2.0 / 3.0
+TestingLibraryElementError: Unable to find an element with the text: Score: 0. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m60[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m40[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 60%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 40%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:109:15
+ ❯ __tests__/pages/statsGame.test.tsx:192:45
+    190|     expect(await screen.findByText(awayLabel)).toBeTruthy();
+    191|     expect(panel("Implied Win Probability").getByText(homeLabel)).toBe…
+    192|     expect(panel("Implied Win Probability").getAllByText("Score: 0")).…
+       |                                             ^
+    193|   });
+    194| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[24/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > does not substitute a probability for absent/invalid odds: undefined
+TestingLibraryElementError: Unable to find an element with the text: Market odds unavailable.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m50[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m50[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 50%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 50%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mScore[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mScore[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:201:45
+    199|     await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => ur…
+    200|     await act(async () => {});
+    201|     expect(panel("Implied Win Probability").getByText("Market odds una…
+       |                                             ^
+    202|   });
+    203| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[25/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > does not substitute a probability for absent/invalid odds: invalid
+TestingLibraryElementError: Unable to find an element with the text: Market odds unavailable.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m53[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m47[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 53%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 47%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:201:45
+    199|     await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => ur…
+    200|     await act(async () => {});
+    201|     expect(panel("Implied Win Probability").getByText("Market odds una…
+       |                                             ^
+    202|   });
+    203| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[26/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > does not substitute a probability for absent/invalid odds: +120junk
+TestingLibraryElementError: Unable to find an element with the text: Market odds unavailable.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m51[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m49[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 51%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 49%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:201:45
+    199|     await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => ur…
+    200|     await act(async () => {});
+    201|     expect(panel("Implied Win Probability").getByText("Market odds una…
+       |                                             ^
+    202|   });
+    203| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[27/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > does not substitute a probability for absent/invalid odds: 1
+TestingLibraryElementError: Unable to find an element with the text: Market odds unavailable.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m70[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m30[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 70%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 30%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:201:45
+    199|     await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => ur…
+    200|     await act(async () => {});
+    201|     expect(panel("Implied Win Probability").getByText("Market odds una…
+       |                                             ^
+    202|   });
+    203| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[28/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > does not substitute a probability for absent/invalid odds: -0
+TestingLibraryElementError: Unable to find an element with the text: Market odds unavailable.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelProbability_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mImplied Win Probability[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_probabilityHero_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_probScale_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probAway_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+            [0m [0m
+            [0m0[0m
+            [0m%[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_probHome_280e58"[39m
+          [36m>[39m
+            [0mTOR[0m
+            [0m [0m
+            [0m100[0m
+            [0m%[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probBar_280e58"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillAway_280e58"[39m
+            [33mstyle[39m=[32m"width: 0%;"[39m
+          [36m/>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_probFillHome_280e58"[39m
+            [33mstyle[39m=[32m"width: 100%;"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_probLabels_280e58"[39m
+          [33mstyle[39m=[32m"color: rgba(255, 255, 255, 0.5); margin-top: 0.25rem;"[39m
+        [36m>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mMarket[0m
+            [0m: [0m
+            [0m0[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:201:45
+    199|     await waitFor(() => expect(fetchMock.mock.calls.some(([url]) => ur…
+    200|     await act(async () => {});
+    201|     expect(panel("Implied Win Probability").getByText("Market odds una…
+       |                                             ^
+    202|   });
+    203| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[29/33]⎯
+
+ FAIL  __tests__/pages/statsGame.test.tsx > stats game route state and missing values > preserves separate same-name players by ID and distinguishes zero from unknown counts
+TestingLibraryElementError: Found multiple elements with the text: 0P / 0 SOG
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_playerTrend_280e58"[39m
+[36m>[39m
+  [0m0[0m
+  [0mP / [0m
+  [0m0[0m
+  [0m SOG[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_playerTrend_280e58"[39m
+[36m>[39m
+  [0m0[0m
+  [0mP / [0m
+  [0m0[0m
+  [0m SOG[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<section[39m
+  [33mclass[39m=[32m"_dataPanel_280e58 _panelTrends_280e58"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelHeader_280e58"[39m
+  [36m>[39m
+    [36m<h3>[39m
+      [0mTop Skaters[0m
+    [36m</h3>[39m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_panelBody_280e58"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_playerList_280e58"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_playerItem_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_playerInfo_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_playerPos_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_playerName_280e58"[39m
+          [36m>[39m
+            [0mSame Name[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_playerTrend_280e58"[39m
+        [36m>[39m
+          [0m0[0m
+          [0mP / [0m
+          [0m0[0m
+          [0m SOG[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_playerItem_280e58"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_playerInfo_280e58"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_playerPos_280e58"[39m
+          [36m>[39m
+            [0mBOS[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_playerName_280e58"[39m
+          [36m>[39m
+            [0mSame Name[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_playerTrend_280e58"[39m
+        [36m>[39m
+          [0m0[0m
+          [0mP / [0m
+          [0m0[0m
+          [0m SOG[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</section>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ __tests__/pages/statsGame.test.tsx:212:33
+    210|     await settled();
+    211|     expect(panel("Top Skaters").getAllByText("Same Name")).toHaveLengt…
+    212|     expect(panel("Top Skaters").getByText("0P / 0 SOG")).toBeTruthy();
+       |                                 ^
+    213|     expect(panel("Top Skaters").getByText("-P / - SOG")).toBeTruthy();
+    214|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[30/33]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  33 failed | 4 passed (37)
+   Start at  10:50:18
+   Duration  2.74s (transform 146ms, setup 10ms, collect 203ms, tests 2.27s, environment 155ms, prepare 29ms)
+

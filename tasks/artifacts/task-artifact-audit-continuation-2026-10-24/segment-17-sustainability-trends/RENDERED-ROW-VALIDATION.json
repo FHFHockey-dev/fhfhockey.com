@@ -1,0 +1,96 @@
+{
+  "checks": [
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "new_children": 0,
+      "prior_children_preserved": true,
+      "scalar_labels_matched": true
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "new_children": 0,
+      "prior_children_preserved": true,
+      "scalar_labels_matched": true
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-FORGE-TESTING-GROUNDS",
+      "new_children": 0,
+      "prior_children_preserved": true,
+      "scalar_labels_matched": true
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "SITE-FORGE-TESTING-GROUNDS",
+      "new_children": 0,
+      "prior_children_preserved": true,
+      "scalar_labels_matched": true
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "TRENDS-HISTORICAL-REPAIRS",
+      "new_children": 6,
+      "prior_children_preserved": true,
+      "scalar_labels_matched": true
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "TRENDS-HISTORICAL-REPAIRS",
+      "new_children": 6,
+      "prior_children_preserved": true,
+      "scalar_labels_matched": true
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "PIPE-ROLLING-HISTORY-REPAIR",
+      "new_children": 2,
+      "prior_children_preserved": true,
+      "scalar_labels_matched": true
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "PIPE-ROLLING-HISTORY-REPAIR",
+      "new_children": 2,
+      "prior_children_preserved": true,
+      "scalar_labels_matched": true
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "FORGE-RESULTS-COVERAGE",
+      "new_children": 1,
+      "prior_children_preserved": true,
+      "scalar_labels_matched": true
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "FORGE-RESULTS-COVERAGE",
+      "new_children": 1,
+      "prior_children_preserved": true,
+      "scalar_labels_matched": true
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-PLAYER-CARDS",
+      "new_children": 0,
+      "prior_children_preserved": true,
+      "scalar_labels_matched": true
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "SITE-PLAYER-CARDS",
+      "new_children": 0,
+      "prior_children_preserved": true,
+      "scalar_labels_matched": true
+    }
+  ],
+  "new_children_rendered_in_both": 9,
+  "prior_children_preserved": true,
+  "milestones_attributed_only": true,
+  "no_runtime_observed": true,
+  "exact_exclusion_field_passed": true,
+  "all_prior_scopes_evidence_preserved": true,
+  "unchanged_rows_identical": 207,
+  "wording_correction": "WORDING-CORRECTION.json"
+}

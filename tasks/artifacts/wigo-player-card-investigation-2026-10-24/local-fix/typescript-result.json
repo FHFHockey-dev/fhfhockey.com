@@ -1,0 +1,5 @@
+{
+  "command": "NODE_OPTIONS=--max-old-space-size=8192 npx --no-install tsc --noEmit --incremental false",
+  "exit_code": 2,
+  "wall_seconds": 59.721
+}

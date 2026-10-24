@@ -1,0 +1,23 @@
+{
+  "status": "Granted CODEX-PLAYER-CARDS-S02-R1-20261024 at2026-10-24T17:17:47.435932+00:00; exact original source bytes preserved and hashes verified before canonical edit",
+  "source_paths": [
+    {
+      "path": "web/lib/player-cards/aggregation.ts",
+      "baseline": "36ca33b11876cc21630a8f22461e72fb45dc4447577f3a4da162c726bd8928de"
+    },
+    {
+      "path": "web/lib/player-cards/domain.test.ts",
+      "baseline": "d24196f3844d151ed6de16427bd34ba5f41a61b2164a49a710a54b0e1a0d9978"
+    },
+    {
+      "path": "web/lib/player-cards/aggregation.r1.test.ts",
+      "baseline": "absent"
+    }
+  ],
+  "scope": "R1 per-row component consistency before pooling, affected metric coverage; original packets/probes preserved",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1",
+  "baseline_verified": {
+    "aggregation.ts": "36ca33b11876cc21630a8f22461e72fb45dc4447577f3a4da162c726bd8928de",
+    "domain.test.ts": "d24196f3844d151ed6de16427bd34ba5f41a61b2164a49a710a54b0e1a0d9978"
+  }
+}

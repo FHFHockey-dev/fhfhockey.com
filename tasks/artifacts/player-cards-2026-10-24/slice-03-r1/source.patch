@@ -1,0 +1,104 @@
+--- web/components/player-cards/InteractiveCard.tsx
++++ web/components/player-cards/InteractiveCard.tsx
+@@ -1,5 +1,5 @@
+ import React from "react";
+-import type { MetricId } from "../../lib/player-cards/contracts";
++import type { MetricId, MetricReading } from "../../lib/player-cards/contracts";
+ import type { FlowSnapshot } from "../../lib/player-cards/interactionSnapshot";
+ import { CATEGORIES, METRICS } from "../../lib/player-cards/registry";
+ import { formatMetric } from "./PlayerCard";
+@@ -7,9 +7,24 @@
+ 
+ export function periodLabel(snapshot: FlowSnapshot) { const period = snapshot.settings.period; return period.mode === "appearances" ? `Own L${period.count} appearances` : `${period.start} to ${period.end} · UTC`; }
+ export function strengthLabel(snapshot: FlowSnapshot) { return snapshot.settings.strength === "all" ? "All Strengths" : snapshot.settings.strength === "pp" ? "Power play" : "5v5"; }
++function metricContext(value: MetricReading): string {
++  if (value.rank) return `${value.rank.tied ? "T-" : ""}${value.rank.ordinal} of ${value.rank.population} · ${value.rank.percentile.toFixed(1)} pct`;
++  if (value.state === "valid") return "Rank unavailable · incomplete pool";
++  if (value.state === "undefined") {
++    if (value.reason?.includes("Zero denominator")) return "Undefined · zero denominator";
++    if (value.reason?.includes("full-N policy")) return "Undefined · full-N policy";
++    if (value.reason?.includes("No completed appearances")) return "Undefined · no appearances";
++    return "Undefined · selected period policy";
++  }
++  if (value.reason?.includes("Required component")) return "Missing source · incomplete inputs";
++  if (value.reason?.includes("Game events") || value.reason?.includes("Game ratio")) return "Invalid source · inconsistent inputs";
++  return "Missing source · unverified inputs";
++}
+ export default function InteractiveCard({ snapshot, selected, svgRef }: { snapshot: FlowSnapshot; selected: readonly MetricId[]; svgRef: React.Ref<SVGSVGElement> }) {
+   const sample = snapshot.sample, long = snapshot.player.name.length > 25, names = snapshot.player.name.split(" ");
+-  return <svg ref={svgRef} className={styles.flowCard} viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg" role="img" aria-label={`${snapshot.player.name}. Synthetic fixture. ${periodLabel(snapshot)}. ${strengthLabel(snapshot)}. ${sample.gp} actual appearances.`} data-snapshot-id={snapshot.id}>
++  const visible = snapshot.readings.filter(value => selected.includes(value.id));
++  const warnings = [sample.warning, visible.some(value => value.state === "missing") ? "Missing source" : null, visible.some(value => value.state === "undefined") ? "Undefined metrics" : null].filter(Boolean);
++  return <svg ref={svgRef} className={styles.flowCard} viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg" role="img" aria-label={`${snapshot.player.name}. Synthetic fixture. ${periodLabel(snapshot)}. ${strengthLabel(snapshot)}. ${sample.gp === null ? "GP unverified" : `${sample.gp} actual appearances`}.`} data-snapshot-id={snapshot.id}>
+     <title>Synthetic player card · {snapshot.player.name}</title>
+     <rect width="1080" height="1080" fill="#1A1D21" /><rect width="1080" height="9" fill="#07AAE2" />
+     <g fontFamily="Arial, sans-serif" fill="#F4F8FB">
+@@ -20,13 +35,13 @@
+         <text fill="#63D2F5" fontSize="25" fontWeight="700">{category.toUpperCase()}</text>
+         {METRICS.filter(metric => metric.category === category && selected.includes(metric.id)).map((metric, row) => {
+           const value = snapshot.readings.find(reading => reading.id === metric.id)!;
+-          return <g key={metric.id} transform={`translate(0 ${row * 94 + 20})`}><title>{metric.help}</title><text y="28" fontSize="27">{metric.label}</text><text x="464" y="28" textAnchor="end" fontSize="38" fontWeight="700">{formatMetric(metric.id,value.value)}</text><text y="57" fontSize="21" fill="#A7B4C0">{metric.id === "atoi" ? "min:sec per appearance" : metric.unit}</text><text y="83" fontSize="22" fill={value.rank ? "#63D2F5" : "#FFC857"}>{value.rank ? `${value.rank.tied ? "T-" : ""}${value.rank.ordinal} of ${value.rank.population} · ${value.rank.percentile.toFixed(1)} pct` : value.state === "valid" ? "Rank unavailable · incomplete pool" : "Unavailable · see sample/source state"}</text></g>;
++          return <g key={metric.id} transform={`translate(0 ${row * 94 + 20})`}><title>{metric.help}</title><text y="28" fontSize="27">{metric.label}</text><text x="464" y="28" textAnchor="end" fontSize="38" fontWeight="700">{formatMetric(metric.id,value.value)}</text><text y="57" fontSize="21" fill="#A7B4C0">{metric.id === "atoi" ? "min:sec per appearance" : metric.unit}</text><text y="83" fontSize="22" fill={value.rank ? "#63D2F5" : "#FFC857"}>{metricContext(value)}</text></g>;
+         })}
+       </g>)}
+       <line x1="48" x2="1032" y1="778" y2="778" stroke="#2F353D" strokeWidth="2" />
+       <text x="48" y="819" fontSize={snapshot.settings.period.mode === "calendar" ? 28 : 31} fontWeight="700">{periodLabel(snapshot)} · {strengthLabel(snapshot)}</text>
+       <text x="48" y="858" fontSize="25">{sample.gp === null ? "GP unverified" : snapshot.settings.period.mode === "appearances" ? `${sample.gp} of ${sample.requested} GP` : `${sample.gp} GP`} · {sample.toiSeconds === null ? "TOI unavailable" : `${(sample.toiSeconds/60).toFixed(1)} min TOI`} · {sample.firstDate} → {sample.lastDate}</text>
+-      <text x="48" y="894" fontSize="23" fill="#FFC857">{sample.warning || (snapshot.readings.some(row => row.state === "missing") ? "Source incomplete · affected values and ranks withheld" : snapshot.settings.period.mode === "calendar" ? "Shared calendar dates · actual GP can differ · no hidden sample filter" : "Own appearance spans may differ across players · no hidden sample filter")}</text>
++      <text x="48" y="894" fontSize="23" fill="#FFC857">{warnings.length ? warnings.join(" · ") : snapshot.settings.period.mode === "calendar" ? "Shared calendar dates · actual GP can differ · no hidden sample filter" : "Own appearance spans may differ across players · no hidden sample filter"}</text>
+       <text x="48" y="932" fontSize="22" fill="#A7B4C0">Cutoff: {snapshot.settings.cutoff.replace("T"," ")} · Capture: {snapshot.capturedAt.slice(5,16).replace("T"," ")} UTC</text>
+       <text x="48" y="969" fontSize="23">Fabricated 18-player cohort · per-metric valid N · no GP, TOI or position filter</text>
+       <text x="48" y="1003" fontSize="21" fill="#A7B4C0">Source/identities/games are synthetic · numeric magnitude is not quality or a forecast</text>
+--- web/components/player-cards/PlayerCardFlow.tsx
++++ web/components/player-cards/PlayerCardFlow.tsx
+@@ -35,6 +35,9 @@
+   const exportContext = snapshot ? pngContext(snapshot) : null;
+   const selected = extra ? EXTRA_METRICS : CURATED_METRICS;
+   const matches = EXAMPLE_PLAYERS.filter(player => player.name.toLowerCase().includes(query.trim().toLowerCase()));
++  const missing = card?.readings.some(value => value.state === "missing");
++  const undefinedMetrics = card?.readings.some(value => value.state === "undefined");
++  const availability = card?.state === "unavailable" ? card.selection.reason || (missing ? "Source unavailable: no exportable values." : "Metrics undefined: no exportable values.") : missing ? "Partial source: affected values and ranks are unavailable." : undefinedMetrics ? "Some metrics undefined: zero denominator or selected period policy." : "Fixture snapshot ready.";
+   async function exportPng() {
+     if (exporting.current || !svg.current || !snapshot || !exportContext || !card || card.state === "unavailable" || phase !== "ready") return;
+     exporting.current = true; setBusy(true); setMessage("Creating PNG from this displayed fixture snapshot…");
+@@ -59,7 +62,7 @@
+       <button disabled={busy || !snapshot || phase !== "ready"} onClick={() => save(new Blob([JSON.stringify({snapshot,renderVariant:"interactive-v1",selectedMetrics:selected,coverage:card?.coverage,source:card?.source,retrospective:card?.retrospective,liveActivation:false,premiumActivation:false},null,2)],{type:"application/json"}),`${snapshot!.id}-manifest.json`)}>Download snapshot manifest</button>
+       <p className={styles.flowSmall}>Season-contained windows · common completed-game cutoff: 24 Oct 2026, 00:00 UTC. Every identity, source proof and statistic here is fabricated. No portrait assets or service access.</p>
+     </section><section className={styles.flowPreview} aria-label="Computed fixture card">
+-      <p className={styles.flowStatus} role="status" aria-live="polite">{phase === "loading" ? "Computing local fixture…" : message || (card?.state === "unavailable" ? card.selection.reason || "Source unavailable: no exportable values." : card?.state === "partial" ? "Partial source: affected values and ranks are unavailable." : "Fixture snapshot ready.")}</p>
++      <p className={styles.flowStatus} role="status" aria-live="polite">{phase === "loading" ? "Computing local fixture…" : message || availability}</p>
+       {phase === "error" && <button onClick={() => setAttempt(value => value+1)}>Retry local fixture</button>}
+       {snapshot && phase === "ready" && <><InteractiveCard snapshot={snapshot} selected={selected} svgRef={svg} /><p className={styles.flowSmall}>The PNG uses this exact displayed SVG. Its synthetic label and sample context are preserved. No period or source recomputation happens during export.</p>
+         <details className={styles.flowReadings}><summary>Read values, source states and coverage at text size</summary>{CATEGORIES.map(category => <section key={category}><h2>{category}</h2><dl>{METRICS.filter(metric => metric.category === category && selected.includes(metric.id)).map(metric => { const value = snapshot.readings.find(row => row.id === metric.id)!, coverage = card!.coverage[metric.id]; return <div key={metric.id}><dt>{metric.label}<br />{metric.unit}</dt><dd><strong>{formatMetric(metric.id,value.value)}</strong><br />{value.rank ? `${value.rank.tied ? "T-" : ""}${value.rank.ordinal} of ${value.rank.population} · ${value.rank.percentile.toFixed(1)} percentile` : value.reason || value.rankReason}<br />{coverage.valid} valid · {coverage.knownUndefined} undefined · {coverage.missingIncomplete} missing<br />{coverage.knownShort} known short</dd></div>; })}</dl></section>)}</details>
+--- web/components/player-cards/PlayerCardFlow.test.tsx
++++ web/components/player-cards/PlayerCardFlow.test.tsx
+@@ -88,4 +88,29 @@
+     await act(async () => finish(new Blob(["example PNG"],{type:"image/png"})));
+     await waitFor(()=>expect(container.querySelector("svg")!.textContent).toContain("Own L5 appearances"));
+   });
++  it("keeps short-sample and missing-input explanations inside the standalone SVG", async () => {
++    window.history.replaceState(null,"","?player=1004&case=metric-gap");
++    const {container}=render(<PlayerCardFlow />);
++    await screen.findByText("Partial source: affected values and ranks are unavailable.");
++    const svg=container.querySelector("svg")!;
++    expect(svg.textContent).toContain("Known short season · proposed policy · Missing source");
++    expect(svg.textContent).toContain("Missing source · incomplete inputs");
++  });
++  it("labels complete zero-exposure metrics as undefined in the banner and SVG", async () => {
++    window.history.replaceState(null,"","?mode=calendar&start=2026-10-01&end=2026-10-01&strength=pp");
++    const {container}=render(<PlayerCardFlow />);
++    await screen.findByText("Some metrics undefined: zero denominator or selected period policy.");
++    const svg=container.querySelector("svg")!;
++    expect(svg.textContent).toContain("1 GP · 0.0 min TOI");
++    expect(svg.textContent).toContain("Undefined · zero denominator");
++    expect(svg.textContent).not.toContain("Missing source");
++    expect(screen.getByRole("status").textContent).not.toContain("Partial source");
++  });
++  it("announces unverified GP without a null-valued appearance count", async () => {
++    window.history.replaceState(null,"","?case=history-gap");
++    const {container}=render(<PlayerCardFlow />);
++    await screen.findByText("Complete appearance history through the common cutoff is unverified");
++    const label=container.querySelector("svg")!.getAttribute("aria-label");
++    expect(label).toContain("GP unverified");expect(label).not.toContain("null actual appearances");
++  });
+ });

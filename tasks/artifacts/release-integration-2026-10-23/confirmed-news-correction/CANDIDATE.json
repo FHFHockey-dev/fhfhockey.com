@@ -1,0 +1,12 @@
+{
+  "head": "431ffcd673b42ad4a149dc3f9dfb03005dbec75a",
+  "at": "2026-10-23T12:46:24.124806+00:00",
+  "files": {
+    "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "9f2f29c50a6af4e7d6c12265e4ed1552ffa52e79b171f568cf7230aac046daab",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts": "9ef4199fb8dd678df9d8e152460790bcb0b3e467308e398aacb8e71116b5dd4d",
+    "web/lib/rosterScheduleData/forgeDailyBridge.test.ts": "16c3d6f394be1a2a877b2a4ddaac9ef8d2100c577ff98ec3adb96aaf4342f9d1"
+  },
+  "patch_sha256": "488f710fb637700efe397b9efbda886a946e5e13da3e277e7c65908b852456ec",
+  "scope": "Serialized Yahoo authority correction plus confirmation regression coverage; trusted positive Yahoo read gap remains. Existing probable floors retained.",
+  "bridge_source_unchanged": "651eff511275b93f6f598181f3c5402c9b4d1b57d3959eb772528842910855f5"
+}

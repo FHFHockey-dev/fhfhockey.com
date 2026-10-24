@@ -1,0 +1,642 @@
+--- before/tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md
++++ after/tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md
+@@ -1,14 +1,25 @@
+ # FHFH master task list — reconciled 2026-10-24
+ 
+-As of `2026-10-24T17:32:59.691223+00:00`. Canonical checkout `octoberBranch`; observed HEAD `2a5092d37cb863ec92a2a4e609999cf226bfa4a5`. This replaces the old master view using the existing sprint ledger IDs. Implementation, independent acceptance and release are separate. FA Portal is excluded.
+-
+-All **32 original master IDs** and **208 current ledger rows** are preserved. The exact prior master is retained in [the archival snapshot](../../tasks/artifacts/fhfh-sprint-ledger-2026-10-22/archive/MASTER-TASKLIST-2026-10-20.before-2026-10-23.md) (SHA256 `5d0126088c72f2216b6c6a89381798156a387a26cb85891cbfc2d4c750924b2a`). Older source findings and scopes remain available there; absence of a fresh review is not completion. Rows marked inventoried only have not received a file-health audit.
++As of `2026-10-24T17:45:04.782732+00:00`. Canonical checkout `octoberBranch`; observed HEAD `2a5092d37cb863ec92a2a4e609999cf226bfa4a5`. This replaces the old master view using the existing sprint ledger IDs. Implementation, independent acceptance and release are separate. FA Portal is excluded.
++
++All **32 original master IDs** and **209 current ledger rows** are preserved. The exact prior master is retained in [the archival snapshot](../../tasks/artifacts/fhfh-sprint-ledger-2026-10-22/archive/MASTER-TASKLIST-2026-10-20.before-2026-10-23.md) (SHA256 `5d0126088c72f2216b6c6a89381798156a387a26cb85891cbfc2d4c750924b2a`). Older source findings and scopes remain available there; absence of a fresh review is not completion. Rows marked inventoried only have not received a file-health audit.
+ 
+ **HISTORICAL CHECKPOINT AGGREGATION (earlier205-ID phase):** all 19 lane handoffs are accounted for and current turns ended at natural checkpoints. All original 188 task IDs and 32 original scopes remain preserved; Testing Grounds is now a locally implemented bounded slice, and16audit carry-forwards give205 IDs. Coherent release assembly and broader release acceptance are unfinished; this is not deployment approval.
+ 
+ 
+ 
+ 
++
++
++## Draft-debug and Draft Ranker content checkpoint — 2026-10-24T17:45:04.782732+00:00
++
++209 stable IDs preserve all208 prior IDs/scopes and1013 earlier evidence entries. One proposed/unassigned SITE-DRAFT-CSV-RESOLVER retains the historical four-step resolver remainder and a narrow static assignment/provenance verification target. Existing resolver search, metadata and summary are credited; the audit has not reproduced a runtime defect or authorized a repair. Only selected current ImportCsvModal ranges were read. All accepted import, privacy and saved-draft contracts remain intact.
++
++The fully read debug PRD closes SHA under July13 NEW7 and performance NEW8/9; September4 direct provider SHA, including zero, supersedes projected fallback derivation. Owner-approved absolute performance evidence and the missing historical relative-baseline exception remain accepted; no30%improvement, chunk-yielding implementation or mandatory worker/virtualization claim. Draft Ranker July17 personal rollout and July30 retired Phase8 scope stay closed. Older staff-only release text is historical and cannot close the latercc3be5c09 in-season homepage guard's production provenance.
++
++TJ's latest card-preview feedback is progress with unresolved overall design; technical local acceptance is not product/design approval. Separate owner/privacy facts distinguish consent withdrawal, private history, account cascades, rebuilt aggregates and retained non-identifying immutable snapshots. No secondary/public ranker activation or old security/migration replay is authorized.
++
++Coverage:7new unique documents/196822bytes fully read, two unchanged prior full reviews reused with scope retained, plus explicitly bounded current application-source ranges. Original inventory/duplicate/exclusion mapping and prior support dispositions are preserved. Overall content audit remains unfinished. No application edits/imports/tests, browser/server, Git, production/provider/auth/database or new workers. See [segment10](/Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/REPORT.md).
+ 
+ ## Draft Dashboard/Yahoo full-content checkpoint — 2026-10-24T17:32:59.691223+00:00
+ 
+@@ -2261,11 +2272,13 @@
+ - **Acceptance:** Historical9-test offline receipt; current production alias not confirmed
+ - **Release:** Still explicit release-inventory item until exact candidate/alias proves inclusion
+ - **Evidence level / limits:** inventoried only. Current status/receipt reconciliation; earlier scoped acceptance remains attached to its historical bytes.
+-- **Verification:** Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments.
++- **Verification:** Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments. Full ranker task/launch/release/decision/community sources preserve the July17 authenticated personal rollout on89ace52c1eab547a0373a8ebae63648ec27c9262 and narrower homepage waiver. The older July15 release-manifest header is historical, not a current alias claim. None of that establishes release of the later in-season guardcc3be5c09; current production provenance for this row remains unverified. No flag or hosted query by audit.
+ - **Dependencies / gate:** Parent release workflow and exact production alias/source SHA; isolate only the gate/test delta from the mixed-scope commit; preserve direct saved-rankings routes and unrelated homepage differences Confirm production project/environment/ready alias and source SHA. Include the isolated existing patch in the next explicitly authorized candidate, then verify the bounded rendered result. No cache or season-data cause asserted without evidence.
+ - **Next:** FORGE must include homepage and nearest test deliberately; do not diagnose cache or rerun implementation. Confirm resulting candidate and production alias under release plan.
+ - **Status evidence date:** `2026-10-23T12:55:59+00:00`.
+ - **Pinned references:** commit `cc3be5c09`; [web/pages/index.tsx:697](../../web/pages/index.tsx) SHA256 `db387e7d5b5a025b2585854fad930ad98eced970eaf0c3e1c34c65315ac760e1`; [tasks/artifacts/ctpi-independent-review-2026-10-22/REVIEW.md:1](../../tasks/artifacts/ctpi-independent-review-2026-10-22/REVIEW.md) SHA256 `ffd61bac1a6ec8158fa9e906efa395ca5382a93134ccf4ff509b32e492020d06`.
++- **Segment10 reconciliation date:** `2026-10-24T17:45:04.782732+00:00`.
++- **Segment10 evidence:** [tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md:93](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/f1260c0ce673-tasks-prd-draft-ranker.md:93>) SHA256 `f1260c0ce67310c274cbff4271546bc3a45f0ae3383b67e057b2f12b74ffca6a`; [tasks/TASKS/draft-ranker/launch-runbook.md:160](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/075f467912a6-launch-runbook.md:160>) SHA256 `075f467912a6362724fee5f10ab553ac677fe0778d141b820faa9231c86495dd`; [tasks/TASKS/draft-ranker/release-manifest.md:13](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/a144b0293406-release-manifest.md:13>) SHA256 `a144b02934061d943919cfc72e506f639c86edc86a0400ec3b183f5822122047`.
+ 
+ ## October22 FORGE projection improvement sprint
+ 
+@@ -2506,7 +2519,7 @@
+ - **Evidence level / limits:** source inspected. Only the named functions/files in the source-input reconciliation below; no whole-area health claim
+ - **Verification:** Current source and retained receipts inspected; no application tests rerun
+ - **Dependencies / gate:** Parent dispatch and exact file lease; preserve release and Game Grid work Exact scoped tests and independent review before integration; no production calls, schema, credentials or deployment authority
+-- **Next:** Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The separate debug checklist SHA remains explicitly open in its existing source until newer evidence is read. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules.
++- **Next:** Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The now fully read debug checklist closes SHA under July13 NEW7 and performance NEW8/9, with September4 official-provider SHA precedence including zero; only actual/custom-unmapped SHA retains nonnegative null-safe derivation. Preserve the owner-approved missing-relative-baseline exception and optional/evaluated virtualization, hashing, chunking and worker proposals; no false30%gain or mandatory performance rewrite. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules. Four historical requested resolver follow-ups and the name-keyed assignment/provenance risk are retained once under proposed SITE-DRAFT-CSV-RESOLVER; the existing summary is not wholly absent. Draft Ranker July17 personal authenticated rollout and July30 Phase8 retirement retain closure, while older July15 staff-only manifest paragraphs are historical. No secondary/public rollout, model change, old migration/security replay or new worktree from source runbooks.
+ - **Status evidence date:** `2026-10-24T15:51:04.684507+00:00`.
+ - **Pinned references:** [web/pages/api/v1/db/cron-report.ts:1](../../web/pages/api/v1/db/cron-report.ts) SHA256 `2c3bfbd09db3562a22cf592c20cc7c0e3dd5fcb5a7a57a3fc6a586343644441b`; [tasks/tasks-README.md:1](../../tasks/tasks-README.md) SHA256 `28fc17b6954a2d78660555cabd8124c30816bf761dc444f7d143706b711f2497`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:1](../../tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`.
+ - **Artifact audit — October24:** Documentary scope/status update; prior evidence and narrower acceptance preserved.
+@@ -2529,6 +2542,8 @@
+ - **Segment08 evidence:** [tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md:139](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/89b939a9a2d0-tasks-prd-cleanup-tasks.md:139>) SHA256 `89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0`; [tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md:253](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/89b939a9a2d0-tasks-prd-cleanup-tasks.md:253>) SHA256 `89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0`; [tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md:143](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/7d0cebf7d3c3-tasks-prd-drm-refactor.md:143>) SHA256 `7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01`; [tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/8a1e4cb7e816-tasks-draft-dashboard-interface-polish.md:3>) SHA256 `8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49`; [tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md:29](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md:29>) SHA256 `9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec`.
+ - **Segment09 reconciliation date:** `2026-10-24T17:32:59.691223+00:00`.
+ - **Segment09 evidence:** [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md:164](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md:164>) SHA256 `437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17`; [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md:176](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md:176>) SHA256 `437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17`; [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md:190](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md:190>) SHA256 `437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17`; [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:109](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/8f721cf25bc9-tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:109>) SHA256 `8f721cf25bc915c0c2499cc840689b25bad7a875d41f0ba03b93f0efdb421242`; [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:128](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/8f721cf25bc9-tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:128>) SHA256 `8f721cf25bc915c0c2499cc840689b25bad7a875d41f0ba03b93f0efdb421242`; [tasks/TASKS/draft-dashboard-yahoo/prd/prd-gamegrid-draft-dashboard-style-overhaul.md:5](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/c04c8ce76855-prd-gamegrid-draft-dashboard-style-overhaul.md:5>) SHA256 `c04c8ce768554f857da892ea986e117a2aaf78f85364af89d3d7471a9f90b9b8`.
++- **Segment10 reconciliation date:** `2026-10-24T17:45:04.782732+00:00`.
++- **Segment10 evidence:** [tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md:8](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md:8>) SHA256 `574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece`; [tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md:454](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md:454>) SHA256 `574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece`; [tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md:555](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md:555>) SHA256 `574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece`; [tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md:1886](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md:1886>) SHA256 `574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece`; [tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md:104](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/f1260c0ce673-tasks-prd-draft-ranker.md:104>) SHA256 `f1260c0ce67310c274cbff4271546bc3a45f0ae3383b67e057b2f12b74ffca6a`; [tasks/TASKS/draft-ranker/release-manifest.md:13](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/a144b0293406-release-manifest.md:13>) SHA256 `a144b02934061d943919cfc72e506f639c86edc86a0400ec3b183f5822122047`; [tasks/TASKS/draft-ranker/launch-runbook.md:158](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/075f467912a6-launch-runbook.md:158>) SHA256 `075f467912a6362724fee5f10ab553ac677fe0778d141b820faa9231c86495dd`.
+ 
+ ### REPO-GENERATED-TRACKING — Remove generated audit cache/output/temp files from tracking without deleting local work or rewriting history
+ 
+@@ -2824,7 +2839,7 @@
+ - **Verification:** Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.
+ - **Dependencies:** Owner factual decisions; existing Draft Pro notice and approved provider credential-lifetime policy.
+ - **Acceptance/release gate:** Owner review of facts/copy; separately authorized publication/indexing. No secret/account inspection or production tracking probe.
+-- **Next action:** Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code. Preserve the Oct19 approved linked-lifetime/same-purpose credential contract. Fact sheet must distinguish local disconnect/actual-auth-user deletion cleanup from user-facing account-deletion workflow, hosted cascade, backups/logs/derived-data erasure and upstream invalidation/provider rights, all unqualified by the reviewed policy. No new deletion feature or changed lifetime policy is requested. Full Draft/Yahoo source review adds separate session/pick/audit/rehearsal retention facts: the dated design has30-day poll observations but no automatic completed-session/pick deletion, with owner/legal policy needed before broad rollout. Reconcile current facts first;30days is not a new linked-credential or league-data lifetime policy. The October18 amended A-DRAFT note adds an explicit privacy exception to older blanket session-only text: a signed-in Draft Pro user who explicitly saves a draft stores owner-scoped normalized private import rows/headers/mapping server-side, with a documented10MiB per-draft bound and cleanup owner. Free dashboard imports, bookmarks and session summaries keep their separate session/privacy contract. Verify current save/cleanup/notice facts with the owner before policy copy; this is documentary evidence, not an auditor storage or erasure test.
++- **Next action:** Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code. Preserve the Oct19 approved linked-lifetime/same-purpose credential contract. Fact sheet must distinguish local disconnect/actual-auth-user deletion cleanup from user-facing account-deletion workflow, hosted cascade, backups/logs/derived-data erasure and upstream invalidation/provider rights, all unqualified by the reviewed policy. No new deletion feature or changed lifetime policy is requested. Full Draft/Yahoo source review adds separate session/pick/audit/rehearsal retention facts: the dated design has30-day poll observations but no automatic completed-session/pick deletion, with owner/legal policy needed before broad rollout. Reconcile current facts first;30days is not a new linked-credential or league-data lifetime policy. The October18 amended A-DRAFT note adds an explicit privacy exception to older blanket session-only text: a signed-in Draft Pro user who explicitly saves a draft stores owner-scoped normalized private import rows/headers/mapping server-side, with a documented10MiB per-draft bound and cleanup owner. Free dashboard imports, bookmarks and session summaries keep their separate session/privacy contract. Verify current save/cleanup/notice facts with the owner before policy copy; this is documentary evidence, not an auditor storage or erasure test. Ranker policy sources add another distinct owner-fact boundary: withdrawal makes comparison evidence ineligible on later rebuilds while private history remains; actual account deletion/cascade, aggregate recomputation and retained non-identifying immutable snapshots are separate contracts. These are dated methodology/runbook requirements, not an auditor erasure test or new promise; contribution/public aggregate activation remains independently held.
+ - **Reviewer:** UNASSIGNED.
+ - **Evidence level / limits:** source gate inventoried; current outcome unverified. Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.
+ - **Source aliases:** MS41-074, SEO audit privacy inventory.
+@@ -2835,6 +2850,8 @@
+ - **Segment08 evidence:** [tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md:132](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/65f143fa43c8-live-draft-runbook.md:132>) SHA256 `65f143fa43c8b3eaadde4c2c5f273448ef3206307bb5546b1df3191fdff5c497`; [tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md:30](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/e584a8a3c87d-live-draft-production-readiness.md:30>) SHA256 `e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6`; [tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md:171](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/3b8988c67e1a-yahoo-tables.md:171>) SHA256 `3b8988c67e1ac72c5d9674e978cea2f7febc71ae41aefa7da538864b8accbb06`.
+ - **Segment09 reconciliation date:** `2026-10-24T17:32:59.691223+00:00`.
+ - **Segment09 evidence:** [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md:84](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md:84>) SHA256 `437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17`; [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md:85](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md:85>) SHA256 `437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17`; [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md:155](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md:155>) SHA256 `437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17`; [tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dashboard.md:35](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/1ffb08389dc0-prd-draft-dashboard.md:35>) SHA256 `1ffb08389dc03942356d0fa8b69c13e7fca1db1527d1dd0da6e8f7acd62b875e`.
++- **Segment10 reconciliation date:** `2026-10-24T17:45:04.782732+00:00`.
++- **Segment10 evidence:** [tasks/TASKS/draft-ranker/decision-record.md:265](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/eae78c5a2a96-decision-record.md:265>) SHA256 `eae78c5a2a96826c5e52d63432157ca6ffb25e74701d0a8dc2ea450cc8cde9cf`; [tasks/TASKS/draft-ranker/community-ranking-runbook.md:80](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/fb71ca92648e-community-ranking-runbook.md:80>) SHA256 `fb71ca92648ebdbe15f01a16d8359e790dfd2e53522d13ec67f9d64b2348beb0`.
+ 
+ ### AUTH-PKCE-COMPLETION — Retain Google PKCE completion before retiring fragment compatibility
+ 
+@@ -3129,12 +3146,12 @@
+ - **Reviewer:** UNASSIGNED
+ - **User impact:** Anonymous visitors can discover/read/export useful cards; unknown coverage and unapproved premium choices must remain explicit.
+ - **Implementation:** Existing single Sol has bounded local synthetic S01 plus pure supplied-record S02/R1 work. S01 exact nine-file patch and S02-R1 exact three-file component-validity correction now have independent limited recommendations and coordinator-recorded parent local acceptance. Both original S02 P2 findings and their failed probes remain preserved; S03 interaction/browser work continues under its separate existing exact lease, not yet accepted here.
+-- **Acceptance:** S01 synthetic fixed-L10 preview accepted with limits:43pins,15unique offline cases and inspected saved PNG/manifest parity in independent review. S02-R1 bounded input-validity correction accepted:29/29unchanged original probes,26/26focused units, scoped static and58pins. No whole-feature, observed-data/public/premium/route/export-design acceptance follows; phone-fit PNG legibility remains TJ feedback.
++- **Acceptance:** S01 synthetic fixed-L10 preview accepted with limits:43pins,15unique offline cases and inspected saved PNG/manifest parity in independent review. S02-R1 bounded input-validity correction accepted:29/29unchanged original probes,26/26focused units, scoped static and58pins. No whole-feature, observed-data/public/premium/route/export-design acceptance follows; phone-fit PNG legibility remains TJ feedback. Latest direct TJ feedback says the preview is not exactly what he envisioned but is progressing. Overall visual/product design acceptance remains unresolved independently of these technical verdicts.
+ - **Release:** Local-only; no deployment, live-card, model/scientific, source-rights or production coverage acceptance.
+ - **Dependencies:** Existing single Sol card owner; exact new-path ownership and protected shared files; SITE-WIGO diagnostic/local-fix dependency; SITE-SOCIAL-SHARE export work remains separately owned. Complete appearance/source/pool evidence, entitlement boundary, rights and cost/retention decisions gate affected real/premium integration.
+ - **Verification:** Auditor read complete S01 REVIEW/REVIEW-EVIDENCE and original S02 plus R1 independent handoffs, not source/test/browser/pixel execution. Original S02 had23pass/6fail independent probes despite19owner passes; R1 rejects per-game incompatible exposure/ratio rows before pooling without hidden GP/TOI thresholds and preserves compatible zero/zero. Captured4values/two unavailable controls and known L10 source gap are bounded arithmetic evidence, not complete history/population proof.
+ - **Acceptance/release gate:** Independent exact local review before integration. Preserve no-GP/TOI/position hidden pool filters, valid-zero/null distinction and rank suppression for unknown coverage. Product-dependent observed/premium behavior stays disabled/configurable until resolved. No new production reads/writes/refresh/backfill, shared auth/export/billing edits, dependency/spend, Git or deploy authority.
+-- **Next:** Existing Sol continues only its already granted S03 interaction/rebuild/offline-QA scope; parent reviews that actual candidate separately. Keep S01 and S02/R1 accepted frozen packets and original failures intact. TJ decides phone PNG readability and unresolved product/default/season/premium proposals; observed source completion, rank population, rights, safe search/auth and entitlement integration remain gates. No second worker, new data capture or production refresh/backfill by this audit.
++- **Next:** Existing Sol continues only its already granted S03 interaction/rebuild/offline-QA scope; parent reviews that actual candidate separately. Keep S01 and S02/R1 accepted frozen packets and original failures intact. TJ reviews the overall proposed composition, phone PNG readability and unresolved product/default/season/premium proposals; observed source completion, rank population, rights, safe search/auth and entitlement integration remain gates. No second worker, new data capture or production refresh/backfill by this audit.
+ - **Evidence level:** Independent limited synthetic/domain review plus recorded parent local acceptance; real integration and product decisions remain open
+ - **Evidence scope:** Bounded local player-card scope only. Schema/prototype fields, one-player diagnostic and synthetic preview are not live league coverage or public launch.
+ - **Dispatch class:** S01/S02-R1 bounded local acceptance recorded; existing single Sol S03 continues separately, no S03/feature/release acceptance
+@@ -3144,6 +3161,8 @@
+ - **Segment08 evidence:** [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9b3c682e7952-PARENT-STEERS.json:1>) SHA256 `9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9`.
+ - **Segment09 reconciliation date:** `2026-10-24T17:32:59.691223+00:00`.
+ - **Segment09 evidence:** [tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/18c518f8c4b9-REVIEW.md:3>) SHA256 `18c518f8c4b97fa9c1f4b840738b63a61b49c5919c7e249bd33757a7b4a096a4`; [tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW.md:5](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/18c518f8c4b9-REVIEW.md:5>) SHA256 `18c518f8c4b97fa9c1f4b840738b63a61b49c5919c7e249bd33757a7b4a096a4`; [tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW-EVIDENCE.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/b395d67969e5-REVIEW-EVIDENCE.json:1>) SHA256 `b395d67969e564570c7dc2e0ae5e742ae6c258ff9e70cd29e5655c3a0fb049a7`; [tasks/artifacts/player-cards-2026-10-24/slice-02-review/HANDOFF.md:7](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/ef7d4c4738f2-HANDOFF.md:7>) SHA256 `ef7d4c4738f2f3a46a684b391ea06ba122c05c653027f83c90be08d4a6a0d0eb`; [tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review/HANDOFF.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/f2c74098ba49-HANDOFF.md:3>) SHA256 `f2c74098ba496bf50137260beea3ad169cd51dc2e53a63557130a55ae6829e43`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/STATUS-SOURCE-EXTRACT.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/f6700b4da87e-STATUS-SOURCE-EXTRACT.json:1>) SHA256 `f6700b4da87eb74693d7e3359b891e29c990e9b167ed5c103fd1365c82902fd6`.
++- **Segment10 reconciliation date:** `2026-10-24T17:45:04.782732+00:00`.
++- **Segment10 evidence:** [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/PARENT-STEER.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/b4ccd670b9ff-PARENT-STEER.json:1>) SHA256 `b4ccd670b9ff61bafb96562b0c88250970644391f87f0bb0f6de57b0e7d145a6`.
+ 
+ ### SITE-PICKUP-TOKENS — Reconcile and repair the narrow Player Pickup Yahoo-context token recurrence after prior style closure
+ 
+@@ -3163,3 +3182,22 @@
+ - **Source aliases:** B-DRAFT-STYLE NEW15.0/C0057; DRAFT C0023/C0041; historical master4.10/5.7.19
+ - **Segment09 reconciliation date:** `2026-10-24T17:32:59.691223+00:00`.
+ - **Segment09 evidence:** [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:109](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/8f721cf25bc9-tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:109>) SHA256 `8f721cf25bc915c0c2499cc840689b25bad7a875d41f0ba03b93f0efdb421242`; [tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md:97](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/84b413e016a2-G4-underlying-site-ux.md:97>) SHA256 `84b413e016a2d35039c524f534dd8fa7869b43d831c15503cf2e8ecd5ccc3487`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/SOURCE-NARROW.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/0f34dd409360-SOURCE-NARROW.md:1>) SHA256 `0f34dd409360a3d445d8178693ca57ef76575a231f8ac52505a552c9d35cbf2c`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/SUPER-ALIAS-EXTRACT.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/64670fba782d-SUPER-ALIAS-EXTRACT.json:1>) SHA256 `64670fba782d99a16aa366c4312dfb7d46a43e3fe036887a7148366e6b05009c`.
++
++### SITE-DRAFT-CSV-RESOLVER — Reconcile the requested CSV resolver remainder and verify same-name assignment/provenance safety
++
++- **User impact:** Repeated ambiguous imports may require repeated manual work; name-only shared assignments can confuse distinct same-name rows, and auto/manual provenance may be misleading. Current runtime impact remains untested.
++- **Implementation:** Proposed P2 reconciliation carry-forward, not dispatched. Embedded debug handoff retains similarity/team-position ordering, mismatch badges, manual-map reuse and explicit auto/manual summary requests. Current source already has resolver search, metadata and coverage/method summary. Narrow static inspection finds name-keyed resettable choices shared by auto and manual paths, manual precedence before contextual matching, and substring/slice search in the inspected unmapped branch.
++- **Acceptance:** Unverified residual and static safety concern. No runtime regression, current browser failure, persistence observation or focused test execution claimed by audit.
++- **Release:** No repair or release; all completed A-DRAFT import/validation/pagination/accessibility work remains credited.
++- **Owner:** UNASSIGNED
++- **Reviewer:** UNASSIGNED
++- **Dependencies:** Exact ImportCsvModal source/test custody and current saved-draft/free-import privacy boundary; REPO-DOCUMENTATION source chronology and SITE-PRIVACY-POLICY. Resolve whether historical UX requests were intentionally superseded before implementing; do not reuse Draft Ranker identity/ADP controls as this resolver contract.
++- **Verification:** Full1886-line debug PRD and unchanged September4 interface-polish list reviewed against prior full A-DRAFT task/audit records. Bounded current ImportCsvModal ranges only: shared name-keyed choice state, auto population, mapping precedence, manual handlers, summary and unmapped search. Static reading supports a verification target, not a reproduced bug. No app/test/browser/Git/provider action.
++- **Acceptance release gate:** Proposed/unassigned only. Parent confirms the surviving requested scope and exact file custody; a future owner first adds or uses focused offline same-name/mixed-auto-manual evidence, preserves accepted import/privacy contracts, and obtains independent acceptance. No production/data/persistence-policy change authorized by this audit.
++- **Next:** Reconcile newer exact receipts and intentional supersession first. If outstanding, verify two identical CSV names with different team/position and mixed auto/manual choices; preserve genuine unique/ID matches. Decide row/context keys and truthful provenance without discarding the existing summary. Bound any requested search boosts, mismatch notice and same-session manual-map reuse with explicit clear/stale-ID/lifetime behavior; do not silently introduce durable imported data or wholesale modal redesign.
++- **Evidence level:** Proposed P2; documentary omission/static verification target, runtime unverified
++- **Evidence scope:** Four historical resolver requests plus exact static assignment/provenance/search ranges; remaining application content unreviewed.
++- **Dispatch class:** Proposed/held/unassigned; no new implementation or worker
++- **Source aliases:** A-DRAFT-DEBUG remaining requested steps1786–1796; DraftDashboard_Audit ImportCsvModal compound-key recommendation770–771; A-DRAFT accepted import/diagnostic baseline retained
++- **Segment10 reconciliation date:** `2026-10-24T17:45:04.782732+00:00`.
++- **Segment10 evidence:** [tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md:1786](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md:1786>) SHA256 `574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece`; [tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md:770](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/c063cab68f39-DraftDashboard_Audit.md:770>) SHA256 `c063cab68f39ace4cd651dc74bc774cffc003fb33fd462ba1f1bbc929ecb8db3`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/SOURCE-NARROW.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/5f743a1bea52-SOURCE-NARROW.md:1>) SHA256 `5f743a1bea52d809f935b67de011cbad4fd2959f7fc37a989894ebdf893145b5`; [tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md:9](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/8a1e4cb7e816-tasks-draft-dashboard-interface-polish.md:9>) SHA256 `8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49`.
+--- before/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md
++++ after/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md
+@@ -7,6 +7,17 @@
+ 
+ 
+ 
++
++
++## Draft-debug and Draft Ranker content checkpoint — 2026-10-24T17:45:04.782732+00:00
++
++209 stable IDs preserve all208 prior IDs/scopes and1013 earlier evidence entries. One proposed/unassigned SITE-DRAFT-CSV-RESOLVER retains the historical four-step resolver remainder and a narrow static assignment/provenance verification target. Existing resolver search, metadata and summary are credited; the audit has not reproduced a runtime defect or authorized a repair. Only selected current ImportCsvModal ranges were read. All accepted import, privacy and saved-draft contracts remain intact.
++
++The fully read debug PRD closes SHA under July13 NEW7 and performance NEW8/9; September4 direct provider SHA, including zero, supersedes projected fallback derivation. Owner-approved absolute performance evidence and the missing historical relative-baseline exception remain accepted; no30%improvement, chunk-yielding implementation or mandatory worker/virtualization claim. Draft Ranker July17 personal rollout and July30 retired Phase8 scope stay closed. Older staff-only release text is historical and cannot close the latercc3be5c09 in-season homepage guard's production provenance.
++
++TJ's latest card-preview feedback is progress with unresolved overall design; technical local acceptance is not product/design approval. Separate owner/privacy facts distinguish consent withdrawal, private history, account cascades, rebuilt aggregates and retained non-identifying immutable snapshots. No secondary/public ranker activation or old security/migration replay is authorized.
++
++Coverage:7new unique documents/196822bytes fully read, two unchanged prior full reviews reused with scope retained, plus explicitly bounded current application-source ranges. Original inventory/duplicate/exclusion mapping and prior support dispositions are preserved. Overall content audit remains unfinished. No application edits/imports/tests, browser/server, Git, production/provider/auth/database or new workers. See [segment10](/Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/REPORT.md).
+ 
+ ## Draft Dashboard/Yahoo full-content checkpoint — 2026-10-24T17:32:59.691223+00:00
+ 
+@@ -170,7 +181,7 @@
+ 
+ ## Latest scoped acceptance checkpoint
+ 
+-As of `2026-10-24T17:32:59.691223+00:00`, **gate-kit R1 is independently ACCEPTED and the prior variant-name collision BLOCK is cleared**. Reviewer receipt:26suite tests plus8independent naming probes, exact8-file reverse reconstruction and preserved arithmetic/inputs. Ledger verified19/19current kit pins. This accepts offline tooling only; actual model qualification remains **UNRUN**. Earlier pending/BLOCK observations below are historical.
++As of `2026-10-24T17:45:04.782732+00:00`, **gate-kit R1 is independently ACCEPTED and the prior variant-name collision BLOCK is cleared**. Reviewer receipt:26suite tests plus8independent naming probes, exact8-file reverse reconstruction and preserved arithmetic/inputs. Ledger verified19/19current kit pins. This accepts offline tooling only; actual model qualification remains **UNRUN**. Earlier pending/BLOCK observations below are historical.
+ 
+ **Billing:** parent reports local packet acceptance except one account-panel purchase-pitch defect; existing BILLING owner has the minimal correction. **Game Grid:** visual-v2 is locally complete and independent review is active with `01a168ae-fd25-7463-86cc-9bf261dbb031`. Neither status establishes deployment; production refresh latency remains unmeasured. No register commit in this update.
+ 
+@@ -2047,10 +2058,12 @@
+ - **Implementation:** Guard remains in octoberBranch homepage fromcc3be5c09. **Acceptance:** Historical9-test offline receipt; current production alias not confirmed. **Release:** Still explicit release-inventory item until exact candidate/alias proves inclusion.
+ - **Owner:** FORGE; **reviewer:** UNASSIGNED. **Dependencies:** Parent release workflow and exact production alias/source SHA; isolate only the gate/test delta from the mixed-scope commit; preserve direct saved-rankings routes and unrelated homepage differences.
+ - **Evidence level:** inventoried only. **Scope:** Current status/receipt reconciliation; earlier scoped acceptance remains attached to its historical bytes. **Provenance:** Current task list, Git objects and cited local receipts; no fresh production observation..
+-- **Verification:** Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments.
++- **Verification:** Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments. Full ranker task/launch/release/decision/community sources preserve the July17 authenticated personal rollout on89ace52c1eab547a0373a8ebae63648ec27c9262 and narrower homepage waiver. The older July15 release-manifest header is historical, not a current alias claim. None of that establishes release of the later in-season guardcc3be5c09; current production provenance for this row remains unverified. No flag or hosted query by audit.
+ - **Acceptance/release gate:** Confirm production project/environment/ready alias and source SHA. Include the isolated existing patch in the next explicitly authorized candidate, then verify the bounded rendered result. No cache or season-data cause asserted without evidence.
+ - **Next:** FORGE must include homepage and nearest test deliberately; do not diagnose cache or rerun implementation. Confirm resulting candidate and production alias under release plan.
+ - **Evidence:** [REPORT.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/draft-ranker-homepage-investigation-2026-10-22/REPORT.md:1>); [hide-ranker.patch:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/draft-ranker-homepage-investigation-2026-10-22/hide-ranker.patch:1>); Git `cc3be5c09f062ea855adc0676293c134156f6b14`; Git `cc3be5c09`; [index.tsx:697](</Users/tim/Code/fhfhockey.com/web/pages/index.tsx:697>); [REVIEW.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/ctpi-independent-review-2026-10-22/REVIEW.md:1>)
++- **Segment10 reconciliation date:** `2026-10-24T17:45:04.782732+00:00`.
++- **Segment10 evidence:** [tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md:93](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/f1260c0ce673-tasks-prd-draft-ranker.md:93>) SHA256 `f1260c0ce67310c274cbff4271546bc3a45f0ae3383b67e057b2f12b74ffca6a`; [tasks/TASKS/draft-ranker/launch-runbook.md:160](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/075f467912a6-launch-runbook.md:160>) SHA256 `075f467912a6362724fee5f10ab553ac677fe0778d141b820faa9231c86495dd`; [tasks/TASKS/draft-ranker/release-manifest.md:13](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/a144b0293406-release-manifest.md:13>) SHA256 `a144b02934061d943919cfc72e506f639c86edc86a0400ec3b183f5822122047`.
+ 
+ ## Sprint operations
+ 
+@@ -2566,7 +2579,7 @@
+ - **Evidence level:** source inspected. **Scope:** Only the named functions/files in the source-input reconciliation below; no whole-area health claim **Provenance:** Current local files and dated review receipts.
+ - **Verification:** Current source and retained receipts inspected; no application tests rerun
+ - **Acceptance/release gate:** Exact scoped tests and independent review before integration; no production calls, schema, credentials or deployment authority
+-- **Next:** Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The separate debug checklist SHA remains explicitly open in its existing source until newer evidence is read. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules.
++- **Next:** Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The now fully read debug checklist closes SHA under July13 NEW7 and performance NEW8/9, with September4 official-provider SHA precedence including zero; only actual/custom-unmapped SHA retains nonnegative null-safe derivation. Preserve the owner-approved missing-relative-baseline exception and optional/evaluated virtualization, hashing, chunking and worker proposals; no false30%gain or mandatory performance rewrite. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules. Four historical requested resolver follow-ups and the name-keyed assignment/provenance risk are retained once under proposed SITE-DRAFT-CSV-RESOLVER; the existing summary is not wholly absent. Draft Ranker July17 personal authenticated rollout and July30 Phase8 retirement retain closure, while older July15 staff-only manifest paragraphs are historical. No secondary/public rollout, model change, old migration/security replay or new worktree from source runbooks.
+ - **Evidence:** [2026-10-23-claude-to-codex-unfinished-work-review.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md:1>); [AGENTS.md:1](</Users/tim/Code/fhfhockey.com/AGENTS.md:1>); [tasks-forge-projection-audit-streamlining-2026-10-21.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:1>); [tasks-forge-projection-improvements-2026-10-22.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:1>); [tasks-prd-rso.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-rso.md:1>); [tasks-prd-roster-schedule-optimizer.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-roster-schedule-optimizer.md:1>); [tasks-prd-game-grid-refactor.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-game-grid-refactor.md:1>); [tasks-prd-fhfh-comprehensive-completion-audit-optimization.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md:1>); [cron-report.ts:1](</Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/cron-report.ts:1>); [tasks-README.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-README.md:1>); [tasks-prd-in-season-trust-clarity-decision-workflow.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:1>)
+ - **Artifact audit — October24:** Documentary scope/status update; prior evidence and narrower acceptance preserved.
+ - **Retained audit scope:** FRESH-04: source AUDIT-TASK-001 current header/index remains a documentation reconciliation against its October2 closure; do not reopen the completed security rollout.
+@@ -2588,6 +2601,8 @@
+ - **Segment08 evidence:** [tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md:139](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/89b939a9a2d0-tasks-prd-cleanup-tasks.md:139>) SHA256 `89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0`; [tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md:253](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/89b939a9a2d0-tasks-prd-cleanup-tasks.md:253>) SHA256 `89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0`; [tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md:143](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/7d0cebf7d3c3-tasks-prd-drm-refactor.md:143>) SHA256 `7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01`; [tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/8a1e4cb7e816-tasks-draft-dashboard-interface-polish.md:3>) SHA256 `8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49`; [tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md:29](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md:29>) SHA256 `9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec`.
+ - **Segment09 reconciliation date:** `2026-10-24T17:32:59.691223+00:00`.
+ - **Segment09 evidence:** [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md:164](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md:164>) SHA256 `437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17`; [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md:176](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md:176>) SHA256 `437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17`; [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md:190](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md:190>) SHA256 `437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17`; [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:109](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/8f721cf25bc9-tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:109>) SHA256 `8f721cf25bc915c0c2499cc840689b25bad7a875d41f0ba03b93f0efdb421242`; [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:128](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/8f721cf25bc9-tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:128>) SHA256 `8f721cf25bc915c0c2499cc840689b25bad7a875d41f0ba03b93f0efdb421242`; [tasks/TASKS/draft-dashboard-yahoo/prd/prd-gamegrid-draft-dashboard-style-overhaul.md:5](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/c04c8ce76855-prd-gamegrid-draft-dashboard-style-overhaul.md:5>) SHA256 `c04c8ce768554f857da892ea986e117a2aaf78f85364af89d3d7471a9f90b9b8`.
++- **Segment10 reconciliation date:** `2026-10-24T17:45:04.782732+00:00`.
++- **Segment10 evidence:** [tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md:8](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md:8>) SHA256 `574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece`; [tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md:454](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md:454>) SHA256 `574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece`; [tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md:555](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md:555>) SHA256 `574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece`; [tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md:1886](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md:1886>) SHA256 `574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece`; [tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md:104](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/f1260c0ce673-tasks-prd-draft-ranker.md:104>) SHA256 `f1260c0ce67310c274cbff4271546bc3a45f0ae3383b67e057b2f12b74ffca6a`; [tasks/TASKS/draft-ranker/release-manifest.md:13](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/a144b0293406-release-manifest.md:13>) SHA256 `a144b02934061d943919cfc72e506f639c86edc86a0400ec3b183f5822122047`; [tasks/TASKS/draft-ranker/launch-runbook.md:158](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/075f467912a6-launch-runbook.md:158>) SHA256 `075f467912a6362724fee5f10ab553ac677fe0778d141b820faa9231c86495dd`.
+ 
+ ### REPO-GENERATED-TRACKING — Remove generated audit cache/output/temp files from tracking without deleting local work or rewriting history
+ 
+@@ -2926,7 +2941,7 @@
+ - **Verification:** Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.
+ - **Dependencies:** Owner factual decisions; existing Draft Pro notice and approved provider credential-lifetime policy.
+ - **Acceptance/release gate:** Owner review of facts/copy; separately authorized publication/indexing. No secret/account inspection or production tracking probe.
+-- **Next action:** Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code. Preserve the Oct19 approved linked-lifetime/same-purpose credential contract. Fact sheet must distinguish local disconnect/actual-auth-user deletion cleanup from user-facing account-deletion workflow, hosted cascade, backups/logs/derived-data erasure and upstream invalidation/provider rights, all unqualified by the reviewed policy. No new deletion feature or changed lifetime policy is requested. Full Draft/Yahoo source review adds separate session/pick/audit/rehearsal retention facts: the dated design has30-day poll observations but no automatic completed-session/pick deletion, with owner/legal policy needed before broad rollout. Reconcile current facts first;30days is not a new linked-credential or league-data lifetime policy. The October18 amended A-DRAFT note adds an explicit privacy exception to older blanket session-only text: a signed-in Draft Pro user who explicitly saves a draft stores owner-scoped normalized private import rows/headers/mapping server-side, with a documented10MiB per-draft bound and cleanup owner. Free dashboard imports, bookmarks and session summaries keep their separate session/privacy contract. Verify current save/cleanup/notice facts with the owner before policy copy; this is documentary evidence, not an auditor storage or erasure test.
++- **Next action:** Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code. Preserve the Oct19 approved linked-lifetime/same-purpose credential contract. Fact sheet must distinguish local disconnect/actual-auth-user deletion cleanup from user-facing account-deletion workflow, hosted cascade, backups/logs/derived-data erasure and upstream invalidation/provider rights, all unqualified by the reviewed policy. No new deletion feature or changed lifetime policy is requested. Full Draft/Yahoo source review adds separate session/pick/audit/rehearsal retention facts: the dated design has30-day poll observations but no automatic completed-session/pick deletion, with owner/legal policy needed before broad rollout. Reconcile current facts first;30days is not a new linked-credential or league-data lifetime policy. The October18 amended A-DRAFT note adds an explicit privacy exception to older blanket session-only text: a signed-in Draft Pro user who explicitly saves a draft stores owner-scoped normalized private import rows/headers/mapping server-side, with a documented10MiB per-draft bound and cleanup owner. Free dashboard imports, bookmarks and session summaries keep their separate session/privacy contract. Verify current save/cleanup/notice facts with the owner before policy copy; this is documentary evidence, not an auditor storage or erasure test. Ranker policy sources add another distinct owner-fact boundary: withdrawal makes comparison evidence ineligible on later rebuilds while private history remains; actual account deletion/cascade, aggregate recomputation and retained non-identifying immutable snapshots are separate contracts. These are dated methodology/runbook requirements, not an auditor erasure test or new promise; contribution/public aggregate activation remains independently held.
+ - **Reviewer:** UNASSIGNED.
+ - **Evidence level / limits:** source gate inventoried; current outcome unverified. Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.
+ - **Source aliases:** MS41-074, SEO audit privacy inventory.
+@@ -2937,6 +2952,8 @@
+ - **Segment08 evidence:** [tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md:132](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/65f143fa43c8-live-draft-runbook.md:132>) SHA256 `65f143fa43c8b3eaadde4c2c5f273448ef3206307bb5546b1df3191fdff5c497`; [tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md:30](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/e584a8a3c87d-live-draft-production-readiness.md:30>) SHA256 `e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6`; [tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md:171](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/3b8988c67e1a-yahoo-tables.md:171>) SHA256 `3b8988c67e1ac72c5d9674e978cea2f7febc71ae41aefa7da538864b8accbb06`.
+ - **Segment09 reconciliation date:** `2026-10-24T17:32:59.691223+00:00`.
+ - **Segment09 evidence:** [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md:84](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md:84>) SHA256 `437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17`; [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md:85](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md:85>) SHA256 `437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17`; [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md:155](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md:155>) SHA256 `437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17`; [tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dashboard.md:35](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/1ffb08389dc0-prd-draft-dashboard.md:35>) SHA256 `1ffb08389dc03942356d0fa8b69c13e7fca1db1527d1dd0da6e8f7acd62b875e`.
++- **Segment10 reconciliation date:** `2026-10-24T17:45:04.782732+00:00`.
++- **Segment10 evidence:** [tasks/TASKS/draft-ranker/decision-record.md:265](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/eae78c5a2a96-decision-record.md:265>) SHA256 `eae78c5a2a96826c5e52d63432157ca6ffb25e74701d0a8dc2ea450cc8cde9cf`; [tasks/TASKS/draft-ranker/community-ranking-runbook.md:80](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/fb71ca92648e-community-ranking-runbook.md:80>) SHA256 `fb71ca92648ebdbe15f01a16d8359e790dfd2e53522d13ec67f9d64b2348beb0`.
+ 
+ ### AUTH-PKCE-COMPLETION — Retain Google PKCE completion before retiring fragment compatibility
+ 
+@@ -3231,12 +3248,12 @@
+ - **Reviewer:** UNASSIGNED
+ - **User impact:** Anonymous visitors can discover/read/export useful cards; unknown coverage and unapproved premium choices must remain explicit.
+ - **Implementation:** Existing single Sol has bounded local synthetic S01 plus pure supplied-record S02/R1 work. S01 exact nine-file patch and S02-R1 exact three-file component-validity correction now have independent limited recommendations and coordinator-recorded parent local acceptance. Both original S02 P2 findings and their failed probes remain preserved; S03 interaction/browser work continues under its separate existing exact lease, not yet accepted here.
+-- **Acceptance:** S01 synthetic fixed-L10 preview accepted with limits:43pins,15unique offline cases and inspected saved PNG/manifest parity in independent review. S02-R1 bounded input-validity correction accepted:29/29unchanged original probes,26/26focused units, scoped static and58pins. No whole-feature, observed-data/public/premium/route/export-design acceptance follows; phone-fit PNG legibility remains TJ feedback.
++- **Acceptance:** S01 synthetic fixed-L10 preview accepted with limits:43pins,15unique offline cases and inspected saved PNG/manifest parity in independent review. S02-R1 bounded input-validity correction accepted:29/29unchanged original probes,26/26focused units, scoped static and58pins. No whole-feature, observed-data/public/premium/route/export-design acceptance follows; phone-fit PNG legibility remains TJ feedback. Latest direct TJ feedback says the preview is not exactly what he envisioned but is progressing. Overall visual/product design acceptance remains unresolved independently of these technical verdicts.
+ - **Release:** Local-only; no deployment, live-card, model/scientific, source-rights or production coverage acceptance.
+ - **Dependencies:** Existing single Sol card owner; exact new-path ownership and protected shared files; SITE-WIGO diagnostic/local-fix dependency; SITE-SOCIAL-SHARE export work remains separately owned. Complete appearance/source/pool evidence, entitlement boundary, rights and cost/retention decisions gate affected real/premium integration.
+ - **Verification:** Auditor read complete S01 REVIEW/REVIEW-EVIDENCE and original S02 plus R1 independent handoffs, not source/test/browser/pixel execution. Original S02 had23pass/6fail independent probes despite19owner passes; R1 rejects per-game incompatible exposure/ratio rows before pooling without hidden GP/TOI thresholds and preserves compatible zero/zero. Captured4values/two unavailable controls and known L10 source gap are bounded arithmetic evidence, not complete history/population proof.
+ - **Acceptance/release gate:** Independent exact local review before integration. Preserve no-GP/TOI/position hidden pool filters, valid-zero/null distinction and rank suppression for unknown coverage. Product-dependent observed/premium behavior stays disabled/configurable until resolved. No new production reads/writes/refresh/backfill, shared auth/export/billing edits, dependency/spend, Git or deploy authority.
+-- **Next:** Existing Sol continues only its already granted S03 interaction/rebuild/offline-QA scope; parent reviews that actual candidate separately. Keep S01 and S02/R1 accepted frozen packets and original failures intact. TJ decides phone PNG readability and unresolved product/default/season/premium proposals; observed source completion, rank population, rights, safe search/auth and entitlement integration remain gates. No second worker, new data capture or production refresh/backfill by this audit.
++- **Next:** Existing Sol continues only its already granted S03 interaction/rebuild/offline-QA scope; parent reviews that actual candidate separately. Keep S01 and S02/R1 accepted frozen packets and original failures intact. TJ reviews the overall proposed composition, phone PNG readability and unresolved product/default/season/premium proposals; observed source completion, rank population, rights, safe search/auth and entitlement integration remain gates. No second worker, new data capture or production refresh/backfill by this audit.
+ - **Evidence level:** Independent limited synthetic/domain review plus recorded parent local acceptance; real integration and product decisions remain open
+ - **Evidence scope:** Bounded local player-card scope only. Schema/prototype fields, one-player diagnostic and synthetic preview are not live league coverage or public launch.
+ - **Dispatch class:** S01/S02-R1 bounded local acceptance recorded; existing single Sol S03 continues separately, no S03/feature/release acceptance
+@@ -3246,6 +3263,8 @@
+ - **Segment08 evidence:** [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9b3c682e7952-PARENT-STEERS.json:1>) SHA256 `9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9`.
+ - **Segment09 reconciliation date:** `2026-10-24T17:32:59.691223+00:00`.
+ - **Segment09 evidence:** [tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/18c518f8c4b9-REVIEW.md:3>) SHA256 `18c518f8c4b97fa9c1f4b840738b63a61b49c5919c7e249bd33757a7b4a096a4`; [tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW.md:5](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/18c518f8c4b9-REVIEW.md:5>) SHA256 `18c518f8c4b97fa9c1f4b840738b63a61b49c5919c7e249bd33757a7b4a096a4`; [tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW-EVIDENCE.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/b395d67969e5-REVIEW-EVIDENCE.json:1>) SHA256 `b395d67969e564570c7dc2e0ae5e742ae6c258ff9e70cd29e5655c3a0fb049a7`; [tasks/artifacts/player-cards-2026-10-24/slice-02-review/HANDOFF.md:7](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/ef7d4c4738f2-HANDOFF.md:7>) SHA256 `ef7d4c4738f2f3a46a684b391ea06ba122c05c653027f83c90be08d4a6a0d0eb`; [tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review/HANDOFF.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/f2c74098ba49-HANDOFF.md:3>) SHA256 `f2c74098ba496bf50137260beea3ad169cd51dc2e53a63557130a55ae6829e43`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/STATUS-SOURCE-EXTRACT.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/f6700b4da87e-STATUS-SOURCE-EXTRACT.json:1>) SHA256 `f6700b4da87eb74693d7e3359b891e29c990e9b167ed5c103fd1365c82902fd6`.
++- **Segment10 reconciliation date:** `2026-10-24T17:45:04.782732+00:00`.
++- **Segment10 evidence:** [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/PARENT-STEER.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/b4ccd670b9ff-PARENT-STEER.json:1>) SHA256 `b4ccd670b9ff61bafb96562b0c88250970644391f87f0bb0f6de57b0e7d145a6`.
+ 
+ ### SITE-PICKUP-TOKENS — Reconcile and repair the narrow Player Pickup Yahoo-context token recurrence after prior style closure
+ 
+@@ -3265,3 +3284,22 @@
+ - **Source aliases:** B-DRAFT-STYLE NEW15.0/C0057; DRAFT C0023/C0041; historical master4.10/5.7.19
+ - **Segment09 reconciliation date:** `2026-10-24T17:32:59.691223+00:00`.
+ - **Segment09 evidence:** [tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:109](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/8f721cf25bc9-tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:109>) SHA256 `8f721cf25bc915c0c2499cc840689b25bad7a875d41f0ba03b93f0efdb421242`; [tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md:97](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/84b413e016a2-G4-underlying-site-ux.md:97>) SHA256 `84b413e016a2d35039c524f534dd8fa7869b43d831c15503cf2e8ecd5ccc3487`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/SOURCE-NARROW.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/0f34dd409360-SOURCE-NARROW.md:1>) SHA256 `0f34dd409360a3d445d8178693ca57ef76575a231f8ac52505a552c9d35cbf2c`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/SUPER-ALIAS-EXTRACT.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/64670fba782d-SUPER-ALIAS-EXTRACT.json:1>) SHA256 `64670fba782d99a16aa366c4312dfb7d46a43e3fe036887a7148366e6b05009c`.
++
++### SITE-DRAFT-CSV-RESOLVER — Reconcile the requested CSV resolver remainder and verify same-name assignment/provenance safety
++
++- **User impact:** Repeated ambiguous imports may require repeated manual work; name-only shared assignments can confuse distinct same-name rows, and auto/manual provenance may be misleading. Current runtime impact remains untested.
++- **Implementation:** Proposed P2 reconciliation carry-forward, not dispatched. Embedded debug handoff retains similarity/team-position ordering, mismatch badges, manual-map reuse and explicit auto/manual summary requests. Current source already has resolver search, metadata and coverage/method summary. Narrow static inspection finds name-keyed resettable choices shared by auto and manual paths, manual precedence before contextual matching, and substring/slice search in the inspected unmapped branch.
++- **Acceptance:** Unverified residual and static safety concern. No runtime regression, current browser failure, persistence observation or focused test execution claimed by audit.
++- **Release:** No repair or release; all completed A-DRAFT import/validation/pagination/accessibility work remains credited.
++- **Owner:** UNASSIGNED
++- **Reviewer:** UNASSIGNED
++- **Dependencies:** Exact ImportCsvModal source/test custody and current saved-draft/free-import privacy boundary; REPO-DOCUMENTATION source chronology and SITE-PRIVACY-POLICY. Resolve whether historical UX requests were intentionally superseded before implementing; do not reuse Draft Ranker identity/ADP controls as this resolver contract.
++- **Verification:** Full1886-line debug PRD and unchanged September4 interface-polish list reviewed against prior full A-DRAFT task/audit records. Bounded current ImportCsvModal ranges only: shared name-keyed choice state, auto population, mapping precedence, manual handlers, summary and unmapped search. Static reading supports a verification target, not a reproduced bug. No app/test/browser/Git/provider action.
++- **Acceptance release gate:** Proposed/unassigned only. Parent confirms the surviving requested scope and exact file custody; a future owner first adds or uses focused offline same-name/mixed-auto-manual evidence, preserves accepted import/privacy contracts, and obtains independent acceptance. No production/data/persistence-policy change authorized by this audit.
++- **Next:** Reconcile newer exact receipts and intentional supersession first. If outstanding, verify two identical CSV names with different team/position and mixed auto/manual choices; preserve genuine unique/ID matches. Decide row/context keys and truthful provenance without discarding the existing summary. Bound any requested search boosts, mismatch notice and same-session manual-map reuse with explicit clear/stale-ID/lifetime behavior; do not silently introduce durable imported data or wholesale modal redesign.
++- **Evidence level:** Proposed P2; documentary omission/static verification target, runtime unverified
++- **Evidence scope:** Four historical resolver requests plus exact static assignment/provenance/search ranges; remaining application content unreviewed.
++- **Dispatch class:** Proposed/held/unassigned; no new implementation or worker
++- **Source aliases:** A-DRAFT-DEBUG remaining requested steps1786–1796; DraftDashboard_Audit ImportCsvModal compound-key recommendation770–771; A-DRAFT accepted import/diagnostic baseline retained
++- **Segment10 reconciliation date:** `2026-10-24T17:45:04.782732+00:00`.
++- **Segment10 evidence:** [tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md:1786](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md:1786>) SHA256 `574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece`; [tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md:770](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/c063cab68f39-DraftDashboard_Audit.md:770>) SHA256 `c063cab68f39ace4cd651dc74bc774cffc003fb33fd462ba1f1bbc929ecb8db3`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/SOURCE-NARROW.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/5f743a1bea52-SOURCE-NARROW.md:1>) SHA256 `5f743a1bea52d809f935b67de011cbad4fd2959f7fc37a989894ebdf893145b5`; [tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md:9](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/8a1e4cb7e816-tasks-draft-dashboard-interface-polish.md:9>) SHA256 `8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49`.
+--- before/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json
++++ after/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json
+@@ -1,5 +1,5 @@
+ {
+-  "as_of": "2026-10-24T17:32:59.691223+00:00",
++  "as_of": "2026-10-24T17:45:04.782732+00:00",
+   "scope": "Evidence/status audit and durable sprint ledger; FA Portal excluded. No current-model/author inference. All implementation acceptance and release are separate.",
+   "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+   "branch": "octoberBranch",
+@@ -7262,7 +7262,7 @@
+       "owner": "FORGE",
+       "reviewer": "UNASSIGNED",
+       "dependencies": "Parent release workflow and exact production alias/source SHA; isolate only the gate/test delta from the mixed-scope commit; preserve direct saved-rankings routes and unrelated homepage differences",
+-      "verification": "Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments.",
++      "verification": "Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments. Full ranker task/launch/release/decision/community sources preserve the July17 authenticated personal rollout on89ace52c1eab547a0373a8ebae63648ec27c9262 and narrower homepage waiver. The older July15 release-manifest header is historical, not a current alias claim. None of that establishes release of the later in-season guardcc3be5c09; current production provenance for this row remains unverified. No flag or hosted query by audit.",
+       "acceptance_release_gate": "Confirm production project/environment/ready alias and source SHA. Include the isolated existing patch in the next explicitly authorized candidate, then verify the bounded rendered result. No cache or season-data cause asserted without evidence.",
+       "next_action": "FORGE must include homepage and nearest test deliberately; do not diagnose cache or rerun implementation. Confirm resulting candidate and production alias under release plan.",
+       "evidence": [
+@@ -7296,15 +7296,48 @@
+           "line": 1,
+           "sha256": "ffd61bac1a6ec8158fa9e906efa395ca5382a93134ccf4ff509b32e492020d06",
+           "observed_at": "2026-10-23T12:54:28+00:00"
+-        }
+-      ],
+-      "as_of": "2026-10-23T12:55:59+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/f1260c0ce673-tasks-prd-draft-ranker.md",
++          "original_path": "tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md",
++          "line": 93,
++          "sha256": "f1260c0ce67310c274cbff4271546bc3a45f0ae3383b67e057b2f12b74ffca6a",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/075f467912a6-launch-runbook.md",
++          "original_path": "tasks/TASKS/draft-ranker/launch-runbook.md",
++          "line": 160,
++          "sha256": "075f467912a6362724fee5f10ab553ac677fe0778d141b820faa9231c86495dd",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/a144b0293406-release-manifest.md",
++          "original_path": "tasks/TASKS/draft-ranker/release-manifest.md",
++          "line": 13,
++          "sha256": "a144b02934061d943919cfc72e506f639c86edc86a0400ec3b183f5822122047",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        }
++      ],
++      "as_of": "2026-10-24T17:45:04.782732+00:00",
+       "evidence_level": "inventoried only",
+       "evidence_scope": "Current status/receipt reconciliation; earlier scoped acceptance remains attached to its historical bytes.",
+       "evidence_provenance": "Current task list, Git objects and cited local receipts; no fresh production observation.",
+       "dispatch_class": "Locally implemented; release pending; exact production confirmation pending",
+       "source_inputs": [
+         "CR-REL-02"
++      ],
++      "artifact_audit_segment10": [
++        {
++          "at": "2026-10-24T17:45:04.782732+00:00",
++          "before_fields": {
++            "verification": "Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments."
++          },
++          "note": "Dated documentary/status overlay; prior scopes/evidence, original failures and narrower closures preserved. No implementation/external authority."
++        }
+       ]
+     },
+     {
+@@ -8672,7 +8705,7 @@
+       "dependencies": "Parent dispatch and exact file lease; preserve release and Game Grid work",
+       "verification": "Current source and retained receipts inspected; no application tests rerun",
+       "acceptance_release_gate": "Exact scoped tests and independent review before integration; no production calls, schema, credentials or deployment authority",
+-      "next_action": "Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The separate debug checklist SHA remains explicitly open in its existing source until newer evidence is read. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules.",
++      "next_action": "Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The now fully read debug checklist closes SHA under July13 NEW7 and performance NEW8/9, with September4 official-provider SHA precedence including zero; only actual/custom-unmapped SHA retains nonnegative null-safe derivation. Preserve the owner-approved missing-relative-baseline exception and optional/evaluated virtualization, hashing, chunking and worker proposals; no false30%gain or mandatory performance rewrite. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules. Four historical requested resolver follow-ups and the name-keyed assignment/provenance risk are retained once under proposed SITE-DRAFT-CSV-RESOLVER; the existing summary is not wholly absent. Draft Ranker July17 personal authenticated rollout and July30 Phase8 retirement retain closure, while older July15 staff-only manifest paragraphs are historical. No secondary/public rollout, model change, old migration/security replay or new worktree from source runbooks.",
+       "evidence": [
+         {
+           "path": "tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md",
+@@ -9069,9 +9102,65 @@
+           "sha256": "c04c8ce768554f857da892ea986e117a2aaf78f85364af89d3d7471a9f90b9b8",
+           "observed_at": "2026-10-24T17:32:59.691223+00:00",
+           "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
+-        }
+-      ],
+-      "as_of": "2026-10-24T17:32:59.691223+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md",
++          "original_path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
++          "line": 8,
++          "sha256": "574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md",
++          "original_path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
++          "line": 454,
++          "sha256": "574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md",
++          "original_path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
++          "line": 555,
++          "sha256": "574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md",
++          "original_path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
++          "line": 1886,
++          "sha256": "574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/f1260c0ce673-tasks-prd-draft-ranker.md",
++          "original_path": "tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md",
++          "line": 104,
++          "sha256": "f1260c0ce67310c274cbff4271546bc3a45f0ae3383b67e057b2f12b74ffca6a",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/a144b0293406-release-manifest.md",
++          "original_path": "tasks/TASKS/draft-ranker/release-manifest.md",
++          "line": 13,
++          "sha256": "a144b02934061d943919cfc72e506f639c86edc86a0400ec3b183f5822122047",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/075f467912a6-launch-runbook.md",
++          "original_path": "tasks/TASKS/draft-ranker/launch-runbook.md",
++          "line": 158,
++          "sha256": "075f467912a6362724fee5f10ab553ac677fe0778d141b820faa9231c86495dd",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        }
++      ],
++      "as_of": "2026-10-24T17:45:04.782732+00:00",
+       "evidence_level": "source inspected",
+       "evidence_scope": "Only the named functions/files in the source-input reconciliation below; no whole-area health claim",
+       "evidence_provenance": "Current local files and dated review receipts",
+@@ -9155,6 +9244,15 @@
+           "at": "2026-10-24T17:32:59.691223+00:00",
+           "before_fields": {
+             "next_action": "Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion."
++          },
++          "note": "Dated documentary/status overlay; prior scopes/evidence, original failures and narrower closures preserved. No implementation/external authority."
++        }
++      ],
++      "artifact_audit_segment10": [
++        {
++          "at": "2026-10-24T17:45:04.782732+00:00",
++          "before_fields": {
++            "next_action": "Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The separate debug checklist SHA remains explicitly open in its existing source until newer evidence is read. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules."
+           },
+           "note": "Dated documentary/status overlay; prior scopes/evidence, original failures and narrower closures preserved. No implementation/external authority."
+         }
+@@ -11381,7 +11479,7 @@
+       "dependencies": "Owner factual decisions; existing Draft Pro notice and approved provider credential-lifetime policy.",
+       "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+       "acceptance_release_gate": "Owner review of facts/copy; separately authorized publication/indexing. No secret/account inspection or production tracking probe.",
+-      "next_action": "Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code. Preserve the Oct19 approved linked-lifetime/same-purpose credential contract. Fact sheet must distinguish local disconnect/actual-auth-user deletion cleanup from user-facing account-deletion workflow, hosted cascade, backups/logs/derived-data erasure and upstream invalidation/provider rights, all unqualified by the reviewed policy. No new deletion feature or changed lifetime policy is requested. Full Draft/Yahoo source review adds separate session/pick/audit/rehearsal retention facts: the dated design has30-day poll observations but no automatic completed-session/pick deletion, with owner/legal policy needed before broad rollout. Reconcile current facts first;30days is not a new linked-credential or league-data lifetime policy. The October18 amended A-DRAFT note adds an explicit privacy exception to older blanket session-only text: a signed-in Draft Pro user who explicitly saves a draft stores owner-scoped normalized private import rows/headers/mapping server-side, with a documented10MiB per-draft bound and cleanup owner. Free dashboard imports, bookmarks and session summaries keep their separate session/privacy contract. Verify current save/cleanup/notice facts with the owner before policy copy; this is documentary evidence, not an auditor storage or erasure test.",
++      "next_action": "Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code. Preserve the Oct19 approved linked-lifetime/same-purpose credential contract. Fact sheet must distinguish local disconnect/actual-auth-user deletion cleanup from user-facing account-deletion workflow, hosted cascade, backups/logs/derived-data erasure and upstream invalidation/provider rights, all unqualified by the reviewed policy. No new deletion feature or changed lifetime policy is requested. Full Draft/Yahoo source review adds separate session/pick/audit/rehearsal retention facts: the dated design has30-day poll observations but no automatic completed-session/pick deletion, with owner/legal policy needed before broad rollout. Reconcile current facts first;30days is not a new linked-credential or league-data lifetime policy. The October18 amended A-DRAFT note adds an explicit privacy exception to older blanket session-only text: a signed-in Draft Pro user who explicitly saves a draft stores owner-scoped normalized private import rows/headers/mapping server-side, with a documented10MiB per-draft bound and cleanup owner. Free dashboard imports, bookmarks and session summaries keep their separate session/privacy contract. Verify current save/cleanup/notice facts with the owner before policy copy; this is documentary evidence, not an auditor storage or erasure test. Ranker policy sources add another distinct owner-fact boundary: withdrawal makes comparison evidence ineligible on later rebuilds while private history remains; actual account deletion/cascade, aggregate recomputation and retained non-identifying immutable snapshots are separate contracts. These are dated methodology/runbook requirements, not an auditor erasure test or new promise; contribution/public aggregate activation remains independently held.",
+       "evidence": [
+         {
+           "path": "tasks/seo-audit-2026-09-25.md",
+@@ -11549,9 +11647,25 @@
+           "sha256": "1ffb08389dc03942356d0fa8b69c13e7fca1db1527d1dd0da6e8f7acd62b875e",
+           "observed_at": "2026-10-24T17:32:59.691223+00:00",
+           "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
+-        }
+-      ],
+-      "as_of": "2026-10-24T17:32:59.691223+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/eae78c5a2a96-decision-record.md",
++          "original_path": "tasks/TASKS/draft-ranker/decision-record.md",
++          "line": 265,
++          "sha256": "eae78c5a2a96826c5e52d63432157ca6ffb25e74701d0a8dc2ea450cc8cde9cf",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/fb71ca92648e-community-ranking-runbook.md",
++          "original_path": "tasks/TASKS/draft-ranker/community-ranking-runbook.md",
++          "line": 80,
++          "sha256": "fb71ca92648ebdbe15f01a16d8359e790dfd2e53522d13ec67f9d64b2348beb0",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        }
++      ],
++      "as_of": "2026-10-24T17:45:04.782732+00:00",
+       "evidence_level": "source gate inventoried; current outcome unverified",
+       "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+       "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+@@ -11583,6 +11697,15 @@
+           "at": "2026-10-24T17:32:59.691223+00:00",
+           "before_fields": {
+             "next_action": "Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code. Preserve the Oct19 approved linked-lifetime/same-purpose credential contract. Fact sheet must distinguish local disconnect/actual-auth-user deletion cleanup from user-facing account-deletion workflow, hosted cascade, backups/logs/derived-data erasure and upstream invalidation/provider rights, all unqualified by the reviewed policy. No new deletion feature or changed lifetime policy is requested. Full Draft/Yahoo source review adds separate session/pick/audit/rehearsal retention facts: the dated design has30-day poll observations but no automatic completed-session/pick deletion, with owner/legal policy needed before broad rollout. Reconcile current facts first;30days is not a new linked-credential or league-data lifetime policy."
++          },
++          "note": "Dated documentary/status overlay; prior scopes/evidence, original failures and narrower closures preserved. No implementation/external authority."
++        }
++      ],
++      "artifact_audit_segment10": [
++        {
++          "at": "2026-10-24T17:45:04.782732+00:00",
++          "before_fields": {
++            "next_action": "Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code. Preserve the Oct19 approved linked-lifetime/same-purpose credential contract. Fact sheet must distinguish local disconnect/actual-auth-user deletion cleanup from user-facing account-deletion workflow, hosted cascade, backups/logs/derived-data erasure and upstream invalidation/provider rights, all unqualified by the reviewed policy. No new deletion feature or changed lifetime policy is requested. Full Draft/Yahoo source review adds separate session/pick/audit/rehearsal retention facts: the dated design has30-day poll observations but no automatic completed-session/pick deletion, with owner/legal policy needed before broad rollout. Reconcile current facts first;30days is not a new linked-credential or league-data lifetime policy. The October18 amended A-DRAFT note adds an explicit privacy exception to older blanket session-only text: a signed-in Draft Pro user who explicitly saves a draft stores owner-scoped normalized private import rows/headers/mapping server-side, with a documented10MiB per-draft bound and cleanup owner. Free dashboard imports, bookmarks and session summaries keep their separate session/privacy contract. Verify current save/cleanup/notice facts with the owner before policy copy; this is documentary evidence, not an auditor storage or erasure test."
+           },
+           "note": "Dated documentary/status overlay; prior scopes/evidence, original failures and narrower closures preserved. No implementation/external authority."
+         }
+@@ -12583,15 +12706,15 @@
+       "scope": "Build shareable observed player cards with honest windows, all-valid-player ranks and snapshot-consistent PNGs",
+       "user_impact": "Anonymous visitors can discover/read/export useful cards; unknown coverage and unapproved premium choices must remain explicit.",
+       "implementation": "Existing single Sol has bounded local synthetic S01 plus pure supplied-record S02/R1 work. S01 exact nine-file patch and S02-R1 exact three-file component-validity correction now have independent limited recommendations and coordinator-recorded parent local acceptance. Both original S02 P2 findings and their failed probes remain preserved; S03 interaction/browser work continues under its separate existing exact lease, not yet accepted here.",
+-      "acceptance": "S01 synthetic fixed-L10 preview accepted with limits:43pins,15unique offline cases and inspected saved PNG/manifest parity in independent review. S02-R1 bounded input-validity correction accepted:29/29unchanged original probes,26/26focused units, scoped static and58pins. No whole-feature, observed-data/public/premium/route/export-design acceptance follows; phone-fit PNG legibility remains TJ feedback.",
++      "acceptance": "S01 synthetic fixed-L10 preview accepted with limits:43pins,15unique offline cases and inspected saved PNG/manifest parity in independent review. S02-R1 bounded input-validity correction accepted:29/29unchanged original probes,26/26focused units, scoped static and58pins. No whole-feature, observed-data/public/premium/route/export-design acceptance follows; phone-fit PNG legibility remains TJ feedback. Latest direct TJ feedback says the preview is not exactly what he envisioned but is progressing. Overall visual/product design acceptance remains unresolved independently of these technical verdicts.",
+       "release": "Local-only; no deployment, live-card, model/scientific, source-rights or production coverage acceptance.",
+       "owner": "CODEX-SCOUT",
+       "reviewer": "UNASSIGNED",
+       "dependencies": "Existing single Sol card owner; exact new-path ownership and protected shared files; SITE-WIGO diagnostic/local-fix dependency; SITE-SOCIAL-SHARE export work remains separately owned. Complete appearance/source/pool evidence, entitlement boundary, rights and cost/retention decisions gate affected real/premium integration.",
+       "verification": "Auditor read complete S01 REVIEW/REVIEW-EVIDENCE and original S02 plus R1 independent handoffs, not source/test/browser/pixel execution. Original S02 had23pass/6fail independent probes despite19owner passes; R1 rejects per-game incompatible exposure/ratio rows before pooling without hidden GP/TOI thresholds and preserves compatible zero/zero. Captured4values/two unavailable controls and known L10 source gap are bounded arithmetic evidence, not complete history/population proof.",
+       "acceptance_release_gate": "Independent exact local review before integration. Preserve no-GP/TOI/position hidden pool filters, valid-zero/null distinction and rank suppression for unknown coverage. Product-dependent observed/premium behavior stays disabled/configurable until resolved. No new production reads/writes/refresh/backfill, shared auth/export/billing edits, dependency/spend, Git or deploy authority.",
+-      "next_action": "Existing Sol continues only its already granted S03 interaction/rebuild/offline-QA scope; parent reviews that actual candidate separately. Keep S01 and S02/R1 accepted frozen packets and original failures intact. TJ decides phone PNG readability and unresolved product/default/season/premium proposals; observed source completion, rank population, rights, safe search/auth and entitlement integration remain gates. No second worker, new data capture or production refresh/backfill by this audit.",
+-      "as_of": "2026-10-24T17:32:59.691223+00:00",
++      "next_action": "Existing Sol continues only its already granted S03 interaction/rebuild/offline-QA scope; parent reviews that actual candidate separately. Keep S01 and S02/R1 accepted frozen packets and original failures intact. TJ reviews the overall proposed composition, phone PNG readability and unresolved product/default/season/premium proposals; observed source completion, rank population, rights, safe search/auth and entitlement integration remain gates. No second worker, new data capture or production refresh/backfill by this audit.",
++      "as_of": "2026-10-24T17:45:04.782732+00:00",
+       "evidence_level": "Independent limited synthetic/domain review plus recorded parent local acceptance; real integration and product decisions remain open",
+       "evidence_scope": "Bounded local player-card scope only. Schema/prototype fields, one-player diagnostic and synthetic preview are not live league coverage or public launch.",
+       "evidence_provenance": "Trusted parent continuation authorization, Library versions and exact installed source documents, owner scope records.",
+@@ -12722,6 +12845,14 @@
+           "sha256": "f6700b4da87eb74693d7e3359b891e29c990e9b167ed5c103fd1365c82902fd6",
+           "observed_at": "2026-10-24T17:32:59.691223+00:00",
+           "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/b4ccd670b9ff-PARENT-STEER.json",
++          "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/PARENT-STEER.json",
++          "line": 1,
++          "sha256": "b4ccd670b9ff61bafb96562b0c88250970644391f87f0bb0f6de57b0e7d145a6",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
+         }
+       ],
+       "artifact_audit_segment08": [
+@@ -12744,6 +12875,16 @@
+             "next_action": "Existing Sol owner advances independent free-card/contracts/synthetic preview work under its exact lease and brings reviewable evidence to Scout. Parent resolves only remaining dependent product/asset/source/entitlement choices. Do not create a second card worker, duplicate WiGO repair, import schedule-specific snapshots as player data or infer card capability from RSO entitlement flags.",
+             "dispatch_class": "Existing single Sol card implementation; slice01 independent review ongoing, no acceptance or release inferred",
+             "evidence_level": "Reviewed requirements and owner preparation; implementation/review incomplete"
++          },
++          "note": "Dated documentary/status overlay; prior scopes/evidence, original failures and narrower closures preserved. No implementation/external authority."
++        }
++      ],
++      "artifact_audit_segment10": [
++        {
++          "at": "2026-10-24T17:45:04.782732+00:00",
++          "before_fields": {
++            "acceptance": "S01 synthetic fixed-L10 preview accepted with limits:43pins,15unique offline cases and inspected saved PNG/manifest parity in independent review. S02-R1 bounded input-validity correction accepted:29/29unchanged original probes,26/26focused units, scoped static and58pins. No whole-feature, observed-data/public/premium/route/export-design acceptance follows; phone-fit PNG legibility remains TJ feedback.",
++            "next_action": "Existing Sol continues only its already granted S03 interaction/rebuild/offline-QA scope; parent reviews that actual candidate separately. Keep S01 and S02/R1 accepted frozen packets and original failures intact. TJ decides phone PNG readability and unresolved product/default/season/premium proposals; observed source completion, rank population, rights, safe search/auth and entitlement integration remain gates. No second worker, new data capture or production refresh/backfill by this audit."
+           },
+           "note": "Dated documentary/status overlay; prior scopes/evidence, original failures and narrower closures preserved. No implementation/external authority."
+         }
+@@ -12810,6 +12951,72 @@
+       "artifact_audit_segment09": [
+         {
+           "at": "2026-10-24T17:32:59.691223+00:00",
++          "before_fields": {},
++          "note": "Dated documentary/status overlay; prior scopes/evidence, original failures and narrower closures preserved. No implementation/external authority."
++        }
++      ]
++    },
++    {
++      "taskID": "SITE-DRAFT-CSV-RESOLVER",
++      "group": "Task-artifact audit proposed carry-forward",
++      "scope": "Reconcile the requested CSV resolver remainder and verify same-name assignment/provenance safety",
++      "user_impact": "Repeated ambiguous imports may require repeated manual work; name-only shared assignments can confuse distinct same-name rows, and auto/manual provenance may be misleading. Current runtime impact remains untested.",
++      "implementation": "Proposed P2 reconciliation carry-forward, not dispatched. Embedded debug handoff retains similarity/team-position ordering, mismatch badges, manual-map reuse and explicit auto/manual summary requests. Current source already has resolver search, metadata and coverage/method summary. Narrow static inspection finds name-keyed resettable choices shared by auto and manual paths, manual precedence before contextual matching, and substring/slice search in the inspected unmapped branch.",
++      "acceptance": "Unverified residual and static safety concern. No runtime regression, current browser failure, persistence observation or focused test execution claimed by audit.",
++      "release": "No repair or release; all completed A-DRAFT import/validation/pagination/accessibility work remains credited.",
++      "owner": "UNASSIGNED",
++      "reviewer": "UNASSIGNED",
++      "dependencies": "Exact ImportCsvModal source/test custody and current saved-draft/free-import privacy boundary; REPO-DOCUMENTATION source chronology and SITE-PRIVACY-POLICY. Resolve whether historical UX requests were intentionally superseded before implementing; do not reuse Draft Ranker identity/ADP controls as this resolver contract.",
++      "verification": "Full1886-line debug PRD and unchanged September4 interface-polish list reviewed against prior full A-DRAFT task/audit records. Bounded current ImportCsvModal ranges only: shared name-keyed choice state, auto population, mapping precedence, manual handlers, summary and unmapped search. Static reading supports a verification target, not a reproduced bug. No app/test/browser/Git/provider action.",
++      "acceptance_release_gate": "Proposed/unassigned only. Parent confirms the surviving requested scope and exact file custody; a future owner first adds or uses focused offline same-name/mixed-auto-manual evidence, preserves accepted import/privacy contracts, and obtains independent acceptance. No production/data/persistence-policy change authorized by this audit.",
++      "next_action": "Reconcile newer exact receipts and intentional supersession first. If outstanding, verify two identical CSV names with different team/position and mixed auto/manual choices; preserve genuine unique/ID matches. Decide row/context keys and truthful provenance without discarding the existing summary. Bound any requested search boosts, mismatch notice and same-session manual-map reuse with explicit clear/stale-ID/lifetime behavior; do not silently introduce durable imported data or wholesale modal redesign.",
++      "as_of": "2026-10-24T17:45:04.782732+00:00",
++      "evidence_level": "Proposed P2; documentary omission/static verification target, runtime unverified",
++      "evidence_scope": "Four historical resolver requests plus exact static assignment/provenance/search ranges; remaining application content unreviewed.",
++      "evidence_provenance": "Full debug source, accepted A-DRAFT/interface scope, prior full audit and narrow current-code extract. Stored transcript requests grant no fresh authority.",
++      "dispatch_class": "Proposed/held/unassigned; no new implementation or worker",
++      "source_inputs": [
++        "A-DRAFT-DEBUG remaining requested steps1786–1796",
++        "DraftDashboard_Audit ImportCsvModal compound-key recommendation770–771",
++        "A-DRAFT accepted import/diagnostic baseline retained"
++      ],
++      "evidence": [
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md",
++          "original_path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
++          "line": 1786,
++          "sha256": "574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/c063cab68f39-DraftDashboard_Audit.md",
++          "original_path": "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
++          "line": 770,
++          "sha256": "c063cab68f39ace4cd651dc74bc774cffc003fb33fd462ba1f1bbc929ecb8db3",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/5f743a1bea52-SOURCE-NARROW.md",
++          "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/SOURCE-NARROW.md",
++          "line": 1,
++          "sha256": "5f743a1bea52d809f935b67de011cbad4fd2959f7fc37a989894ebdf893145b5",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/source-snapshots/8a1e4cb7e816-tasks-draft-dashboard-interface-polish.md",
++          "original_path": "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md",
++          "line": 9,
++          "sha256": "8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49",
++          "observed_at": "2026-10-24T17:45:04.782732+00:00",
++          "review_scope": "Full referenced document or explicitly bounded extract reviewed. Underlying app/coordination/visual/hosted claims retain documented limits; no stored command executed. Snapshot is evidence, not authority."
++        }
++      ],
++      "artifact_audit_segment10": [
++        {
++          "at": "2026-10-24T17:45:04.782732+00:00",
+           "before_fields": {},
+           "note": "Dated documentary/status overlay; prior scopes/evidence, original failures and narrower closures preserved. No implementation/external authority."
+         }
+@@ -17838,12 +18045,12 @@
+     ],
+     "all_legacy_ids_mapped": true,
+     "task_rows_before": 188,
+-    "status": "October24 segment09:208 IDs; full Draft/Yahoo chronology and narrow proposed token recurrence; full-corpus content audit unfinished.",
++    "status": "October24 segment10:209 IDs; Draft-debug closure and proposed CSV resolver remainder, historical ranker rollout preserved; full-corpus content audit unfinished.",
+     "archive": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/archive/MASTER-TASKLIST-2026-10-20.before-2026-10-23.md",
+     "index_owner": "Parent retains Git/index/release; no Git mutation authorized by this update",
+     "roster": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/CHECKPOINT-INVENTORY.json",
+-    "after_sha256": "3c200103ad156edbf3a791e7b7ba8798ffacd621a945ffd5a290e1fcc11d4203",
+-    "completed_at": "2026-10-24T17:32:59.691223+00:00",
++    "after_sha256": "f0580083b1af1708509104dcf103adc1623f52a31124ee5f68a33601693eaffa",
++    "completed_at": "2026-10-24T17:45:04.782732+00:00",
+     "git_status": "Local documentation only; release owner holds index, no ledger commit/push",
+     "reconciliation_history": {
+       "as_of": "2026-10-24T13:54:28.119238+00:00",
+@@ -17853,7 +18060,7 @@
+       "legacy_scopes_preserved": 32,
+       "new_task_id": "SITE-FORGE-TESTING-GROUNDS"
+     },
+-    "task_rows_after": 208
++    "task_rows_after": 209
+   },
+   "sos_unsaved_prerequisite_handoff": {
+     "as_of": "2026-10-23T15:58:32+00:00",
+@@ -18283,5 +18490,19 @@
+     ],
+     "coverage": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/COVERAGE.json",
+     "whole_tree_content_complete": false
++  },
++  "artifact_audit_segment10_20261024": {
++    "at": "2026-10-24T17:45:04.782732+00:00",
++    "changed_existing_ids": [
++      "REPO-DOCUMENTATION",
++      "SITE-PRIVACY-POLICY",
++      "SITE-DRAFTRANKER-HOMEPAGE",
++      "SITE-PLAYER-CARDS"
++    ],
++    "added_ids": [
++      "SITE-DRAFT-CSV-RESOLVER"
++    ],
++    "coverage": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/COVERAGE.json",
++    "whole_tree_content_complete": false
+   }
+ }

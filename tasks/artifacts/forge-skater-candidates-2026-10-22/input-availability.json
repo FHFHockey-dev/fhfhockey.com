@@ -1,0 +1,59 @@
+{
+  "cohort": "retained hydrated b only",
+  "captures": 62,
+  "capturedDates": [
+    "2026-10-21"
+  ],
+  "queriedSources": {
+    "rolling_player_game_metrics": 706,
+    "nst_team_all": 124
+  },
+  "selectedFields": {
+    "rolling_player_game_metrics": [
+      "assists_total_all",
+      "assists_total_last5",
+      "blocks_per_60_all",
+      "blocks_per_60_avg_all",
+      "blocks_per_60_avg_last5",
+      "blocks_per_60_last5",
+      "game_date",
+      "game_id",
+      "goals_total_all",
+      "goals_total_last5",
+      "hits_per_60_all",
+      "hits_per_60_avg_all",
+      "hits_per_60_avg_last5",
+      "hits_per_60_last5",
+      "player_id",
+      "season",
+      "shots_total_all",
+      "shots_total_last5",
+      "sog_per_60_all",
+      "sog_per_60_avg_all",
+      "sog_per_60_avg_last5",
+      "sog_per_60_last5",
+      "strength_state",
+      "toi_seconds_avg_all",
+      "toi_seconds_avg_last5"
+    ],
+    "nst_team_all": [
+      "date",
+      "gp",
+      "toi",
+      "xga"
+    ]
+  },
+  "strengths": {
+    "rolling_player_game_metrics": [
+      "ev",
+      "pp"
+    ]
+  },
+  "scope": "Read captured request descriptors only; no source fetches. These are pre-R19 reconstructions.",
+  "missingRequiredInputs": [
+    "Aligned per-player per-game ES/PP individual assists and on-ice GF with identical strength/vintage/identity",
+    "Current-season F/D per-strength shots/goals/TOI split-half histories with availability timestamps",
+    "Per-player SH goals/assists/shots/TOI and explicit team PK skater-seconds budget",
+    "Neutral context baselines and empirical single-effect coefficient/variance estimates"
+  ]
+}

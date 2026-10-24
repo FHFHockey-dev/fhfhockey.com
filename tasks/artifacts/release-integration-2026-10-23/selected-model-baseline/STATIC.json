@@ -1,0 +1,49 @@
+{
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-4n9ijevq/snapshot/web",
+  "results": [
+    {
+      "name": "types",
+      "argv": [
+        "npm",
+        "exec",
+        "--offline",
+        "--no",
+        "--",
+        "tsc",
+        "--noEmit",
+        "--incremental",
+        "false",
+        "-p",
+        "audit.yahoo.tsconfig.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "lint",
+      "argv": [
+        "npm",
+        "exec",
+        "--offline",
+        "--no",
+        "--",
+        "eslint",
+        "lib/projections/stages/skater-stage.ts",
+        "lib/projections/run-forge-projections.ts",
+        "lib/projections/apiHelpers.ts",
+        "pages/api/v1/forge/players.ts",
+        "pages/api/v1/forge/goalies.ts",
+        "pages/api/v1/projections/players.ts",
+        "pages/api/v1/projections/goalies.ts",
+        "pages/api/v1/projections/teams.ts",
+        "lib/projections/constants/projection-weights.ts",
+        "lib/projections/runProjectionV2.test.ts",
+        "lib/projections/apiHelpers.runAdmission.test.ts",
+        "lib/projections/nativeInputEligibility.test.ts",
+        "__tests__/pages/api/v1/forge/players.test.ts",
+        "__tests__/pages/api/v1/forge/goalies.test.ts",
+        "scripts/qualify-native-players-offline.test.ts"
+      ],
+      "exit_code": 0
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+
+Running 5 tests using 1 worker
+
+[1A[2K[1/5] [chromium] › e2e/roster-schedule-optimizer.spec.ts:412:5 › provider refresh proposes repairs while keeping a selected move
+[1A[2K[2/5] [chromium] › e2e/roster-schedule-optimizer.spec.ts:960:5 › connected refresh and account save preserve forecast permissions and exclusions
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:960:5 › connected refresh and account save preserve forecast permissions and exclusions 
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: locator.check: Test timeout of 60000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('#rso-roster-edit').getByRole('checkbox', { name: 'Protect', exact: true }).first()[22m
+
+
+      1086 |     return { provider: value.context.provider, intent: value.intent, roster: value.roster, lockedAssignments: value.lockedAssignments };
+      1087 |   })).toEqual({ provider: "manual", intent: beforeSwitch.intent, roster: beforeSwitch.roster, lockedAssignments: beforeSwitch.lockedAssignments });
+    > 1088 |   await rosterPanel.getByRole("checkbox", { name: "Protect", exact: true }).first().check();
+           |                                                                                     ^
+      1089 |   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent.protectedPlayerIds)).toEqual([players[0].id]);
+      1090 |   expect(pageErrors).toEqual([]);
+      1091 |   await page.screenshot({ path: testInfo.outputPath("rso-manual-fork-editing.png") });
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1088:85
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../adjudicated-controls-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../adjudicated-controls-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../adjudicated-controls-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../adjudicated-controls-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/5] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1563:5 › candidate worker ranks the complete population without blocking filters and retains zero AGP
+[1A[2K[4/5] [chromium] › e2e/roster-schedule-optimizer.spec.ts:2053:50 › compact future and partial weeks use league dates and retain the full horizon without saving
+[1A[2K[5/5] [chromium] › e2e/roster-schedule-optimizer.spec.ts:2119:5 › compact initial future week defaults to Monday and preserves clipped horizons
+[1A[2K  2) [chromium] › e2e/roster-schedule-optimizer.spec.ts:2119:5 › compact initial future week defaults to Monday and preserves clipped horizons 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeLessThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: <= [32m1[39m
+    Received:    [31m1.7109375[39m
+
+      1721 |     await writeFile(test.info().outputPath("slider-alignment-failure.json"), JSON.stringify({ date, viewport: page.viewportSize(), thumbCenter, headerCenter, delta: Math.abs(thumbCenter - headerCenter), geometry, selectedHeader }, null, 2));
+      1722 |   }
+    > 1723 |   expect(Math.abs(thumbCenter - headerCenter)).toBeLessThanOrEqual(1);
+           |                                                ^
+      1724 | }
+      1725 |
+      1726 | for (const count of [19, 20, 29]) test(`compact layout accounts for ${count} slots with a maximum of 20 slot rows and internal labels`, async ({ page }, testInfo) => {
+        at expectDaySliderAligned (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1723:48)
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2140:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../adjudicated-controls-01/results/roster-schedule-optimizer--94789--preserves-clipped-horizons-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../adjudicated-controls-01/results/roster-schedule-optimizer--94789--preserves-clipped-horizons-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../adjudicated-controls-01/results/roster-schedule-optimizer--94789--preserves-clipped-horizons-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../adjudicated-controls-01/results/roster-schedule-optimizer--94789--preserves-clipped-horizons-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  2 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:960:5 › connected refresh and account save preserve forecast permissions and exclusions 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:2119:5 › compact initial future week defaults to Monday and preserves clipped horizons 
+  3 passed (1.2m)

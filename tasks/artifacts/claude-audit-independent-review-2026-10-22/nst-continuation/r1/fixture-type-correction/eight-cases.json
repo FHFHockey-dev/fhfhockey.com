@@ -1,0 +1,18 @@
+{
+  "versions": {
+    "node": "v22.11.0",
+    "npm": "10.9.0"
+  },
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "audit.vitest.config.mts",
+    "__tests__/pages/api/v1/db/auditNstR1Additional.test.ts"
+  ],
+  "exit_code": 0,
+  "duration_seconds": 0.77,
+  "fixture_sha256": "3ac4eb83022c96dcb1330eae4170068c4ad46b98129693d2493055cdb35e4347"
+}

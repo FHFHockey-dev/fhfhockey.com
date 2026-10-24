@@ -1,0 +1,38 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts lib/rosterScheduleOptimizer/p07IndependentComponent.test.tsx lib/player-forecasts/p07BridgeClaimOracle.test.ts lib/rosterScheduleOptimizer/executionAdapter.test.ts hooks/useRosterPlanning.test.tsx hooks/useCandidateMetrics.test.tsx __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-p07-r2-review-n7g6bsdg/web
+
+(node:53740) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/executionAdapter.test.ts (34 tests) 70ms
+(node:53740) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts (11 tests) 185ms
+(node:53740) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts (6 tests) 23ms
+(node:53740) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ hooks/useRosterPlanning.test.tsx (4 tests) 17ms
+(node:53740) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ hooks/useCandidateMetrics.test.tsx (3 tests) 13ms
+(node:53740) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/rosterScheduleOptimizer/p07IndependentComponent.test.tsx > mounts the real UI/hook/adapter with one current read shared by plan and candidate consumers
+REVIEW_EXECUTIONS {"executions":[{"id":"manual:1pgb46z","context":{"provider":"manual","seasonId":20262027,"leagueId":"private-league","teamId":"private-team","startDate":"2026-10-23","endDate":"2026-10-23","timeZone":"UTC","asOf":"2026-10-22T12:00:00.000Z"},"intent":{"revision":0,"steps":[],"protectedPlayerIds":[],"excludedPlayerIds":[],"goalieCoverage":"accept_risk","goalieWindow":"early","goalieSplit":"mon_thu","alternativeCount":10},"options":{"allowRead":true,"publicContext":true,"refreshKey":"[\"[\\\"[\\\\\\\"manual\\\\\\\",20262027,\\\\\\\"private-league\\\\\\\",\\\\\\\"private-team\\\\\\\",\\\\\\\"2026-10-23\\\\\\\",\\\\\\\"2026-10-23\\\\\\\",\\\\\\\"UTC\\\\\\\"]\\\",null,false,null]\",0]","yahooEligibility":null},"candidates":{"requestedPlayerIds":[]}}],"urls":["/api/v1/roster-schedule-optimizer/access","/api/v1/roster-schedule-optimizer/workspace?provider=manual&seasonId=20262027&leagueId=private-league&teamId=private-team&startDate=2026-10-23&endDate=2026-10-23","/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-10-23&endDate=2026-10-23&timeZone=UTC"]}
+
+ ✓ lib/rosterScheduleOptimizer/p07IndependentComponent.test.tsx (1 test) 123ms
+(node:53740) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/p07BridgeClaimOracle.test.ts (1 test) 1ms
+
+ Test Files  7 passed (7)
+      Tests  60 passed (60)
+   Start at  12:19:51
+   Duration  2.87s (transform 533ms, setup 29ms, collect 946ms, tests 433ms, environment 923ms, prepare 189ms)
+
+

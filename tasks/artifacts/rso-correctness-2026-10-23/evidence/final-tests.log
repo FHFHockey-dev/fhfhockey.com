@@ -1,0 +1,21 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/planningReproducibility.test.ts lib/player-forecasts/planningContributions.test.ts lib/player-forecasts/contributions.test.ts lib/player-forecasts/rsoUsePolicy.test.ts lib/player-forecasts/nativeContributionAdmission.test.ts lib/player-forecasts/nativeParticipationFrame.test.ts lib/rosterScheduleOptimizer/executionAdapter.test.ts lib/rosterScheduleOptimizer/providerGoalieStarts.test.ts hooks/useRosterPlanning.test.tsx hooks/useCandidateMetrics.test.tsx lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts --reporter=json --outputFile=../evidence/final-tests.json
+
+(node:33449) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:33449) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:33449) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:33449) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:33449) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:33449) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:33449) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:33449) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+JSON report written to /private/tmp/fhfh-rso-correctness-20261023/evidence/final-tests.json

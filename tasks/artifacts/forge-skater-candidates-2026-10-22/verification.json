@@ -1,0 +1,30 @@
+{
+  "distinctMechanicalCases": 24,
+  "focusedFiles": 4,
+  "focusedTestStatus": "passed",
+  "partialCountCaseRerun": {
+    "cases": 8,
+    "status": "passed",
+    "notAdditionalDistinctCases": true
+  },
+  "scopedEslint": "passed",
+  "scopedTypeScript": "passed",
+  "sharedHeavyLock": "released",
+  "whitespaceCheck": "passed",
+  "historicalRescore": {
+    "rows": 2074,
+    "games": 62,
+    "F": 1379,
+    "D": 695,
+    "evidence": "pre-R19 historical reconstruction only"
+  },
+  "newCoefficientFits": 0,
+  "runtimeIntegration": false,
+  "productionReads": 0,
+  "productionWrites": 0,
+  "commits": 0,
+  "deployments": 0,
+  "approvalDenials": 0,
+  "pendingOrUncertainToolActions": false,
+  "remainingGate": "Aligned training inputs and current c cohort absent; predictive qualification unestablished."
+}

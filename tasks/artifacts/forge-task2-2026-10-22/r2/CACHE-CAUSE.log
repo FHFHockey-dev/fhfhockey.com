@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest --run --config review-vitest.config.mts scripts/cache-cause.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-task2-r2-d3c181zf/web
+
+ ✓ scripts/cache-cause.test.ts (1 test) 632ms
+   ✓ isolates the persistent league-save cache as the cold/warm receipt delta  632ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  12:53:35
+   Duration  793ms (transform 226ms, setup 2ms, collect 50ms, tests 632ms, environment 0ms, prepare 27ms)
+

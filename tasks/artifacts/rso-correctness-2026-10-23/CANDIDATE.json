@@ -1,0 +1,77 @@
+{
+  "created_at": "2026-10-23T12:28:23.807838+00:00",
+  "branch": "octoberBranch",
+  "baseline_head": "431ffcd673b42ad4a149dc3f9dfb03005dbec75a",
+  "owned_delta": {
+    "web/lib/player-forecasts/resolvedPlanningForecast.ts": {
+      "before": "2070019c4ea4d9c8cda19b11da5050b2da845825732eacde30b02da1e46ef745",
+      "after": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07"
+    },
+    "web/lib/player-forecasts/rsoUsePolicy.ts": {
+      "before": "712730f58ba95e2890daab74b31c68e7a3f8840b9b2c1e66fe4ceae3a921455c",
+      "after": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215"
+    },
+    "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts": {
+      "before": "08317c82847edd961ac5cfbc36083900016ca1d261a49ae2e135698610bbe976",
+      "after": "dc4e9bcacd4e5ece49d8a26469b61af7c7005275a69a1b6f27e4ba8cd5fbf60c"
+    }
+  },
+  "reviewed_yahoo_release_owner_files": {
+    "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "9f2f29c50a6af4e7d6c12265e4ed1552ffa52e79b171f568cf7230aac046daab",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts": "9ef4199fb8dd678df9d8e152460790bcb0b3e467308e398aacb8e71116b5dd4d"
+  },
+  "canonical_owned_mismatches": [],
+  "canonical_yahoo_mismatches": [],
+  "patch_sha256": "ff7ef648a48d2a65d6f3fe2f891c37d743576b69f7ae13aeb2e1a61da6f50659",
+  "test_files": {
+    "hooks/useCandidateMetrics.test.tsx": 3,
+    "hooks/useRosterPlanning.test.tsx": 4,
+    "lib/player-forecasts/contributions.test.ts": 113,
+    "lib/player-forecasts/nativeContributionAdmission.test.ts": 26,
+    "lib/player-forecasts/nativeParticipationFrame.test.ts": 42,
+    "lib/player-forecasts/rsoUsePolicy.test.ts": 17,
+    "lib/rosterScheduleOptimizer/executionAdapter.test.ts": 37,
+    "lib/rosterScheduleOptimizer/planningReproducibility.test.ts": 32,
+    "lib/rosterScheduleOptimizer/providerGoalieStarts.test.ts": 4,
+    "lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts": 4,
+    "lib/player-forecasts/planningContributions.test.ts": 110
+  },
+  "distinct_selected_tests_passed": 392,
+  "static_results": [
+    {
+      "name": "scoped-types",
+      "argv": [
+        "npm",
+        "exec",
+        "--offline",
+        "--no",
+        "--",
+        "tsc",
+        "--noEmit",
+        "--incremental",
+        "false",
+        "--project",
+        "audit.scoped-tsconfig.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "scoped-lint",
+      "argv": [
+        "npm",
+        "exec",
+        "--offline",
+        "--no",
+        "--",
+        "eslint",
+        "lib/player-forecasts/resolvedPlanningForecast.ts",
+        "lib/player-forecasts/rsoUsePolicy.ts",
+        "lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+        "lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts"
+      ],
+      "exit_code": 0
+    }
+  ],
+  "native_production_reviews": 0,
+  "scope": "Local synthetic regression and independent Yahoo correction review; no whole-tree release approval"
+}

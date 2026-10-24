@@ -1,0 +1,12 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c2-isolated/web
+
+(node:70095) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/NewsFeed/NewsCard.test.tsx (39 tests) 169ms
+
+ Test Files  1 passed (1)
+      Tests  39 passed (39)
+   Start at  13:41:07
+   Duration  689ms (transform 176ms, setup 3ms, collect 255ms, tests 169ms, environment 141ms, prepare 29ms)
+

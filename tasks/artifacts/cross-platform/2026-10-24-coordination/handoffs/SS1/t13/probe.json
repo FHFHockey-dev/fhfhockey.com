@@ -1,0 +1,149 @@
+{
+  "config": {
+    "configFile": "/Users/tim/Code/fhfhockey.com/web/playwright.config.ts",
+    "rootDir": "/Users/tim/Code/fhfhockey.com/web/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t13/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/tim/Code/fhfhockey.com/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "list"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 8,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "social-share.spec.ts",
+      "file": "social-share.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "Monday default grid ranks every team by Game Grid weekScore in square day cells and exports",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 15987,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeEnabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: 'Refresh schedule', exact: true })\nExpected: enabled\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeEnabled\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: 'Refresh schedule', exact: true })\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeEnabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: 'Refresh schedule', exact: true })\nExpected: enabled\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeEnabled\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: 'Refresh schedule', exact: true })\u001b[22m\n\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:95:85)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:317:3",
+                    "location": {
+                      "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                      "column": 85,
+                      "line": 95
+                    },
+                    "snippet": "  93 |   const response = await page.goto(`/social-share/${format}`);\n  94 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n> 95 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n     |                                                                                     ^\n  96 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  97 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  98 | }"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                        "column": 85,
+                        "line": 95
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeEnabled\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('button', { name: 'Refresh schedule', exact: true })\nExpected: enabled\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeEnabled\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('button', { name: 'Refresh schedule', exact: true })\u001b[22m\n\n\n  93 |   const response = await page.goto(`/social-share/${format}`);\n  94 |   expect(response?.headers()[\"x-robots-tag\"]).toContain(\"noindex\");\n> 95 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n     |                                                                                     ^\n  96 |   await page.getByLabel(\"Week of (Monday)\").fill(upcomingWeek);\n  97 |   await expect(page.getByRole(\"button\", { name: \"Refresh schedule\", exact: true })).toBeEnabled();\n  98 | }\n    at open (/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:95:85)\n    at /Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts:317:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-24T21:30:34.292Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t13/test-results/social-share-Monday-defaul-27edc-quare-day-cells-and-exports-chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "video",
+                      "contentType": "video/webm",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t13/test-results/social-share-Monday-defaul-27edc-quare-day-cells-and-exports-chromium/video.webm"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t13/test-results/social-share-Monday-defaul-27edc-quare-day-cells-and-exports-chromium/error-context.md"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Code/fhfhockey.com/web/e2e/social-share.spec.ts",
+                    "column": 85,
+                    "line": 95
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "a54bce60df3e96b84bd8-0be3269dc84a288a0474",
+          "file": "social-share.spec.ts",
+          "line": 313,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-24T21:30:33.995Z",
+    "duration": 16507.048,
+    "expected": 0,
+    "skipped": 0,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}

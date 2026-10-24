@@ -1,0 +1,51 @@
+{
+  "at": "2026-10-24T16:59:37.835803+00:00",
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "97fc641537a2ddc53f74abb58140cb441a8c924204eb412e211271d139e36cc4",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "71ee25872ab27ca866b904e8da6779a44a942421f0da942ec8417ba2c88286e2",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "20ff17124d74b2c107d10e4106fc0f34f39190a22bd9a7c3c1524a5dd54b6ac4"
+  },
+  "ids": 207,
+  "evidence_entries": 955,
+  "added_ids": [
+    "SITE-PLAYER-CARDS"
+  ],
+  "changed_ids": [
+    "WGO-HISTORY",
+    "REPO-GENERATED-TRACKING",
+    "PIPE-DRM-NATURAL",
+    "SITE-WIGO",
+    "REPO-DOCUMENTATION"
+  ],
+  "all206_prior_scopes_preserved": true,
+  "all925_evidence_prefixes_preserved": true,
+  "handoff189_ids_preserved": true,
+  "legacy_blocks_byte_identical_each_markdown": 32,
+  "unchanged_existing_rows_identical": 201,
+  "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+  "library_version": 7,
+  "metadata_helper_exit": 0,
+  "metadata_readback": [
+    {
+      "name": "user.library-file-version",
+      "exit_code": 0,
+      "value_matches": true
+    }
+  ],
+  "canonical_bytes_unchanged_by_library": true,
+  "coverage": {
+    "content-reviewed": 23,
+    "partially-inspected": 9,
+    "duplicate-by-hash": 1,
+    "metadata-only": 47
+  },
+  "library_full_text_reads": 2,
+  "full_repo_bytes": 267818,
+  "remaining_base_queue": 12161,
+  "next_cursor": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+  "whole_tree_content_audit_complete": false,
+  "app_source_or_test_operations": 0,
+  "git_operations": 0,
+  "production_provider_api_database_cron_operations": 0,
+  "active_or_uncertain_audit_mutations": false
+}

@@ -1,0 +1,33 @@
+{
+ "added": [
+  "Assets/MapPrototype/Editor/SprintV17.cs",
+  "Assets/MapPrototype/Editor/SprintV17.cs.meta",
+  "Assets/MapPrototype/Editor/SprintV17Capture.cs",
+  "Assets/MapPrototype/Editor/SprintV17Capture.cs.meta",
+  "Assets/MapPrototype/Editor/SprintV17Coverage.cs",
+  "Assets/MapPrototype/Editor/SprintV17Coverage.cs.meta",
+  "Assets/MapPrototype/Editor/SprintV17EvidenceRunner.cs",
+  "Assets/MapPrototype/Editor/SprintV17EvidenceRunner.cs.meta",
+  "Assets/MapPrototype/Editor/SprintV17HudRunner.cs",
+  "Assets/MapPrototype/Editor/SprintV17HudRunner.cs.meta",
+  "Assets/MapPrototype/Editor/SprintV17PilotRegressionRunner.cs",
+  "Assets/MapPrototype/Editor/SprintV17PilotRegressionRunner.cs.meta",
+  "Assets/MapPrototype/Editor/SprintV17RouteRunner.cs",
+  "Assets/MapPrototype/Editor/SprintV17RouteRunner.cs.meta",
+  "Assets/MapPrototype/Editor/SprintV17Validation.cs",
+  "Assets/MapPrototype/Editor/SprintV17Validation.cs.meta",
+  "Assets/MapPrototype/Scenes/VesperBasin_v17_IndustrialDeck.unity",
+  "Assets/MapPrototype/Scenes/VesperBasin_v17_IndustrialDeck.unity.meta",
+  "Assets/MapPrototype/Shaders/VesperV17IndustrialDeck.shader",
+  "Assets/MapPrototype/Shaders/VesperV17IndustrialDeck.shader.meta",
+  "Assets/MapPrototype/SprintAssets/v17.meta",
+  "Assets/MapPrototype/SprintAssets/v17/V17 deck slabs.asset",
+  "Assets/MapPrototype/SprintAssets/v17/V17 deck slabs.asset.meta",
+  "Assets/MapPrototype/SprintAssets/v17/V17 deck wear.asset",
+  "Assets/MapPrototype/SprintAssets/v17/V17 deck wear.asset.meta",
+  "Assets/MapPrototype/SprintAssets/v17/V17 industrial deck graphite.mat",
+  "Assets/MapPrototype/SprintAssets/v17/V17 industrial deck graphite.mat.meta"
+ ],
+ "removed": [],
+ "changed": []
+}

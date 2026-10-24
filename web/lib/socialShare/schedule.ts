@@ -4,7 +4,7 @@ import { planningScheduleStatus } from "lib/rosterScheduleData/normalize";
 import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
 import calcWeekScore from "components/GameGrid/utils/calcWeekScore";
 import { calcWeightedOffNights } from "components/GameGrid/utils/helper";
-import { SHARE_TIME_ZONE, type ShareGame, type ShareTeam, type SocialScheduleData, type SocialScheduleGame, type SocialShareFormat, type SocialShareSnapshot } from "./types";
+import { SCHEDULE_FORMATS, SHARE_TIME_ZONE, type ShareGame, type ShareTeam, type SocialScheduleData, type SocialScheduleGame, type SocialShareFormat, type SocialShareSnapshot } from "./types";
 
 export function assertCalendarDate(date: string): string {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(`${date}T00:00:00Z`)) || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date) throw new Error("Use a real YYYY-MM-DD calendar date.");
@@ -28,7 +28,7 @@ function selectedWeekDates(weekStart: string, selected: string[]): string[] {
   if (new Set(selected).size !== selected.length || selected.some(date => !dates.includes(assertCalendarDate(date)))) throw new Error("Selected dates must be unique dates within the selected week.");
   return dates.filter(date => selected.includes(date));
 }
-function currentSeason(weekStart: string): number {
+export function currentSeason(weekStart: string): number {
   const year = Number(weekStart.slice(0, 4)) - (Number(weekStart.slice(5, 7)) < 8 ? 1 : 0);
   return year * 10000 + year + 1;
 }
@@ -88,7 +88,7 @@ export function selectScheduleDates(snapshot: SocialShareSnapshot, selectedDates
     expiresAt = new Date(expiry).toISOString();
     if (expiry <= asOf) { state = "stale"; reasons.push("Schedule read is older than the applicable freshness limit."); }
   }
-  if (!["game-grid", "remaining-week"].includes(snapshot.format)) { state = "blocked"; reasons.push("This format requires ownership or player evidence that is not available in this schedule-only edition."); }
+  if (!SCHEDULE_FORMATS.includes(snapshot.format)) { state = "blocked"; reasons.push("This format requires ownership or player evidence that is not available in this schedule-only edition."); }
   const rows = snapshot.teams.map(team => {
     const games = snapshot.games.filter(game => game.homeTeam.id === team.id || game.awayTeam.id === team.id);
     const opportunities = remaining.filter(game => game.homeTeam.id === team.id || game.awayTeam.id === team.id);
@@ -107,6 +107,19 @@ export function selectScheduleDates(snapshot: SocialShareSnapshot, selectedDates
   const result = { ...snapshot, selectedDates: selected, state, reasons: [...new Set(reasons)], days, rows, expiresAt };
   result.id = editionId(result);
   return result;
+}
+
+/** What the live Tuesday API says until a trend source is approved (it makes no read). */
+export const TUESDAY_NOT_CONNECTED = { sourceReason: "No upstream read is made until a live trend source is approved.", reason: "Rolling game metrics and ownership are not connected." } as const;
+
+/** An edition made without any upstream read: blocked, with the reason shown to the viewer. */
+export function buildBlockedSnapshot(input: { format: SocialShareFormat; weekStart: string; generatedAt: string; selectedDates?: string[]; sourceReason: string; reason: string }): SocialShareSnapshot {
+  const blocked = buildScheduleSnapshot({ format: input.format, weekStart: input.weekStart, selectedDates: input.selectedDates, generatedAt: input.generatedAt, schedule: { data: {}, numGamesPerDay: [], coveredDates: [] } });
+  blocked.state = "blocked";
+  blocked.expiresAt = null;
+  blocked.source = { name: "NHL schedule", fetchedAt: null, updatedAt: null, coveredDates: [], state: "blocked", reasons: [input.sourceReason] };
+  blocked.reasons = [input.reason];
+  return blocked;
 }
 
 export function buildScheduleSnapshot(input: { format: SocialShareFormat; weekStart: string; schedule: SocialScheduleData; generatedAt: string; selectedDates?: string[] }): SocialShareSnapshot {

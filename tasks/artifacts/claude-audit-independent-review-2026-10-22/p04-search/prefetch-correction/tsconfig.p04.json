@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "files": [
+    "next-bootstrap.d.ts",
+    "components/StatsPage/PlayerSearchBar.tsx",
+    "components/StatsPage/PlayerSearchBar.test.tsx"
+  ],
+  "include": []
+}

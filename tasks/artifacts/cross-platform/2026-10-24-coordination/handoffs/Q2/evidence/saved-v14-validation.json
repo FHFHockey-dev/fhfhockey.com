@@ -1,0 +1,219 @@
+{
+    "utc": "2026-10-24T15:06:42.5054780Z",
+    "v13SHA256": "077bd43b9bcaccd51a68e5d353b23cb2c701c7003c8eb21ea3c46c5ddd89aa80",
+    "v14SHA256": "450e21bf020bb2f579cfb468b1589909ea7ca43430be64e1dd31deb5333ec80a",
+    "failure": "",
+    "passed": true,
+    "checks": [
+        {
+            "name": "v13 scene hash matches the v13 handoff",
+            "passed": true,
+            "detail": "077bd43b9bcaccd51a68e5d353b23cb2c701c7003c8eb21ea3c46c5ddd89aa80"
+        },
+        {
+            "name": "v14 is a separate saved scene",
+            "passed": true,
+            "detail": "450e21bf020bb2f579cfb468b1589909ea7ca43430be64e1dd31deb5333ec80a"
+        },
+        {
+            "name": "strata shader found and compiles without errors in the Editor",
+            "passed": true,
+            "detail": "VesperBasin/V14 Strata Rock"
+        },
+        {
+            "name": "every object outside the regenerated terrain exists in both scenes",
+            "passed": true,
+            "detail": "missing=0 extra=0 "
+        },
+        {
+            "name": "transforms, active states and component lists outside terrain are identical",
+            "passed": true,
+            "detail": "differences=0"
+        },
+        {
+            "name": "all serialized component fields outside terrain are identical except canyon-rock material slots",
+            "passed": true,
+            "detail": "other differences=0, rock material slots changed=61"
+        },
+        {
+            "name": "gameplay components (pilot, weapon, targets, capture zones, recovery, cockpit readout) retained",
+            "passed": true,
+            "detail": "QuestPilotControls=1,QuestPracticeWeapon=1,PracticeTarget=3,CaptureZone=1"
+        },
+        {
+            "name": "debug labels and HUD objects are unchanged (TextMesh count and fields)",
+            "passed": true,
+            "detail": "TextMesh=20"
+        },
+        {
+            "name": "v14 terrain has the v13 structure: 4 renderers, 3 mesh colliders on visible meshes",
+            "passed": true,
+            "detail": "renderers=4 colliders=3"
+        },
+        {
+            "name": "v14 terrain meshes/materials live only in SprintAssets/v14",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "no v14 renderer still uses a replaced v12/v13 rock material",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "route corridor samples hit saved collision in both scenes",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "route corridor collision surface identical (same collider path and height within 1 cm)",
+            "passed": true,
+            "detail": "samples=612"
+        },
+        {
+            "name": "route margin differences involve only regenerated terrain (reshaped rock or rock now above inherited ground)",
+            "passed": true,
+            "detail": "terrainDiffs=47 maxDelta=2.18 emergent=2 maxRise=0.76"
+        },
+        {
+            "name": "no lateral obstruction moved inside the 8.8 m route deck",
+            "passed": true,
+            "detail": "changedRays=7/80"
+        },
+        {
+            "name": "saved scenes unchanged by validation",
+            "passed": true,
+            "detail": ""
+        }
+    ],
+    "v13": {
+        "scene": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+        "renderers": 627,
+        "enabledRenderers": 526,
+        "colliders": 235,
+        "enabledColliders": 197,
+        "meshColliders": 94,
+        "uniqueMaterials": 57,
+        "textures": 3,
+        "enabledTriangles": 129162
+    },
+    "v14": {
+        "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+        "renderers": 627,
+        "enabledRenderers": 526,
+        "colliders": 235,
+        "enabledColliders": 197,
+        "meshColliders": 94,
+        "uniqueMaterials": 57,
+        "textures": 3,
+        "enabledTriangles": 129386
+    },
+    "corridorSamples": 612,
+    "corridorDifferences": 0,
+    "marginSamples": 816,
+    "marginTerrainDifferences": 47,
+    "marginOtherDifferences": 0,
+    "coverSamples": 80,
+    "coverChanged": 7,
+    "maxMarginTerrainDelta": 2.175837755203247,
+    "maxEmergentRise": 0.7636528015136719,
+    "marginTerrainEmergent": 2,
+    "coverChanges": [
+        {
+            "origin": {
+                "x": -18.0,
+                "y": 3.3499999046325684,
+                "z": 16.0
+            },
+            "side": -1.0,
+            "height": 1.0,
+            "v13": 12.740118980407715,
+            "v14": 13.212296485900879,
+            "v13Hit": "V13 North Ascent/Terrain/Radar plateau and route shoulders",
+            "v14Hit": "V13 North Ascent/Terrain/Radar plateau and route shoulders"
+        },
+        {
+            "origin": {
+                "x": -18.0,
+                "y": 4.849999904632568,
+                "z": 16.0
+            },
+            "side": -1.0,
+            "height": 2.5,
+            "v13": 13.227448463439941,
+            "v14": 13.321634292602539,
+            "v13Hit": "V13 North Ascent/Terrain/Radar plateau and route shoulders",
+            "v14Hit": "V13 North Ascent/Terrain/Radar plateau and route shoulders"
+        },
+        {
+            "origin": {
+                "x": -18.0,
+                "y": 6.849999904632568,
+                "z": 24.0
+            },
+            "side": -1.0,
+            "height": 2.5,
+            "v13": 9.116955757141113,
+            "v14": 8.479987144470215,
+            "v13Hit": "V13 North Ascent/Terrain/Radar plateau and route shoulders",
+            "v14Hit": "V13 North Ascent/Terrain/Radar plateau and route shoulders"
+        },
+        {
+            "origin": {
+                "x": -18.0,
+                "y": 7.849999904632568,
+                "z": 28.0
+            },
+            "side": -1.0,
+            "height": 2.5,
+            "v13": 13.559784889221191,
+            "v14": 16.20888900756836,
+            "v13Hit": "V13 North Ascent/Terrain/Radar plateau and route shoulders",
+            "v14Hit": "V13 North Ascent/Terrain/Radar plateau and route shoulders"
+        },
+        {
+            "origin": {
+                "x": -11.600000381469727,
+                "y": 11.850000381469727,
+                "z": 42.400001525878906
+            },
+            "side": 1.0,
+            "height": 2.5,
+            "v13": 16.064311981201172,
+            "v14": 23.62933921813965,
+            "v13Hit": "V13 North Ascent/Terrain/Radar plateau and route shoulders",
+            "v14Hit": "V13 North Ascent/Terrain/Radar plateau and route shoulders"
+        },
+        {
+            "origin": {
+                "x": -10.0,
+                "y": 12.850000381469727,
+                "z": 46.0
+            },
+            "side": 1.0,
+            "height": 2.5,
+            "v13": 18.90616798400879,
+            "v14": 25.0,
+            "v13Hit": "V13 North Ascent/Terrain/Radar plateau and route shoulders",
+            "v14Hit": "none"
+        },
+        {
+            "origin": {
+                "x": -8.399999618530273,
+                "y": 13.65000057220459,
+                "z": 49.599998474121094
+            },
+            "side": 1.0,
+            "height": 2.5,
+            "v13": 18.158794403076172,
+            "v14": 25.0,
+            "v13Hit": "V13 North Ascent/Terrain/Radar plateau and route shoulders",
+            "v14Hit": "none"
+        }
+    ],
+    "differences": [
+        "terrain now above inherited ground (-27.87, 5.35, 32.39) V12 Canyon Outpost/Terrain/Playable Islands/Grounded outpost islands@2.040001 -> V13 North Ascent/Terrain/Radar plateau and route shoulders@2.803654",
+        "terrain now above inherited ground (-28.57, 5.60, 33.77) V12 Canyon Outpost/Terrain/Playable Islands/Grounded outpost islands@2.040001 -> V13 North Ascent/Terrain/Radar plateau and route shoulders@2.785702"
+    ],
+    "method": "Opens saved v13 then v14 in the Editor (no Play Mode, no saves). Objects are matched by name path plus occurrence ordinal so the regenerated Terrain child's new sibling index does not mask changes. Serialized fields are compared through SerializedProperty values, object references by scene path or asset path. Collision uses edit-mode Physics raycasts against saved colliders; route corridor = v13 route profile at +/-5.4 m (8.8 m deck plus margin), margin band = 5.4-12 m; cover = horizontal rays at 1.0 m and 2.5 m above the route surface out to 25 m."
+}

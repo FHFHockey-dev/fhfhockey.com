@@ -1,0 +1,10 @@
+# Social editor test-only handback
+
+Use the actual Next page/AuthProvider/access gate. This helper seeds a fictional localStorage session only in a fresh Playwright browser context, fulfills only synthetic auth/role/profile/settings bootstrap reads, and aborts bootstrap writes, unrelated local APIs and external requests. It does not replace application auth or grant any real account role.
+
+1. Base the shared-spec change on SHA `83230d539d6bcac430fc4167f318087db302f6c00e6171e23011b1d20678f904` and review concurrent edits.
+2. Add `web/e2e/fixtures/socialEditorSession.ts` from this handback and apply `social-share.spec-only.patch`. Final spec SHA is `a3da9fa1ef2170d11fe6a75f6bd9ec244f534b872709e86362de3d21e67955ae`; helper SHA is `ad3992ece8525016566a9e6ab3b889993a316b541305efc457abe814c96e91fa`.
+3. Run only against an owned isolated Next process with `PLAYWRIGHT_BASE_URL=http://127.0.0.1:3140`, `NEXT_PUBLIC_SUPABASE_URL=https://social-editor-fixture.supabase.invalid`, and both `NEXT_PUBLIC_SUPABASE_PUBLIC_KEY` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` set to `synthetic-social-editor-public-key`. Server service key must also be synthetic. Never reuse a profile, production URL/key, ignored env files or real session.
+4. Positive edition fixtures assert the bearer; actual credential-free API denial remains a separate test. Keep backend outbound-denial and browser interception in place; reserve/recheck the port, use only isolated caches, and stop only the owned process.
+
+The final local source candidate is `8f883c65269be83500b665b8be78f9d5e74d26b6`, parent `270def4ec6b0abc05b0ceeb2f55d75445b27a35a`. Its only application correction after the first run is the separately reviewed `SocialShare.css-r1.patch` (source CSS final SHA `07622368f7352872ca3dd28148552bd2424c479bc2bda43d24e95706f7d10288`). Do not integrate diagnostic-only spec files/instrumentation; the release spec was restored exactly. No publication, role initialization or expanded live tier read is authorized by this handback.

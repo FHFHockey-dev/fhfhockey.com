@@ -1,0 +1,55 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/planningReproducibility.test.ts -t reproduces admitted baseline quality
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-rso-correctness-20261023/web
+
+(node:31060) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/rosterScheduleOptimizer/planningReproducibility.test.ts (18 tests | 1 failed | 17 skipped) 38ms
+   ↓ planning search reproducibility > keeps points manual and connected results equal for matching canonical inputs
+   ↓ planning search reproducibility > keeps categories manual and connected results equal for matching canonical inputs
+   ↓ planning search reproducibility > keeps goalie manual and connected results equal for matching canonical inputs
+   ↓ planning search reproducibility > reproduces admitted detailed quality decisions across scoring profiles and input order
+   ↓ planning search reproducibility > reproduces admitted blended quality decisions across scoring profiles and input order
+   × planning search reproducibility > reproduces admitted baseline quality decisions across scoring profiles and input order 38ms
+     → expected 'agp' to be 'outcome' // Object.is equality
+   ↓ planning search reproducibility > replays admitted quality forecasts with daily locks and realized results
+   ↓ planning search reproducibility > replays admitted quality forecasts with weekly locks and realized results
+   ↓ planning search reproducibility > retains an eligible quality checkpoint when a deadline interrupts search
+   ↓ planning search reproducibility > bounds unchecked points bench decisions without inventing scoring evidence
+   ↓ planning search reproducibility > bounds unchecked categories bench decisions without inventing scoring evidence
+   ↓ planning search reproducibility > bounds unchecked goalie bench decisions without inventing scoring evidence
+   ↓ planning search reproducibility > prioritizes selected-plan explanations and shares duplicate receipts within the quota
+   ↓ planning search reproducibility > starts no bench rechecks after the response deadline and retains approved numerical inputs
+   ↓ planning search reproducibility > uses canonical schedule-fit and acquisition ordering across input permutations
+   ↓ planning search reproducibility > uses work quotas by default and labels an explicit time interruption
+   ↓ planning search reproducibility > bounds long-range default work by dates and available candidate groups
+   ↓ planning search reproducibility > bounds a 367-day catalog workload with 25 rostered and 300 available players
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planningReproducibility.test.ts > planning search reproducibility > reproduces admitted baseline quality decisions across scoring profiles and input order
+AssertionError: expected 'agp' to be 'outcome' // Object.is equality
+
+Expected: [32m"outcome"[39m
+Received: [31m"agp"[39m
+
+ ❯ reproducesAdmittedQuality lib/rosterScheduleOptimizer/planningReproducibility.test.ts:138:43
+    136|       const replayed = planRoster(JSON.parse(JSON.stringify(snapshot))…
+    137|       for (const result of [one, two, replayed]) {
+    138|         expect(result.baseline.objective).toBe(profile === "points" ? …
+       |                                           ^
+    139|         expect(result.selected.recommendation?.eligible).toBe(profile …
+    140|         expect(result.selected.comparisonEligible).toBe(true);
+ ❯ lib/rosterScheduleOptimizer/planningReproducibility.test.ts:179:102
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 17 skipped (18)
+   Start at  12:18:15
+   Duration  584ms (transform 119ms, setup 11ms, collect 126ms, tests 38ms, environment 291ms, prepare 38ms)
+

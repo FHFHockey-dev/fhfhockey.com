@@ -1,0 +1,53 @@
+{
+  "initialSourceFiles": 1975,
+  "finalSourceFiles": 1975,
+  "allPreExistingSourceBytesUnchanged": true,
+  "archiveMatchesTestedSources": true,
+  "historicalPacketFiles": 54,
+  "historicalChanges": [],
+  "sourceArchiveSha256": "416c54bda8b28e48611fbdd3f9499d82b610aa6d1794d96b0283f89693eacd85",
+  "sourceManifestSha256": "acbf253f89ae8e6e966585c5d783909d6384e317b1c0ae2d634247f64f6bc7bb",
+  "keyFiles": {
+    "web/lib/projections/stages/skater-stage.ts": {
+      "snapshot": "fe8357390ed4d5ed599bbd0429df5ea6150f703c9f8b121819198d6b4fc8c05b",
+      "canonicalNow": "fe8357390ed4d5ed599bbd0429df5ea6150f703c9f8b121819198d6b4fc8c05b",
+      "matches": true
+    },
+    "web/lib/projections/utils/market-output-builders.ts": {
+      "snapshot": "1daa4512af0109f4aa99bbff6ed97065a9516a34446d52f7a3f57d79b9067b43",
+      "canonicalNow": "1daa4512af0109f4aa99bbff6ed97065a9516a34446d52f7a3f57d79b9067b43",
+      "matches": true
+    },
+    "web/lib/projections/uncertainty.ts": {
+      "snapshot": "bbfa835b827ec18f671ff37b9c3e56c31a485e4e0441d78be83bdd7bb6dea62b",
+      "canonicalNow": "bbfa835b827ec18f671ff37b9c3e56c31a485e4e0441d78be83bdd7bb6dea62b",
+      "matches": true
+    },
+    "web/lib/projections/dispersion.ts": {
+      "snapshot": "169d6f59416e5bde27dca9b814bb3d95c878436e9cf5f404be57fb697d2378b5",
+      "canonicalNow": "169d6f59416e5bde27dca9b814bb3d95c878436e9cf5f404be57fb697d2378b5",
+      "matches": true
+    },
+    "web/lib/projections/goalie/leagueSavePct.ts": {
+      "snapshot": "363597731c381eef6f871b7d6210caad1feabec5b5abf86c910da0baff121677",
+      "canonicalNow": "363597731c381eef6f871b7d6210caad1feabec5b5abf86c910da0baff121677",
+      "matches": true
+    },
+    "web/lib/projections/stages/goalie-stage.ts": {
+      "snapshot": "fa9da548c345cab0ba88e54160e47befc222f6f64143c39509c1aa50e9d0efb0",
+      "canonicalNow": "fa9da548c345cab0ba88e54160e47befc222f6f64143c39509c1aa50e9d0efb0",
+      "matches": true
+    },
+    "web/lib/projections/calculators/skater-adjustments.ts": {
+      "snapshot": "89cf0e544daac80c01f9af267a7774a31ce523d2e483fd87074d999c18fd119b",
+      "canonicalNow": "89cf0e544daac80c01f9af267a7774a31ce523d2e483fd87074d999c18fd119b",
+      "matches": true
+    },
+    "web/lib/projections/runProjectionV2.test.ts": {
+      "snapshot": "b669fbeb639c733c27dfee2f27003c9ae0d7359c282e0ee495e45792663ca5d3",
+      "canonicalNow": "b669fbeb639c733c27dfee2f27003c9ae0d7359c282e0ee495e45792663ca5d3",
+      "matches": true
+    }
+  },
+  "canonicalApplicationEditsInR2": 0
+}

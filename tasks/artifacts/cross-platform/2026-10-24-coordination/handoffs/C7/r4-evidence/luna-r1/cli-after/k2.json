@@ -1,0 +1,55 @@
+{
+  "version": "ifttt-luna-review-v1",
+  "canPublish": false,
+  "canWriteAliases": false,
+  "canChangeStatus": false,
+  "canExecuteReplacement": false,
+  "status": "held",
+  "holds": [
+    "decisions_unresolved",
+    "luna_dispatch_disabled"
+  ],
+  "lineage": {
+    "originalPostId": "1000",
+    "author": "reporter",
+    "url": "https://x.com/Reporter/status/1000",
+    "textVersion": "tweet-source-claim-v1:text:444a46aa6d7675b9be6de4454f4b3c4bf913da388df675cc4f4afc4a54744bc9",
+    "packetHash": "b35aeefb5a18bf268e568dd97cbf681bffa84b18e5f2c17f1cf618e72df539d7"
+  },
+  "identity": null,
+  "goalieStatuses": [],
+  "decisionReview": {
+    "mode": "review_only",
+    "canPublish": false,
+    "canChangeStatus": false,
+    "providerDispatchEnabled": false,
+    "bindingVersion": "tweet-decision-review-binding-v1",
+    "planHash": "2ac9fe5aad4a057dec5d9583963e278394d95f38c913ff929ff7f32f90dce0fa",
+    "packetHash": "b35aeefb5a18bf268e568dd97cbf681bffa84b18e5f2c17f1cf618e72df539d7",
+    "sourceSupportMeaning": "assessment_of_supplied_statement_only",
+    "calibrationStatus": "uncalibrated_shadow_only",
+    "reviewReasons": [
+      "uncalibrated_shadow_only"
+    ],
+    "status": "unknown",
+    "reason": "reference_transport_or_response_error",
+    "post": {
+      "status": "unknown",
+      "reason": "reference_transport_or_response_error"
+    },
+    "claims": [],
+    "heldCandidates": [
+      {
+        "candidateIndex": 0,
+        "observationId": "tweet-observation-v2:4ad2cc4672b7cd6330a321cb92efbc0d37dd7f91d3d07f5ac7cd5962d377aeca",
+        "reasons": [
+          "statement_missing"
+        ]
+      }
+    ],
+    "unboundStatements": []
+  },
+  "attempts": 0,
+  "requestIds": [],
+  "reviewQueueKey": "57b9a960ef490f31dc75154460db5f002fbba7e4ee27fccc7231293847b82076"
+}

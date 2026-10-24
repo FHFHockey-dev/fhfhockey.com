@@ -1,0 +1,12 @@
+{
+  "command": [
+    "npm",
+    "test",
+    "--",
+    "--run",
+    "__tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts"
+  ],
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-ctpi-independent-review-mskfkylx/isolation/red-snapshot/web",
+  "exit_code": 1,
+  "duration_seconds": 0.56
+}

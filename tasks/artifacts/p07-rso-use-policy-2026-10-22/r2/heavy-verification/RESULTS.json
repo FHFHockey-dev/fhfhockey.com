@@ -1,0 +1,53 @@
+{
+  "started_at": "2026-10-22T16:29:14.353887+00:00",
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web",
+  "commands": [
+    {
+      "name": "typecheck",
+      "argv": [
+        "npm",
+        "exec",
+        "--no",
+        "--",
+        "tsc",
+        "--noEmit",
+        "--incremental",
+        "false",
+        "--project",
+        "audit.application-tsconfig.json"
+      ],
+      "started_at": "2026-10-22T16:29:14.483687+00:00",
+      "finished_at": "2026-10-22T16:30:11.811842+00:00",
+      "exit_code": 0,
+      "log": "typecheck.log"
+    },
+    {
+      "name": "lint",
+      "argv": [
+        "npm",
+        "exec",
+        "--no",
+        "--",
+        "eslint",
+        "lib/rosterScheduleOptimizer/currentPlanningRead.ts",
+        "lib/rosterScheduleOptimizer/executionAdapter.ts",
+        "lib/rosterScheduleOptimizer/executionAdapter.test.ts",
+        "lib/player-forecasts/planningContributions.ts",
+        "pages/api/v1/roster-schedule-optimizer/data.ts",
+        "__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts",
+        "hooks/useRosterPlanning.ts",
+        "hooks/useRosterPlanning.test.tsx"
+      ],
+      "started_at": "2026-10-22T16:30:11.811896+00:00",
+      "finished_at": "2026-10-22T16:30:13.342538+00:00",
+      "exit_code": 0,
+      "log": "lint.log"
+    }
+  ],
+  "runtime": {
+    "node": "v22.11.0",
+    "npm": "10.9.0"
+  },
+  "lock_released": true,
+  "finished_at": "2026-10-22T16:30:13.343234+00:00"
+}

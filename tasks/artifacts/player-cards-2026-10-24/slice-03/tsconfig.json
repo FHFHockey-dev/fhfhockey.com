@@ -1,0 +1,17 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "../../../../web/next-bootstrap.d.ts",
+    "../../../../web/lib/player-cards/interactionFixtures.ts",
+    "../../../../web/lib/player-cards/interactionSnapshot.ts",
+    "../../../../web/components/player-cards/PlayerCardFlow.tsx",
+    "../../../../web/components/player-cards/InteractiveCard.tsx",
+    "../../../../web/components/player-cards/PlayerCardFlow.test.tsx"
+  ],
+  "exclude": [
+    "../../../../web/node_modules"
+  ]
+}

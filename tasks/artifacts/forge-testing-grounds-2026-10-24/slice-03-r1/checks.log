@@ -1,0 +1,39 @@
+COMMAND: npm test -- --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/r1.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/r1.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+ ✓ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/boundaries.test.ts (10 tests | 8 skipped) 4ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed | 8 skipped (10)
+   Start at  11:47:28
+   Duration  170ms (transform 36ms, setup 2ms, collect 46ms, tests 4ms, environment 0ms, prepare 32ms)
+
+
+EXIT: 0; elapsedSeconds: 0.54
+COMMAND: npm test -- --run lib/forge-testing-grounds/boundedWorker.test.ts --maxWorkers=1 --no-file-parallelism
+
+> web@0.1.0 test
+> vitest --run lib/forge-testing-grounds/boundedWorker.test.ts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/forge-testing-grounds/boundedWorker.test.ts (19 tests) 25ms
+
+ Test Files  1 passed (1)
+      Tests  19 passed (19)
+   Start at  11:47:28
+   Duration  217ms (transform 40ms, setup 3ms, collect 50ms, tests 25ms, environment 0ms, prepare 31ms)
+
+
+EXIT: 0; elapsedSeconds: 0.642
+COMMAND: npx --no-install tsc --noEmit --strict --skipLibCheck --target es2015 --lib dom,dom.iterable,esnext --module esnext --moduleResolution bundler --esModuleInterop lib/forge-testing-grounds/runnerContracts.ts lib/forge-testing-grounds/memoryRunStore.ts lib/forge-testing-grounds/boundedWorker.test.ts
+EXIT: 0; output: (none)
+
+COMMAND: npx --no-install eslint --report-unused-disable-directives-severity warn lib/forge-testing-grounds/runnerContracts.ts lib/forge-testing-grounds/memoryRunStore.ts lib/forge-testing-grounds/boundedWorker.test.ts
+EXIT: 0; output: (none)

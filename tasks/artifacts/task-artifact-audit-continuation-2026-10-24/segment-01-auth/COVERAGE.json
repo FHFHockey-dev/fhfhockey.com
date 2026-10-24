@@ -1,0 +1,204 @@
+{
+  "at": "2026-10-24T15:20:30.469059+00:00",
+  "scope": "Three unique auth source documents plus six selected cited/claim-relevant receipts; full read at exact hashes. No global rescan.",
+  "frozen_parent_index_unmodified": true,
+  "entries": [
+    {
+      "path": "tasks/TASKS/auth-user-settings-platform/docs/auth-provider-manual-config.md",
+      "sha256": "05b8f6fe4e9bf4ca058c0d9152240aef3736376893a84522e6ede98f283f16aa",
+      "bytes": 10791,
+      "lines": 190,
+      "coverage": "content-reviewed",
+      "read_ranges": [
+        [
+          1,
+          190
+        ]
+      ],
+      "exceptions": [],
+      "claim_limit": "Whole documentary text read. All tests, source behavior, decisions and hosted statements remain attributed retained evidence; not independently executed or current-live proof."
+    },
+    {
+      "path": "tasks/TASKS/auth-user-settings-platform/prd/prd-auth-user-settings-platform.md",
+      "sha256": "9b2b743962f86b50b74a3c34ddf571d6f183d41463aa2d792a6b21bc4b5c9851",
+      "bytes": 31530,
+      "lines": 344,
+      "coverage": "content-reviewed",
+      "read_ranges": [
+        [
+          1,
+          344
+        ]
+      ],
+      "exceptions": [],
+      "claim_limit": "Whole documentary text read. All tests, source behavior, decisions and hosted statements remain attributed retained evidence; not independently executed or current-live proof."
+    },
+    {
+      "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+      "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+      "bytes": 86202,
+      "lines": 363,
+      "coverage": "content-reviewed",
+      "read_ranges": [
+        [
+          1,
+          363
+        ]
+      ],
+      "exceptions": [],
+      "claim_limit": "Whole documentary text read. All tests, source behavior, decisions and hosted statements remain attributed retained evidence; not independently executed or current-live proof."
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SECURITY-MATRIX.md",
+      "sha256": "35a4ffe308ada5d9706dd61fe5b60eeab09ecaa15e02f5e7af9259994efb70bd",
+      "bytes": 15923,
+      "lines": 70,
+      "coverage": "content-reviewed",
+      "read_ranges": [
+        [
+          1,
+          70
+        ]
+      ],
+      "exceptions": [],
+      "claim_limit": "Whole documentary text read. All tests, source behavior, decisions and hosted statements remain attributed retained evidence; not independently executed or current-live proof."
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CREDENTIALS-PROPOSAL.md",
+      "sha256": "e154bbdd62968d7eb2013bd9b7dad5b7268914aa8bd951c720d80e5dbddc194c",
+      "bytes": 16669,
+      "lines": 67,
+      "coverage": "content-reviewed",
+      "read_ranges": [
+        [
+          1,
+          67
+        ]
+      ],
+      "exceptions": [],
+      "claim_limit": "Whole documentary text read. All tests, source behavior, decisions and hosted statements remain attributed retained evidence; not independently executed or current-live proof.",
+      "prior_sensitive_filename_exclusion": "Frozen prior index remains unchanged. Continuation classifies this explicitly cited receipt as value-free policy/decision prose after literal-pattern safety check and full read, not a credential-value artifact. credential-availability.json and all actual secret/capture files remain excluded."
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-RECEIPTS.md",
+      "sha256": "4bd572d4d018581c95ce5f5dcf3b2a01cd85a8bd0aca52e804d3e02d4a39d405",
+      "bytes": 6981,
+      "lines": 44,
+      "coverage": "content-reviewed",
+      "read_ranges": [
+        [
+          1,
+          44
+        ]
+      ],
+      "exceptions": [],
+      "claim_limit": "Whole documentary text read. All tests, source behavior, decisions and hosted statements remain attributed retained evidence; not independently executed or current-live proof."
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-local/MASTER-RECONCILIATION.md",
+      "sha256": "77e611c0c7a0cee164561e7a31cac3d53019c46e98cf795b0597e07426dc7c92",
+      "bytes": 4404,
+      "lines": 27,
+      "coverage": "content-reviewed",
+      "read_ranges": [
+        [
+          1,
+          27
+        ]
+      ],
+      "exceptions": [],
+      "claim_limit": "Whole documentary text read. All tests, source behavior, decisions and hosted statements remain attributed retained evidence; not independently executed or current-live proof."
+    },
+    {
+      "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G1-auth-draftranker.md",
+      "sha256": "80476c68a21f1da68cbb63ec2b1c7b88c088527ef8a999db5c979589708f7c99",
+      "bytes": 22378,
+      "lines": 115,
+      "coverage": "content-reviewed",
+      "read_ranges": [
+        [
+          1,
+          115
+        ]
+      ],
+      "exceptions": [],
+      "claim_limit": "Whole documentary text read. All tests, source behavior, decisions and hosted statements remain attributed retained evidence; not independently executed or current-live proof."
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-patreon/HANDOFF.md",
+      "sha256": "f2c2ba189e6438603b40a6df147a63279251370046b1e7dc9fb55e006b3ba9b7",
+      "bytes": 5575,
+      "lines": 44,
+      "coverage": "content-reviewed",
+      "read_ranges": [
+        [
+          1,
+          44
+        ]
+      ],
+      "exceptions": [],
+      "claim_limit": "Whole documentary text read. All tests, source behavior, decisions and hosted statements remain attributed retained evidence; not independently executed or current-live proof."
+    }
+  ],
+  "totals": {
+    "files": 9,
+    "bytes": 200453,
+    "lines": 1264
+  },
+  "source_checkboxes": {
+    "checked": 206,
+    "unchecked": 7,
+    "unmapped_unchecked": 0
+  },
+  "unchecked_scope_mapping": [
+    {
+      "line": 199,
+      "text": "- [ ] NEW 17.0 Rotate sensitive credentials that were exposed during auth setup and debugging",
+      "stable_ids": [
+        "AUTH-LEGACY-CONTAINMENT"
+      ]
+    },
+    {
+      "line": 200,
+      "text": "- [ ] NEW 17.1 Rotate the Supabase service-role key and any other exposed Supabase secrets.",
+      "stable_ids": [
+        "AUTH-LEGACY-CONTAINMENT"
+      ]
+    },
+    {
+      "line": 201,
+      "text": "- [ ] NEW 17.2 Rotate exposed third-party credentials, including Yahoo, Resend, database, and Google service-account secrets.",
+      "stable_ids": [
+        "AUTH-LEGACY-CONTAINMENT"
+      ]
+    },
+    {
+      "line": 202,
+      "text": "- [ ] NEW 17.3 Update local and deployed environment configuration with the rotated values and verify dependent integrations still work.",
+      "stable_ids": [
+        "AUTH-LEGACY-CONTAINMENT"
+      ]
+    },
+    {
+      "line": 344,
+      "text": "- [ ] NEW 46.0 **P2 OAuth PKCE migration dependency:** the browser client explicitly uses `flowType: \"pkce\"`; callback/reset routes exchange code responses, retain token-hash compatibility, scrub credential-bearing locations before processing, preserve safe return paths, and now fall back to credential-free hard navigation when post-auth router replacement rejects. The focused AuthForm/callback/reset/location/client group passes 5 files and 35/35 tests (2026-08-01). Hosted Confirm signup/Reset Password templates use `RedirectTo`/`TokenHash`; the authorized Production `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq` passed fresh value-free confirmation and recovery completion, including confirmed-user/profile/settings readback, password update/sign-out, and zero-residual cleanup. Current Google verification reached the expected Google OAuth identifier page with only parameter-name evidence; full provider completion remains intentionally open under the no-provider boundary before retiring legacy fragment compatibility.",
+      "stable_ids": [
+        "AUTH-PKCE-COMPLETION"
+      ]
+    },
+    {
+      "line": 357,
+      "text": "- [ ] NEW 51.0 **P1 legacy mailbox plaintext-credential retention:** a bounded Sent Items verification for an unrelated support reply unexpectedly exposed older messages containing plaintext credential material. Do not repeat, copy, test, or reuse any value. Treat the already-rotated FHFH password family as contained under NEW 48, identify the owner/system for every other affected credential without persisting values, verify each is retired or rotate and contain it, then obtain explicit owner approval before deleting the source messages and any recoverable mailbox copies. A follow-up metadata-only inventory found four candidate messages\u2014one `FHFH` subject from 2025 and three `fhfhockey.com` developer-account subjects from 2022\u2014sent only to a Gmail-domain recipient; no body, value, message ID, address, or link was read or persisted. Metadata cannot identify the exact provider/system or prove retirement, so obtain an owner-supplied redacted system/owner/status mapping before any rotation or deletion. No credential, session, provider, or message changed (updated 2026-07-21).",
+      "stable_ids": [
+        "AUTH-LEGACY-CONTAINMENT"
+      ]
+    },
+    {
+      "line": 362,
+      "text": "- [ ] NEW 55.0 **P2 browser roles hold full grants on provider-linkage tables (2026-10-17 completion audit):** `anon` and `authenticated` hold ALL privileges, including TRUNCATE and TRIGGER, on `connected_accounts`, `external_leagues`, `external_teams`, `provider_sync_runs`, `user_entitlements` and `user_provider_preferences` (baseline l.43635-44659). The owner `insert_own` policy plus `idx_connected_accounts_provider_user_id_unique` (baseline l.34074) lets any signed-in user insert a row that squats another person's `(provider, provider_user_id)`, so the real owner's Patreon/Yahoo link fails with 23505. The browser only reads `connected_accounts` (`AccountSettingsPage.tsx:880,1025`). Cross-referenced by master NEW-028 (6.3). Close with a reviewed grant-tightening migration and a read-only production grant check. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G1-auth-draftranker.md`. _(Partial 2026-10-19: approved migration20261019052934 and dated grant readback cover connected_accounts,external_leagues,external_teams,provider_sync_runs only. user_entitlements and user_provider_preferences retain the source grant gap; legitimate owner preference upserts must be preserved. This row remains open for the fenced two-table repair and authorized effective-grant receipt.)_ [Precise proposal](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/continuation-review/R-RECEIPTS.md).",
+      "stable_ids": [
+        "SECURITY-RESIDUAL-ACL"
+      ]
+    }
+  ]
+}

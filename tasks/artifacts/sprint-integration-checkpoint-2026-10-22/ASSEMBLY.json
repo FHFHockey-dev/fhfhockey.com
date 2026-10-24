@@ -1,0 +1,17 @@
+{
+  "snapshot": "/tmp/fhfh-sprint-integration-u5ophe9k/snapshot",
+  "base": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task10-r1-2er5yphn",
+  "base_manifest": "task10-display-2026-10-22/r1/FIXED-SNAPSHOT.json",
+  "base_files": 3379,
+  "accepted_pins": 110,
+  "dependencies": 244,
+  "canonical_head": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+  "branch": "octoberBranch",
+  "application_edits": 0,
+  "excluded_new_work": [
+    "Task2 R2 warm-cache reproducibility hold",
+    "Claude tasks6/7/8/11 newer model/runner changes",
+    "unqualified skater experiments"
+  ],
+  "release_ready": false
+}

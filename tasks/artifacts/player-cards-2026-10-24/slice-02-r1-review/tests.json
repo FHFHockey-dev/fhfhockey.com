@@ -1,0 +1,11 @@
+{
+  "name": "tests",
+  "command": "npm test -- --run --config ../tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review/vitest.review.config.mjs --configLoader native --no-cache lib/player-cards/domain.test.ts lib/player-cards/aggregation.r1.test.ts",
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "start": "2026-10-24T17:24:25.363Z",
+  "end": "2026-10-24T17:24:26.026Z",
+  "exitCode": 0,
+  "signal": null,
+  "error": null,
+  "note": "Actual source; original probes copied byte-identically at same directory depth solely to preserve original receipts. Existing local dependencies; original tests with artifact-owned Node/no-setup/no-cache native config. Types/lint scope excludes slice03."
+}

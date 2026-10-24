@@ -1,0 +1,485 @@
+{
+  "at": "2026-10-23T16:51:16.825958+00:00",
+  "qualification": "Latest per-case evidence across distinct frozen run pins, NOT a green full run. Original full run16/44 passed.",
+  "runs": [
+    {
+      "run": "affected-spec-01",
+      "pass": 16,
+      "fail": 28,
+      "stats": {
+        "startTime": "2026-10-23T16:04:06.348Z",
+        "duration": 583707.0909999999,
+        "expected": 16,
+        "skipped": 0,
+        "unexpected": 28,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "failed-families-01",
+      "pass": 7,
+      "fail": 10,
+      "stats": {
+        "startTime": "2026-10-23T16:15:29.334Z",
+        "duration": 194657.719,
+        "expected": 7,
+        "skipped": 0,
+        "unexpected": 10,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "commandbar-and-oracles-01",
+      "pass": 8,
+      "fail": 2,
+      "stats": {
+        "startTime": "2026-10-23T16:21:35.567Z",
+        "duration": 102686.511,
+        "expected": 8,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "remaining-controls-01",
+      "pass": 3,
+      "fail": 3,
+      "stats": {
+        "startTime": "2026-10-23T16:24:06.207Z",
+        "duration": 38764.935,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "disclosure-controls-01",
+      "pass": 1,
+      "fail": 2,
+      "stats": {
+        "startTime": "2026-10-23T16:27:47.857Z",
+        "duration": 130348.03199999999,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "adjudicated-controls-01",
+      "pass": 3,
+      "fail": 2,
+      "stats": {
+        "startTime": "2026-10-23T16:31:13.649Z",
+        "duration": 74754.31300000001,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "account-and-partial-01",
+      "pass": 0,
+      "fail": 2,
+      "stats": {
+        "startTime": "2026-10-23T16:33:49.411Z",
+        "duration": 78372.727,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "alignment-and-account-01",
+      "pass": 3,
+      "fail": 3,
+      "stats": {
+        "startTime": "2026-10-23T16:36:23.753Z",
+        "duration": 43734.429000000004,
+        "expected": 3,
+        "skipped": 0,
+        "unexpected": 3,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "final-disclosure-controls-01",
+      "pass": 1,
+      "fail": 1,
+      "stats": {
+        "startTime": "2026-10-23T16:38:32.048Z",
+        "duration": 25452.176,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "horizontal-and-bench-01",
+      "pass": 1,
+      "fail": 1,
+      "stats": {
+        "startTime": "2026-10-23T16:41:39.064Z",
+        "duration": 27818.6,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "final-contract-controls-01",
+      "pass": 1,
+      "fail": 2,
+      "stats": {
+        "startTime": "2026-10-23T16:43:24.072Z",
+        "duration": 38576.289000000004,
+        "expected": 1,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "retained-yahoo-final-01",
+      "pass": 0,
+      "fail": 1,
+      "stats": {
+        "startTime": "2026-10-23T16:45:30.533Z",
+        "duration": 16965.459,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 1,
+        "flaky": 0
+      }
+    },
+    {
+      "run": "final-unknown-contracts-01",
+      "pass": 2,
+      "fail": 0,
+      "stats": {
+        "startTime": "2026-10-23T16:47:27.682Z",
+        "duration": 5002.823,
+        "expected": 2,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      }
+    }
+  ],
+  "latest": [
+    {
+      "title": "connected refresh fixtures preserve nonzero intent through offline, cooldown, Undo and reopen",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "commandbar-and-oracles-01"
+    },
+    {
+      "title": "manual workspace retains reviewed intent, protections and locks through recalculation and reload",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "mobile tabs keep selection and expose the matchup and player details",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "readiness controls reach existing inputs across the required viewports",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "remaining-controls-01"
+    },
+    {
+      "title": "streams A to B to C through successive conditional acquisitions and keeps expanded desktop layout",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "commandbar-and-oracles-01"
+    },
+    {
+      "title": "weekly lock keeps one fixed occupant across a window, including a confirmed midpoint assignment",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "fixture category tradeoffs use only startable post-acquisition games on desktop and mobile",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "commandbar-and-oracles-01"
+    },
+    {
+      "title": "fixture category gains use only startable post-acquisition games on desktop and mobile",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "commandbar-and-oracles-01"
+    },
+    {
+      "title": "fixture category unavailable baseline use only startable post-acquisition games on desktop and mobile",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "commandbar-and-oracles-01"
+    },
+    {
+      "title": "provider refresh proposes repairs while keeping a selected move",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "adjudicated-controls-01"
+    },
+    {
+      "title": "connected manager bench locks constrain the worker and preserve provider authority through undo and reload",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "remaining-controls-01"
+    },
+    {
+      "title": "provider refresh adopts the authoritative league timezone and keeps the selected horizon and intent on reload",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "shows sequential stream occupants with real games and retains workspace layout when details expand",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "failed-families-01"
+    },
+    {
+      "title": "dense roster keeps schedule views and their scrollbars inside the desktop frame",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "failed-families-01"
+    },
+    {
+      "title": "Yahoo timeout retains schedule analysis and matchup-week navigation without actionable acquisitions",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "final-unknown-contracts-01"
+    },
+    {
+      "title": "mixed Kaprizov coverage stays unresolved until complete evidence supports the bench decision",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "disclosure-controls-01"
+    },
+    {
+      "title": "weekly LW/RW and UTIL bench explanations preserve midpoint locks through worker reload",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "failed-families-01"
+    },
+    {
+      "title": "manual league eligibility must be confirmed and survives a reload",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "failed-families-01"
+    },
+    {
+      "title": "goalie competition stays unresolved across the worker and evidence view",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "assignment-only forecasts preserve their allowed uses in the browser",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "totals-only forecasts preserve their allowed uses in the browser",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "legacy forecasts preserve their allowed uses in the browser",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "unproven-lineage forecasts cannot certify readiness in the browser",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "connected refresh and account save preserve forecast permissions and exclusions",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "alignment-and-account-01"
+    },
+    {
+      "title": "conflicting forecasts keep capacity planning and show the affected target",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "failed-families-01"
+    },
+    {
+      "title": "points goalie coverage survives worker reload and benches harmful starts once credited",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "remaining-controls-01"
+    },
+    {
+      "title": "unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (manual)",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "failed-families-01"
+    },
+    {
+      "title": "unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (connected)",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "failed-families-01"
+    },
+    {
+      "title": "candidate feedback views preserve eligibility, availability and planned-add semantics",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "final-unknown-contracts-01"
+    },
+    {
+      "title": "projected candidate fit values usable points above schedule quantity",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "planning worker measures the full typical workload and cancels superseded edits",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "candidate worker ranks the complete population without blocking filters and retains zero AGP",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "adjudicated-controls-01"
+    },
+    {
+      "title": "Audit1 native candidate Worker finds complete swaps before any plan is selected",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "commandbar-and-oracles-01"
+    },
+    {
+      "title": "compact layout accounts for 20 slots with a maximum of 20 slot rows and internal labels",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "commandbar-and-oracles-01"
+    },
+    {
+      "title": "compact layout accounts for 29 slots with a maximum of 20 slot rows and internal labels",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "commandbar-and-oracles-01"
+    },
+    {
+      "title": "compact day and bench controls preserve saved intent and keyboard selection",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "final-contract-controls-01"
+    },
+    {
+      "title": "compact short desktop and mobile retain rows, day state, reserves and unknown goalie status",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "horizontal-and-bench-01"
+    },
+    {
+      "title": "compact future and partial weeks use league dates and retain the full horizon without saving",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "alignment-and-account-01"
+    },
+    {
+      "title": "compact initial future week defaults to Monday and preserves clipped horizons",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "alignment-and-account-01"
+    },
+    {
+      "title": "compact vacancies and non-playing holds survive day changes and Bench collapse",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "final-disclosure-controls-01"
+    },
+    {
+      "title": "alerts on a healthy player left in IR and shows what activating him gains",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    },
+    {
+      "title": "plans tonight's goalie from Yahoo's Starting and Not Starting marks and shows them in the grid",
+      "project": "chromium",
+      "status": "passed",
+      "errors": [],
+      "run": "affected-spec-01"
+    }
+  ]
+}

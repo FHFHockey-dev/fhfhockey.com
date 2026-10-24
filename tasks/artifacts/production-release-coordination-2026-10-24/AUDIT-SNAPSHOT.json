@@ -1,0 +1,35 @@
+{
+  "pins": [
+    {
+      "path": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "sha256": "b4f996bf98fe94e4d858e8848a3b07e940c6bebc0d5a3ce6d154c44137863bfa",
+      "bytes": 767362,
+      "matches_reported": true
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "sha256": "05aa6d10f6f078cf46d442e3ca54c82687ad250bc8d9bf4f989b7b07498ee074",
+      "bytes": 803781,
+      "matches_reported": true
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json",
+      "sha256": "8f757cad2a836827347604fd0376055219f11ffed36340cd101e06aab3e706a9",
+      "bytes": 1605512,
+      "matches_reported": true
+    }
+  ],
+  "reported_counts": {
+    "stable_ids": 217,
+    "evidence": 1278,
+    "readable_children": 80,
+    "legacy_blocks": 32
+  },
+  "library": {
+    "id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "version": 21,
+    "bytes": 767362
+  },
+  "report": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/FINAL-CHECKPOINT.json",
+  "custody": "Audit retains sole canonical writer; no pending write reported. Full audit unfinished."
+}

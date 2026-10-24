@@ -1,0 +1,321 @@
+{
+    "utc": "2026-10-24T17:40:40.1336610Z",
+    "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+    "method": "Occlusion-correct material-family masks via magenta slot swaps; 480x270 renders, threshold 0.10 summed RGB difference; env view (pilot, targets, text hidden).",
+    "views": [
+        {
+            "view": "route-overview",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": false,
+            "shares": [
+                {
+                    "family": "road deck (Road graphite, flat untextured)",
+                    "fraction": 0.14014659821987152
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.49026235938072205
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.09942129999399185
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.06831789761781693
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.20185184478759766
+                }
+            ]
+        },
+        {
+            "view": "compounds-overview",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": false,
+            "shares": [
+                {
+                    "family": "road deck (Road graphite, flat untextured)",
+                    "fraction": 0.26315587759017944
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.5440123677253723
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.14077159762382507
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.032484568655490875
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.019583333283662796
+                }
+            ]
+        },
+        {
+            "view": "basin-overview-west",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": false,
+            "shares": [
+                {
+                    "family": "road deck (Road graphite, flat untextured)",
+                    "fraction": 0.19063271582126617
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.4670756161212921
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.09942129999399185
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.1182175949215889
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.12465278059244156
+                }
+            ]
+        },
+        {
+            "view": "spawn-cockpit",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (Road graphite, flat untextured)",
+                    "fraction": 0.11406635493040085
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.12351851910352707
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.3825463056564331
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.38235339522361755
+                }
+            ]
+        },
+        {
+            "view": "lower-approach",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (Road graphite, flat untextured)",
+                    "fraction": 0.006604938302189112
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.11359567940235138
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.532353401184082
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.3520524799823761
+                }
+            ]
+        },
+        {
+            "view": "middle-ascent",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (Road graphite, flat untextured)",
+                    "fraction": 0.007592592388391495
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.04800154268741608
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.39358025789260864
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.55272376537323
+                }
+            ]
+        },
+        {
+            "view": "radar-to-energy",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (Road graphite, flat untextured)",
+                    "fraction": 0.055771604180336
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.1684645116329193
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.49871140718460083
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.2866358160972595
+                }
+            ]
+        },
+        {
+            "view": "a-plaza-to-se-logistics",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (Road graphite, flat untextured)",
+                    "fraction": 0.07580246776342392
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.3570910394191742
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.2467438280582428
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.4271527826786041
+                }
+            ]
+        },
+        {
+            "view": "a-plaza-to-ne-service",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (Road graphite, flat untextured)",
+                    "fraction": 0.23765432834625244
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.11986111104488373
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.32374998927116394
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.33118826150894165
+                }
+            ]
+        },
+        {
+            "view": "spawn-road-east",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (Road graphite, flat untextured)",
+                    "fraction": 0.3552932143211365
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.11986111104488373
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.17981481552124023
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.34973764419555664
+                }
+            ]
+        }
+    ],
+    "overviewMean": [
+        {
+            "family": "road deck (Road graphite, flat untextured)",
+            "fraction": 0.19797839224338531
+        },
+        {
+            "family": "canyon rock (v14 strata)",
+            "fraction": 0.5004501342773438
+        },
+        {
+            "family": "structures and props",
+            "fraction": 0.11320473253726959
+        },
+        {
+            "family": "water",
+            "fraction": 0.07300668954849243
+        },
+        {
+            "family": "sky / background",
+            "fraction": 0.11536265164613724
+        }
+    ],
+    "playerHeightMean": [
+        {
+            "family": "road deck (Road graphite, flat untextured)",
+            "fraction": 0.12182649970054626
+        },
+        {
+            "family": "canyon rock (v14 strata)",
+            "fraction": 0.15005621314048767
+        },
+        {
+            "family": "structures and props",
+            "fraction": 0.3653571307659149
+        },
+        {
+            "family": "water",
+            "fraction": 0.0
+        },
+        {
+            "family": "sky / background",
+            "fraction": 0.383120596408844
+        }
+    ]
+}

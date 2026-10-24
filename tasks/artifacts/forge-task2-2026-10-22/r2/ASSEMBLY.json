@@ -1,0 +1,30 @@
+{
+  "snapshot": "/tmp/fhfh-task2-r2-d3c181zf",
+  "baseCommit": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+  "trackedPaths": [
+    "web/lib",
+    "web/scripts",
+    "web/utils",
+    "web/types",
+    "web/tests",
+    "web/package.json",
+    "web/package-lock.json",
+    "web/tsconfig.json",
+    "web/vitest.config.mts",
+    "web/next-env.d.ts",
+    "web/next-bootstrap.d.ts",
+    "web/yahoo-fantasy.d.ts",
+    "web/eslint.config.mjs",
+    "web/__tests__/vitest.setup.js",
+    "supabase/migrations/20261021182129_forge_latest_rolling_rows.sql"
+  ],
+  "overlayArchives": [
+    "task2-source.tar.gz excluding superseded skater stage",
+    "r1/r1-source.tar.gz"
+  ],
+  "stageSource": "base commit, includes Claude NB/market changes and original task2 fallback",
+  "canonicalUncommittedForeignWorkIncluded": false,
+  "sourceCount": 1975,
+  "node": "22.11.0",
+  "npm": "10.9.0"
+}

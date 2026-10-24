@@ -1,0 +1,62 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+ ✓ web/lib/forge-testing-grounds/ownerRoutes.test.ts (32 tests) 9ms
+ ✓ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/server-controls.test.ts (5 tests) 10ms
+ ✓ web/lib/forge-testing-grounds/serverOwnerBoundary.test.ts (19 tests) 7ms
+(node:53587) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx > owner workspace lifecycle > renders only a generic locked SSR frame with no private props or data hooks
+Warning: useLayoutEffect does nothing on the server, because its effect cannot be encoded into the server renderer's output format. This will lead to a mismatch between the initial, non-hydrated UI and the intended UI. To avoid this, useLayoutEffect should only be used in components that render exclusively on the client. See https://reactjs.org/link/uselayouteffect-ssr for common fixes.
+    at SideEffect (/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/shared/lib/side-effect.js:16:13)
+    at Head (/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/shared/lib/head.js:154:11)
+    at TestingGroundsPage
+Warning: useLayoutEffect does nothing on the server, because its effect cannot be encoded into the server renderer's output format. This will lead to a mismatch between the initial, non-hydrated UI and the intended UI. To avoid this, useLayoutEffect should only be used in components that render exclusively on the client. See https://reactjs.org/link/uselayouteffect-ssr for common fixes.
+    at SideEffect (/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/shared/lib/side-effect.js:16:13)
+    at Head (/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/shared/lib/head.js:154:11)
+    at TestingGroundsPage
+
+ ✓ web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx (10 tests) 352ms
+(node:53591) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/gate-controls.test.tsx (3 tests | 1 failed) 76ms
+   × Independent owner-gate race controls > does not remount the workspace from an auth refresh while the document remains hidden [S05-R1] 64ms
+     → expected <span …(1)></span> to be null
+   ✓ Independent owner-gate race controls > rejects late JSON capability completion after sign-out even if HTTP headers were previously successful 6ms
+   ✓ Independent owner-gate race controls > keeps session-read errors and enabled/incorrect capability bodies unavailable without reflecting private messages 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/gate-controls.test.tsx > Independent owner-gate race controls > does not remount the workspace from an auth refresh while the document remains hidden [S05-R1]
+AssertionError: expected <span …(1)></span> to be null
+
+- Expected: 
+null
+
++ Received: 
+<span
+  class="_previewBadge_6e4668"
+>
+  Synthetic preview
+</span>
+
+ ❯ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/gate-controls.test.tsx:27:102
+     25|     await act(async () => change("TOKEN_REFRESHED", { access_token: "s…
+     26|     await act(async () => refreshed.resolve(grant()));
+     27|     expect(document.visibilityState).toBe("hidden"); expect(screen.que…
+       |                                                                                                      ^
+     28|   });
+     29|   it("rejects late JSON capability completion after sign-out even if H…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  1 failed | 68 passed (69)
+   Start at  12:45:40
+   Duration  1.75s (transform 206ms, setup 7ms, collect 287ms, tests 454ms, environment 424ms, prepare 165ms)
+

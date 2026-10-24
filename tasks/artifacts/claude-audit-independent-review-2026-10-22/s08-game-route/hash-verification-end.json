@@ -1,0 +1,50 @@
+{
+  "head": "d77602cf7fbdd4549588127603ebf0b535138b99",
+  "branch": "octoberBranch",
+  "files": [
+    {
+      "file": "web/pages/stats/game/[gameId].tsx",
+      "sha256": "dc4f19d8ee1b688a34a816a562fc5e4c01d4bac0e862cd91f272b06b2fa6156f",
+      "matches_tested_snapshot": true
+    },
+    {
+      "file": "web/__tests__/pages/statsGame.test.tsx",
+      "sha256": "09807279a24a8fe98bd57e802103e894e21411fa1896b2d437fad7ba4d36b88a",
+      "matches_tested_snapshot": true
+    }
+  ],
+  "unchanged_source_pins": {
+    "web/pages/stats/game/[gameId].module.scss": "54d7cb504b5cabb61a16ff6c99f3c53df75faf4a9046519e2302e1d8773c4dcf",
+    "web/pages/api/v1/game/[id]/boxscore/index.ts": "803558b26c18c2d855f6ac0ce5a9489434f9ab466b98eaccd5bc12ab9893054c",
+    "web/pages/api/v1/game/[id]/right-rail/index.ts": "2ae05027e0f72e310ec14a46932c9565d77d1a3182f083908294336cc721e23b",
+    "web/pages/api/v1/schedule/date/[date].ts": "33a02958cf357103021bfaf32da0db44730d0031c66fd6aafb41401c87ebefbe",
+    "web/lib/NHL/server/rightRail.ts": "bad71595b15f101c53f01399753bbcf21a2eb675f611e989ab340d949c47217f",
+    "web/lib/NHL/server/index.ts": "0499ac3f3fdedb228efdd2091d2c93b6e79ef35b8fa56328ed60b7201fc3d435",
+    "web/lib/api/types.ts": "c663ebaff73ba9b09858178da35828b6fab29ce537d8a0e7d9db9f90b46e5c2f",
+    "web/lib/NHL/types.ts": "805b62b040a2e46b18e863815eeccaa175a01b9c4e770f679f2e483fb09c1fce",
+    "web/components/StatsPage/PlayerSearchBar.tsx": "ddd48a75a636aeba2721adf79f50bd44561c35d8399cc9e48e1b822c69bcc33f",
+    "web/__tests__/pages/game.test.tsx": "ba2d549ba1768ff6890c5d5e6225f5d173180623a268a5d7d5d50cdb41fa7a46"
+  },
+  "accepted_preserved_pins": {
+    "web/components/MetricsTimeline/MetricsTimeline.tsx": "07bb3c3919ae684504551ab05afddada6dfe9fb71b8af282ccd11ea562779ebe",
+    "web/components/MetricsTimeline/metricsTimelineData.ts": "59ad16886a71aa2c8d0e0d555f1b426439b6b6242dcc887d187dee85eb9bd441",
+    "web/components/MetricsTimeline/metricsTimelineData.test.ts": "fabc0c29b1e1e772fb6e8f9461f881584ebff7cb58ecab2b2588608ce5c13622",
+    "web/components/MetricsTimeline/MetricsTimeline.test.tsx": "83766270718f896c4d810509d1c4a6b67036c8dac65534aadc26be23720465b4",
+    "web/lib/stats/percentUnits.ts": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+    "web/lib/stats/percentUnits.test.ts": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+    "web/components/GoalieShareChart/index.tsx": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+    "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+    "web/hooks/useShotData.ts": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+    "web/hooks/useShotData.test.tsx": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+    "web/components/GameStateAnalysis/GameStateAnalysis.tsx": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+    "web/components/GameStateAnalysis/GameStateAnalysis.test.tsx": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+    "web/components/TeamDashboard/AdvancedL10Metrics.tsx": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+    "web/components/TeamDashboard/AdvancedL10Metrics.test.tsx": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+    "web/components/TeamDashboard/TeamDashboard.tsx": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+    "web/components/TeamDashboard/TeamDashboard.test.tsx": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+    "web/lib/stats/teamCountConsumers.test.tsx": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa"
+  },
+  "patch_sha256": "d9f67b3d17b1577d4f2f96a9e90c2dd16c3cd1d91f567a10f5ca775d176630b1",
+  "manifest_sha256": "1ea145d67726c45bd953cbee58a22be730372ee01e33aa0742960274b39da4b3",
+  "diff_check": 0
+}

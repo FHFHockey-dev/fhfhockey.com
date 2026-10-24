@@ -362,7 +362,7 @@ describe("bounded monthly execution", () => {
     expect(f.stripe.invoices.pay).not.toHaveBeenCalled();
   });
   it("keeps urgent cleanup reachable beyond one batch of failed stop jobs and an older retry backlog", async () => {
-    const sql = readFileSync("../supabase/migrations/20261021210000_in_season_sandbox_billing.sql", "utf8")
+    const sql = readFileSync("../tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql", "utf8")
       .split("create function public.list_in_season_sandbox_monthly_jobs")[1].split("end $$;")[0].replace(/\s+/g, " ");
     expect(sql).toContain("order by case when kind in ('stop','cutoff') then 0 else 1 end,lease_until asc nulls first,due_at,id limit p_limit");
     // Model this SQL selection/claim contract with advancing time; no SQL is applied.

@@ -1,0 +1,35 @@
+{
+  "checked_at": "2026-10-23T12:53:43.035283+00:00",
+  "head": "431ffcd673b42ad4a149dc3f9dfb03005dbec75a",
+  "source_files": {
+    "web/lib/rosterScheduleData/forgeDailyBridge.ts": "651eff511275b93f6f598181f3c5402c9b4d1b57d3959eb772528842910855f5",
+    "web/lib/projections/dailyBoardEvidence.ts": "d1900dc7c322a74d2810ecfe8b36476f2d047d7d348d431ba888352f9cb54d16",
+    "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "9f2f29c50a6af4e7d6c12265e4ed1552ffa52e79b171f568cf7230aac046daab",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.ts": "d1b25a62b72388a1b5f29310f2f175eac3c2716f20c67f4c056e7d9f228c3bb4",
+    "web/lib/integrations/yahoo/rosterPlanning.ts": "631ee6917cb67646695322d15ac280bf0b050e5a504e6cbb6d9dbf0d6e635e54",
+    "web/pages/api/v1/roster-schedule-optimizer/provider.ts": "7d2eaddedbf4ad6993cd41f451aaaa05a4a6fae45e80d844387ee84222bb571d",
+    "web/pages/api/v1/roster-schedule-optimizer/data.ts": "a8549dccf6bfda665576ae2d41df6e39db9ca09e2be11098a467e85a5b63e049",
+    "web/lib/rosterScheduleOptimizer/providerGoalieStarts.ts": "a5e86e0b12ef6ca3d056f9811e3de81b991130b0edee807181a44c745f33032b",
+    "web/lib/player-forecasts/resolvedPlanningForecast.ts": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07",
+    "web/lib/player-forecasts/rsoUsePolicy.ts": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215",
+    "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts": "dc4e9bcacd4e5ece49d8a26469b61af7c7005275a69a1b6f27e4ba8cd5fbf60c",
+    "web/lib/api/requireApiUser.ts": "9dcc841a77859d2c07a9919756bb5980081120ca61be2af3b7ebb7cb7b150ff2",
+    "web/hooks/rosterPlanningExecution.ts": "be2ad204061d7fe770f0c5be37b6df03ea2242a13fd4505973515ea21aed08cf",
+    "web/hooks/rosterPlanning.worker.ts": "d6c38e8966c2ef30b94960d1986c6fc691cd2618a86b96bf3c253b9edad564da",
+    "web/lib/integrations/yahoo/providerClient.ts": "8b9285f9f0803c85256d5e31db09f503582befff646e30c8798b06efe6636f67",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "e699974c923445dae29e54304413cc3213ff6219f98ad41fc039bfa7478bffc5"
+  },
+  "source_mismatches": {},
+  "fixture_sha256": "497e6c5de32d6adafb1d45102ae28b9277d273d03d9861506a2678f9024b3deb",
+  "application_edits": [],
+  "tests": {
+    "passed": 16,
+    "failed": 0
+  },
+  "policy": "TJ selected likely80%/projected65% floors; chosen policy not calibrated evidence",
+  "trusted_yahoo_path": "not implemented; source/broker proposal reviewed only",
+  "reviewed_proposal": {
+    "path": "tasks/artifacts/release-integration-2026-10-23/confirmed-news-correction/REPORT.md",
+    "sha256": "135bf134d9bfca2169fdbb4993504b7f21dfa00eb7dcf700b00af8afcf3bc72f"
+  }
+}

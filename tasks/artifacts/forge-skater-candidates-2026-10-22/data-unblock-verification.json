@@ -1,0 +1,27 @@
+{
+  "continuationTestExecutions": 18,
+  "newDistinctExportCases": 11,
+  "repeatedScorerCases": 7,
+  "totalDistinctCandidateCases": 35,
+  "exportTests": "passed",
+  "exportScopedEslint": "passed",
+  "fullCurrentTreeTypeScript": {
+    "status": "passed",
+    "command": "NODE_OPTIONS=--max-old-space-size=8192 npx --no-install tsc --noEmit --incremental false",
+    "log": "full-typecheck.log",
+    "lock": "/private/tmp/fhfh-heavy.lock acquired atomically and released"
+  },
+  "sqlContract": "offline selected-column/readonly/bounds check passed; no SQL executed",
+  "localCapturesInspected": 248,
+  "historicalAuditRows": 2074,
+  "rawIndividualOnIceReadsFound": 0,
+  "aggregateIppSummariesFoundIn": [
+    "b",
+    "b0"
+  ],
+  "hostedQueries": 0,
+  "newCoefficientsFitted": 0,
+  "stageCalculatorLease": "released",
+  "pendingToolActions": false,
+  "approvalState": "not requested/executed by this worker; exact proposal ready for parent and TJ"
+}

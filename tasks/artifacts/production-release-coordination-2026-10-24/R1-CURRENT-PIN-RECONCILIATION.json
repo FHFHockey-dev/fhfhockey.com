@@ -1,0 +1,15 @@
+{
+  "frozen_selected_pins": 110,
+  "current_matching": 110,
+  "current_drift": [],
+  "not_rechecked": "Inherited 3637-file archive is not a blanket release selection. Current source changes are not imported automatically.",
+  "canonical_application_changes_by_coordinator": 0,
+  "count_reconciliation": {
+    "original_selected_pins": 109,
+    "r1_selected_pins": 110,
+    "added_r1_test_pin": [
+      "web/__tests__/pages/api/v1/start-chart.test.ts"
+    ],
+    "note": "Earlier handoff text says 109 final pins. Actual r1 manifest contains 110: original 109 plus the explicitly reviewed Start Chart test correction pin. No missing original pin or unexpected drift."
+  }
+}

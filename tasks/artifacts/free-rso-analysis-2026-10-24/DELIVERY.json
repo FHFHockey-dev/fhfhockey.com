@@ -1,0 +1,30 @@
+{
+  "library_file_id": "libfile_56093daa2c8c8191949724f087463edc",
+  "library_create_confirmed": true,
+  "local_library_identity_persisted": true,
+  "report": "FREE-RSO-RECOMMENDATION.md",
+  "report_sha256": "bb25b9d83e374b33142f0ad5f2e9f2c0446192ef4934c90cfeb0f950d27d86f9",
+  "support": [
+    "SOURCE-PINS.json",
+    "DOCUMENT-CHECKS.json"
+  ],
+  "original_claude_library_file_id": "libfile_3f369e15d8448191acf14999be40fa16",
+  "original_action": "preserved; supplied full text read; no replace/delete",
+  "remaining_delivery_blockers": [],
+  "launch_evidence_gaps": [
+    "ownership public reuse rights",
+    "SS1-14 accepted verification and browser evidence",
+    "current live data coverage and measured cache/cost",
+    "production flags and deployed source"
+  ],
+  "current_version_number": 1,
+  "file_id": "file_0000000014c881f5a404ce07c7d1e960",
+  "editorial_cleanup": {
+    "status": "saved",
+    "change": "Removed one internal workflow/skills bullet only",
+    "expected_previous_version": 0,
+    "confirmed_saved_version": 1,
+    "citations_unchanged": true,
+    "local_library_identity_persisted": true
+  }
+}

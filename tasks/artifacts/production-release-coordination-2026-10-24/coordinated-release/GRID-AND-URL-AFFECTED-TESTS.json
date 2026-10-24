@@ -1,0 +1,13 @@
+[
+  "components/GameGrid/utils/useFourWeekSchedule.test.ts",
+  "lib/NHL/client/sharedRead.test.ts",
+  "lib/NHL/client/index.test.tsx",
+  "lib/dashboard/clientFetchCache.test.ts",
+  "components/GameGrid/utils/useOpponentMetricsData.test.ts",
+  "components/GameGrid/OpportunitySparkline.test.tsx",
+  "components/GameGrid/SortableHeaders.test.tsx",
+  "components/GameGrid/utils/FourWeekGrid.test.tsx",
+  "components/GameGrid/GameGridPage.test.tsx",
+  "components/SocialShare/SocialShare.test.tsx",
+  "lib/socialShare/schedule.test.ts"
+]

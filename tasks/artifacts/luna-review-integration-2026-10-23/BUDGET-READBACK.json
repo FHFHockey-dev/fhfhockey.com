@@ -1,0 +1,42 @@
+{
+  "path": "tasks/ifttt-integration-2026-10-16/comparison-retry-execution-2026-10-19/aggregate-budget.sqlite",
+  "sha256": "e8418735afaeff893177e550df6774600c6c6fec4f49c2b01c183712cdc064f2",
+  "experiment": [
+    {
+      "id": 1,
+      "capNanoUsd": 520000000,
+      "blocked": "unknown billed outcome"
+    }
+  ],
+  "attemptGroups": [
+    {
+      "endpoint": "decisions",
+      "state": "settled",
+      "count": 23,
+      "reservedNanoUsd": 5313000000,
+      "actualNanoUsd": 2582690
+    },
+    {
+      "endpoint": "responses",
+      "state": "settled",
+      "count": 13,
+      "reservedNanoUsd": 3328512000,
+      "actualNanoUsd": 5542353
+    },
+    {
+      "endpoint": "responses",
+      "state": "uncertain",
+      "count": 1,
+      "reservedNanoUsd": 254394800,
+      "actualNanoUsd": null
+    }
+  ],
+  "exposureNanoUsd": 262519843,
+  "unsettled": [
+    {
+      "id": "lindgren-0",
+      "state": "uncertain",
+      "reserveNanoUsd": 254394800
+    }
+  ]
+}

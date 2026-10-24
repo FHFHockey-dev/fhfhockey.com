@@ -1,0 +1,93 @@
+   ▲ Next.js 15.5.22
+   - Local:        http://127.0.0.1:3120
+   - Network:      http://127.0.0.1:3120
+   - Experiments (use with caution):
+     ✓ externalDir
+
+ ✓ Starting...
+ ✓ Ready in 1075ms
+ ○ Compiling /account ...
+ ✓ Compiled /account in 572ms (977 modules)
+ GET /account?section=draft-pro 200 in 1111ms
+ GET /account?section=draft-pro 200 in 222ms
+ GET /account?section=draft-pro 200 in 214ms
+ GET /account?section=draft-pro 200 in 220ms
+ GET /account?section=draft-pro 200 in 219ms
+ GET /account?section=draft-pro 200 in 212ms
+ GET /account?section=draft-pro 200 in 214ms
+ GET /account?section=draft-pro 200 in 216ms
+ GET /account?section=draft-pro 200 in 217ms
+ GET /account?section=draft-pro 200 in 215ms
+ GET /account?section=draft-pro 200 in 215ms
+ GET /account?section=draft-pro 200 in 210ms
+ GET /account?section=draft-pro 200 in 218ms
+ GET /account?section=draft-pro 200 in 218ms
+ GET /account?section=draft-pro 200 in 217ms
+ GET /account?section=draft-pro 200 in 219ms
+ GET /account?section=draft-pro 200 in 215ms
+ GET /account?section=draft-pro 200 in 215ms
+ GET /account?section=draft-pro 200 in 210ms
+ GET /account?section=draft-pro 200 in 211ms
+ GET /account?section=draft-pro 200 in 209ms
+ GET /account?section=draft-pro 200 in 209ms
+ GET /account?section=draft-pro&draft_pro_checkout=cs_test_private 200 in 216ms
+ GET /account?section=draft-pro 200 in 215ms
+ GET /account?section=draft-pro 200 in 210ms
+ GET /account?section=draft-pro 200 in 211ms
+ GET /account?section=draft-pro 200 in 212ms
+ GET /account?section=draft-pro 200 in 211ms
+ GET /account?section=draft-pro 200 in 210ms
+ GET /account?section=draft-pro 200 in 212ms
+ GET /account?section=draft-pro 200 in 210ms
+ GET /account?section=draft-pro 200 in 211ms
+ GET /account?section=draft-pro 200 in 208ms
+ GET /account?section=draft-pro 200 in 211ms
+ GET /account?section=draft-pro 200 in 210ms
+ GET /account?section=draft-pro&draft_pro_checkout=cs_test_private 200 in 211ms
+ GET /account?section=draft-pro 200 in 210ms
+ ✓ Compiled in 73ms (717 modules)
+ GET /account?section=draft-pro 200 in 209ms
+ ✓ Compiled in 58ms (260 modules)
+ GET /account?section=draft-pro 200 in 272ms
+ GET /account?section=draft-pro 200 in 215ms
+ GET /account?section=draft-pro 200 in 210ms
+ GET /account?section=draft-pro 200 in 209ms
+ GET /account?section=draft-pro 200 in 210ms
+ GET /account?section=draft-pro 200 in 210ms
+ GET /account?section=draft-pro 200 in 209ms
+ GET /account?section=draft-pro 200 in 211ms
+ GET /account?section=draft-pro 200 in 212ms
+ GET /account?section=draft-pro 200 in 212ms
+ GET /account?section=draft-pro&draft_pro_checkout=cs_test_private 200 in 216ms
+ GET /account?section=draft-pro 200 in 212ms
+ ✓ Compiled in 80ms (717 modules)
+ ✓ Compiled in 46ms (260 modules)
+ GET /account?section=draft-pro 200 in 284ms
+ GET /account?section=draft-pro 200 in 214ms
+ GET /account?section=draft-pro 200 in 213ms
+ GET /account?section=draft-pro 200 in 212ms
+ GET /account?section=draft-pro 200 in 211ms
+ GET /account?section=draft-pro 200 in 216ms
+ GET /account?section=draft-pro 200 in 212ms
+ GET /account?section=draft-pro 200 in 212ms
+ GET /account?section=draft-pro 200 in 216ms
+ GET /account?section=draft-pro 200 in 212ms
+ GET /account?section=draft-pro 200 in 215ms
+ GET /account?section=draft-pro&draft_pro_checkout=cs_test_private 200 in 212ms
+ GET /account?section=draft-pro 200 in 211ms
+ GET /account?section=draft-pro 200 in 211ms
+ ✓ Compiled in 74ms (717 modules)
+ ✓ Compiled in 41ms (260 modules)
+ GET /account?section=draft-pro 200 in 289ms
+ GET /account?section=draft-pro 200 in 211ms
+ GET /account?section=draft-pro 200 in 211ms
+ GET /account?section=draft-pro 200 in 212ms
+ GET /account?section=draft-pro 200 in 214ms
+ GET /account?section=draft-pro 200 in 210ms
+ GET /account?section=draft-pro 200 in 211ms
+ GET /account?section=draft-pro 200 in 213ms
+ GET /account?section=draft-pro 200 in 211ms
+ GET /account?section=draft-pro 200 in 209ms
+ GET /account?section=draft-pro&draft_pro_checkout=cs_test_private 200 in 218ms
+ GET /account?section=draft-pro 200 in 215ms
+[?25h

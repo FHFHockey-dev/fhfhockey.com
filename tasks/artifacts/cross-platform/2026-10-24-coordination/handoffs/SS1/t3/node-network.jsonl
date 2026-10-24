@@ -1,0 +1,4 @@
+{"t":"2026-10-24T17:11:17.887Z","pid":63685,"proc":"/usr/local/bin/npm run","kind":"deny-connect","target":"registry.npmjs.org:443"}
+{"t":"2026-10-24T17:11:18.590Z","pid":63715,"proc":"/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/server/lib/start-server.js","kind":"deny-fetch","target":"https://registry.npmjs.org/-/package/next/dist-tags"}
+{"t":"2026-10-24T17:11:27.891Z","pid":63685,"proc":"/usr/local/bin/npm run","kind":"deny-connect","target":"registry.npmjs.org:443"}
+{"t":"2026-10-24T17:12:27.894Z","pid":63685,"proc":"/usr/local/bin/npm run","kind":"deny-connect","target":"registry.npmjs.org:443"}

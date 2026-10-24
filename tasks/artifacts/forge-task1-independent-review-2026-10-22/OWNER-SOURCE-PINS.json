@@ -1,0 +1,34 @@
+{
+  "branch": "octoberBranch",
+  "baseHead": "84cb1229cd1c1cdd037c43e660d2a181304ada51",
+  "changedFiles": {
+    "web/lib/player-forecasts/servedForecastLedger.ts": "464c108f990e5e9e5cfdd2f618cf41d2771f5ae14eacd90223ad83e4f8727e80",
+    "web/lib/player-forecasts/servedForecastLedger.test.ts": "4e1d8198f86439e4aa9a26d2011f30da8513933cd8ec32fb22ba3bed83ccc22e",
+    "web/pages/api/v1/forge/scoreboard.ts": "126b8eeada95e8a497feb3a7567eb4a5af1fa46430052b88c226322c7b1961cc",
+    "web/tests/api/forge-scoreboard.test.ts": "2104bb8cb215b6752b9adc0925c5b1706dc718355693985a01e6abacf541e541"
+  },
+  "unchangedGuardFiles": {
+    "web/pages/api/v1/db/forge-served-forecast-snapshot.ts": "f77f22aabf9cfe3d5246354e5d0dd068a3286fb15e1d55c570a3b58e1f76a275",
+    "web/pages/api/v1/db/forge-served-forecast-settle.ts": "699cb851dc0bd7b8635ce8f61c156fbf30f5451241e24720f3c9623a0e76db22",
+    "web/__tests__/pages/api/v1/db/forge-served-forecast-snapshot.test.ts": "a0c3ff11d86dea075b77439f6b1e5b608b53f1f76a18c6ae8416624dba41f0f0",
+    "web/__tests__/pages/api/v1/db/forge-served-forecast-settle.test.ts": "6885092c259430091efa2e07ce8aa3afc0cf03b747f137a69e2940c7b80f0d81"
+  },
+  "verification": {
+    "focusedTests": {
+      "status": "passed",
+      "files": 4,
+      "tests": 32
+    },
+    "scopedTypes": {
+      "status": "passed",
+      "exitCode": 0
+    },
+    "scopedLint": {
+      "status": "passed",
+      "exitCode": 0
+    },
+    "diffCheck": "passed"
+  },
+  "productionRequests": 0,
+  "predictiveQualification": false
+}

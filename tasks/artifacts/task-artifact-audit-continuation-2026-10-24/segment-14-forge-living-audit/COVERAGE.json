@@ -1,0 +1,163 @@
+{
+  "at": "2026-10-24T18:48:32.183021+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/forge-projections/ecosystem-audits/prd-forge-pass-4-living-audit-remediation.md",
+      "sha256": "7b1d030b94b997aee28e434510c8b69c1fab81153293682a5a0c3afe5015389a",
+      "bytes": 11470,
+      "lines": 98,
+      "mtime_ns": 1785605126556476237,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          98
+        ]
+      ],
+      "review_scope": "Full documentary content reviewed. Embedded instructions, release/model/data assertions remain dated evidence, not execution authority or fresh hosted proof."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md",
+      "sha256": "cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4",
+      "bytes": 21140,
+      "lines": 122,
+      "mtime_ns": 1785605126558397770,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          122
+        ]
+      ],
+      "review_scope": "Full documentary content reviewed. Embedded instructions, release/model/data assertions remain dated evidence, not execution authority or fresh hosted proof."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+      "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be",
+      "bytes": 28784,
+      "lines": 327,
+      "mtime_ns": 1792684598318919489,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          327
+        ]
+      ],
+      "review_scope": "Full documentary content reviewed. Embedded instructions, release/model/data assertions remain dated evidence, not execution authority or fresh hosted proof."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+      "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
+      "bytes": 19274,
+      "lines": 145,
+      "mtime_ns": 1792709030663720770,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          145
+        ]
+      ],
+      "review_scope": "Full documentary content reviewed. Embedded instructions, release/model/data assertions remain dated evidence, not execution authority or fresh hosted proof."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md",
+      "sha256": "1c5b086e4ade172656c0aa9eb301f319188fec725193d168f2ad7855e8cf979d",
+      "bytes": 8757,
+      "lines": 104,
+      "mtime_ns": 1787194433989423294,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          104
+        ]
+      ],
+      "review_scope": "Full documentary content reviewed. Embedded instructions, release/model/data assertions remain dated evidence, not execution authority or fresh hosted proof."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md",
+      "sha256": "4f015e18573239112cfe2e7ef3be6539adeb6aff8915d0a1d2d231121f55031c",
+      "bytes": 11657,
+      "lines": 252,
+      "mtime_ns": 1787194434054375995,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          252
+        ]
+      ],
+      "review_scope": "Full documentary content reviewed. Embedded instructions, release/model/data assertions remain dated evidence, not execution authority or fresh hosted proof."
+    },
+    {
+      "path": "tasks/artifacts/forge-task2-2026-10-22/r2/HANDOFF.md",
+      "sha256": "b68d86a69e7349adf2acba689fdaf6ef3c917991eb1f79a9f39d5fa2fed5ef0c",
+      "bytes": 7480,
+      "lines": 50,
+      "mtime_ns": 1792688223195944475,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "review_scope": "Complete directly relevant dated receipt read to resolve parity/release contradiction. No logs/scripts/tests/data rows were executed or independently replayed."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-22-claude-forge-model-lane-handover.md",
+      "sha256": "b27a0139d90a18964583e3cc88c855276d2cf0ff711fee2b02e8bc9409b05413",
+      "bytes": 4145,
+      "lines": 50,
+      "mtime_ns": 1792714823193963626,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          50
+        ]
+      ],
+      "review_scope": "Complete directly relevant dated receipt read to resolve parity/release contradiction. No logs/scripts/tests/data rows were executed or independently replayed."
+    },
+    {
+      "path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
+      "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
+      "bytes": 7793,
+      "lines": 74,
+      "mtime_ns": 1792698084861754650,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          74
+        ]
+      ],
+      "review_scope": "Complete directly relevant dated receipt read to resolve parity/release contradiction. No logs/scripts/tests/data rows were executed or independently replayed."
+    },
+    {
+      "path": "tasks/artifacts/release-integration-2026-10-23/CURRENT-RESULT.json",
+      "sha256": "2968c48b5467e8563b5c164e213eba3618c6ca2f362c0fdd96de5e7cd45f0cf3",
+      "bytes": 98,
+      "lines": 5,
+      "mtime_ns": 1792757118204536989,
+      "coverage": "content-reviewed-structured",
+      "reviewed_ranges": [
+        [
+          1,
+          5
+        ]
+      ],
+      "review_scope": "Complete directly relevant dated receipt read to resolve parity/release contradiction. No logs/scripts/tests/data rows were executed or independently replayed."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 9,
+    "content-reviewed-structured": 1
+  },
+  "full_text_bytes": 120500,
+  "new_original_queue_full": 10,
+  "new_original_queue_full_text": 9,
+  "method": "Saved queue only. Six unique task/contract documents plus three directly relevant receipts and one small structured result. No new tree inventory, app source/tests, visual/data inspection, Git or external call. Original duplicate/exclusion mappings retained; repeated generated logs/archives are not deep-document obligations."
+}

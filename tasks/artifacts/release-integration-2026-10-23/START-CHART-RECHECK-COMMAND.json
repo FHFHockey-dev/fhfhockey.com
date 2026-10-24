@@ -1,0 +1,29 @@
+{
+  "cwd": "/tmp/fhfh-release-current-pzcctyxs/isolation/snapshot/web",
+  "environment": {
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/tmp/fhfh-release-current-pzcctyxs/isolation/snapshot/web/.audit-home",
+    "TMPDIR": "/tmp/fhfh-release-current-pzcctyxs/isolation/private-test-tmp",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://unit-tests.supabase.invalid",
+    "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY": "synthetic-public-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "synthetic-service-role-key",
+    "NODE_OPTIONS": "--require /tmp/fhfh-release-current-pzcctyxs/isolation/snapshot/web/audit-network-deny.cjs --max-old-space-size=8192",
+    "npm_config_offline": "true",
+    "npm_config_audit": "false",
+    "npm_config_fund": "false",
+    "TZ": "UTC",
+    "npm_config_update_notifier": "false"
+  },
+  "argv": [
+    "npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "audit.vitest.config.mts",
+    "lib/projections/startChartPipeline.test.ts",
+    "--reporter=json",
+    "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/start-chart-export-recheck.json"
+  ],
+  "reason": "TMPDIR outside isolated repository, preserving private artifact guard"
+}

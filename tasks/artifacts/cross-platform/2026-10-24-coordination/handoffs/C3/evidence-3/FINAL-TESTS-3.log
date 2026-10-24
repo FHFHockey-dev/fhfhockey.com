@@ -1,0 +1,19 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c3-isolated/web
+
+(node:58768) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:58767) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:58766) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/account/InSeasonPanel.rollout.test.tsx (7 tests) 100ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx (25 tests) 259ms
+ ✓ components/account/InSeasonPanel.test.tsx (49 tests) 763ms
+
+ Test Files  3 passed (3)
+      Tests  81 passed (81)
+   Start at  12:59:04
+   Duration  1.31s (transform 256ms, setup 6ms, collect 529ms, tests 1.12s, environment 638ms, prepare 119ms)
+
+JSON report written to /private/tmp/fhfh-c3-isolated/evidence/FINAL-TESTS-3.json

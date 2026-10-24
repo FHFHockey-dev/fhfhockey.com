@@ -1,0 +1,234 @@
+
+Running 6 tests using 1 worker
+
+[1A[2K[1/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:906:7 › assignment-only forecasts preserve their allowed uses in the browser
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:906:7 › assignment-only forecasts preserve their allowed uses in the browser 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByRole('region', { name: 'Itinerary' }).getByRole('table').first()
+    Expected substring: [32m"Bravo Center"[39m
+    Received string:    [31m"ⓘMon Oct 52 NHLTue Oct 60 NHLWed Oct 70 NHLCCentervsNYR———BNCentervsNYR+2 off+2 offFilled1/1"[39m
+    Timeout: 15000ms
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('region', { name: 'Itinerary' }).getByRole('table').first()[22m
+    [2m    33 × locator resolved to <table aria-label="Lineup by position" class="SlotWeekGrid_grid__ebZSy">…</table>[22m
+    [2m       - unexpected value "ⓘMon Oct 52 NHLTue Oct 60 NHLWed Oct 70 NHLCCentervsNYR———BNCentervsNYR+2 off+2 offFilled1/1"[22m
+
+
+      922 |     const outcome = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ hasText: "Projected points" }).locator("strong");
+      923 |     await expect(outcome).toHaveText("—");
+    > 924 |     if (mode === "assignment-only") await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Bravo Center");
+          |                                                                                                                              ^
+      925 |     await page.getByRole("button", { name: "Matchup", exact: true }).click();
+      926 |     await expect(page.getByText(/Full comparison unavailable/)).toBeVisible();
+      927 |     await page.getByText(/Forecast coverage ·/).click();
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:924:126
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../focus-policy-01/results/roster-schedule-optimizer--8014c-allowed-uses-in-the-browser-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../focus-policy-01/results/roster-schedule-optimizer--8014c-allowed-uses-in-the-browser-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../focus-policy-01/results/roster-schedule-optimizer--8014c-allowed-uses-in-the-browser-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../focus-policy-01/results/roster-schedule-optimizer--8014c-allowed-uses-in-the-browser-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:940:5 › connected refresh and account save preserve forecast permissions and exclusions
+[1A[2K  2) [chromium] › e2e/roster-schedule-optimizer.spec.ts:940:5 › connected refresh and account save preserve forecast permissions and exclusions 
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'Refresh provider' })[22m
+    [2m    - locator resolved to <button aria-busy="false" aria-label="Refresh provider" aria-describedby="rso-provider-refresh-status">Refresh provider</button>[22m
+    [2m  - attempting click action[22m
+    [2m    2 × waiting for element to be visible, enabled and stable[22m
+    [2m      - element is visible, enabled and stable[22m
+    [2m      - scrolling into view if needed[22m
+    [2m      - done scrolling[22m
+    [2m      - element is outside of the viewport[22m
+    [2m    - retrying click action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and stable[22m
+    [2m      - element is visible, enabled and stable[22m
+    [2m      - scrolling into view if needed[22m
+    [2m      - done scrolling[22m
+    [2m      - element is outside of the viewport[22m
+    [2m    - retrying click action[22m
+    [2m      - waiting 100ms[22m
+    [2m    114 × waiting for element to be visible, enabled and stable[22m
+    [2m        - element is visible, enabled and stable[22m
+    [2m        - scrolling into view if needed[22m
+    [2m        - done scrolling[22m
+    [2m        - element is outside of the viewport[22m
+    [2m      - retrying click action[22m
+    [2m        - waiting 500ms[22m
+
+
+      1001 |   refreshed = true;
+      1002 |   await openPlanningSetup(page);
+    > 1003 |   await page.getByRole("button", { name: "Refresh provider" }).click();
+           |                                                                ^
+      1004 |   await expectQualityReadiness(page, false);
+      1005 |   await page.getByRole("button", { name: "Save to account" }).click();
+      1006 |   await expect(page.getByText("Saved to account.")).toBeVisible();
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1003:64
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../focus-policy-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../focus-policy-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../focus-policy-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../focus-policy-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1144:5 › unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (manual)
+[1A[2K  3) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1144:5 › unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (manual) 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByRole('table', { name: 'Lineup by position' })
+    Expected substring: [32m"Alpha Center"[39m
+    Received string:    [31m"ⓘThu Oct 81 NHLCCentervsNYR—BNCentervsNYRFilled1/1"[39m
+    Timeout: 15000ms
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('table', { name: 'Lineup by position' })[22m
+    [2m    33 × locator resolved to <table aria-label="Lineup by position" class="SlotWeekGrid_grid__ebZSy">…</table>[22m
+    [2m       - unexpected value "ⓘThu Oct 81 NHLCCentervsNYR—BNCentervsNYRFilled1/1"[22m
+
+
+      1217 |   const expectUnapprovedCapacity = async () => {
+      1218 |     await showScheduleView(page, "position");
+    > 1219 |     await expect(page.getByRole("table", { name: "Lineup by position" })).toContainText("Alpha Center");
+           |                                                                           ^
+      1220 |     await expect(page.getByRole("button", { name: "Best projected points", exact: true })).toBeDisabled();
+      1221 |     await expect(projected).toContainText("—");
+      1222 |   };
+        at expectUnapprovedCapacity (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1219:75)
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1223:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../focus-policy-01/results/roster-schedule-optimizer--b41eb-articipation-expiry-manual--chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../focus-policy-01/results/roster-schedule-optimizer--b41eb-articipation-expiry-manual--chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../focus-policy-01/results/roster-schedule-optimizer--b41eb-articipation-expiry-manual--chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../focus-policy-01/results/roster-schedule-optimizer--b41eb-articipation-expiry-manual--chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[4/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1144:5 › unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (connected)
+[1A[2K  4) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1144:5 › unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (connected) 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByRole('table', { name: 'Lineup by position' })
+    Expected substring: [32m"Alpha Center"[39m
+    Received string:    [31m"ⓘThu Oct 81 NHLCCentervsNYR—BNCentervsNYRFilled1/1"[39m
+    Timeout: 15000ms
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('table', { name: 'Lineup by position' })[22m
+    [2m    34 × locator resolved to <table aria-label="Lineup by position" class="SlotWeekGrid_grid__ebZSy">…</table>[22m
+    [2m       - unexpected value "ⓘThu Oct 81 NHLCCentervsNYR—BNCentervsNYRFilled1/1"[22m
+
+
+      1217 |   const expectUnapprovedCapacity = async () => {
+      1218 |     await showScheduleView(page, "position");
+    > 1219 |     await expect(page.getByRole("table", { name: "Lineup by position" })).toContainText("Alpha Center");
+           |                                                                           ^
+      1220 |     await expect(page.getByRole("button", { name: "Best projected points", exact: true })).toBeDisabled();
+      1221 |     await expect(projected).toContainText("—");
+      1222 |   };
+        at expectUnapprovedCapacity (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1219:75)
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1223:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../focus-policy-01/results/roster-schedule-optimizer--60f1d-icipation-expiry-connected--chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../focus-policy-01/results/roster-schedule-optimizer--60f1d-icipation-expiry-connected--chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../focus-policy-01/results/roster-schedule-optimizer--60f1d-icipation-expiry-connected--chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../focus-policy-01/results/roster-schedule-optimizer--60f1d-icipation-expiry-connected--chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[5/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1448:5 › planning worker measures the full typical workload and cancels superseded edits
+[1A[2K[6/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1573:5 › Audit1 native candidate Worker finds complete swaps before any plan is selected
+[1A[2K  5) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1573:5 › Audit1 native candidate Worker finds complete swaps before any plan is selected 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: locator('[data-rso-candidate-id="fhfh:140"]')
+    Expected substring: [32m"Net points +999"[39m
+    Received string:    [31m"1ADDStrongest Last CandidateNJD · CFADROPOwned WeakNJD · COwnership unknown. Demand from other managers isn't checked.+999Net Pts0Net AGPMon—Same games, more pointsRecheck availability before claimingPreview swap"[39m
+    Timeout: 15000ms
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 15000ms[22m
+    [2m  - waiting for locator('[data-rso-candidate-id="fhfh:140"]')[22m
+    [2m    34 × locator resolved to <article data-gain="true" data-ranked="true" data-injured="false" data-rso-candidate-id="fhfh:140" class="CandidateCard_card__2pn2l" aria-label="Strongest Last Candidate compared acquisition">…</article>[22m
+    [2m       - unexpected value "1ADDStrongest Last CandidateNJD · CFADROPOwned WeakNJD · COwnership unknown. Demand from other managers isn't checked.+999Net Pts0Net AGPMon—Same games, more pointsRecheck availability before claimingPreview swap"[22m
+
+
+      1609 |   expect(strongest.plans.some((plan: any) => plan.netPoints === 999 && plan.steps[0].dropPlayerId === "fhfh:3")).toBe(true);
+      1610 |   const card = page.locator('[data-rso-candidate-id="fhfh:140"]');
+    > 1611 |   await expect(card).toContainText("Net points +999");
+           |                      ^
+      1612 |   await expect(card).toContainText("Owned Weak");
+      1613 |   await expect(card.getByRole("button", { name: "Select compared plan" })).toBeDisabled();
+      1614 |   await page.getByText("League rules and scoring", { exact: true }).click();
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1611:22
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../focus-policy-01/results/roster-schedule-optimizer--ae298-before-any-plan-is-selected-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../focus-policy-01/results/roster-schedule-optimizer--ae298-before-any-plan-is-selected-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../focus-policy-01/results/roster-schedule-optimizer--ae298-before-any-plan-is-selected-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../focus-policy-01/results/roster-schedule-optimizer--ae298-before-any-plan-is-selected-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  5 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:906:7 › assignment-only forecasts preserve their allowed uses in the browser 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:940:5 › connected refresh and account save preserve forecast permissions and exclusions 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1144:5 › unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (manual) 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1144:5 › unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (connected) 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1573:5 › Audit1 native candidate Worker finds complete swaps before any plan is selected 
+  1 passed (2.3m)

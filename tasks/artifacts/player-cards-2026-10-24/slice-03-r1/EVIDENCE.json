@@ -1,0 +1,330 @@
+{
+  "status": "Author S03R1 correction frozen; independent re-review pending",
+  "lease": "CODEX-PLAYER-CARDS-S03-R1-20261024",
+  "source_files": [
+    {
+      "path": "web/components/player-cards/InteractiveCard.tsx",
+      "size_bytes": 5984,
+      "sha256": "70b6edce10ffe219817c64f2c4763a8e58091b9c59f9b77fb2a68aa2b7d33271"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.tsx",
+      "size_bytes": 11747,
+      "sha256": "036c44fb865ac729e2ddfba06bf0d6205d983bf9f89133c88f20918869302e30"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.test.tsx",
+      "size_bytes": 9114,
+      "sha256": "0ce3fb52c6f19fcea4d5f0755924faab1472cda1b4e1fa704396e1b4176c8579"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/HANDOFF.md",
+      "size_bytes": 6563,
+      "sha256": "6246ccf60da01158d5f66738e87be729c44997e5394a0721066df55e4c5cb4dd"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/OWNERSHIP.json",
+      "size_bytes": 976,
+      "sha256": "157aae556fef892eb8211aaddf34918d891485cc679b4ab233f9008797527726"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/banner-before-export.json",
+      "size_bytes": 1470,
+      "sha256": "44aeeb1d8b7624462242bada8813bab530cc56bbdf94ca5c91a91b6093749a93"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/banner-command.json",
+      "size_bytes": 627,
+      "sha256": "f36f9067fbcc0dacf63cd582a634e604abf90daeb624adbf9dcbb08bd6501652"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/banner-control.mjs",
+      "size_bytes": 1601,
+      "sha256": "cb0464998b1eb4072d6f2d806a27aaa19044d663dbb7473cd5ab91551f5d660e"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/banner.log",
+      "size_bytes": 63,
+      "sha256": "8a692c6ebe0a7419efc76ff79ad5ed841d27f3514f16ebaf8c10a9d458f35666"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/baseline/InteractiveCard.tsx",
+      "size_bytes": 5023,
+      "sha256": "181a0cd3dd36b14433ce845c864209ce36103ecf14853037826faf6bec8e06fe"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/baseline/PlayerCardFlow.test.tsx",
+      "size_bytes": 7413,
+      "sha256": "a3372616fa57559d7717e7b43d667986e7fdbe2ece06fbf948c8ec23b123f7dc"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/baseline/PlayerCardFlow.tsx",
+      "size_bytes": 11421,
+      "sha256": "83d75fc766229367aa7599b89413f9dc1b8754b00910bd75bf4b0e20f22d0926"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-command.json",
+      "size_bytes": 626,
+      "sha256": "a04968e9d1a0f2a8bc40e0f1bf43327d13fad6db767637c03feb8babe4fd3850"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-controls.mjs",
+      "size_bytes": 8452,
+      "sha256": "f960b526ad08b645980fa8763463aca21a258ab3b13d0420a4abde6c1ef5f1e6"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-harness.json",
+      "size_bytes": 627,
+      "sha256": "68a7f703b516b13a4a70266aeb0aed70a67c74c111f07104961d61b28ca5077f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-output/browser-results.json",
+      "size_bytes": 3343,
+      "sha256": "a61b188a441ee4edbe4b2896a24b4a11620f5fc9da0c18c8b58710d4e77dbb38"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-output/history-gap-manifest.json",
+      "size_bytes": 7719,
+      "sha256": "144736ae4311ed19fa96613acad8292f013a7f4a28bbac8043fd46fb802ce080"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-output/partial-manifest.json",
+      "size_bytes": 7583,
+      "sha256": "3f7b5689ac4dc5a280a83ab6000fde0450f1f616c9dab7cb833fc6860db3d06c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-output/partial-page.png",
+      "size_bytes": 281815,
+      "sha256": "14b312a27ef7b46310eb8858b588eb4861b6c09d868ee470eae8516c7f2b160e"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-output/partial.png",
+      "size_bytes": 232873,
+      "sha256": "1a2705e9210a9f3921311822ca2ddd016a2b557d238b2adfb9803cf46621a794"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-output/selected-5v5-manifest.json",
+      "size_bytes": 7861,
+      "sha256": "8cb4bed972a4f8f01b9a358b596f1f13f60988a3f647df9bff37074feb72b0bf"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-output/source-error-manifest.json",
+      "size_bytes": 8321,
+      "sha256": "76496c63250de79ddb1081539fc54c6fa79b4064c650ba97c630e8fc4fd27b06"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-output/stale-manifest.json",
+      "size_bytes": 8307,
+      "sha256": "477fe83226a9f816c8070dea2e1a48762c7ca7aeec15566896642bc1da12f72f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-output/unknown-pool-manifest.json",
+      "size_bytes": 7250,
+      "sha256": "bd5ad2b016bdb1661ddecd283c5801910dfdb6844d0ce11293159360024d91fd"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-output/zero-pp-manifest.json",
+      "size_bytes": 7205,
+      "sha256": "e8738ca5b6527d58dc9b53efd356219428fce58d39cce60f51894a6834ca986f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser-output/zero-pp.png",
+      "size_bytes": 225024,
+      "sha256": "31b8f3c11bab114cbea5b92e2880fcbc66acc5d2653c87e3d75d3a75ba26d82a"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser.log",
+      "size_bytes": 62,
+      "sha256": "4a34d551958e9bbe23886275576269daa41caafe49ef86191ffed2bcaf616a5f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/interaction-controls.test.tsx",
+      "size_bytes": 5587,
+      "sha256": "091811cf04c4c99784e184c01594c10a4bdd59f2b7bbd142c9e87821cacc06a1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/lint-command.json",
+      "size_bytes": 705,
+      "sha256": "fa9301044d8f6a0a1d1d61e9c625981e64a2e2f6c6af5a0e406c327f3b21a7d9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/lint.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/offline.setup.ts",
+      "size_bytes": 197,
+      "sha256": "09d1d8b0af038d05344cd119ae4381f6afd4e8d13ca4205ac7cd9633eef40c7d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/owner-tests.log",
+      "size_bytes": 586,
+      "sha256": "669ae14e900338986646a9ad375a2302a28cf5166817c8b751ded78f09dfd0c6"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview-entry.tsx",
+      "size_bytes": 230,
+      "sha256": "058fca7598addf852c9a1373ae2aa1fcd61fa083aa397ecc3c465513b44796ae"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+      "size_bytes": 318626,
+      "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/probes-command.json",
+      "size_bytes": 796,
+      "sha256": "a428847c0d164567ee828b6e3da928251c21a33ebb3a5aa33ee062bf76435085"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/probes-initial-command.json",
+      "size_bytes": 707,
+      "sha256": "fa11c935f71c0267e60288b78808dd74a54fec75705602f05e7adeba1dddb775"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/probes-initial.log",
+      "size_bytes": 2547,
+      "sha256": "ddc796220b563f2f07edee901527fbe14140694bf6f95c6313745acbebc010d7"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/probes.log",
+      "size_bytes": 773,
+      "sha256": "8b5c78274e7024dc5e33448960357b3f8f948fe5ba24eda082814dff26c03545"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/protected-before.json",
+      "size_bytes": 16437,
+      "sha256": "1b75a3ad10f71b27116ccfd86217360d297e86744ead4883c52587161079ad4b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/render-command.json",
+      "size_bytes": 627,
+      "sha256": "c83b56721204f1c77b4eecd84a076e970812b36b155d2a82d5d5176f2aca2ae1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/render-preview.mjs",
+      "size_bytes": 2402,
+      "sha256": "b8f7ae4b0613daf3735f198334df9aa1e60232089380af72168630b15128eb4d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/render.log",
+      "size_bytes": 241,
+      "sha256": "fc578b4ac69bf6f77d93e4bbf5daee1980e127944a8a2a496f6df5bdefc023c5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/restore-runtime.json",
+      "size_bytes": 294,
+      "sha256": "998cd19b13f14c37fd9509bca08af08279ed092b42a580f2f651e892d78ca1e0"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/review.vitest.config.mts",
+      "size_bytes": 698,
+      "sha256": "7747b1972ea4a06b98ef6fcbafbaa0d15764de700ab31aa8d8ab45ad3bfb3964"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/run-browser.py",
+      "size_bytes": 1876,
+      "sha256": "b5890b6bc14b96ba0b83a92e1dc58e6400279b1ffa3f72e772920f8792514078"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/run-check.py",
+      "size_bytes": 2160,
+      "sha256": "57a2843e491aad8790e4e07e665432a306ddcffea14ce8accd37ecffdd42b751"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/source.patch",
+      "size_bytes": 12480,
+      "sha256": "fe8f1016d2c87f5eca1e50357b27396758daf51e42453065d8a1d67511a1a7ee"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/tsconfig.json",
+      "size_bytes": 423,
+      "sha256": "4b5017093c82cb920b41dea5c73792fe8f173d52956f5aa095fccf1a33e51689"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/types-command.json",
+      "size_bytes": 657,
+      "sha256": "6029233c3486d0bd331cf42aca981012ecb18551e7374fdbe9fd0da8de5764d9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/types.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "original_integrity": {
+    "originalArtifactFilesUnchanged": 92,
+    "explicitReviewerPins": 65,
+    "intentionalSourceChangesOnly": [
+      "web/components/player-cards/PlayerCardFlow.tsx",
+      "web/components/player-cards/InteractiveCard.tsx",
+      "web/components/player-cards/PlayerCardFlow.test.tsx"
+    ],
+    "otherReviewerPinsUnchanged": 62,
+    "acceptedMathSourceFilesUnchanged": 3,
+    "originalProbes": [
+      {
+        "name": "interaction-controls.test.tsx",
+        "sha256": "091811cf04c4c99784e184c01594c10a4bdd59f2b7bbd142c9e87821cacc06a1",
+        "byteIdenticalToReview": true
+      },
+      {
+        "name": "offline.setup.ts",
+        "sha256": "09d1d8b0af038d05344cd119ae4381f6afd4e8d13ca4205ac7cd9633eef40c7d",
+        "byteIdenticalToReview": true
+      },
+      {
+        "name": "browser-controls.mjs",
+        "sha256": "f960b526ad08b645980fa8763463aca21a258ab3b13d0420a4abde6c1ef5f1e6",
+        "byteIdenticalToReview": true
+      }
+    ]
+  },
+  "checks": {
+    "ownerTests": 10,
+    "unchangedReviewProbes": 5,
+    "uniqueUiCasesPassed": 15,
+    "scopedTypes": "passed",
+    "threeFileLint": "passed",
+    "unchangedBrowserProbe": {
+      "rawPassed": 7,
+      "rawFailed": 0,
+      "usableGroups": 6,
+      "postExportBannerGroupExcluded": true,
+      "PNGexports": 2,
+      "pageHttpAttempts": 0,
+      "pageErrors": 0
+    },
+    "supplementalPreExportBannerControl": "passed, before any export, zero requests/errors",
+    "partialAndZeroManifestsByteIdenticalToOriginal": true,
+    "manualVisualQA": [
+      "Corrected partial PNG",
+      "Corrected zeroPP PNG"
+    ]
+  },
+  "restoredPreview": {
+    "pid": 76261,
+    "execSession": 88560,
+    "route": "http://127.0.0.1:3125/player-cards",
+    "status": 200,
+    "bytes": 317312,
+    "sha256": "c50ecfbe2fc56955c085c5ff1adfadef9d5a393c39f2a2ad1fb4b6aebe854357",
+    "unchangedLastServedPreview": true,
+    "R1Activated": false,
+    "workerLocalGETs": 1
+  },
+  "R1activated": false,
+  "productionRequests": 0,
+  "LibraryActions": 0,
+  "newWorkers": 0,
+  "designChanges": false,
+  "remaining": [
+    "Independent R1 acceptance",
+    "Explicit coordinated corrected-content handoff",
+    "TJ unresolved visual direction and phone readability",
+    "Unchanged observed-source/fullpopulation/rights/auth/paywall gates"
+  ]
+}

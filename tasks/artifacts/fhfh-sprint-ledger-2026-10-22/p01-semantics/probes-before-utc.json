@@ -1,0 +1,46 @@
+{
+  "node": "v22.11.0",
+  "timezone": "UTC",
+  "source_pins": {
+    "web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx": "53121a1d2666c664e326159a982ef5efe36f9f8da3c082af81eab78211debbd7",
+    "web/hooks/useTeamSchedule.ts": "c526df196651bb5c94ffba17b54bbc70133754bafc77b26c3bfb27602ba47826",
+    "web/hooks/useTeamStatsHeaderData.ts": "1a493766a110a9f2905ebc4a6ca4251cb87dbb360de3547d643c5d8c514ed9b2"
+  },
+  "observations": {
+    "dateOnly": {
+      "input": "2026-10-19",
+      "joinedDay": "2026-10-19",
+      "expected": "2026-10-19"
+    },
+    "finality": {
+      "input": "UNKNOWN",
+      "afterScoreEnrichment": "FINAL",
+      "calendarResults": {
+        "LIVE": "win",
+        "UNKNOWN": "win",
+        "FINAL": "win",
+        "FUT": "win"
+      }
+    },
+    "missingType": {
+      "input": null,
+      "output": 2
+    },
+    "zeroHomeScore": {
+      "zero": null,
+      "nonzeroControl": "1-3"
+    },
+    "wgoGap": {
+      "assumedGrain": "synthetic cumulative",
+      "gamesBetweenObservations": 2,
+      "pointsBetweenObservations": 2,
+      "calendarResult": "win",
+      "perGameOutcomeEstablished": false
+    },
+    "headerRw": {
+      "regulationAndOtWins": 25,
+      "outputRegulationWins": 25
+    }
+  },
+  "limits": "Source extraction with synthetic inputs only; no service, database, environment file, browser or application module loaded. Does not establish stored WGO grain or authoritative finality. Counts and outputs describe observations, not passing acceptance."
+}

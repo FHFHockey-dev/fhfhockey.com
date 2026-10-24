@@ -1,0 +1,48 @@
+{
+  "at": "2026-10-24T17:46:32.193760+00:00",
+  "scope": "Saved original queue overlay only, not current whole-tree inventory",
+  "folders": [
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/",
+      "full_this_segment": [
+        "prd/prd-draft-dash-debug.md"
+      ],
+      "prior_full_scope_reused": [
+        "tasks-draft-dashboard-interface-polish.md",
+        "docs/DraftDashboard_Audit.md"
+      ],
+      "remaining_by_original_kind": {},
+      "limitation": "No remaining unique task document in this folder from the original queue after this full debug read. That is not full current filesystem/source/binary review; exact original inventory and metadata/duplicate exceptions retained."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/",
+      "full_this_segment": [
+        "tasks/TASKS/draft-ranker/execution-boundary.md",
+        "tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md",
+        "tasks/TASKS/draft-ranker/decision-record.md",
+        "tasks/TASKS/draft-ranker/launch-runbook.md",
+        "tasks/TASKS/draft-ranker/release-manifest.md",
+        "tasks/TASKS/draft-ranker/community-ranking-runbook.md"
+      ],
+      "remaining_unique_documents": [
+        "tasks/TASKS/draft-ranker/discovery-source-contract.md",
+        "tasks/TASKS/draft-ranker/dr-010-migration-review.md",
+        "tasks/TASKS/draft-ranker/dr-011-yahoo-mapping-review.md",
+        "tasks/TASKS/draft-ranker/dr-012-migration-review.md",
+        "tasks/TASKS/draft-ranker/goal-prompt.md",
+        "tasks/TASKS/draft-ranker/implementation-plan.md",
+        "tasks/TASKS/draft-ranker/prd-draft-ranker.md",
+        "tasks/TASKS/draft-ranker/product-strategy.md",
+        "tasks/TASKS/draft-ranker/progress.md",
+        "tasks/TASKS/draft-ranker/repository-audit.md",
+        "tasks/TASKS/draft-ranker/repository-record.md",
+        "tasks/TASKS/draft-ranker/technical-contract.md"
+      ],
+      "limitation": "Progress, product/implementation/technical/discovery and migration/repository documents still queued. Dated rollout closure is not a fresh hosted query."
+    }
+  ],
+  "preserved_dispositions": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/DISPOSITION-INDEX.json",
+  "known_support_metadata_only": 39,
+  "selected_unique_reports_remaining": 8,
+  "new_duplicate_full_scope_resolutions": 0
+}

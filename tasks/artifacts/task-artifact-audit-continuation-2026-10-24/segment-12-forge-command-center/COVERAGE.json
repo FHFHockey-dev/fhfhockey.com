@@ -1,0 +1,527 @@
+{
+  "at": "2026-10-24T18:17:34.362692+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/forge-projections/command-center/prd-forge-command-center-rebuild.md",
+      "sha256": "f2993446200478cbaff5194fe7dfa0d647ea5eb61cfa7272be0fd3e403714257",
+      "bytes": 21543,
+      "lines": 386,
+      "mtime_ns": 1785605126554588286,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          386
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/f29934462004-prd-forge-command-center-rebuild.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/command-center/tasks-prd-forge-command-center-rebuild.md",
+      "sha256": "a9628ebf4f10b4d62d45f8da75e506e420149525f8939056e5b6680610559a1b",
+      "bytes": 17061,
+      "lines": 126,
+      "mtime_ns": 1785605126554751695,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          126
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/a9628ebf4f10-tasks-prd-forge-command-center-rebuild.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/artifacts/forge-command-center-reconciliation-checklist.md",
+      "sha256": "9e0cfd367fc68662e16ca71fc498e3e0c88b11fe05d057ee53e39a5ff7321d7d",
+      "bytes": 5358,
+      "lines": 23,
+      "mtime_ns": 1785605126592941827,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          23
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/9e0cfd367fc6-forge-command-center-reconciliation-checklist.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/artifacts/draft-lane-2026-10-18/S-19-command-center-errors.md",
+      "sha256": "980e15291033ff101b77ee7e12d2a3d80faafb7bfc77dbfe90bd0543f089949e",
+      "bytes": 2441,
+      "lines": 22,
+      "mtime_ns": 1792349854138386496,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          22
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/980e15291033-S-19-command-center-errors.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5b-forge-dashboards-trends.md",
+      "sha256": "27ab108f411561f99e9a019a4bfb9a64555e68a52d8ff1a9d4b0bc2e2eb1fc9a",
+      "bytes": 23522,
+      "lines": 169,
+      "mtime_ns": 1792277895463668743,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          169
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/27ab108f4115-G5b-forge-dashboards-trends.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "G5b output omission65\u201382 recovered explicitly; all remaining full-document chunks seen. Diaries are context, not acceptance evidence."
+    },
+    {
+      "path": "tasks/artifacts/draft-lane-2026-10-18/DIARY.md",
+      "sha256": "ee6f435b5a1f882bc6fbad3cbba9a9fea8f1ab6c7f864a07cb34091b27fdcf7d",
+      "bytes": 10188,
+      "lines": 71,
+      "mtime_ns": 1792348630951776752,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          71
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/ee6f435b5a1f-DIARY.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/artifacts/draft-lane-2026-10-18/CHECKPOINT-DIARY-2026-10-18.md",
+      "sha256": "ac0aff5d3b78b5a33c7e257b8136738c732edabcd4a08f31d5c654d5bee75970",
+      "bytes": 6173,
+      "lines": 92,
+      "mtime_ns": 1792350582700694451,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          92
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/ac0aff5d3b78-CHECKPOINT-DIARY-2026-10-18.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md",
+      "sha256": "dbcc5358b6e0c4b06fd5d150e060070a00b32025ba9ffa52aa830c8e77b58381",
+      "bytes": 22000,
+      "lines": 144,
+      "mtime_ns": 1792348998390386949,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          144
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/dbcc5358b6e0-tasks-prd-forge-dashboard.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md",
+      "sha256": "3e866cc5a143fe69bad009e971550c75d7bf1bf72a6feaf0151e704439425003",
+      "bytes": 17593,
+      "lines": 99,
+      "mtime_ns": 1792348998390180825,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          99
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/3e866cc5a143-tasks-prd-trends.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md",
+      "sha256": "48636bfa4e23c2ecfd46a7575d8b17bd23d575f28371f08e09d43d2d0bbac1be",
+      "bytes": 32583,
+      "lines": 210,
+      "mtime_ns": 1785605126557912752,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          210
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/48636bfa4e23-tasks-prd-forge-ecosystem-pass-4-audit-remediation.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/TASKS/super-goal/security-boundary-reconciliation.md",
+      "sha256": "b04279f96a09f40fc35902796881aaa634eac14fafc56fd4a93579c6cc6e3df4",
+      "bytes": 8856,
+      "lines": 59,
+      "mtime_ns": 1785977520207525542,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          59
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/b04279f96a09-security-boundary-reconciliation.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/artifacts/security-audit-fixes-2026-10-18/DIARY.md",
+      "sha256": "5e81ee27988b49e89bfe11e5e583c033631e2e2398b099a2810311e7e894bb61",
+      "bytes": 6395,
+      "lines": 71,
+      "mtime_ns": 1792350676584763578,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          71
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/5e81ee27988b-DIARY.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md",
+      "sha256": "96e8ee3f4fff357b7625b0c6f8f62de2e9bf7e5c25219e0ed682fa22524d5335",
+      "bytes": 26045,
+      "lines": 157,
+      "mtime_ns": 1785605126555757980,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          157
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/96e8ee3f4fff-tasks-prd-forge-dashboard-component-health.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard-component-health.md",
+      "sha256": "e5d1f7234c45120ae1a5d52192fcc8818ae29a9b4cde5ab7eb852e0f5e8c9368",
+      "bytes": 21091,
+      "lines": 277,
+      "mtime_ns": 1785605126554902563,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          277
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/e5d1f7234c45-prd-forge-dashboard-component-health.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/artifacts/forge-dashboard-component-health-matrix.md",
+      "sha256": "c69756618b5c6236be900dae069a8a2c755ad38929e620848915d14fe2826d2d",
+      "bytes": 7193,
+      "lines": 65,
+      "mtime_ns": 1785605126593347724,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          65
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/c69756618b5c-forge-dashboard-component-health-matrix.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/artifacts/forge-dashboard-component-remediation-closeout.md",
+      "sha256": "89b21a4aba22132d4e29ed78d57948873759d5d28df77594dd391a42e96f0166",
+      "bytes": 6518,
+      "lines": 61,
+      "mtime_ns": 1785605126593980277,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          61
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/89b21a4aba22-forge-dashboard-component-remediation-closeout.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md",
+      "sha256": "401ac54a9bd9213099efd9e8e6eba45bb115c0a156fe9d557a34c976b6052493",
+      "bytes": 34998,
+      "lines": 187,
+      "mtime_ns": 1785605126555450370,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          187
+        ]
+      ],
+      "snapshot": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/401ac54a9bd9-tasks-forge-dashboard-component-remediation.md",
+      "original_inventory_hash_matches": true,
+      "already_completed_in_prior_overlay": false,
+      "scope": "Full documentary content reviewed; original claims, author reports and dated receipts are not converted into current application/hosted acceptance. No stored commands executed.",
+      "reader_limits": "Text review only; embedded source/test/visual/production assertions retain their provenance."
+    },
+    {
+      "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+      "sha256": "4458ec50593056026baa680ee997932d25fe5ee9ea03e44732cbd9ef7fa4caaa",
+      "bytes": 1783269,
+      "lines": 5991,
+      "mtime_ns": 1792456686568580563,
+      "coverage": "partially-inspected",
+      "ranges": [
+        [
+          502,
+          502
+        ],
+        [
+          2071,
+          2071
+        ],
+        [
+          5870,
+          5870
+        ],
+        [
+          5980,
+          5980
+        ]
+      ],
+      "method": "Bounded exact-topic searches and complete selected clauses only; not full 1.7MB document review.",
+      "extract": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/4458ec505930-EXTRACT-tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+      "extract_sha256": "0dd4081d51aee7caf365b9e923c6d61de7037f48cbf58d1217a1e2c5621bc3d2"
+    },
+    {
+      "path": "tasks/TASKS/super-goal/super-goal-final-summary.md",
+      "sha256": "b99e7bfde3fd4579acf9ae870b85a855b79deb1ee8a072da9978a2d2278acf82",
+      "bytes": 342964,
+      "lines": 1124,
+      "mtime_ns": 1792692629008497853,
+      "coverage": "partially-inspected",
+      "ranges": [],
+      "method": "Exact-topic search, no matching closure; not full review."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+      "sha256": "5a38142ba66e3f3bef29bff05152c74907eb24ee144b7b6d53cfbc814f3f5e4f",
+      "bytes": 50730,
+      "lines": 489,
+      "mtime_ns": 1792865695524016748,
+      "coverage": "partially-inspected",
+      "ranges": [],
+      "method": "Exact-topic searches and section headings only; no matches do not establish broad absence of closure."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "sha256": "ff6abb41d00c11c6651ce7cdf038b5256de5e84b0ff0ee012dd93472ccf70417",
+      "bytes": 76636,
+      "lines": 357,
+      "mtime_ns": 1792865734502898598,
+      "coverage": "partially-inspected",
+      "ranges": [],
+      "method": "Exact-topic search only; no full review."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+      "sha256": "549d80021c41a83522aded37026b709386ee2b853175c549ab53dba71150aec3",
+      "bytes": 60135,
+      "lines": 312,
+      "mtime_ns": 1792865734807816618,
+      "coverage": "partially-inspected",
+      "ranges": [],
+      "method": "Exact-topic search only; no full review."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md",
+      "sha256": "e5e12382bd3bd8d70884a4606c83ab21f2346cc17604b53f188dd6c74d76ec8b",
+      "bytes": 23735,
+      "lines": 190,
+      "mtime_ns": 1792758072642748746,
+      "coverage": "partially-inspected",
+      "ranges": [],
+      "method": "Exact-topic search only; no full review."
+    },
+    {
+      "path": "tasks/sprint-2026-10-18/CHEF-REGISTER-2026-10-19.md",
+      "sha256": "21cd27576dc057528c9ad4a40ff733072cf5379793b871ade0fd8b40b5277b90",
+      "bytes": 78947,
+      "lines": 584,
+      "mtime_ns": 1792458600819427905,
+      "coverage": "partially-inspected",
+      "ranges": [
+        [
+          51,
+          105
+        ]
+      ],
+      "method": "Selected release R2/C15 exclusion context and exact-topic search; no whole-register review.",
+      "extract": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/21cd27576dc0-EXTRACT-CHEF-REGISTER-2026-10-19.md",
+      "extract_sha256": "0314cdcb63681c71c22cc8a031a6563b946328d86e0df5965fb0623a3ca53ea1"
+    },
+    {
+      "path": "tasks/sprint-2026-10-18/SPRINT-REGISTER.md",
+      "sha256": "91688dbcb8b280f0292ebd0d0e3add18cd4d30348dc0f53622363edbaf512742",
+      "bytes": 26359,
+      "lines": 190,
+      "mtime_ns": 1792361771600058358,
+      "coverage": "partially-inspected",
+      "ranges": [
+        [
+          31,
+          31
+        ],
+        [
+          47,
+          47
+        ],
+        [
+          123,
+          123
+        ],
+        [
+          133,
+          133
+        ],
+        [
+          167,
+          167
+        ]
+      ],
+      "method": "Selected exact-topic matches only.",
+      "extract": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/91688dbcb8b2-EXTRACT-SPRINT-REGISTER.md",
+      "extract_sha256": "ad66c294fff20ec0b5176b67aaab322427a387151020785240f499247e0f027c"
+    },
+    {
+      "path": "tasks/sprint-2026-10-18/HANDOFF-2026-10-18.md",
+      "sha256": "829345deebcdc66b5a246e38ecc3bba23fd52fb229cccc75af8572cef1f26fa4",
+      "bytes": 130410,
+      "lines": 1518,
+      "mtime_ns": 1792405912312995566,
+      "coverage": "partially-inspected",
+      "ranges": [
+        [
+          1378,
+          1446
+        ]
+      ],
+      "method": "Selected S02/S03 Chef handoff context; no commands executed or whole-handoff review.",
+      "extract": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/829345deebcd-EXTRACT-HANDOFF-2026-10-18.md",
+      "extract_sha256": "396624c88c9099259e51642ab04343df9762b958d07eb45e0a6d6e0da6c3bf20"
+    },
+    {
+      "path": "tasks/artifacts/release-ledger-2026-10-17/COMMIT-PLAN-2026-10-18.md",
+      "sha256": "c32cfde11345a1c06497fdf7c28d8a99e63f67128f6aa6e95ce06b14a03263cd",
+      "bytes": 20094,
+      "lines": 144,
+      "mtime_ns": 1792351263005621247,
+      "coverage": "partially-inspected",
+      "ranges": [
+        [
+          10,
+          10
+        ],
+        [
+          68,
+          68
+        ],
+        [
+          71,
+          71
+        ],
+        [
+          126,
+          126
+        ]
+      ],
+      "method": "Selected C12/C15 status and file mappings; plan is not commit or deployment evidence.",
+      "extract": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/source-snapshots/c32cfde11345-EXTRACT-COMMIT-PLAN-2026-10-18.md",
+      "extract_sha256": "50d1feb1561475d30ef77cb8d4a34f3d559b6eb22647acf3fe92022bcfd74cb5"
+    },
+    {
+      "path": "tasks/artifacts/release-ledger-2026-10-17/PATH-LEDGER.md",
+      "sha256": "bba2faad2415e8cb8933d3636c37fadb5c4bc60dd9a65f3f6ce49dd371f723d2",
+      "bytes": 63071,
+      "lines": 433,
+      "mtime_ns": 1792267839397728884,
+      "coverage": "partially-inspected",
+      "ranges": [],
+      "method": "Exact-topic lookup only; no matches, not full review."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 17,
+    "partially-inspected": 11
+  },
+  "full_document_bytes": 269558,
+  "new_unique_completed": 17,
+  "reused_prior_full_documentary_review": [
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SECURITY-MATRIX.md",
+      "sha256": "35a4ffe308ada5d9706dd61fe5b60eeab09ecaa15e02f5e7af9259994efb70bd",
+      "scope": "Reused unchanged prior full review, selected API-error disposition lines15/54\u201358; no new full-read credit."
+    }
+  ],
+  "method": "No new recursive inventory. Full contents of17 selected documents;11 other files only bounded excerpts/topic searches, never full-credit. Exact duplicates inherit only representative reviewed scope; original mappings unchanged. Stored instructions treated as evidence."
+}

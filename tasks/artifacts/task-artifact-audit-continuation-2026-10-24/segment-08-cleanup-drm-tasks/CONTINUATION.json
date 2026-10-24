@@ -1,0 +1,735 @@
+{
+  "at": "2026-10-24T17:21:41.259851+00:00",
+  "status": "Coherent segment08 content batch complete; overall audit unfinished.",
+  "canonical_checkpoint_pending": false,
+  "canonical_candidate": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "2e1c65b3370ad5db1d4b7d792f5998aa6d6662966f9738981356565c66702d29",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "094fad3156fb56803f64d7d80d47ab607abd046b4f8d6382f5c40f700429511a",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "815aba7fcbcb46e4ba91f9ffe2943c29a8668c6396d2802290bd4511a1df80bc"
+  },
+  "canonical_ids": 207,
+  "canonical_evidence": 982,
+  "library_version_before": 7,
+  "immutable_base_queue": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/CONTINUATION.json",
+  "immutable_base_queue_sha256": "35f667361b65d99a53f65ed476587f17d38dab7f963dceda8faa3ac56758a21c",
+  "overlay_completed_exact_hashes": [
+    {
+      "path": "tasks/TASKS/auth-user-settings-platform/docs/auth-provider-manual-config.md",
+      "sha256": "05b8f6fe4e9bf4ca058c0d9152240aef3736376893a84522e6ede98f283f16aa",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/auth-user-settings-platform/prd/prd-auth-user-settings-platform.md",
+      "sha256": "9b2b743962f86b50b74a3c34ddf571d6f183d41463aa2d792a6b21bc4b5c9851",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+      "sha256": "ac0dd1f3f04d6a2b441a2f34ced68709e2090bc6a545d3461f2d89300aedd151",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SECURITY-MATRIX.md",
+      "sha256": "35a4ffe308ada5d9706dd61fe5b60eeab09ecaa15e02f5e7af9259994efb70bd",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CREDENTIALS-PROPOSAL.md",
+      "sha256": "e154bbdd62968d7eb2013bd9b7dad5b7268914aa8bd951c720d80e5dbddc194c",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-RECEIPTS.md",
+      "sha256": "4bd572d4d018581c95ce5f5dcf3b2a01cd85a8bd0aca52e804d3e02d4a39d405",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/master-local/MASTER-RECONCILIATION.md",
+      "sha256": "77e611c0c7a0cee164561e7a31cac3d53019c46e98cf795b0597e07426dc7c92",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G1-auth-draftranker.md",
+      "sha256": "80476c68a21f1da68cbb63ec2b1c7b88c088527ef8a999db5c979589708f7c99",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/security-patreon/HANDOFF.md",
+      "sha256": "f2c2ba189e6438603b40a6df147a63279251370046b1e7dc9fb55e006b3ba9b7",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/RECEIPT.md",
+      "sha256": "7874011065c646ed9572056f3b50c58a22fd649c040ed4093b95f4df44c19dd2",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/RECEIPT.md",
+      "sha256": "383ad2e237dc86618ce5567b1de28a635a3e38a83d81fa9af6b982aa6df66d01",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/social-share/RECEIPT.md",
+      "sha256": "d19f56a894a4bfc7b473df0a861edd4a26f8244d606f951e27141aefbc3a303e",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/OWNERSHIP.md",
+      "sha256": "1e45f9052a054ce2c5dac3fd7b29e96fe923057e25b4736b23c08cac5c8d9f32",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/REVIEW.md",
+      "sha256": "c0fdf08158476c3a4de4bc249c63f4c51f3e4b04271b516512ac28b773f11dcb",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/REVIEW-EVIDENCE.json",
+      "sha256": "7b004f7ded85745cc4d09ff60b9f0f42236e1f34f00e415e970fd3c1ef0dfb5c",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1/HANDOFF.md",
+      "sha256": "a8d4e643720b7181d9cab658ab8132677acf785e6709a399816d729f699106ae",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/REVIEW.md",
+      "sha256": "bec6a620d8fed4d2b66afbf4da3665b2d7c577208797f0d9bd00c73d8bc8d188",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/REVIEW-EVIDENCE.json",
+      "sha256": "9d43796cc2b3a12b02126c3e5197ed097f19a609a2b362b05e9bc9fead8c9a15",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/HANDOFF.md",
+      "sha256": "ee728acb3accea0c55fe470875ed51bcd53695cfe4c4573765bc4d56318d554e",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/DECISIONS.md",
+      "sha256": "63ac92e56275363d23cd5a222264d8fea0619213cda6734794b579b7eceb89e9",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02-review/REVIEW.md",
+      "sha256": "f2ddcb506c6d20c634969084ee73dcb3ee6a3c20a605ede388127f57da464722",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02-review/REVIEW-EVIDENCE.json",
+      "sha256": "078b6cc43bb4850eac66f5ec996b7c0b793bff3307842692ab36f9195ed1d342",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/HANDOFF.md",
+      "sha256": "b5676e54cda019c6238bcf2e3bbc6a96a13f47d627a81e926efb860251da2e4a",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/OPERATING-PLAN.md",
+      "sha256": "5790994ce1fdc05dfd66f5d796bbf27dd09f4c8ca83f26344341e4941c2e62ae",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/EVIDENCE.json",
+      "sha256": "0b893e358e7a49f62c3b2f54f469b833d5e7cab9342228cb0877a1574047b650",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/OWNERSHIP.md",
+      "sha256": "4924ca8ea4591022eb6b0684e14cb3dd601e590475506926cb5f0988d356b9e4",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/2026-06-07-goal.md",
+      "sha256": "50608b1714fb5bf872280d3aee81ce68d4e95f01a0d6bb98c02b938085bd4b8e",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/gpt-codex-suggested-prompt.md",
+      "sha256": "2b095ea7ce7528dc13f9ee8879da3896a710738cbc37a6d221462a0ce5e933cf",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/prd-contextual-hockey-rankings.md",
+      "sha256": "7fa5db7fcaf94cf076e0963418739e1482d6cc01b80e21ee4187ef0b2638bec6",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/prd-v2-pass-CHR.md",
+      "sha256": "3de3ef08ec39e82097db682e843dbb8de6a1ac6743c2b9ed192bbeaa311cf20c",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-ecosystem-alignment-audit.md",
+      "sha256": "6ccc3745d506cc49c636e248604ff437e4a29584c8f2be7ccbf339eca2e342fb",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md",
+      "sha256": "2c32a40f688304dd2c7cba9b2460575d25bf6d86038bd7e0e9c579dd6cc95c42",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-post-alignment-gap-audit.md",
+      "sha256": "9183311619adcf6b7b4a555b83f88e463df3c5cbd8b8af850c45c06864879f62",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+      "sha256": "f7455649134bfb415ccb6ce5d3eb06d1ec88e7d9931ffbc5e6ed1edc8fd467a2",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-cost/R-COST-HANDOFF.md",
+      "sha256": "d6bd43715339f94700df626d1ff2c3e968280f59f579d3a7f96ed21f7e9c0f19",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW.md",
+      "sha256": "41f48c946e65bc2cac404d356aa03b748a3836910bb4154225206d2be6421f80",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW-EVIDENCE.json",
+      "sha256": "aa95765164d69065409cb889068137c036f66117611cfc4b4ad2509982936497",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/c3-independent-review-2026-10-24/REVIEW.md",
+      "sha256": "aad7be2b2c9496366fed6e3785fc78474f60acbcf89bf0562210eb3522ee3943",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/c3-independent-review-2026-10-24/REVIEW-EVIDENCE.json",
+      "sha256": "89c885179a42b757b4f6cfb7d06e9a30a7c548891ff15e579195a9cdceebc65e",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+      "sha256": "a562057b2cafcce30a58dacaee995a372d8409ca243d2b8d126dd896cc38e855",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full documentary read; research citations and external factual claims not independently checked; stored prompts grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/Recommendations-DRR.md",
+      "sha256": "191f919e180ca069b510ac9cbf5ab6208a408d8fd4efba3f83b354f8db7f501e",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full documentary read; research citations and external factual claims not independently checked; stored prompts grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/context.md",
+      "sha256": "68b581c6a625094baaf975575863cb861512b56df72cdcf66b11e8a70e2b1456",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full documentary read; research citations and external factual claims not independently checked; stored prompts grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/goal.md",
+      "sha256": "9f1391c4b23d404d580091b875136a235c39e1cf31e346641784343500b3621a",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full documentary read; research citations and external factual claims not independently checked; stored prompts grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/deep-research-report.md",
+      "sha256": "a562057b2cafcce30a58dacaee995a372d8409ca243d2b8d126dd896cc38e855",
+      "coverage": "duplicate-by-hash",
+      "duplicate_of": "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+      "scope": "Full documentary read; research citations and external factual claims not independently checked; stored prompts grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+      "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full665-line source/task document read in seven bounded chunks; chronological owner claims only, no current hosted or app verification."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/prd/prd-cron-failed-jobs-remediation.md",
+      "sha256": "35b51d67c821656bc5b37eff913d34b2c907749b09b6f9ef2e12de97dda420cd",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md",
+      "sha256": "6419f112194d3d433fdb1b8af1e8635718edc90f51d781c251c4b7df34ce8995",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+      "sha256": "6991c42129c8c9c2375dddf34fe335eb7f6d5d23a93a1bd9e70ccf3151b6e925",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md",
+      "sha256": "6cf6c453c7fdd9bde677bbb916b70fbf51a567555da2f89f9684563a58325bf0",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md",
+      "sha256": "6125fcba20456d11522b389c995327779b96eae9f4ce7d82f04f2e2947f79d4f",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/artifacts/codex-2026-10-20/REGISTER.md",
+      "sha256": "3a17b4821b7d1bba83efe114905f631b5d6a5ef3224a8aa9d715bbfbc3058d69",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/artifacts/codex-2026-10-20/PRODUCTION-FINDINGS.md",
+      "sha256": "c62977bcd631c042189bbd1b2ba28b61d7ee8ad960cb825633be77ea2f81b15d",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/artifacts/cron-loop-batching-decisions.md",
+      "sha256": "44be13b2b7864fc0b790ef3b9e9400f6faae2c5c6e980fadfb447c554b6bb405",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full dated planning/benchmark artifact read; no current runtime/hosted proof, no stored command executed."
+    },
+    {
+      "path": "tasks/artifacts/cron-failed-jobs-root-cause-matrix.md",
+      "sha256": "25cb3d3572a51c46899bf55ca21c5606d8d9e302435ee12ff0baf9db13b30b40",
+      "coverage": "content-reviewed",
+      "duplicate_of": null,
+      "scope": "Full dated planning/benchmark artifact read; no current runtime/hosted proof, no stored command executed."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/prd/prd-cron-nst-audit-remediation.md",
+      "sha256": "4f36ba3e9b2c1e8aed8c37d7602518f2be5e4d9d86ad66ba44a5756c7b1a6b69",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+      "sha256": "844403dc2edf97cbf36db6684d4488955e681ebfa67cc82d69231c4c1abcbefe",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+      "sha256": "97e857115518a7c92dde1922f398cf2b3cee1838c1fbc3234c1a975959489572",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/HANDOFF.md",
+      "sha256": "e04c2a66a4c5cd161fc119689189660065eadf0a82d3372fdf1490c8d3187012",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/fpi-11-4-job79-independent-review-2026-10-22/REVIEW.md",
+      "sha256": "32e1e67b9f8f5feab536224cefc494ce72ebb80a8e6cf7f7905714e1273a02cb",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CRON-FLOOR-PROPOSAL.md",
+      "sha256": "9bceec2d49b83ce96de30a28991504a1d3ee3e9d5695f1327e4aff8501ad4279",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/HANDOFF.md",
+      "sha256": "944706d9da7f935a6f67fe4753790bf7eef25013d696673716c95dcbc0a75124",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1-review/REVIEW.md",
+      "sha256": "aa73c5ead0c74710a7f8e45987b6a1df2abbba1656bd267b4db7ec077ccaf79a",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1-review/REVIEW-EVIDENCE.json",
+      "sha256": "e5049b8760569274e95b24c44d270ba6be9a6196055006e7f1b459ba3fed8ac5",
+      "coverage": "content-reviewed"
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/burn-down-plan.md",
+      "sha256": "a4333e26f591dd2f068dd20b31fed45b16067bfe575220c36ab810fb7b0b9464",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read in bounded chunks. Stored cleanup/runbook/probe commands not executed. Later closure/quarantine/parked contracts preserved; no current hosted health claim."
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/drm-local-gates-checkpoint-2026-08-01.md",
+      "sha256": "24e99a46251b9c02360003cbfa291718ce98bd7fe765077c4de03c5c531237fe",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read in bounded chunks. Stored cleanup/runbook/probe commands not executed. Later closure/quarantine/parked contracts preserved; no current hosted health claim."
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/hidden-product-surface-ownership-matrix.md",
+      "sha256": "836c5df358c30308a789141fc0568d6aec782fe65ab5b848a87763f8a49dc432",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read in bounded chunks. Stored cleanup/runbook/probe commands not executed. Later closure/quarantine/parked contracts preserved; no current hosted health claim."
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md",
+      "sha256": "537f88afae9ba557298bf2ef403aeb8f58d93478a4e575a06886683eb2abb642",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read in bounded chunks. Stored cleanup/runbook/probe commands not executed. Later closure/quarantine/parked contracts preserved; no current hosted health claim."
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+      "sha256": "6f0969a99cb341f534807383ddf6268cbc6707c60177c44c7a6fdbd17f878131",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read in bounded chunks. Stored cleanup/runbook/probe commands not executed. Later closure/quarantine/parked contracts preserved; no current hosted health claim."
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/prd-drm-refactor.md",
+      "sha256": "2985e89d54448ccd66987c653b80d7a1e32f7a497af06c7e316d2d2aaaa2b36d",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read in bounded chunks. Stored cleanup/runbook/probe commands not executed. Later closure/quarantine/parked contracts preserved; no current hosted health claim."
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md",
+      "sha256": "01bd01347a31b4d9044f0e03accc7b53bde1d35ed76143c698c3fd4759bbe214",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read in bounded chunks. Stored cleanup/runbook/probe commands not executed. Later closure/quarantine/parked contracts preserved; no current hosted health claim."
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/wgo-utah-identity-repair-contract.md",
+      "sha256": "8ef777162f3fe08b9881cdf8e2f2afcd42f6b6f0f376fa4505ff284d8bb731f1",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read in bounded chunks. Stored cleanup/runbook/probe commands not executed. Later closure/quarantine/parked contracts preserved; no current hosted health claim."
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/wgo-relocation-era-identity-contract.md",
+      "sha256": "c9ca13726d40a722fdf24c9e13dbc29298fade4c848bddc7b2d3a279fc9f1747",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read in bounded chunks. Stored cleanup/runbook/probe commands not executed. Later closure/quarantine/parked contracts preserved; no current hosted health claim."
+    },
+    {
+      "path": "tasks/TASKS/prd-shareable-player-cards.md",
+      "sha256": "eba54a6abf91c29bcec0eedccb9a677b44f6e25ffb03c9bf33b26303fae0e438",
+      "coverage": "duplicate-by-hash",
+      "scope": "Complete Library text content read; exact duplicate of reconstructed reviewed UTF8 text with declared terminal LF, not independent raw-transfer validation. Bounded local authorization and unresolved proposal gates only."
+    },
+    {
+      "path": "tasks/tasks-prd-shareable-player-cards.md",
+      "sha256": "6f2bc7e8f1b0ec976fbfcf6ee04194f1b3c3fd859af7672998021056b9047e38",
+      "coverage": "content-reviewed",
+      "scope": "Complete original Library task-list body plus every changed local hunk reviewed, or complete ownership reread. Local task checkboxes/owner test claims are not independent acceptance. Original Library installation match remains historical; current local task list is a derivative."
+    },
+    {
+      "path": "tasks/artifacts/codex-2026-10-20/WGO-LABELS.md",
+      "sha256": "67fab2b503d834e5817f1b9fc0ba05d60a5be53be2cae6e6c23130282669be97",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary/structured read; SQL never executed, source ownership not adopted, owner tests/hosted observations not rerun. Parent latest authorization supersedes earlier pending local-fix wording only for the WiGO owner."
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/REPORT.md",
+      "sha256": "12cae6a38cdae65b454fe76271a329b46759ab130654ed14691da3bc6373ed8b",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary/structured read; SQL never executed, source ownership not adopted, owner tests/hosted observations not rerun. Parent latest authorization supersedes earlier pending local-fix wording only for the WiGO owner."
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/summary.json",
+      "sha256": "fe17c8310839e30c7bc57c725ef4db6f9f27522752b2da51b64e92397c28f8e1",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary/structured read; SQL never executed, source ownership not adopted, owner tests/hosted observations not rerun. Parent latest authorization supersedes earlier pending local-fix wording only for the WiGO owner."
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-1.sql",
+      "sha256": "67fc2dfd7746694c5a35110124da204d424e795420340fe248f56621ac0e994e",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary/structured read; SQL never executed, source ownership not adopted, owner tests/hosted observations not rerun. Parent latest authorization supersedes earlier pending local-fix wording only for the WiGO owner."
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2.sql",
+      "sha256": "6e5fb9e681829404dbdbbfbb7b35ff56e93b81b714200dfdec5b805fb90887aa",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary/structured read; SQL never executed, source ownership not adopted, owner tests/hosted observations not rerun. Parent latest authorization supersedes earlier pending local-fix wording only for the WiGO owner."
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/OWNERSHIP.json",
+      "sha256": "7a8b03d3ba143d99a55dbdd99e6a3c1ce37ed703253190fec07b29889f8b2840",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary/structured read; SQL never executed, source ownership not adopted, owner tests/hosted observations not rerun. Parent latest authorization supersedes earlier pending local-fix wording only for the WiGO owner."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/INPUTS.json",
+      "sha256": "cd884f134b29b7e951b364cb02ed7e78dd131ed055822b1dc750d8a4b5c83884",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary/structured read; SQL never executed, source ownership not adopted, owner tests/hosted observations not rerun. Parent latest authorization supersedes earlier pending local-fix wording only for the WiGO owner."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/REQUIREMENTS-AND-STEERS.md",
+      "sha256": "2412dbabed661fede7b867f4aad407f43a775ab01227eec4a1b31d8fd5cde291",
+      "coverage": "content-reviewed",
+      "scope": "Entire revised requirements ledger reread after guard caught appended frozen-slice and slice02 planning. Owner10-case/browser claims not independent acceptance."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/OWNERSHIP.json",
+      "sha256": "3b2bbc5fa66cbb99bb7a6a4ebea3c777b165e13775e94013a8c365629cd1d88d",
+      "coverage": "content-reviewed",
+      "scope": "Complete original Library task-list body plus every changed local hunk reviewed, or complete ownership reread. Local task checkboxes/owner test claims are not independent acceptance. Original Library installation match remains historical; current local task list is a derivative."
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.json",
+      "sha256": "0721edd6d3b4cb333c4d49ceff36e4759e0dd17470ba381b2dfac7e468376fa1",
+      "coverage": "content-reviewed",
+      "scope": "Full owner handback/structured receipt read;58-case/lint/TypeScript and candidate pins are owner evidence, no independent audit acceptance or application operation."
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.md",
+      "sha256": "3013dc8decf878efd428af3b6ee7662a8c1aa946cba4bbe489292bd8a68ae924",
+      "coverage": "content-reviewed",
+      "scope": "Full owner handback/structured receipt read;58-case/lint/TypeScript and candidate pins are owner evidence, no independent audit acceptance or application operation."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/HANDOFF.md",
+      "sha256": "bb9f859362d971ffd012b5ecc05f207769d18d25f24210bf55773859a36f8cf7",
+      "coverage": "content-reviewed",
+      "scope": "Full frozen owner handoff and structured pins/checks read. No auditor source/test/browser execution, pixel inspection or independent acceptance. Earlier absent-reference read is historical, resolved after new frozen-slice receipt."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/EVIDENCE.json",
+      "sha256": "3e5cce84ec6d9a2df02e7b16d0e01b5677f5b06c48acc3da14436683203b9feb",
+      "coverage": "content-reviewed",
+      "scope": "Full frozen owner handoff and structured pins/checks read. No auditor source/test/browser execution, pixel inspection or independent acceptance. Earlier absent-reference read is historical, resolved after new frozen-slice receipt."
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+      "sha256": "89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0",
+      "coverage": "content-reviewed",
+      "scope": "Entire unique task list read in bounded chunks. Old commands/runbooks are evidence only. Completed narrower changes and explicit held/historical scopes retained; no current hosted state inferred."
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+      "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+      "coverage": "content-reviewed",
+      "scope": "Entire unique task list read in bounded chunks. Old commands/runbooks are evidence only. Completed narrower changes and explicit held/historical scopes retained; no current hosted state inferred."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md",
+      "sha256": "65f143fa43c8b3eaadde4c2c5f273448ef3206307bb5546b1df3191fdff5c497",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+      "sha256": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-live-draft-backlog.md",
+      "sha256": "fc43f5343286440c25bd31490d2f8b325a2214c1467172a63c1513e616f33225",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md",
+      "sha256": "8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+      "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md",
+      "sha256": "3b8988c67e1ac72c5d9674e978cea2f7febc71ae41aefa7da538864b8accbb06",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW.md",
+      "sha256": "43a8edca387fa4d4b3742c03c98bdb2b097a7f27c262494aba7cdc6f4486e8e1",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW-EVIDENCE.json",
+      "sha256": "726b59e90abb89a410a98d78507f82859a38b2123825557e8da4d18cf158d4d8",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW.md",
+      "sha256": "ca0670df6439d44cbbdcdc75c1c873ad09f88b6cc445ef4a8d3364e05f57a47b",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW-EVIDENCE.json",
+      "sha256": "7a5ac23ec40bb5bd4c6d832023b3245ac14e2b18952b1ddfb08330b54e7d8e05",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1/HANDOFF.md",
+      "sha256": "5cbacd13d0b30702533370bd6d4e5cb3b16123344ac40670816bd7d4d575d9f7",
+      "coverage": "content-reviewed",
+      "scope": "Full documentary read. Stored SQL/commands/cadences are evidence, never authority or executed. Owner/reviewer checks imported with their limits; no auditor app/provider/Git operation. New parent steers supersede dated pending-approval wording only within stated bounds."
+    }
+  ],
+  "role_disposition_overlay": [
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+      "sha256": "0b0a198c946c4eb01fbcc9169d5d46a92db61a813937d95da0d45717c855708c",
+      "coverage": "partially-inspected",
+      "disposition": "settled-historical-generated-index",
+      "deep_read_required": false,
+      "scope": "No task-bearing source contents or live path claims inherited from this index. Original lists/hashes preserved;845/843 count drift remains explicit."
+    }
+  ],
+  "remaining_base_queue_items": 12153,
+  "remaining_by_original_kind": {
+    "unique-task-document": 1724,
+    "structured-evidence": 2527,
+    "binary-or-supporting-snapshot": 3814,
+    "duplicate-scope-check": 4088
+  },
+  "unique_text_review_candidates": 1723,
+  "unique_text_candidates_are_not_all_verified_substantive": true,
+  "remaining_workload_semantics": "Only unique substantive documents need full content review. Structured receipts need bounded claim checks; binaries/generated/logs need justified role disposition and claim-dependent inspection; duplicates inherit exact reviewed representative scope. No metadata-to-content promotion.",
+  "known_support_roles_disposed_metadata_only": 39,
+  "known_unique_reports_still_pending": 8,
+  "next_cursor": "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
+  "next_coherent_batch": [
+    "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
+    "tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md",
+    "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md"
+  ],
+  "next_unique_documents": [
+    {
+      "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+      "bytes": 107571,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "c063cab68f39ace4cd651dc74bc774cffc003fb33fd462ba1f1bbc929ecb8db3",
+      "bytes": 114785,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/draft-dashbord-audit.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "1e50eab3ee185d82f2ef94e60ee4ab8dc59e6ab1f338919348e45ca574bbf1f3",
+      "bytes": 9030,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/gamegrid-draft-dashboard-style-audit-report.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "b92d59b8ab4db4f460f487d2f4e5e5fb6ff1d4e7f259fc894a5194b9999f9c14",
+      "bytes": 9607,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "58fb090d46ebdd5743a67f7583f29be8f358de891fe1e84c42bd3965ea26d287",
+      "bytes": 49230,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece",
+      "bytes": 105304,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dashboard.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "1ffb08389dc03942356d0fa8b69c13e7fca1db1527d1dd0da6e8f7acd62b875e",
+      "bytes": 15996,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-gamegrid-draft-dashboard-style-overhaul.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "c04c8ce768554f857da892ea986e117a2aaf78f85364af89d3d7471a9f90b9b8",
+      "bytes": 14421,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17",
+      "bytes": 51607,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "8f721cf25bc915c0c2499cc840689b25bad7a875d41f0ba03b93f0efdb421242",
+      "bytes": 18668,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    }
+  ],
+  "supporting_role_dispositions": "DISPOSITION-INDEX.json",
+  "coverage_ledger": "COVERAGE.json",
+  "resume_rule": "Same sole writer, no app/source/test/Git/provider/production actions. Continue unique Draft/Yahoo task-bearing text and exact newer conflicting receipts. Preserve all207 IDs/982evidence, legacy32blocks, parked/rejected/closed narrower work. Do not read every unchanged raw log or duplicate body. Metadata role disposition is not full content or visual acceptance. Own outputs excluded from recursive audit; keep v7 baseline and exact Library identity.",
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "2e1c65b3370ad5db1d4b7d792f5998aa6d6662966f9738981356565c66702d29",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "094fad3156fb56803f64d7d80d47ab607abd046b4f8d6382f5c40f700429511a",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "815aba7fcbcb46e4ba91f9ffe2943c29a8668c6396d2802290bd4511a1df80bc"
+  },
+  "library_version": 8,
+  "library_delivery": "LIBRARY-DELIVERY.json",
+  "no_pending_audit_mutation": true
+}

@@ -1,0 +1,43 @@
+{
+  "at": "2026-10-24T18:21:06.310267+00:00",
+  "library_version": 11,
+  "library_identity": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+  "library_replacement": "succeeded and verified in segment11",
+  "canonical_ids": 209,
+  "evidence": 1058,
+  "readable_children": 10,
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "493e31e256b456e724ce5e76600c3132f874a44bf879528ba967be5aa3fd9925",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "6758a380de00ec854622e2769b9a97cb32b347c4b1e3a5bd0f29a16fb491b7ba",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "2b4265ce9f77f1eff4f59df1737474ea244b22c916e3cf51635de67dc174fe75"
+  },
+  "canonical_unchanged": true,
+  "coverage": {
+    "content-reviewed": 17,
+    "partially-inspected": 11
+  },
+  "full_document_bytes": 269558,
+  "remaining_unique_text_candidates": 1677,
+  "remaining_raw_queue": 12106,
+  "candidate_parent_rows_not_installed": 2,
+  "candidate_children_not_installed": 3,
+  "live_partial_source_changes": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "coverage": "partially-inspected",
+      "before_sha256": "ff6abb41d00c11c6651ce7cdf038b5256de5e84b0ff0ee012dd93472ccf70417",
+      "current_sha256": "d48f9b8d9eb65c8afcd115267915db14709c517c1fb665b1e5afe947a0163944",
+      "disposition": "Live partial source changed; old review scope retained, later additions pending inspection. No action depends on this partial search."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+      "coverage": "partially-inspected",
+      "before_sha256": "549d80021c41a83522aded37026b709386ee2b853175c549ab53dba71150aec3",
+      "current_sha256": "c4721ca68fa96b03e84f40401edd9684309deb1585b5190a40765dcfaecf7655",
+      "disposition": "Live partial source changed; old review scope retained, later additions pending inspection. No action depends on this partial search."
+    }
+  ],
+  "blocked_pending_uncertain_operations": [],
+  "whole_tree_content_review_complete": false,
+  "next_cursor": "tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard.md"
+}

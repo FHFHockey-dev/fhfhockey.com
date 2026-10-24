@@ -1,0 +1,73 @@
+{
+  "G1": {
+    "ready": {
+      "state": "ready",
+      "blocked": false,
+      "gridStillExportable": true,
+      "tiers": 3,
+      "specialistsHits": 3
+    },
+    "missing": {
+      "state": "missing",
+      "blocked": true,
+      "gridStillExportable": true,
+      "tiers": 0,
+      "specialistsHits": 0
+    },
+    "staleOwnership": {
+      "state": "stale",
+      "blocked": true,
+      "gridStillExportable": true,
+      "tiers": 0,
+      "specialistsHits": 0
+    },
+    "staleStats": {
+      "state": "stale",
+      "blocked": true,
+      "gridStillExportable": true,
+      "tiers": 0,
+      "specialistsHits": 0
+    },
+    "futureOwnership": {
+      "state": "missing",
+      "blocked": true,
+      "gridStillExportable": true,
+      "tiers": 0,
+      "specialistsHits": 0
+    }
+  },
+  "F1": {
+    "state": "ready",
+    "ownershipAsOf": "2026-10-26",
+    "players": 298
+  },
+  "T1": {
+    "tiers": [
+      50,
+      30,
+      20
+    ],
+    "unique": true,
+    "under50Below30": 0,
+    "bounds": true
+  },
+  "R1": {
+    "mismatches": 0,
+    "playerKeys": [
+      "blocks",
+      "gamesPlayed",
+      "gamesStarted",
+      "group",
+      "hits",
+      "name",
+      "nhlId",
+      "ownership",
+      "pointsPerGame",
+      "positions",
+      "qualityStartPct",
+      "savePct",
+      "shots",
+      "team"
+    ]
+  }
+}

@@ -1,0 +1,43 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c2-isolated/web
+
+(node:70112) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/HomepageGamesSection.test.tsx (29 tests) 749ms
+(node:70132) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/homepageNewsCompatibility.test.tsx (51 tests) 83ms
+(node:70160) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/HomepageStandingsInjuriesSection.test.tsx (14 tests) 416ms
+(node:70162) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/NewsFeed/NewsCard.test.tsx (39 tests) 177ms
+(node:70164) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/tweetNewsAutomation.test.ts (29 tests) 49ms
+(node:70166) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/newsFeed.test.ts (30 tests) 10ms
+(node:70168) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/HomepagePlayoffBracket.test.tsx (4 tests) 102ms
+(node:70170) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/HomepageDraftRanker.test.tsx (4 tests) 85ms
+(node:70172) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/tweetPatternReview.test.ts (2 tests) 7ms
+(node:70187) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/HomepagePulse.test.tsx (2 tests) 17ms
+(node:70189) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/useHomepageGames.test.tsx (1 test) 61ms
+ ✓ lib/sources/tweetLunaReview.test.ts (46 tests) 728ms
+
+ Test Files  12 passed (12)
+      Tests  251 passed (251)
+   Start at  13:41:08
+   Duration  7.11s (transform 488ms, setup 23ms, collect 1.52s, tests 2.48s, environment 1.66s, prepare 375ms)
+

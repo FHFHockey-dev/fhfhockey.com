@@ -1,0 +1,2 @@
+components/player-cards/PlayerCard.tsx(4,20): error TS2307: Cannot find module './PlayerCard.module.scss' or its corresponding type declarations.
+components/player-cards/PlayerCardPreview.tsx(6,20): error TS2307: Cannot find module './PlayerCard.module.scss' or its corresponding type declarations.

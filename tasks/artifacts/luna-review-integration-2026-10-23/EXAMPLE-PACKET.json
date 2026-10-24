@@ -1,0 +1,113 @@
+{
+  "packet": {
+    "version": "ifttt-review-sidecar-v1",
+    "mode": "review_only",
+    "canPublish": false,
+    "canChangeStatus": false,
+    "receiptSnapshot": {
+      "id": "synthetic-receipt",
+      "eventTable": "line_source_ifttt_events",
+      "eventId": "synthetic-event",
+      "receivedAt": "2026-10-16T15:01:00Z",
+      "inputRow": {
+        "tweet_id": "1000",
+        "text": "BOS Jeremy Swayman starts tonight.",
+        "tweet_created_at": "2026-10-16T15:00:00Z",
+        "link_to_tweet": "https://x.com/Reporter/status/1000",
+        "raw_payload": {
+          "text": "BOS Jeremy Swayman starts tonight."
+        }
+      }
+    },
+    "source": {
+      "retainedSourceId": "line_source_ifttt_events:synthetic-event",
+      "sourceTextVersionId": "tweet-source-claim-v1:text:444a46aa6d7675b9be6de4454f4b3c4bf913da388df675cc4f4afc4a54744bc9",
+      "originalPostId": "1000",
+      "text": "BOS Jeremy Swayman starts tonight.",
+      "author": "reporter",
+      "url": "https://x.com/Reporter/status/1000",
+      "publishedAt": "2026-10-16T15:00:00Z",
+      "ingestedAt": "2026-10-16T15:01:00Z",
+      "sourceTextIsUntrustedData": true,
+      "provenance": {
+        "attribution": {
+          "relay": {
+            "accountKey": "x:handle:reporter",
+            "accountId": null,
+            "handle": "reporter"
+          },
+          "original": {
+            "accountKey": "x:handle:reporter",
+            "accountId": null,
+            "handle": "reporter"
+          },
+          "quoted": null,
+          "originalTweetId": "1000",
+          "originalUrl": "https://x.com/Reporter/status/1000",
+          "status": "resolved",
+          "originalPublishedAt": "2026-10-16T15:00:00Z",
+          "relationship": "direct",
+          "quoteEndorsement": "not_asserted"
+        },
+        "primaryTextSource": null
+      }
+    },
+    "wholePost": {
+      "proposedChecks": [
+        "relevance"
+      ],
+      "holds": []
+    },
+    "candidateCount": 1,
+    "candidatesOmitted": null,
+    "candidates": [
+      {
+        "observationId": "tweet-observation-v2:4ad2cc4672b7cd6330a321cb92efbc0d37dd7f91d3d07f5ac7cd5962d377aeca",
+        "extractionVersion": "2026-10-16.4",
+        "canonicalPlayerIds": [
+          8478499
+        ],
+        "evidence": {
+          "start": 4,
+          "end": 34,
+          "text": "Jeremy Swayman starts tonight."
+        },
+        "anchor": {
+          "subjectSpan": {
+            "start": 4,
+            "end": 18,
+            "text": "Jeremy Swayman"
+          },
+          "predicateSpan": {
+            "start": 19,
+            "end": 25,
+            "text": "starts"
+          }
+        },
+        "scope": {
+          "kind": "game",
+          "teamId": 6,
+          "gameId": 2026020010,
+          "phase": "entry",
+          "group": null
+        },
+        "effectiveAt": "2026-10-16T23:00:00Z",
+        "modality": "asserted",
+        "fact": {
+          "kind": "starter",
+          "playerId": 8478499
+        },
+        "proposedChecks": [
+          "source_support",
+          "wording"
+        ],
+        "holds": []
+      }
+    ],
+    "holds": [],
+    "providerDispatchEnabled": false
+  },
+  "extractionVersion": "2026-10-16.4",
+  "statements": [],
+  "decisions": true
+}

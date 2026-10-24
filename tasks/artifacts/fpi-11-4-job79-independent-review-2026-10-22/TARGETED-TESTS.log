@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest --run --config vitest.offline.config.mts lib/cron/nstCoordination.test.ts lib/nst/requestBudget.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-job79-independent-5yyabruo/web
+
+ ✓ lib/nst/requestBudget.test.ts (20 tests) 500ms
+ ✓ lib/cron/nstCoordination.test.ts (6 tests) 10ms
+
+ Test Files  2 passed (2)
+      Tests  26 passed (26)
+   Start at  12:34:46
+   Duration  802ms (transform 46ms, setup 7ms, collect 52ms, tests 510ms, environment 0ms, prepare 68ms)
+

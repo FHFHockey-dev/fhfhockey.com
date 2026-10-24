@@ -1,0 +1,27 @@
+{
+  "preview.html": {
+    "bytes": 314484,
+    "sha256": "f65ce654f1e1e7ab226aa01e95617d925608d8d590fbd65d5bbaa85b324e05a5"
+  },
+  "card.png": {
+    "bytes": 220317,
+    "sha256": "0375d72fb9c35331d37077757b9e5ff1cd145abb9b8731a90b392fe4b65ca262"
+  },
+  "snapshot-manifest.json": {
+    "bytes": 7314,
+    "sha256": "6975e878697ffce369ce10ab17a0e4c0e44877bddc65ef35a1a209fdc3893fde"
+  },
+  "source.patch": {
+    "bytes": 16516,
+    "sha256": "2def6ef7ecb8e3ed8e0e8dab8ff6c454297d6f0131abe1b5df5343d4cc9a4a35"
+  },
+  "serve-preview.mjs": {
+    "bytes": 1105,
+    "sha256": "48e84275cfc729886cf059f713cddbc7f02a223c6998897db0c83cf3d54ae0e5"
+  },
+  "acceptedFunctional": {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+    "bytes": 318626,
+    "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+  }
+}

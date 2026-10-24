@@ -1,0 +1,130 @@
+{
+  "accepted_successors": [
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+      "earlier": {
+        "sha256": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+        "packet": "A1-A10 and NST R1"
+      },
+      "successor": {
+        "packet": "P07 R2 plus task10 R1",
+        "sha256": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17"
+      }
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+      "earlier": {
+        "sha256": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+        "packet": "A1-A10 and NST R1"
+      },
+      "successor": {
+        "packet": "P07 R2 plus task10 R1",
+        "sha256": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c"
+      }
+    },
+    {
+      "path": "web/lib/player-forecasts/servedForecastLedger.ts",
+      "earlier": {
+        "sha256": "b9f5629e291bbcbee64f40378a762b2ee85e06fffe74cd1c564d6e62989098f1",
+        "packet": "A1-A10 and NST R1"
+      },
+      "successor": {
+        "packet": "task1 supported scoreboard",
+        "sha256": "464c108f990e5e9e5cfdd2f618cf41d2771f5ae14eacd90223ad83e4f8727e80"
+      }
+    },
+    {
+      "path": "web/lib/player-forecasts/servedForecastLedger.test.ts",
+      "earlier": {
+        "sha256": "3052c97e64b16cbe03d0c8146a71f83f7516c83e3563c981a410eb56b8fd3577",
+        "packet": "A1-A10 and NST R1"
+      },
+      "successor": {
+        "packet": "task1 supported scoreboard",
+        "sha256": "4e1d8198f86439e4aa9a26d2011f30da8513933cd8ec32fb22ba3bed83ccc22e"
+      }
+    },
+    {
+      "path": "web/pages/api/v1/forge/scoreboard.ts",
+      "earlier": {
+        "sha256": "260b504bdbe499e0779d6833dca4145893a7b5188f6d7174f1af4d348db21abb",
+        "packet": "A1-A10 and NST R1"
+      },
+      "successor": {
+        "packet": "task1 supported scoreboard",
+        "sha256": "126b8eeada95e8a497feb3a7567eb4a5af1fa46430052b88c226322c7b1961cc"
+      }
+    },
+    {
+      "path": "web/tests/api/forge-scoreboard.test.ts",
+      "earlier": {
+        "sha256": "aa58a4d16e5b2354cfaf129796ca3fde72314a52890717bc1e30b9820dec4ac5",
+        "packet": "A1-A10 and NST R1"
+      },
+      "successor": {
+        "packet": "task1 supported scoreboard",
+        "sha256": "2104bb8cb215b6752b9adc0925c5b1706dc718355693985a01e6abacf541e541"
+      }
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.ts",
+      "earlier": {
+        "sha256": "23131921ff0d8caea93c4302f01bb3377bb823611c9410108973e0cab09b1124",
+        "packet": "Luna contracts"
+      },
+      "successor": {
+        "packet": "Luna correction-r1",
+        "sha256": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a"
+      }
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.test.ts",
+      "earlier": {
+        "sha256": "620479333f55017fcc7749535cd09fa893e2772ac8ff4f2371716df8a3640ee2",
+        "packet": "Luna contracts"
+      },
+      "successor": {
+        "packet": "Luna correction-r1",
+        "sha256": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451"
+      }
+    }
+  ],
+  "reviewed_dependencies_superseded_by_accepted_packets": [
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+      "old_dependency": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+      "current": {
+        "sha256": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+        "packet": "P07 R2 plus task10 R1"
+      },
+      "basis": "P05 retained r1"
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+      "old_dependency": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+      "current": {
+        "sha256": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+        "packet": "P07 R2 plus task10 R1"
+      },
+      "basis": "P05 retained r1"
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+      "old_dependency": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+      "current": {
+        "sha256": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+        "packet": "P07 R2 plus task10 R1"
+      },
+      "basis": "P05 retained pickup-expiry"
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+      "old_dependency": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+      "current": {
+        "sha256": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+        "packet": "P07 R2 plus task10 R1"
+      },
+      "basis": "P05 retained pickup-expiry"
+    }
+  ]
+}

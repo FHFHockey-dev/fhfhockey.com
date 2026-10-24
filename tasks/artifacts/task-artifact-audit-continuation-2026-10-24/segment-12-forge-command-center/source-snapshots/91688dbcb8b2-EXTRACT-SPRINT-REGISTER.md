@@ -1,0 +1,5 @@
+31: | S-03 | Paging tie-breaks, goalie-power paging and error redaction, Trends rolling sidecar read, `fullRefresh` truncation gate, truthful forecast response | audit-data-fixes | `teamStatsQueries`, `teamMatrix`, `goalieMatrix`, `deploymentTiers`, `fetchRollingPlayerAverages`, `trends/goalie-power.ts`, the Trends player page, `rollingPlayerValidationPayload`, `game-predictions/forecast.ts`, `workflow.ts` | — | in review (done locally) |
+47: | S-19 | Command Center shows safe unavailable text instead of raw request URL and status | S-13 session (`local_fe5987f3`) | `clientFetchCache.ts`, Command Center shell and components, their tests | — | running (ticket ~19:2xZ) |
+123:   - **S-13 / S-19:** Command Center errors and the private-import routes are fixed; tests and tsc pass; browser checks pending.
+133:   - the coherent `goalie-power.ts` diff (3/3 tests)
+167: - 19:5xZ: **S-03** done locally: all 5 audit items fixed with mutation-checked tests. Chef checked `goalie-power.ts`: one coherent diff (page size 1000, in-flight cleanup in `finally`, redacted 500) and one test file, 3/3 passing. S-02's early hunk and S-03's edits don't conflict.

@@ -1,0 +1,145 @@
+{
+  "at": "2026-10-24T20:48:23.669796+00:00",
+  "before_ids": 215,
+  "after_ids": 217,
+  "before_evidence": 1253,
+  "after_evidence": 1278,
+  "added_ids": [
+    "SITE-INSEASON-WORKFLOW-ACCEPTANCE",
+    "SITE-RANKINGS-QUALIFICATION"
+  ],
+  "changed_existing_ids": [
+    "NEWS-SOURCE-PRESENTATION",
+    "SITE-START-CONTRACT",
+    "SITE-WIGO",
+    "RSO-FE-07a"
+  ],
+  "all_prior_ids_scopes_evidence_prefixes_preserved": true,
+  "legacy_blocks_byte_identical": 32,
+  "unchanged_existing_rows_identical": 211,
+  "readable_children_before": 71,
+  "readable_children_after": 80,
+  "scalar_label_checks": [
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "NEWS-SOURCE-PRESENTATION",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "NEWS-SOURCE-PRESENTATION",
+      "field": "next_action",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "next_action",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-WIGO",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-WIGO",
+      "field": "next_action",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "RSO-FE-07a",
+      "field": "implementation",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "RSO-FE-07a",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "RSO-FE-07a",
+      "field": "next_action",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "NEWS-SOURCE-PRESENTATION",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "NEWS-SOURCE-PRESENTATION",
+      "field": "next_action",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "next_action",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-WIGO",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-WIGO",
+      "field": "next_action",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "RSO-FE-07a",
+      "field": "implementation",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "RSO-FE-07a",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "RSO-FE-07a",
+      "field": "next_action",
+      "label_value_matched": true
+    }
+  ],
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "8b0a93d5e74ce9f32144e487ec7059ef33871505d7910e1c4bd47b0e7873b28e",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "24b32be9e45298af55635a1a6f36461ef968a5739ef2068ea1d471b693c97f4a",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "bc20a1f0096f3b265e20f9aa14e182d728b12b5d24802141891a0e4aff620fca"
+  },
+  "candidate_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "b4f996bf98fe94e4d858e8848a3b07e940c6bebc0d5a3ce6d154c44137863bfa",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "05aa6d10f6f078cf46d442e3ca54c82687ad250bc8d9bf4f989b7b07498ee074",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "8f757cad2a836827347604fd0376055219f11ffed36340cd101e06aab3e706a9"
+  },
+  "no_added_trailing_whitespace": true,
+  "application_tests_git_or_external_operations": 0,
+  "whole_tree_content_audit_complete": false
+}

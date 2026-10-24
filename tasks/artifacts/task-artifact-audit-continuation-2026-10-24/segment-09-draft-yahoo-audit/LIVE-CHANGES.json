@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-24T17:37:37.902021+00:00",
+  "scope": "Selected already-reviewed sources only; no recursive scan",
+  "changes": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+      "reviewed_sha256": "57c7ecb6b7fdcfa23dd390f60ab72e11eec557b5e688cc19444767a8cb73b657",
+      "current_sha256": "6bee52dcc9b9aa41aa09d4e4795be2909f18198e80583a0230faf7c0d4af09f7",
+      "reviewed_scope": "partially-inspected",
+      "action": "Retain exact frozen extracts; later content is queued, never silently accepted."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+      "reviewed_sha256": "51e61899d5f006d7fb0e9148562262e1e06ae9104f10d3e373e266ec34cbdfdd",
+      "current_sha256": "5f0e9f218d0743dc3eb360e8dd3e48d1437dfc6fa05099c7e464127c07c950a5",
+      "reviewed_scope": "partially-inspected",
+      "action": "Retain exact frozen extracts; later content is queued, never silently accepted."
+    }
+  ],
+  "selected_coordination_drift_recheck": {
+    "path": "SCOPED-LIVE-RECHECK.json",
+    "selected_acceptance_evidence_unchanged": true
+  }
+}

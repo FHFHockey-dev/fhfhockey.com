@@ -91,7 +91,7 @@ function createMockRes() {
 }
 
 describe("/api/v1/forge/goalies", () => {
-  it.each([true, false])("checks the actual fallback summary after requested-date 404: qualified=%s", async qualified => {
+  it.each([true, false])("preserves released fallback after requested-date 404 with native-only contract=%s", async qualified => {
     vi.mocked(requireLatestSucceededRunId).mockRejectedValueOnce(Object.assign(new Error("missing requested date"), { statusCode: 404 }));
     const prior = fromMock.getMockImplementation()!;
     let projectionReads = 0;
@@ -113,19 +113,14 @@ describe("/api/v1/forge/goalies", () => {
     });
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
-    expect(res.statusCode).toBe(qualified ? 200 : 422);
-    expect(summaryReads).toEqual(["run-122"]);
-    if (qualified) {
-      expect(res.body).toMatchObject({ runId: "run-122", asOfDate: "2026-02-06", fallbackApplied: true });
-      expect(res.body.data).toHaveLength(1);
-      expect(res.body.diagnostics.requested.runId).toBeNull();
-    } else {
-      expect(res.body.data).toBeUndefined();
-      expect(res.body.error).toContain("exclusion provenance");
-    }
+    expect(res.statusCode).toBe(200);
+    expect(summaryReads).toEqual([]);
+    expect(res.body).toMatchObject({ runId: "run-122", asOfDate: "2026-02-06", fallbackApplied: true });
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.diagnostics.requested.runId).toBeNull();
   });
 
-  it.each(["fallback", "explicit"])("withholds rows when the selected %s run lacks exclusion provenance", async mode => {
+  it.each(["fallback", "explicit"])("retains released legacy rows for selected %s runs without claiming native qualification", async mode => {
     const prior = fromMock.getMockImplementation()!;
     let projectionReads = 0;
     fromMock.mockImplementation((table: string) => {
@@ -145,9 +140,9 @@ describe("/api/v1/forge/goalies", () => {
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-02-07", ...(mode === "explicit"
       ? { runId: "11111111-1111-4111-8111-111111111111" } : {}) } } as any, res);
-    expect(res.statusCode).toBe(422);
-    expect(res.body.data).toBeUndefined();
-    expect(res.body.error).toContain("exclusion provenance");
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.runId).toBe(mode === "explicit" ? "11111111-1111-4111-8111-111111111111" : "run-122");
   });
   beforeEach(() => {
     vi.clearAllMocks();

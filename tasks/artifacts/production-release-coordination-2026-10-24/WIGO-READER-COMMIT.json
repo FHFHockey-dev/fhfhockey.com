@@ -1,0 +1,63 @@
+{
+  "at": "2026-10-24T20:57:45.985014+00:00",
+  "candidate_commit": "212d38c65c3f48fc6f6ec820cd4edbacd1d364e8",
+  "tree": "a1630891a89470aaa164db1969bd1973a5c6ccbe",
+  "parent": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "paths": {
+    "web/utils/fetchWigoPlayerStats.ts": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f",
+    "web/utils/fetchWigoPlayerStats.test.ts": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1"
+  },
+  "object_directory": "/tmp/fhfh-release-git-objects-9jzub3ou/objects",
+  "alternate_object_directory": "/Users/tim/Code/fhfhockey.com/.git/objects",
+  "isolated_index": "/tmp/fhfh-release-git-objects-9jzub3ou/release.index",
+  "stat": "web/utils/fetchWigoPlayerStats.test.ts | 17 +++++++++++++++++\n web/utils/fetchWigoPlayerStats.ts      | 15 +++++----------\n 2 files changed, 22 insertions(+), 10 deletions(-)",
+  "canonical_git_index_changed": false,
+  "canonical_refs_changed": false,
+  "canonical_checkout_changes": false,
+  "publication": "Not pushed or deployed",
+  "independent_review_reused": "Exact accepted reader source/test bytes and unchanged production dependencies; review REVIEW.md plus focused production-base composition checks",
+  "checks": [
+    {
+      "argv": [
+        "node",
+        "/tmp/fhfh-wigo-reader-release-xx5wxns_/web/node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "/tmp/fhfh-wigo-reader-release-xx5wxns_/reader.vitest.config.mts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "cwd": "/tmp/fhfh-wigo-reader-release-xx5wxns_/web",
+      "exit_code": 0,
+      "duration_seconds": 0.55,
+      "log": "reader-tests.log"
+    },
+    {
+      "argv": [
+        "node",
+        "/tmp/fhfh-wigo-reader-release-xx5wxns_/web/node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "--incremental",
+        "false",
+        "-p",
+        "/tmp/fhfh-wigo-reader-release-xx5wxns_/reader.tsconfig.json"
+      ],
+      "cwd": "/tmp/fhfh-wigo-reader-release-xx5wxns_/web",
+      "exit_code": 0,
+      "duration_seconds": 1.307,
+      "log": "reader-types.log"
+    },
+    {
+      "argv": [
+        "node",
+        "/tmp/fhfh-wigo-reader-release-xx5wxns_/web/node_modules/eslint/bin/eslint.js",
+        "utils/fetchWigoPlayerStats.ts",
+        "utils/fetchWigoPlayerStats.test.ts"
+      ],
+      "cwd": "/tmp/fhfh-wigo-reader-release-xx5wxns_/web",
+      "exit_code": 0,
+      "duration_seconds": 1.372,
+      "log": "reader-lint.log"
+    }
+  ]
+}

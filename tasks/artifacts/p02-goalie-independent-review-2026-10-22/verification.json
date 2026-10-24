@@ -1,0 +1,41 @@
+{
+  "completedAt": "2026-10-22T13:56:26.020988+00:00",
+  "status": "nine_file_corrections_locally_verified_with_inherited_consumer_gap",
+  "finding": {
+    "id": "P02-R1",
+    "priority": "P2",
+    "confidence": "high",
+    "attribution": "inherited filtering outside nine-file lease",
+    "files": [
+      {
+        "path": "web/components/PlayerStats/PlayerSummaryStrip.tsx",
+        "line": 65
+      },
+      {
+        "path": "web/components/PlayerStats/PlayerStatsSummary.tsx",
+        "line": 24
+      }
+    ],
+    "reproduced": "Unknown participation/incomplete paired counts silently dropped; two summaries show 0.900 while context is unavailable"
+  },
+  "headAtSnapshotEnd": "a565238f670edc4cf65da79ad52ba82ec41f3b71",
+  "checks": {
+    "ownerPassed": 96,
+    "independentPassed": 6,
+    "independentFailed": 2,
+    "scopedTscExit": 0,
+    "scopedLintExit": 0,
+    "candidateFilesMatch": 9,
+    "a7A9PinsMatch": 13,
+    "ownerClosurePinsMatch": 50,
+    "copiedSourceFilesUnchanged": 51
+  },
+  "externalActionsAttempted": 0,
+  "applicationEdits": 0,
+  "executionBlockers": [],
+  "qualificationLimits": [
+    "Two summary consumers need coordinated lease extension and independent fix review",
+    "Missing profile QS/time remains unavailable until separate source hydration",
+    "No live data or model/release qualification"
+  ]
+}

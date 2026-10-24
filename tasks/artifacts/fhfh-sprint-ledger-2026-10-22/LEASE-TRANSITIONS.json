@@ -1,0 +1,641 @@
+{
+  "as_of": "2026-10-23T12:12:51+00:00",
+  "authority": "Parent confirmed TJ expanded sprint and named new implementation owners; direct task1 owner supplied exact four-file lease. Claude assignment is TJ 15:58:49 statement. No thread/model identity inferred for Claude.",
+  "original_manifest": {
+    "path": "tasks/artifacts/claude-audit-fixes-2026-10-22/combined-audit-nst/CANDIDATE.json",
+    "sha256": "c6511c243f6979781606b2484fa6383ab7a0735d5a2e69da99e3e93ceff936de",
+    "meaning": "Historical accepted A1-A10/NST scope, not acceptance of later current-tree edits"
+  },
+  "tasklist": {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "snapshot": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/TASKLIST-20261022-SNAPSHOT.md",
+    "sha256": "6c08e45eb8f0549280f81be63e6d5b735bce7bb65370c6761d29613b9d6ae0c1",
+    "historical_text_superseded": "List-only, idle and permanent-P08-wait language superseded only by the explicit current assignments below"
+  },
+  "transitions": [
+    {
+      "path": "web/lib/player-forecasts/servedForecastLedger.ts",
+      "original_accepted_sha256": "b9f5629e291bbcbee64f40378a762b2ee85e06fffe74cd1c564d6e62989098f1",
+      "original_packet": "A1-A4/A6",
+      "successor_owner": "FPI-LEDGER",
+      "successor_thread": "01a16459-e44c-7528-a602-b703dc9cb0f5",
+      "status": "released_to_named_successor",
+      "scope": "Task1 paired ledger/scoreboard only. Preserve A3 authoritative completeness and A4 independent-universe guards; no bridge, snapshot or settle edits.",
+      "current_bytes_match_not_claimed": true
+    },
+    {
+      "path": "web/lib/player-forecasts/servedForecastLedger.test.ts",
+      "original_accepted_sha256": "3052c97e64b16cbe03d0c8146a71f83f7516c83e3563c981a410eb56b8fd3577",
+      "original_packet": "A1-A4/A6",
+      "successor_owner": "FPI-LEDGER",
+      "successor_thread": "01a16459-e44c-7528-a602-b703dc9cb0f5",
+      "status": "released_to_named_successor",
+      "scope": "Task1 paired ledger/scoreboard only. Preserve A3 authoritative completeness and A4 independent-universe guards; no bridge, snapshot or settle edits.",
+      "current_bytes_match_not_claimed": true
+    },
+    {
+      "path": "web/pages/api/v1/forge/scoreboard.ts",
+      "original_accepted_sha256": "260b504bdbe499e0779d6833dca4145893a7b5188f6d7174f1af4d348db21abb",
+      "original_packet": "A1-A4/A6",
+      "successor_owner": "FPI-LEDGER",
+      "successor_thread": "01a16459-e44c-7528-a602-b703dc9cb0f5",
+      "status": "released_to_named_successor",
+      "scope": "Task1 paired ledger/scoreboard only. Preserve A3 authoritative completeness and A4 independent-universe guards; no bridge, snapshot or settle edits.",
+      "current_bytes_match_not_claimed": true
+    },
+    {
+      "path": "web/tests/api/forge-scoreboard.test.ts",
+      "original_accepted_sha256": "aa58a4d16e5b2354cfaf129796ca3fde72314a52890717bc1e30b9820dec4ac5",
+      "original_packet": "A1-A4/A6",
+      "successor_owner": "FPI-LEDGER",
+      "successor_thread": "01a16459-e44c-7528-a602-b703dc9cb0f5",
+      "status": "released_to_named_successor",
+      "scope": "Task1 paired ledger/scoreboard only. Preserve A3 authoritative completeness and A4 independent-universe guards; no bridge, snapshot or settle edits.",
+      "current_bytes_match_not_claimed": true
+    },
+    {
+      "path": "web/lib/projections/queries/skater-queries.ts",
+      "original_accepted_sha256": "9dfcff408d4cd5f9bdb266a3380a8beacc557a584002e44d5b75e0639d74606a",
+      "original_packet": "A1-A4/A6",
+      "successor_owner": "FPI-HYDRATION",
+      "successor_thread": "01a1645a-1237-713f-8590-9540223b40d2",
+      "status": "released_to_named_successor",
+      "scope": "Task2 hydration/physical heads plus exclusive skater-stage.ts. No Claude-owned paths.",
+      "current_bytes_match_not_claimed": true
+    },
+    {
+      "path": "web/lib/projections/queries/skater-queries.test.ts",
+      "original_accepted_sha256": "a417087529e6ed4319769699bb4f443c1873263fbdb738624c817c1861c732e2",
+      "original_packet": "A1-A4/A6",
+      "successor_owner": "FPI-HYDRATION",
+      "successor_thread": "01a1645a-1237-713f-8590-9540223b40d2",
+      "status": "released_to_named_successor",
+      "scope": "Task2 hydration/physical heads plus exclusive skater-stage.ts. No Claude-owned paths.",
+      "current_bytes_match_not_claimed": true
+    },
+    {
+      "path": "web/lib/rosterScheduleData/forgeDailyBridge.ts",
+      "original_accepted_sha256": "57f21bc5214a37d3ef5aff985ba62f0c5d30ae5f3925693f7d61f55a240abc6a",
+      "original_packet": "A1-A4/A6",
+      "successor_owner": "CLAUDE",
+      "successor_thread": null,
+      "status": "historical_edit_reservation_released_interface_handoff_required",
+      "scope": "Task7.3 only under Claude assignment. P07 reads bridge as a dependency, so coordinate intended interface and requalify affected consumers; old P08 pins are not a permanent lock.",
+      "current_bytes_match_not_claimed": true
+    },
+    {
+      "path": "web/lib/rosterScheduleData/forgeDailyBridge.test.ts",
+      "original_accepted_sha256": "d3f65f3b3c63b631799cd6ccd41b6e1031ea1d1a7dbd6bc3f7506028702cea24",
+      "original_packet": "A1-A4/A6",
+      "successor_owner": "CLAUDE",
+      "successor_thread": null,
+      "status": "historical_edit_reservation_released_interface_handoff_required",
+      "scope": "Task7.3 only under Claude assignment. P07 reads bridge as a dependency, so coordinate intended interface and requalify affected consumers; old P08 pins are not a permanent lock.",
+      "current_bytes_match_not_claimed": true
+    },
+    {
+      "path": "web/pages/api/v1/db/forge-served-forecast-snapshot.ts",
+      "original_accepted_sha256": "f77f22aabf9cfe3d5246354e5d0dd068a3286fb15e1d55c570a3b58e1f76a275",
+      "original_packet": "A1-A4/A6",
+      "successor_owner": "FORGE",
+      "successor_thread": null,
+      "status": "excluded_from_task1_new_lease",
+      "scope": "Completed baseline preserved; snapshot/settle extension requires explicit coordination if task1 establishes a need.",
+      "current_bytes_match_not_claimed": true
+    },
+    {
+      "path": "web/pages/api/v1/db/forge-served-forecast-settle.ts",
+      "original_accepted_sha256": "699cb851dc0bd7b8635ce8f61c156fbf30f5451241e24720f3c9623a0e76db22",
+      "original_packet": "A1-A4/A6",
+      "successor_owner": "FORGE",
+      "successor_thread": null,
+      "status": "excluded_from_task1_new_lease",
+      "scope": "Completed baseline preserved; snapshot/settle extension requires explicit coordination if task1 establishes a need.",
+      "current_bytes_match_not_claimed": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/forge-served-forecast-settle.test.ts",
+      "original_accepted_sha256": "6885092c259430091efa2e07ce8aa3afc0cf03b747f137a69e2940c7b80f0d81",
+      "original_packet": "A1-A4/A6",
+      "successor_owner": "FORGE",
+      "successor_thread": null,
+      "status": "excluded_from_task1_new_lease",
+      "scope": "Completed baseline preserved; snapshot/settle extension requires explicit coordination if task1 establishes a need.",
+      "current_bytes_match_not_claimed": true
+    }
+  ],
+  "active_leases": {
+    "release": {
+      "owner": "FORGE",
+      "thread": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+      "scope": "Exclusive Git/candidate/release coordination; application fixes require exact lease declaration",
+      "status": "active per parent"
+    },
+    "ledger": {
+      "owner": "LEDGER",
+      "thread": "01a16391-47f8-74d9-9cab-9f20cf1b50e0",
+      "scope": "Top-level ledger artifacts and single diary; no worker subdirectory or app edits",
+      "status": "active"
+    },
+    "game_grid": {
+      "owner": "GAMEGRID",
+      "thread": "01a165c9-f9ce-7101-878a-e27a6d63970d",
+      "paths": [
+        "web/components/GameGrid/DesktopMasterTable.tsx",
+        "web/components/GameGrid/DetailToggle.module.scss",
+        "web/components/GameGrid/GameGrid.module.scss",
+        "web/components/GameGrid/GameGrid.tsx",
+        "web/components/GameGrid/LeagueWeek.test.tsx",
+        "web/components/GameGrid/MetricInfoDisclosure.tsx",
+        "web/components/GameGrid/OpponentMetricsTable.test.tsx",
+        "web/components/GameGrid/OpponentMetricsTable.tsx",
+        "web/components/GameGrid/OpportunitySparkline.module.scss",
+        "web/components/GameGrid/OpportunitySparkline.test.tsx",
+        "web/components/GameGrid/OpportunitySparkline.tsx",
+        "web/components/GameGrid/RatingMeter.module.scss",
+        "web/components/GameGrid/RatingMeter.tsx",
+        "web/components/GameGrid/SortableHeaders.test.tsx",
+        "web/components/GameGrid/utils/FourWeekGrid.module.scss",
+        "web/components/GameGrid/utils/FourWeekGrid.test.tsx",
+        "web/components/GameGrid/utils/FourWeekGrid.tsx",
+        "web/components/GameGrid/utils/fourWeekGridViews.test.ts",
+        "web/components/GameGrid/utils/fourWeekGridViews.ts",
+        "web/components/GameGrid/utils/scheduleOpportunity.ts",
+        "web/components/GameGrid/utils/scheduleSummary.test.ts",
+        "web/components/GameGrid/utils/useFourWeekSchedule.test.ts",
+        "web/components/GameGrid/utils/useFourWeekSchedule.ts",
+        "web/components/GameGrid/utils/useOpponentMetricsData.ts",
+        "web/components/GameGrid/utils/useOpportunityClock.ts",
+        "web/e2e/fixtures/game-grid-previews/data.ts",
+        "web/e2e/game-grid-previews.spec.ts"
+      ],
+      "status": "local owner completed/idle; preserve all bytes pending reviewed release handoff; no duplicate editor"
+    },
+    "optimization": {
+      "owner": "OPTIMIZATION",
+      "thread": "01a168a2-8ed7-739d-b9ff-87e51d0b9034",
+      "paths": [],
+      "status": "active read-only; own task artifacts only"
+    },
+    "external_claude": {
+      "owner": "CLAUDE",
+      "thread": null,
+      "status": "current activity UNKNOWN; historical committed handoffs available",
+      "scope": "Parent reconfirms actual source ownership before transfer; old6/7/8/11-only map is stale"
+    },
+    "baseline_identity": {
+      "owner": "UNASSIGNED",
+      "paths": [
+        "web/lib/player-forecasts/resolvedPlanningForecast.ts",
+        "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts"
+      ],
+      "status": "proposed bounded fix, parent lease pending"
+    },
+    "yahoo_start_authority": {
+      "owner": "UNASSIGNED",
+      "paths": [
+        "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts",
+        "web/lib/rosterScheduleOptimizer/providerGoalieStarts.ts"
+      ],
+      "status": "proposed independent source/behavior review; no app edit lease"
+    }
+  },
+  "heavy_check_lock": {
+    "path": "/private/tmp/fhfh-heavy.lock",
+    "evidence": [
+      {
+        "path": "tasks/diaries/2026-10-20-codex-orchestrator.md",
+        "line": 15
+      },
+      {
+        "path": "tasks/diaries/2026-10-21-claude-forge-projection-audit.md",
+        "line": 36
+      }
+    ],
+    "state": "Documented location only; not acquired, removed or inspected for current ownership/liveness"
+  },
+  "p07_r2_lease": {
+    "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/LEASE.md",
+    "sha256": "c411a52bc2982f4bc2106d61c19ae2e152fd2242640ada6d18f24c20111ab365",
+    "finding": "No intersection with task1 exact four files or task2 query/stage paths. R1 still holds RSO component until explicit handoff; no assumption that omission from narrow R2 lease releases earlier leases."
+  },
+  "limits": "No application bytes changed or tests rerun by ledger owner. Old accepted pins are baselines, not perpetual editing locks. New edits need new scoped review and current candidate reconciliation; no production approval.",
+  "latest_assignment_update": "2026-10-22T17:15:04+00:00",
+  "planner_attribution": {
+    "recorded_at": "2026-10-22T16:22:27+00:00",
+    "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+    "owner": "FPI-DISPLAY",
+    "thread": "01a1645a-6c9d-77ac-a105-0513908cb0fc",
+    "sha256": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474",
+    "basis": "Task10 HANDOFF and diary explicitly name gameForecastPoints helper; task10 candidate SHA equals R2 excluded canonical SHA and the current observed file. Attribution is for task10 helper delta, not every historical line or model authorship.",
+    "evidence": [
+      {
+        "path": "tasks/artifacts/task10-display-2026-10-22/HANDOFF.md",
+        "line": 7,
+        "sha256": "683b12d5abfaf39957fdef2e18cc1c87a2ff96066f155bc9333f66169098364d",
+        "observed_at": "2026-10-22T16:22:27+00:00"
+      },
+      {
+        "path": "tasks/artifacts/task10-display-2026-10-22/candidate.json",
+        "line": 1,
+        "sha256": "61148a0455a6e908f3145911f1a03ced6e91793c119401b0537bb0df0b1ead9f",
+        "observed_at": "2026-10-22T16:22:27+00:00"
+      },
+      {
+        "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/CANONICAL-COMPARISON.json",
+        "line": 1,
+        "sha256": "e85252ff45f9be730fb9817f5b56fbc59d65812d44bc3883655a361044006363",
+        "observed_at": "2026-10-22T16:22:27+00:00"
+      }
+    ],
+    "current_tree_acceptance": false
+  },
+  "sprint_control": {
+    "state": "active per trusted parent relay of TJ resume",
+    "model_preference": "ALL ASTRA; runtime not independently confirmed",
+    "release_owner": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+    "ledger_scope": "documentation and read-only source/status reconciliation",
+    "parent_retains_dispatch": true,
+    "production_boundary": "No authority for new DB/cron/NST/provider/migration actions inferred; release actions sequenced exclusively by named release owner under exact candidate safeguards."
+  },
+  "final_integration_checkpoint": {
+    "recorded_at": "2026-10-22T17:15:04+00:00",
+    "status": "HELD — final fixed integration snapshot verified, combined acceptance blocked by13tests",
+    "report": {
+      "path": "tasks/artifacts/sprint-integration-checkpoint-2026-10-22/REPORT.md",
+      "line": 1,
+      "sha256": "5a924494242ea59c88f517a1fed8ff5fe3b1eb5d38b687eff1b4789e76ee75b6",
+      "observed_at": "2026-10-22T17:15:04+00:00"
+    },
+    "observed_head": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+    "archive": "tasks/artifacts/sprint-integration-checkpoint-2026-10-22/export-completion/fixed-source.tar.gz",
+    "archive_sha256": "09bd763bc9b740159f2d4aa5b0c97d19ce3839872b1ac27762b21cbd6596beff",
+    "verified_files": 3585,
+    "accepted_pins": 110,
+    "retained_dependencies": 244,
+    "verification": {
+      "selected_test_files": 67,
+      "latest_passed": 1928,
+      "latest_failed": 13,
+      "accounting": "Original1925pass/16fail;21-case migration file rerun after3export-only inputs supplied replaces original migration result, not added to total. Counts are test executions/selection results, not distinct semantic coverage.",
+      "application_types": "Passed application-only config, all production/application sources retained",
+      "exported_review_fixture_types": "Open TS2352 in artifact-only p07Task10Serialization.test.ts:34; fixture absent from canonicalweb; original bytes/diagnostic preserved",
+      "lint": "97acceptedTS/TSX paths;0errors,9warnings (3raw-image,6hook dependencies)",
+      "relocation_oracles": "14/14passed",
+      "relocation_preflight": "Passed actual runner with7pinned inputs, no DB/client/target load",
+      "integrity": "All3585files and110accepted pins match per final owner receipt; ledger auditor did not rerun tests/extract archive"
+    },
+    "open_followups": [
+      {
+        "taskID": "INTEGRATE-PLANNER-CONTRACT",
+        "owner": "UNASSIGNED",
+        "custodian": "PARENT",
+        "paths": [
+          "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+          "web/lib/rosterScheduleData/forgeDailyBridge.test.ts:348"
+        ],
+        "failures": 13,
+        "scope": "12direct-native-fixture quantitative expectations and1directbridge/weightedunknown expectation. Require trusted target/current-read context and all nonzero weighted inputs; preserve original numerical assertions and denial controls.",
+        "gate": "New precise two-test-file lease and evidence before deciding test-contract versus actual runtime correction; no fix authorized by checkpoint."
+      },
+      {
+        "taskID": "INTEGRATE-REVIEW-FIXTURE-TYPES",
+        "owner": "REVIEW",
+        "path": "tasks/artifacts/p07-task10-independent-review-2026-10-22/p07Task10Serialization.test.ts:34",
+        "scope": "Versioned reviewer-owned typing correction; synthetic contribution record missing required ResolvedContribution fields (TS2352). Preserve historical fixture/receipt; no application error claim."
+      }
+    ],
+    "excluded": "Task2R2/newerClaude6/7/8/11 and unqualified skater changes; other canonical differences outside named accepted overlays. Two accepted query pins retain older A1 bytes, not held task2query.",
+    "task2_separate_hold": "1975matchingfiles/393pass1unchanged captured-input cache failure; Claude7leagueSavePct warmcache outside helper lease. Not part of1928/13selection.",
+    "next_after_resume": "Read final report and replay.py. Safe default replay only extracts/verifies archive; targeted --failed-planner requires resumed parent assignment. No new fix/test now.",
+    "release_ready": false
+  },
+  "forge_lead_current_application_edit_lease": "Release owner active; exact app fix leases must be declared by owner. Ledger grants none.",
+  "historical_active_leases_20261022": {
+    "task1": {
+      "owner": "FPI-LEDGER",
+      "thread": "01a16459-e44c-7528-a602-b703dc9cb0f5",
+      "paths": [
+        "web/lib/player-forecasts/servedForecastLedger.ts",
+        "web/lib/player-forecasts/servedForecastLedger.test.ts",
+        "web/pages/api/v1/forge/scoreboard.ts",
+        "web/tests/api/forge-scoreboard.test.ts"
+      ],
+      "status": "Independently accepted tasks1.1/1.3 and supported1.2 only",
+      "candidate_manifest": {
+        "path": "tasks/artifacts/forge-task1-scoreboard-2026-10-22/SOURCE-PINS.json",
+        "line": 1,
+        "sha256": "0dec491d94c7a8f09e1ed6c83846eb0af27a97b556bcf730b5b06c78ee9f8976",
+        "observed_at": "2026-10-22T16:22:27+00:00"
+      },
+      "scope": "Exact four-file candidate ready for parent review/handoff; no further edits planned, no automatic task6.3 overlap",
+      "independent_review": {
+        "recorded_at": "2026-10-22T16:32:36+00:00",
+        "status": "Independently accepted tasks1.1/1.3 and supported1.2 only",
+        "report": {
+          "path": "tasks/artifacts/forge-task1-independent-review-2026-10-22/REVIEW.md",
+          "line": 1,
+          "sha256": "5f5fddf9d0f66232bd96e4e3416d1d0792c56469a225f0156953cc07ef6d04ea",
+          "observed_at": "2026-10-22T16:32:36+00:00"
+        },
+        "reviewer": "FPI-LEDGER-REVIEW",
+        "tests_passed": 35,
+        "independent_cases": 10,
+        "pins": "8owner pins and23-file frozen snapshot matched per reviewer",
+        "important_boundary": "Goalie known nonstarts remain in event/Brier population; count/FP metrics use dressed cohort",
+        "held": "Historical F/D and TOI/PP-TOI opportunity-rate decomposition, durable full-population coverage, Q3/Q4 and predictive/release qualification",
+        "auditor_execution": "Report imported; tests not rerun"
+      }
+    },
+    "task2": {
+      "owner": "FPI-HYDRATION",
+      "thread": "01a1645a-1237-713f-8590-9540223b40d2",
+      "paths": [
+        "web/lib/projections/calculators/skater-adjustments.ts::computeSkaterPhysicalEventRates"
+      ],
+      "excludes": "Other calculator functions and skater-stage.ts now FPI-MODEL; Claude paths; whole-file rewrites",
+      "status": "Coherent R2 packet complete; combined acceptance held by unchanged reproducibility failure",
+      "test_scope": "Physical helper regressions; exact test edits under owner packet",
+      "historical_query_lease": "Earlier query/test ownership and pinned task2 candidate retained as historical evidence; no new query change authorized by this correction",
+      "current_work": "Checkpoint complete; goalie-cache repair outside helper lease and not started",
+      "independent_acceptance": {
+        "recorded_at": "2026-10-22T16:59:14+00:00",
+        "status": "Exact two-file physical helper repair independently accepted; advertised combined R1 manifest and working-tree reproducibility held",
+        "receipt": {
+          "path": "tasks/artifacts/forge-task2-independent-review-2026-10-22/r1/REVIEW.md",
+          "line": 1,
+          "sha256": "c7372af0d059ad5d57ccfdbd9d232d3750230f21219bbe1d1280e133fa604db5",
+          "observed_at": "2026-10-22T16:59:14+00:00"
+        },
+        "accepted_checks": 128,
+        "accepted_scope": "Only computeSkaterPhysicalEventRates and existing runProjectionV2 tests on original frozen candidate; outside-function bytes unchanged",
+        "accepted_calculator_sha256": "89cf0e544daac80c01f9af267a7774a31ce523d2e483fd87074d999c18fd119b",
+        "accepted_test_sha256": "b669fbeb639c733c27dfee2f27003c9ae0d7359c282e0ee495e45792663ca5d3",
+        "held_packet_finding": "Advertised skater-stage fe835739 differs from tested e0f760d1; two-file archive cannot produce third-file executable/dependency changes.12other combined pins match. Concurrent stage imports absent from tested market dependency.",
+        "reproducibility": "Frozen repair unchanged reproducibility oracle passes; earlier canonical working-tree result-hash mismatch unresolved. Proven stage drift does not establish cause of that failure.",
+        "owner": "FPI-HYDRATION",
+        "current_action": "R2 complete frozen manifest/snapshot and unchanged reproducibility work active per parent; no broader source edit authority",
+        "release": "Matched current-query physical/all-strength/variant-c cohort,20×5 writer identity,bias/RMSE/calibration and operational authorization held"
+      },
+      "r2_checkpoint": {
+        "recorded_at": "2026-10-22T17:03:00+00:00",
+        "report": {
+          "path": "tasks/artifacts/forge-task2-2026-10-22/r2/HANDOFF.md",
+          "line": 1,
+          "sha256": "b68d86a69e7349adf2acba689fdaf6ef3c917991eb1f79a9f39d5fa2fed5ef0c",
+          "observed_at": "2026-10-22T17:03:00+00:00"
+        },
+        "status": "Coherent R2 packet complete; combined acceptance held by unchanged reproducibility failure",
+        "base": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+        "source_archive_sha256": "416c54bda8b28e48611fbdd3f9499d82b610aa6d1794d96b0283f89693eacd85",
+        "archived_files": 1975,
+        "owner_tests_passed": 393,
+        "owner_tests_failed": 1,
+        "test_files": 12,
+        "diagnostic_passed": 1,
+        "integrity": "All1975 archived/tested bytes match;54prior evidence files unchanged per owner receipt",
+        "cause": "Actual fixed-snapshot diagnostic isolates module-lifetime goalie leagueSavePct cache: first capture100reads, warm capture99, omitting forge_goalie_game query; forecasts/source hashes identical. Original reproducibility assertion remains red.",
+        "required_owner": "Claude task7 / parent coordination, not task2 helper lease",
+        "target": "web/lib/projections/goalie/leagueSavePct.ts:82",
+        "proposed_after_resume": "Owner-scoped cache lifetime/provenance correction, repeated same-input and different retained-input same-date regression, then independent combined review. Do not weaken hash/read-count oracle.",
+        "current_action": "Checkpoint only; no fix or new implementation launched",
+        "limits": "Earlier exact working-tree hashes cannot be reconstructed; this proves a fixed-snapshot mechanism, not historical production impact. Model/data/release gates remain held."
+      }
+    },
+    "tasks3_4_5_9": {
+      "owner": "FPI-MODEL",
+      "thread": "01a1645a-3fe7-7289-8d44-11e216d6e0c5",
+      "scope": "No stage/calculator changes by this packet. Data-dependent runtime integration held; new current editing scope requires parent coordination.",
+      "protected_function": "web/lib/projections/calculators/skater-adjustments.ts::computeSkaterPhysicalEventRates",
+      "status": "Checkpoint complete; pilot exported once by ROOT, existing Library transfer/validation pending after TJ resume",
+      "data_approval": "Exact one-query approval consumed by successful ROOT export; do not repeat query",
+      "pilot": {
+        "recorded_at": "2026-10-22T17:03:00+00:00",
+        "source": "Trusted parent execution/checkpoint report; ledger auditor did not query, retrieve or inspect export bytes",
+        "approval": {
+          "decision": "TJ Yes to exact pilot request",
+          "at_utc": "2026-10-22T16:55:58Z"
+        },
+        "execution": {
+          "executor": "ROOT",
+          "at_utc": "2026-10-22T16:56:40.473Z",
+          "status": "One read-only export succeeded",
+          "reported_rows": 5219,
+          "reported_bytes_before_newline": 3363724,
+          "truncated": false,
+          "retries": 0,
+          "writes": 0
+        },
+        "root_cloud_files": {
+          "json": "/workspace/scratch/28bd2529354b/task3-pilot-export.json",
+          "sql": "/workspace/scratch/28bd2529354b/task3-executed-query.sql"
+        },
+        "library": {
+          "json": {
+            "id": "libfile_bdb4847bbdbc8191b5a958bce4ab9fde",
+            "name": "task3-pilot-export.json",
+            "bytes_including_newline": 3363725
+          },
+          "executed_sql": {
+            "id": "libfile_abe8480e81248191989de2276fa092cd",
+            "name": "task3-executed-query.sql"
+          }
+        },
+        "local_mac_state": "Not materialized; deep local validation not run",
+        "next_after_TJ_resume": "Materialize the existing Library JSON and exact executed SQL on Mac, hash/verify identity and size, then run existing local validator into a fresh output. Never repeat the production query.",
+        "acceptance": "Successful export is not matched-input validity, fitted coefficients, predictive quality, historical as-of proof or release acceptance."
+      }
+    },
+    "task10": {
+      "owner": "FPI-DISPLAY",
+      "thread": "01a1645a-6c9d-77ac-a105-0513908cb0fc",
+      "scope": "RSO points callback/import/prop plus SlotWeekGrid render/tiers/legend and task-specific helpers/tests. Preserve P07 gate and compare handoff hashes before edits.",
+      "recorded_at": "2026-10-22T16:22:27+00:00",
+      "status": "Independently accepted pinned combined P07R2 + task10R1 local slice; T10-C1 closed",
+      "release_receipt": {
+        "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/DISPLAY-LEASE-RELEASE.md",
+        "line": 1,
+        "sha256": "14df72ff73a4966968cb29fadcd06d4de78d11bb88102c83b6750e85693d4f51",
+        "observed_at": "2026-10-22T16:22:27+00:00"
+      },
+      "handoff": {
+        "path": "tasks/artifacts/task10-display-2026-10-22/HANDOFF.md",
+        "line": 1,
+        "sha256": "683b12d5abfaf39957fdef2e18cc1c87a2ff96066f155bc9333f66169098364d",
+        "observed_at": "2026-10-22T16:22:27+00:00"
+      },
+      "handoff_pins": {
+        "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "d7257a7a89e14af496b9c849473115b07bc95c65044c60bab17bca72246a3d30",
+        "web/components/RosterScheduleOptimizer/SlotWeekGrid.tsx": "b41a20e6dc7229ec015a66f1440faf788790bfaaaeae2ddc9a498e40011ccefd"
+      },
+      "owner_tests_before_integration": 27,
+      "finding": "Owner executed actual current RSO pointsFor: GOALS1×3 plus missing weighted ASSISTS returned3; required unavailable. Not an integration acceptance pass.",
+      "planner_attribution": {
+        "recorded_at": "2026-10-22T16:22:27+00:00",
+        "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+        "owner": "FPI-DISPLAY",
+        "thread": "01a1645a-6c9d-77ac-a105-0513908cb0fc",
+        "sha256": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474",
+        "basis": "Task10 HANDOFF and diary explicitly name gameForecastPoints helper; task10 candidate SHA equals R2 excluded canonical SHA and the current observed file. Attribution is for task10 helper delta, not every historical line or model authorship.",
+        "evidence": [
+          {
+            "path": "tasks/artifacts/task10-display-2026-10-22/HANDOFF.md",
+            "line": 7,
+            "sha256": "683b12d5abfaf39957fdef2e18cc1c87a2ff96066f155bc9333f66169098364d",
+            "observed_at": "2026-10-22T16:22:27+00:00"
+          },
+          {
+            "path": "tasks/artifacts/task10-display-2026-10-22/candidate.json",
+            "line": 1,
+            "sha256": "61148a0455a6e908f3145911f1a03ced6e91793c119401b0537bb0df0b1ead9f",
+            "observed_at": "2026-10-22T16:22:27+00:00"
+          },
+          {
+            "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/CANONICAL-COMPARISON.json",
+            "line": 1,
+            "sha256": "e85252ff45f9be730fb9817f5b56fbc59d65812d44bc3883655a361044006363",
+            "observed_at": "2026-10-22T16:22:27+00:00"
+          }
+        ],
+        "current_tree_acceptance": false
+      },
+      "limits": "Separate candidate review/current-tree integration required. Handoff pins are dated; no assertion they remain unchanged during authorized task10 edits.",
+      "independent_acceptance": {
+        "recorded_at": "2026-10-22T16:59:14+00:00",
+        "status": "Independently accepted pinned combined P07R2 + task10R1 local slice; T10-C1 closed",
+        "receipt": {
+          "path": "tasks/artifacts/p07-task10-r1-independent-review-2026-10-22/REPORT.md",
+          "line": 1,
+          "sha256": "02243124f495702bd35158dbc722e680c251c96dd2b57b79ee41b49d7ebd50f0",
+          "observed_at": "2026-10-22T16:59:14+00:00"
+        },
+        "tests_passed": 22,
+        "combined_pins": 39,
+        "snapshot_files": 3379,
+        "p07_r2_pins_preserved": 8,
+        "planner_sha256": "d1300a64ac98d97765b9daff8017f3fe8341aa8757984ff176a177fc3a2674f2",
+        "finding_closed": "Known goalie-only LOSSES_GOALIE/GAMES_STARTED weights excluded from skater totals; both prior mountedUI failures pass with assertions unchanged",
+        "held": "Independent browser/full application-worker runtime, whole FHFH tree, target/predictive qualification and release",
+        "browser": {
+          "status": "Blocked/denied by local runtime; no uncertain outcome",
+          "action": "One independent sandbox Chromium launch for offline static-grid inspection",
+          "target": "Installed headless shell; no page/context opened",
+          "reason": "bootstrap_check_in MachPortRendezvousServer permission denied1100; process exited SIGTRAP, cleanup completed",
+          "receipt": {
+            "path": "tasks/artifacts/p07-task10-independent-review-2026-10-22/REPORT.md",
+            "line": 50,
+            "sha256": "8a38ff1709353725a24c67dafc20efeb8ef7f28c750f44a3bc1444efcd5caacb",
+            "observed_at": "2026-10-22T16:59:14+00:00"
+          },
+          "retry": "None; no escalation/workaround. Existing owner screenshots remain historical, not independent browser acceptance."
+        },
+        "next_action": "Original FORGE lead pins coherent integration checkpoint excluding unreviewed Claude changes; preserve exact accepted bytes and explicit exceptions"
+      }
+    },
+    "claude": {
+      "owner": "CLAUDE",
+      "tasks": [
+        6,
+        7,
+        8,
+        11
+      ],
+      "paths": [
+        "web/lib/projections/utils/market-output-builders.ts",
+        "web/lib/projections/goalieModel.ts",
+        "web/lib/projections/stages/goalie-stage.ts",
+        "web/lib/projections/uncertainty.ts",
+        "web/pages/api/v1/db/run-projection-v2.ts",
+        "web/lib/projections/run-forge-projections.ts",
+        "web/lib/routeRunner/registry.ts",
+        "web/lib/routeRunner/options.ts"
+      ],
+      "exceptions": "6.3 shared ledger depends task1 interface; 7.3 bridge handoff above; 11.4 PIPELINE local candidate/evidence scope, exact paths pending; 11.5 TJ decision"
+    },
+    "task11_4": {
+      "assigned_at": "2026-10-22T16:15:03+00:00",
+      "owner": "PIPELINE",
+      "thread": "01a16391-ed12-75cc-9dc8-e1c04ad170fa",
+      "exact_paths": "Nine-path isolated artifact overlay declared; no canonical application lease",
+      "scope": "Isolated local constant/advisory candidate/tests and NST narrower-filter evidence only; no automatic shared-path lease.",
+      "excludes": "Claude11 core, NST routes/client and canonical registers; live cron/index/SQL/deploy",
+      "status": "Qualified independent local acceptance of nine-file overlay; release held",
+      "canonical_application_edits": false,
+      "artifact_root": "tasks/artifacts/fpi-11-4-job79-2026-10-22/",
+      "overlay_paths": [
+        "tasks/TASKS/cron-operations/cron-schedule.md (only job79/399 hunks)",
+        "web/lib/cron/nstCoordination.ts",
+        "web/lib/cron/nstCoordination.test.ts",
+        "web/lib/cron/nstBurstPlans.ts",
+        "web/lib/cron/nstBurstPlans.test.ts",
+        "web/lib/cron/nstRateLimitPolicy.ts",
+        "web/lib/cron/combinedCronInventory.test.ts",
+        "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+        "web/lib/cron/nstRateLimitPolicy.test.ts"
+      ],
+      "source": "Owner declaration and provisional fixture update; corrected candidate recheck pending",
+      "inventory_scope": "Candidate56pg/86total; canonical57/87 broader unrelated changes excluded",
+      "fixture_checkpoint": {
+        "recorded_at": "2026-10-22T16:24:48+00:00",
+        "source": "Direct PIPELINE owner update; raw fixture receipts not inspected or rerun by ledger auditor",
+        "status": "Rechecking after artifact-only ninth-path addition; no acceptance",
+        "negative_control": "Retirement-only fixture reproduced20URL pacing21seconds instead of intended0",
+        "initial_coupled_run": {
+          "passed": 100,
+          "total": 102,
+          "failed": 2,
+          "reported_cause": "Omitted existing e89 policy tests still expected4seconds for81URLs"
+        },
+        "correction": "Add web/lib/cron/nstRateLimitPolicy.test.ts from pinned current tests; preserve21second minimum",
+        "canonical_application_edits": false,
+        "next_action": "Await corrected coupled-run receipt and exact candidate pins; independent review/release remain separate"
+      },
+      "final_local_receipt": {
+        "recorded_at": "2026-10-22T16:32:36+00:00",
+        "status": "Local preparation complete; independent review and release pending",
+        "report": {
+          "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/HANDOFF.md",
+          "line": 1,
+          "sha256": "e04c2a66a4c5cd161fc119689189660065eadf0a82d3372fdf1490c8d3187012",
+          "observed_at": "2026-10-22T16:32:36+00:00"
+        },
+        "manifest": {
+          "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/MANIFEST.json",
+          "line": 1,
+          "sha256": "56623a29e21e24a3ca49b60aade8f511796fd8350a01054e6a7d2f443156f6ae",
+          "observed_at": "2026-10-22T16:32:36+00:00"
+        },
+        "patch_sha256": "4e0b4db7da44e883dd278f611c787db646b83874af8b9e7d624d4fd5c75389ec",
+        "base": "6d5664f761132ab479a7febec60548d0fa9ee6ff",
+        "overlay_paths": 9,
+        "tests_passed": 102,
+        "test_files": 7,
+        "scoped_types_lint": "Owner passed; patch apply/output hashes passed",
+        "progress_read_checks": 7,
+        "progress_read_limit": "Synthetic semantics only. Current query already filters job/exact scope; saved error lacks SQLSTATE/timing/plan, so no new route/index change justified. Bounded live diagnostic authority remains separate.",
+        "canonical_edits": false,
+        "inventory": "Base-relative56pg/86total, not broader canonical57/87",
+        "retained_negative_control": "Retirement alone reproduces20URL pacing21s instead0; advisory coupling required",
+        "auditor_execution": "Handoff imported; raw tests not rerun"
+      },
+      "independent_acceptance": {
+        "recorded_at": "2026-10-22T16:59:14+00:00",
+        "status": "Qualified independent local acceptance of nine-file overlay; release held",
+        "receipt": {
+          "path": "tasks/artifacts/fpi-11-4-job79-independent-review-2026-10-22/REVIEW.md",
+          "line": 1,
+          "sha256": "32e1e67b9f8f5feab536224cefc494ce72ebb80a8e6cf7f7905714e1273a02cb",
+          "observed_at": "2026-10-22T16:59:14+00:00"
+        },
+        "review_checks_passed": 36,
+        "overlay_paths": 9,
+        "fixture_hashes": 79,
+        "patch_sha256": "4e0b4db7da44e883dd278f611c787db646b83874af8b9e7d624d4fd5c75389ec",
+        "coupling": "Retirement-only20URL negative control fails as expected; complete advisory/retirement package passes. Preserve full-job counts, rolling windows,21s floor and master diagnostic return shape.",
+        "runtime_limit": "Dispatch coordination is same-user local filesystem; completion-spacing/concurrency metadata is not a global runtime job lock or cross-host guarantee.",
+        "held": "Exact release reconciliation/approval; current deployed replacement schedule/pipeline health not confirmed. Progress-read filter/index proposal lacks error/timing/plan evidence; no new route/index fix justified."
+      }
+    }
+  },
+  "current_report": "ACTIVE-CHECKPOINT-20261023.md"
+}

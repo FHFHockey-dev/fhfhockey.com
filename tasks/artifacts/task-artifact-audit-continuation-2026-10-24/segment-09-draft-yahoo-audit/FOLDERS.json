@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-24T17:35:17.562637+00:00",
+  "scope": "Overlay of saved original inventory only; no new recursive scan",
+  "folders": [
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/",
+      "base_queue_records": 16,
+      "still_queued_records": 1,
+      "remaining_by_original_kind": {
+        "unique-task-document": 1
+      },
+      "full_content_this_segment": [
+        "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
+        "tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md",
+        "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+        "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md",
+        "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dashboard.md",
+        "tasks/TASKS/draft-dashboard-yahoo/draft-dashbord-audit.md",
+        "tasks/TASKS/draft-dashboard-yahoo/gamegrid-draft-dashboard-style-audit-report.md",
+        "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md",
+        "tasks/TASKS/draft-dashboard-yahoo/prd/prd-gamegrid-draft-dashboard-style-overhaul.md"
+      ],
+      "remaining_unique_documents": [
+        "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md"
+      ],
+      "limitation": "Early preparatory inventory, main audit, paired functional/style/Yahoo PRDs/tasks all fully read here. Embedded debug PRD and other live-draft docs remain queued; current app-wide correctness not established."
+    },
+    {
+      "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/",
+      "full_this_segment": [
+        "G4-underlying-site-ux.md"
+      ],
+      "limitation": "Full dated G4 report read; only token recurrence independently checked narrowly. Other source claims remain dated pending mapped owner evidence."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/",
+      "full_this_segment": [
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW.md",
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW-EVIDENCE.json"
+      ],
+      "limitation": "Exact S05-R1 reviewer documents only, no new source/test or native/live verification."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/",
+      "full_this_segment": [
+        "tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW.md",
+        "tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW-EVIDENCE.json",
+        "tasks/artifacts/player-cards-2026-10-24/slice-02-review/HANDOFF.md",
+        "tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review/HANDOFF.md"
+      ],
+      "limitation": "S01/S02/R1 review packets only; S03 ongoing, saved pixels inspected by independent reviewer, not this audit."
+    }
+  ],
+  "preserved_disposition_index": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/DISPOSITION-INDEX.json",
+  "known_support_role_metadata_only": 39,
+  "known_selected_unique_reports_remaining": 8,
+  "new_duplicate_full_scope_resolutions": 0
+}

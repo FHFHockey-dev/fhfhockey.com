@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-10-24T22:27:03.794992+00:00",
+  "report": "FREE-RSO-RECOMMENDATION.md",
+  "reportSha256": "bb25b9d83e374b33142f0ad5f2e9f2c0446192ef4934c90cfeb0f950d27d86f9",
+  "bytes": 56868,
+  "lines": 315,
+  "words": 7126,
+  "localLinkCountIncludingSelfEvidence": 104,
+  "citationAndFileErrors": [],
+  "pinnedSourceFiles": 56,
+  "sourceChangesSincePin": [],
+  "staticDocumentValidation": "passed",
+  "tests": "not run",
+  "browser": "not run",
+  "liveProviderDatabaseReads": 0,
+  "gitCommands": 0,
+  "builds": 0,
+  "deployments": 0,
+  "applicationEdits": 0,
+  "historicalEvidence": "t13/vitest.log reports131 passing; not rerun and not evidence for later SS1-14 changes",
+  "editorialCleanup": {
+    "checkedAt": "2026-10-24T22:30:33.334112+00:00",
+    "change": "Deleted exactly one evidence-boundary workflow/skills bullet; all other report bytes unchanged",
+    "previousReportSha256": "2e564147e50a92fcafaaba16a0bd03c2603c9929468fb49687977f1daf69beeb",
+    "citationsUnchanged": true,
+    "sourceRevalidation": "not repeated; this edit changes no source claims or citation targets"
+  }
+}

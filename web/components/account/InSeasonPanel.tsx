@@ -6,7 +6,8 @@ import supabase from "lib/supabase/client";
 type Subscription = { subscriptionId: string; cancelledAt: string | null; billingStoppedAt: string | null; stopComplete: boolean };
 
 export default function InSeasonPanel() {
-  const { status, access, refresh } = useProviderSyncAccess();
+  const { status, access, refresh } = useProviderSyncAccess({ entitlementOnly: true });
+  const syncAccess = useProviderSyncAccess();
   const [available, setAvailable] = useState(false);
   const [monthlyAvailable, setMonthlyAvailable] = useState(false);
   const [monthlyReason, setMonthlyReason] = useState("disabled");
@@ -106,15 +107,20 @@ export default function InSeasonPanel() {
     finally { if (requestEpoch === epoch.current) setBusy(false); }
   }
 
+  const freeSync = syncAccess.status === "ready" && syncAccess.access?.eligible === true && syncAccess.access.reason === "rollout_free";
+  const showPlans = syncAccess.status === "ready" && !freeSync && status === "ready" && access?.eligible === false;
+
   return <section aria-labelledby="in-season-access-title">
-    <h2 id="in-season-access-title">Premium sync access</h2>
-    <p>Choose $4.99 monthly or a $24.99 one-time season pass. Both plans end July 1, 2027 at midnight New York time.</p>
-    <p>Access covers supported Yahoo and Fantrax sync features. Manual tools and your saved local plans remain available. Fantrax support varies by tool.</p>
+    <h2 id="in-season-access-title">Sync access</h2>
+    {freeSync && <p role="status">Yahoo and Fantrax sync are currently available without a paid membership. Your existing membership and billing controls remain below.</p>}
+    {syncAccess.status === "error" && <p role="alert">Current sync availability could not be checked. <button type="button" onClick={() => void syncAccess.refresh()}>Retry sync availability</button></p>}
+    {showPlans && <p>Choose $4.99 monthly or a $24.99 one-time season pass. Both plans end July 1, 2027 at midnight New York time.</p>}
+    <p>Manual tools and your saved local plans remain available. Supported sync features vary by provider and tool.</p>
     {status === "idle" ? <p><Link href="/auth?mode=sign-in">Sign in to view your access</Link></p>
       : status === "loading" ? <p role="status">Checking your access…</p>
-      : status === "error" ? <p role="alert">Your access could not be verified. <button type="button" onClick={() => void refresh()}>Try again</button></p>
+      : status === "error" ? <p role="alert">Your membership could not be verified. <button type="button" onClick={() => void refresh()}>Try again</button></p>
       : access?.eligible ? <p role="status">Premium sync is active for your account. Your existing supporter and retained access still apply.</p>
-      : access?.eligible === false ? <div>
+      : showPlans ? <div>
         <h3>Season pass · $24.99</h3>
         <p>One payment for access until July 1, 2027. No automatic renewal.</p>
         <button type="button" disabled={!available || busy} onClick={() => void checkout("season_pass")}>Buy season pass · $24.99</button>
@@ -142,6 +148,6 @@ export default function InSeasonPanel() {
     </div>}
     {managementError && <p role="alert">{managementError}</p>}
     {message && <p role="status">{message}</p>}
-    <p><button type="button" disabled={busy} onClick={() => { void refresh(); void reload(); }}>Refresh access after payment</button></p>
+    <p><button type="button" disabled={busy} onClick={() => { void refresh(); void syncAccess.refresh(); void reload(); }}>Refresh access</button></p>
   </section>;
 }

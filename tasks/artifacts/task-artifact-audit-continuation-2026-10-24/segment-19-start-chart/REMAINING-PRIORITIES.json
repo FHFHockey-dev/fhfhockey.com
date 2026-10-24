@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-24T19:54:56.564069+00:00",
+  "source": "Saved inventory with exact content/role overlays; no new scan",
+  "remaining_unique_candidates": 1630,
+  "remaining_by_kind": {
+    "unique-task-document": 1630,
+    "structured-evidence": 2524,
+    "binary-or-supporting-snapshot": 3814,
+    "duplicate-scope-check": 4088
+  },
+  "not_all_candidates_require_full_read": true,
+  "next_primary_contracts": [
+    "tasks/TASKS/three-pillars-analytics/prd-three-pillars-analytics.md",
+    "tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md",
+    "tasks/TASKS/three-pillars-analytics/trends/prd-trends.md"
+  ],
+  "next_family_not_opened": true
+}

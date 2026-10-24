@@ -1,0 +1,368 @@
+--- a/web/components/PlayerPickupTable/PlayerPickupTable.tsx
++++ b/web/components/PlayerPickupTable/PlayerPickupTable.tsx
+@@ -12,6 +12,7 @@
+ import PanelStatus from "components/common/PanelStatus";
+ import { getLocalTeamLogoPath } from "lib/images";
+ import OptimizedImage from "components/common/OptimizedImage";
++import type { PlayerOwnershipContext } from "lib/dashboard/playerOwnership";
+ 
+ // TO DO
+ // integrate week score, dynamic. if toggle turns off a day, update score
+@@ -28,6 +29,7 @@
+   yahoo_player_name: string | null;
+   yahoo_team: string | null;
+   percent_ownership: number | null;
++  ownershipEvidence?: PlayerOwnershipContext["ownershipEvidence"];
+   eligible_positions: string[] | null;
+   off_nights: number | null;
+   points: number | null;
+@@ -164,7 +166,13 @@
+   value?: number | string | null;
+ };
+ 
+-const getLatestOwnershipValue = (timelineRaw: unknown): number | null => {
++const ownershipPct = (value: unknown): number | null => {
++  const parsed = typeof value === "string" && /^\d+(\.\d+)?$/.test(value) ? Number(value)
++    : typeof value === "number" ? value : NaN;
++  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 100 ? parsed : null;
++};
++
++const getLatestOwnershipEvidence = (timelineRaw: unknown): PlayerOwnershipContext["ownershipEvidence"] => {
+   let entries: OwnershipTimelineEntry[] | null = null;
+ 
+   if (Array.isArray(timelineRaw)) {
+@@ -184,41 +192,37 @@
+     return null;
+   }
+ 
+-  let latestTimestamp: number | null = null;
+-  let latestDateString: string | null = null;
+-  let latestValue: number | null = null;
++  let latest: PlayerOwnershipContext["ownershipEvidence"] = null;
+ 
+   for (const entry of entries) {
+     if (!entry || typeof entry !== "object") continue;
+     const entryDateRaw = typeof entry.date === "string" ? entry.date : null;
+-    if (!entryDateRaw) continue;
+-
++    if (!entryDateRaw || !/^\d{4}-\d{2}-\d{2}$/.test(entryDateRaw)) continue;
+     const parsedTimestamp = Date.parse(entryDateRaw);
+-    const numericValue =
+-      typeof entry.value === "number"
+-        ? entry.value
+-        : entry.value != null
+-          ? Number(entry.value)
+-          : NaN;
+-
+-    if (Number.isNaN(numericValue)) continue;
+-
+-    if (!Number.isNaN(parsedTimestamp)) {
+-      if (latestTimestamp === null || parsedTimestamp > latestTimestamp) {
+-        latestTimestamp = parsedTimestamp;
+-        latestValue = numericValue;
+-      }
+-      continue;
+-    }
+-
+-    if (latestDateString === null || entryDateRaw > latestDateString) {
+-      latestDateString = entryDateRaw;
+-      latestValue = numericValue;
++    const value = ownershipPct(entry.value);
++    if (value === null || !Number.isFinite(parsedTimestamp) || new Date(parsedTimestamp).toISOString().slice(0, 10) !== entryDateRaw) continue;
++    if (!latest || entryDateRaw > latest.observedOn!) {
++      const age = Date.now() - parsedTimestamp;
++      latest = { value, observedOn: entryDateRaw, provider: "yahoo", status: age < 0 ? "unknown" : age <= 3 * 86400000 ? "fresh" : "stale" };
+     }
+   }
+ 
+-  return latestValue;
++  return latest;
+ };
++
++function resolvePickupOwnership(timeline: unknown, seasonValue: unknown, rowValue: unknown): Pick<UnifiedPlayerData, "percent_ownership" | "ownershipEvidence"> {
++  const dated = getLatestOwnershipEvidence(timeline);
++  const value = ownershipPct(seasonValue) ?? ownershipPct(rowValue);
++  const ownershipEvidence = dated ?? (value === null ? null : { value, observedOn: null, provider: "yahoo" as const, status: "unknown" as const });
++  return { percent_ownership: ownershipEvidence?.status === "fresh" ? ownershipEvidence.value : null, ownershipEvidence };
++}
++
++function pickupOwnershipLabel(player: Pick<UnifiedPlayerData, "percent_ownership" | "ownershipEvidence">): string {
++  if (player.percent_ownership !== null) return `${player.percent_ownership}%`;
++  const evidence = player.ownershipEvidence;
++  if (!evidence) return "Unknown";
++  return `Last known ${evidence.value}% · ${evidence.observedOn ? `${evidence.observedOn} (${evidence.status === "stale" ? "stale" : "unverified"})` : "date unknown"}`;
++}
+ 
+ function summarizePlayerPickupError(error: unknown): string {
+   const message =
+@@ -506,6 +510,8 @@
+ // Filters Component
+ interface FiltersProps {
+   ownershipThreshold: number;
++  includeUnknownOwnership: boolean;
++  setIncludeUnknownOwnership: (value: boolean) => void;
+   leagueMode?: boolean;
+   setOwnershipThreshold: (value: number) => void;
+   teamFilter: string;
+@@ -535,6 +541,8 @@
+ const Filters: React.FC<FiltersProps> = ({
+   leagueMode = false,
+   ownershipThreshold,
++  includeUnknownOwnership,
++  setIncludeUnknownOwnership,
+   setOwnershipThreshold,
+   teamFilter,
+   setTeamFilter,
+@@ -890,6 +898,13 @@
+                 </div>
+               </div>
+             )}
++            <div className={styles.filterRow}>
++              <label>
++                <input type="checkbox" checked={includeUnknownOwnership} disabled={leagueMode}
++                  onChange={(event) => setIncludeUnknownOwnership(event.target.checked)} />{" "}
++                Include unknown ownership
++              </label>
++            </div>
+             <div className={styles.metricFilterContainer}>
+               {/* Header: Label + Preset Buttons */}
+               <div className={styles.metricFilterHeader}>
+@@ -1237,9 +1252,9 @@
+                     )}
+                   </td>
+                   <td className={styles.numCell}>
+-                    {player.percent_ownership !== null
+-                      ? `${player.percent_ownership}%`
+-                      : "N/A"}
++                    <span title={player.ownershipEvidence?.observedOn ? `Yahoo ownership · ${player.ownershipEvidence.observedOn}` : undefined}>
++                      {pickupOwnershipLabel(player)}
++                    </span>
+                   </td>
+                   <td className={styles.positionsCell}>
+                     {player.eligible_positions?.join(", ") ||
+@@ -1526,9 +1541,9 @@
+                   <td>
+                     {" "}
+                     {/* Own% */}
+-                    {player.percent_ownership !== null
+-                      ? `${player.percent_ownership}%`
+-                      : "N/A"}
++                    <span title={player.ownershipEvidence?.observedOn ? `Yahoo ownership · ${player.ownershipEvidence.observedOn}` : undefined}>
++                      {pickupOwnershipLabel(player)}
++                    </span>
+                   </td>
+                   <td>
+                     {" "}
+@@ -1744,6 +1759,7 @@
+   const [ownershipThreshold, setOwnershipThreshold] = useState<number>(
+     defaultOwnershipThreshold
+   );
++  const [includeUnknownOwnership, setIncludeUnknownOwnership] = useState(true);
+   const [teamFilter, setTeamFilter] = useState<string>(defaultTeamFilter);
+   const [selectedPositions, setSelectedPositions] =
+     useState<Record<string, boolean>>(defaultPositions); // State for positions
+@@ -1835,12 +1851,7 @@
+           (seasonPlayerRows as any[]).forEach((row) => {
+             const key = row?.player_key;
+             const id = row?.player_id;
+-            const percentFromRow =
+-              typeof row?.percent_ownership === "number"
+-                  ? row.percent_ownership
+-                  : row?.percent_ownership != null
+-                    ? Number(row.percent_ownership)
+-                    : null;
++            const percentFromRow = ownershipPct(row?.percent_ownership);
+ 
+             if (typeof key === "string" && key.length > 0) {
+               allowedPlayerKeys.add(key);
+@@ -1943,34 +1954,7 @@
+               return null;
+             })();
+ 
+-            const percentOwnershipFromTimeline = getLatestOwnershipValue(
+-              r.ownership_timeline
+-            );
+-
+-            const resolvedPercentOwnership = (() => {
+-              if (
+-                ownershipFromSeasonLookup !== null &&
+-                ownershipFromSeasonLookup !== undefined &&
+-                !Number.isNaN(ownershipFromSeasonLookup)
+-              ) {
+-                return ownershipFromSeasonLookup;
+-              }
+-
+-              if (percentOwnershipFromTimeline !== null) {
+-                return percentOwnershipFromTimeline;
+-              }
+-
+-              if (typeof r.percent_ownership === "number") {
+-                return r.percent_ownership;
+-              }
+-
+-              if (r.percent_ownership != null) {
+-                const numeric = Number(r.percent_ownership);
+-                return Number.isNaN(numeric) ? null : numeric;
+-              }
+-
+-              return null;
+-            })();
++            const ownership = resolvePickupOwnership(r.ownership_timeline, ownershipFromSeasonLookup, r.percent_ownership);
+ 
+             return {
+               nhl_player_id: r.nhl_player_id ? String(r.nhl_player_id) : "",
+@@ -1982,7 +1966,7 @@
+                 : null,
+               yahoo_player_name: r.yahoo_player_name || null,
+               yahoo_team: r.yahoo_team || null,
+-              percent_ownership: resolvedPercentOwnership,
++              ...ownership,
+               eligible_positions: normalizePickupPositions(r.eligible_positions),
+               off_nights: r.off_nights ?? null,
+               points:
+@@ -2362,8 +2346,7 @@
+       if (leagueContext && !isYahooPickupPlayer(player.yahoo_player_id, leagueContext, playerView)) return false;
+       // League rosters determine availability regardless of global ownership.
+       if (!leagueContext && (
+-        player.percent_ownership !== null &&
+-        player.percent_ownership > ownershipThreshold
++        player.percent_ownership === null ? !includeUnknownOwnership : player.percent_ownership > ownershipThreshold
+       ))
+         return false;
+ 
+@@ -2395,7 +2378,7 @@
+     });
+     return result;
+     // Dependency on selectedPositions is key here!
+-  }, [playersDataWithComputedGp, ownershipThreshold, teamFilter, selectedPositions, leagueContext, playerView]);
++  }, [playersDataWithComputedGp, ownershipThreshold, includeUnknownOwnership, teamFilter, selectedPositions, leagueContext, playerView]);
+ 
+   // --- Compute Percentiles (Logic unchanged) ---
+   const playersWithPercentiles: PlayerWithPercentiles[] = useMemo(() => {
+@@ -2766,6 +2749,7 @@
+   // --- resetFilters (Now resets selectedPositions too) ---
+   const resetFilters = () => {
+     setOwnershipThreshold(defaultOwnershipThreshold);
++    setIncludeUnknownOwnership(true);
+     setTeamFilter(defaultTeamFilter);
+     setSelectedPositions(defaultPositions); // Reset positions to default
+     // Reset metric filters to all true
+@@ -2784,7 +2768,7 @@
+   useEffect(() => {
+     setCurrentPage(1);
+     setExpanded({});
+-  }, [ownershipThreshold, teamFilter, selectedPositions, selectedMetrics, leagueContext, playerView]);
++  }, [ownershipThreshold, includeUnknownOwnership, teamFilter, selectedPositions, selectedMetrics, leagueContext, playerView]);
+ 
+   useEffect(() => {
+     if (totalPages > 0 && currentPage > totalPages) {
+@@ -2811,6 +2795,8 @@
+         leagueMode={Boolean(leagueContext)}
+         ownershipThreshold={ownershipThreshold}
+         setOwnershipThreshold={setOwnershipThreshold}
++        includeUnknownOwnership={includeUnknownOwnership}
++        setIncludeUnknownOwnership={setIncludeUnknownOwnership}
+         teamFilter={teamFilter}
+         setTeamFilter={setTeamFilter}
+         selectedPositions={selectedPositions} // Pass state
+--- a/web/components/PlayerPickupTable/PlayerPickupTable.test.ts
++++ b/web/components/PlayerPickupTable/PlayerPickupTable.test.ts
+@@ -1,5 +1,5 @@
+ import React from "react";
+-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
++import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import PlayerPickupTable from "./PlayerPickupTable";
+ 
+@@ -37,9 +37,9 @@
+ });
+ 
+ 
+-const state = vi.hoisted(() => ({ pro: false, fail: false, from: vi.fn(), access: { eligible: true } }));
++const state = vi.hoisted(() => ({ pro: false, fail: false, from: vi.fn(), access: { eligible: true }, rows: [] as Record<string, unknown>[] }));
+ vi.mock("hooks/useCurrentSeason", () => ({ useCurrentSeasonQuery: () => ({ data: { seasonId: 20262027 }, isLoading: false, isError: false, refetch: vi.fn() }) }));
+-vi.mock("hooks/useDraftProAccess", () => ({ useDraftProAccess: () => ({ status: "ready", access: state.pro ? state.access : null }) }));
++vi.mock("hooks/useProviderSyncAccess", () => ({ useProviderSyncAccess: () => ({ status: "ready", access: state.pro ? state.access : null, refresh: vi.fn() }) }));
+ vi.mock("lib/supabase/client", () => ({ default: { auth: { getSession: async () => ({ data: { session: { access_token: "test" } } }) } } }));
+ vi.mock("lib/supabase/public-client", () => ({ default: { from: state.from } }));
+ const rows = [
+@@ -49,19 +49,22 @@
+ ];
+ beforeEach(() => {
+   state.pro = false; state.fail = false;
++  state.rows = rows.map(row => ({ ...row, ownership_timeline: [{ date: "2026-10-22", value: row.percent_ownership }] }));
++  vi.useFakeTimers({ toFake: ["Date"] });
++  vi.setSystemTime(new Date("2026-10-22T12:00:00Z"));
+   state.from.mockImplementation((table: string) => {
+-    const data = table === "yahoo_players" ? rows.map((row) => ({ player_key: row.yahoo_player_id, player_id: row.nhl_player_id, percent_ownership: row.percent_ownership }))
+-      : table === "yahoo_nhl_player_map_read" ? rows : [];
++    const data = table === "yahoo_players" ? state.rows.map((row) => ({ player_key: row.yahoo_player_id, player_id: row.nhl_player_id, percent_ownership: row.percent_ownership }))
++      : table === "yahoo_nhl_player_map_read" ? state.rows : [];
+     const result = { data, error: state.fail && table === "yahoo_players" ? { message: "Unavailable" } : null };
+     const builder: any = { then: (resolve: any) => Promise.resolve(result).then(resolve) };
+     for (const method of ["select", "eq", "range", "order", "in", "not", "limit", "gte", "lte", "maybeSingle"]) builder[method] = () => builder;
+     return builder;
+   });
+ });
+-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
++afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
+ 
+ describe("Player pickup interactions", () => {
+-  it("loads current ownership without history and filters zero-owned players by team", async () => {
++  it("loads dated ownership from existing player rows and filters zero-owned players by team", async () => {
+     render(React.createElement(PlayerPickupTable));
+     expect(screen.getByRole("heading", { name: /^Best Players Available$/ }).textContent)
+       .toBe("Best Players Available");
+@@ -98,6 +101,7 @@
+       expect(screen.queryByText(/Invalid Date/)).toBeNull();
+     }
+     expect(screen.getByRole("button", { name: "Non-rostered in my league" })).toBeTruthy();
++    expect((screen.getByRole("checkbox", { name: "Include unknown ownership" }) as HTMLInputElement).disabled).toBe(true);
+     expect(screen.getByText(/Waiver status and immediate addability are unknown/)).toBeTruthy();
+     await waitFor(() => expect(screen.getByText("F. Agent")).toBeTruthy());
+     expect(screen.queryByText("O. Player")).toBeNull();
+@@ -123,3 +127,44 @@
+     expect(fetchMock).toHaveBeenCalledTimes(2);
+   });
+ });
++
++describe("pickup ownership evidence", () => {
++  it.each([null, undefined, "", "   ", false, "0x10", -1])("does not coerce missing or malformed season/row ownership into zero (%j)", async value => {
++    state.rows = [{ ...rows[0], percent_ownership: value }];
++    render(React.createElement(PlayerPickupTable));
++    const name = await screen.findByText("F. Agent");
++    const row = within(name.closest("tr")!);
++    expect(row.getByText("Unknown")).toBeTruthy();
++    expect(row.queryByRole("cell", { name: /^0%$/ })).toBeNull();
++  });
++
++  it.each([0, "0"])("preserves undated zero as last-known evidence, never a fresh measured zero (%j)", async value => {
++    state.rows = [{ ...rows[0], percent_ownership: value }];
++    render(React.createElement(PlayerPickupTable));
++    const name = await screen.findByText("F. Agent");
++    expect(within(name.closest("tr")!).getByText("Last known 0% · date unknown")).toBeTruthy();
++  });
++
++  it.each([1024, 390])("labels dated stale values and filters unknown separately at viewport %s", async width => {
++    vi.stubGlobal("innerWidth", width);
++    state.rows = [
++      { ...rows[0], percent_ownership: 0, ownership_timeline: [{ date: "2026-10-22", value: "0" }] },
++      { ...rows[2], percent_ownership: 20, ownership_timeline: JSON.stringify([{ date: "2026-10-18", value: 0 }, { date: "2026-10-22", value: "" }]) },
++    ];
++    render(React.createElement(PlayerPickupTable));
++    const freshName = "F. Agent";
++    const staleName = "O. Player";
++    const name = await screen.findByText(freshName);
++    expect(within(name.closest("tr")!).getByRole("cell", { name: /^0%$/ })).toBeTruthy();
++    expect(screen.getByText("Last known 0% · 2026-10-18 (stale)")).toBeTruthy();
++    const includeUnknown = screen.getByRole("checkbox", { name: "Include unknown ownership" }) as HTMLInputElement;
++    expect(includeUnknown.checked).toBe(true);
++    fireEvent.change(screen.getByRole("slider"), { target: { value: "0" } });
++    expect(screen.getByText(staleName)).toBeTruthy();
++    fireEvent.click(includeUnknown);
++    expect(screen.queryByText(staleName)).toBeNull();
++    expect(screen.getByText(freshName)).toBeTruthy();
++    fireEvent.click(includeUnknown);
++    expect(screen.getByText(staleName)).toBeTruthy();
++  });
++});

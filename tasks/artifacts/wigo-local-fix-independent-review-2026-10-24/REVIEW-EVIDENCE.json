@@ -1,0 +1,76 @@
+{
+  "at": "2026-10-24T16:56:57.609446+00:00",
+  "verdict": "ACCEPT WITH LIMITS",
+  "scope": "Exact four-file local WiGO data fix only; parent acceptance and production execution remain separate",
+  "patch_sha256": "a63ef5a4e6dde4ee1255661a612f01b79a4e4306c5822f8d4fe078f89fbb394e",
+  "candidate_pins": [
+    {
+      "path": "web/pages/api/v1/db/calculate-wigo-stats.ts",
+      "before_expected": "69014f862d3a3013827cc1fff2e5335d0609da2e4cb02621bc4a964580d7e0ec",
+      "after_expected": "f438eb129e1f70dd0691151916e78a8ea2225412ec63847ce93e334bc9ee9fa6",
+      "baseline_actual": "69014f862d3a3013827cc1fff2e5335d0609da2e4cb02621bc4a964580d7e0ec",
+      "candidate_actual": "f438eb129e1f70dd0691151916e78a8ea2225412ec63847ce93e334bc9ee9fa6",
+      "canonical_actual": "f438eb129e1f70dd0691151916e78a8ea2225412ec63847ce93e334bc9ee9fa6",
+      "match": true
+    },
+    {
+      "path": "web/utils/fetchWigoPlayerStats.ts",
+      "before_expected": "fc89f01637a332d5cb30b7f90e9991724bd4431ec9799a0ff39c20b941469210",
+      "after_expected": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f",
+      "baseline_actual": "fc89f01637a332d5cb30b7f90e9991724bd4431ec9799a0ff39c20b941469210",
+      "candidate_actual": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f",
+      "canonical_actual": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f",
+      "match": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts",
+      "before_expected": "6cc5edf0cfcb0071fb82f6a662176a3ea804a372b7ea5ec32367c6297220a283",
+      "after_expected": "a065e5ea2a93f2fc93efd93ae90a6e2c72b733566e74597135ef94010815c198",
+      "baseline_actual": "6cc5edf0cfcb0071fb82f6a662176a3ea804a372b7ea5ec32367c6297220a283",
+      "candidate_actual": "a065e5ea2a93f2fc93efd93ae90a6e2c72b733566e74597135ef94010815c198",
+      "canonical_actual": "a065e5ea2a93f2fc93efd93ae90a6e2c72b733566e74597135ef94010815c198",
+      "match": true
+    },
+    {
+      "path": "web/utils/fetchWigoPlayerStats.test.ts",
+      "before_expected": "fcd21583653912ff8c19345909abcc103b148c74f74bda1a7bd0605cf6f68ef6",
+      "after_expected": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1",
+      "baseline_actual": "fcd21583653912ff8c19345909abcc103b148c74f74bda1a7bd0605cf6f68ef6",
+      "candidate_actual": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1",
+      "canonical_actual": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1",
+      "match": true
+    }
+  ],
+  "pin_summary": {
+    "recorded": 46,
+    "unchanged": 46,
+    "baseline_candidate_copies_verified": 8
+  },
+  "verification": {
+    "owner_cases_passed": 58,
+    "independent_cases_passed": 17,
+    "total_passed": 75,
+    "failed": 0,
+    "scoped_lint": "passed",
+    "whole_web_typescript": "Owner retained exit2, two prior C4-reported Buffer/BinaryLike errors; not repeated by reviewer",
+    "blocked_checks": [],
+    "commands": "COMMANDS.json"
+  },
+  "original_failures_preserved": [
+    "local-fix/red-tests.log: 17 failed,41 passed",
+    "local-fix/green-tests-1.log:57 passed,1 floating-point assertion failure",
+    "local-fix/typescript.log:exit2, two Buffer/BinaryLike errors"
+  ],
+  "limits": [
+    "No current production aggregates repaired",
+    "Cross-season last-N preserved; missing October5 NST metrics remain null",
+    "No broad route execution; bounded path plus explicit production approval needed",
+    "Earlier batches are not rolled back; global transaction/upsert guarantees unchanged",
+    "No population-wide identity compatibility or new-card cohort acceptance",
+    "Historical source-arrival chronology unknown",
+    "Legacy override not observed in Kucherov live table because no wigo_rates row in prior approved diagnosis"
+  ],
+  "external_actions_this_review": 0,
+  "source_repairs": 0,
+  "subagents": 0
+}

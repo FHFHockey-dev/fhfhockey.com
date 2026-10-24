@@ -1,4 +1,4 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { formatOpportunity, MATCHUP_LABELS, type OpportunityWeek, type TeamOpportunity } from "./utils/scheduleOpportunity";
 import styles from "./OpportunitySparkline.module.scss";
@@ -28,40 +28,58 @@ export default function OpportunitySparkline({ value, scale, team }: { value?: T
   const trigger = useRef<HTMLButtonElement>(null);
   const card = useRef<HTMLDivElement>(null);
   const pointerType = useRef("");
+  const hovered = useRef(false);
+  const keyboardFocused = useRef(false);
+  const pinned = useRef(false);
+  const contains = useCallback((target: EventTarget | null) => target instanceof Node &&
+    Boolean(trigger.current?.contains(target) || card.current?.contains(target)), []);
+  const close = useCallback(() => {
+    hovered.current = false;
+    keyboardFocused.current = false;
+    pinned.current = false;
+    setOpen(false);
+  }, []);
+  const leave = (target: EventTarget | null) => {
+    if (contains(target)) return;
+    hovered.current = false;
+    if (!keyboardFocused.current && !pinned.current) setOpen(false);
+  };
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, "");
   const cardId = `opportunity-card-${id}`;
 
   // Follow the trigger while the page or table scrolls; close once it leaves the viewport.
-  const place = () => {
+  const place = useCallback(() => {
     const box = trigger.current?.getBoundingClientRect();
     if (!box) return;
-    if (box.bottom < 0 || box.top > window.innerHeight) { setOpen(false); return; }
+    if (box.bottom < 0 || box.top > window.innerHeight) { close(); return; }
     const height = card.current?.offsetHeight ?? 150;
     const left = Math.max(8, Math.min(box.left + box.width / 2 - CARD_WIDTH / 2, window.innerWidth - CARD_WIDTH - 8));
-    const top = window.innerHeight - box.bottom >= height + 12 ? box.bottom + 6 : Math.max(8, box.top - height - 6);
+    const top = window.innerHeight - box.bottom >= height ? box.bottom : Math.max(8, box.top - height);
     setPosition({ left, top });
-  };
+  }, [close]);
 
   useLayoutEffect(() => {
     if (open) place(); else setPosition(null);
-  }, [open]);
+  }, [open, place]);
 
   useEffect(() => {
     if (!open) return;
-    const close = () => setOpen(false);
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") close(); };
-    const onPointer = (event: PointerEvent) => { if (!trigger.current?.contains(event.target as Node)) close(); };
+    const onPointer = (event: PointerEvent) => { if (!contains(event.target)) close(); };
+    const onFocus = (event: FocusEvent) => { if (!contains(event.target)) close(); };
     document.addEventListener("keydown", onKey);
     document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("focusin", onFocus);
     window.addEventListener("scroll", place, true);
     window.addEventListener("resize", place);
     return () => {
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("focusin", onFocus);
       window.removeEventListener("scroll", place, true);
       window.removeEventListener("resize", place);
     };
-  }, [open]);
+  }, [open, place, close, contains]);
 
   const weeks = value?.weeks ?? [];
   const trend = getTrend(weeks);
@@ -71,23 +89,30 @@ export default function OpportunitySparkline({ value, scale, team }: { value?: T
   const complete = weeks.length > 0 && weeks.every((w) => w.opportunity != null);
   const area = complete ? `${line} L ${x(weeks.length - 1).toFixed(2)} ${HEIGHT} L ${x(0).toFixed(2)} ${HEIGHT} Z` : null;
   const lastKnown = weeks.reduce((last, w, i) => w.opportunity == null ? last : i, -1);
-  const label = `${team} 4-week value ${formatOpportunity(value?.opportunity)}${trend ? `, ${trend.toLowerCase()}` : ""}; weekly games ${weeks.map((w) => w.gamesPlayed ?? "unknown").join(", ") || "unavailable"}`;
+  const label = `${team} 4-week opportunity ${formatOpportunity(value?.opportunity)}${trend ? `, ${trend.toLowerCase()}` : ""}; weekly games ${weeks.map((w) => w.gamesPlayed ?? "unknown").join(", ") || "unavailable"}`;
 
   const show = () => setOpen(true);
-  const hide = () => setOpen(false);
 
   return <>
     <button ref={trigger} type="button" className={styles.trigger} aria-label={label} aria-describedby={open ? cardId : undefined}
       onPointerDown={(event) => { pointerType.current = event.pointerType; }}
-      onPointerEnter={(event) => { if (event.pointerType === "mouse") show(); }}
-      onPointerLeave={(event) => { if (event.pointerType === "mouse") hide(); }}
+      onPointerEnter={(event) => { if (event.pointerType === "mouse") { hovered.current = true; show(); } }}
+      onPointerLeave={(event) => { if (event.pointerType === "mouse") leave(event.relatedTarget); }}
       onFocus={(event) => {
         let keyboard = true;
         try { keyboard = event.currentTarget.matches(":focus-visible"); } catch { /* older engines */ }
+        keyboardFocused.current = keyboard;
         if (keyboard) show();
       }}
-      onBlur={hide}
-      onClick={() => { if (pointerType.current === "mouse") show(); else setOpen((v) => !v); pointerType.current = ""; }}>
+      onBlur={(event) => {
+        keyboardFocused.current = false;
+        if (!contains(event.relatedTarget) && (event.relatedTarget || (!hovered.current && !pinned.current))) close();
+      }}
+      onClick={() => {
+        if (pointerType.current === "mouse") show();
+        else { pinned.current = !pinned.current; setOpen(pinned.current); }
+        pointerType.current = "";
+      }}>
       {lastKnown < 0 ? <span className={styles.empty} aria-hidden="true" /> : (
         <svg className={styles.spark} viewBox={`0 0 ${WIDTH} ${HEIGHT}`} aria-hidden="true" data-shared-scale={scale}>
           <defs>
@@ -109,26 +134,30 @@ export default function OpportunitySparkline({ value, scale, team }: { value?: T
       )}
     </button>
     {open && createPortal(
-      <div ref={card} id={cardId} role="tooltip" className={styles.card}
+      <div ref={card} id={cardId} role="tooltip" className={styles.cardRegion}
+        onPointerEnter={(event) => { if (event.pointerType === "mouse") hovered.current = true; }}
+        onPointerLeave={(event) => { if (event.pointerType === "mouse") leave(event.relatedTarget); }}
         style={position ? { left: position.left, top: position.top } : { left: -9999, top: 0 }}>
-        <div className={styles.cardHeader}>
-          <span className={styles.cardTeam}>{team}</span>
-          <span className={styles.cardTotal}>4WK {formatOpportunity(value?.opportunity)}</span>
-          {trend && <span className={styles.cardTrend} data-trend={trend}><span aria-hidden="true">{TREND_GLYPH[trend]}</span> {trend}</span>}
+        <div className={styles.card}>
+          <div className={styles.cardHeader}>
+            <span className={styles.cardTeam}>{team}</span>
+            <span className={styles.cardTotal}>4WK opportunity {formatOpportunity(value?.opportunity)}</span>
+            {trend && <span className={styles.cardTrend} data-trend={trend}><span aria-hidden="true">{TREND_GLYPH[trend]}</span> {trend}</span>}
+          </div>
+          <ul className={styles.cardWeeks}>
+            {weeks.map((w) => (
+              <li key={w.weekNumber} className={styles.cardWeek}>
+                <span className={styles.cardDate}>{formatWeekStart(w.start)}</span>
+                {w.gamesPlayed == null
+                  ? <span className={styles.cardPending}>Schedule pending</span>
+                  : <>
+                    <span className={styles.cardCounts}>{w.gamesPlayed} GP · {w.offNights} OFF</span>
+                    <span className={styles.cardMatchup} data-matchup={w.skaterMatchup}>{MATCHUP_LABELS[w.skaterMatchup]}</span>
+                  </>}
+              </li>
+            ))}
+          </ul>
         </div>
-        <ul className={styles.cardWeeks}>
-          {weeks.map((w) => (
-            <li key={w.weekNumber} className={styles.cardWeek}>
-              <span className={styles.cardDate}>{formatWeekStart(w.start)}</span>
-              {w.gamesPlayed == null
-                ? <span className={styles.cardPending}>Schedule pending</span>
-                : <>
-                  <span className={styles.cardCounts}>{w.gamesPlayed} GP · {w.offNights} OFF</span>
-                  <span className={styles.cardMatchup} data-matchup={w.skaterMatchup}>{MATCHUP_LABELS[w.skaterMatchup]}</span>
-                </>}
-            </li>
-          ))}
-        </ul>
       </div>,
       document.body,
     )}

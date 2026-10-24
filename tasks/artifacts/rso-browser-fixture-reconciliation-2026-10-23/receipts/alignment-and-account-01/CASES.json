@@ -1,0 +1,44 @@
+[
+  {
+    "title": "connected refresh and account save preserve forecast permissions and exclusions",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "compact day and bench controls preserve saved intent and keyboard selection",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/Past lineup unverified \u00b7 GP/)\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/Past lineup unverified \u00b7 GP/)\u001b[22m\n\n\n  1951 |   await monday.focus(); await page.keyboard.press(\"Enter\");\n  1952 |   await expect(slider).toHaveAttribute(\"aria-valuetext\", \"Mon, Oct 5\");\n> 1953 |   await expect(page.getByText(/Past lineup unverified \u00b7 GP/)).toBeVisible();\n       |                                                               ^\n  1954 |   await expect(page.getByRole(\"table\", { name: \"Individual player weekly schedule\" }).getByRole(\"rowheader\", { name: /Pending C/ }).first()).toBeVisible();\n  1955 |   await page.keyboard.press(\"ArrowRight\"); await expect(slider).toHaveAttribute(\"aria-valuetext\", dates[0]);\n  1956 |   await page.screenshot({ path: testInfo.outputPath(\"compact-date-focus.png\") });\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1953:63"
+    ]
+  },
+  {
+    "title": "compact short desktop and mobile retain rows, day state, reserves and unknown goalie status",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m120.0078125\u001b[39m\n\n  1726 |     if (observation.delta > 1) await writeFile(test.info().outputPath(\"slider-alignment-failure.json\"), JSON.stringify(observation, null, 2));\n  1727 |   }\n> 1728 |   expect(Math.abs(thumbCenter - headerCenter)).toBeLessThanOrEqual(1);\n       |                                                ^\n  1729 | }\n  1730 |\n  1731 | for (const count of [19, 20, 29]) test(`compact layout accounts for ${count} slots with a maximum of 20 slot rows and internal labels`, async ({ page }, testInfo) => {\n    at expectDaySliderAligned (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1728:48)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2022:5"
+    ]
+  },
+  {
+    "title": "compact future and partial weeks use league dates and retain the full horizon without saving",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "compact initial future week defaults to Monday and preserves clipped horizons",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/Planning data is temporarily unavailable. Your saved manual workspace is preserved/)\nExpected: visible\nError: strict mode violation: getByText(/Planning data is temporarily unavailable. Your saved manual workspace is preserved/) resolved to 5 elements:\n    1) <div role=\"status\" class=\"RosterScheduleOptimizer_notice__Jc5Ct\">Planning data is temporarily unavailable. Your sa\u2026</div> aka getByLabel('Planning command bar').getByText('Planning data is temporarily')\n    2) <p aria-live=\"polite\">Planning data is temporarily unavailable. Your sa\u2026</p> aka getByLabel('Candidate browser').getByText('Planning data is temporarily')\n    3) <p class=\"RosterScheduleOptimizer_evidence___LRJ5\">forecasts: unknown \u00b7 Planning data is temporarily\u2026</p> aka getByText('forecasts: unknown \u00b7 Planning')\n    4) <p class=\"RosterScheduleOptimizer_evidence___LRJ5\">baselines: unknown \u00b7 Planning data is temporarily\u2026</p> aka getByText('baselines: unknown \u00b7 Planning')\n    5) <p class=\"RosterScheduleOptimizer_evidence___LRJ5\">participation: unknown \u00b7 Planning data is tempora\u2026</p> aka getByText('participation: unknown \u00b7')\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/Planning data is temporarily unavailable. Your saved manual workspace is preserved/)\u001b[22m\n\n\n  2300 |   await page.reload();\n  2301 |   await openCompactControls(page);\n> 2302 |   await expect(page.getByText(/Planning data is temporarily unavailable. Your saved manual workspace is preserved/)).toBeVisible();\n       |                                                                                                                      ^\n  2303 |   await expect(table.locator('[data-player-id]')).toHaveCount(20);\n  2304 |   await expect(summary.getByText(\"Roster games\").locator(\"..\")).toHaveText(\"Roster gamesUnknown\");\n  2305 |   await expect(summary.getByText(\"NHL games\").locator(\"..\")).toHaveText(\"NHL gamesUnknown\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2302:118"
+    ]
+  }
+]

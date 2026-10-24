@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useId } from "react";
 import supabase from "lib/supabase";
-import Link from "next/link";
+import { useRouter } from "next/router";
 
 interface PlayerResult {
   id: number;
@@ -10,6 +10,7 @@ interface PlayerResult {
 }
 
 export default function PlayerSearchBar() {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<PlayerResult[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
@@ -154,13 +155,14 @@ export default function PlayerSearchBar() {
         >
           {results.map((player, index) => (
             <li key={player.id}>
-              <Link
+              <a
                 ref={(element) => { resultRefs.current[index] = element; }}
                 href={`/stats/player/${player.id}`}
-                prefetch={false}
                 onClick={(event) => {
-                  if (event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+                  if (!event.defaultPrevented && event.button === 0 && !event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey) {
+                    event.preventDefault();
                     updateQuery("");
+                    void router.push(`/stats/player/${player.id}`);
                   }
                 }}
                 onKeyDown={(event) => {
@@ -194,7 +196,7 @@ export default function PlayerSearchBar() {
                   />
                 )}
                 <span>{player.fullName}</span>
-              </Link>
+              </a>
             </li>
           ))}
         </ul>

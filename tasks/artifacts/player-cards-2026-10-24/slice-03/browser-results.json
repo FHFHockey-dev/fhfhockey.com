@@ -1,0 +1,106 @@
+{
+  "checks": [
+    {
+      "name": "own-l5 PNG/manifest snapshot equality",
+      "passed": true,
+      "snapshotId": "synthetic-flow-v1-1001-L5-all-allow-known-short-proposed-complete",
+      "gameIds": [
+        "2026100123",
+        "2026100122",
+        "2026100120",
+        "2026100119",
+        "2026100118"
+      ],
+      "settings": {
+        "season": 20262027,
+        "gameType": "regular",
+        "strength": "all",
+        "cutoff": "2026-10-24T00:00:00Z",
+        "period": {
+          "mode": "appearances",
+          "count": 5
+        },
+        "seasonPolicy": "season-only-proposed",
+        "shortSamplePolicy": "allow-known-short-proposed",
+        "rankPolicy": "competition-midrank-proposed"
+      }
+    },
+    {
+      "name": "actual Back/Forward restores period",
+      "passed": true
+    },
+    {
+      "name": "calendar PNG/manifest snapshot equality",
+      "passed": true,
+      "snapshotId": "synthetic-flow-v1-1001-2026-10-17-2026-10-23-all-allow-known-short-proposed-complete",
+      "gameIds": [
+        "2026100123",
+        "2026100122",
+        "2026100120",
+        "2026100119",
+        "2026100118",
+        "2026100117"
+      ],
+      "settings": {
+        "season": 20262027,
+        "gameType": "regular",
+        "strength": "all",
+        "cutoff": "2026-10-24T00:00:00Z",
+        "period": {
+          "mode": "calendar",
+          "start": "2026-10-17",
+          "end": "2026-10-23",
+          "timezone": "UTC"
+        },
+        "seasonPolicy": "season-only-proposed",
+        "shortSamplePolicy": "allow-known-short-proposed",
+        "rankPolicy": "competition-midrank-proposed"
+      }
+    },
+    {
+      "name": "invalid-range recovery and touch-sized retry",
+      "passed": true
+    },
+    {
+      "name": "duplicate identity and honestly short sample",
+      "passed": true
+    },
+    {
+      "name": "partial PNG/manifest snapshot equality",
+      "passed": true,
+      "snapshotId": "synthetic-flow-v1-1004-L10-all-allow-known-short-proposed-metric-gap",
+      "gameIds": [
+        "2026100423",
+        "2026100420",
+        "2026100417"
+      ],
+      "settings": {
+        "season": 20262027,
+        "gameType": "regular",
+        "strength": "all",
+        "cutoff": "2026-10-24T00:00:00Z",
+        "period": {
+          "mode": "appearances",
+          "count": 10
+        },
+        "seasonPolicy": "season-only-proposed",
+        "shortSamplePolicy": "allow-known-short-proposed",
+        "rankPolicy": "competition-midrank-proposed"
+      }
+    },
+    {
+      "name": "partial/unknown/stale/history gates",
+      "passed": true
+    },
+    {
+      "name": "PP/extra/mobile/text reading/keyboard focus",
+      "passed": true
+    },
+    {
+      "name": "zero external requests/page errors",
+      "passed": true
+    }
+  ],
+  "network": [],
+  "errors": []
+}

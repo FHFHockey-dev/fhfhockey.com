@@ -1,0 +1,213 @@
+{
+  "at": "2026-10-24T20:30:27.841855+00:00",
+  "near_duplicate_representatives": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "original_support_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "canonical_support_sha256": "150880b7f63bfa1cbd459bb776d4763197392d407a7b2837d11de3c9749b87dd",
+      "bytes_differ_by": "Terminal LF only",
+      "sha256": "724117a9105f7e7d08f7523830c88c73fe8d64e7a4ec81a02f388e4bbedd4982"
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "original_support_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "canonical_support_sha256": "cafc2d85a65f6aaf3c0674ecb11a11fe7408ba1db70564339595b730d1bbb6c8",
+      "bytes_differ_by": "Terminal LF only",
+      "sha256": "07137c53d97c959e4028a01a86ca6837ddd8b4e4fb5deb550ce1a1873a7a5373"
+    }
+  ],
+  "entries": [
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "sha256": "724117a9105f7e7d08f7523830c88c73fe8d64e7a4ec81a02f388e4bbedd4982",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "sha256": "07137c53d97c959e4028a01a86ca6837ddd8b4e4fb5deb550ce1a1873a7a5373",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/evidence-context/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "sha256": "724117a9105f7e7d08f7523830c88c73fe8d64e7a4ec81a02f388e4bbedd4982",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/evidence-context/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "sha256": "07137c53d97c959e4028a01a86ca6837ddd8b4e4fb5deb550ce1a1873a7a5373",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/evidence-independent-review/composed/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "sha256": "724117a9105f7e7d08f7523830c88c73fe8d64e7a4ec81a02f388e4bbedd4982",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/evidence-independent-review/composed/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "sha256": "07137c53d97c959e4028a01a86ca6837ddd8b4e4fb5deb550ce1a1873a7a5373",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/evidence-independent-review/standalone/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "sha256": "724117a9105f7e7d08f7523830c88c73fe8d64e7a4ec81a02f388e4bbedd4982",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/evidence-independent-review/standalone/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "sha256": "07137c53d97c959e4028a01a86ca6837ddd8b4e4fb5deb550ce1a1873a7a5373",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/independent-injury-goalie-review/after/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "sha256": "724117a9105f7e7d08f7523830c88c73fe8d64e7a4ec81a02f388e4bbedd4982",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/independent-injury-goalie-review/after/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "sha256": "07137c53d97c959e4028a01a86ca6837ddd8b4e4fb5deb550ce1a1873a7a5373",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/independent-injury-goalie-review/before/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "sha256": "724117a9105f7e7d08f7523830c88c73fe8d64e7a4ec81a02f388e4bbedd4982",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/independent-injury-goalie-review/before/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "sha256": "07137c53d97c959e4028a01a86ca6837ddd8b4e4fb5deb550ce1a1873a7a5373",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/independent-injury-goalie-review/probes/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "sha256": "724117a9105f7e7d08f7523830c88c73fe8d64e7a4ec81a02f388e4bbedd4982",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/independent-injury-goalie-review/probes/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "sha256": "07137c53d97c959e4028a01a86ca6837ddd8b4e4fb5deb550ce1a1873a7a5373",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/injury-goalie/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "sha256": "724117a9105f7e7d08f7523830c88c73fe8d64e7a4ec81a02f388e4bbedd4982",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-corpus-fixes-2026-10-15/injury-goalie/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "sha256": "07137c53d97c959e4028a01a86ca6837ddd8b4e4fb5deb550ce1a1873a7a5373",
+      "coverage": "duplicate-bounded-scope",
+      "representative": "tasks/ifttt-integration-2026-10-16/handoff/extracted-reviewed/ifttt-claim-identity-repair-2026-10-15/source/tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "canonical_support": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "representative_scope": "Complete structural/count/hash/span/cross-link inspection only; no all-row semantic/visual/current-runtime acceptance",
+      "normalized_json_equivalence_verified_for_representative": true,
+      "exact_hash_to_representative": true,
+      "whole_content_reviewed": false,
+      "disposition": "Inherited bounded support role, never full content review. Original exact duplicate references retained."
+    }
+  ]
+}

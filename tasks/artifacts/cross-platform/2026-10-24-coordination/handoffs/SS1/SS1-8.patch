@@ -1,0 +1,394 @@
+--- a/web/lib/socialShare/schedule.test.ts
++++ b/web/lib/socialShare/schedule.test.ts
+@@ -7,6 +7,12 @@
+ // Never a Supabase read in unit tests: opponent rates come only from this mock.
+ const opponentSource = vi.hoisted(() => ({ loadShareTeamRates: vi.fn(() => Promise.reject(new Error("offline"))) }));
+ vi.mock("lib/socialShare/teamRates", () => opponentSource);
++// Player sources come only from this mock (no Supabase read in unit tests).
++const playerSource = vi.hoisted(() => ({ loadSharePlayerSources: vi.fn((..._args: unknown[]) => Promise.reject(new Error("offline")) as Promise<unknown>) }));
++vi.mock("lib/socialShare/playerSources", () => playerSource);
++import { fictionalLeagueWeek, fictionalTeamStats } from "./fixtures";
++import { fictionalPlayerSources } from "./pickupsFixture";
++import { pickupTiers, specialists } from "./players";
+ import { shareCacheControl, SHARE_CACHE_EXPIRY_MARGIN_SECONDS } from "./server";
+ import handler from "pages/api/v1/social-share/[format]";
+ import type { NextApiRequest, NextApiResponse } from "next";
+@@ -253,7 +259,7 @@
+     } finally { vi.useRealTimers(); }
+   });
+   it("keeps Tuesday trends blocked with zero upstream reads until a live trend source is approved", async () => {
+-    upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockClear();
++    upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockClear(); playerSource.loadSharePlayerSources.mockClear();
+     for (const query of [{ format: "tuesday-trends", weekStart }, { format: "tuesday-trends" }, { format: "tuesday-trends", weekStart, selectedDates: dates.slice(1).join(",") }]) {
+       const result = await request(query);
+       expect(result.code).toBe(200);
+@@ -264,6 +270,7 @@
+     }
+     expect(upstream.getSchedule).not.toHaveBeenCalled();
+     expect(opponentSource.loadShareTeamRates).not.toHaveBeenCalled();
++    expect(playerSource.loadSharePlayerSources).not.toHaveBeenCalled();
+     expect((await request({ format: "tuesday-trends", weekStart: "2099-01-05" })).code).toBe(400);
+     expect(upstream.getSchedule).not.toHaveBeenCalled();
+   });
+@@ -290,7 +297,60 @@
+     }
+     expect(upstream.getSchedule).not.toHaveBeenCalled();
+     expect(opponentSource.loadShareTeamRates).not.toHaveBeenCalled();
++  });
++  it("attaches a trimmed, read-only player layer after a ready schedule and handles stale, missing and unmapped sources", async () => {
++    upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockReset(); playerSource.loadSharePlayerSources.mockReset();
++    upstream.getSchedule.mockResolvedValue(fictionalLeagueWeek(weekStart, now));
++    opponentSource.loadShareTeamRates.mockResolvedValue(fictionalTeamStats(20252026, "2026-01-05T08:00:00Z") as never);
++    const sources = () => fictionalPlayerSources(20252026, "2026-01-05", "2026-01-05T08:00:00Z");
++    playerSource.loadSharePlayerSources.mockResolvedValue(sources());
++    const ok = await request({ format: "game-grid", weekStart });
++    expect(ok.body.state).toBe("ready");
++    const topTeams = ok.body.rows.filter((row: { rank: number; remainingGames: number }) => row.rank <= 10 && row.remainingGames > 0).map((row: { team: { abbreviation: string } }) => row.team.abbreviation);
++    expect(playerSource.loadSharePlayerSources).toHaveBeenCalledWith(20252026, topTeams);
++    expect(upstream.getSchedule.mock.invocationCallOrder[0]).toBeLessThan(playerSource.loadSharePlayerSources.mock.invocationCallOrder[0]);
++    expect(ok.body.players).toMatchObject({ state: "ready", selectedDates: dates });
++    // Only the players the cards show leave the server.
++    const shown = new Set([...pickupTiers(ok.body, true).flatMap(tier => Object.values(tier.groups).flat()), ...Object.values(specialists(ok.body, true)).flat()].map(player => player.nhlId));
++    expect(new Set(ok.body.players.players.map((player: { nhlId: number }) => player.nhlId))).toEqual(shown);
++    expect(ok.body.players.players.length).toBeLessThanOrEqual(36);
++    const hidden = sources().skaters.find(row => !shown.has(row.player_id))!.player_name!;
++    expect(JSON.stringify(ok.body)).not.toContain(`"${hidden}"`);
++    expect(JSON.stringify(ok.body.players)).not.toMatch(/465\.p\.|player_key|editorial|last_updated/);
++    expect(ok.headers["Cache-Control"]).toBe("public, max-age=0, s-maxage=300, stale-while-revalidate=300");
++
++    // Id-mapping miss: the first shown skater loses its map row and simply drops out.
++    const missingId = ok.body.players.players.find((player: { group: string }) => player.group !== "G").nhlId;
++    const unmapped = sources(); unmapped.map = unmapped.map.filter(row => Number(row.nhl_player_id) !== missingId);
++    playerSource.loadSharePlayerSources.mockResolvedValueOnce(unmapped);
++    const miss = await request({ format: "game-grid", weekStart });
++    expect(miss.body.players.state).toBe("ready");
++    expect(miss.body.players.players.map((player: { nhlId: number }) => player.nhlId)).not.toContain(missingId);
++
++    // Stale ownership (two weeks old): no names leave the server and the cache stays short.
++    playerSource.loadSharePlayerSources.mockResolvedValueOnce(fictionalPlayerSources(20252026, "2025-12-20", "2026-01-05T08:00:00Z"));
++    const stale = await request({ format: "remaining-week", weekStart });
++    expect(stale.body.players).toMatchObject({ state: "stale", players: [], selectedDates: dates.slice(3) });
++    expect(JSON.stringify(stale.body)).not.toContain("Fixture ");
++    expect(stale.headers["Cache-Control"]).toBe("public, max-age=0, s-maxage=60");
++
++    // Missing: the loader fails (e.g. over a limit); the schedule edition still serves.
++    playerSource.loadSharePlayerSources.mockRejectedValueOnce(new Error("Yahoo ownership response was incomplete or over its 1000-row limit."));
++    const missing = await request({ format: "game-grid", weekStart });
++    expect(missing.body.state).toBe("ready");
++    expect(missing.body.players).toMatchObject({ state: "missing", players: [] });
++    expect(JSON.stringify(missing.body)).not.toContain("1000-row");
+   });
++  it("never reads players after a failed or partial schedule", async () => {
++    upstream.getSchedule.mockReset(); playerSource.loadSharePlayerSources.mockReset();
++    upstream.getSchedule.mockRejectedValue(new Error("down"));
++    expect((await request({ format: "game-grid", weekStart })).code).toBe(503);
++    upstream.getSchedule.mockResolvedValue({ ...fictionalLeagueWeek(weekStart, now), coveredDates: dates.slice(1) });
++    const partial = await request({ format: "game-grid", weekStart });
++    expect(partial.body.state).toBe("partial");
++    expect(partial.body.players ?? null).toBeNull();
++    expect(playerSource.loadSharePlayerSources).not.toHaveBeenCalled();
++  });
+   it("does not expose private source fields or activate export for the release reader shape", async () => {
+     upstream.getSchedule.mockResolvedValue({ data: {}, numGamesPerDay: [0, 0, 0, 0, 0, 0, 0], coveredDates: dates, accountId: "private-account", capture: "private-capture", odds: "private-odds" });
+     const result = await request({ format: "game-grid", weekStart });
+--- a/web/lib/socialShare/server.ts
++++ b/web/lib/socialShare/server.ts
+@@ -2,6 +2,8 @@
+ import { TUESDAY_NOT_CONNECTED, assertCalendarDate, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, currentSeason, weekDates } from "./schedule";
+ import { buildOpponentLayer } from "./matchups";
+ import { loadShareTeamRates } from "./teamRates";
++import { loadSharePlayerSources } from "./playerSources";
++import { buildPlayerLayer, PLAYER_TEAM_RANK_MAX, trimPlayerLayer } from "./players";
+ import { isSocialShareFormat, OPPONENT_RATE_FORMATS, UPSTREAM_READ_FORMATS, type SocialShareFormat, type SocialShareSnapshot } from "./types";
+ 
+ export class SocialShareRequestError extends Error {
+@@ -31,6 +33,13 @@
+   const season = currentSeason(start);
+   const stats = await loadShareTeamRates(season).catch(() => null);
+   snapshot.opponents = buildOpponentLayer(stats, { season, teams: snapshot.teams, fetchedAt: new Date().toISOString(), generatedAt: snapshot.generatedAt });
++  // Player reads only follow a ready schedule edition (an unready one ranks nobody), and only for
++  // that edition's top Week Score teams. The layer leaves the server trimmed to the cards' players.
++  if (snapshot.state !== "ready" || snapshot.source.state !== "ready") return snapshot;
++  const topTeams = snapshot.rows.filter(row => row.rank <= PLAYER_TEAM_RANK_MAX && row.remainingGames > 0).map(row => row.team.abbreviation);
++  const sources = topTeams.length ? await loadSharePlayerSources(season, topTeams).catch(() => null) : null;
++  const layer = buildPlayerLayer(sources, { season, teams: snapshot.teams.map(team => team.abbreviation), fetchedAt: new Date().toISOString(), generatedAt: snapshot.generatedAt });
++  snapshot.players = trimPlayerLayer(snapshot, layer);
+   return snapshot;
+ }
+ 
+@@ -46,7 +55,7 @@
+ export const SHARE_CACHE_MAX_SECONDS = 300;
+ /** A cached edition must still leave the viewer this long to prepare and download before it expires. */
+ export const SHARE_CACHE_EXPIRY_MARGIN_SECONDS = 600;
+-/** Shorter ceiling while the matchup layer is unready, so a transient stats failure clears quickly. */
++/** Shorter ceiling while a card layer (opponents, players) is unready, so a transient failure clears quickly. */
+ export const SHARE_CACHE_UNREADY_OPPONENTS_SECONDS = 60;
+ 
+ /**
+@@ -58,8 +67,10 @@
+   if (snapshot.state !== "ready" || snapshot.source.state !== "ready" || !snapshot.expiresAt) return "no-store";
+   const usable = Math.floor((Date.parse(snapshot.expiresAt) - now) / 1000) - SHARE_CACHE_EXPIRY_MARGIN_SECONDS;
+   if (!Number.isFinite(usable) || usable < 60) return "no-store";
+-  const ceiling = snapshot.opponents?.state === "ready" ? SHARE_CACHE_MAX_SECONDS : SHARE_CACHE_UNREADY_OPPONENTS_SECONDS;
++  // Any attached layer that is not ready (opponents required; players when present) keeps the cache short.
++  const layersReady = snapshot.opponents?.state === "ready" && (!snapshot.players || snapshot.players.state === "ready");
++  const ceiling = layersReady ? SHARE_CACHE_MAX_SECONDS : SHARE_CACHE_UNREADY_OPPONENTS_SECONDS;
+   const sMaxAge = Math.min(ceiling, usable);
+-  const stale = snapshot.opponents?.state === "ready" ? Math.min(SHARE_CACHE_MAX_SECONDS, usable - sMaxAge) : 0;
++  const stale = layersReady ? Math.min(SHARE_CACHE_MAX_SECONDS, usable - sMaxAge) : 0;
+   return `public, max-age=0, s-maxage=${sMaxAge}${stale > 0 ? `, stale-while-revalidate=${stale}` : ""}`;
+ }
+--- a/web/lib/socialShare/types.ts
++++ b/web/lib/socialShare/types.ts
+@@ -105,6 +105,11 @@
+   state: ShareDataState;
+   reasons: string[];
+   players: SharePlayer[];
++  /**
++   * Live editions keep only the players their cards show for these selected dates; another day
++   * selection needs a refresh. Absent (fixtures) means the rows are not trimmed to one selection.
++   */
++  selectedDates?: string[] | null;
+ };
+ 
+ /** One skater's last-5 vs season windows from rolling_player_game_metrics (strength "all"). */
+--- a/web/components/SocialShare/SocialShare.tsx
++++ b/web/components/SocialShare/SocialShare.tsx
+@@ -6,7 +6,7 @@
+ import { mondayGridRows } from "lib/socialShare/mondayGrid";
+ import { easiestSchedules, opponentsReady, SOFT_DEFENSE_MAX, STREAM_TEAM_RANK_MAX, streamingNights, type MatchupGame } from "lib/socialShare/matchups";
+ import { deploymentChanges, hotCold, MIN_RATE_TOI_SECONDS_LAST5, MIN_TREND_SEASON_GAMES, moversReady, ownershipMovers, rateStandouts, TREND_WINDOW_GAMES, trendsReady, type RateMetric, type TrendPick } from "lib/socialShare/trends";
+-import { MIN_GOALIE_STARTS, MIN_SKATER_GAMES, PICKUP_BANDS, PLAYER_TEAM_RANK_MAX, pickupTiers, playersReady, specialists, type RankedPlayer, type SpecialistCategory } from "lib/socialShare/players";
++import { MIN_GOALIE_STARTS, MIN_SKATER_GAMES, PICKUP_BANDS, PLAYER_TEAM_RANK_MAX, pickupTiers, playersMatchSelection, playersReady, specialists, type RankedPlayer, type SpecialistCategory } from "lib/socialShare/players";
+ import styles from "./SocialShare.module.scss";
+ 
+ const labels: Record<SocialShareFormat, string> = {
+@@ -98,8 +98,20 @@
+   </>;
+ }
+ 
++/**
++ * Why an untrusted edition cannot rank, in the viewer's terms. On game days an edition is valid
++ * for 15 minutes (never past a puck drop), so "expired" is the common case; it was previously
++ * reported as a generic "not ready" (SS1-8 diagnosis).
++ */
++function scheduleReason(snapshot: SocialShareSnapshot) {
++  const reason = [...snapshot.reasons, ...snapshot.source.reasons][0]?.replace(/\.$/, "");
++  if (snapshot.state !== "ready" || snapshot.source.state !== "ready") return `the schedule edition is not ready (${snapshot.state}${reason ? `: ${reason}` : ""})`;
++  if (!snapshot.expiresAt || Date.parse(snapshot.expiresAt) <= Date.now()) return `the schedule edition expired at ${timeLabel(snapshot.expiresAt)}; refresh the schedule`;
++  return "the schedule edition is not ready (the last refresh failed or a different week is loaded; refresh the schedule)";
++}
++
+ function unreadyReason(snapshot: SocialShareSnapshot, trusted: boolean) {
+-  if (!trusted) return "the schedule edition is not ready";
++  if (!trusted) return scheduleReason(snapshot);
+   const opponents = snapshot.opponents;
+   return !opponents ? "opponent team ratings are unavailable" : `opponent team ratings are ${opponents.state}${opponents.reasons.length ? ` (${opponents.reasons[0].replace(/\.$/, "")})` : ""}`;
+ }
+@@ -174,8 +186,9 @@
+   : [player.pointsPerGame!.toFixed(2), "PTS/GP"];
+ 
+ function playerUnreadyReason(snapshot: SocialShareSnapshot, trusted: boolean) {
+-  if (!trusted) return "the schedule edition is not ready";
++  if (!trusted) return scheduleReason(snapshot);
+   const players = snapshot.players;
++  if (players?.state === "ready" && !playersMatchSelection(snapshot)) return "player rows were prepared for different days; refresh the schedule for this selection";
+   return !players ? "player ownership and season totals are not connected" : `player sources are ${players.state}${players.reasons.length ? ` (${players.reasons[0].replace(/\.$/, "")})` : ""}`;
+ }
+ 
+@@ -242,7 +255,7 @@
+   // An edition without a trend layer is "not connected" (the live API makes no read), never a schedule fault.
+   const trends = snapshot.trends;
+   if (!trends) return "rolling game metrics and ownership are not connected";
+-  if (!trusted) return "the schedule edition is not ready";
++  if (!trusted) return scheduleReason(snapshot);
+   const [state, reasons] = kind === "movers" ? [trends.moversState, trends.moversReasons] : [trends.state, trends.reasons];
+   return `${kind === "movers" ? "ownership" : "rolling metrics"} are ${state}${reasons.length ? ` (${reasons[0].replace(/\.$/, "")})` : ""}`;
+ }
+--- a/web/lib/socialShare/players.ts
++++ b/web/lib/socialShare/players.ts
+@@ -116,7 +116,10 @@
+   return { ...base, ownershipAsOf, statsUpdatedAt, state, reasons, players: players.sort((a, b) => a.nhlId - b.nhlId) };
+ }
+ 
+-export const playersReady = (snapshot: SocialShareSnapshot) => snapshot.players?.state === "ready";
++const sameDates = (a: string[], b: string[]) => a.length === b.length && a.every((date, i) => date === b[i]);
++/** True when the layer is ready and was prepared for the edition's current day selection. */
++export const playersMatchSelection = (snapshot: SocialShareSnapshot) => !snapshot.players?.selectedDates || sameDates(snapshot.players.selectedDates, snapshot.selectedDates);
++export const playersReady = (snapshot: SocialShareSnapshot) => snapshot.players?.state === "ready" && playersMatchSelection(snapshot);
+ 
+ export type RankedPlayer = SharePlayer & { weekRank: number; remainingGames: number; offNightGames: number };
+ function onTopTeams(snapshot: SocialShareSnapshot): RankedPlayer[] {
+@@ -151,6 +154,18 @@
+     [group, byGroup[group].filter(player => player.ownership >= band.min && player.ownership < band.max).slice(0, PLAYERS_PER_LIST)])) as PickupTier["groups"] }));
+ }
+ 
++/**
++ * Server-side: keep only the players the pickup and specialist cards show for this edition's
++ * selected dates, and record that selection. An unready layer keeps nobody, so no names leave it.
++ */
++export function trimPlayerLayer(snapshot: SocialShareSnapshot, layer: SharePlayerLayer): SharePlayerLayer {
++  const prepared = { ...layer, selectedDates: [...snapshot.selectedDates] };
++  if (layer.state !== "ready") return { ...prepared, players: [] };
++  const edition = { ...snapshot, players: prepared };
++  const shown = new Set([...pickupTiers(edition, true).flatMap(tier => Object.values(tier.groups).flat()), ...Object.values(specialists(edition, true)).flat()].map(player => player.nhlId));
++  return { ...prepared, players: layer.players.filter(player => shown.has(player.nhlId)) };
++}
++
+ export type SpecialistCategory = "hits" | "shots" | "blocks";
+ export type Specialist = RankedPlayer & { perGame: number };
+ /** Specialists: skaters under 50% rostered on top-10 Week Score teams, by season total ÷ games played. */
+--- a/web/lib/socialShare/players.test.ts
++++ b/web/lib/socialShare/players.test.ts
+@@ -132,6 +132,21 @@
+   });
+ });
+ 
++describe("live trimming and day selection", () => {
++  it("keeps only shown players for the prepared selection and needs a refresh for other days", async () => {
++    const { trimPlayerLayer, playersReady } = await import("./players");
++    const full = edition(), trimmed = { ...full, players: trimPlayerLayer(full, full.players!) };
++    expect(trimmed.players.selectedDates).toEqual(full.selectedDates);
++    expect(trimmed.players.players.length).toBeLessThanOrEqual(36);
++    expect(pickupTiers(trimmed, true)).toEqual(pickupTiers(full, true));
++    expect(specialists(trimmed, true)).toEqual(specialists(full, true));
++    const toggled = selectScheduleDates(trimmed, weekDates(weekStart).slice(2));
++    expect(playersReady(toggled)).toBe(false);
++    expect(pickupTiers(toggled, true)).toEqual([]);
++    expect(trimPlayerLayer(full, { ...full.players!, state: "stale" }).players).toEqual([]);
++  });
++});
++
+ describe("specialists", () => {
+   it("ranks under-50% skaters on top-10 teams by season total per game played", () => {
+     const board = specialists(edition(), true);
+--- /dev/null
++++ b/web/lib/socialShare/playerSources.ts
+@@ -0,0 +1,59 @@
++import publicSupabase from "lib/supabase/public-client";
++import { fetchAllSupabasePages } from "lib/supabase/pagination";
++import { PICKUP_YAHOO_TEAM_ALIASES, type PickupOwnershipRow } from "./pickupsFixture";
++import type { ShareGoalieRow, ShareMapRow, SharePlayerSources, ShareSkaterRow } from "./players";
++
++/** Explicit row ceilings: about 30–50 rows per team for ten teams, with headroom. Exceeding one fails closed. */
++export const PLAYER_SOURCE_LIMITS = { yahoo: 1000, mapChunk: 150, skaters: 800, goalies: 120 } as const;
++const YAHOO_COLUMNS = "player_key,player_id,editorial_team_abbreviation,display_position,eligible_positions,percent_ownership,status,season,last_updated";
++const SKATER_COLUMNS = "player_id,player_name,season,games_played,points_per_game,shots,hits,blocked_shots,current_team_abbreviation,updated_at";
++const GOALIE_COLUMNS = "goalie_id,goalie_name,season_id,games_played,games_started,quality_starts_pct,save_pct,current_team_abbreviation,updated_at";
++const NHL_TO_YAHOO = Object.fromEntries(Object.entries(PICKUP_YAHOO_TEAM_ALIASES).map(([yahoo, nhl]) => [nhl, yahoo]));
++
++type CountedPage<T> = PromiseLike<{ data: T[] | null; error: unknown; count: number | null }>;
++/** Exact-count, single-page read: a source larger than `limit` rows fails instead of paging on. */
++async function bounded<T>(what: string, limit: number, page: (from: number, to: number) => CountedPage<T>): Promise<T[]> {
++  let expected: number | null = null;
++  const rows = await fetchAllSupabasePages<T>(async ({ from, to }) => {
++    const { data, error, count } = await page(from, to);
++    if (!error) {
++      if (count == null || !Number.isFinite(count) || count < 0 || (expected != null && count !== expected)) throw new Error(`${what} completeness changed or is unavailable.`);
++      expected = count;
++    }
++    return { data, error };
++  }, { pageSize: limit, limit });
++  if (expected === null || rows.length !== expected) throw new Error(`${what} response was incomplete or over its ${limit}-row limit.`);
++  return rows;
++}
++
++/**
++ * Read-only anon reads for the pickup and specialist cards, filtered server-side to the edition's
++ * top Week Score teams. yahoo_players reads only current-season rows under 50% rostered and no
++ * ownership timelines; the existing yahoo_nhl_player_map_read view maps Yahoo ids to NHL ids.
++ */
++export async function loadSharePlayerSources(season: number, teams: string[]): Promise<SharePlayerSources> {
++  if (!teams.length) return { yahoo: [], map: [], skaters: [], goalies: [] };
++  const yahooSeason = Math.floor(season / 10000);
++  const yahooTeams = [...new Set(teams.flatMap(team => [team, NHL_TO_YAHOO[team]].filter((item): item is string => !!item)))];
++  const [yahoo, skaters, goalies] = await Promise.all([
++    bounded<PickupOwnershipRow>("Yahoo ownership", PLAYER_SOURCE_LIMITS.yahoo, (from, to) => publicSupabase.from("yahoo_players")
++      .select(YAHOO_COLUMNS, { count: "exact" }).eq("season", yahooSeason).lt("percent_ownership", 50).in("editorial_team_abbreviation", yahooTeams)
++      .order("player_key", { ascending: true }).range(from, to) as unknown as CountedPage<PickupOwnershipRow>),
++    bounded<ShareSkaterRow>("Skater season totals", PLAYER_SOURCE_LIMITS.skaters, (from, to) => publicSupabase.from("wgo_skater_stats_totals")
++      .select(SKATER_COLUMNS, { count: "exact" }).eq("season", String(season)).in("current_team_abbreviation", teams)
++      .order("player_id", { ascending: true }).range(from, to) as unknown as CountedPage<ShareSkaterRow>),
++    bounded<ShareGoalieRow>("Goalie season totals", PLAYER_SOURCE_LIMITS.goalies, (from, to) => publicSupabase.from("wgo_goalie_stats_totals")
++      .select(GOALIE_COLUMNS, { count: "exact" }).eq("season_id", season).in("current_team_abbreviation", teams)
++      .order("goalie_id", { ascending: true }).range(from, to) as unknown as CountedPage<ShareGoalieRow>),
++  ]);
++  // The view keys some rows by player_key and some by bare player_id; ask for both, in bounded chunks.
++  const ids = [...new Set(yahoo.flatMap(row => [row.player_key, row.player_id]).filter((id): id is string => !!id))];
++  const map: ShareMapRow[] = [];
++  for (let index = 0; index < ids.length; index += PLAYER_SOURCE_LIMITS.mapChunk) {
++    const chunk = ids.slice(index, index + PLAYER_SOURCE_LIMITS.mapChunk);
++    map.push(...await bounded<ShareMapRow>("Yahoo to NHL id map", chunk.length * 2, (from, to) => publicSupabase.from("yahoo_nhl_player_map_read")
++      .select("yahoo_player_id,nhl_player_id", { count: "exact" }).in("yahoo_player_id", chunk)
++      .order("yahoo_player_id", { ascending: true }).range(from, to) as unknown as CountedPage<ShareMapRow>));
++  }
++  return { yahoo, map, skaters, goalies };
++}
+--- /dev/null
++++ b/web/lib/socialShare/playerSources.test.ts
+@@ -0,0 +1,65 @@
++import { beforeEach, describe, expect, it, vi } from "vitest";
++
++// A fake anon client records every read; no Supabase request ever leaves this test.
++const source = vi.hoisted(() => ({ calls: [] as { table: string; columns: string; filters: [string, string, unknown][]; range: [number, number] }[], rows: {} as Record<string, Record<string, unknown>[]>, count: {} as Record<string, number | null> }));
++vi.mock("lib/supabase/public-client", () => ({
++  default: {
++    from: (table: string) => {
++      const call = { table, columns: "", filters: [] as [string, string, unknown][], range: [0, 0] as [number, number] };
++      const query = {
++        select: (columns: string) => { call.columns = columns; return query; },
++        eq: (column: string, value: unknown) => { call.filters.push(["eq", column, value]); return query; },
++        lt: (column: string, value: unknown) => { call.filters.push(["lt", column, value]); return query; },
++        in: (column: string, value: unknown) => { call.filters.push(["in", column, value]); return query; },
++        order: () => query,
++        range: async (from: number, to: number) => {
++          call.range = [from, to]; source.calls.push(call);
++          const all = table === "yahoo_nhl_player_map_read" ? (source.rows[table] ?? []).filter(row => (call.filters.find(item => item[0] === "in")![2] as string[]).includes(row.yahoo_player_id as string)) : source.rows[table] ?? [];
++          return { data: all.slice(from, to + 1), error: null, count: source.count[table] === undefined ? all.length : source.count[table] };
++        },
++      };
++      return query;
++    },
++  },
++}));
++import { loadSharePlayerSources, PLAYER_SOURCE_LIMITS } from "./playerSources";
++
++const yahoo = (id: number, team: string) => ({ player_key: `465.p.${id}`, player_id: String(id), editorial_team_abbreviation: team, percent_ownership: 20 });
++beforeEach(() => {
++  source.calls = []; source.count = {};
++  source.rows = {
++    yahoo_players: [yahoo(1, "NJ"), yahoo(2, "TOR")],
++    yahoo_nhl_player_map_read: [{ yahoo_player_id: "465.p.1", nhl_player_id: "8470001" }, { yahoo_player_id: "2", nhl_player_id: "8470002" }],
++    wgo_skater_stats_totals: [{ player_id: 8470001 }], wgo_goalie_stats_totals: [{ goalie_id: 8470002 }],
++  };
++});
++
++describe("live player source loader (mocked client)", () => {
++  it("filters server-side to the season, under-50% ownership and the edition's teams, with explicit limits", async () => {
++    const result = await loadSharePlayerSources(20262027, ["NJD", "TOR"]);
++    const call = (table: string) => source.calls.find(item => item.table === table)!;
++    expect(call("yahoo_players")).toMatchObject({ range: [0, PLAYER_SOURCE_LIMITS.yahoo - 1], filters: [["eq", "season", 2026], ["lt", "percent_ownership", 50], ["in", "editorial_team_abbreviation", ["NJD", "NJ", "TOR"]]] });
++    expect(call("yahoo_players").columns).not.toMatch(/ownership_timeline|player_name|injury_note|headshot/);
++    expect(call("wgo_skater_stats_totals")).toMatchObject({ range: [0, PLAYER_SOURCE_LIMITS.skaters - 1], filters: [["eq", "season", "20262027"], ["in", "current_team_abbreviation", ["NJD", "TOR"]]] });
++    expect(call("wgo_goalie_stats_totals")).toMatchObject({ range: [0, PLAYER_SOURCE_LIMITS.goalies - 1], filters: [["eq", "season_id", 20262027], ["in", "current_team_abbreviation", ["NJD", "TOR"]]] });
++    expect(call("yahoo_nhl_player_map_read")).toMatchObject({ columns: "yahoo_player_id,nhl_player_id", filters: [["in", "yahoo_player_id", ["465.p.1", "1", "465.p.2", "2"]]], range: [0, 7] });
++    expect(result.map).toHaveLength(2);
++    expect(source.calls).toHaveLength(4);
++  });
++
++  it("chunks the id map and fails closed when a source exceeds its limit", async () => {
++    source.rows.yahoo_players = Array.from({ length: 100 }, (_, i) => yahoo(i + 10, "TOR"));
++    await loadSharePlayerSources(20262027, ["TOR"]);
++    const chunks = source.calls.filter(item => item.table === "yahoo_nhl_player_map_read");
++    expect(chunks.map(item => (item.filters[0][2] as string[]).length)).toEqual([150, 50]);
++    source.count.yahoo_players = PLAYER_SOURCE_LIMITS.yahoo + 1;
++    await expect(loadSharePlayerSources(20262027, ["TOR"])).rejects.toThrow("over its 1000-row limit");
++    source.count = { wgo_goalie_stats_totals: null };
++    await expect(loadSharePlayerSources(20262027, ["TOR"])).rejects.toThrow("completeness");
++  });
++
++  it("makes no read without teams", async () => {
++    expect(await loadSharePlayerSources(20262027, [])).toEqual({ yahoo: [], map: [], skaters: [], goalies: [] });
++    expect(source.calls).toHaveLength(0);
++  });
++});

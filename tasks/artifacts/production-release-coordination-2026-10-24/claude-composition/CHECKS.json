@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-24T21:09:10.696576+00:00",
+  "snapshot": "/tmp/fhfh-claude-production-compose-vh5ae_ra",
+  "checks": [
+    {
+      "log": "focused-tests.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-claude-production-compose-vh5ae_ra/web/node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "/tmp/fhfh-claude-production-compose-vh5ae_ra/composition.vitest.config.mts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 5.84
+    }
+  ],
+  "source_integrity_matches": true,
+  "canonical_edits": 0,
+  "network": "Process preload refuses socket/fetch network; tests use mocked providers",
+  "servers": 0
+}

@@ -1,0 +1,66 @@
+[
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/deep-research-report.md",
+    "sha256": "2cdba9dab7def7bd101e78b4c54fc6ea9195ac732fb983f88803931b46297573",
+    "bytes": 22089,
+    "lines": 77,
+    "mtime_ns": 1785197963747477083,
+    "kind": "unique-task-document"
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-trends-audit.md",
+    "sha256": "5ecdf072650054e3ee00bee7109f5293f5406db5ed6a715f8c8480e357327695",
+    "bytes": 23842,
+    "lines": 445,
+    "mtime_ns": 1785605126580438591,
+    "kind": "unique-task-document"
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+    "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+    "bytes": 20679,
+    "lines": 381,
+    "mtime_ns": 1787933631275707503,
+    "kind": "unique-task-document"
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+    "sha256": "397987998667390b8161f6d268e99dba9c206ce66391e98dc4df97f636b8faac",
+    "bytes": 72814,
+    "lines": 352,
+    "mtime_ns": 1787932594714125169,
+    "kind": "unique-task-document"
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md",
+    "sha256": "de5c10b7b2dbce6e3a692da9e25914d6884bbc0b58b5277a951ea787ba6e5b2e",
+    "bytes": 8797,
+    "lines": 86,
+    "mtime_ns": 1785605126582484285,
+    "kind": "unique-task-document"
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+    "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+    "bytes": 42327,
+    "lines": 188,
+    "mtime_ns": 1787932560627448067,
+    "kind": "unique-task-document"
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-dependency-map.json",
+    "sha256": "3614e6e55913b6f12b9f7a4f4f9a4401742eb0e627bd4e64b5b067bd68da5375",
+    "bytes": 667393,
+    "lines": 21889,
+    "mtime_ns": 1785605126581632867,
+    "kind": "structured-evidence"
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-inventory.json",
+    "sha256": "dc7fa2f3a95444a04f2a30b9fefc8b228257d80f54824c8ca138da7e7bb859b4",
+    "bytes": 466521,
+    "lines": 14384,
+    "mtime_ns": 1785605126582261129,
+    "kind": "structured-evidence"
+  }
+]

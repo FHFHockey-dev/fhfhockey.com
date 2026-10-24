@@ -1,0 +1,29 @@
+{
+  "at": "2026-10-24T15:54:22.262762+00:00",
+  "canonical": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "ac006c547ed467ff29951bc56e4921a25c5c3ae5922362bcf1dbbbdfd622d488",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "538e4bd8230eff1b9cfb0d8613f5471216175f8b5d4f8d8b25ae1f1978a9582a",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "9dfd1bb0bb019ad140d42f0c811c5e6544ffc54e46d970f8fc9e2189c92f4c71"
+  },
+  "all206_ids_scopes_preserved": true,
+  "evidence_before_after": [
+    892,
+    902
+  ],
+  "new_ids": 0,
+  "changed_rows": 3,
+  "legacy_blocks_byte_identical_both_markdown": 32,
+  "coverage": {
+    "content-reviewed": 13,
+    "partially-inspected": 1
+  },
+  "findings_hash_line_validated": 23,
+  "library_version": 5,
+  "library_local_metadata_exit": 0,
+  "canonical_diff_check_exit": 0,
+  "canonical_write_pending": false,
+  "library_write_pending": false,
+  "overall_tree_audit_complete": false,
+  "next_cursor": "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+  "no_source_test_git_production_action": true
+}

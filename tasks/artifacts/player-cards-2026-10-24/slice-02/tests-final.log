@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run lib/player-cards/domain.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:61041) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-cards/domain.test.ts (19 tests) 12ms
+
+ Test Files  1 passed (1)
+      Tests  19 passed (19)
+   Start at  13:04:30
+   Duration  438ms (transform 39ms, setup 3ms, collect 43ms, tests 12ms, environment 169ms, prepare 36ms)
+

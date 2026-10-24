@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-23T15:47:32.655263+00:00",
+  "finding": "The old seven-card/10px-left-border oracle is obsolete relative to the retained released Release C tree. These exact labels and CSS rules are already present in that tree; this is not introduced by the current Yahoo or Grid changes.",
+  "baseline": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "metricsInBaselineAndCurrent": [
+    "\"Active games\"",
+    "\"Bench games\"",
+    "{rules.scoring.mode === \"categories\" ? \"Category outcomes\" : \"Projected points\"}"
+  ],
+  "identicalReleasedCssRules": [
+    ".metrics article { border: 1px solid v.$draft-border; border-radius: v.$radius-card; }",
+    ".metrics article::before { content: \"\"; position: absolute; inset: 0 auto 0 0; width: 4px; border-radius: v.$radius-card 0 0 v.$radius-card; background: var(--position-color); pointer-events: none; }",
+    ".rosterSummary .metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }"
+  ],
+  "canonicalHistory": {
+    "fourMetricCardsRemoved": "67e50ee4e03fcc5d84ebcd208a037d70b9e9c305",
+    "onePixelOutlineAndFourPixelPseudoAccent": "7f094c8e68be136ef72a6fb56c073dc2ba0d43b2",
+    "qualification": "These canonical commits are not ancestors of the separate release ref. Direct released file-content comparison, not ancestry, establishes the existing contract."
+  },
+  "sourceHashes": {
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "3d7e8ac4c48fe6decde41ef48ec8606af6ce58030586fea9e0ab50f4d277e803",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss": "2146ff48eb395978d485b692b91f87949b8efaf7c530e82f9b6ef3b20edd9f61"
+  },
+  "workerScope": "Test-only lease unchanged. Preserve original seven/10px failure receipt; assert three named current cards with released 1px outline/4px accent. Keep position-group left-band and numerical/workload/cancellation oracles. Rebind removed card assertions to present controls without changing values; report unavailable semantics rather than dropping coverage.",
+  "appEdits": 0,
+  "browserRuns": 0
+}

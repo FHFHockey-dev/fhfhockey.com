@@ -1,0 +1,122 @@
+diff --git a/web/pages/api/internal/yahoo-live-draft.ts b/web/pages/api/internal/yahoo-live-draft.ts
+index 1adf894a3..03ab50f5c 100644
+--- a/web/pages/api/internal/yahoo-live-draft.ts
++++ b/web/pages/api/internal/yahoo-live-draft.ts
+@@ -38,6 +38,23 @@ const auditedPoll = withCronJobAudit(async (_req: NextApiRequest, res: NextApiRe
+ }, { jobName: "/api/internal/yahoo-live-draft", recordRowMetrics: false,
+   responsePreviewKeys: ["cycles", "attempted", "succeeded", "failed", "error"] });
+ 
++// Disabled and off-season exits do no work, so most of them write no row. The
++// invocation in one fixed UTC minute records a heartbeat instead: about one row
++// a day showing the schedule still fires and which idle state it is in.
++function idleState() {
++  if (!isYahooLiveDraftEnabled()) return { disabled: true };
++  if (isYahooDraftBackgroundPollingSuspended()) {
++    return { suspended: true, resumesAt: YAHOO_DRAFT_BACKGROUND_RESUMES_AT };
++  }
++  return null;
++}
++
++const isIdleHeartbeatMinute = (now = new Date()) => now.getUTCHours() === 12 && now.getUTCMinutes() === 0;
++
++const auditedIdle = withCronJobAudit(async (_req: NextApiRequest, res: NextApiResponse) =>
++  res.status(200).json(idleState()), { jobName: "/api/internal/yahoo-live-draft", recordRowMetrics: false,
++  responsePreviewKeys: ["disabled", "suspended", "resumesAt"] });
++
+ export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+   res.setHeader("Cache-Control", "no-store");
+   if (req.method !== "GET") {
+@@ -49,9 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
+   if (req.headers.authorization !== `Bearer ${secret}`) {
+     return res.status(401).json({ error: "Unauthorized" });
+   }
+-  if (!isYahooLiveDraftEnabled()) return res.status(200).json({ disabled: true });
+-  if (isYahooDraftBackgroundPollingSuspended()) {
+-    return res.status(200).json({ suspended: true, resumesAt: YAHOO_DRAFT_BACKGROUND_RESUMES_AT });
+-  }
++  const idle = idleState();
++  if (idle) return isIdleHeartbeatMinute() ? auditedIdle(req, res) : res.status(200).json(idle);
+   return auditedPoll(req, res);
+ }
+diff --git a/web/__tests__/pages/api/internal/yahoo-live-draft.test.ts b/web/__tests__/pages/api/internal/yahoo-live-draft.test.ts
+index 394ae126a..32a3eb5ad 100644
+--- a/web/__tests__/pages/api/internal/yahoo-live-draft.test.ts
++++ b/web/__tests__/pages/api/internal/yahoo-live-draft.test.ts
+@@ -140,6 +140,57 @@ describe("Yahoo production scheduler", () => {
+     expect(mocks.auditInsert).toHaveBeenCalledTimes(1);
+     error.mockRestore();
+   });
++  describe("idle heartbeat", () => {
++    const suspendedBody = { suspended: true, resumesAt: "2027-08-01T00:00:00-04:00" };
++    it.each([
++      { name: "suspended", at: "2027-07-15T12:00:30Z", enabled: "true", body: suspendedBody },
++      { name: "disabled", at: "2027-08-15T12:00:00Z", enabled: "false", body: { disabled: true } },
++    ])("records one bounded $name row in the 12:00 UTC minute", async ({ at, enabled, body }) => {
++      vi.setSystemTime(new Date(at));
++      vi.stubEnv("YAHOO_LIVE_DRAFT_ENABLED", enabled);
++      const res = response();
++      await handler(request() as any, res as any);
++      expect(res.status).toHaveBeenCalledWith(200);
++      expect(res.sent).toHaveBeenCalledExactlyOnceWith(body);
++      const row = auditRow();
++      expect(row).toMatchObject({ job_name: "/api/internal/yahoo-live-draft", status: "success", rows_affected: null,
++        details: { statusCode: 200, rowsUpserted: null, failedRows: null, error: null } });
++      expect(JSON.parse(row.details.response)).toEqual(body);
++      expect(mocks.limit).not.toHaveBeenCalled();
++      expect(mocks.run).not.toHaveBeenCalled();
++    });
++    it.each(["2027-07-15T11:59:59.999Z", "2027-07-15T12:01:00Z"])("writes no idle row outside the heartbeat minute (%s)", async (at) => {
++      vi.setSystemTime(new Date(at));
++      const res = response();
++      await handler(request() as any, res as any);
++      expect(res.sent).toHaveBeenCalledExactlyOnceWith(suspendedBody);
++      expect(mocks.auditInsert).not.toHaveBeenCalled();
++    });
++    it("keeps denied and unconfigured calls unaudited in the heartbeat minute", async () => {
++      vi.setSystemTime(new Date("2027-07-15T12:00:00Z"));
++      await handler(request("wrong") as any, response() as any);
++      vi.stubEnv("CRON_SECRET", "");
++      await handler(request() as any, response() as any);
++      expect(mocks.auditInsert).not.toHaveBeenCalled();
++    });
++    it("writes only the poll row when an active run lands in the heartbeat minute", async () => {
++      vi.setSystemTime(new Date("2027-08-15T12:00:00Z"));
++      const res = response();
++      await handler(request() as any, res as any);
++      expect(res.sent).toHaveBeenCalledExactlyOnceWith({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
++      expect(JSON.parse(auditRow().details.response)).toEqual({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
++    });
++    it("still answers when the heartbeat insert fails", async () => {
++      vi.setSystemTime(new Date("2027-07-15T12:00:00Z"));
++      mocks.auditInsert.mockResolvedValue({ error: { message: "audit unavailable" } });
++      const error = vi.spyOn(console, "error").mockImplementation(() => {});
++      const res = response();
++      await handler(request() as any, res as any);
++      expect(res.sent).toHaveBeenCalledExactlyOnceWith(suspendedBody);
++      expect(mocks.auditInsert).toHaveBeenCalledTimes(1);
++      error.mockRestore();
++    });
++  });
+   it("makes no network request at import or during a run", () => {
+     expect(mocks.network.requests).toBe(0);
+   });
+diff --git a/web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts b/web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts
+index 624a7f516..046e72dca 100644
+--- a/web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts
++++ b/web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts
+@@ -179,13 +179,14 @@ describe("Vercel cron static source coverage", () => {
+   });
+ 
+   // 2026-10-24 (C5): yahoo-live-draft returns a withCronJobAudit delegate after
+-  // its exact secret prefix and no-op enabled/suspended exits, but the shared
++  // its exact secret prefix (plus a daily idle-heartbeat delegate), but the shared
+   // classifier reviews delegates only for espn/fantrax/patreon. It stays
+   // unqualified until that owner adds a reviewed yahoo form; no exemption.
+   it("keeps yahoo-live-draft's runtime audit delegate statically unqualified", () => {
+     const route = "/api/internal/yahoo-live-draft";
+     const source = fs.readFileSync(path.resolve(webRoot, `pages${route}.ts`), "utf8");
+     expect(source).toContain("const auditedPoll = withCronJobAudit(");
++    expect(source).toContain("const auditedIdle = withCronJobAudit(");
+     expect(source).toContain("  return auditedPoll(req, res);\n}");
+     expect(classifyVercelCronSource(source, route)).toMatchObject({ authMode: "cron-secret-only", auditMode: "unqualified" });
+   });

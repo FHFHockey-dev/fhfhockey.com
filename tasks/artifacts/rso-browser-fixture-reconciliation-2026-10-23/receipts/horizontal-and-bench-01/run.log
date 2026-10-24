@@ -1,0 +1,46 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1901:5 › compact day and bench controls preserve saved intent and keyboard selection
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1901:5 › compact day and bench controls preserve saved intent and keyboard selection 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveAttribute[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByRole('slider', { name: 'Selected planning day' })
+    Expected: [32m"Wed, Oct 7"[39m
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveAttribute" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('slider', { name: 'Selected planning day' })[22m
+
+
+      1981 |   await showScheduleView(page, "player");
+      1982 |   await expect(bench).toHaveAttribute("aria-expanded", "false");
+    > 1983 |   await expect(slider).toHaveAttribute("aria-valuetext", dates[2]);
+           |                        ^
+      1984 |   await bench.focus();
+      1985 |   await page.keyboard.press("Enter"); await expect(bench).toHaveAttribute("aria-expanded", "true");
+      1986 |   await expect(table.locator('tbody[data-position="BENCH"] tr[data-player-id]:visible')).toHaveCount(6);
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1983:24
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../horizontal-and-bench-01/results/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../horizontal-and-bench-01/results/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../horizontal-and-bench-01/results/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../horizontal-and-bench-01/results/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:2003:32 › compact short desktop and mobile retain rows, day state, reserves and unknown goalie status
+[1A[2K  1 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1901:5 › compact day and bench controls preserve saved intent and keyboard selection 
+  1 passed (27.8s)

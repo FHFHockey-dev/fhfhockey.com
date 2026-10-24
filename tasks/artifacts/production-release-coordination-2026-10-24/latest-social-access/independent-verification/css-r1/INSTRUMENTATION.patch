@@ -1,0 +1,15 @@
+--- release spec
++++ diagnostic only spec
+@@ -839,6 +839,12 @@
+       if (tier.more) await expect(block).toContainText(`+${tier.more} more`);
+       await expect(block.locator("[data-player]").first()).toContainText("L5 GP");
+     }
++    console.info("tier_geometry_measurements", JSON.stringify({ mode, ...(await square.evaluate(node => {
++      const box = node as HTMLElement, frame = box.getBoundingClientRect();
++      const footer = box.querySelector("footer")!.getBoundingClientRect();
++      const rows = Array.from(box.querySelectorAll<HTMLElement>("[data-player]"));
++      return { offsetWidth: box.offsetWidth, offsetHeight: box.offsetHeight, scrollWidth: box.scrollWidth, scrollHeight: box.scrollHeight, frameWidth: frame.width, frameHeight: frame.height, playerRows: rows.length, maxPlayerRightBeyondFrame: Math.max(...rows.map(row => row.getBoundingClientRect().right)) - frame.right, maxPlayerBottomBeyondFooter: Math.max(...rows.map(row => row.getBoundingClientRect().bottom)) - footer.top, logoWidths: Array.from(box.querySelectorAll<HTMLElement>('[class*="tierLogos"] img')).map(image => image.getBoundingClientRect().width) };
++    })) }));
+     expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
+     await expect(download).toBeEnabled();
+     await downloadedPng(page, `streaming-tiers-${mode}`);

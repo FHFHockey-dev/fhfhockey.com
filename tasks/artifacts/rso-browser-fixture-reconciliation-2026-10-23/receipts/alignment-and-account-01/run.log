@@ -1,0 +1,126 @@
+
+Running 6 tests using 1 worker
+
+[1A[2K[1/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:960:5 › connected refresh and account save preserve forecast permissions and exclusions
+[1A[2K[2/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1901:5 › compact day and bench controls preserve saved intent and keyboard selection
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1901:5 › compact day and bench controls preserve saved intent and keyboard selection 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/Past lineup unverified · GP/)
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByText(/Past lineup unverified · GP/)[22m
+
+
+      1951 |   await monday.focus(); await page.keyboard.press("Enter");
+      1952 |   await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 5");
+    > 1953 |   await expect(page.getByText(/Past lineup unverified · GP/)).toBeVisible();
+           |                                                               ^
+      1954 |   await expect(page.getByRole("table", { name: "Individual player weekly schedule" }).getByRole("rowheader", { name: /Pending C/ }).first()).toBeVisible();
+      1955 |   await page.keyboard.press("ArrowRight"); await expect(slider).toHaveAttribute("aria-valuetext", dates[0]);
+      1956 |   await page.screenshot({ path: testInfo.outputPath("compact-date-focus.png") });
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1953:63
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../alignment-and-account-01/results/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../alignment-and-account-01/results/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../alignment-and-account-01/results/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../alignment-and-account-01/results/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:2001:32 › compact short desktop and mobile retain rows, day state, reserves and unknown goalie status
+[1A[2K  2) [chromium] › e2e/roster-schedule-optimizer.spec.ts:2001:32 › compact short desktop and mobile retain rows, day state, reserves and unknown goalie status 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeLessThanOrEqual[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: <= [32m1[39m
+    Received:    [31m120.0078125[39m
+
+      1726 |     if (observation.delta > 1) await writeFile(test.info().outputPath("slider-alignment-failure.json"), JSON.stringify(observation, null, 2));
+      1727 |   }
+    > 1728 |   expect(Math.abs(thumbCenter - headerCenter)).toBeLessThanOrEqual(1);
+           |                                                ^
+      1729 | }
+      1730 |
+      1731 | for (const count of [19, 20, 29]) test(`compact layout accounts for ${count} slots with a maximum of 20 slot rows and internal labels`, async ({ page }, testInfo) => {
+        at expectDaySliderAligned (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1728:48)
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2022:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../alignment-and-account-01/results/roster-schedule-optimizer--efc74-s-and-unknown-goalie-status-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../alignment-and-account-01/results/roster-schedule-optimizer--efc74-s-and-unknown-goalie-status-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../alignment-and-account-01/results/roster-schedule-optimizer--efc74-s-and-unknown-goalie-status-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../alignment-and-account-01/results/roster-schedule-optimizer--efc74-s-and-unknown-goalie-status-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[4/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:2058:50 › compact future and partial weeks use league dates and retain the full horizon without saving
+[1A[2K[5/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:2124:5 › compact initial future week defaults to Monday and preserves clipped horizons
+[1A[2K[6/6] [chromium] › e2e/roster-schedule-optimizer.spec.ts:2238:32 › compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile
+[1A[2K  3) [chromium] › e2e/roster-schedule-optimizer.spec.ts:2238:32 › compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText(/Planning data is temporarily unavailable. Your saved manual workspace is preserved/)
+    Expected: visible
+    Error: strict mode violation: getByText(/Planning data is temporarily unavailable. Your saved manual workspace is preserved/) resolved to 5 elements:
+        1) <div role="status" class="RosterScheduleOptimizer_notice__Jc5Ct">Planning data is temporarily unavailable. Your sa…</div> aka getByLabel('Planning command bar').getByText('Planning data is temporarily')
+        2) <p aria-live="polite">Planning data is temporarily unavailable. Your sa…</p> aka getByLabel('Candidate browser').getByText('Planning data is temporarily')
+        3) <p class="RosterScheduleOptimizer_evidence___LRJ5">forecasts: unknown · Planning data is temporarily…</p> aka getByText('forecasts: unknown · Planning')
+        4) <p class="RosterScheduleOptimizer_evidence___LRJ5">baselines: unknown · Planning data is temporarily…</p> aka getByText('baselines: unknown · Planning')
+        5) <p class="RosterScheduleOptimizer_evidence___LRJ5">participation: unknown · Planning data is tempora…</p> aka getByText('participation: unknown ·')
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByText(/Planning data is temporarily unavailable. Your saved manual workspace is preserved/)[22m
+
+
+      2300 |   await page.reload();
+      2301 |   await openCompactControls(page);
+    > 2302 |   await expect(page.getByText(/Planning data is temporarily unavailable. Your saved manual workspace is preserved/)).toBeVisible();
+           |                                                                                                                      ^
+      2303 |   await expect(table.locator('[data-player-id]')).toHaveCount(20);
+      2304 |   await expect(summary.getByText("Roster games").locator("..")).toHaveText("Roster gamesUnknown");
+      2305 |   await expect(summary.getByText("NHL games").locator("..")).toHaveText("NHL gamesUnknown");
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2302:118
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../alignment-and-account-01/results/roster-schedule-optimizer--9642a-tates-on-desktop-and-mobile-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../alignment-and-account-01/results/roster-schedule-optimizer--9642a-tates-on-desktop-and-mobile-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../alignment-and-account-01/results/roster-schedule-optimizer--9642a-tates-on-desktop-and-mobile-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../alignment-and-account-01/results/roster-schedule-optimizer--9642a-tates-on-desktop-and-mobile-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  3 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1901:5 › compact day and bench controls preserve saved intent and keyboard selection 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:2001:32 › compact short desktop and mobile retain rows, day state, reserves and unknown goalie status 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:2238:32 › compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile 
+  3 passed (43.7s)

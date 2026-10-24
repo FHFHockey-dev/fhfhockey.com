@@ -1,0 +1,86 @@
+{
+  "at": "2026-10-24T17:01:16.141487+00:00",
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "97fc641537a2ddc53f74abb58140cb441a8c924204eb412e211271d139e36cc4",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "71ee25872ab27ca866b904e8da6779a44a942421f0da942ec8417ba2c88286e2",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "20ff17124d74b2c107d10e4106fc0f34f39190a22bd9a7c3c1524a5dd54b6ac4"
+  },
+  "library_version": 7,
+  "ids": 207,
+  "evidence": 955,
+  "selected": [
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+      "bytes": 88067,
+      "lines": 274,
+      "sha256": "89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0",
+      "chunks": [
+        [
+          1,
+          93,
+          16200
+        ],
+        [
+          94,
+          129,
+          15803
+        ],
+        [
+          130,
+          166,
+          16062
+        ],
+        [
+          167,
+          213,
+          16453
+        ],
+        [
+          214,
+          252,
+          16323
+        ],
+        [
+          253,
+          274,
+          7150
+        ]
+      ]
+    },
+    {
+      "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+      "bytes": 74419,
+      "lines": 185,
+      "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+      "chunks": [
+        [
+          1,
+          80,
+          16330
+        ],
+        [
+          81,
+          111,
+          15939
+        ],
+        [
+          112,
+          134,
+          16417
+        ],
+        [
+          135,
+          160,
+          16311
+        ],
+        [
+          161,
+          185,
+          9186
+        ]
+      ]
+    }
+  ],
+  "scope": "Same sole worker: complete paired unique task reads and substantive next batch, no application/Git/production actions. Metadata disposition distinct from full content and from genuinely pending unique documents.",
+  "owner_steers": "WiGO independent75checks/46pins plus parent acceptance with limits; no refresh/backfill. Player-card01 independent review ongoing. TestingGrounds05 P2 hidden-token-refresh remount under correction; owner activation blocked,0/1approved auth reads used. No status-only Library replacement."
+}

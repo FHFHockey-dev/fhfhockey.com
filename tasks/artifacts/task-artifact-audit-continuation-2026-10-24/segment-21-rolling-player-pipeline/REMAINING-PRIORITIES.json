@@ -1,0 +1,59 @@
+{
+  "at": "2026-10-24T20:17:05.178144+00:00",
+  "tentative_unique_text_candidates": 1606,
+  "not_all_are_substantive": true,
+  "next_family": [
+    "tasks/TASKS/lines-ccc-ingestion/prd-lines-ccc-ingestion.md",
+    "tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md",
+    "tasks/TASKS/lines-gdl-ingestion/prd/prd-gdl-suite-ingestion.md",
+    "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "tasks/TASKS/lines-gdl-ingestion/GDL-INGESTION-RUNBOOK.md"
+  ],
+  "historical_notes_partial": {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md",
+    "sha256": "56d54c886d3aeebb2aabb73ba30e449378166a57d086a1821dd8b75d6eff7a1c",
+    "bytes": 208717,
+    "lines": 7129,
+    "mtime_ns": 1787193730196504632,
+    "coverage": "partially-inspected",
+    "reviewed_ranges": [
+      [
+        2085,
+        2222
+      ],
+      [
+        2608,
+        3086
+      ],
+      [
+        7117,
+        7129
+      ]
+    ],
+    "structural_scope": "All level-two headings indexed; selected complete status/remediation/completeness sections and authorization tail read. No every-row/generated/formula/log review claimed.",
+    "review_scope": "Historical predecessor working notes: selected substantive sections only. Remaining prose/field lists/live examples unreviewed; later fully read initial/remediation/blueprint/pass2 task and decision documents govern current dispositions.",
+    "unreviewed_ranges": [
+      [
+        1,
+        2084
+      ],
+      [
+        2223,
+        2607
+      ],
+      [
+        3087,
+        7116
+      ]
+    ],
+    "continuation_priority": "Lower-value historical precursor; retain exact remaining body, no blanket completion."
+  },
+  "priority_rules": [
+    "Unique current tasklists/PRDs/owner decisions and contradictory closure receipts first.",
+    "Prior full cron decisions reused at exact hashes; do not repeat them without advancement.",
+    "Historical March field inventories/test logs/family receipts remain mapped support. Do not read every unchanged log as a new task source.",
+    "The long first-pass notes file is substantive historical prose and partially read, not a generated-file full-coverage claim.",
+    "Advanced live coordination is unreviewed unless an exact later read is recorded."
+  ]
+}

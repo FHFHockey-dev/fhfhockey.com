@@ -147,4 +147,12 @@ describe("playerOwnership", () => {
     clearClientFetchCache();
     expect(await fetchOwnershipSnapshotMap([12], "2026-03-14")).toEqual({ 12: null });
   });
+
+  it("retains the trend fallback when the snapshot has no observation rather than an ambiguous identity", async () => {
+    vi.stubGlobal("fetch", vi.fn(async (input: RequestInfo | URL) => jsonResponse(String(input).includes("ownership-snapshots") ? {
+      success: true, players: [{ playerId: 12, ownership: null, observedOn: null }]
+    } : { success: true, selectedPlayers: [{ playerId: 12, latest: 60, delta: 10, sparkline: [{ date: "2026-03-09", value: 50 }, { date: "2026-03-14", value: 60 }] }] })));
+    expect((await fetchOwnershipContextMap([12], "2026-03-14"))[12]).toMatchObject({ ownership: 60, delta: 10,
+      ownershipEvidence: { value: 60, observedOn: "2026-03-14", status: "fresh" } });
+  });
 });

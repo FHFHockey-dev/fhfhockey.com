@@ -1,0 +1,1398 @@
+diff --git a/web/components/LineCombinations/LineCombinationsGrid.tsx b/web/components/LineCombinations/LineCombinationsGrid.tsx
+index 49476dd56..2732603e1 100644
+--- a/web/components/LineCombinations/LineCombinationsGrid.tsx
++++ b/web/components/LineCombinations/LineCombinationsGrid.tsx
+@@ -17,16 +17,16 @@ export function LineCombinationsGrid({
+   playerMap,
+   cardClassName = ""
+ }: LineCombinationsGridProps) {
+-  // Handle 11F/7D case: put D7 in C4 (12th forward spot)
+-  let displayForwards = [...forwards];
+-  let displayDefensemen = [...defensemen];
+-  if (forwards.length === 11 && defensemen.length === 7) {
+-    displayForwards = [...forwards, defensemen[6]]; // 12th spot is D7
+-    displayDefensemen = defensemen.slice(0, 6); // Only first 6 D
+-  } else {
+-    displayForwards = forwards.slice(0, 12);
+-    displayDefensemen = defensemen.slice(0, 6);
+-  }
++  // Dressed skaters beyond 12F/6D fill the other group's open slots, e.g.
++  // 11F/7D puts D7 in C4 and 13F/5D puts F13 in E3, so nobody is dropped.
++  const displayForwards = [
++    ...forwards.slice(0, 12),
++    ...defensemen.slice(6)
++  ].slice(0, 12);
++  const displayDefensemen = [
++    ...defensemen.slice(0, 6),
++    ...forwards.slice(12)
++  ].slice(0, 6);
+   const displayGoalies = goalies.slice(0, 2);
+ 
+   // Helper to assign LW/C/RW for a line of 3 forwards
+diff --git a/web/components/ShotVisualization/ShotVisualization.tsx b/web/components/ShotVisualization/ShotVisualization.tsx
+index 975d319a1..6ac7b9966 100644
+--- a/web/components/ShotVisualization/ShotVisualization.tsx
++++ b/web/components/ShotVisualization/ShotVisualization.tsx
+@@ -16,10 +16,34 @@ import * as d3 from "d3";
+ import { hexbin as d3Hexbin, HexbinBin } from "d3-hexbin";
+ import { teamsInfo } from "lib/teamsInfo";
+ 
++const DEFAULT_EVENT_TYPES = ["goal", "shot-on-goal"];
++const DEFAULT_GAME_TYPES = [GAME_TYPES.REGULAR_SEASON];
++
++const sameSelection = (a: string[], b: string[]) =>
++  a.length === b.length && a.every((value) => b.includes(value));
++
++// Play-by-play records goals apart from "shot-on-goal" (saved) events, so
++// shots on goal are both together. Without saved shots a percentage is unknown.
++function shotSummary(shotData: ShotData[]) {
++  const goalCount = shotData.filter((d) => d.typedesckey === "goal").length;
++  const savedCount = shotData.filter(
++    (d) => d.typedesckey === "shot-on-goal"
++  ).length;
++  const shotCount = goalCount + savedCount;
++  return {
++    eventCount: shotData.length,
++    goalCount,
++    shotCount: savedCount > 0 ? shotCount : null,
++    shootingPct:
++      savedCount > 0 ? ((goalCount / shotCount) * 100).toFixed(1) : null
++  };
++}
++
+ interface ShotVisualizationProps {
+   shotData: ShotData[];
+   opponentShotData?: ShotData[];
+   isLoading: boolean;
++  error?: Error | null;
+   onFilterChange?: (filters: ShotDataFilters) => void;
+   filters?: ShotDataFilters;
+   teamAbbreviation?: string;
+@@ -34,10 +58,11 @@ export function ShotVisualization({
+   shotData,
+   opponentShotData = [],
+   isLoading,
++  error,
+   onFilterChange,
+   filters = {
+-    eventTypes: ["goal", "shot-on-goal"],
+-    gameTypes: [GAME_TYPES.REGULAR_SEASON]
++    eventTypes: DEFAULT_EVENT_TYPES,
++    gameTypes: DEFAULT_GAME_TYPES
+   },
+   teamAbbreviation,
+   alwaysShowOpponentLegend = false
+@@ -59,10 +84,10 @@ export function ShotVisualization({
+ 
+   // Track selected event types and game types
+   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>(
+-    filters.eventTypes || ["goal", "shot-on-goal"]
++    filters.eventTypes || DEFAULT_EVENT_TYPES
+   );
+   const [selectedGameTypes, setSelectedGameTypes] = useState<string[]>(
+-    filters.gameTypes || [GAME_TYPES.REGULAR_SEASON]
++    filters.gameTypes || DEFAULT_GAME_TYPES
+   );
+ 
+   // Reset legends state when key changes
+@@ -146,94 +171,117 @@ export function ShotVisualization({
+     }
+   };
+ 
+-  if (isLoading) {
+-    return (
+-      <div
+-        style={{
+-          display: "flex",
+-          justifyContent: "center",
+-          alignItems: "center",
+-          height: "100%",
+-          minHeight: "300px"
+-        }}
+-      >
+-        Loading shot data...
+-      </div>
+-    );
+-  }
++  const handleReset = () => {
++    setSelectedEventTypes(DEFAULT_EVENT_TYPES);
++    setSelectedGameTypes(DEFAULT_GAME_TYPES);
++    onFilterChange?.({
++      ...filters,
++      eventTypes: DEFAULT_EVENT_TYPES,
++      gameTypes: DEFAULT_GAME_TYPES
++    });
++  };
++  const isDefaultSelection =
++    sameSelection(selectedEventTypes, DEFAULT_EVENT_TYPES) &&
++    sameSelection(selectedGameTypes, DEFAULT_GAME_TYPES);
++
++  // Filters stay mounted through loading, empty and error states so a
++  // selection can always be changed or reset.
++  const statusMessage = isLoading
++    ? "Loading shot data..."
++    : error
++      ? `Unable to load event data: ${error.message}`
++      : selectedEventTypes.length === 0 || selectedGameTypes.length === 0
++        ? "Select at least one event type and one game type."
++        : shotData.length === 0 && opponentShotData.length === 0
++          ? "No event data available for the selected filters"
++          : null;
+ 
+   return (
+     <div className={styles.shotVisualizationContainer}>
+-      {shotData.length === 0 ? (
+-        <div
+-          style={{
+-            display: "flex",
+-            justifyContent: "center",
+-            alignItems: "center",
+-            height: "100%",
+-            width: "100%",
+-            minHeight: "300px"
+-          }}
+-        >
+-          No event data available for the selected filters
++      {/* Left side: Control panel */}
++      <div className={styles.controlPanel}>
++        {/* Filter controls */}
++        <div className={styles.filterControls}>
++          <div className={styles.filterGroup}>
++            <label htmlFor="eventTypeFilter">Event Types:</label>
++            <select
++              id="eventTypeFilter"
++              multiple
++              value={selectedEventTypes}
++              onChange={handleEventTypeChange}
++              className={styles.filterSelect}
++            >
++              {EVENT_TYPES.map((eventType) => (
++                <option key={eventType} value={eventType}>
++                  {eventTypeLabels[eventType] || eventType}
++                </option>
++              ))}
++            </select>
++            <small>Hold Ctrl/Cmd to select multiple</small>
++          </div>
++
++          <div className={styles.filterGroup}>
++            <label htmlFor="gameTypeFilter">Game Types:</label>
++            <select
++              id="gameTypeFilter"
++              multiple
++              value={selectedGameTypes}
++              onChange={handleGameTypeChange}
++              className={styles.filterSelect}
++            >
++              {Object.entries(GAME_TYPES).map(([key, value]) => (
++                <option key={value} value={value}>
++                  {gameTypeLabels[value] || key}
++                </option>
++              ))}
++            </select>
++            <small>Hold Ctrl/Cmd to select multiple</small>
++          </div>
++
++          <button
++            type="button"
++            className={styles.showMoreSeasonsButton}
++            onClick={handleReset}
++            disabled={isDefaultSelection}
++          >
++            Reset filters
++          </button>
+         </div>
+-      ) : (
+-        <>
+-          {/* Left side: Control panel */}
+-          <div className={styles.controlPanel}>
+-            {/* Filter controls */}
+-            <div className={styles.filterControls}>
+-              <div className={styles.filterGroup}>
+-                <label htmlFor="eventTypeFilter">Event Types:</label>
+-                <select
+-                  id="eventTypeFilter"
+-                  multiple
+-                  value={selectedEventTypes}
+-                  onChange={handleEventTypeChange}
+-                  className={styles.filterSelect}
+-                >
+-                  {EVENT_TYPES.map((eventType) => (
+-                    <option key={eventType} value={eventType}>
+-                      {eventTypeLabels[eventType] || eventType}
+-                    </option>
+-                  ))}
+-                </select>
+-                <small>Hold Ctrl/Cmd to select multiple</small>
+-              </div>
+ 
+-              <div className={styles.filterGroup}>
+-                <label htmlFor="gameTypeFilter">Game Types:</label>
+-                <select
+-                  id="gameTypeFilter"
+-                  multiple
+-                  value={selectedGameTypes}
+-                  onChange={handleGameTypeChange}
+-                  className={styles.filterSelect}
+-                >
+-                  {Object.entries(GAME_TYPES).map(([key, value]) => (
+-                    <option key={value} value={value}>
+-                      {gameTypeLabels[value] || key}
+-                    </option>
+-                  ))}
+-                </select>
+-                <small>Hold Ctrl/Cmd to select multiple</small>
+-              </div>
+-            </div>
++        {/* InnerShotVisualizationControls will receive and render the legends and stats */}
++        {!statusMessage && (
++          <InnerShotVisualizationControls
++            key={`controls-${key}`}
++            shotData={shotData}
++            opponentShotData={opponentShotData}
++            scaleValues={{
++              team: teamScaleValues,
++              opponent: { min: 0, mid: 0, max: 0 }
++            }}
++            legendsReady={legendsReady}
++            alwaysShowLegend={alwaysShowOpponentLegend}
++          />
++        )}
++      </div>
+ 
+-            {/* InnerShotVisualizationControls will receive and render the legends and stats */}
+-            <InnerShotVisualizationControls
+-              key={`controls-${key}`}
+-              shotData={shotData}
+-              opponentShotData={opponentShotData}
+-              scaleValues={{
+-                team: teamScaleValues,
+-                opponent: { min: 0, mid: 0, max: 0 }
+-              }}
+-              legendsReady={legendsReady}
+-              alwaysShowLegend={alwaysShowOpponentLegend}
+-            />
++      {statusMessage ? (
++        <div className={styles.rinksSideBySide}>
++          <div
++            role={error && !isLoading ? "alert" : "status"}
++            style={{
++              display: "flex",
++              justifyContent: "center",
++              alignItems: "center",
++              height: "100%",
++              width: "100%",
++              minHeight: "300px"
++            }}
++          >
++            {statusMessage}
+           </div>
+-
++        </div>
++      ) : (
++        <>
+           {/* Right side: Rink visualization */}
+           <div className={styles.rinksSideBySide}>
+             {/* My Team Half Rink */}
+@@ -293,11 +341,7 @@ function InnerShotVisualization({
+   side: string;
+ }) {
+   const containerRef = useRef<HTMLDivElement>(null);
+-  const [stats, setStats] = useState({
+-    eventCount: 0,
+-    goalCount: 0,
+-    shootingPct: "0.0"
+-  });
++  const [stats, setStats] = useState(() => shotSummary([]));
+ 
+   // Store bin maps and max values for sharing with control panel
+   const [binMap, setBinMap] = useState<Map<string, number>>(new Map());
+@@ -341,18 +385,7 @@ function InnerShotVisualization({
+     const rinkWidth = 85;
+ 
+     // Calculate event statistics
+-    const goals = shotData.filter((d) => d.typedesckey === "goal");
+-    const shots = shotData.filter((d) => d.typedesckey === "shot-on-goal");
+-
+-    const goalCount = goals.length;
+-    const shotCount = shots.length;
+-    const eventCount = shotData.length;
+-
+-    // Calculate shooting percentage if we have both shots and goals
+-    const shootingPct =
+-      shotCount > 0 ? ((goalCount / shotCount) * 100).toFixed(1) : "0.0";
+-
+-    setStats({ eventCount, goalCount, shootingPct });
++    setStats(shotSummary(shotData));
+ 
+     // For vertical orientation, we swap x and y coordinates and transform accordingly
+     // For half-rink, we want all shots attacking toward the bottom (offensive zone at the bottom)
+@@ -494,14 +527,14 @@ function InnerShotVisualization({
+           Total Events: {stats.eventCount}
+         </p>
+         {stats.goalCount > 0 && (
+-          <>
+-            <p style={{ margin: "5px 0", fontWeight: "bold" }}>
+-              Goals: {stats.goalCount}
+-            </p>
+-            <p style={{ margin: "5px 0", fontWeight: "bold" }}>
+-              Shooting %: {stats.shootingPct}%
+-            </p>
+-          </>
++          <p style={{ margin: "5px 0", fontWeight: "bold" }}>
++            Goals: {stats.goalCount}
++          </p>
++        )}
++        {stats.shootingPct !== null && (
++          <p style={{ margin: "5px 0", fontWeight: "bold" }}>
++            Shooting %: {stats.shootingPct}%
++          </p>
+         )}
+       </div>
+     </div>
+@@ -527,12 +560,7 @@ function InnerShotVisualizationControls({
+   legendsReady: boolean;
+   alwaysShowLegend?: boolean;
+ }) {
+-  const [stats, setStats] = useState({
+-    eventCount: 0,
+-    goalCount: 0,
+-    shotCount: 0,
+-    shootingPct: "0.0"
+-  });
++  const [stats, setStats] = useState(() => shotSummary([]));
+ 
+   // Container refs for the legends
+   const teamLegendRef = useRef<HTMLDivElement>(null);
+@@ -540,21 +568,7 @@ function InnerShotVisualizationControls({
+ 
+   // Calculate statistics once on mount
+   useEffect(() => {
+-    const goals = shotData.filter((d) => d.typedesckey === "goal");
+-    const shots = shotData.filter((d) => d.typedesckey === "shot-on-goal");
+-
+-    const goalCount = goals.length;
+-    const shotCount = shots.length;
+-    const eventCount = shotData.length;
+-    const shootingPct =
+-      shotCount > 0 ? ((goalCount / shotCount) * 100).toFixed(1) : "0.0";
+-
+-    setStats({
+-      eventCount,
+-      goalCount,
+-      shotCount,
+-      shootingPct
+-    });
++    setStats(shotSummary(shotData));
+   }, [shotData]);
+ 
+   // Create team legend using the scale values from the rink visualization
+@@ -773,12 +787,10 @@ function InnerShotVisualizationControls({
+       {/* Statistics panel */}
+       <div className={styles.statsPanel}>
+         <p>Total Events: {stats.eventCount}</p>
+-        <p>Shots on Goal: {stats.shotCount}</p>
+-        {stats.goalCount > 0 && (
+-          <>
+-            <p>Goals: {stats.goalCount}</p>
+-            <p>Shooting %: {stats.shootingPct}%</p>
+-          </>
++        {stats.shotCount !== null && <p>Shots on Goal: {stats.shotCount}</p>}
++        {stats.goalCount > 0 && <p>Goals: {stats.goalCount}</p>}
++        {stats.shootingPct !== null && (
++          <p>Shooting %: {stats.shootingPct}%</p>
+         )}
+       </div>
+ 
+diff --git a/web/components/TeamTabNavigation/TeamTabNavigation.test.tsx b/web/components/TeamTabNavigation/TeamTabNavigation.test.tsx
+index 856181004..170824442 100644
+--- a/web/components/TeamTabNavigation/TeamTabNavigation.test.tsx
++++ b/web/components/TeamTabNavigation/TeamTabNavigation.test.tsx
+@@ -1,9 +1,25 @@
+-import { cleanup, render, screen } from "@testing-library/react";
++import {
++  act,
++  cleanup,
++  fireEvent,
++  render,
++  screen,
++} from "@testing-library/react";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ 
+-const { calendarPropsMock, routerState, useTeamScheduleMock } = vi.hoisted(
++const {
++  calendarPropsMock,
++  fromMock,
++  linePropsMock,
++  routerState,
++  shotPropsMock,
++  useTeamScheduleMock,
++} = vi.hoisted(
+   () => ({
+     calendarPropsMock: vi.fn(),
++    fromMock: vi.fn(),
++    linePropsMock: vi.fn(),
++    shotPropsMock: vi.fn(),
+     routerState: {
+       isReady: true,
+       pathname: "/teams/[teamAbbrev]",
+@@ -18,6 +34,8 @@ vi.mock("next/router", () => ({
+   useRouter: () => routerState,
+ }));
+ 
++vi.mock("lib/supabase", () => ({ default: { from: fromMock } }));
++
+ vi.mock("hooks/useTeamSchedule", () => ({
+   useTeamSchedule: useTeamScheduleMock,
+ }));
+@@ -39,11 +57,17 @@ vi.mock("../RosterMatrix/RosterMatrixWrapper", () => ({
+ }));
+ 
+ vi.mock("../ShotVisualization/ShotVisualization", () => ({
+-  ShotVisualization: () => <div>Shot visualization</div>,
++  ShotVisualization: (props: unknown) => {
++    shotPropsMock(props);
++    return <div>Shot visualization</div>;
++  },
+ }));
+ 
+ vi.mock("../LineCombinations/LineCombinationsGrid", () => ({
+-  LineCombinationsGrid: () => <div>Line combinations</div>,
++  LineCombinationsGrid: (props: unknown) => {
++    linePropsMock(props);
++    return <div>Line combinations</div>;
++  },
+ }));
+ 
+ vi.mock("../TeamScheduleCalendar/TeamScheduleCalendar", () => ({
+@@ -170,3 +194,330 @@ describe("TeamTabNavigation schedule identity", () => {
+     expect(calendarPropsMock).not.toHaveBeenCalled();
+   });
+ });
++
++type QueryResult = { data: unknown; error: unknown };
++
++function query(result: QueryResult | Promise<QueryResult>) {
++  const chain: any = {};
++  for (const method of ["select", "eq", "order", "limit", "in"]) {
++    chain[method] = vi.fn(() => chain);
++  }
++  chain.then = (
++    resolve: (value: QueryResult) => unknown,
++    reject: (error: unknown) => unknown,
++  ) => Promise.resolve(result).then(resolve, reject);
++  return chain;
++}
++
++function deferred<T>() {
++  let resolve!: (value: T) => void;
++  const promise = new Promise<T>((yes) => {
++    resolve = yes;
++  });
++  return { promise, resolve };
++}
++
++const lineRow = (team: number, forwards: unknown[], defensemen: unknown[]) => ({
++  forwards,
++  defensemen,
++  goalies: [team * 100 + 30, team * 100 + 31],
++  gameId: 2026020001,
++});
++const playerRows = (ids: string[]) =>
++  ids.map((id) => ({ nhl_player_id: id, nhl_player_name: `Player ${id}` }));
++
++function routeTables(tables: Record<string, () => unknown>) {
++  fromMock.mockImplementation((table: string) => {
++    const next = tables[table];
++    if (!next) throw new Error(`Unexpected read: ${table}`);
++    return next();
++  });
++}
++
++async function flush() {
++  await act(async () => {
++    await Promise.resolve();
++    await Promise.resolve();
++  });
++}
++
++const tables = () => fromMock.mock.calls.map(([table]) => table);
++
++describe("TeamTabNavigation Season Stats line combinations", () => {
++  beforeEach(() => {
++    routerState.isReady = true;
++    routerState.query = {};
++    fromMock.mockReset();
++    linePropsMock.mockReset();
++    useTeamScheduleMock.mockReset();
++    useTeamScheduleMock.mockReturnValue({
++      ...baseScheduleResult,
++      scheduleTeam: null,
++    });
++  });
++
++  afterEach(() => cleanup());
++
++  it("reads nothing while other tabs are shown and reuses the result when the tab returns", async () => {
++    routeTables({
++      lineCombinations: () =>
++        query({ data: [lineRow(22, [2201, 2202], [2220])], error: null }),
++      yahoo_nhl_player_map: () =>
++        query({
++          data: playerRows(["2201", "2202", "2220", "2230", "2231"]),
++          error: null,
++        }),
++    });
++    const view = render(
++      <TeamTabNavigation {...baseProps} teamId="22" teamAbbrev="EDM" seasonId="20252026" />,
++    );
++    routerState.query = { tab: "visualization" };
++    view.rerender(
++      <TeamTabNavigation {...baseProps} teamId="22" teamAbbrev="EDM" seasonId="20252026" />,
++    );
++    await flush();
++    expect(fromMock).not.toHaveBeenCalled();
++
++    routerState.query = { tab: "stats" };
++    view.rerender(
++      <TeamTabNavigation {...baseProps} teamId="22" teamAbbrev="EDM" seasonId="20252026" />,
++    );
++    expect(screen.getByText("Loading...")).toBeTruthy();
++    await flush();
++    expect(tables()).toEqual(["lineCombinations", "yahoo_nhl_player_map"]);
++    expect(linePropsMock).toHaveBeenLastCalledWith(
++      expect.objectContaining({
++        forwards: ["2201", "2202"],
++        defensemen: ["2220"],
++        goalies: ["2230", "2231"],
++        playerMap: expect.objectContaining({ "2201": expect.any(Object) }),
++      }),
++    );
++
++    routerState.query = {};
++    view.rerender(
++      <TeamTabNavigation {...baseProps} teamId="22" teamAbbrev="EDM" seasonId="20252026" />,
++    );
++    routerState.query = { tab: "stats" };
++    view.rerender(
++      <TeamTabNavigation {...baseProps} teamId="22" teamAbbrev="EDM" seasonId="20252026" />,
++    );
++    await flush();
++    expect(fromMock).toHaveBeenCalledTimes(2);
++    expect(screen.getByText("Line combinations")).toBeTruthy();
++  });
++
++  it("discards a late response for the previous team after A → B", async () => {
++    routerState.query = { tab: "stats" };
++    const teamA = deferred<QueryResult>();
++    const lineReads = [
++      () => query(teamA.promise),
++      () => query({ data: [lineRow(10, [1001], [1020])], error: null }),
++    ];
++    routeTables({
++      lineCombinations: () => lineReads.shift()!(),
++      yahoo_nhl_player_map: () => query({ data: [], error: null }),
++    });
++    const view = render(
++      <TeamTabNavigation {...baseProps} teamId="22" teamAbbrev="EDM" seasonId="20252026" />,
++    );
++    view.rerender(
++      <TeamTabNavigation {...baseProps} teamId="10" teamAbbrev="TOR" seasonId="20252026" />,
++    );
++    await flush();
++    expect(linePropsMock).toHaveBeenLastCalledWith(
++      expect.objectContaining({ forwards: ["1001"] }),
++    );
++    await act(async () => {
++      teamA.resolve({ data: [lineRow(22, [2201], [2220])], error: null });
++    });
++    await flush();
++    expect(linePropsMock).toHaveBeenLastCalledWith(
++      expect.objectContaining({ forwards: ["1001"] }),
++    );
++    expect(linePropsMock).not.toHaveBeenCalledWith(
++      expect.objectContaining({ forwards: ["2201"] }),
++    );
++    // The obsolete team never triggers a player-map read.
++    expect(tables()).toEqual([
++      "lineCombinations",
++      "lineCombinations",
++      "yahoo_nhl_player_map",
++    ]);
++  });
++
++  it.each([
++    [
++      "line read error",
++      { data: null, error: { message: "lines unavailable" } },
++      { data: [], error: null },
++      "lines unavailable",
++    ],
++    [
++      "player map error",
++      { data: [lineRow(22, [2201], [2220])], error: null },
++      { data: null, error: { message: "players unavailable" } },
++      "players unavailable",
++    ],
++    ["no persisted lines", { data: [], error: null }, { data: [], error: null }, "No line combinations found."],
++  ])("shows the %s instead of a grid", async (_label, lines, players, text) => {
++    routerState.query = { tab: "stats" };
++    routeTables({
++      lineCombinations: () => query(lines),
++      yahoo_nhl_player_map: () => query(players),
++    });
++    render(<TeamTabNavigation {...baseProps} teamId="22" teamAbbrev="EDM" seasonId="20252026" />);
++    await flush();
++    expect(screen.getByText(text)).toBeTruthy();
++    expect(linePropsMock).not.toHaveBeenCalled();
++  });
++
++  it("drops null and blank IDs and flattens nested line rows", async () => {
++    routerState.query = { tab: "stats" };
++    routeTables({
++      lineCombinations: () =>
++        query({
++          data: [lineRow(22, [[2201, 2202, 2203], [2204, null, ""]], [2220, null])],
++          error: null,
++        }),
++      yahoo_nhl_player_map: () => query({ data: [], error: null }),
++    });
++    render(<TeamTabNavigation {...baseProps} teamId="22" teamAbbrev="EDM" seasonId="20252026" />);
++    await flush();
++    expect(linePropsMock).toHaveBeenLastCalledWith(
++      expect.objectContaining({
++        forwards: ["2201", "2202", "2203", "2204"],
++        defensemen: ["2220"],
++      }),
++    );
++  });
++});
++
++describe("TeamTabNavigation Shot Map error", () => {
++  beforeEach(() => {
++    routerState.query = { tab: "visualization" };
++    fromMock.mockReset();
++    shotPropsMock.mockReset();
++    useTeamScheduleMock.mockReturnValue({
++      ...baseScheduleResult,
++      scheduleTeam: null,
++    });
++  });
++
++  afterEach(() => cleanup());
++
++  it("hands the read error to the visualization instead of a detached banner", () => {
++    const shotError = new Error("pbp unavailable");
++    render(
++      <TeamTabNavigation
++        {...baseProps}
++        teamId="22"
++        teamAbbrev="EDM"
++        seasonId="20252026"
++        shotError={shotError}
++      />,
++    );
++    expect(shotPropsMock).toHaveBeenLastCalledWith(
++      expect.objectContaining({ error: shotError }),
++    );
++    expect(screen.queryByText(/Error loading event data/)).toBeNull();
++    expect(fromMock).not.toHaveBeenCalled();
++  });
++});
++
++describe("LineCombinationsGrid mixed line shapes", () => {
++  afterEach(() => cleanup());
++
++  const ids = (prefix: number, count: number) =>
++    Array.from({ length: count }, (_, i) => String(prefix + i));
++
++  it.each([
++    ["12F/6D", 12, 6],
++    ["11F/7D", 11, 7],
++    ["13F/5D", 13, 5],
++    ["10F/8D", 10, 8],
++  ])("shows every dressed skater for %s", async (_shape, forwardCount, defenseCount) => {
++    const { LineCombinationsGrid } = await vi.importActual<
++      typeof import("../LineCombinations/LineCombinationsGrid")
++    >("../LineCombinations/LineCombinationsGrid");
++    const forwards = ids(100, forwardCount);
++    const defensemen = ids(200, defenseCount);
++    render(
++      <LineCombinationsGrid
++        forwards={forwards}
++        defensemen={defensemen}
++        goalies={["300", "301"]}
++        playerMap={{}}
++      />,
++    );
++    for (const id of [...forwards, ...defensemen, "300", "301"]) {
++      expect(screen.getByText(id)).toBeTruthy();
++    }
++    expect(screen.getAllByRole("link")).toHaveLength(forwardCount + defenseCount + 2);
++  });
++});
++
++describe("ShotVisualization filters", () => {
++  afterEach(() => cleanup());
++
++  async function renderShotVisualization(props: Record<string, unknown>) {
++    const { ShotVisualization } = await vi.importActual<
++      typeof import("../ShotVisualization/ShotVisualization")
++    >("../ShotVisualization/ShotVisualization");
++    const onFilterChange = vi.fn();
++    const view = render(
++      <ShotVisualization
++        shotData={[]}
++        isLoading={false}
++        onFilterChange={onFilterChange}
++        filters={{ eventTypes: ["goal", "shot-on-goal"], gameTypes: ["02"] }}
++        {...props}
++      />,
++    );
++    return { ...view, onFilterChange };
++  }
++
++  it.each([
++    ["loading", { isLoading: true }, "Loading shot data...", "status"],
++    ["empty", {}, "No event data available for the selected filters", "status"],
++    ["error", { error: new Error("pbp unavailable") }, "Unable to load event data: pbp unavailable", "alert"],
++    [
++      "no selection",
++      { filters: { eventTypes: [], gameTypes: ["02"] } },
++      "Select at least one event type and one game type.",
++      "status",
++    ],
++  ])("keeps the filters usable in the %s state", async (_state, props, text, role) => {
++    await renderShotVisualization(props);
++    expect(screen.getByRole(role).textContent).toBe(text);
++    expect(screen.getByLabelText("Event Types:")).toBeTruthy();
++    expect(screen.getByLabelText("Game Types:")).toBeTruthy();
++  });
++
++  it("changes and resets filters from an empty result", async () => {
++    const { onFilterChange } = await renderShotVisualization({});
++    const reset = screen.getByRole("button", { name: "Reset filters" }) as HTMLButtonElement;
++    expect(reset.disabled).toBe(true);
++
++    const gameTypes = screen.getByLabelText("Game Types:") as HTMLSelectElement;
++    for (const option of Array.from(gameTypes.options)) {
++      option.selected = option.value === "03";
++    }
++    fireEvent.change(gameTypes);
++    expect(onFilterChange).toHaveBeenLastCalledWith({
++      eventTypes: ["goal", "shot-on-goal"],
++      gameTypes: ["03"],
++    });
++    expect(reset.disabled).toBe(false);
++
++    fireEvent.click(reset);
++    expect(onFilterChange).toHaveBeenLastCalledWith({
++      eventTypes: ["goal", "shot-on-goal"],
++      gameTypes: ["02"],
++    });
++    expect(reset.disabled).toBe(true);
++    expect(
++      Array.from(gameTypes.selectedOptions).map((option) => option.value),
++    ).toEqual(["02"]);
++  });
++});
+diff --git a/web/components/TeamTabNavigation/TeamTabNavigation.tsx b/web/components/TeamTabNavigation/TeamTabNavigation.tsx
+index a63ce32fc..fdfe16280 100644
+--- a/web/components/TeamTabNavigation/TeamTabNavigation.tsx
++++ b/web/components/TeamTabNavigation/TeamTabNavigation.tsx
+@@ -1,5 +1,6 @@
+ import { useRouter } from "next/router";
+-import React, { useEffect, useState } from "react";
++import React, { useEffect, useRef, useState } from "react";
++import supabase from "lib/supabase";
+ import styles from "./TeamTabNavigation.module.scss";
+ import { TeamDashboard } from "../TeamDashboard/TeamDashboard";
+ import { GameStateAnalysis } from "../GameStateAnalysis/GameStateAnalysis";
+@@ -32,16 +33,6 @@ interface TeamTabNavigationProps {
+   onFilterChange: (filters: ShotDataFilters) => void;
+   // New props for stats tab
+   summaries?: any[];
+-  lineCombos?: {
+-    forwards: string[];
+-    defensemen: string[];
+-    goalies: string[];
+-  } | null;
+-  lineCombosLoading?: boolean;
+-  lineCombosError?: string | null;
+-  playerMap?: Record<string, any>;
+-  playerMapLoading?: boolean;
+-  playerMapError?: string | null;
+   showAllSeasons?: boolean;
+   onToggleAllSeasons?: () => void;
+ }
+@@ -102,6 +93,141 @@ const TABS: Tab[] = [
+ const isTabKey = (value: unknown): value is TabKey =>
+   typeof value === "string" && TABS.some((tab) => tab.key === value);
+ 
++interface LineCombos {
++  forwards: string[];
++  defensemen: string[];
++  goalies: string[];
++}
++
++interface LineCombosResult {
++  teamId: string;
++  lineCombos: LineCombos | null;
++  playerMap: Record<string, any>;
++  lineCombosError: string | null;
++  playerMapError: string | null;
++}
++
++const toPlayerIds = (value: unknown): string[] =>
++  Array.isArray(value)
++    ? value
++        .flat()
++        .filter((id) => id != null && String(id).trim() !== "")
++        .map(String)
++    : [];
++
++const errorMessage = (error: unknown) =>
++  error instanceof Error
++    ? error.message
++    : String((error as { message?: unknown })?.message ?? error);
++
++// Latest line combination for the shown team, read only while the Season
++// Stats tab is open. A late response for a previous team is discarded.
++function useTeamLineCombos(teamId: string, enabled: boolean) {
++  const [result, setResult] = useState<LineCombosResult | null>(null);
++  const resultRef = useRef<LineCombosResult | null>(null);
++
++  useEffect(() => {
++    const cached = resultRef.current;
++    if (!enabled || !teamId) return;
++    if (
++      cached?.teamId === teamId &&
++      !cached.lineCombosError &&
++      !cached.playerMapError
++    ) {
++      return;
++    }
++
++    let active = true;
++    const finish = (next: Omit<LineCombosResult, "teamId">) => {
++      if (!active) return;
++      resultRef.current = { teamId, ...next };
++      setResult(resultRef.current);
++    };
++    resultRef.current = null;
++    setResult(null);
++
++    (async () => {
++      try {
++        const { data, error } = await supabase
++          .from("lineCombinations")
++          .select("forwards,defensemen,goalies,gameId")
++          .eq("teamId", Number(teamId))
++          .order("gameId", { ascending: false })
++          .limit(1);
++        if (!active) return;
++        if (error) throw error;
++        const row = data?.[0];
++        if (!row) {
++          return finish({
++            lineCombos: null,
++            playerMap: {},
++            lineCombosError: null,
++            playerMapError: null
++          });
++        }
++        const lineCombos = {
++          forwards: toPlayerIds(row.forwards),
++          defensemen: toPlayerIds(row.defensemen),
++          goalies: toPlayerIds(row.goalies)
++        };
++        const uniqueIds = Array.from(
++          new Set([
++            ...lineCombos.forwards,
++            ...lineCombos.defensemen,
++            ...lineCombos.goalies
++          ])
++        );
++        if (uniqueIds.length === 0) {
++          return finish({
++            lineCombos,
++            playerMap: {},
++            lineCombosError: null,
++            playerMapError: null
++          });
++        }
++        const { data: players, error: playerError } = await supabase
++          .from("yahoo_nhl_player_map")
++          .select(
++            "nhl_player_id, nhl_player_name, mapped_position, eligible_positions"
++          )
++          .in("nhl_player_id", uniqueIds);
++        const playerMap: Record<string, any> = {};
++        (players ?? []).forEach((player) => {
++          if (player.nhl_player_id != null) {
++            playerMap[player.nhl_player_id] = player;
++          }
++        });
++        finish({
++          lineCombos,
++          playerMap: playerError ? {} : playerMap,
++          lineCombosError: null,
++          playerMapError: playerError ? errorMessage(playerError) : null
++        });
++      } catch (error) {
++        finish({
++          lineCombos: null,
++          playerMap: {},
++          lineCombosError: errorMessage(error),
++          playerMapError: null
++        });
++      }
++    })();
++
++    return () => {
++      active = false;
++    };
++  }, [teamId, enabled]);
++
++  const current = result?.teamId === teamId ? result : null;
++  return {
++    lineCombos: current?.lineCombos ?? null,
++    playerMap: current?.playerMap ?? {},
++    lineCombosError: current?.lineCombosError ?? null,
++    playerMapError: current?.playerMapError ?? null,
++    loading: enabled && !!teamId && !current
++  };
++}
++
+ export function TeamTabNavigation({
+   teamId,
+   teamAbbrev,
+@@ -114,12 +240,6 @@ export function TeamTabNavigation({
+   filters,
+   onFilterChange,
+   summaries = [],
+-  lineCombos,
+-  lineCombosLoading = false,
+-  lineCombosError,
+-  playerMap = {},
+-  playerMapLoading = false,
+-  playerMapError,
+   showAllSeasons = false,
+   onToggleAllSeasons
+ }: TeamTabNavigationProps) {
+@@ -137,6 +257,14 @@ export function TeamTabNavigation({
+     scheduleTeam
+   } = useTeamSchedule(teamAbbrev, seasonId, teamId);
+ 
++  const {
++    lineCombos,
++    playerMap,
++    lineCombosError,
++    playerMapError,
++    loading: lineCombosLoading
++  } = useTeamLineCombos(teamId, activeTab === "stats");
++
+   useEffect(() => {
+     if (!router.isReady) return;
+     const queryTab = Array.isArray(router.query.tab)
+@@ -310,9 +438,7 @@ export function TeamTabNavigation({
+                 <div
+                   className={`${styles.lineCombinations} ${styles.lineCombinationsFixedHeight}`}
+                 >
+-                  {lineCombosLoading || playerMapLoading ? (
+-                    <div>Loading...</div>
+-                  ) : null}
++                  {lineCombosLoading ? <div>Loading...</div> : null}
+                   {lineCombosError && (
+                     <div style={{ color: "red" }}>{lineCombosError}</div>
+                   )}
+@@ -320,7 +446,6 @@ export function TeamTabNavigation({
+                     <div style={{ color: "red" }}>{playerMapError}</div>
+                   )}
+                   {!lineCombosLoading &&
+-                    !playerMapLoading &&
+                     !lineCombosError &&
+                     !playerMapError &&
+                     lineCombos && (
+@@ -333,7 +458,6 @@ export function TeamTabNavigation({
+                       />
+                     )}
+                   {!lineCombosLoading &&
+-                    !playerMapLoading &&
+                     !lineCombosError &&
+                     !playerMapError &&
+                     !lineCombos && <div>No line combinations found.</div>}
+@@ -385,17 +509,13 @@ export function TeamTabNavigation({
+                 shotData={shotData}
+                 opponentShotData={opponentShotData}
+                 isLoading={isLoadingShotData}
++                error={shotError}
+                 onFilterChange={onFilterChange}
+                 filters={filters}
+                 teamAbbreviation={teamAbbrev}
+                 alwaysShowOpponentLegend={true}
+               />
+             </div>
+-            {shotError && (
+-              <div className={styles.errorMessage}>
+-                Error loading event data: {shotError.message}
+-              </div>
+-            )}
+           </div>
+         );
+ 
+diff --git a/web/hooks/useShotData.test.tsx b/web/hooks/useShotData.test.tsx
+index 44ffb9274..603839d73 100644
+--- a/web/hooks/useShotData.test.tsx
++++ b/web/hooks/useShotData.test.tsx
+@@ -1,9 +1,15 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import { act, cleanup, renderHook } from "@testing-library/react";
+ 
+-const mocks = vi.hoisted(() => ({ pages: vi.fn() }));
++const mocks = vi.hoisted(() => ({ pages: vi.fn(), from: vi.fn() }));
+ vi.mock("lib/supabase", () => ({
+-  default: { from: () => { throw new Error("Unexpected unmocked query"); } }
++  default: {
++    from: (table: string) => {
++      const query = mocks.from(table);
++      if (!query) throw new Error("Unexpected unmocked query");
++      return query;
++    }
++  }
+ }));
+ vi.mock("lib/supabase/pagination", () => ({ fetchAllSupabasePages: mocks.pages }));
+ 
+@@ -16,10 +22,12 @@ function deferred<T>() {
+   return { promise, resolve, reject };
+ }
+ 
+-const games = (team: number) => [{ id: team, hometeamid: team, awayteamid: 99 }];
+-const shots = (team: number, type = "goal") => [
+-  { gameid: team, eventownerteamid: team, xcoord: 10, ycoord: 5, typedesckey: type },
+-  { gameid: team, eventownerteamid: 99, xcoord: -10, ycoord: 5, typedesckey: type }
++// NHL game IDs carry the game type in digits 5-6: 2026020001 is regular season.
++const gameId = (team: number, gameType = "02") => Number(`2026${gameType}${String(team).padStart(4, "0")}`);
++const games = (team: number, gameType = "02") => [{ id: gameId(team, gameType), hometeamid: team, awayteamid: 99 }];
++const shots = (team: number, type = "goal", gameType = "02") => [
++  { gameid: gameId(team, gameType), eventownerteamid: team, xcoord: 10, ycoord: 5, typedesckey: type },
++  { gameid: gameId(team, gameType), eventownerteamid: 99, xcoord: -10, ycoord: 5, typedesckey: type }
+ ];
+ const filters = { eventTypes: ["goal"], gameTypes: ["02"] };
+ 
+@@ -122,7 +130,8 @@ describe("useShotData request ownership", () => {
+       eventTypes: [event], gameTypes: [game]
+     }), { initialProps: { event: "goal", game: "02", season: "20262027" } });
+     await flush();
+-    mocks.pages.mockResolvedValueOnce(games(1)).mockResolvedValueOnce(shots(1, "hit"));
++    const gameType = changed === "game" ? "03" : "02";
++    mocks.pages.mockResolvedValueOnce(games(1, gameType)).mockResolvedValueOnce(shots(1, "hit", gameType));
+     rerender({
+       event: changed === "event" ? "hit" : "goal",
+       game: changed === "game" ? "03" : "02",
+@@ -136,6 +145,65 @@ describe("useShotData request ownership", () => {
+     expect(mocks.pages).toHaveBeenCalledTimes(4);
+   });
+ 
++  it("reads only games of the selected game types", async () => {
++    const chunks: unknown[][] = [];
++    const eventQuery: any = {
++      select: () => eventQuery,
++      in: (column: string, values: unknown[]) => {
++        if (column === "gameid") chunks.push(values);
++        return eventQuery;
++      },
++      range: () => eventQuery
++    };
++    mocks.from.mockReturnValue(eventQuery);
++    mocks.pages
++      .mockResolvedValueOnce([
++        { id: 2026020001, hometeamid: 1, awayteamid: 99 },
++        { id: 2026030001, hometeamid: 99, awayteamid: 1 },
++        { id: 2026010001, hometeamid: 1, awayteamid: 99 }
++      ])
++      .mockImplementationOnce(async (query: any) => {
++        query({ from: 0, to: 999 });
++        return [{ gameid: 2026030001, eventownerteamid: 1, xcoord: 10, ycoord: 5, typedesckey: "goal" }];
++      });
++    const { result } = renderHook(() => useShotData(1, "20262027", { eventTypes: ["goal"], gameTypes: ["03"] }));
++    await flush();
++    expect(chunks).toEqual([[2026030001]]);
++    expect(result.current.shotData).toHaveLength(1);
++  });
++
++  it("returns nothing for a selection that excludes every game", async () => {
++    mocks.pages.mockResolvedValueOnce(games(1));
++    const { result } = renderHook(() => useShotData(1, "20262027", { eventTypes: ["goal"], gameTypes: ["03"] }));
++    await flush();
++    expect(result.current).toMatchObject({ isLoading: false, error: null, shotData: [], opponentShotData: [] });
++    expect(mocks.pages).toHaveBeenCalledTimes(1);
++  });
++
++  it.each([
++    ["event", { eventTypes: [], gameTypes: ["02"] }],
++    ["game", { eventTypes: ["goal"], gameTypes: [] }]
++  ])("makes no read when no %s type is selected", async (_label, emptyFilters) => {
++    const { result } = renderHook(() => useShotData(1, "20262027", emptyFilters));
++    await flush();
++    expect(mocks.pages).not.toHaveBeenCalled();
++    expect(result.current).toMatchObject({ isLoading: false, error: null, shotData: [], opponentShotData: [] });
++  });
++
++  it("drops unparseable coordinates instead of plotting them at center ice", async () => {
++    mocks.pages.mockResolvedValueOnce(games(1)).mockResolvedValueOnce([
++      { gameid: gameId(1), eventownerteamid: 1, xcoord: "", ycoord: 5, typedesckey: "goal" },
++      { gameid: gameId(1), eventownerteamid: 1, xcoord: "12", ycoord: "-4", typedesckey: "goal" },
++      { gameid: gameId(1), eventownerteamid: 99, xcoord: -10, ycoord: "n/a", typedesckey: "goal" }
++    ]);
++    const { result } = renderHook(() => useShotData(1, "20262027", filters));
++    await flush();
++    expect(result.current.shotData).toEqual([
++      expect.objectContaining({ xcoord: 12, ycoord: -4, eventownerteamid: 1 })
++    ]);
++    expect(result.current.opponentShotData).toEqual([]);
++  });
++
+   it("clears the previous error when loading a different key", async () => {
+     mocks.pages.mockRejectedValueOnce(new Error("current failure"));
+     const { result, rerender } = renderHook(({ team }) => useShotData(team, "20262027", filters), {
+diff --git a/web/hooks/useShotData.ts b/web/hooks/useShotData.ts
+index 092902adb..324f6f337 100644
+--- a/web/hooks/useShotData.ts
++++ b/web/hooks/useShotData.ts
+@@ -45,6 +45,20 @@ export interface ShotDataFilters {
+   gameTypes?: string[];
+ }
+ 
++// Unparseable coordinates are dropped rather than plotted at center ice.
++function toPlottedShot(shot: any): ShotData | null {
++  const x = parseFloat(shot.xcoord as unknown as string);
++  const y = parseFloat(shot.ycoord as unknown as string);
++  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
++  return {
++    xcoord: x,
++    ycoord: y,
++    typedesckey: shot.typedesckey as string,
++    hometeamdefendingside: shot.hometeamdefendingside,
++    eventownerteamid: shot.eventownerteamid
++  };
++}
++
+ export function useShotData(
+   teamId: number,
+   season?: string | null,
+@@ -82,6 +96,18 @@ export function useShotData(
+       return;
+     }
+ 
++    // An explicitly empty selection means nothing to show, not "every event".
++    if (
++      requestFilters.eventTypes?.length === 0 ||
++      requestFilters.gameTypes?.length === 0
++    ) {
++      setShotData([]);
++      setOpponentShotData([]);
++      loadedKey.current = requestKey;
++      setIsLoading(false);
++      return;
++    }
++
+     async function fetchTeamShotData() {
+       try {
+         setIsLoading(true);
+@@ -90,13 +116,6 @@ export function useShotData(
+         let allGames: { id: number; hometeamid: number; awayteamid: number }[] =
+           [];
+ 
+-        // Initialize game type filter condition
+-        const gameTypeFilters =
+-          requestFilters.gameTypes?.map((gameType) => {
+-            const seasonStart = season!.substring(0, 4);
+-            return `id.like.${seasonStart}${gameType}%`;
+-          }) || [];
+-
+         const games = await fetchAllSupabasePages<any>(({ from, to }) => {
+           if (!active) return Promise.resolve({ data: [], error: null });
+           let gamesQuery = supabase
+@@ -114,9 +133,14 @@ export function useShotData(
+ 
+         console.log("Fetched games for team", teamId, ":", games.length);
+ 
++        // NHL game IDs carry the game type in digits 5-6 (e.g. 2025020001).
++        const gameTypes = requestFilters.gameTypes;
+         // Only keep games with non-null hometeamid and awayteamid, and cast to number
+         allGames = games
+           .filter((g) => g.hometeamid !== null && g.awayteamid !== null)
++          .filter(
++            (g) => !gameTypes || gameTypes.includes(String(g.id).slice(4, 6))
++          )
+           .map((g) => ({
+             id: g.id,
+             hometeamid: g.hometeamid as number,
+@@ -188,23 +212,8 @@ export function useShotData(
+                     shot.xcoord !== null &&
+                     shot.ycoord !== null
+                 )
+-                .map((shot) => {
+-                  // Normalize coordinates if needed
+-                  let x = parseFloat(shot.xcoord as unknown as string);
+-                  let y = parseFloat(shot.ycoord as unknown as string);
+-
+-                  // Ensure coordinates are valid numbers
+-                  if (isNaN(x)) x = 0;
+-                  if (isNaN(y)) y = 0;
+-
+-                  return {
+-                    xcoord: x,
+-                    ycoord: y,
+-                    typedesckey: shot.typedesckey as string,
+-                    hometeamdefendingside: shot.hometeamdefendingside,
+-                    eventownerteamid: shot.eventownerteamid
+-                  };
+-                });
++                .map(toPlottedShot)
++                .filter((shot): shot is ShotData => shot !== null);
+ 
+               const validOpponentShots: ShotData[] = events
+                 .filter(
+@@ -215,23 +224,8 @@ export function useShotData(
+                     shot.xcoord !== null &&
+                     shot.ycoord !== null
+                 )
+-                .map((shot) => {
+-                  // Normalize coordinates if needed
+-                  let x = parseFloat(shot.xcoord as unknown as string);
+-                  let y = parseFloat(shot.ycoord as unknown as string);
+-
+-                  // Ensure coordinates are valid numbers
+-                  if (isNaN(x)) x = 0;
+-                  if (isNaN(y)) y = 0;
+-
+-                  return {
+-                    xcoord: x,
+-                    ycoord: y,
+-                    typedesckey: shot.typedesckey as string,
+-                    hometeamdefendingside: shot.hometeamdefendingside,
+-                    eventownerteamid: shot.eventownerteamid
+-                  };
+-                });
++                .map(toPlottedShot)
++                .filter((shot): shot is ShotData => shot !== null);
+ 
+               allShots = allShots.concat(validTeamShots);
+               allOpponentShots = allOpponentShots.concat(validOpponentShots);
+diff --git a/web/pages/stats/team/[teamAbbreviation].tsx b/web/pages/stats/team/[teamAbbreviation].tsx
+index 32cb4f91a..e280028bf 100644
+--- a/web/pages/stats/team/[teamAbbreviation].tsx
++++ b/web/pages/stats/team/[teamAbbreviation].tsx
+@@ -6,7 +6,6 @@ import React, { useEffect, useState, useRef } from "react";
+ import { useShotData, ShotDataFilters } from "hooks/useShotData";
+ import { useTeamStatsHeaderData } from "hooks/useTeamStatsHeaderData";
+ import { teamsInfo } from "lib/teamsInfo";
+-import { LineCombinationsGrid } from "components/LineCombinations/LineCombinationsGrid";
+ import { TeamTabNavigation } from "components/TeamTabNavigation/TeamTabNavigation";
+ import TeamDropdown from "components/TeamDropdown";
+ import { getTeams } from "lib/NHL/server";
+@@ -96,20 +95,6 @@ export default function TeamStatsPage({
+     gameTypes: ["02"] // Regular season by default
+   });
+ 
+-  // State for line combinations
+-  const [lineCombos, setLineCombos] = useState<{
+-    forwards: string[];
+-    defensemen: string[];
+-    goalies: string[];
+-  } | null>(null);
+-  const [lineCombosLoading, setLineCombosLoading] = useState(false);
+-  const [lineCombosError, setLineCombosError] = useState<string | null>(null);
+-
+-  // State for player info map
+-  const [playerMap, setPlayerMap] = useState<Record<string, any>>({});
+-  const [playerMapLoading, setPlayerMapLoading] = useState(false);
+-  const [playerMapError, setPlayerMapError] = useState<string | null>(null);
+-
+   const {
+     data: standingsData,
+     loading: standingsLoading,
+@@ -132,68 +117,6 @@ export default function TeamStatsPage({
+     // eslint-disable-next-line react-hooks/exhaustive-deps
+   }, []);
+ 
+-  useEffect(() => {
+-    if (!teamId) return;
+-    setLineCombosLoading(true);
+-    setLineCombosError(null);
+-    supabase
+-      .from("lineCombinations")
+-      .select("forwards,defensemen,goalies,gameId")
+-      .eq("teamId", teamId)
+-      .order("gameId", { ascending: false })
+-      .limit(1)
+-      .then(({ data, error }) => {
+-        if (error) {
+-          setLineCombosError(error.message);
+-          setLineCombos(null);
+-        } else if (data && data.length > 0) {
+-          setLineCombos({
+-            forwards: (data[0].forwards || []).map(String),
+-            defensemen: (data[0].defensemen || []).map(String),
+-            goalies: (data[0].goalies || []).map(String)
+-          });
+-        } else {
+-          setLineCombos(null);
+-        }
+-        setLineCombosLoading(false);
+-      });
+-  }, [teamId]);
+-
+-  // Fetch player info for all unique player IDs in the lineCombos
+-  useEffect(() => {
+-    if (!lineCombos) return;
+-    const allIds = [
+-      ...lineCombos.forwards,
+-      ...lineCombos.defensemen,
+-      ...lineCombos.goalies
+-    ].filter(Boolean);
+-    const uniqueIds = Array.from(new Set(allIds));
+-    if (uniqueIds.length === 0) return;
+-    setPlayerMapLoading(true);
+-    setPlayerMapError(null);
+-    supabase
+-      .from("yahoo_nhl_player_map")
+-      .select(
+-        "nhl_player_id, nhl_player_name, mapped_position, eligible_positions"
+-      )
+-      .in("nhl_player_id", uniqueIds)
+-      .then(({ data, error }) => {
+-        if (error) {
+-          setPlayerMapError(error.message);
+-          setPlayerMap({});
+-        } else if (data) {
+-          const map: Record<string, any> = {};
+-          data.forEach((row) => {
+-            if (row.nhl_player_id != null) {
+-              map[row.nhl_player_id] = row;
+-            }
+-          });
+-          setPlayerMap(map);
+-        }
+-        setPlayerMapLoading(false);
+-      });
+-  }, [lineCombos]);
+-
+   // Show more/less for stats table
+   const [showAllSeasons, setShowAllSeasons] = useState(false);
+   const displayedSummaries = showAllSeasons
+@@ -322,12 +245,6 @@ export default function TeamStatsPage({
+           filters={filters}
+           onFilterChange={handleFilterChange}
+           summaries={summaries}
+-          lineCombos={lineCombos}
+-          lineCombosLoading={lineCombosLoading}
+-          lineCombosError={lineCombosError}
+-          playerMap={playerMap}
+-          playerMapLoading={playerMapLoading}
+-          playerMapError={playerMapError}
+           showAllSeasons={showAllSeasons}
+           onToggleAllSeasons={() => setShowAllSeasons((v) => !v)}
+         />

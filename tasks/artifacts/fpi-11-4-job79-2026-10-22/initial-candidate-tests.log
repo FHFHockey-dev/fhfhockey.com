@@ -1,0 +1,70 @@
+
+> web@0.1.0 test
+> vitest --run --config vitest.offline.config.mts lib/cron/nstCoordination.test.ts lib/cron/nstBurstPlans.test.ts lib/cron/nstRateLimitPolicy.test.ts lib/nst/requestBudget.test.ts lib/cron/cronInventory.test.ts lib/cron/combinedCronInventory.test.ts __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90m/private/tmp/fhfh-fpi-11-4-job79/web[39m
+
+ [32m✓[39m lib/cron/nstCoordination.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m lib/nst/requestBudget.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 466[2mms[22m[39m
+ [32m✓[39m lib/cron/combinedCronInventory.test.ts [2m([22m[2m42 tests[22m[2m)[22m[32m 40[2mms[22m[39m
+ [32m✓[39m lib/cron/cronInventory.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [31m❯[39m lib/cron/nstRateLimitPolicy.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 5[2mms[22m[39m
+   [32m✓[39m nstRateLimitPolicy[2m > [22mexports the published NST key-budget windows[32m 1[2mms[22m[39m
+   [32m✓[39m nstRateLimitPolicy[2m > [22mallows at most 39 requests in a burst[32m 0[2mms[22m[39m
+   [32m✓[39m nstRateLimitPolicy[2m > [22mrejects burst plans that would exceed the five-minute burst cap[32m 0[2mms[22m[39m
+[31m   [31m×[31m nstRateLimitPolicy[2m > [22maccepts a modest delay when it brings the plan under every limit[39m[32m 2[2mms[22m[39m
+[31m     → expected false to be true // Object.is equality[39m
+   [32m✓[39m nstRateLimitPolicy[2m > [22mkeeps an arbitrarily large queue within every window at 21 seconds per request[32m 0[2mms[22m[39m
+[31m   [31m×[31m nstRateLimitPolicy[2m > [22mselects the first safe interval from a candidate list[39m[32m 0[2mms[22m[39m
+[31m     → expected 21000 to be 4000 // Object.is equality[39m
+   [32m✓[39m nstRateLimitPolicy[2m > [22mreturns null when no candidate interval is safe[32m 0[2mms[22m[39m
+ [32m✓[39m lib/cron/nstBurstPlans.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m6 passed[39m[22m[90m (7)[39m
+[2m      Tests [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m100 passed[39m[22m[90m (102)[39m
+[2m   Start at [22m 12:22:37
+[2m   Duration [22m 1.38s[2m (transform 66ms, setup 7ms, collect 132ms, tests 540ms, environment 0ms, prepare 188ms)[22m
+
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 2 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m lib/cron/nstRateLimitPolicy.test.ts[2m > [22mnstRateLimitPolicy[2m > [22maccepts a modest delay when it brings the plan under every limit
+[31m[1mAssertionError[22m: expected false to be true // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- true[39m
+[31m+ false[39m
+
+[36m [2m❯[22m lib/cron/nstRateLimitPolicy.test.ts:[2m67:36[22m[39m
+    [90m 65| [39m    })[33m;[39m
+    [90m 66| [39m
+    [90m 67| [39m    [34mexpect[39m(assessment[33m.[39misCompliant)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m   | [39m                                   [31m^[39m
+    [90m 68| [39m    [34mexpect[39m(assessment[33m.[39mwindowCounts)[33m.[39m[34mtoEqual[39m(
+    [90m 69| [39m      expect[33m.[39m[34marrayContaining[39m([
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m lib/cron/nstRateLimitPolicy.test.ts[2m > [22mnstRateLimitPolicy[2m > [22mselects the first safe interval from a candidate list
+[31m[1mAssertionError[22m: expected 21000 to be 4000 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 4000[39m
+[31m+ 21000[39m
+
+[36m [2m❯[22m lib/cron/nstRateLimitPolicy.test.ts:[2m103:36[22m[39m
+    [90m101| [39m
+    [90m102| [39m    [34mexpect[39m(assessment)[33m.[39mnot[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m103| [39m    [34mexpect[39m(assessment[33m?.[39mintervalMs)[33m.[39m[34mtoBe[39m([34m4_000[39m)[33m;[39m
+    [90m   | [39m                                   [31m^[39m
+    [90m104| [39m    [34mexpect[39m(assessment[33m?.[39misCompliant)[33m.[39m[34mtoBe[39m([35mtrue[39m)[33m;[39m
+    [90m105| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯[22m[39m
+

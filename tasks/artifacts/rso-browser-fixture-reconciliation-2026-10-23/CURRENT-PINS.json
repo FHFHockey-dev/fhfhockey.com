@@ -1,0 +1,30 @@
+{
+  "at": "2026-10-23T16:51:16.825958+00:00",
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "pins": {
+    "web/e2e/roster-schedule-optimizer.spec.ts": "6681805aeefaa3bfe81ce47660766500c6b2aa53bee0b78572443723a43dec13",
+    "web/e2e/roster-schedule-optimizer-fixtures.ts": "7de8756a3bfb9c322386dc5bbd6250992c1e4f0a0e1e408d7a14fd76095ee87d",
+    "FIXTURE-CANDIDATE.patch": "7f2b99d9d756d68b46587fa30778cd634078a7f2853fa3cf48498de632aeaf29",
+    "ACCEPTANCE-HARNESS.patch": "2c4d9e01ab571b4bf786b01a79730aeb3b17bf380c1cd4911a5d4b9b740d4d5b",
+    "harness-v2/rso-p07-acceptance.spec.ts": "a7ba4795d0d9ee66ab0a9c4e0369f045341d3eb18ff847537159015286a265cc"
+  },
+  "unchangedOriginals": {
+    "web/e2e/draft-pro-fixtures.ts": true,
+    "tasks/artifacts/rso-browser-acceptance-2026-10-23/harness/rso-p07-acceptance.spec.ts": true,
+    "tasks/artifacts/rso-browser-acceptance-2026-10-23/harness-validation/RECEIPT-2a5092d37cb8.json": true
+  },
+  "snapshotDrift": {
+    "web/next-env.d.ts": {
+      "before": "95c5e6b31f13db907e9fe5d7cd72edd186321a0c7a8fb2d89129029fb289c276",
+      "after": "ced3cb1bdbb8082cae388902481ba6a8a1e454ec7daed6125b368118f06e4a77"
+    },
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss": {
+      "before": "2146ff48eb395978d485b692b91f87949b8efaf7c530e82f9b6ef3b20edd9f61",
+      "after": "4e40feb952963ba192e4bb7d0568983e8d1cc3d0bcaa292b8c79627355be22a2"
+    },
+    "web/components/RosterScheduleOptimizer/CompactSchedule.tsx": {
+      "before": "e203017397116abb2a0cf1b3e98b41cff44f01cd6fad916c1ed96e6b5e8f1ec9",
+      "after": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e"
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "source": "tasks/artifacts/codex-2026-10-20/research/imported-checkpoint/sos/sos_synthetic.py",
+  "source_sha256": "51026460179467476c84ff6cb713be3cb1287b8e6683bed9999b01476396863a",
+  "extraction": "Literal source prefix before def weighting_games() with exactly one trailing LF removed; all other bytes and arithmetic unchanged. Candidate subclasses only entries for explicit point ledger.",
+  "core_sha256": "eb886d1aa79ec8b49d23ed9f0c3e82a16c0b3ad693cea461bc45c3c3f0350258",
+  "source_prefix_bytes": 7725,
+  "removed_trailing_lf_bytes": 1,
+  "delivered_core_bytes": 7724
+}

@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-24T14:31:03.834340+00:00",
+  "results": [
+    {
+      "name": "tests",
+      "exitCode": 1,
+      "started": "2026-10-24T14:29:59.851629+00:00",
+      "finished": "2026-10-24T14:30:03.148838+00:00"
+    },
+    {
+      "name": "types",
+      "exitCode": 0,
+      "started": "2026-10-24T14:30:03.148868+00:00",
+      "finished": "2026-10-24T14:31:00.457005+00:00"
+    },
+    {
+      "name": "lint",
+      "exitCode": 0,
+      "started": "2026-10-24T14:31:00.457042+00:00",
+      "finished": "2026-10-24T14:31:03.444895+00:00"
+    }
+  ],
+  "snapshotDrift": [],
+  "currentSelectedPinDrift": [],
+  "contentTreeSha256": "d54286fd7f8ad2a32abb2fa928f21a01b3c8d8ce300d4caa526cfb2fb0e53f95",
+  "archiveSha256": "a08f698fa74f07da67fdc188224fa7a3d4c5f5c245eb109b9c6a1b63fc4ab664",
+  "sourceFiles": 3637
+}

@@ -1,0 +1,49 @@
+{
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-trusted-yahoo-an1feuqc/snapshot/web",
+  "results": [
+    {
+      "name": "types",
+      "argv": [
+        "npm",
+        "exec",
+        "--offline",
+        "--no",
+        "--",
+        "tsc",
+        "--noEmit",
+        "--incremental",
+        "false",
+        "-p",
+        "audit.yahoo.tsconfig.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "lint",
+      "argv": [
+        "npm",
+        "exec",
+        "--offline",
+        "--no",
+        "--",
+        "eslint",
+        "lib/integrations/yahoo/planningConfirmations.ts",
+        "lib/integrations/yahoo/planningConfirmations.test.ts",
+        "pages/api/v1/roster-schedule-optimizer/yahoo-current-data.ts",
+        "lib/integrations/yahoo/planningConfirmationRoute.test.ts",
+        "lib/rosterScheduleOptimizer/currentPlanningRead.ts",
+        "lib/rosterScheduleOptimizer/executionAdapter.ts",
+        "lib/rosterScheduleOptimizer/executionAdapter.test.ts",
+        "lib/rosterScheduleOptimizer/privatePlanningRead.ts",
+        "hooks/yahooPlanningReadBroker.ts",
+        "hooks/yahooPlanningReadBroker.test.ts",
+        "hooks/rosterPlanningExecution.ts",
+        "hooks/rosterPlanning.worker.ts",
+        "hooks/useRosterPlanning.ts",
+        "hooks/useRosterPlanning.test.tsx",
+        "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+      ],
+      "exit_code": 0
+    }
+  ]
+}

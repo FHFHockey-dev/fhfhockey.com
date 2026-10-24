@@ -1,0 +1,207 @@
+[
+  {
+    "lane": "C1",
+    "patches": [
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C1/C1-S06.patch",
+        "sha256": "ecef9b66b9aa65eba5be10e8842c67b996bdb26e80d5744093f82ee8fd0ab7d4",
+        "files": [
+          "web/components/LineCombinations/LineCombinationsGrid.tsx",
+          "web/components/ShotVisualization/ShotVisualization.tsx",
+          "web/components/TeamTabNavigation/TeamTabNavigation.test.tsx",
+          "web/components/TeamTabNavigation/TeamTabNavigation.tsx",
+          "web/hooks/useShotData.test.tsx",
+          "web/hooks/useShotData.ts",
+          "web/pages/stats/team/[teamAbbreviation].tsx"
+        ]
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C1/C1-S06-R1.patch",
+        "sha256": "f7c5bf62894d2e9b4ea11b951d04b34a6c73a111c29608a9519f366828b769b9",
+        "files": [
+          "web/components/LineCombinations/LineCombinationsGrid.tsx",
+          "web/components/TeamTabNavigation/TeamTabNavigation.test.tsx"
+        ]
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C1/C1-S05.patch",
+        "sha256": "66a5e41121d0da29b11aa95bf93d8065ca6f3a9a9fe0219d6e09d01d1ede9da4",
+        "files": [
+          "web/components/GoalieShareChart/GoalieShareChart.module.scss",
+          "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+          "web/components/GoalieShareChart/index.tsx",
+          "web/styles/Stats.module.scss"
+        ]
+      }
+    ],
+    "union_paths": [
+      "web/components/GoalieShareChart/GoalieShareChart.module.scss",
+      "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+      "web/components/GoalieShareChart/index.tsx",
+      "web/components/LineCombinations/LineCombinationsGrid.tsx",
+      "web/components/ShotVisualization/ShotVisualization.tsx",
+      "web/components/TeamTabNavigation/TeamTabNavigation.test.tsx",
+      "web/components/TeamTabNavigation/TeamTabNavigation.tsx",
+      "web/hooks/useShotData.test.tsx",
+      "web/hooks/useShotData.ts",
+      "web/pages/stats/team/[teamAbbreviation].tsx",
+      "web/styles/Stats.module.scss"
+    ]
+  },
+  {
+    "lane": "C4",
+    "patches": [
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/C4-SITE-WIGO.patch",
+        "sha256": "2266893f0e268690ab27819aa3d2d3ab6afc3a2d8af6058cf14d79d11e4e190e",
+        "files": [
+          "web/pages/wigoCharts.tsx",
+          "web/__tests__/pages/wigoCharts.test.tsx"
+        ]
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/C4-WIGO-R1.patch",
+        "sha256": "65dddc937aa83739926b5df810a6fd2f8ed03f406c4d50955d9817314f048c7f",
+        "files": [
+          "web/pages/wigoCharts.tsx",
+          "web/__tests__/pages/wigoCharts.test.tsx"
+        ]
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/C4-BLSH-DETAIL-v2.patch",
+        "sha256": "b1fa417dad912f57d9a51a201a740d21be0bf0ea7edb8220528096f3731d19ec",
+        "files": [
+          "web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx",
+          "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx",
+          "web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
+          "web/components/buyLowSellHigh/BlshPlayerDetail.module.scss"
+        ]
+      }
+    ],
+    "union_paths": [
+      "web/__tests__/pages/wigoCharts.test.tsx",
+      "web/components/buyLowSellHigh/BlshPlayerDetail.module.scss",
+      "web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
+      "web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx",
+      "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx",
+      "web/pages/wigoCharts.tsx"
+    ]
+  },
+  {
+    "lane": "C5",
+    "patches": [
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C5/C5-cron-audit-coverage-r2.patch",
+        "sha256": "e86b43ce3ad0d62586d5c1423b79a65139ceef73e262596c5e39b537d807c062",
+        "files": [
+          "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts",
+          "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+          "web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts",
+          "web/pages/api/internal/yahoo-live-draft.ts",
+          "web/pages/api/v1/db/update-drafted-prospects.ts"
+        ]
+      }
+    ],
+    "union_paths": [
+      "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts",
+      "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+      "web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts",
+      "web/pages/api/internal/yahoo-live-draft.ts",
+      "web/pages/api/v1/db/update-drafted-prospects.ts"
+    ]
+  },
+  {
+    "lane": "C2",
+    "patches": [
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C2/C2-LUNA-F1-F2-F3.patch",
+        "sha256": "b6dc017e138caaa6edc0d8cc000c7cad5fbdebae4492a648610220dce8bfc249",
+        "files": [
+          "web/lib/sources/tweetLunaReview.ts",
+          "web/lib/sources/tweetLunaTransport.ts",
+          "web/lib/sources/tweetLunaReview.test.ts",
+          "web/scripts/review-ifttt-luna.ts"
+        ]
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C2/C2-NEWS-METADATA-R1.patch",
+        "sha256": "c7f29a2cdd9d762cccbb9c266b1b5969f164e015d6aef6b975ab4d608bdae04e",
+        "files": [
+          "web/pages/api/v1/db/tweet-pattern-review.ts",
+          "web/lib/homepageNewsCompatibility.test.tsx"
+        ]
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C2/C2-NEWS-COPY.patch",
+        "sha256": "ded81fc5afb8ba7d7e935b51ad98539b45bc008d68e16b315256e7506e2e86a3",
+        "files": [
+          "web/components/NewsFeed/NewsCard.tsx",
+          "web/components/NewsFeed/NewsCard.test.tsx"
+        ]
+      }
+    ],
+    "union_paths": [
+      "web/components/NewsFeed/NewsCard.test.tsx",
+      "web/components/NewsFeed/NewsCard.tsx",
+      "web/lib/homepageNewsCompatibility.test.tsx",
+      "web/lib/sources/tweetLunaReview.test.ts",
+      "web/lib/sources/tweetLunaReview.ts",
+      "web/lib/sources/tweetLunaTransport.ts",
+      "web/pages/api/v1/db/tweet-pattern-review.ts",
+      "web/scripts/review-ifttt-luna.ts"
+    ]
+  },
+  {
+    "lane": "C3",
+    "patches": [
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/C3-CANCEL-RELOAD.patch",
+        "sha256": "c500b580b79f2bd1ce3bc00e50630ea3ac1d47bd1985843c53121cb8a9b420ff",
+        "files": [
+          "web/components/account/InSeasonPanel.tsx",
+          "web/components/account/InSeasonPanel.test.tsx"
+        ]
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/C3-AUTH-SIGNOUT-CLEANUP.patch",
+        "sha256": "5ad23a504c4a1892bbd5ae33d83959afedcb4aca5d3bf60039f8ffc37aae23e4",
+        "files": [
+          "web/lib/supabase/browser-auth.ts",
+          "web/__tests__/contexts/AuthProviderContext.test.tsx"
+        ]
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/C3-UUID-HARDENING.delta.patch",
+        "sha256": "a258a6ac9bbee84547a95acbb93a53ecc6a9c71245bf7517d2bf64f6e838f67e",
+        "files": [
+          "web/components/account/InSeasonPanel.tsx",
+          "web/components/account/InSeasonPanel.test.tsx"
+        ]
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/C3-REFUND-PRIVATE-ERRORS.patch",
+        "sha256": "c53cc8a71557c8f8d58681d73508823c01f0b08aed2fcbb79b2defe1e1f4d177",
+        "files": [
+          "web/components/account/DraftProPanel.tsx",
+          "web/components/account/DraftProPanel.test.tsx"
+        ]
+      },
+      {
+        "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/C3-PANEL-MESSAGES.delta.patch",
+        "sha256": "9f0491557d8dde968b3147defca035d905fac4e23227f0cea7a5c6d878526521",
+        "files": [
+          "web/components/account/DraftProPanel.tsx",
+          "web/components/account/DraftProPanel.test.tsx"
+        ]
+      }
+    ],
+    "union_paths": [
+      "web/__tests__/contexts/AuthProviderContext.test.tsx",
+      "web/components/account/DraftProPanel.test.tsx",
+      "web/components/account/DraftProPanel.tsx",
+      "web/components/account/InSeasonPanel.test.tsx",
+      "web/components/account/InSeasonPanel.tsx",
+      "web/lib/supabase/browser-auth.ts"
+    ]
+  }
+]

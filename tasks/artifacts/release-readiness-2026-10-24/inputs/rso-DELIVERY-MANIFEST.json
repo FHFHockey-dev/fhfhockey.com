@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-23T16:54:30.351695+00:00",
+  "status": "recommended for integration; broader release gates remain with owner",
+  "files": {
+    "REPORT.md": "b176d7431839e637b8ec905d7dc83b3fe74b99f9ba306c6c2b1be59ae5c367c1",
+    "FIXTURE-CANDIDATE.patch": "7f2b99d9d756d68b46587fa30778cd634078a7f2853fa3cf48498de632aeaf29",
+    "ACCEPTANCE-HARNESS.patch": "2c4d9e01ab571b4bf786b01a79730aeb3b17bf380c1cd4911a5d4b9b740d4d5b",
+    "CURRENT-PINS.json": "809c9ab308e4c48e3acb1e5b37c3001e366784193f46ed9c908177e16dae22c0",
+    "CURRENT-CASE-ACCOUNTING.json": "bf9501b18e2975ab7526c79b1da6ee060547e63683cf3a688e904c9c2e8bbd03",
+    "FAILURE-CLASSIFICATION.json": "c132f2427d2c26121be2be7e06431e8c6848f97da778e2da08f237ee34faf771",
+    "scoped-static/RECEIPT.json": "429b76076aa1e561486982b9ccf79a59b73c16b6ee9268129a150a88128b57ba",
+    "SERVER-STOPPED.json": "afd6c29b0ab5282f5c9ed7bb5e5524aa2ec10946bf4161f9e0afe48cd231b605"
+  },
+  "uniqueAffectedCases": 44,
+  "uniquePassingCases": 44,
+  "fullAffectedSpecPass": 16,
+  "fullAffectedSpecFail": 28,
+  "acceptancePass": 10,
+  "static": "ESLint and TypeScript exit0",
+  "pendingOperations": []
+}

@@ -1,0 +1,60 @@
+{
+  "at": "2026-10-24T21:12:50.845014+00:00",
+  "snapshot": "/tmp/fhfh-c1-c4-navigation-release-gmyae6br",
+  "checks": [
+    {
+      "log": "c1-c4-tests.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-c1-c4-navigation-release-gmyae6br/web/node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "/tmp/fhfh-c1-c4-navigation-release-gmyae6br/composition.vitest.config.mts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.725
+    },
+    {
+      "log": "c1-c4-types.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-c1-c4-navigation-release-gmyae6br/web/node_modules/typescript/bin/tsc",
+        "-p",
+        "/tmp/fhfh-c1-c4-navigation-release-gmyae6br/composition.tsconfig.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 3.943
+    },
+    {
+      "log": "c1-c4-lint.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-c1-c4-navigation-release-gmyae6br/web/node_modules/eslint/bin/eslint.js",
+        "components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+        "components/GoalieShareChart/index.tsx",
+        "components/LineCombinations/LineCombinationsGrid.tsx",
+        "components/ShotVisualization/ShotVisualization.tsx",
+        "components/TeamTabNavigation/TeamTabNavigation.test.tsx",
+        "components/TeamTabNavigation/TeamTabNavigation.tsx",
+        "hooks/useShotData.test.tsx",
+        "hooks/useShotData.ts",
+        "pages/stats/team/[teamAbbreviation].tsx",
+        "__tests__/pages/wigoCharts.test.tsx",
+        "pages/wigoCharts.tsx",
+        "__tests__/pages/stats/team/teamAbbreviation.test.tsx",
+        "components/GoalieShareChart/GoalieShareChart.test.ts"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.265
+    }
+  ],
+  "source_integrity_matches": true,
+  "canonical_edits": 0,
+  "network": "Blocked by process preload; mocked clients",
+  "servers": 0
+}

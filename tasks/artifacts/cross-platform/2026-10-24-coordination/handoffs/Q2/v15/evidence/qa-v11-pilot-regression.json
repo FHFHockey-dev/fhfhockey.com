@@ -1,0 +1,63 @@
+{
+    "runId": "1698944f214e44e2843eb039d42a04d0",
+    "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+    "utc": "2026-10-24T15:42:32.1742310Z",
+    "failure": "",
+    "passed": true,
+    "realPlayMode": true,
+    "cleanupComplete": true,
+    "checks": [
+        {
+            "name": "v11 retains one active pilot and live weapon",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "saved spawn left-stick travel retains seven metres per second",
+            "passed": true,
+            "measured": 14.000001907348633
+        },
+        {
+            "name": "three released XR snap gestures rotate ninety degrees",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "pilot reaches target bypass entrance through actual collision movement",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "new target solids leave full pilot-capsule clearance beside range",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "actual pilot traverses twenty-six-metre target bypass",
+            "passed": true,
+            "measured": 26.01667022705078
+        },
+        {
+            "name": "capture A is neutral before actual entry",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "actual v11 pilot enters and progresses capture A",
+            "passed": true,
+            "measured": 0.16666659712791443
+        },
+        {
+            "name": "capture A completes while weapon fires",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "cockpit capture readout remains connected with weapon panel",
+            "passed": true,
+            "measured": 0.0
+        }
+    ],
+    "runtimeErrors": [],
+    "method": "Focused retained-behavior regression in actual v11 Play Mode: virtual OculusTouchController/XRHMD events drive existing pilot Update and CharacterController; actual capsule overlaps/casts inspect the new targets' bypass; actual movement traverses it. One setup warp places the pilot outside A, then actual stick entry and capture run while weapon fires. No broad traversal, headset or performance claim."
+}

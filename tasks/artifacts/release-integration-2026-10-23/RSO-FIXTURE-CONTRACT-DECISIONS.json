@@ -1,0 +1,51 @@
+{
+  "at": "2026-10-23T16:30:21.880587+00:00",
+  "candidatePopulation": {
+    "decision": "Reconcile obsolete999-scored assertion to full999eligible/bounded40selected/160evaluations/incomplete search; retain lastcandidate1000 first,+16,zeroAGP andfilter/timer responsiveness",
+    "source": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
+    "sha256": "30acc638e6019650dbe7c53b7a443c9670be8fdea54b38e7e56027e9e4883b90",
+    "exactReleasedSourceMatch": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+    "evidence": "representative-only activePoints; separate search.eligibleCandidates; existing nearby40/160 and outside-bounded-set unit contracts",
+    "notClaimed": "exhaustive optimality or999 scored comparisons"
+  },
+  "manualAsOf": {
+    "decision": "Fresh correlated server evaluatedAt belongs to returned display/evaluation snapshot; saved workspace provenance remains unchanged absent edit",
+    "source": "currentPlanningRead.ts:133; executionAdapter.test.ts:214-219; RosterScheduleOptimizer.tsx:343 and578-601",
+    "replacement": "Assert new current read/display cutoff and current-day behavior; preserve unchanged saved context/asOf on pure view navigation/reload; retain old failed oracle",
+    "runtimeEdit": "none"
+  },
+  "noticeInteraction": {
+    "state": "Unresolved; source and failed screenshot show collapsed hover/focus notice rail",
+    "next": "Test real hover/focus expansion then normal Continue click; noforceclick/no pointer-event suppression",
+    "runtimeEdit": "none"
+  },
+  "alignment": {
+    "state": "Hypothesis pending measuredgeometry",
+    "evidence": "scheduleLegend inlinepadding5px vscompactScroll3px; datecontrols moved tolegend buttable remainsinscroll",
+    "threshold": "<=1px unchanged",
+    "runtimeEdit": "none"
+  },
+  "retainedYahoo": {
+    "source": "workspace.ts:276-287, candidatePlanMetrics.ts:153-161",
+    "decision": "Retained provider roster sets unknown availability/timing/cost/allowance and unsupported verification. Preserve owned schedule/week navigation and explicit limitations; require no actionable acquisition or certified netgain. Raw NHL opportunity is separate from old +AGP1.",
+    "rawIntentButton": "CandidateCard119 Selectadd is managerintent foracquirable; visibilityaloneis not verifiedcomparison/authorization. Realcurrentpublicfixtureunknown andsavedsyntheticmanager_available mustremainseparate."
+  },
+  "candidateFeedback": {
+    "source": "Fixture periods[] and candidatePlanMetrics.ts:156-161",
+    "decision": "Gross Horizon20 is not netcomparison when allowanceunknown. Rebind to absence/unavailable authorized netcomparison with reason; preserve eligibility/availability, manager edit intent, plannedadds0to1, unknownallowance and activegames3 where actualsupported. Do not changeunknownrules to manufacturepositive.",
+    "activeGamesAdjudication": {
+      "decision": "Expected1 ownedstart, not3 including unapplied proposedplayer; selectedintentadd1 remainssaved",
+      "source": "planningTimeline.ts127-136",
+      "sourceSha256": "264f95a4a37ed618372650e61893e3f80f070f64a14d63d6418cf329fb519eb2",
+      "exactReleaseCMatch": true,
+      "reason": "Fixtureperiods[] has no coveringacquisitionperiod; timeline returns beforecommittingnextRoster",
+      "requiredControls": [
+        "No acquisition period covers limitation",
+        "Plannedadds1 andunchangedselectedstep",
+        "Allowanceunknown",
+        "No authorizednetcomparison"
+      ],
+      "notChanged": "rules orengine"
+    }
+  }
+}

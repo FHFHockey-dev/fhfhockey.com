@@ -1,0 +1,37 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/p07IndependentComponent.test.tsx
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-p07-r1-review-3mw_5nd7/web
+
+(node:38909) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/rosterScheduleOptimizer/p07IndependentComponent.test.tsx > mounts the real UI/hook/adapter with one current read shared by plan and candidate consumers
+REVIEW_EXECUTIONS {"executions":[{"id":"manual:1pgb46z","context":{"provider":"manual","seasonId":20262027,"leagueId":"private-league","teamId":"private-team","startDate":"2026-10-23","endDate":"2026-10-23","timeZone":"UTC","asOf":"2026-10-22T12:00:00.000Z"},"intent":{"revision":0,"steps":[],"protectedPlayerIds":[],"excludedPlayerIds":[],"goalieCoverage":"accept_risk","goalieWindow":"early","goalieSplit":"mon_thu","alternativeCount":10},"options":{"allowRead":true,"publicContext":true,"refreshKey":"[\"[\\\"[\\\\\\\"manual\\\\\\\",20262027,\\\\\\\"private-league\\\\\\\",\\\\\\\"private-team\\\\\\\",\\\\\\\"2026-10-23\\\\\\\",\\\\\\\"2026-10-23\\\\\\\",\\\\\\\"UTC\\\\\\\"]\\\",null,false,null]\",0]","yahooEligibility":null},"candidates":{"requestedPlayerIds":[]}}],"urls":["/api/v1/roster-schedule-optimizer/access","/api/v1/roster-schedule-optimizer/workspace?provider=manual&seasonId=20262027&leagueId=private-league&teamId=private-team&startDate=2026-10-23&endDate=2026-10-23","/api/v1/roster-schedule-optimizer/data?seasonId=20262027&startDate=2026-10-23&endDate=2026-10-23&timeZone=UTC"]}
+
+ ❯ lib/rosterScheduleOptimizer/p07IndependentComponent.test.tsx (1 test | 1 failed) 124ms
+   × mounts the real UI/hook/adapter with one current read shared by plan and candidate consumers 124ms
+     → expected "spy" to be called 1 times, but got 3 times
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleOptimizer/p07IndependentComponent.test.tsx > mounts the real UI/hook/adapter with one current read shared by plan and candidate consumers
+AssertionError: expected "spy" to be called 1 times, but got 3 times
+ ❯ lib/rosterScheduleOptimizer/p07IndependentComponent.test.tsx:36:19
+     34|   await act(async () => { await new Promise(resolve => setTimeout(reso…
+     35|   console.info("REVIEW_EXECUTIONS", JSON.stringify({ executions, urls:…
+     36|   expect(fetcher).toHaveBeenCalledTimes(1);
+       |                   ^
+     37| });
+     38| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  11:50:50
+   Duration  853ms (transform 331ms, setup 8ms, collect 497ms, tests 124ms, environment 127ms, prepare 27ms)
+
+

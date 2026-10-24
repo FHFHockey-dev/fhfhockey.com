@@ -1,0 +1,22 @@
+{
+  "utc": "2026-10-24T15:43:31.039326+00:00",
+  "baselineFile": "/Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023C/baseline-v12-hashes.json",
+  "baselineSha256": "7df8091123286dd3b3bc79de3b1206db36e1b0b944e2210a7eaa72989a5e7451",
+  "baselineCount": 611,
+  "main": {
+    "root": "/Users/tim/Desktop/MetaQuestGame/Vesper Basin Prototype",
+    "changed": [],
+    "missing": [],
+    "matched": 611
+  },
+  "isolated": {
+    "root": "/Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject",
+    "changed": [],
+    "missing": [],
+    "matched": 611
+  },
+  "mainHasV13Scene": false,
+  "mainHasV14Scene": false,
+  "v13SceneSha256": "077bd43b9bcaccd51a68e5d353b23cb2c701c7003c8eb21ea3c46c5ddd89aa80",
+  "v13SceneMatchesHandoff": true
+}

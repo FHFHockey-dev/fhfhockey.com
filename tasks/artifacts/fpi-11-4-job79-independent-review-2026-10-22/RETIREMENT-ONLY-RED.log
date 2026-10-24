@@ -1,0 +1,49 @@
+
+> web@0.1.0 test
+> vitest --run --config vitest.offline.config.mts lib/cron/nstCoordination.test.ts -t keeps retired job79 clearance advisory
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-job79-retirement-only-gfcnvgz1/fixture/web
+
+ ❯ lib/cron/nstCoordination.test.ts (6 tests | 1 failed | 5 skipped) 5ms
+   × nstCoordination > keeps retired job79 clearance advisory while preserving full-job pacing 4ms
+     → expected { requestCount: 20, …(8) } to match object { burstAllowed: true, …(1) }
+(14 matching properties omitted from actual)
+   ↓ nstCoordination > returns a shared-key serialization policy for direct NST jobs
+   ↓ nstCoordination > confirms every active NST cron start has ten minutes of clearance
+   ↓ nstCoordination > fails closed for a route without an audited cron slot
+   ↓ nstCoordination > keeps the burst-clearance schedule synchronized with the canonical inventory
+   ↓ nstCoordination > does not impose NST coordination on non-direct jobs
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 5 skipped (6)
+   Start at  12:35:30
+   Duration  140ms (transform 29ms, setup 5ms, collect 29ms, tests 5ms, environment 0ms, prepare 26ms)
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/cron/nstCoordination.test.ts > nstCoordination > keeps retired job79 clearance advisory while preserving full-job pacing
+AssertionError: expected { requestCount: 20, …(8) } to match object { burstAllowed: true, …(1) }
+(14 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "burstAllowed": true,
+-   "requestIntervalMs": 0,
++   "burstAllowed": false,
++   "requestIntervalMs": 21000,
+  }
+
+ ❯ lib/cron/nstCoordination.test.ts:22:8
+     20|     expect(getNstCronBurstClearance("update-nst-gamelog").allowed).toB…
+     21|     expect(resolveNstGamelogRequestPlan({ queuedDates: 1, requestCount…
+     22|       .toMatchObject({ burstAllowed: true, requestIntervalMs: 0 });
+       |        ^
+     23|     expect(resolveNstGamelogRequestPlan({ queuedDates: 2, requestCount…
+     24|       .toMatchObject({ burstAllowed: false, requestIntervalMs: 21_000 …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

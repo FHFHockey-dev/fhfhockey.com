@@ -1,0 +1,183 @@
+{
+  "K1": {
+    "got": {
+      "a": [
+        "high",
+        "second",
+        "between",
+        "low"
+      ],
+      "b": [
+        "high",
+        "second",
+        "low"
+      ],
+      "c": [
+        "high",
+        "second",
+        "between",
+        "between",
+        "low"
+      ],
+      "two": [
+        "high",
+        "low"
+      ],
+      "one": [
+        "neutral",
+        "neutral",
+        "neutral"
+      ],
+      "ties": [
+        "high",
+        "high",
+        "second",
+        "low",
+        "low"
+      ]
+    },
+    "bad": 0
+  },
+  "T1": {
+    "bad": [],
+    "pairs": [
+      "5/2:WSH@15.8",
+      "4/3:NYI,MTL@13.9",
+      "4/2:STL,VAN,VGK,EDM,FLA@9.9",
+      "4/1:NYR,PIT,TOR,BOS,BUF,DET,SEA,COL,OTT,CBJ,DAL,PHI,SJS@5.8",
+      "3/2:NJD,UTA,LAK@3.9",
+      "3/1:MIN,ANA,CAR,WPG,CHI,TBL,CGY@-0.2"
+    ]
+  },
+  "P1": {
+    "recentCalls": 1,
+    "pool": 69,
+    "RANK_POOL_MAX": 132,
+    "shown": 37,
+    "TRIMMED_PLAYERS_MAX": 66,
+    "poolOnly": 32,
+    "leakedPoolNames": [],
+    "notInPool": 0,
+    "orderBad": [],
+    "tierCounts": {
+      "strict": [
+        2,
+        14,
+        33
+      ],
+      "widened": [
+        2,
+        47,
+        96
+      ]
+    },
+    "cache": "public, max-age=0, s-maxage=300, stale-while-revalidate=300",
+    "tiers": [
+      [
+        [
+          2,
+          0
+        ],
+        [
+          8,
+          6
+        ],
+        [
+          5,
+          28
+        ]
+      ],
+      [
+        [
+          2,
+          0
+        ],
+        [
+          8,
+          39
+        ],
+        [
+          5,
+          91
+        ]
+      ]
+    ]
+  },
+  "P2": {
+    "recentState": "unavailable",
+    "cache": "public, max-age=0, s-maxage=60",
+    "leak": false,
+    "otherRecentCalls": 0,
+    "staleShown": 0,
+    "staleCounts": null
+  },
+  "V1": {
+    "vil": 2.0096,
+    "iaf": 1.9393333333333334,
+    "ref": {
+      "vil": 2.0096,
+      "iaf": 1.9393333333333334
+    },
+    "roles": {
+      "vil": 2.4896,
+      "iaf": 2.0393333333333334
+    },
+    "noToiFpPerGame": {
+      "vil": 1.92,
+      "iaf": 2
+    },
+    "multipliers": [
+      1.0466666666666666,
+      0.9696666666666667
+    ],
+    "order": [
+      "Vilardi",
+      "Iafallo"
+    ],
+    "formula": "Score = L5 fantasy pts/GP (G 3 · A 2 · PPP 1 · SOG 0.2 · HIT 0.2 · BLK 0.25; goalies W 4 · SV 0.2 · GA −1 · SO 3) × opportunity (L1 +15% · L2 +10% · L3 +5% · D P1 +10% · P2 +5% · PP1 +10% · PP2 +5% · ±2% per L5 TOI min vs 16:00 F / 20:00 D, max ±10%); season rate breaks ties"
+  },
+  "Q1": {
+    "shape": [
+      {
+        "table": "rolling_player_game_metrics",
+        "range": [
+          0,
+          999
+        ],
+        "order": [
+          "game_date"
+        ],
+        "select": "player_id,season,game_date,strength_state,season_games_played,goals_total_last5,assists_total_last5,points_total_last5,shots_total_last5,hits_avg_last5,blocks_avg_last5,toi_seconds_avg_last5,pp_points_total_last5,toi_seconds_avg_season,line_combo_slot,line_combo_group,pp_unit",
+        "writes": 0
+      },
+      {
+        "table": "wgo_goalie_stats",
+        "range": [
+          0,
+          167
+        ],
+        "order": [
+          "date"
+        ],
+        "select": "goalie_id,date,season_id,games_played,wins,saves,shots_against,goals_against,quality_start,shutouts",
+        "writes": 0
+      },
+      {
+        "table": "rolling_player_game_metrics",
+        "range": [
+          1000,
+          1679
+        ],
+        "order": [
+          "game_date"
+        ],
+        "select": "player_id,season,game_date,strength_state,season_games_played,goals_total_last5,assists_total_last5,points_total_last5,shots_total_last5,hits_avg_last5,blocks_avg_last5,toi_seconds_avg_last5,pp_points_total_last5,toi_seconds_avg_season,line_combo_slot,line_combo_group,pp_unit",
+        "writes": 0
+      }
+    ],
+    "rows": [
+      1500,
+      100
+    ]
+  }
+}

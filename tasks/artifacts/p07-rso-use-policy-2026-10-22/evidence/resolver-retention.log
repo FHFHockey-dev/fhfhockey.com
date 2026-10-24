@@ -1,0 +1,19 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/player-forecasts/planningContributions.test.ts lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web
+
+(node:13963) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/planningContributions.test.ts (110 tests) 34ms
+(node:13963) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts (28 tests) 38ms
+
+ Test Files  2 passed (2)
+      Tests  138 passed (138)
+   Start at  10:29:43
+   Duration  861ms (transform 300ms, setup 11ms, collect 379ms, tests 72ms, environment 246ms, prepare 50ms)
+

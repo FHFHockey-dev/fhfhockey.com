@@ -1,0 +1,17 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t eligible full-team evidence for goalie starts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-p07-r1-review-3mw_5nd7/web
+
+(node:39054) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (209 tests | 208 skipped) 69ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 208 skipped (209)
+   Start at  11:52:20
+   Duration  1.07s (transform 514ms, setup 9ms, collect 713ms, tests 69ms, environment 159ms, prepare 32ms)
+
+

@@ -1,0 +1,365 @@
+{
+  "differences": [
+    {
+      "path": "web/audit.application-tsconfig.json",
+      "snapshot_sha256": "73b7a29ba33ef4c50c53b440a98bde50ace6e1613e4cd1995f701448b6343e7f",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/audit.vitest.config.mts",
+      "snapshot_sha256": "16b373a3c0026be1ab54fe30f00634b4db578b265426198f96b9349a06fab963",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/audit-network-deny.cjs",
+      "snapshot_sha256": "5fd1c8ce5bb65531ab0558bccf4fe9ef252e4c524c4bec4c944c37e4bd707c06",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/audit.offline.setup.ts",
+      "snapshot_sha256": "7dbb56c149b2b620b5cc073456a414d2819b06cfbb5ec7c7f0cf02ef7d176a6f",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/styles/vars.scss",
+      "snapshot_sha256": "edb491e43103d32cf76b755fd73a80e9e10bc350244c7fedd981a26714a4d4d9",
+      "canonical_sha256": "69b7ac0ea0bcd4504b60dd698f4d747daceddef80636de748e816f26a4112f1f",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/scripts/qualify-native-players-offline.ts",
+      "snapshot_sha256": "16ea12db0dd60cc6b88d0d089aa639cbdf5bedca7a86d16f07228c64f60c554e",
+      "canonical_sha256": "d345fcc4913c8e9ecf87b00f6500aa811a9f9f64e0f6e7988dfb8da61bcb7275",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/scripts/qualify-native-players-offline.test.ts",
+      "snapshot_sha256": "472ab145c301e6806b3f5449aad66ae3c40135db1d70e7580fbf3a2ee6535d0f",
+      "canonical_sha256": "cf99e337551c94231b7d0df81a045dcf1a0c497f2a093c16d80e8be526d1dfbc",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/auditStatsAsync.test.tsx",
+      "snapshot_sha256": "880f5979ae200e1d0a9f50b0488ec35878bcb45d40170a7cfb2f62cb1f86ae7e",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/reviewNegativeExposure.test.tsx",
+      "snapshot_sha256": "67fc78cd8da4777bfad0e37c395ecc367ce299664b3aaf020517ef27331bce1c",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/auditTemporalCutoff.test.ts",
+      "snapshot_sha256": "74e72c3d6c8deaace08fc73b7f60598dc519d40b7f0c3425d3c946734a74244c",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/reviewConsumerExposure.test.tsx",
+      "snapshot_sha256": "4a3678f2c5a3db9f8b70dfa4295897f03bace5637b53c0b2fec2838903e882b2",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/auditEdgecases.test.ts",
+      "snapshot_sha256": "78be7306d016249d3b2da91ba63ac18a5bac1dfc6ceb5d596d65e858f091c295",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/pages/db/upsert-projections.tsx",
+      "snapshot_sha256": "2f274d2eed1ede03b8b9007ba5c9caa49752665428dc29fc91ff32b0d03f2619",
+      "canonical_sha256": "5de410ac2d8cbe075e05fcef904c1cd69a76fe86524d0646ddeaeabd97f6bda4",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/pages/db/index.tsx",
+      "snapshot_sha256": "99bbcf89461eeb45a232fc4cca894d107b2672240e9ea16279266dcd6edfe3fa",
+      "canonical_sha256": "546e5dd79584ef1ba10e20ada2e7d27c4a2348be996602228413249f4eebae13",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/pages/db/player-aliases.tsx",
+      "snapshot_sha256": "63f5369f4bc80491528b4eeaf797eedc445b7a0d72effb5674b9626836be9f64",
+      "canonical_sha256": "322c7cb66ad3c1ec4e66da08e652343d8dfe97cbcf2868152b72e4af58f3c758",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/pages/db/player-forecast-season-editor.tsx",
+      "snapshot_sha256": "5a14ef9701a0dd6762f5ad65145b985df48edc2c6a613967238aa94ed8a5bfea",
+      "canonical_sha256": "763f1ba5676277f33ca03fbb2b43c606ed5255e94f24607d2b1947fac3ef3a1f",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/pages/db/tweet-pattern-review.tsx",
+      "snapshot_sha256": "f5633bd1b4f10bb10fa092687d0ee0836b865b339a24f46646bb8ecc5af88cf9",
+      "canonical_sha256": "68c6cebd05c9139a4c25b01234eafa96da2c78dbb34543c4e4748c3da926e562",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/pages/db/player-forecast-review.tsx",
+      "snapshot_sha256": "1c754364c6c025c37407e0c5bcc7260079325f9d7e3ba05dce9571bd9e45b8fc",
+      "canonical_sha256": "8b5db4ad70d8f11d28df6f4cf1f3be9ce896bd002e0ac2deb6c8ea198abf8325",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/pages/api/v1/db/run-projection-v2.ts",
+      "snapshot_sha256": "6f3c68d16746a091be9de4ca5d43ec9e95414eaba718054c588f18aae141e349",
+      "canonical_sha256": "9800b55c4531dacde940592e5344a86497de50cce9a7e46426babdbceab43d20",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-ctpi-daily.ts",
+      "snapshot_sha256": "03a310525d41b5933dab7cedf9a1005b4cd9feec39fdabfd39c0471d0372ab98",
+      "canonical_sha256": "7ba8680eb056ffe7ed220d3c0955dc61569fca17050bfd516493a21377b3e7d7",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/pages/api/v1/account/in-season/checkout.ts",
+      "snapshot_sha256": "c276aa8976b0eb79ae7961c911c6c8569ccb766ba2f6527da1b1dbae64856267",
+      "canonical_sha256": "53508ada83a494e9ecfb9f9ddc1416eafe9c62f270b01d5081a826914c144c3f",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/in-season/billingRoutes.test.ts",
+      "snapshot_sha256": "ff4048b000a0430def609320c9385379ac8f9022643bfeec22a5bd6f27d8cb78",
+      "canonical_sha256": "ed71429ee5e16193c280f33d570390107ac970a55dff6aa001501be078cab9aa",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/run-forge-projections.ts",
+      "snapshot_sha256": "79faaaef6f263e55c7602251e745c436b38ecc5621c36a04d56fca4c4990a21d",
+      "canonical_sha256": "5cc2df55ddf4091fa5428fbfe338f03eb71f5559713fe794351a61a6ef142408",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/runProjectionV2.test.ts",
+      "snapshot_sha256": "82e6a983efbd16bbc35362fa1d280fd1d72fa09fe4f02b4016c8ede5fce0e8c0",
+      "canonical_sha256": "b669fbeb639c733c27dfee2f27003c9ae0d7359c282e0ee495e45792663ca5d3",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/run-forge-projections.resume.test.ts",
+      "snapshot_sha256": "329eacae1d49bab6061182db02864baffd4f13eee37ce38678504f22ea985125",
+      "canonical_sha256": "67192f40fb258d31dff98b98d07f0e82b44f3e5d480272cab7f4fcd97362a27e",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/uncertainty.test.ts",
+      "snapshot_sha256": "e7282ef01bb97877db112dc129e2a6c415bcb9a6422bf8a688c816c9ebc4be0b",
+      "canonical_sha256": "32c776baac562e4b4073d6b71ef910bfce16066d98e4a9ab5cc6cae44d7a0015",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/uncertainty.ts",
+      "snapshot_sha256": "6a614099748df394d92c562220c5fb2546a97a7d486ce7c76f01ef5563ec0492",
+      "canonical_sha256": "bbfa835b827ec18f671ff37b9c3e56c31a485e4e0441d78be83bdd7bb6dea62b",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/goalieModel.test.ts",
+      "snapshot_sha256": "79beb99c5691945ec68b7dd02300d4f1d77739bbadc2aa7cff655686ca72ef64",
+      "canonical_sha256": "3fdcea3a3b79bb068caa6d7d8567a75b7e0b614eba9dadf348d75044b9fbd174",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/goalieModel.ts",
+      "snapshot_sha256": "fef53bc83fa3fadc7ef593eaa615325d2a947438d9f5213991f610dda347ad42",
+      "canonical_sha256": "7be7646592d674f7de5b86ffa2f57fc022a09c3705d9c8ef7b4c12b5e5e82c61",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/nativeGoalAccounting.test.ts",
+      "snapshot_sha256": "622eae06f19d60bd5597e963259e932aea542ac0c1afcc9d767bbb13c89d44ec",
+      "canonical_sha256": "ab32053a3ee2a4fc030c55c89fc0ba1b9425d9b9da0d2aa9ac0aa1188d26e1d8",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/goaliePipeline.test.ts",
+      "snapshot_sha256": "705f2675e9203f43bbd56ec80faf2634631ba2ca15eb9a4fec4901fffa2eec78",
+      "canonical_sha256": "fd4b08f18d904ce4029140ef0dacc72967cd547d03ab85441ea72519bd8f2153",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/p07Task10Serialization.test.ts",
+      "snapshot_sha256": "c015bf95740c749700e04f175324a0bd1c96207d84a30fa177a731e218f37e4f",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/p07IndependentBoundary.test.ts",
+      "snapshot_sha256": "27e59bb1412a411052a81097c6469cdd8262441b85a9cc30194b3b49d893a65e",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/p07IndependentComponent.test.tsx",
+      "snapshot_sha256": "b0735c56c7950d0c49d79d1a29f9b77949fee2d8e823b0a476d63325156c5b0f",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/p07R2IndependentCorrelation.test.ts",
+      "snapshot_sha256": "d7575c6b57d81f9333edbf37f7ec4eab56180a6ec87a2fe3d392b913b270c562",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/p07ReviewFixture.ts",
+      "snapshot_sha256": "c377ede29e8faf92186ef5cf2d0619874b6c08f64058d6fdb52840de58caa3a7",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/player-forecasts/p07BridgeClaimOracle.test.ts",
+      "snapshot_sha256": "375b5bd032d200bccffe1fd5ed2e1052d7ab68ddf446bc2666c68a8aa7889963",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/cron/nstCoordination.ts",
+      "snapshot_sha256": "28a9f7278489f0da80bfdb6f5effdbe516b2bd03028fb0ba24e9fbab634f2058",
+      "canonical_sha256": "5ed92547973e82b5aa4d69d08946568436b96b953eea0791f4ffa1baa190476d",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/cron/nstCoordination.test.ts",
+      "snapshot_sha256": "8aed3bc393b2c7eaebd5f99fae8a9b3b9402df4510ef6a83c91b409bdb0e2fbf",
+      "canonical_sha256": "ad3602b4b68cf730fff5980a140cbd7e3a3ba6bf650346897aa0697b75671cb9",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/stages/goalie-stage.ts",
+      "snapshot_sha256": "7eb6abfcdef2505dc8743ce53dd8c2224198a8245da719573c7df594dec972a5",
+      "canonical_sha256": "fa9da548c345cab0ba88e54160e47befc222f6f64143c39509c1aa50e9d0efb0",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/stages/skater-stage.ts",
+      "snapshot_sha256": "870d21f7748f87d6b9179f47969862e0634462819927987011c4d8d4ab4e14dc",
+      "canonical_sha256": "fe8357390ed4d5ed599bbd0429df5ea6150f703c9f8b121819198d6b4fc8c05b",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/queries/skater-queries.ts",
+      "snapshot_sha256": "9dfcff408d4cd5f9bdb266a3380a8beacc557a584002e44d5b75e0639d74606a",
+      "canonical_sha256": "4589f8d79dd6c30be4c2653fe82af1166535b97450eaaa5fd049459c54441893",
+      "classification": "accepted-packet-divergence"
+    },
+    {
+      "path": "web/lib/projections/queries/skater-queries.test.ts",
+      "snapshot_sha256": "a417087529e6ed4319769699bb4f443c1873263fbdb738624c817c1861c732e2",
+      "canonical_sha256": "cdc0a351a4c71db1d30879c25763023fc4da36f148ab0313e317af1346ac9c15",
+      "classification": "accepted-packet-divergence"
+    },
+    {
+      "path": "web/lib/projections/utils/market-output-builders.ts",
+      "snapshot_sha256": "0fb7462f4f0b89b5938b8afb18e191f894de553f639c71f4bd7b57e2460bb776",
+      "canonical_sha256": "1daa4512af0109f4aa99bbff6ed97065a9516a34446d52f7a3f57d79b9067b43",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/lib/projections/calculators/skater-adjustments.ts",
+      "snapshot_sha256": "39b0c8ed9745902fd387b3db01da72c3ac411adeb185bab82259053116dc7636",
+      "canonical_sha256": "89cf0e544daac80c01f9af267a7774a31ce523d2e483fd87074d999c18fd119b",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/scripts/fixtures/native-player-offline-synthetic.json",
+      "snapshot_sha256": "355aafa1d7d32e18332a5eefc595177fc289ff8796236045eccecc9f8bab9778",
+      "canonical_sha256": "12953ed69ad7ab160c91f712bee24b3f891ce62092ce12ac7d0962a489d538fe",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/__tests__/pages/db/player-aliases.test.tsx",
+      "snapshot_sha256": "dccec22f820fef46732197c6da8dbc61fea31fa3e241683712e8f0a3dd83a5a1",
+      "canonical_sha256": "0edfd45c0b2abd27c1c7f98646c665ee1d5aab7a46274d346bff3aabaa354d1d",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts",
+      "snapshot_sha256": "c80e7a616da5e4704efeddba9285645d9f2d865b211afb0cfc697a0b12a81465",
+      "canonical_sha256": "7150b3470fdd1d44848aa859206d542879c37428fe2fbf9946ea3988dd3efb59",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/auditNstIndependent.test.ts",
+      "snapshot_sha256": "cf4d68df2811ce5557f4c2b344631b81369d6d0ffe19e192e9624803db029817",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+      "snapshot_sha256": "2093c898a46d26814654c84be423c7e5df7516bd837082300d086dfdbf854a90",
+      "canonical_sha256": "e4d387ce6d35f2532ce88fe437c82a13aadc81cdf49cea825d2cfacda98ad451",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/auditNstR1Additional.test.ts",
+      "snapshot_sha256": "18a2f3296c422478cc74c14f7f2571ba16a40337531426d11c7230b5c3013c0b",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/run-projection-v2.test.ts",
+      "snapshot_sha256": "932216397093113655854b700db9e084d52eb97528ba21f31ea263a694690010",
+      "canonical_sha256": "749710e8ebc0463f09f983545e672f6cab96ff9bad500103314f1d52f6264c78",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/components/MetricsTimeline/metricsTimelineData.ts",
+      "snapshot_sha256": "4cf82af3ff7f1dbabb0c207b45fac988f568415c2e057fe0ba71cbc0ce137b93",
+      "canonical_sha256": "59ad16886a71aa2c8d0e0d555f1b426439b6b6242dcc887d187dee85eb9bd441",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/components/MetricsTimeline/MetricsTimeline.tsx",
+      "snapshot_sha256": "987e32c5e7a92de1efc062d1d5002834e7656fc4de5666e44cbd0c31ae6adbc3",
+      "canonical_sha256": "07bb3c3919ae684504551ab05afddada6dfe9fb71b8af282ccd11ea562779ebe",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/components/MetricsTimeline/metricsTimelineData.test.ts",
+      "snapshot_sha256": "ac0ebc952022011dc55fe9db239f1657406e1b9d00703d84b00789f7d1d98089",
+      "canonical_sha256": "fabc0c29b1e1e772fb6e8f9461f881584ebff7cb58ecab2b2588608ce5c13622",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/components/Admin/CronRouteRunner.tsx",
+      "snapshot_sha256": "e92d7563c51f2a013eb6a678a3453c77232e2aa63dc78e7d50e46f2d97d31c6e",
+      "canonical_sha256": "78085cda3a36f5344cf8030f00cdb13318da9b4277f8aa5dd92a952f9bf98f2b",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/p07Task10Independent.test.tsx",
+      "snapshot_sha256": "b2ecdcb1e667c126b5507869ea2a6e19cdedc0573a2ed6214ba917c6afbe68c3",
+      "canonical_sha256": null,
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/components/account/InSeasonPanel.test.tsx",
+      "snapshot_sha256": "1625383b4b086b051126ad590e4703e0612d3a94df2727743b9d8611734f3a84",
+      "canonical_sha256": "9111c5524568150797b0cc232e3b4f2584758102206531d9b26d408ba8abdd10",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/components/account/InSeasonPanel.tsx",
+      "snapshot_sha256": "68ad90554e03268a2a66c38658dcfaaec07ea7a563a6353b51efd34c9ad3657b",
+      "canonical_sha256": "aa8b536ee039599c6d41167841b5c1a177f0350c895d03ae0b6ed0acfd76a167",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    },
+    {
+      "path": "web/contexts/AuthProviderContext/index.tsx",
+      "snapshot_sha256": "fbf8bd3ee951d10806def220b8f168ee9177953c03c2031582e578e94f7b62e7",
+      "canonical_sha256": "ba911142eb7c7e52c880df27a4b7236e95dd2345012a32078df9671073ff4be8",
+      "classification": "retained-foreign-or-review-fixture; no new acceptance"
+    }
+  ],
+  "accepted_mismatch_count": 2
+}

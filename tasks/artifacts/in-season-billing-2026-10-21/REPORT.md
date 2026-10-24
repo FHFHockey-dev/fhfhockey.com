@@ -1,5 +1,12 @@
 # In-season sandbox billing handoff — 2026-10-21
 
+**Draft location correction (2026-10-22):** the unchanged sandbox billing SQL is retained at
+[drafts/20261021210000_in_season_sandbox_billing.sql](drafts/20261021210000_in_season_sandbox_billing.sql),
+outside the active migration chain. Its SHA-256 remains `d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12`.
+Historical receipts/manifests retain the former `supabase/migrations/` path as evidence of what
+was tested; resolve that path to this draft for current file-hash checks. This relocation grants
+no canonical-source, hosted-apply or deployment authority.
+
 **Latest local correction:** [same-owner cancellation continuity](cancellation-owner-refresh-2026-10-22/HANDOFF.md) preserves unresolved cancellation request IDs across token refresh for the same owner, clearing them on owner change/sign-out. It changes only the account panel and its test; other entrypoint/core files remain hash-identical. The new pinned correction needs independent re-review; activation and service gates remain held.
 
 **New local packet, 2026-10-22:** [inactive account and worker entrypoints](inactive-entrypoints-2026-10-22/HANDOFF.md) adds guarded monthly signup/cancellation UI, owner-only subscription lookup and an authenticated one-job worker route with truthful failure reporting. New flags default off; none were configured. **307/307 tests**, full TypeScript and targeted lint passed. Exact hashes/patches cover five application files, three tests and one unapplied owner-lookup SQL review draft. The prior 11-file correction union is unchanged. This increment needs its own independent review and isolated RPC/service verification; there is no active schedule, live support or deployment.

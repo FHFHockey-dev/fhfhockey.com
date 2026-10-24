@@ -1,0 +1,12 @@
+--- independent-r1/p07ReviewFixture.ts
++++ r2-adapted/p07ReviewFixture.ts
+@@ -37,4 +37,8 @@
+   const body = { success: true, data, bridgeForecasts: wire };
+   return { snapshot: structuredClone(snapshot), body, intent: workspace.intent };
+ }
+-export function respond(body: unknown) { return { ok: true, json: async () => structuredClone(body) } as Response; }
++export function respond(body: unknown, readOverride?: unknown) {
++  return { ok: true, json: async () => ({ ...structuredClone(body as object), read: readOverride === undefined ? {
++    nonce: (vi.mocked(fetch).mock.lastCall?.[1]?.headers as Record<string, string>)["X-RSO-Read-Nonce"], evaluatedAt: now,
++  } : readOverride }) } as Response;
++}

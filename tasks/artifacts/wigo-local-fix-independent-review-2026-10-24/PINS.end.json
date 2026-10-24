@@ -1,0 +1,281 @@
+{
+  "at": "2026-10-24T16:55:19.860287+00:00",
+  "pins": [
+    {
+      "path": "web/pages/api/v1/db/calculate-wigo-stats.ts",
+      "sha256": "f438eb129e1f70dd0691151916e78a8ea2225412ec63847ce93e334bc9ee9fa6",
+      "expected": "f438eb129e1f70dd0691151916e78a8ea2225412ec63847ce93e334bc9ee9fa6",
+      "unchanged": true
+    },
+    {
+      "path": "web/utils/fetchWigoPlayerStats.ts",
+      "sha256": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f",
+      "expected": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f",
+      "unchanged": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts",
+      "sha256": "a065e5ea2a93f2fc93efd93ae90a6e2c72b733566e74597135ef94010815c198",
+      "expected": "a065e5ea2a93f2fc93efd93ae90a6e2c72b733566e74597135ef94010815c198",
+      "unchanged": true
+    },
+    {
+      "path": "web/utils/fetchWigoPlayerStats.test.ts",
+      "sha256": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1",
+      "expected": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1",
+      "unchanged": true
+    },
+    {
+      "path": "web/package.json",
+      "sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "expected": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "unchanged": true
+    },
+    {
+      "path": "web/package-lock.json",
+      "sha256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+      "expected": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+      "unchanged": true
+    },
+    {
+      "path": "web/.nvmrc",
+      "sha256": "6f7ebb0460b61089c4413e5740b5e2fa196a19281886e50ab1f99b15e0aeeb21",
+      "expected": "6f7ebb0460b61089c4413e5740b5e2fa196a19281886e50ab1f99b15e0aeeb21",
+      "unchanged": true
+    },
+    {
+      "path": "web/vitest.config.mts",
+      "sha256": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+      "expected": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+      "unchanged": true
+    },
+    {
+      "path": "web/tsconfig.json",
+      "sha256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "expected": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "unchanged": true
+    },
+    {
+      "path": "web/__tests__/vitest.setup.js",
+      "sha256": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+      "expected": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+      "unchanged": true
+    },
+    {
+      "path": "web/utils/adminOnlyMiddleware.ts",
+      "sha256": "de749fa9e811aacbbd1c85a080140f380fd8c3d3794ad378caa9dd4025f444c5",
+      "expected": "de749fa9e811aacbbd1c85a080140f380fd8c3d3794ad378caa9dd4025f444c5",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/cron/normalizeDependencyError.ts",
+      "sha256": "6bc3d9862f9d40f4a1be277b41f225266ee80af510afc2d484e92778fcb6830a",
+      "expected": "6bc3d9862f9d40f4a1be277b41f225266ee80af510afc2d484e92778fcb6830a",
+      "unchanged": true
+    },
+    {
+      "path": "web/pages/wigoCharts.tsx",
+      "sha256": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151",
+      "expected": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151",
+      "unchanged": true
+    },
+    {
+      "path": "web/__tests__/pages/wigoCharts.test.tsx",
+      "sha256": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b",
+      "expected": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/offline-repro.cjs",
+      "sha256": "72b8cc0dbf4347a2d6c3d4c1576fc54549058ab5f3316f55af4ea7b2764397d8",
+      "expected": "72b8cc0dbf4347a2d6c3d4c1576fc54549058ab5f3316f55af4ea7b2764397d8",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/offline-results.json",
+      "sha256": "5f3c5293d85733a2d1cc258a68f4d11a49cdcb8ba4c6f70295e4d6aa2d0b4065",
+      "expected": "5f3c5293d85733a2d1cc258a68f4d11a49cdcb8ba4c6f70295e4d6aa2d0b4065",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/REPORT.md",
+      "sha256": "e8e2db19ab5e7243f3bd2cf7049cbc1c33c3b6d1f5e495968d3b13b99a063ab9",
+      "expected": "e8e2db19ab5e7243f3bd2cf7049cbc1c33c3b6d1f5e495968d3b13b99a063ab9",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/proposed-read-only-evidence.sql",
+      "sha256": "76b0489ce0206d3b5e4e2968c28fbef85b55605afbbabc41473a69a89c93ca66",
+      "expected": "76b0489ce0206d3b5e4e2968c28fbef85b55605afbbabc41473a69a89c93ca66",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/summary.json",
+      "sha256": "fe17c8310839e30c7bc57c725ef4db6f9f27522752b2da51b64e92397c28f8e1",
+      "expected": "fe17c8310839e30c7bc57c725ef4db6f9f27522752b2da51b64e92397c28f8e1",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-1.sql",
+      "sha256": "67fc2dfd7746694c5a35110124da204d424e795420340fe248f56621ac0e994e",
+      "expected": "67fc2dfd7746694c5a35110124da204d424e795420340fe248f56621ac0e994e",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2.sql",
+      "sha256": "6e5fb9e681829404dbdbbfbb7b35ff56e93b81b714200dfdec5b805fb90887aa",
+      "expected": "6e5fb9e681829404dbdbbfbb7b35ff56e93b81b714200dfdec5b805fb90887aa",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/REPORT.md",
+      "sha256": "12cae6a38cdae65b454fe76271a329b46759ab130654ed14691da3bc6373ed8b",
+      "expected": "12cae6a38cdae65b454fe76271a329b46759ab130654ed14691da3bc6373ed8b",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-1-rows.json",
+      "sha256": "38804083b42d7a8a62104bf3f881069f03754a34b899feca55edc68500506736",
+      "expected": "38804083b42d7a8a62104bf3f881069f03754a34b899feca55edc68500506736",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-1-result.json",
+      "sha256": "c96d5313d229ebae383dc8f925acf02f672a671fb29f053e28dc9c5b1136994a",
+      "expected": "c96d5313d229ebae383dc8f925acf02f672a671fb29f053e28dc9c5b1136994a",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2-rows.json",
+      "sha256": "52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+      "expected": "52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2-result.json",
+      "sha256": "f2d2fdd13fdf07519e87d7cfa4811c2a3cffe318c02b6e09d6b753fa147f59d5",
+      "expected": "f2d2fdd13fdf07519e87d7cfa4811c2a3cffe318c02b6e09d6b753fa147f59d5",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.json",
+      "sha256": "0721edd6d3b4cb333c4d49ceff36e4759e0dd17470ba381b2dfac7e468376fa1",
+      "expected": "0721edd6d3b4cb333c4d49ceff36e4759e0dd17470ba381b2dfac7e468376fa1",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/typescript.log",
+      "sha256": "1b23794cfb9de88241ed38bf05c0be38f72b06afa74735e4d7463cb9dc0a2746",
+      "expected": "1b23794cfb9de88241ed38bf05c0be38f72b06afa74735e4d7463cb9dc0a2746",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/OWNERSHIP.json",
+      "sha256": "7a8b03d3ba143d99a55dbdd99e6a3c1ce37ed703253190fec07b29889f8b2840",
+      "expected": "7a8b03d3ba143d99a55dbdd99e6a3c1ce37ed703253190fec07b29889f8b2840",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/eslint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/02-recent-rate-authority.patch",
+      "sha256": "34e0442afaae5987bd03901631143de3d8e77dccfe487d6712851f885d63dd1f",
+      "expected": "34e0442afaae5987bd03901631143de3d8e77dccfe487d6712851f885d63dd1f",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/focused-tests.log",
+      "sha256": "d6b5877bf589532b3312f055f7f7712293362c18975186dcd34ce3106c27ce84",
+      "expected": "d6b5877bf589532b3312f055f7f7712293362c18975186dcd34ce3106c27ce84",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/typescript-result.json",
+      "sha256": "271568a30ef6bce5305c8da49d6d199bf5002ebdec8c1ffd87a00cd868d7c33e",
+      "expected": "271568a30ef6bce5305c8da49d6d199bf5002ebdec8c1ffd87a00cd868d7c33e",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/WIGO-DATA-FIX.patch",
+      "sha256": "a63ef5a4e6dde4ee1255661a612f01b79a4e4306c5822f8d4fe078f89fbb394e",
+      "expected": "a63ef5a4e6dde4ee1255661a612f01b79a4e4306c5822f8d4fe078f89fbb394e",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/SOURCE-PINS.json",
+      "sha256": "37a4435a7ee5f8d9e86b9967237e19cef4f00ab02ee500691d04248c0b73e943",
+      "expected": "37a4435a7ee5f8d9e86b9967237e19cef4f00ab02ee500691d04248c0b73e943",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/01-builder-window-and-errors.patch",
+      "sha256": "b25bc1a038b01b83d78937d440311c3ec8268d546327698a1f91568e771c0022",
+      "expected": "b25bc1a038b01b83d78937d440311c3ec8268d546327698a1f91568e771c0022",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/green-tests-1.log",
+      "sha256": "ad9b9b712069bacedd24655a691dac5bd701b1ec1f8f1c3e8f071268f6528686",
+      "expected": "ad9b9b712069bacedd24655a691dac5bd701b1ec1f8f1c3e8f071268f6528686",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/red-tests.log",
+      "sha256": "b0a7d08514ebaf632e7080d8dcd5f46eda110254baae07d403af16f211d3f470",
+      "expected": "b0a7d08514ebaf632e7080d8dcd5f46eda110254baae07d403af16f211d3f470",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.md",
+      "sha256": "3013dc8decf878efd428af3b6ee7662a8c1aa946cba4bbe489292bd8a68ae924",
+      "expected": "3013dc8decf878efd428af3b6ee7662a8c1aa946cba4bbe489292bd8a68ae924",
+      "unchanged": true
+    },
+    {
+      "path": "web/components/WiGO/statMetadata.ts",
+      "sha256": "8ef22249e8066164e3bf1ce13fe4693f3e37fba9d907cc881c1af8c9c2b435d3",
+      "expected": "8ef22249e8066164e3bf1ce13fe4693f3e37fba9d907cc881c1af8c9c2b435d3",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/supabase/pagination.ts",
+      "sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "expected": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/supabase/database-generated.types.ts",
+      "sha256": "348d1a452d649ca6d4160b7611cd59a7feb30f8e7cc4f6119baabe43f0aaf6b3",
+      "expected": "348d1a452d649ca6d4160b7611cd59a7feb30f8e7cc4f6119baabe43f0aaf6b3",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/COORDINATION-PROTOCOL.md",
+      "sha256": "70dcda85a0174f7fcd3cf03cdbd5943f23e6bb2524e1c25545dab07ae34313d3",
+      "expected": "70dcda85a0174f7fcd3cf03cdbd5943f23e6bb2524e1c25545dab07ae34313d3",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/WIGO-DATA/WIGO-DATA-FIX-20261024-LEASE.json",
+      "sha256": "7a8b03d3ba143d99a55dbdd99e6a3c1ce37ed703253190fec07b29889f8b2840",
+      "expected": "7a8b03d3ba143d99a55dbdd99e6a3c1ce37ed703253190fec07b29889f8b2840",
+      "unchanged": true
+    },
+    {
+      "path": "supabase/migrations/20260716112908_production_schema_baseline.sql",
+      "sha256": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d",
+      "expected": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/RECEIPT.md",
+      "sha256": "383ad2e237dc86618ce5567b1de28a635a3e38a83d81fa9af6b982aa6df66d01",
+      "expected": "383ad2e237dc86618ce5567b1de28a635a3e38a83d81fa9af6b982aa6df66d01",
+      "unchanged": true
+    }
+  ]
+}

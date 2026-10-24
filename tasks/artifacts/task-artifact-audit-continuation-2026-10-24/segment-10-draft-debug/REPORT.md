@@ -1,0 +1,27 @@
+# Draft-debug and Draft Ranker content checkpoint
+
+Seven new unique documents received full documentary reads: the1,886-line/105,304-byte embedded Draft debug PRD and six Draft Ranker execution/task/decision/launch/release/community sources. Total196,822bytes. The unchanged September interface-polish list was reread to resolve a specific contradiction; the prior complete main-audit review was reused at its exact hash. Neither receives new unique-document credit. [COVERAGE.json](COVERAGE.json) preserves ranges, hashes and limits.
+
+## Material results
+
+- **Proposed P2 SITE-DRAFT-CSV-RESOLVER** consolidates four historical requested follow-ups: similarity/team-position search ordering, mismatch indication, bounded manual-map reuse and truthful auto/manual summary. Current search, metadata and mapping summary are already present. A narrowly inspected current source uses the same name-keyed choice map for automatic and manual assignment; manual choice precedes contextual matching and existing choice is counted as manual. This is a concrete static verification target, not an executed runtime counterexample. The prior main audit had already recommended contextual keys. A future owner must check newer receipts/supersession and verify two identical names with differing team/position plus mixed auto/manual choices before any correction. All accepted CSV validation/pagination/session/accessibility work retains closure. No implementation is dispatched by audit.
+- **Close stale debug pending wording:** July13 NEW7/8 and NEW9 supply SHA and performance closure. September4 direct official-provider SHA (including zero) takes precedence; derivation remains for actual/custom inputs lacking the mapped stat. Owner-approved absolute timing evidence and the missing relative-baseline exception remain intact. Do not claim30%gain, implemented chunk yielding, or required virtualization/hash/worker/prefetch work from old roadmap prose.
+- **Preserve Draft Ranker chronology:** July17 personal authenticated rollout is complete in the inspected source, while old July15 staff-only/header paragraphs are historical. Discovery, contribution/public aggregate exposure and beta scope remain separate gates. Phase8 was explicitly retired July30; do not reopen it as unfinished work. July89ace rollout does not prove release of the latercc3be5c09 in-season homepage guard. Current production state was not queried.
+- **Privacy owner facts:** contribution withdrawal affects later eligible aggregate rebuilds, not automatic private-history erasure; account cascades, regenerated aggregates and retained non-identifying immutable snapshots are distinct source contracts. Keep them separate in the existing fact sheet without making a new legal/deletion promise.
+- **Card design remains unresolved:** TJ says the preview is progressing but is not exactly what he envisioned. Technical local acceptance does not approve the overall composition, visual design or final mobile export.
+
+Four existing IDs change, one proposed ID is added:208→209 IDs;1013→1030evidence. All208 prior scopes/evidence prefixes,204unchanged row objects and32legacy blocks per Markdown are preserved. [CHANGELOG.json](CHANGELOG.json) contains before/after fields and17exact frozen source references; [FINDINGS.json](FINDINGS.json) distinguishes closure, proposed work and held decisions.
+
+## Coverage and continuation
+
+[CONTINUATION.json](CONTINUATION.json) retains the original immutable queue, exact reviewed-hash overlay and prior duplicate/exclusion map. [FOLDERS.json](FOLDERS.json) shows no remaining unique Draft/Yahoo task document from that original queue; this is not a claim every current file, generated body, source or pixel in that folder is fully reviewed. Metadata and exact duplicate dispositions retain their limited scope. The39known supporting metadata dispositions and eight selected unique reports remain carried separately, without blanket new acceptance.
+
+Resume at `tasks/TASKS/draft-ranker/progress.md`, then its canonical PRD, discovery and technical contracts. Remaining documents in that folder stay explicit. No whole-tree audit completion is claimed.
+
+## Verification and limits
+
+Checks validate stable IDs/scopes, evidence prefixes,32legacy block bytes, Markdown/JSON row parity, snapshot hashes/line bounds, coherent counts and added whitespace. Exact canonical readback and same-identity Library replacement will be recorded in FINAL-CHECKPOINT.json. [SOURCE-NARROW.md](SOURCE-NARROW.md) contains only the selected current ImportCsvModal ranges; other application content and runtime behavior remain unreviewed. No application edit/import/test, browser/server, auth/DB/provider/production action, Git operation or additional worker occurred. Embedded prompts, old clone/build/release commands and historical security baselines were treated solely as evidence. No audit action was denied or left uncertain.
+
+## Verified delivery
+
+Canonical209IDs/1030evidence installed/read back exactly;17new references and frozen source pins matched. All208 prior scopes/evidence prefixes,204unchanged row objects and32legacy blocks per Markdown remain intact. Same Library identity replacedv9→v10 successfully; returned metadata helper exit0/native readback match and local bytes unchanged. [FINAL-CHECKPOINT.json](FINAL-CHECKPOINT.json) records exact hashes, selected-source change detection and no pending mutation. Overall content audit remains unfinished.

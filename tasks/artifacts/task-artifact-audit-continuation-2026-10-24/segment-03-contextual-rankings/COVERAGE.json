@@ -1,0 +1,221 @@
+{
+  "at": "2026-10-24T15:48:46.259411+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/2026-06-07-goal.md",
+      "status": "content-reviewed",
+      "sha256": "50608b1714fb5bf872280d3aee81ce68d4e95f01a0d6bb98c02b938085bd4b8e",
+      "bytes": 18266,
+      "lines": 546,
+      "reviewed_ranges": [
+        [
+          1,
+          546
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/gpt-codex-suggested-prompt.md",
+      "status": "content-reviewed",
+      "sha256": "2b095ea7ce7528dc13f9ee8879da3896a710738cbc37a6d221462a0ce5e933cf",
+      "bytes": 26454,
+      "lines": 722,
+      "reviewed_ranges": [
+        [
+          1,
+          722
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/prd-contextual-hockey-rankings.md",
+      "status": "content-reviewed",
+      "sha256": "7fa5db7fcaf94cf076e0963418739e1482d6cc01b80e21ee4187ef0b2638bec6",
+      "bytes": 57800,
+      "lines": 1787,
+      "reviewed_ranges": [
+        [
+          1,
+          1787
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/prd-v2-pass-CHR.md",
+      "status": "content-reviewed",
+      "sha256": "3de3ef08ec39e82097db682e843dbb8de6a1ac6743c2b9ed192bbeaa311cf20c",
+      "bytes": 30048,
+      "lines": 626,
+      "reviewed_ranges": [
+        [
+          1,
+          626
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-ecosystem-alignment-audit.md",
+      "status": "content-reviewed",
+      "sha256": "6ccc3745d506cc49c636e248604ff437e4a29584c8f2be7ccbf339eca2e342fb",
+      "bytes": 16471,
+      "lines": 259,
+      "reviewed_ranges": [
+        [
+          1,
+          259
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md",
+      "status": "content-reviewed",
+      "sha256": "2c32a40f688304dd2c7cba9b2460575d25bf6d86038bd7e0e9c579dd6cc95c42",
+      "bytes": 45399,
+      "lines": 264,
+      "reviewed_ranges": [
+        [
+          1,
+          264
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-post-alignment-gap-audit.md",
+      "status": "content-reviewed",
+      "sha256": "9183311619adcf6b7b4a555b83f88e463df3c5cbd8b8af850c45c06864879f62",
+      "bytes": 27518,
+      "lines": 578,
+      "reviewed_ranges": [
+        [
+          1,
+          578
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+      "status": "content-reviewed",
+      "sha256": "f7455649134bfb415ccb6ce5d3eb06d1ec88e7d9931ffbc5e6ed1edc8fd467a2",
+      "bytes": 29191,
+      "lines": 167,
+      "reviewed_ranges": [
+        [
+          1,
+          167
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-cost/R-COST-HANDOFF.md",
+      "status": "content-reviewed",
+      "sha256": "d6bd43715339f94700df626d1ff2c3e968280f59f579d3a7f96ed21f7e9c0f19",
+      "bytes": 14906,
+      "lines": 117,
+      "reviewed_ranges": [
+        [
+          1,
+          117
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW.md",
+      "status": "content-reviewed",
+      "sha256": "41f48c946e65bc2cac404d356aa03b748a3836910bb4154225206d2be6421f80",
+      "bytes": 9288,
+      "lines": 74,
+      "reviewed_ranges": [
+        [
+          1,
+          74
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW-EVIDENCE.json",
+      "status": "content-reviewed",
+      "sha256": "aa95765164d69065409cb889068137c036f66117611cfc4b4ad2509982936497",
+      "bytes": 1773,
+      "lines": 75,
+      "reviewed_ranges": [
+        [
+          1,
+          75
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/artifacts/c3-independent-review-2026-10-24/REVIEW.md",
+      "status": "content-reviewed",
+      "sha256": "aad7be2b2c9496366fed6e3785fc78474f60acbcf89bf0562210eb3522ee3943",
+      "bytes": 9933,
+      "lines": 58,
+      "reviewed_ranges": [
+        [
+          1,
+          58
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/artifacts/c3-independent-review-2026-10-24/REVIEW-EVIDENCE.json",
+      "status": "content-reviewed",
+      "sha256": "89c885179a42b757b4f6cfb7d06e9a30a7c548891ff15e579195a9cdceebc65e",
+      "bytes": 1668,
+      "lines": 44,
+      "reviewed_ranges": [
+        [
+          1,
+          44
+        ]
+      ],
+      "note": "Full documentary read; owner/reviewer claims imported only within stated scope, no app/test/hosted/pixel acceptance by auditor."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+      "status": "partially-inspected",
+      "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f",
+      "bytes": 152980,
+      "lines": 665,
+      "reviewed_ranges": [],
+      "note": "Parsed checkbox structure only: zero unchecked boxes. This does not validate all checked clauses or constitute full semantic review."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 13,
+    "partially-inspected": 1
+  },
+  "full_read_bytes": 288715,
+  "full_read_lines": 5317,
+  "other_partial_reads": [
+    "Selected rg matches in canonical master and top-level JSON task fields for206-ID deduplication.",
+    "Selected coordination rg matches for C3 and slice03 routing; truncated output was used only as discovery, not complete-document coverage.",
+    "tasks/tasks-README.md keyword search only."
+  ],
+  "unreadable_or_absent_discovery": [
+    {
+      "path": "tasks/handoff-2026-10-20/README.md",
+      "action": "Read-only rg probe alongside known exact documents",
+      "reason": "No such file or directory; no output/claim derived from missing path; no retry."
+    }
+  ],
+  "not_reviewed": [
+    "Ranking application implementations/tests and current hosted source rows.",
+    "Main rankings task list remaining full content; research/deep-research reports; workstation context/recommendations.",
+    "Underlying R-COST raw before/after/harness results; attribution is to full dated receipt.",
+    "C3/TG reviewer source/tests/log/pin matrices and browser images; imported verdicts only.",
+    "No new global inventory. New own namespace excluded from recursive re-audit."
+  ]
+}

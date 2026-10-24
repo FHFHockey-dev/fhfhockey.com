@@ -1,0 +1,110 @@
+{
+  "scope": "Additive selected-folder coverage, not a recursive inventory; consult original FOLDERS for all other folders.",
+  "folders": [
+    {
+      "folder": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3",
+      "content_reviewed": [
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/RECEIPT.md"
+      ],
+      "partially_inspected": [],
+      "remaining": "Only named exact files/ranges reviewed; other source/test/log/pin/image/archive siblings retain prior coverage or are explicitly unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4",
+      "content_reviewed": [
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/RECEIPT.md"
+      ],
+      "partially_inspected": [],
+      "remaining": "Only named exact files/ranges reviewed; other source/test/log/pin/image/archive siblings retain prior coverage or are explicitly unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/social-share",
+      "content_reviewed": [
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/social-share/RECEIPT.md"
+      ],
+      "partially_inspected": [
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/social-share/results.json"
+      ],
+      "remaining": "Only named exact files/ranges reviewed; other source/test/log/pin/image/archive siblings retain prior coverage or are explicitly unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03",
+      "content_reviewed": [
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/OWNERSHIP.md",
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/HANDOFF.md",
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/OPERATING-PLAN.md",
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/EVIDENCE.json"
+      ],
+      "partially_inspected": [],
+      "remaining": "Only named exact files/ranges reviewed; other source/test/log/pin/image/archive siblings retain prior coverage or are explicitly unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review",
+      "content_reviewed": [
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/REVIEW.md",
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/REVIEW-EVIDENCE.json"
+      ],
+      "partially_inspected": [],
+      "remaining": "Only named exact files/ranges reviewed; other source/test/log/pin/image/archive siblings retain prior coverage or are explicitly unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1",
+      "content_reviewed": [
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1/HANDOFF.md"
+      ],
+      "partially_inspected": [],
+      "remaining": "Only named exact files/ranges reviewed; other source/test/log/pin/image/archive siblings retain prior coverage or are explicitly unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review",
+      "content_reviewed": [
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/REVIEW.md",
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/REVIEW-EVIDENCE.json"
+      ],
+      "partially_inspected": [],
+      "remaining": "Only named exact files/ranges reviewed; other source/test/log/pin/image/archive siblings retain prior coverage or are explicitly unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02",
+      "content_reviewed": [
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/HANDOFF.md",
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/DECISIONS.md"
+      ],
+      "partially_inspected": [],
+      "remaining": "Only named exact files/ranges reviewed; other source/test/log/pin/image/archive siblings retain prior coverage or are explicitly unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02-review",
+      "content_reviewed": [
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02-review/REVIEW.md",
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02-review/REVIEW-EVIDENCE.json"
+      ],
+      "partially_inspected": [],
+      "remaining": "Only named exact files/ranges reviewed; other source/test/log/pin/image/archive siblings retain prior coverage or are explicitly unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/cross-platform/2026-10-24-coordination",
+      "content_reviewed": [],
+      "partially_inspected": [
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md"
+      ],
+      "remaining": "Only named exact files/ranges reviewed; other source/test/log/pin/image/archive siblings retain prior coverage or are explicitly unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04",
+      "content_reviewed": [
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/OWNERSHIP.md"
+      ],
+      "partially_inspected": [],
+      "remaining": "Only named exact files/ranges reviewed; other source/test/log/pin/image/archive siblings retain prior coverage or are explicitly unreviewed."
+    }
+  ],
+  "exclusions": [
+    "C3 browser images/RESULTS/mutation and test logs not reviewed; receipt-only claims.",
+    "C4 screenshots not viewed; visual/browser/network claims remain owner evidence.",
+    "Social-share PNG/JPEG/trace archives/network logs metadata/receipt only; results stats bounded parse.",
+    "TG application files/tests, bulk PINS/COMMANDS and check logs not independently executed or fully inspected; review verdicts are documentary imports.",
+    "Unrelated Q1/Q2 assets and outputs outside authorized tree are excluded."
+  ]
+}

@@ -1,0 +1,250 @@
+{
+  "status": "First visual checkpoint; frozen for TJfeedback/Scoutindependentreview",
+  "frozenAtUtc": "2026-10-24T19:52:26.846307+00:00",
+  "sources": [
+    {
+      "path": "web/components/player-cards/EditorialPlayerCard.tsx",
+      "bytes": 10699,
+      "sha256": "053d67ea06e1be6ba336db2afa35eaa04a7ec72b3e599f3d166e0c0d898d8a29"
+    },
+    {
+      "path": "web/components/player-cards/EditorialPlayerCard.test.tsx",
+      "bytes": 5438,
+      "sha256": "99b9013b5d2d16d343f88381730d5794c1beaefda5b6647aa092f0cef5d8bfe6"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/BRIEF.md",
+      "bytes": 4809,
+      "sha256": "006ce9ca6d7e85be1ebea8b01b0587a1cd1bb54ad012dbc949f6cde84c49835b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/HANDOFF.md",
+      "bytes": 5839,
+      "sha256": "249cfd132565b503db63136c5e6e6c9ddaf610707068697210b24b7af700b2a5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/INPUT-LIMITATION.json",
+      "bytes": 4862,
+      "sha256": "08035b2399c61ad5ac158c5fc94a7bf9483959527d5995d260572a486f7ad06f"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/LEASE-RECEIPT.json",
+      "bytes": 6248,
+      "sha256": "ed6621dfab0904f0ebe90997a3b2fbda83749d97b017765288b30df10818d2b8"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/LOCAL-REFERENCES.json",
+      "bytes": 2495,
+      "sha256": "d56ee3562398d1f89208e259819c8f6f8d24bf9f1d755fbb1d357aa210f6901b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/OWNERSHIP.json",
+      "bytes": 839,
+      "sha256": "f2f6d90d0fbf822b7d27bf6de746e982f1dc1eb87aab06c0a44c895983993641"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/PROTECTED-ARTIFACTS.json",
+      "bytes": 21902,
+      "sha256": "2232c96cf4d6af62c6c31545653365163e2e093c7b095142f64f2742968e9b80"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/PROTECTED-SOURCES.json",
+      "bytes": 2301,
+      "sha256": "0774a93dc69b3d37a9a6d5902be99394941f9f32c487e1ba1d717ae357f936e5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/REFERENCE-SYNTHESIS.md",
+      "bytes": 3670,
+      "sha256": "fc49bddb8f08152a777814564f9670fe530f40e9c281c90a8e309fcdea11d9d2"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/VISUAL-QA.md",
+      "bytes": 3049,
+      "sha256": "df147d385529efb18f5c2f375df6a496b1a2f181a0f08d15568bcea8a6782851"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/browser-check.mjs",
+      "bytes": 6005,
+      "sha256": "9b5aaaba7d79ca8c8ca8f4c7368dcef4e84fa14f30ee3a8f9e15de8117e7b6cd"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/browser-command.json",
+      "bytes": 654,
+      "sha256": "037982e1e9c61e7ded2243f62a3b694553bebcbdeadf5826fb752ed4bfc7ab96"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/browser-results.json",
+      "bytes": 948,
+      "sha256": "e4c3a661853cf43c9890731900f0a51152b4922277cd28ea74651dee49c764cd"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/browser.log",
+      "bytes": 49,
+      "sha256": "446055de8485b75201e535a8731bc5d3622b6aa896f87323ae6d42377af28acd"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/candidate-pins.json",
+      "bytes": 857,
+      "sha256": "2cff277f4f28821a7dfcec533ced2dac883bfb0ac45e572ccff79df810ea8edf"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/card-desktop.png",
+      "bytes": 171312,
+      "sha256": "e9eb4bfaf4dfe3c5efefa93850a135ef82fac3b694d741c011f907b9401ecfe0"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/card-phone.png",
+      "bytes": 38370,
+      "sha256": "c9339adf822d79986e294fdcad792a193cffd7977291a50a84e52d9f60d10a50"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/card.png",
+      "bytes": 220317,
+      "sha256": "0375d72fb9c35331d37077757b9e5ff1cd145abb9b8731a90b392fe4b65ca262"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/card.svg",
+      "bytes": 11215,
+      "sha256": "bfa6bf5339470b56733cfbaf8090425b6ed52d3fc265bf3cf24202e9e7bbe655"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/handoff-preview.py",
+      "bytes": 4128,
+      "sha256": "9a206ce42be39cd5b86d08dd316f19ade7cc60f51f4622f4ffe1612c025169cc"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/lint-command.json",
+      "bytes": 683,
+      "sha256": "08ac2f44e3d1a59c89fd0e19beeaf413431b0d929b394a6e0ab30324e5fdff48"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/lint.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/offline.setup.ts",
+      "bytes": 206,
+      "sha256": "1cc06f39cb5f2dd1983fbd1f3c1afa18300893b5b6c97376e41fcb71e88da592"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/preservation-results.json",
+      "bytes": 143,
+      "sha256": "5d393e681ae42996f2526c5ec51dfcb0bfe728dcccc8001e58eba4fb35165fac"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/preview-entry.tsx",
+      "bytes": 5927,
+      "sha256": "fc9028233043faf3d9ab0c6af1dfd79145a3c9fabca16155334671292f9b7809"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/preview-phone.png",
+      "bytes": 83880,
+      "sha256": "d923b14b4e26ccd0d352e2b6f1ebd183cf04e95189d8f6714191f97121aa88c1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/preview.css",
+      "bytes": 1917,
+      "sha256": "33eb5410c0aca0e652ed8fde957a997e7378ba7d6ef476a5f04c84668a5fe034"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/preview.html",
+      "bytes": 314484,
+      "sha256": "f65ce654f1e1e7ab226aa01e95617d925608d8d590fbd65d5bbaa85b324e05a5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/render-command.json",
+      "bytes": 653,
+      "sha256": "a99af6866cad9f5f8896a2f810dae355e9614af3ddf7fc3faa0c0e43f07a7dcc"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/render-preview.mjs",
+      "bytes": 2281,
+      "sha256": "86679b49c51eb5df6cee4485a204dc7d1c5d14c1846ddd8c82096a80d48cec7b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/render.log",
+      "bytes": 259,
+      "sha256": "8f3e16a58e8b14c6ed93883ef94a0b55df17628ee2a89c477c83b16c2ba39e00"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/run-check.py",
+      "bytes": 2098,
+      "sha256": "e87bcf03c0755811b21bcea87a17cf27e8bfd754fa8afffa8746dfae96f3f2b0"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/runtime.json",
+      "bytes": 1094,
+      "sha256": "144680b4f711cee939f62eff6c6d580f9a298ea31e64c467b4e9751abb022619"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/serve-preview.mjs",
+      "bytes": 1105,
+      "sha256": "48e84275cfc729886cf059f713cddbc7f02a223c6998897db0c83cf3d54ae0e5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/snapshot-manifest.json",
+      "bytes": 7314,
+      "sha256": "6975e878697ffce369ce10ab17a0e4c0e44877bddc65ef35a1a209fdc3893fde"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/source.patch",
+      "bytes": 16516,
+      "sha256": "2def6ef7ecb8e3ed8e0e8dab8ff6c454297d6f0131abe1b5df5343d4cc9a4a35"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/tests-command.json",
+      "bytes": 675,
+      "sha256": "ec87a27283e0cff4859518b7823c5ad85eb537c13fd9e7e57d34c206f68c693d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/tests.log",
+      "bytes": 629,
+      "sha256": "7adc759c5f73463cec59fd5097caca77538a126d574ae9de7e15f306f28e291d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/tsconfig.json",
+      "bytes": 377,
+      "sha256": "a9a950010f5bd790c13f0407f74a06a74be9714bd7f3e3d6b08367a904f7f6e4"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/types-command.json",
+      "bytes": 684,
+      "sha256": "fe926d8da1b8d5ce14ff1b8763c7d7b57ae67aac2bcec20e3abd57788faa8cbd"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/types.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/vitest.config.mts",
+      "bytes": 600,
+      "sha256": "89d9648df9963cf47a555e0224e23acdb05affe1766f100a3c6d099b2576576b"
+    }
+  ],
+  "checks": {
+    "focusedTests": "5/5passed",
+    "scopedTypeScript": "passed",
+    "twoFileLint": "passed",
+    "offlineBrowserGroups": "4/4passed",
+    "externalRequests": 0,
+    "pageErrors": 0,
+    "loopbackReadOnlyGets": 2
+  },
+  "preserved": {
+    "PROTECTED-SOURCES.json": 20,
+    "PROTECTED-ARTIFACTS.json": 154
+  },
+  "notPerformed": [
+    "Libraryoutputupload/retry",
+    "full-toolstylepropagation",
+    "live/production/provider/modelcalls",
+    "app/authintegration",
+    "premiumactivation",
+    "Git/index/commits/push/deploy",
+    "newworkers"
+  ]
+}

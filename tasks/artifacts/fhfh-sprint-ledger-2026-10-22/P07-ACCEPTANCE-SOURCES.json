@@ -1,0 +1,106 @@
+{
+  "recorded_at": "2026-10-22T13:59:58+00:00",
+  "head": "a565238f670edc4cf65da79ad52ba82ec41f3b71",
+  "decision": "TJ explicitly selected option2; exact quotes and relay provenance in P07-SELECTED-POLICY.md",
+  "application_edits": 0,
+  "new_behavior_tests": 0,
+  "existing_tests_rerun": 0,
+  "sources": [
+    {
+      "path": "web/lib/rosterScheduleData/planning.test.ts",
+      "sha256": "30ec57586d80e83ce0602f90a2c0ab89e93934b7f06681f7885f822a7bc88748",
+      "inspected_ranges": [
+        [
+          139,
+          235
+        ]
+      ],
+      "evidence_level": "source inspected",
+      "limit": "Selected existing test/control or task contract text only; not executed or whole-file vetted."
+    },
+    {
+      "path": "web/lib/player-forecasts/planningContributions.test.ts",
+      "sha256": "85665ae6cf5a9f17230bea469e14be6c7eafb44d6224c034fda8d4954cd3ff62",
+      "inspected_ranges": [
+        [
+          132,
+          185
+        ],
+        [
+          675,
+          745
+        ]
+      ],
+      "evidence_level": "source inspected",
+      "limit": "Selected existing test/control or task contract text only; not executed or whole-file vetted."
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts",
+      "sha256": "2d3ded14afb002ff1026a5a9ebbdf6be6d94a70c9ca742c1416e39043f84344b",
+      "inspected_ranges": [
+        [
+          30,
+          108
+        ]
+      ],
+      "evidence_level": "source inspected",
+      "limit": "Selected existing test/control or task contract text only; not executed or whole-file vetted."
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/start-chart.test.ts",
+      "sha256": "9f70e810de91003b78d4b64d3e8a06c6740493d1902a99331f94e41405664504",
+      "inspected_ranges": [
+        [
+          1200,
+          1302
+        ]
+      ],
+      "evidence_level": "source inspected",
+      "limit": "Selected existing test/control or task contract text only; not executed or whole-file vetted."
+    },
+    {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+      "sha256": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+      "inspected_ranges": [
+        [
+          420,
+          430
+        ]
+      ],
+      "evidence_level": "source inspected",
+      "limit": "Selected existing test/control or task contract text only; not executed or whole-file vetted."
+    },
+    {
+      "path": "web/lib/in-season/workspaceSchema.test.ts",
+      "sha256": "f215c31e8d97956d22f013baab8a22e3f3034da5e2bdd92fde429f049e947354",
+      "inspected_ranges": [
+        [
+          147,
+          214
+        ]
+      ],
+      "evidence_level": "source inspected",
+      "limit": "Selected existing test/control or task contract text only; not executed or whole-file vetted."
+    },
+    {
+      "path": "tasks/tasks-prd-roster-schedule-optimizer.md",
+      "sha256": "ced28e5f557e3d17cd3a0adb56164cac0f0f79ad6494d72bf3fea0ad942b49f8",
+      "inspected_ranges": [
+        [
+          143,
+          145
+        ],
+        [
+          152,
+          152
+        ],
+        [
+          218,
+          219
+        ]
+      ],
+      "evidence_level": "source inspected",
+      "limit": "Selected existing test/control or task contract text only; not executed or whole-file vetted."
+    }
+  ]
+}

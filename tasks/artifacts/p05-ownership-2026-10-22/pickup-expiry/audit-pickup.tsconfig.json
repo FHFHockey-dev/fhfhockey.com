@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "components/PlayerPickupTable/PlayerPickupTable.tsx",
+    "components/PlayerPickupTable/PlayerPickupTable.test.ts",
+    "next-bootstrap.d.ts",
+    "yahoo-fantasy.d.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    "next-env.d.ts"
+  ]
+}

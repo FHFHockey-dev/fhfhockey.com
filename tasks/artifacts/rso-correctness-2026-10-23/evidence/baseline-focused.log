@@ -1,0 +1,23 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/planningReproducibility.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-rso-correctness-20261023/web
+
+(node:32313) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/rosterScheduleOptimizer/planningReproducibility.test.ts > planning search reproducibility > bounds long-range default work by dates and available candidate groups
+Long-range planning fixture: 12.1 ms, 47 evaluations
+
+stdout | lib/rosterScheduleOptimizer/planningReproducibility.test.ts > planning search reproducibility > bounds a 367-day catalog workload with 25 rostered and 300 available players
+Catalog planning fixture: 1443.4 ms, 13 evaluations
+
+ ✓ lib/rosterScheduleOptimizer/planningReproducibility.test.ts (32 tests) 1764ms
+   ✓ planning search reproducibility > bounds a 367-day catalog workload with 25 rostered and 300 available players  1445ms
+
+ Test Files  1 passed (1)
+      Tests  32 passed (32)
+   Start at  12:20:55
+   Duration  2.22s (transform 106ms, setup 9ms, collect 112ms, tests 1.76s, environment 225ms, prepare 29ms)
+

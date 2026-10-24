@@ -1,0 +1,264 @@
+{
+    "utc": "2026-10-24T15:31:07.5151940Z",
+    "failure": "",
+    "v14SHA256": "450e21bf020bb2f579cfb468b1589909ea7ca43430be64e1dd31deb5333ec80a",
+    "v15SHA256": "",
+    "passed": true,
+    "savedScenesUnchanged": true,
+    "viewHeightOverSurface": 2.430000066757202,
+    "method": "Matched 1920x1080 Editor mono renders (URP SingleCameraRequest, two submissions, synchronous shader compilation, 600 m far clip) from identical cameras. Player-height views use the saved pilot eye offset plus controller skin above the A plaza / route surfaces. Clean images temporarily disable pilot/target renderers and TextMesh debug labels only. Not a headset, stereo or performance capture.",
+    "images": [
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-preview-compounds-overview-clean.png",
+            "sha256": "ccdbfa4df26fe207b74eb67942d861f0610ce099bb5bfc7abd53bbf7f23854f3",
+            "camera": {
+                "name": "compounds-overview",
+                "position": {
+                    "x": 0.0,
+                    "y": 72.0,
+                    "z": -98.0
+                },
+                "target": {
+                    "x": 0.0,
+                    "y": 4.0,
+                    "z": 2.0
+                },
+                "fov": 58.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-preview-a-plaza-to-ne-service-clean.png",
+            "sha256": "eede575021e9894fdf3b12847e65adf00a561678e3eb6c3914ef75ba80d73262",
+            "camera": {
+                "name": "a-plaza-to-ne-service",
+                "position": {
+                    "x": 8.0,
+                    "y": 2.7799999713897705,
+                    "z": 8.0
+                },
+                "target": {
+                    "x": 32.0,
+                    "y": 10.0,
+                    "z": 31.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-preview-a-plaza-to-nw-comms-clean.png",
+            "sha256": "3f303be9fcf5c9aee91909f4c684a3dbc12cc2fa0a63ecef8980258016ec8c49",
+            "camera": {
+                "name": "a-plaza-to-nw-comms",
+                "position": {
+                    "x": -8.0,
+                    "y": 2.7799999713897705,
+                    "z": 8.0
+                },
+                "target": {
+                    "x": -46.0,
+                    "y": 8.0,
+                    "z": 29.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-preview-a-plaza-to-se-logistics-clean.png",
+            "sha256": "338215179e1800db5e305b07e9a4335cf4210e98008e721801b32bfa857a95a2",
+            "camera": {
+                "name": "a-plaza-to-se-logistics",
+                "position": {
+                    "x": 8.0,
+                    "y": 2.7799999713897705,
+                    "z": -8.0
+                },
+                "target": {
+                    "x": 38.0,
+                    "y": 8.0,
+                    "z": -30.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-preview-a-plaza-to-sw-loading-clean.png",
+            "sha256": "e2bcb21c50287681b695113755e6172723f203ba5b783cd7a6052fc75034d222",
+            "camera": {
+                "name": "a-plaza-to-sw-loading",
+                "position": {
+                    "x": -8.0,
+                    "y": 2.7799999713897705,
+                    "z": -8.0
+                },
+                "target": {
+                    "x": -29.0,
+                    "y": 7.0,
+                    "z": -31.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-preview-ne-service-close-clean.png",
+            "sha256": "7e217743504d29d0403d825e5e9e4d745634e57b16d1ee998b4940d40be16438",
+            "camera": {
+                "name": "ne-service-close",
+                "position": {
+                    "x": 56.0,
+                    "y": 26.0,
+                    "z": 8.0
+                },
+                "target": {
+                    "x": 32.0,
+                    "y": 11.0,
+                    "z": 31.0
+                },
+                "fov": 55.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-preview-nw-comms-close-clean.png",
+            "sha256": "715b08c5233b3b7525818182a47f6af8e0112594ea74bc425307a957600a9146",
+            "camera": {
+                "name": "nw-comms-close",
+                "position": {
+                    "x": -70.0,
+                    "y": 24.0,
+                    "z": 6.0
+                },
+                "target": {
+                    "x": -46.0,
+                    "y": 9.0,
+                    "z": 29.0
+                },
+                "fov": 55.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-preview-se-logistics-close-clean.png",
+            "sha256": "09ab0f0669e1ca906275df2aacf84de2019a7913fbede053d009357c157967d8",
+            "camera": {
+                "name": "se-logistics-close",
+                "position": {
+                    "x": 62.0,
+                    "y": 24.0,
+                    "z": -54.0
+                },
+                "target": {
+                    "x": 38.0,
+                    "y": 8.0,
+                    "z": -30.0
+                },
+                "fov": 55.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-preview-sw-loading-close-clean.png",
+            "sha256": "dfe255e728c8cac0a2123ce4301595b074d9faf90d34b072cc7aae2f19cc32ec",
+            "camera": {
+                "name": "sw-loading-close",
+                "position": {
+                    "x": -53.0,
+                    "y": 22.0,
+                    "z": -55.0
+                },
+                "target": {
+                    "x": -29.0,
+                    "y": 7.0,
+                    "z": -31.0
+                },
+                "fov": 55.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-preview-route-overview-clean.png",
+            "sha256": "9c2d20755b213b6387fb57687716a2ece02604f71cdf5fbed4c098a51fc9ebd8",
+            "camera": {
+                "name": "route-overview",
+                "position": {
+                    "x": 105.0,
+                    "y": 90.0,
+                    "z": -70.0
+                },
+                "target": {
+                    "x": 0.0,
+                    "y": 12.0,
+                    "z": 62.0
+                },
+                "fov": 55.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-preview-radar-to-energy-clean.png",
+            "sha256": "af4112a158e37f83630f1c223f0167fb38facf364b7a62a4174778eccdf5f94f",
+            "camera": {
+                "name": "radar-to-energy",
+                "position": {
+                    "x": -2.0,
+                    "y": 16.780000686645508,
+                    "z": 65.0
+                },
+                "target": {
+                    "x": -12.0,
+                    "y": 3.0,
+                    "z": 10.0
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25
+        },
+        {
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+            "file": "images/v14-preview-original-spawn-clean.png",
+            "sha256": "5c7c5442927b25dd2cc3e6b858b89e44d3c95516b9f3b142ae2c0990d8844fcc",
+            "camera": {
+                "name": "original-spawn",
+                "position": {
+                    "x": -103.0,
+                    "y": 2.75,
+                    "z": 0.0
+                },
+                "target": {
+                    "x": -42.99999237060547,
+                    "y": 2.75,
+                    "z": -0.000007152557373046875
+                },
+                "fov": 72.0
+            },
+            "cleanEnvironment": true,
+            "hiddenRenderers": 25
+        }
+    ]
+}

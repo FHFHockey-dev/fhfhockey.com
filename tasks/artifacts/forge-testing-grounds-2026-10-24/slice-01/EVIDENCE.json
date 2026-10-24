@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "scope": "FORGE Testing Grounds slice 01; local building blocks, not integration or pilot acceptance",
+  "recordedDate": "2026-10-24",
+  "branch": "octoberBranch",
+  "baseHead": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "taskIds": [
+    "1.1 partial",
+    "1.2 partial",
+    "1.3 partial",
+    "1.5 discovery only",
+    "1.6 first ownership boundary",
+    "2.3 operational/health only",
+    "2.6 local validation only",
+    "4.4 numeric input only",
+    "4.5 counter reconciliation only",
+    "4.6 local recheck/navigation semantics only",
+    "6.6 progress only",
+    "7.3 operational envelope only"
+  ],
+  "sources": [
+    {
+      "library_file_id": "libfile_f0c6192b583c81918b5d6edc88e02803",
+      "version_id": "1",
+      "name": "prd-forge-testing-grounds.md",
+      "declared_size_bytes": 27797,
+      "total_lines": 232,
+      "has_more": false,
+      "read_text_bytes": 27796,
+      "read_text_sha256": "680df7b002a18cedb20f08efa2dc58a788177d8236aa43ffd28f54c501f6255f",
+      "expected_version_from_delegation": "1",
+      "created_at": "2026-10-24T13:16:03.353654Z",
+      "modified_at": "2026-10-24T13:18:53.883367Z",
+      "byte_identity_verified": false,
+      "read_limitations": "Complete text returned with has_more=false; read text is one byte shorter than declared stored file. Hash describes returned text, not materialized file bytes. No canonical local copy installed."
+    },
+    {
+      "library_file_id": "libfile_1831092d42f88191b7513ef7133ae6f7",
+      "version_id": null,
+      "name": "tasks-prd-forge-testing-grounds.md",
+      "declared_size_bytes": 26987,
+      "total_lines": 115,
+      "has_more": false,
+      "read_text_bytes": 26986,
+      "read_text_sha256": "a5299b6ccf0a817589181177d57c14cde782112ee8cae265abc6e25c02cc3b0d",
+      "expected_version_from_delegation": "0",
+      "created_at": "2026-10-24T13:24:34.047110Z",
+      "modified_at": "2026-10-24T13:24:34.047110Z",
+      "byte_identity_verified": false,
+      "read_limitations": "Complete text returned with has_more=false; read text is one byte shorter than declared stored file. Hash describes returned text, not materialized file bytes. No canonical local copy installed."
+    }
+  ],
+  "sourceVersionNote": "PRD read reports version_id=1. Task list read reports version_id=null; v0 is supplied delegation identity, not independently returned version metadata. Creation and modification match at 2026-10-24T13:24:34.047110Z.",
+  "checks": [
+    {
+      "command": "npm test -- --run lib/forge-testing-grounds/operationalProgress.test.ts lib/forge-testing-grounds/dataHealth.test.ts --maxWorkers=1 --no-file-parallelism",
+      "cwd": "web",
+      "exitCode": 0,
+      "result": "2 files; 20 tests passed",
+      "warning": "Installed Vitest 3.2.7 emitted Node punycode deprecation warning; no dependency mutation."
+    },
+    {
+      "command": "npx tsc --noEmit --strict --skipLibCheck --target es2015 --module esnext --moduleResolution bundler --esModuleInterop lib/forge-testing-grounds/operationalProgress.ts lib/forge-testing-grounds/operationalProgress.test.ts lib/forge-testing-grounds/dataHealth.ts lib/forge-testing-grounds/dataHealth.test.ts",
+      "cwd": "web",
+      "exitCode": 0,
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "command": "npx eslint --report-unused-disable-directives-severity warn lib/forge-testing-grounds/operationalProgress.ts lib/forge-testing-grounds/operationalProgress.test.ts lib/forge-testing-grounds/dataHealth.ts lib/forge-testing-grounds/dataHealth.test.ts",
+      "cwd": "web",
+      "exitCode": 0,
+      "result": "passed",
+      "output": ""
+    },
+    {
+      "command": "Explicit trailing-whitespace scan of four new files (untracked files are not covered by ordinary git diff --check)",
+      "exitCode": 0,
+      "result": "passed"
+    }
+  ],
+  "originalFailures": [
+    {
+      "action": "Expected local PRD/task path discovery",
+      "result": "Both paths absent; initial chained command stopped on ls exit 1. Full Library text subsequently read."
+    },
+    {
+      "action": "Nested AGENTS discovery",
+      "result": "No nested match (rg exit 1) stopped a chained source read; retried the source reads independently."
+    },
+    {
+      "action": "vitest.config.ts discovery",
+      "result": "Path absent; actual config is vitest.config.mts, read before tests."
+    },
+    {
+      "action": "Send first result to source parent thread",
+      "target": "01a15411-3560-7632-8d31-1dd2447ba00e",
+      "result": "thread not found; no message sent. Coordinator relay used."
+    },
+    {
+      "action": "Library local installation",
+      "result": "Coordinator reports download helper failed. This worker did not retry it; complete supported Library reads used per parent steer."
+    }
+  ],
+  "notRun": [
+    "Full application typecheck/lint/test suite",
+    "Browser/UI checks (no UI change or server)",
+    "Hosted runner or database validation",
+    "Real FORGE fit/capture/pilot",
+    "Production requests",
+    "Deployment"
+  ],
+  "boundaries": {
+    "productionRequests": 0,
+    "providerRequests": 0,
+    "paidModelCalls": 0,
+    "deployments": 0,
+    "serversStarted": 0,
+    "gitMutations": 0,
+    "subagentsSpawned": 0,
+    "sharedApplicationFilesEdited": 0
+  },
+  "changedFiles": [
+    "web/lib/forge-testing-grounds/operationalProgress.ts",
+    "web/lib/forge-testing-grounds/operationalProgress.test.ts",
+    "web/lib/forge-testing-grounds/dataHealth.ts",
+    "web/lib/forge-testing-grounds/dataHealth.test.ts"
+  ],
+  "baselineFiles": "All four application paths absent before creation; baseline null. No committed candidate SHA (Git operations prohibited). Candidate SHA-256 hashes recorded below.",
+  "acceptance": "Local checks passed. Independent review, integration and end-to-end acceptance pending.",
+  "candidateHashes": {
+    "web/lib/forge-testing-grounds/operationalProgress.ts": {
+      "baseline": null,
+      "sha256": "3d8112f72969ad567d827a237d71f7596df774a74b541f232cc7456070404daf"
+    },
+    "web/lib/forge-testing-grounds/operationalProgress.test.ts": {
+      "baseline": null,
+      "sha256": "ec02afa4ad37b48f10f48e76fc9399f2c918c2ef8b1de31fdda93fede58daa8c"
+    },
+    "web/lib/forge-testing-grounds/dataHealth.ts": {
+      "baseline": null,
+      "sha256": "0205a7bfd011305e4fc109de9f81f1958b9b623f8a56f79808515ddb6d24e982"
+    },
+    "web/lib/forge-testing-grounds/dataHealth.test.ts": {
+      "baseline": null,
+      "sha256": "c806bcf60ccf4c19958e9bc735213481f0239749abc2ef358d063fcb821691d3"
+    }
+  },
+  "dependencyHashes": {
+    "web/lib/projections/evidenceTime.ts": "c818c021a2857607055d60454ecf03ac39fb27298719726662652d8321e42a00",
+    "web/utils/adminOnlyMiddleware.ts": "de749fa9e811aacbbd1c85a080140f380fd8c3d3794ad378caa9dd4025f444c5",
+    "web/components/Admin/AdminPageGate.tsx": "eba9494e2df0e8e47f56b38250a6a572e1051efe109018d37f143da714bc17eb",
+    "web/lib/routeRunner/store.ts": "895d850d59b632b07017ed6b974e5909e3906320be3eb8a4c2fa367ab7cfb033",
+    "web/pages/api/v1/db/route-runner/jobs.ts": "bb75024d92fdc3234a47384fb76848d36605d289c0cb2c1987e0e167e44a9e52",
+    "web/pages/api/v1/db/route-runner/jobs/[id].ts": "7b8026ece4635acd502848b3dcba1ecfee089c2c474706dcb1516eab7b8d763a",
+    "web/pages/api/v1/db/route-runner-tick.ts": "2847f34e0544a0f05557ddc61fd2498aa29cbb4219b2896a7799ff91830b153c",
+    "web/pages/db/runner.tsx": "8430bb6531922dbf1a38ad2ac468d1f76e1953eeea7f749d1c84ab9f774cb41c",
+    "web/lib/player-forecasts/gameContract.ts": "40883646c707db254bd48ddf7d87511466e93c83879b2f66939beb4b6e2b1c26",
+    "web/lib/player-forecasts/researchContract.ts": "10cd27021f157d27adaa42ea7088f43318fa9730df52859d8bf0cb90ca4cbc46",
+    "web/lib/player-forecasts/modeledGoalieParticipation.ts": "f2d08511647d7de7e19bea506f412ee39154903212440805d28766184755b00e",
+    "web/lib/projections/constants/projection-weights.ts": "e98611fbd96d10c248951f14be15d6dcf56272a72beb90b6112f3ac0d023d035",
+    "web/lib/projections/research/skater-candidates/priors.ts": "0fec69e252418950d4aeae8ffbdf83eaefdb6e4b5e6d81a74655424684267fa8",
+    "tasks/artifacts/forge-f6-ledger-week-2026-10-23/BASELINE-RECEIPTS.json": "2ba6cffb2f949ccd8236ed68fd9e52c3b2daedefc5d89fd42e379717facb74d5",
+    "tasks/artifacts/forge-f6-ledger-week-2026-10-23/FUTURE-APPROVAL.md": "de4f3b0672741f062966ae2449dc36cb3513db0d4a356cfc6fd488a40a902ee9",
+    "web/package.json": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+    "web/vitest.config.mts": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+    "web/__tests__/vitest.setup.js": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+    "web/tsconfig.json": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b"
+  },
+  "artifactHashes": {
+    "OWNERSHIP.md": "3cc311281f50fa43aca6ecb8e5481759708801276db921b768dc946f9b7554ac",
+    "CAPABILITIES.md": "224f6f4a494595071089b4e438990b27be8c915f609fe4958cd99a49d9e32e9a",
+    "checks.log": "2a6ddb7d68335bf5433c3d9489730fe03ec8b2dead02520b4243126897ce83a3"
+  }
+}

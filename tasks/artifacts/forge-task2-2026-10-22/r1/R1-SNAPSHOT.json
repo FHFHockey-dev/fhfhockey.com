@@ -1,0 +1,9 @@
+{
+  "stage": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-r1-jvgf3u1_",
+  "source": "copy of independently pinned non-Git snapshot",
+  "overlaidFiles": [
+    "web/lib/projections/calculators/skater-adjustments.ts",
+    "web/lib/projections/runProjectionV2.test.ts"
+  ],
+  "historicalPinsPreserved": true
+}

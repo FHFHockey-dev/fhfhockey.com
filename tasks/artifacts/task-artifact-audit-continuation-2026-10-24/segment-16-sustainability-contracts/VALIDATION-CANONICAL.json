@@ -1,0 +1,70 @@
+{
+  "at": "2026-10-24T19:24:17.455705+00:00",
+  "before_ids": 213,
+  "after_ids": 213,
+  "before_evidence": 1123,
+  "after_evidence": 1149,
+  "added_ids": [],
+  "changed_existing_ids": [
+    "SUSTAINABILITY-NATURAL",
+    "SUSTAINABILITY-MATURED-EVIDENCE",
+    "REPO-DOCUMENTATION"
+  ],
+  "all_prior_ids_scopes_evidence_prefixes_preserved": true,
+  "legacy_blocks_byte_identical": 32,
+  "unchanged_existing_rows_identical": 210,
+  "readable_children_before": 30,
+  "readable_children_after": 36,
+  "scalar_label_checks": [
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SUSTAINABILITY-NATURAL",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SUSTAINABILITY-MATURED-EVIDENCE",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SUSTAINABILITY-NATURAL",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SUSTAINABILITY-MATURED-EVIDENCE",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "field": "verification",
+      "label_value_matched": true
+    }
+  ],
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "288b318523c21dc69946b5e3e58a2ee49733e3d147f7e8f3a5167b1cec806fc4",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "6d8966eab0a09aa494aea732938f63c3f372e7eb266ee2c8eb323b59d2b521b3",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "1b06be8634de0ee07e8e27343d61799e8e833efd8c029e187758f51d513554ac"
+  },
+  "candidate_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "f7fcef85d38a396204b8919ee3763251cef6fe03865b297d167bbb341f3f1040",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "2d2858f86f18387077a1061959dfdb1b70a28dd3b7371871a36f79b6d454cfcd",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "a0054edbb0f92bf395f764914b4c8eeba7c72b297e8c4de92c869b7f0ce1ae02"
+  },
+  "no_added_trailing_whitespace": true,
+  "application_tests_git_or_external_operations": 0,
+  "whole_tree_content_audit_complete": false,
+  "canonical_written": true
+}

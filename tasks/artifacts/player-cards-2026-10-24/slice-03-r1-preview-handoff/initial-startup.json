@@ -1,0 +1,8 @@
+{
+  "previousListener": null,
+  "stoppedOwnedPid": null,
+  "reviewedHtmlSha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5",
+  "htmlBytes": 318626,
+  "syntheticLabelsPresent": true,
+  "bind": "127.0.0.1:3125"
+}

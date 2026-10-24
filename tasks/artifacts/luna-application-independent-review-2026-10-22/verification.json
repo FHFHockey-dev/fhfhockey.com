@@ -1,0 +1,38 @@
+{
+  "completedAt": "2026-10-22T13:30:03.142795+00:00",
+  "baseHead": "fd58ba2452c0175b201e50285df156cb7f91b4f4",
+  "status": "review_complete_narrow_repair_required",
+  "finding": {
+    "id": "R1",
+    "priority": "P2",
+    "confidence": "high",
+    "path": "web/lib/sources/tweetIdentityReplacementReview.ts",
+    "line": 26,
+    "reproductions": 2,
+    "actual": "reviewable_held",
+    "expected": "held",
+    "effectAuthorityEscalation": false
+  },
+  "checks": {
+    "ownerTests": {
+      "passed": 30,
+      "failed": 0
+    },
+    "independentTests": {
+      "passedSafetyControls": 8,
+      "passedIntegrationCharacterizations": 1,
+      "failed": 2
+    },
+    "scopedTscExit": 0,
+    "scopedLintExit": 0,
+    "ownerPinsMatched": 55,
+    "trialPinsMatched": 40,
+    "snapshotSourceFilesUnchanged": 17,
+    "archiveFilesVerified": 20,
+    "networkGuardDiagnostics": false
+  },
+  "integrationGate": "Bind each projection mode and knowledge cutoff to the same request source publication instant; bare snapshots are not safe causal directories for arbitrary earlier sources.",
+  "externalActionsAttempted": 0,
+  "applicationEdits": 0,
+  "executionBlockers": []
+}

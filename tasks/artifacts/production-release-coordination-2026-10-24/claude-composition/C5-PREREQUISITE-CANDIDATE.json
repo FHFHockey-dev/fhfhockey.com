@@ -1,0 +1,56 @@
+{
+  "at": "2026-10-24T21:29:38.566172+00:00",
+  "base": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "snapshot": "/tmp/fhfh-c5-prerequisite-compose-f2n8ykuk",
+  "selected": {
+    "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts": {
+      "sha256": "f1d3238b68c45d43eb15c77825bed0a6e718779c8bccf34efccadafdefc6c8c6",
+      "source": "Exact C5 r2 source/test handback"
+    },
+    "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts": {
+      "sha256": "c2de0f7e2d86d5e26e87592428e0f112004ac1c30d5407ec0d01356513cc977e",
+      "source": "Exact C5 r2 source/test handback"
+    },
+    "web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts": {
+      "sha256": "f16fad19188630ced0a9d32c53a91b5a969cee0b4e45b6cee5c2e2ca98899b27",
+      "source": "Exact C5 r2 source/test handback"
+    },
+    "web/pages/api/internal/yahoo-live-draft.ts": {
+      "sha256": "20c99628240be857c349a3a2b97c36fc48a58519f7a30c06cb33a71fd1f8abbe",
+      "source": "Exact C5 r2 source/test handback"
+    },
+    "web/pages/api/v1/db/update-drafted-prospects.ts": {
+      "sha256": "e4c5e476c50e57be341498a615ad0517ccd9f918937f42d85410f8a7c1df9881",
+      "source": "Exact C5 r2 source/test handback"
+    },
+    "web/lib/cron/withCronJobAudit.ts": {
+      "sha256": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+      "source": "Committed HEAD prerequisite used by C5 canonical review; explicitly selected for isolated qualification, not blanket accepted"
+    },
+    "web/lib/cron/nhlOffSeason.ts": {
+      "sha256": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+      "source": "Committed HEAD prerequisite used by C5 canonical review; explicitly selected for isolated qualification, not blanket accepted"
+    },
+    "web/lib/cron/cronAuditCoverage.ts": {
+      "sha256": "754a0df900b7cabd573838b4d229857ae63d83361e6ad94ad6a7f7ea084706b3",
+      "source": "Committed HEAD prerequisite used by C5 canonical review; explicitly selected for isolated qualification, not blanket accepted"
+    },
+    "web/lib/cron/withCronJobAudit.test.ts": {
+      "sha256": "87db115af6c190a14020e1502eafcebd9174db5f9cfd9ed94a4592b14f755bb5",
+      "source": "Committed HEAD prerequisite used by C5 canonical review; explicitly selected for isolated qualification, not blanket accepted"
+    },
+    "web/lib/cron/nhlOffSeason.test.ts": {
+      "sha256": "ca7dd5725c8529cd3b8e85e62ce130d3aa7c3d774065d2a47daa3c1d8935d5d6",
+      "source": "Committed HEAD prerequisite used by C5 canonical review; explicitly selected for isolated qualification, not blanket accepted"
+    }
+  },
+  "test_files": [
+    "__tests__/pages/api/internal/yahoo-live-draft.test.ts",
+    "__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+    "__tests__/pages/api/v1/db/update-drafted-prospects.test.ts",
+    "lib/cron/withCronJobAudit.test.ts",
+    "lib/cron/nhlOffSeason.test.ts"
+  ],
+  "status": "Explicit C5 shared-prerequisite qualification probe, not selected into qualified bundle",
+  "gates": "No source/classifier/schedule changes in canonical checkout; no cron/provider/DB invocation or authority relaxation. Yahoo classifier remains its current unqualified behavior."
+}

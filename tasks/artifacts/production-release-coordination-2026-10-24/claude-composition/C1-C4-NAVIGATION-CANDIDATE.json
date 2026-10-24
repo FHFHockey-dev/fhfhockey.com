@@ -1,0 +1,83 @@
+{
+  "at": "2026-10-24T21:12:14.281677+00:00",
+  "base": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "snapshot": "/tmp/fhfh-c1-c4-navigation-release-gmyae6br",
+  "selected": {
+    "web/components/GoalieShareChart/GoalieShareChart.module.scss": {
+      "sha256": "1352a81560e50128c75709d29ad65eed1295562834746e7cf2d18948e65d138b",
+      "source": "Exact C1 final candidate"
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx": {
+      "sha256": "fef6ef9c2b4b4fd754333d322b1ac31d5193c27a17b098c2c3d7a0b01a686536",
+      "source": "Exact C1 final candidate"
+    },
+    "web/components/GoalieShareChart/index.tsx": {
+      "sha256": "b632a0cae6a50174012264950b7a0ca1b22402811a7162024216c40ecf09949c",
+      "source": "Exact C1 final candidate"
+    },
+    "web/components/LineCombinations/LineCombinationsGrid.tsx": {
+      "sha256": "fb5c6a3c0d50f1c9f1abca1de82527420cc240b3ba3c4b125c466485b18c6de7",
+      "source": "Exact C1 final candidate"
+    },
+    "web/components/ShotVisualization/ShotVisualization.tsx": {
+      "sha256": "a563dadeed8e41915c11258019a0a97cbb0872622391307fa069a39daec2b921",
+      "source": "Exact C1 final candidate"
+    },
+    "web/components/TeamTabNavigation/TeamTabNavigation.test.tsx": {
+      "sha256": "6312ca9177389c01db342826b4833f99facc9729ddbacd4f737b21ae245dbae0",
+      "source": "Exact C1 final candidate"
+    },
+    "web/components/TeamTabNavigation/TeamTabNavigation.tsx": {
+      "sha256": "3e9fd15559b22ec0949e176086531be5348a92ac1efc0dcd4beebc2d92730fb6",
+      "source": "Exact C1 final candidate"
+    },
+    "web/hooks/useShotData.test.tsx": {
+      "sha256": "7c78ae8c32883b6c035c2ba3d12ee6f50e04b3c3b3293770f33f7d0529aee0f2",
+      "source": "Exact C1 final candidate"
+    },
+    "web/hooks/useShotData.ts": {
+      "sha256": "a5a77ced8be87b36e34ffe71003e4df48942f34c7af1de43608736f7074af4c1",
+      "source": "Exact C1 final candidate"
+    },
+    "web/pages/stats/team/[teamAbbreviation].tsx": {
+      "sha256": "561a048fe68f4f49fb4a7bc54eb3c87be39fcb90c87eca4002dd81f7b205957c",
+      "source": "Exact C1 final candidate"
+    },
+    "web/styles/Stats.module.scss": {
+      "sha256": "e0dbf85fab25a006ce4b5f7be97ef7c355c519e34edba385c5226a157f15d8d8",
+      "source": "Exact C1 final candidate"
+    },
+    "web/__tests__/pages/wigoCharts.test.tsx": {
+      "sha256": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b",
+      "source": "Exact C4 final candidate"
+    },
+    "web/pages/wigoCharts.tsx": {
+      "sha256": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151",
+      "source": "Exact C4 final candidate"
+    },
+    "web/__tests__/pages/stats/team/teamAbbreviation.test.tsx": {
+      "sha256": "71dd3fb4234009950c6bad3cb7f5b0b047aa6ff198fb8648888d08987c9de16b",
+      "source": "Unchanged C1 independently reviewed adjacent tests"
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.test.ts": {
+      "sha256": "250bfc553ce0caa0cb1901c7592e1d3f0dde93180e0e97255a0948b8435baeec",
+      "source": "Unchanged C1 independently reviewed adjacent tests"
+    }
+  },
+  "test_files": [
+    "components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+    "components/TeamTabNavigation/TeamTabNavigation.test.tsx",
+    "hooks/useShotData.test.tsx",
+    "__tests__/pages/wigoCharts.test.tsx",
+    "__tests__/pages/stats/team/teamAbbreviation.test.tsx",
+    "components/GoalieShareChart/GoalieShareChart.test.ts"
+  ],
+  "unchanged_dependencies": "Production useTeams, NHL client, cache, navigation/siteSurfaceLinks and complete SurfaceWorkflowLinks directory; earlier component .tsx existence probe did not cover directory index. No dependency source overlays selected.",
+  "excluded": [
+    "C4 BLSH prototype and new absent production modules",
+    "C5 routes pending newer shared wrapper qualification",
+    "Grid reader changes/tests not required to deploy C1",
+    "All social-access/C2/C3/research/database changes"
+  ],
+  "status": "Prepared for minimal production composition checks; not publication approved"
+}

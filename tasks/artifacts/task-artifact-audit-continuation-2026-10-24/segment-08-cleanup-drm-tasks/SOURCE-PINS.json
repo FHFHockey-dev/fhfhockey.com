@@ -1,0 +1,16 @@
+{
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/43a8edca387f-REVIEW.md": "43a8edca387fa4d4b3742c03c98bdb2b097a7f27c262494aba7cdc6f4486e8e1",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/726b59e90abb-REVIEW-EVIDENCE.json": "726b59e90abb89a410a98d78507f82859a38b2123825557e8da4d18cf158d4d8",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9b3c682e7952-PARENT-STEERS.json": "9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/ca0670df6439-REVIEW.md": "ca0670df6439d44cbbdcdc75c1c873ad09f88b6cc445ef4a8d3364e05f57a47b",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/7a5ac23ec40b-REVIEW-EVIDENCE.json": "7a5ac23ec40bb5bd4c6d832023b3245ac14e2b18952b1ddfb08330b54e7d8e05",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/5cbacd13d0b3-HANDOFF.md": "5cbacd13d0b30702533370bd6d4e5cb3b16123344ac40670816bd7d4d575d9f7",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/65f143fa43c8-live-draft-runbook.md": "65f143fa43c8b3eaadde4c2c5f273448ef3206307bb5546b1df3191fdff5c497",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/e584a8a3c87d-live-draft-production-readiness.md": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/fc43f5343286-yahoo-live-draft-backlog.md": "fc43f5343286440c25bd31490d2f8b325a2214c1467172a63c1513e616f33225",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/3b8988c67e1a-yahoo-tables.md": "3b8988c67e1ac72c5d9674e978cea2f7febc71ae41aefa7da538864b8accbb06",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/89b939a9a2d0-tasks-prd-cleanup-tasks.md": "89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/7d0cebf7d3c3-tasks-prd-drm-refactor.md": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+  "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/8a1e4cb7e816-tasks-draft-dashboard-interface-polish.md": "8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49"
+}

@@ -1,0 +1,410 @@
+{
+  "teams": [
+    "A",
+    "B",
+    "H",
+    "L"
+  ],
+  "season": {
+    "id": "20262027",
+    "start": "2026-09-01T00:00:00Z",
+    "end": "2027-07-01T00:00:00Z"
+  },
+  "as_of": "2026-10-20T00:00:00Z",
+  "horizon": {
+    "kind": "future_as_of",
+    "start": "2026-10-20T00:00:00Z",
+    "end": "2026-11-17T00:00:00Z"
+  },
+  "config": {
+    "mode": "final_win",
+    "kappa": "2",
+    "prior_mean": ".5",
+    "prior_known_at": "2026-08-01T00:00:00Z"
+  },
+  "history": {
+    "as_of": "2026-10-20T00:00:00Z",
+    "complete_teams": [
+      "A",
+      "B",
+      "H",
+      "L"
+    ],
+    "results": [
+      {
+        "id": "AH0",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "A",
+        "away": "H",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "AH1",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "A",
+        "away": "H",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "AH2",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "A",
+        "away": "H",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "AH3",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "A",
+        "away": "H",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "AH4",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "A",
+        "away": "H",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "away_reg"
+      },
+      {
+        "id": "AH5",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "A",
+        "away": "H",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "away_reg"
+      },
+      {
+        "id": "AH6",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "A",
+        "away": "H",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "away_reg"
+      },
+      {
+        "id": "AH7",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "A",
+        "away": "H",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "away_reg"
+      },
+      {
+        "id": "AH8",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "A",
+        "away": "H",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "away_reg"
+      },
+      {
+        "id": "AH9",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "A",
+        "away": "H",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "away_reg"
+      },
+      {
+        "id": "BL0",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "B",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "BL1",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "B",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "BL2",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "B",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "BL3",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "B",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "BL4",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "B",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "BL5",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "B",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "BL6",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "B",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "away_reg"
+      },
+      {
+        "id": "BL7",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "B",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "away_reg"
+      },
+      {
+        "id": "BL8",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "B",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "away_reg"
+      },
+      {
+        "id": "BL9",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "B",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "away_reg"
+      },
+      {
+        "id": "HL0",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "H",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "HL1",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "H",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "HL2",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "H",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "HL3",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "H",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "HL4",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "H",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "HL5",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "H",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "HL6",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "H",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "HL7",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "H",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "HL8",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "H",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      },
+      {
+        "id": "HL9",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "H",
+        "away": "L",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "away_reg"
+      },
+      {
+        "id": "AB",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "A",
+        "away": "B",
+        "start": "2026-10-10T18:00:00Z",
+        "end": "2026-10-10T21:00:00Z",
+        "available_at": "2026-10-10T21:01:00Z",
+        "outcome": "home_reg"
+      }
+    ]
+  },
+  "schedule": {
+    "observed_at": "2026-10-19T23:00:00Z",
+    "start": "2026-10-20T00:00:00Z",
+    "end": "2026-11-17T00:00:00Z",
+    "complete_teams": [
+      "A",
+      "B",
+      "H",
+      "L"
+    ],
+    "fixtures": [
+      {
+        "id": "fAB",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "A",
+        "away": "B",
+        "start": "2026-10-21T18:00:00Z",
+        "known_at": "2026-09-01T00:00:00Z",
+        "status": "scheduled"
+      },
+      {
+        "id": "fHL",
+        "season": "20262027",
+        "phase": "regular",
+        "home": "H",
+        "away": "L",
+        "start": "2026-10-21T18:00:00Z",
+        "known_at": "2026-09-01T00:00:00Z",
+        "status": "scheduled"
+      }
+    ]
+  }
+}

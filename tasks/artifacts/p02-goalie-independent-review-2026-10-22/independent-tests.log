@@ -1,0 +1,101 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-p02-check-rhRCBu/isolation/snapshot/web
+
+(node:97148) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ × components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds the overview headline as well as context when a query row has unknown participation 18ms
+   → expected '0.900' to be '-' // Object.is equality
+ × components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds the Trends summary for the same unknown-participation query row 2ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > preserves unavailable GAA and QS for the actual selected profile column shape 3ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > pairs known appearance counts and excludes only a known nonappearance consistently 3ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > retains true zero SV with paired positive-shot exposure in the production consumers 3ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > uses relief exposure for GAA and withholds an incomplete pair regardless of row order 0ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > retains incomplete start-classification coverage and excludes relief from the QS denominator 0ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds a playoff SV ratio when the played row lacks its paired saves count 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds the overview headline as well as context when a query row has unknown participation
+AssertionError: expected '0.900' to be '-' // Object.is equality
+
+Expected: [32m"-"[39m
+Received: [31m"0.900"[39m
+
+ ❯ components/PlayerStats/p02-independent.test.tsx:34:29
+     32|     render(<><PlayerSummaryStrip gameLog={rawLog(log)} isGoalie window…
+     33|     expect(contextualCard('Save Percentage').getByText('-')).toBeTruth…
+     34|     expect(headline('SV%')).toBe('-');
+       |                             ^
+     35|   });
+     36|   it('withholds the Trends summary for the same unknown-participation …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds the Trends summary for the same unknown-participation query row
+TestingLibraryElementError: Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/PlayerStats/p02-independent.test.tsx:39:59
+     37|     const log = [row(), row({ date: '2026-10-21', games_played: null, …
+     38|     render(<PlayerStatsSummary gameLog={rawLog(log)} selectedStats={['…
+     39|     expect(within(screen.getByText('SV%').parentElement!).getByText('-…
+       |                                                           ^
+     40|   });
+     41|   it('preserves unavailable GAA and QS for the actual selected profile…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 6 passed (8)
+   Start at  09:50:30
+   Duration  436ms (transform 146ms, setup 9ms, collect 193ms, tests 33ms, environment 128ms, prepare 28ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/p02-goalie-independent-review-2026-10-22/independent-tests.json

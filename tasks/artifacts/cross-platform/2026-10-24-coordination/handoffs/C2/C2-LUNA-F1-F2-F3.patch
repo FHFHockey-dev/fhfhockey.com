@@ -1,0 +1,165 @@
+--- a/web/lib/sources/tweetLunaReview.ts
++++ b/web/lib/sources/tweetLunaReview.ts
+@@ -119,8 +119,7 @@
+         provenance: { kind: "approved_local", label: `retained-sidecar:${mapped.packetHash}`, lineageKey: packet.source.originalPostId! },
+       } });
+       if (prepared.status !== "prepared") throw new Error("identity_preparation_held");
+-      base.attempts++;
+-      const receipt = await args.transport("responses", responsesWire(prepared.request));
++      const receipt = await args.transport("responses", responsesWire(prepared.request), { onAdmitted: () => { base.attempts++; } });
+       base.requestIds.push(receipt.requestId);
+       const raw = outputJson(receipt.body);
+       base.identity = validateFixtureIdentityProposal(prepared.request, raw.identity);
+@@ -130,18 +129,22 @@
+     }
+     if (input.decisions === true) {
+       const transport = args.transport;
++      let transportError: unknown = null;
+       const adapter = createShadowAdapter({ now, config: { enabled: true, maxRequests: 1, maxInputTokens: 70_000,
+         maxEstimatedUsd: 1, maxInputBytesPerRequest: 65_536, maxReservedTokensPerRequest: 70_000, timeoutMs: 16_000 },
+       transport: async (request) => {
+-        base.attempts++;
+-        const receipt = await transport("decisions", request);
+-        base.requestIds.push(receipt.requestId);
+-        return { body: receipt.body, requestId: receipt.requestId ?? undefined };
++        try {
++          const receipt = await transport("decisions", request, { onAdmitted: () => { base.attempts++; } });
++          base.requestIds.push(receipt.requestId);
++          return { body: receipt.body, requestId: receipt.requestId ?? undefined };
++        } catch (error) { transportError = error; throw error; }
+       } });
+       const sidecar = await adapter.evaluate(mapped.input);
+       base.decisionReview = validateTweetDecisionReviewResult(mapped, { bindingVersion: DECISION_REVIEW_BINDING_VERSION,
+         planHash: mapped.planHash, packetHash: mapped.packetHash, sidecar });
+       if (base.decisionReview.status !== "bound_review") base.holds.push("decisions_unresolved");
++      // The adapter absorbs transport errors as unknown/skipped; an unusable leg is held, never review_only.
++      if (base.decisionReview.status === "unknown") throw transportError ?? new Error("decisions_reference_unavailable");
+     }
+     base.holds.push("human_review_required", "no_publication_authority");
+     return base;
+@@ -150,7 +153,7 @@
+     const safeReasons = new Set(["review_input_too_large", "review_clock_invalid", "identity_source_clock_mismatch",
+       "dated_identity_evidence_unavailable", "identity_preparation_held", "goalie_subject_binding_invalid", "goalie_certainty_inflation",
+       "goalie_definite_wording_unsupported", "luna_response_incomplete", "luna_response_shape", "luna_dispatch_disabled",
+-      "luna_budget_stopped", "luna_budget_exhausted", "luna_unsettled_attempt", "luna_attempt_held_no_retry", "luna_request_too_large"]);
++      "luna_budget_stopped", "luna_budget_exhausted", "luna_unsettled_attempt", "luna_attempt_held_no_retry", "luna_request_too_large", "decisions_reference_unavailable"]);
+     const reason = error instanceof Error && safeReasons.has(error.message) ? error.message : "invalid_or_unavailable_review";
+     return { ...base, status: "held", holds: [...base.holds, reason] };
+   }
+--- a/web/lib/sources/tweetLunaTransport.ts
++++ b/web/lib/sources/tweetLunaTransport.ts
+@@ -31,7 +31,7 @@
+   enabled?: boolean; stopped: () => boolean; apiKey: () => string | undefined;
+   admission: LunaAdmissionStore; fetch?: typeof fetch; timeoutMs?: number;
+ }) {
+-  return async (endpoint: LunaEndpoint, input: Record<string, unknown>): Promise<LunaReceipt> => {
++  return async (endpoint: LunaEndpoint, input: Record<string, unknown>, hooks: { onAdmitted?: () => void } = {}): Promise<LunaReceipt> => {
+     if (args.enabled !== true || args.stopped()) throw new Error("luna_dispatch_disabled");
+     const timeout = args.timeoutMs ?? 15_000;
+     if (!Number.isInteger(timeout) || timeout < 1 || timeout > 15_000 || input.model !== LUNA_MODEL
+@@ -47,6 +47,8 @@
+     const key = identityDigest({ endpoint, body });
+     const admission = await args.admission.reserve(key, LUNA_RESERVATION_NANO_USD);
+     if (admission.status === "replay") return admission.receipt;
++    // Only a fresh durable reservation is an attempt; refusals and replays reserve nothing.
++    hooks.onAdmitted?.();
+     let timer: ReturnType<typeof setTimeout> | undefined;
+     let observedRequestId: string | null = null;
+     const controller = new AbortController();
+--- a/web/lib/sources/tweetLunaReview.test.ts
++++ b/web/lib/sources/tweetLunaReview.test.ts
+@@ -39,13 +39,13 @@
+     mentions: [{ id: "subject", kind: "name", span: { start, end: start + 14, text: "Jeremy Swayman" }, teamHint: null, positionHint: null }],
+   } };
+ }
+-function harness(options: { mutate?: (body: any, endpoint: string, wire: any) => void; ledger?: Record<string, unknown>; timeout?: boolean; timeoutMs?: number; stopped?: boolean } = {}) {
++function harness(options: { mutate?: (body: any, endpoint: string, wire: any) => void; ledger?: Record<string, unknown>; timeout?: boolean | "decisions"; timeoutMs?: number; stopped?: boolean | (() => boolean) } = {}) {
+   const dir = mkdtempSync(join(tmpdir(), "luna-integration-")); dirs.push(dir); const path = join(dir, "ledger.json");
+   writeFileSync(path, JSON.stringify({ version: "luna-local-admission-v1", approvedPolicyId: "synthetic-no-paid-authority", enabled: true,
+     blockedReason: null, expiresAt: "2026-10-17T00:00:00Z", capNanoUsd: 520_000_000, priorExposureNanoUsd: 0, maxCalls: 4, attempts: {}, ...options.ledger }));
+   const fetcher = vi.fn(async (url: any, init: any) => {
+-    if (options.timeout) return new Promise<Response>(() => undefined);
+     const wire = JSON.parse(init.body), endpoint = String(url).endsWith("responses") ? "responses" : "decisions";
++    if (options.timeout === true || options.timeout === endpoint) return new Promise<Response>(() => undefined);
+     let body: any = { id: "response-fixture", model: LUNA_MODEL, usage: { input_tokens: 100, output_tokens: 50 } };
+     if (endpoint === "responses") {
+       const request = JSON.parse(wire.input);
+@@ -63,7 +63,8 @@
+   });
+   const key = vi.fn(() => "synthetic-key");
+   const store = openLunaLocalAdmission(path, () => Date.parse(NOW));
+-  const transport = createLunaTransport({ enabled: true, stopped: () => options.stopped === true, apiKey: key, admission: store,
++  const stopped = typeof options.stopped === "function" ? options.stopped : () => options.stopped === true;
++  const transport = createLunaTransport({ enabled: true, stopped, apiKey: key, admission: store,
+     fetch: fetcher as typeof fetch, timeoutMs: options.timeoutMs });
+   return { path, fetcher, key, transport, store, ledger: () => JSON.parse(readFileSync(path, "utf8")),
+     run: (input = fixture(), enabled = true) => runRetainedTweetLunaReview({ enabled, input, transport, now: () => NOW }) };
+@@ -135,6 +136,7 @@
+   it("reuses settled responses across processes without new dispatch", async () => {
+     const h = harness(); const first = await h.run(), second = await h.run();
+     expect(second.identity).toEqual(first.identity); expect(h.fetcher).toHaveBeenCalledTimes(2);
++    expect([first.attempts, second.attempts]).toEqual([2, 0]);
+     expect(Object.keys(h.ledger().attempts)).toHaveLength(2);
+   });
+   it("keeps a retraction/version separate and applies neither interpretation", async () => {
+@@ -164,8 +166,39 @@
+     await h.run(); expect(h.fetcher).not.toHaveBeenCalled(); expect(h.key).not.toHaveBeenCalled();
+   });
+   it("honors kill switch before admission or key lookup", async () => {
+-    const h = harness({ stopped: true }); await h.run(); expect(h.ledger().attempts).toEqual({}); expect(h.key).not.toHaveBeenCalled();
++    const h = harness({ stopped: true }); const r = await h.run(); expect(h.ledger().attempts).toEqual({}); expect(h.key).not.toHaveBeenCalled();
++    expect(r).toMatchObject({ status: "held", attempts: 0 });
+   });
++  it("holds a Decisions-only kill-switch stop with zero attempts", async () => {
++    const h = harness({ stopped: true }), input = fixture(); delete input.identity;
++    const r = await h.run(input);
++    expect(r).toMatchObject({ status: "held", attempts: 0, decisionReview: { status: "unknown" } });
++    expect(r.holds).toEqual(expect.arrayContaining(["decisions_unresolved", "luna_dispatch_disabled"]));
++    expect(h.fetcher).not.toHaveBeenCalled(); expect(h.ledger().attempts).toEqual({});
++  });
++  it("holds a kill switch that stops the Decisions leg after Responses", async () => {
++    let stop = false; const h = harness({ stopped: () => stop, mutate: (_b, e) => { if (e === "responses") stop = true; } });
++    const r = await h.run();
++    expect(r).toMatchObject({ status: "held", attempts: 1, decisionReview: { status: "unknown" } });
++    expect(r.holds).toContain("luna_dispatch_disabled"); expect(r.holds).not.toContain("human_review_required");
++    expect(h.fetcher).toHaveBeenCalledTimes(1); expect(h.ledger().blockedReason).toBeNull();
++  });
++  it("holds a Decisions-leg timeout and keeps both admitted reservations counted", async () => {
++    const h = harness({ timeout: "decisions", timeoutMs: 5 }); const r = await h.run();
++    expect(r).toMatchObject({ status: "held", attempts: 2, requestIds: ["request-responses"], decisionReview: { status: "unknown" } });
++    expect(r.holds).toEqual(expect.arrayContaining(["decisions_unresolved", "luna_attempt_held_no_retry"]));
++    expect(h.ledger().blockedReason).toBe("unknown_billed_outcome");
++    const again = await h.run(); expect(again).toMatchObject({ status: "held", attempts: 0 }); expect(h.fetcher).toHaveBeenCalledTimes(2);
++  });
++  it("counts a reservation admitted before a missing key as an attempt without dispatch", async () => {
++    const h = harness(); h.key.mockReturnValue(undefined as any); const r = await h.run();
++    expect(r).toMatchObject({ status: "held", attempts: 1 }); expect(h.fetcher).not.toHaveBeenCalled();
++  });
++  it("leaves a partial Decisions review as review_only with its hold", async () => {
++    const h = harness({ mutate: (b, e) => { if (e === "decisions") b.answers[0].probability = 2; } }); const r = await h.run();
++    expect(r).toMatchObject({ status: "review_only", attempts: 2, decisionReview: { status: "partial_or_unknown" } });
++    expect(r.holds).toEqual(expect.arrayContaining(["decisions_unresolved", "human_review_required"]));
++  });
+   it("blocks unknown model billing without saving a successful receipt", async () => {
+     const h = harness({ mutate: b => { b.model = "substituted"; } }); await h.run();
+     expect(h.ledger().blockedReason).toBe("unknown_billed_outcome"); expect(h.fetcher).toHaveBeenCalledTimes(1);
+@@ -189,7 +222,7 @@
+     expect(priceLunaUsage({ model: LUNA_MODEL, usage: { input_tokens: 1_050_000, output_tokens: 2048 } }, "responses")).toBeLessThan(LUNA_RESERVATION_NANO_USD);
+   });
+   it("preserves retained reference bytes", () => {
+-    expect(createHash("sha256").update(readFileSync("lib/sources/decisionsReference/adapter.mjs")).digest("hex")).toBe(DECISION_REFERENCE_SHA256);
++    expect(createHash("sha256").update(readFileSync("lib/sources/decisionsReference/adapter.mjs") as unknown as Uint8Array).digest("hex")).toBe(DECISION_REFERENCE_SHA256);
+   });
+ });
+ 
+--- a/web/scripts/review-ifttt-luna.ts
++++ b/web/scripts/review-ifttt-luna.ts
+@@ -19,7 +19,7 @@
+   const raw = readFileSync(inputPath);
+   if (raw.length > 512_000) throw new Error("Review packet exceeds local byte limit");
+   const ref = readFileSync(resolve("lib/sources/decisionsReference/adapter.mjs"));
+-  if (createHash("sha256").update(ref).digest("hex") !== DECISION_REFERENCE_SHA256) throw new Error("Retained reference digest mismatch");
++  if (createHash("sha256").update(ref as unknown as Uint8Array).digest("hex") !== DECISION_REFERENCE_SHA256) throw new Error("Retained reference digest mismatch");
+   const input: LunaReviewInput = JSON.parse(raw.toString("utf8"));
+   const transport = dispatch ? createLunaTransport({ enabled: true,
+     stopped: () => process.env.IFTTT_LUNA_REVIEW_ENABLED !== "true" || process.env.IFTTT_LUNA_REVIEW_STOP !== "false",

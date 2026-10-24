@@ -1,0 +1,108 @@
+
+> web@0.1.0 test
+> vitest --run --config review-vitest.config.mts lib/projections/queries/skater-queries.test.ts lib/projections/nativeGoalAccounting.test.ts scripts/qualify-native-players-offline.test.ts lib/projections/runProjectionV2.test.ts
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90m/private/tmp/fhfh-task2-review-et29jk5z/web[39m
+
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+fatal: not a git repository (or any of the parent directories): .git
+ [31m❯[39m scripts/qualify-native-players-offline.test.ts [2m([22m[2m56 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 5045[2mms[22m[39m
+   [33m[2m✓[22m[39m offline current native player qualification[2m > [22mreproduces current native calculations with genuine admission and zero live client/transport/writes [33m 531[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mleaves absent playing/start evidence unknown and preserves consumer missing-participation rejection[32m 83[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds original publishedAt before/equal/one microsecond after cutoff[32m 176[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds original receivedAt before/equal/one microsecond after cutoff[32m 171[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds original verifiedAt before/equal/one microsecond after cutoff[32m 168[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.fetched_at before/equal/one microsecond after cutoff[32m 170[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.fetchedAt before/equal/one microsecond after cutoff[32m 168[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.source_updated_at before/equal/one microsecond after cutoff[32m 167[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained roster_optimizer_team_games.sourceUpdatedAt before/equal/one microsecond after cutoff[32m 166[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained rosters.created_at before/equal/one microsecond after cutoff[32m 169[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained fhfh_player_identities.updated_at before/equal/one microsecond after cutoff[32m 165[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_lineup_snapshots.observed_at before/equal/one microsecond after cutoff[32m 164[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_lineup_snapshots.available_at before/equal/one microsecond after cutoff[32m 163[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_lineup_snapshots.created_at before/equal/one microsecond after cutoff[32m 163[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_lineup_assignments.created_at before/equal/one microsecond after cutoff[32m 167[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_goalie_start_observations.observed_at before/equal/one microsecond after cutoff[32m 168[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_goalie_start_observations.available_at before/equal/one microsecond after cutoff[32m 164[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_goalie_start_observations.created_at before/equal/one microsecond after cutoff[32m 162[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_observation_conflicts.detected_at before/equal/one microsecond after cutoff[32m 166[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_observation_conflicts.created_at before/equal/one microsecond after cutoff[32m 166[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_conflict_resolutions.resolved_at before/equal/one microsecond after cutoff[32m 164[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained player_forecast_conflict_resolutions.created_at before/equal/one microsecond after cutoff[32m 171[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained forge_board_news_events.accepted_at before/equal/one microsecond after cutoff[32m 166[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mbounds retained market_prices_daily.source_observed_at before/equal/one microsecond after cutoff[32m 166[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mallows future schedule/expiry/effective metadata and later local artifact creation without moving source cutoff[32m 82[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects source evidence even one microsecond beyond the supplied cutoff[32m 5[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mnever promotes a confirmed PP role to playing participation[32m 79[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects missing receipts, incomplete exports, changed hashes and late nested source evidence[32m 4[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mfails closed if a native optional query swallows an unprovided input table[32m 8[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects omitted retained columns even when a producer fallback catches the query error[32m 7[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects later accepted-news evidence without backdating its receipt[32m 5[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects missing/future as-of and target/roster mismatch[32m 6[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mblocks direct RPC, adapter mutations and unsupported/unrecorded reads[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for limit[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for limit[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for select[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for order[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for order[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for range[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for eq[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for or[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for maybeSingle[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects unsupported argument/options shape for abortSignal[32m 1[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects implicit predicate type coercion and compares zoned timestamp filters exactly[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mimplements native exact-count HEAD without returning rows[32m 0[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mblocks equivalent client paths and SDK entry points before inert config/sentinel access in a fresh process[32m 243[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects future outcomes in rolling/team/goalie history and their referenced game[32m 6[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mchecks aggregate and camel-case event times while allowing future schedule/expiry[32m 6[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrequires exact completion for cutoff-day history, and completion before the original publication[32m 96[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mrejects historical statistics whose referenced puck drop is still in the future[32m 6[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mcannot certify PPP from missing or zero PP exposure denominators[32m 82[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mkeeps PPP missing and blocked when PP rows and aligned count support are absent[32m 80[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mcannot relabel the immutable fictional artifact as retained exports (replace strings=false)[32m 5[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mcannot relabel the immutable fictional artifact as retained exports (replace strings=true)[32m 5[2mms[22m[39m
+   [32m✓[39m offline current native player qualification[2m > [22mblocks network primitives and process escapes before dispatch and restores them[32m 1[2mms[22m[39m
+[31m   [31m×[31m offline current native player qualification[2m > [22mwrites a new reproducible receipt without changing or overwriting original inputs[39m[32m 31[2mms[22m[39m
+[31m     → Command failed: git rev-parse HEAD
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+fatal: not a git repository (or any of the parent directories): .git
+[39m
+(node:53602) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/projections/nativeGoalAccounting.test.ts [2m([22m[2m37 tests[22m[2m)[22m[32m 210[2mms[22m[39m
+(node:53604) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+[90mstderr[2m | lib/projections/queries/skater-queries.test.ts[2m > [22m[2mcounted rolling skater history (legacy window scan)[2m > [22m[2mcompletes the exact bounded scope at 0 rows
+[22m[39mforge_latest_rolling_rows is not deployed (PGRST202); FORGE reads rolling rows by the legacy window scan.
+
+ [32m✓[39m lib/projections/queries/skater-queries.test.ts [2m([22m[2m110 tests[22m[2m)[22m[32m 76[2mms[22m[39m
+(node:53606) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ [32m✓[39m lib/projections/runProjectionV2.test.ts [2m([22m[2m108 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m scripts/qualify-native-players-offline.test.ts[2m > [22moffline current native player qualification[2m > [22mwrites a new reproducible receipt without changing or overwriting original inputs
+[31m[1mError[22m: Command failed: git rev-parse HEAD
+git: warning: confstr() failed with code 5: couldn't get path of DARWIN_USER_TEMP_DIR; using /tmp instead
+fatal: not a git repository (or any of the parent directories): .git
+[39m
+[36m [2m❯[22m git scripts/qualify-native-players-offline.ts:[2m494:38[22m[39m
+    [90m492| [39m  if (sha256 !== options.get("--input-sha256")) throw new Error("Retai…
+    [90m493| [39m  [35mconst[39m root [33m=[39m [34mresolve[39m(__dirname[33m,[39m [32m"../.."[39m)[33m;[39m
+    [90m494| [39m  const git = (...args: string[]) => execFileSync("git", args, { cwd: …
+    [90m   | [39m                                     [31m^[39m
+    [90m495| [39m  const codeCommit = git("rev-parse", "HEAD"), branch = git("branch", …
+    [90m496| [39m  const receipt = { version: "native-player-offline-local-receipt-v1",…
+[90m [2m❯[22m Module.runOfflinePlayerQualification scripts/qualify-native-players-offline.ts:[2m495:22[22m[39m
+[90m [2m❯[22m scripts/qualify-native-players-offline.test.ts:[2m405:29[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m3 passed[39m[22m[90m (4)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m310 passed[39m[22m[90m (311)[39m
+[2m   Start at [22m 12:19:36
+[2m   Duration [22m 6.73s[2m (transform 466ms, setup 7ms, collect 459ms, tests 5.35s, environment 472ms, prepare 111ms)[22m
+

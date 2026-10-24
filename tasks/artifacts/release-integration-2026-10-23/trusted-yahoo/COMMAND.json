@@ -1,0 +1,30 @@
+{
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-trusted-yahoo-4_xzzm18/snapshot/web",
+  "environment": {
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-trusted-yahoo-4_xzzm18/home",
+    "TMPDIR": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-trusted-yahoo-4_xzzm18/tmp",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://unit-tests.supabase.invalid",
+    "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY": "synthetic-public-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "synthetic-service-role-key",
+    "NODE_OPTIONS": "--require /var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-trusted-yahoo-4_xzzm18/snapshot/web/audit-network-deny.cjs",
+    "npm_config_offline": "true",
+    "npm_config_audit": "false",
+    "npm_config_fund": "false",
+    "TZ": "UTC",
+    "npm_config_update_notifier": "false"
+  },
+  "argv": [
+    "npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "audit.vitest.config.mts",
+    "lib/rosterScheduleOptimizer/executionAdapter.test.ts",
+    "hooks/yahooPlanningReadBroker.test.ts",
+    "hooks/useRosterPlanning.test.tsx",
+    "--reporter=json",
+    "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/trusted-yahoo/tests.json"
+  ]
+}

@@ -1,0 +1,297 @@
+{
+  "at": "2026-10-23T16:59:12.613983+00:00",
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "stagedPaths": [],
+  "packets": {
+    "trusted-yahoo": {
+      "files": 15,
+      "drift": [],
+      "review": "independently ACCEPT58 distinct selected,21newadversarial"
+    },
+    "selected-model-baseline": {
+      "files": 15,
+      "drift": [],
+      "review": "independently ACCEPT108affected+9guards; restoration notqualification"
+    }
+  },
+  "parentReviewSha256": "84ce57769568a0f0b0a1bd1526ebfcb2c602021a63aec6d904950558dad467f2",
+  "modelReportSha256": "a58cbc0950531ca1c559be28851e44752797577783d5bc6ba9a006ffbb0b00fc",
+  "remaining": "Coherent accepted source/resource composition, privacy and migration-authority screening, current whole-release verification, exact candidate commit/browser and parent/project/deployment gates. Bounded RSO fixture and layout packet is complete and accepted locally.",
+  "runningOwnedProcesses": 0,
+  "gitMutations": 0,
+  "productionCalls": 0,
+  "newsLease": "Six-path packet frozen and accepted locally; owner pins verified with no drift. No application edits by release owner.",
+  "gameGridR4": "Accepted and frozen26pins; r5 two-path request owned separately, not in this checkpoint",
+  "combinedValidation": {
+    "files": 3468,
+    "overlayPins": 105,
+    "archive": {
+      "path": "fixed-source.tar.gz",
+      "sha256": "8569002be726f846a94a05946b9112fe634e007c3b3fb764aaec3a26c818e4a7",
+      "files": 3468,
+      "bytes": 11928305,
+      "status": "verification checkpoint; not final composition or release commit"
+    },
+    "types": "pass after default4GB OOM; established8GB setting",
+    "lint": "pass;0errors8previously recordedwarnings",
+    "routeTests": 14,
+    "sourceDrift": [],
+    "report": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/combined-validation-v1/REPORT.md",
+    "currentOverlayDrift": [
+      {
+        "path": "web/e2e/game-grid-previews.spec.ts",
+        "tested": "dbe8db03640b64103fcbf6c94bde3248b4d624f9593b58fdc6550ff8a8f8798c",
+        "current": "52b59e88a1b10ab5c80c5c7662babb141419b440ae118e836354099087766d0d"
+      },
+      {
+        "path": "web/components/GameGrid/GameGrid.module.scss",
+        "tested": "7171d3ba0ebb3b2ca01065809db0d72ded645d3ca7d8f5cf4c7f602e435cf82a",
+        "current": "be198c4802d59f3899e413fd109d4869b1dd3faac847b5e402a39154fd725777"
+      },
+      {
+        "path": "web/lib/newsFeed.ts",
+        "tested": "5e67090b9b6cd57acea578387024eb921dd70dd230dcddf54787760a52b9f389",
+        "current": "de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d"
+      },
+      {
+        "path": "web/lib/homepageNewsCompatibility.test.tsx",
+        "tested": "c7ea065ce9e32c03363b95e7ae9784fbd987677efd522031da3d88fd38f057ff",
+        "current": "48321a8a5add55a9e9f4534cfd751dcf2e68d62b8576b696860a70288fde7ca7"
+      }
+    ]
+  },
+  "newsStatus": {
+    "decision": "Qualified local independent ACCEPT, P2 serialization blocker closed",
+    "reviewResult": "Parent relayed 9 original and 10 actual loader\u2192JSON\u2192homepage checks passed",
+    "sourcePinsVerified": 6,
+    "receipt": "NEWS-SERIALIZATION-ACCEPTANCE.json",
+    "scope": "Display attribution decision survives serialization; fresh raw evidence overrides saved decisions; malformed markers fail closed; distinct updates preserved; claim validator unchanged.",
+    "separateOpenIssues": [
+      "metadata sync loss",
+      "accepted-public-claim producer/loader contract",
+      "duplicate original-source identity"
+    ]
+  },
+  "rsoFixtures": {
+    "owner": "01a168af-30c9-71b7-af0a-f25a9d90a02a",
+    "lease": "RSO-FIXTURE-LEASE.json",
+    "state": "ACCEPT bounded fixture packet for local integration. Eight delivery artifact hashes, five fixture pins, two runtime pins and runtime patch verified; 44 unique latest-case PASS records across distinct frozen runs, not a single final green run.",
+    "ownerReportedPassing": [
+      "manual intent/reload",
+      "desktop/mobile nonce good/bad and unreviewed-row rejection",
+      "authenticated Yahoo100/0/unknown with contradictory saved marks",
+      "finite provider-expiry withdrawal desktop/mobile using Date-only fixture with real window/Worker monotonic origins"
+    ],
+    "expiryFinding": "Final versioned browser harness passed expiry withdrawal using a Date-only synthetic planning day while preserving real window/Worker monotonic origins; original Playwright clock failures preserved, no runtime workaround.",
+    "layoutReconciliation": "Authorized test-only update against exact released Release C three-card/1px outline/4px accent contract; original red retained",
+    "runtimePinCheck": {
+      "trusted-yahoo": {
+        "pins": 15,
+        "drift": []
+      },
+      "selected-model-baseline": {
+        "pins": 15,
+        "drift": []
+      }
+    },
+    "runningOperation": "None. Worker final handoff reports no active operations; SERVER-STOPPED.json records verified shutdown of owned Next PID11732. No new operations launched.",
+    "at": "2026-10-23T16:59:12.613983+00:00",
+    "affectedSpecReceipt": {
+      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/affected-spec-01/CASES.json",
+      "sha256": "107b3f9564d3c6bd8c2715042799d1ae75ae1ea67aa68ceded4c62f6c882e94a",
+      "cases": 44,
+      "passed": 16,
+      "failed": 24,
+      "timedOut": 4,
+      "ownerReportedNoSkipsRetries": true,
+      "scope": "Actual44-case receipt inspected; remaining failures not waived. Original summary styling outdated versusreleasedReleaseC; <=1px alignment failures remain unmodified."
+    },
+    "directCoordination": "Message successfully delivered via send_message_to_thread: summary-card update permitted by releasedcontentproof; overlay exactSCSS at naturalboundary, target1180x757 normalRefreshSave; preserve<=1px alignment thresholds.",
+    "latestBlockers": [
+      "Coherent whole-release composition/privacy/current static/exact-SHA browser/parent/Vercel gates remain open."
+    ],
+    "contractDecisions": "RSO-FIXTURE-CONTRACT-DECISIONS.json",
+    "latestCaseAccounting": {
+      "path": "tasks/artifacts/rso-browser-fixture-reconciliation-2026-10-23/CURRENT-CASE-ACCOUNTING.json",
+      "sha256": "bf9501b18e2975ab7526c79b1da6ee060547e63683cf3a688e904c9c2e8bbd03",
+      "passed": 44,
+      "failed": 0,
+      "qualification": "Latestpercaseacrossdifferentpins; originalfullrun16pass28nonpasspreserved"
+    },
+    "contractDecisionsVerifiedByOwner": [
+      "candidate999 admission/boundedsearch/responsiveness pass",
+      "fresh server/displayasOf plus unchanged savedworkspace pure view/horizon pass",
+      "providerrepair/save/reopen and realhover Continue manually pass"
+    ],
+    "currentVerifiedPins": {
+      "web/e2e/roster-schedule-optimizer.spec.ts": "6681805aeefaa3bfe81ce47660766500c6b2aa53bee0b78572443723a43dec13",
+      "web/e2e/roster-schedule-optimizer-fixtures.ts": "7de8756a3bfb9c322386dc5bbd6250992c1e4f0a0e1e408d7a14fd76095ee87d",
+      "FIXTURE-CANDIDATE.patch": "7f2b99d9d756d68b46587fa30778cd634078a7f2853fa3cf48498de632aeaf29",
+      "ACCEPTANCE-HARNESS.patch": "2c4d9e01ab571b4bf786b01a79730aeb3b17bf380c1cd4911a5d4b9b740d4d5b",
+      "harness-v2/rso-p07-acceptance.spec.ts": "a7ba4795d0d9ee66ab0a9c4e0369f045341d3eb18ff847537159015286a265cc"
+    },
+    "finalPacket": {
+      "status": "Accepted for bounded local integration",
+      "manifest": "tasks/artifacts/rso-browser-fixture-reconciliation-2026-10-23/DELIVERY-MANIFEST.json",
+      "manifestSha256": "a6b9617df984b6dd51223688571a2f67dbe7f82eb500d5ab9590dc30d043e7b2",
+      "reportSha256": "b176d7431839e637b8ec905d7dc83b3fe74b99f9ba306c6c2b1be59ae5c367c1",
+      "artifactHashChecks": 8,
+      "fixturePinChecks": 5,
+      "runtimePinChecks": 2,
+      "runtimePatchChecks": 1,
+      "acceptanceHarness": "10/10 passed",
+      "singleFinalFullGreenRun": false,
+      "pendingOperations": []
+    }
+  },
+  "gameGridR5": {
+    "decision": "ACCEPT scoped Game Grid r5 correction for local integration",
+    "pins": 26,
+    "independentChromium": 6,
+    "report": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/game-grid-r5-review/REPORT.md",
+    "packetSha256": "526714310534287ee87867c2e4c80ece7d0b5c1f99bd7c6bc51a42b4c47c0056",
+    "tjVisualAcceptance": true
+  },
+  "compositionReadiness": {
+    "inventory": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/composition-readiness-v2/INVENTORY.json",
+    "paths": 857,
+    "outsidePriorWebArchive": 42,
+    "unexplainedChangedSource": 0,
+    "status": "Not a release candidate. Bounded RSO fixtures/layout complete; manual Luna held; coherent full source/resource composition and whole-release gates remain pending."
+  },
+  "usageCheckpointPolicy": {
+    "at": "2026-10-23T16:19:35.615156+00:00",
+    "source": "TJ via parent explicit8% instruction",
+    "protectedLane": true,
+    "continueBelow5Percent": true,
+    "scope": "Existing release-blocking RSO fixtures/command-bar focused verification and safe coordination only",
+    "otherLanes": "Parent/ledger coordinate natural checkpoints at5%; no interruption",
+    "incrementalCheckpoint": "Save exact failures/pins/runIDs at each meaningful step",
+    "lastVerifiedOwnReading": {
+      "remainingPercent": 2,
+      "at": "2026-10-23T16:44:09Z",
+      "usedPercent": 98,
+      "credits": 0
+    },
+    "thresholdSignal": {
+      "remainingPercent": 5,
+      "at": "2026-10-23T16:28:48Z",
+      "source": "ledger direct meter",
+      "protectedContinue": true
+    },
+    "lastVerifiedLedgerReading": {
+      "remainingPercent": 4,
+      "at": "2026-10-23T16:37:00Z"
+    }
+  },
+  "rsoCommandBar": {
+    "status": "Whole original1180x757 connected account case PASS per independent fixture owner, including manualforkediting",
+    "candidate": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/rso-command-bar/CANDIDATE.json",
+    "sourceSha256": "ee4dcb45b83366ad35ed2a34a5165ae059790ff232d02af6f9482297c3f7d75d",
+    "patchSha256": "26764c956ff9ef84cf386be52e478774a188f39b2bb1c9142e49cc65909a1694",
+    "exactSourceLease": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss",
+    "originalOracle": "Connected1180x757 normal Refresh provider click cannot reach offscreen button; Saveclipped",
+    "verification": {
+      "diffCheck": "pass",
+      "testScriptSyntax": "pass",
+      "browser": "PASS: original overflow reproduced, corrected containment at six widths, twelve normal action clicks and six keyboard exercises; no requests",
+      "browserResultSha256": "30474b31b77f169cf27f6cbd3905aa73631dd12b5889774f505eb4cce522286b",
+      "executionSession": {
+        "sessionId": 46495,
+        "exitCode": 0,
+        "state": "completed"
+      },
+      "screenshotsViewed": [
+        "after-1180.png",
+        "after-320.png"
+      ],
+      "evidencePins": {
+        "RESULT.json": "30474b31b77f169cf27f6cbd3905aa73631dd12b5889774f505eb4cce522286b",
+        "after-1180.png": "27a5334819b86c7d6a55149066fec43e48a89a9cdef35e9b0cb80b0b2df3bdad",
+        "after-320.png": "4f0e0c5760c5b315548e465e41a858f2a2078bd9f78ab114166ca4c1a6b62e59"
+      }
+    },
+    "lockOwner": "No owned process or lock; do not modify any subsequently acquired worker lock",
+    "next": "Complete; current CSS also includes verified alignment correction. No further command-bar edit pending."
+  },
+  "rsoSliderAlignment": {
+    "status": "Verified: unchanged <=1px initial, horizontal, reverse-scroll and reopen browser controls pass at recorded pins.",
+    "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss",
+    "beforeSha256": "ee4dcb45b83366ad35ed2a34a5165ae059790ff232d02af6f9482297c3f7d75d",
+    "afterSha256": "4e40feb952963ba192e4bb7d0568983e8d1cc3d0bcaa292b8c79627355be22a2",
+    "patchSha256": "4c1b17b4f95b18341488693ea07c98beaca8d7e7e4fac0c677b06a746447e8c1",
+    "geometrySha256": "b6fd7eb4ae6b3b33f7970a9f1f056d046f35e28ccd172569905af05964b63cae",
+    "priorCommandBarPacket": "../rso-command-bar/CANDIDATE.json",
+    "changedRules": 1,
+    "oracle": "Existing <=1px slider/header bound unchanged; no forced interaction or formula changes",
+    "browser": "Original mobile/shortdesktop casePASS with horizontal runtimecorrection; desktop/future/clipped priorgeometry<=0.024px; unchanged<=1px threshold"
+  },
+  "masterConsolidation": {
+    "path": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+    "sha256": "86260ab86adc99fe4a17a29ca4487b5f7768eecd97bfd77d00ab4e49d6759347",
+    "state": "Ledger reports documentation consolidation complete and all 19 handoffs accounted for; release assembly and broader acceptance remain explicitly unfinished.",
+    "scope": "188 ledger IDs and32 original scopes retained per ledger receipt; no acceptance inferred",
+    "contextDiaries": "preserve locally; exclude from release candidates"
+  },
+  "rsoHorizontalScroll": {
+    "status": "Bounded local runtime correction verified: original mobile browser case and scopedTS/lint pass; whole-release gates remain",
+    "path": "web/components/RosterScheduleOptimizer/CompactSchedule.tsx",
+    "beforeSha256": "e203017397116abb2a0cf1b3e98b41cff44f01cd6fad916c1ed96e6b5e8f1ec9",
+    "afterSha256": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e",
+    "patchSha256": "673536bd26d634767d90857cc4da716a6fc58227c8174d22bb265ecc60d6552f",
+    "cssSha256": "4e40feb952963ba192e4bb7d0568983e8d1cc3d0bcaa292b8c79627355be22a2",
+    "geometrySha256": "7a03bc2cb96f36e72e610bd7fe06a9300eec1b6f58b7117aa6943df884947ee4",
+    "oracle": "Original <=1px afterhorizontal scroll plus reverse scroll/reopen; no relaxedthreshold",
+    "static": {
+      "receipt": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/scoped-static/RECEIPT.json",
+      "sha256": "429b76076aa1e561486982b9ccf79a59b73c16b6ee9268129a150a88128b57ba",
+      "typescript": "exit0",
+      "eslint": "exit0,no output",
+      "matchedCanonicalPins": {
+        "web/e2e/roster-schedule-optimizer.spec.ts": "6681805aeefaa3bfe81ce47660766500c6b2aa53bee0b78572443723a43dec13",
+        "web/e2e/roster-schedule-optimizer-fixtures.ts": "7de8756a3bfb9c322386dc5bbd6250992c1e4f0a0e1e408d7a14fd76095ee87d",
+        "web/components/RosterScheduleOptimizer/CompactSchedule.tsx": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e"
+      },
+      "scope": "Changed E2E spec/helper,versioned acceptance harness andCompactSchedule.tsx plus imports; not fullappcurrent-snapshotcheck"
+    },
+    "browser": {
+      "receipt": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/horizontal-and-bench-01",
+      "sourcePinsVerified": true,
+      "case": "compact short desktop and mobile retain rows, day state, reserves and unknown goalie status",
+      "status": "passed",
+      "runTotals": {
+        "passed": 1,
+        "failed": 1,
+        "exit": 1
+      },
+      "otherFailure": "Separate bench/day case needs Date-controls disclosure reopened after view switch; not an alignment failure",
+      "casesSha256": "12f82f7def80f3a53772f64623ab5324ffdc67a5c9f0b03519ee2b88a6941853",
+      "testPinsSha256": "2fc93c9c4e61f98d5b48a52c47085062e221ae96714722ea3b8bd1a47fd4a1bb",
+      "resultsSha256": "2434b6a9940d3d3191cdfffd77fcdfd50ae36b13ab7e086c045e54dd1dfb763a",
+      "ownerReportedAdditionalControls": "reverse60scroll and closed/reopen120sync;375/390/1024/320/720 viewports; bench/keyboard/reserve/overflow/persistence preserved"
+    }
+  },
+  "nextSafeCommand": "Read CURRENT-HANDOFF.json and verify final delivery/runtime pins before resuming coherent release composition. Recheck current Git status and leases. Do not repeat completed focused tests for status; no push until exact candidate and remaining release gates pass.",
+  "rsoLayoutRuntimeCandidate": {
+    "paths": {
+      "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss": "4e40feb952963ba192e4bb7d0568983e8d1cc3d0bcaa292b8c79627355be22a2",
+      "web/components/RosterScheduleOptimizer/CompactSchedule.tsx": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e"
+    },
+    "patch": "rso-layout-corrections.patch",
+    "patchSha256": "0d183f664c3e412498596dac702bc6a3e6d7e18e0afe795ed7bfbaee886d2b8d",
+    "scope": "ThreeexistingCSSrules foroverflow/padding plus guarded two-way scroll/reopen sync; forecast/auth/persistence/model unchanged",
+    "browser": "Whole1180accountPASS; originalmobilehorizontal5widthsPASS; maxoffset0.0104167px perowner, exactsourcepins independentlyverified",
+    "static": {
+      "receipt": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/scoped-static/RECEIPT.json",
+      "sha256": "429b76076aa1e561486982b9ccf79a59b73c16b6ee9268129a150a88128b57ba",
+      "typescript": "exit0",
+      "eslint": "exit0,no output",
+      "matchedCanonicalPins": {
+        "web/e2e/roster-schedule-optimizer.spec.ts": "6681805aeefaa3bfe81ce47660766500c6b2aa53bee0b78572443723a43dec13",
+        "web/e2e/roster-schedule-optimizer-fixtures.ts": "7de8756a3bfb9c322386dc5bbd6250992c1e4f0a0e1e408d7a14fd76095ee87d",
+        "web/components/RosterScheduleOptimizer/CompactSchedule.tsx": "1e91adce6fd9b1ab15f8a3586e569632b43bde14b749ef2e53e44114b6dad36e"
+      },
+      "scope": "Changed E2E spec/helper,versioned acceptance harness andCompactSchedule.tsx plus imports; not fullappcurrent-snapshotcheck"
+    }
+  }
+}

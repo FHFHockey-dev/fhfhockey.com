@@ -1,0 +1,4362 @@
+
+> web@0.1.0 test
+> vitest --run components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx lib/rosterScheduleOptimizer/gameForecastPoints.test.ts components/RosterScheduleOptimizer/ForecastPoints.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:54143) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:54141) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:54140) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:54142) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/ForecastPoints.test.tsx (3 tests) 15ms
+ ✓ lib/rosterScheduleOptimizer/gameForecastPoints.test.ts (19 tests) 3ms
+ ✓ components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx (5 tests) 139ms
+ ❯ components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx (6 tests | 6 failed) 6232ms
+   × RSO live grid points callback > renders complete FP from the current admitted read 1080ms
+     → Unable to find role="button" and name "Synthetic player, C, 2026-10-23"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+   × RSO live grid points callback > renders unavailable FP for a missing weighted key instead of the known subtotal 1033ms
+     → Unable to find role="button" and name "Synthetic player, C, 2026-10-23"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+   × RSO live grid points callback > renders goalie expected and if-starts FP with distinct semantics 1028ms
+     → Unable to find role="button" and name "Synthetic player, G, 2026-10-23"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+   × RSO live grid points callback > does not invent an if-starts estimate at start probability 0 1029ms
+     → Unable to find role="button" and name "Synthetic player, G, 2026-10-23"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+   × RSO live grid points callback > does not invent an if-starts estimate at start probability null 1035ms
+     → Unable to find role="button" and name "Synthetic player, G, 2026-10-23"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+   × RSO live grid points callback > does not admit numeric native forecasts without target review 1025ms
+     → Unable to find role="button" and name "Synthetic player, G, 2026-10-23"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx > RSO live grid points callback > renders complete FP from the current admitted read
+TestingLibraryElementError: Unable to find role="button" and name "Synthetic player, C, 2026-10-23"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+ ❯ waitForWrapper node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ mount components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx:56:29
+     54|   vi.stubGlobal("fetch", fetcher);
+     55|   render(<RosterScheduleOptimizer />);
+     56|   const cell = await screen.findByRole("button", { name: `Synthetic pl…
+       |                             ^
+     57|   await waitFor(() => expect(within(cell).getByLabelText(/Expected fan…
+     58|   return { cell: within(cell), fetcher };
+ ❯ components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx:63:37
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx > RSO live grid points callback > renders unavailable FP for a missing weighted key instead of the known subtotal
+TestingLibraryElementError: Unable to find role="button" and name "Synthetic player, C, 2026-10-23"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+ ❯ waitForWrapper node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ mount components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx:56:29
+     54|   vi.stubGlobal("fetch", fetcher);
+     55|   render(<RosterScheduleOptimizer />);
+     56|   const cell = await screen.findByRole("button", { name: `Synthetic pl…
+       |                             ^
+     57|   await waitFor(() => expect(within(cell).getByLabelText(/Expected fan…
+     58|   return { cell: within(cell), fetcher };
+ ❯ components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx:69:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx > RSO live grid points callback > renders goalie expected and if-starts FP with distinct semantics
+TestingLibraryElementError: Unable to find role="button" and name "Synthetic player, G, 2026-10-23"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+ ❯ waitForWrapper node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ mount components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx:56:29
+     54|   vi.stubGlobal("fetch", fetcher);
+     55|   render(<RosterScheduleOptimizer />);
+     56|   const cell = await screen.findByRole("button", { name: `Synthetic pl…
+       |                             ^
+     57|   await waitFor(() => expect(within(cell).getByLabelText(/Expected fan…
+     58|   return { cell: within(cell), fetcher };
+ ❯ components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx:75:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx > RSO live grid points callback > does not invent an if-starts estimate at start probability 0
+ FAIL  components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx > RSO live grid points callback > does not invent an if-starts estimate at start probability null
+TestingLibraryElementError: Unable to find role="button" and name "Synthetic player, G, 2026-10-23"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+ ❯ waitForWrapper node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ mount components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx:56:29
+     54|   vi.stubGlobal("fetch", fetcher);
+     55|   render(<RosterScheduleOptimizer />);
+     56|   const cell = await screen.findByRole("button", { name: `Synthetic pl…
+       |                             ^
+     57|   await waitFor(() => expect(within(cell).getByLabelText(/Expected fan…
+     58|   return { cell: within(cell), fetcher };
+ ❯ components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx:81:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx > RSO live grid points callback > does not admit numeric native forecasts without target review
+TestingLibraryElementError: Unable to find role="button" and name "Synthetic player, G, 2026-10-23"
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_workspace_52fb3c"[39m
+    [36m>[39m
+      [36m<header[39m
+        [33maria-label[39m=[32m"Planning command bar"[39m
+        [33mclass[39m=[32m"_navBar_52fb3c"[39m
+        [33mrole[39m=[32m"group"[39m
+      [36m>[39m
+        [36m<h1[39m
+          [33mclass[39m=[32m"_navTitle_52fb3c"[39m
+        [36m>[39m
+          [0mRoster Schedule Optimizer[0m
+        [36m</h1>[39m
+        [36m<button[39m
+          [33maria-controls[39m=[32m"rso-planning-setup"[39m
+          [33maria-expanded[39m=[32m"false"[39m
+          [33mclass[39m=[32m"_providerControl_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_providerMark_52fb3c"[39m
+          [36m>[39m
+            [0mM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [36m<strong>[39m
+              [0mManual roster[0m
+            [36m</strong>[39m
+            [36m<small>[39m
+              [0mChoose source and dates[0m
+            [36m</small>[39m
+          [36m</span>[39m
+        [36m</button>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navWeek_52fb3c"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-controls[39m=[32m"rso-planning-setup"[39m
+            [33maria-expanded[39m=[32m"false"[39m
+            [33maria-label[39m=[32m"Planning setup · Fri, Oct 23 – Fri, Oct 23"[39m
+            [33mclass[39m=[32m"_rangeButton_52fb3c"[39m
+          [36m>[39m
+            [0mFri, Oct 23[0m
+            [0m – [0m
+            [0mFri, Oct 23[0m
+          [36m</button>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [0mCurrent week[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mid[39m=[32m"rso-current-week-range"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [36m>[39m
+              [0mSaved range retained. [0m
+              [0mCurrent week [0m
+              [0mMon, Oct 19[0m
+              [0m – [0m
+              [0mSun, Oct 25[0m
+              [0m · [0m
+              [0mMon–Sun fallback; league matchup dates unverified[0m
+            [36m</span>[39m
+          [36m</small>[39m
+        [36m</div>[39m
+        [36m<label[39m
+          [33mclass[39m=[32m"_commandSearch_52fb3c"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+          [36m>[39m
+            [0mPlayer search[0m
+          [36m</span>[39m
+          [36m<input[39m
+            [33maria-label[39m=[32m"Search candidate players"[39m
+            [33mplaceholder[39m=[32m"Search players or teams…"[39m
+            [33mtype[39m=[32m"search"[39m
+            [33mvalue[39m=[32m""[39m
+          [36m/>[39m
+        [36m</label>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_navStatus_52fb3c"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_statusRail_52fb3c"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-account-save-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_notice_52fb3c"[39m
+              [33mhidden[39m=[32m""[39m
+              [33mid[39m=[32m"rso-action-status"[39m
+              [33mrole[39m=[32m"status"[39m
+            [36m/>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33maria-label[39m=[32m"Workspace actions"[39m
+          [33mclass[39m=[32m"_commandActions_52fb3c"[39m
+          [33mrole[39m=[32m"group"[39m
+        [36m>[39m
+          [36m<button[39m
+            [33maria-describedby[39m=[32m"rso-undo-reason"[39m
+            [33mdisabled[39m=[32m""[39m
+          [36m>[39m
+            [0mUndo[0m
+          [36m</button>[39m
+          [36m<small[39m
+            [33mclass[39m=[32m"_scheduleSrOnly_52fb3c"[39m
+            [33mid[39m=[32m"rso-undo-reason"[39m
+          [36m>[39m
+            [0mNo edits to undo.[0m
+          [36m</small>[39m
+          [36m<button>[39m
+            [0mMatchup[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<details[39m
+          [33mclass[39m=[32m"_navMenu_52fb3c"[39m
+        [36m>[39m
+          [36m<summary[39m
+            [33maria-label[39m=[32m"Settings and tools"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33maria-hidden[39m=[32m"true"[39m
+            [36m>[39m
+              [0m☰[0m
+            [36m</span>[39m
+          [36m</summary>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_navMenuPanel_52fb3c"[39m
+          [36m>[39m
+            [36m<small[39m
+              [33mclass[39m=[32m"_updatedAt_52fb3c"[39m
+              [33mid[39m=[32m"rso-updated-at"[39m
+            [36m>[39m
+              [0mUpdated 8:00 AM[0m
+            [36m</small>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mLeague settings[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mPoints[0m
+                [0m · [0m
+                [0mdaily[0m
+                [0m lineup[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33maria-controls[39m=[32m"rso-planning-setup"[39m
+              [33maria-expanded[39m=[32m"false"[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mPlanning preferences[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mGoalies: [0m
+                [0mAccept risk[0m
+                [0m · [0m
+                [0mearly[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button[39m
+              [33mclass[39m=[32m"_commandControl_52fb3c"[39m
+            [36m>[39m
+              [36m<strong>[39m
+                [0mFilters & options[0m
+              [36m</strong>[39m
+              [36m<small>[39m
+                [0mAvailability · teams · positions[0m
+              [36m</small>[39m
+            [36m</button>[39m
+            [36m<button>[39m
+              [0mReload schedule data[0m
+            [36m</button>[39m
+          [36m</div>[39m
+        [36m</details>[39m
+      [36m</header>[39m
+      [36m<fi...
+ ❯ waitForWrapper node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:163:27
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:86:33
+ ❯ mount components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx:56:29
+     54|   vi.stubGlobal("fetch", fetcher);
+     55|   render(<RosterScheduleOptimizer />);
+     56|   const cell = await screen.findByRole("button", { name: `Synthetic pl…
+       |                             ^
+     57|   await waitFor(() => expect(within(cell).getByLabelText(/Expected fan…
+     58|   return { cell: within(cell), fetcher };
+ ❯ components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx:87:28
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  6 failed | 27 passed (33)
+   Start at  12:20:48
+   Duration  7.13s (transform 614ms, setup 9ms, collect 1.25s, tests 6.39s, environment 757ms, prepare 148ms)
+

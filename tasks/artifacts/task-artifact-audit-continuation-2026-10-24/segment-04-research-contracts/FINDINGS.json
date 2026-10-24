@@ -1,0 +1,281 @@
+{
+  "at": "2026-10-24T16:04:14.600130+00:00",
+  "canonical_written": false,
+  "library_version_unchanged": 5,
+  "findings": [
+    {
+      "finding_id": "SEG04-01",
+      "classification": "research_recommendations_not_authority",
+      "priority": "documentary",
+      "existing_ids": [
+        "REPO-DOCUMENTATION"
+      ],
+      "title": "Supporting research is duplicated and is not the adopted contract",
+      "finding": "Two research copies have identical SHA256. The report/recommendations propose cume_dist, a shot-level shared service, adjusted flagship ratings and true5v5 deployment. Later actual task decisions reuse existing sources, distinguish descriptive versus diagnostic impact and record source-specific denominator contracts. No new architecture/model/rights/provider work follows from research instructions or unresolvable internal citation IDs.",
+      "next_documentary_action": "Keep the research historical/source-attributed; link adopted clauses to dated implementation decisions rather than treating recommendations as incomplete mandatory work.",
+      "dispatch": "None; proposed/parked or existing evidence gate only.",
+      "current_hosted_state": "Unverified; no external access.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+          "line": 31,
+          "sha256": "a562057b2cafcce30a58dacaee995a372d8409ca243d2b8d126dd896cc38e855",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/workstation/Recommendations-DRR.md",
+          "line": 80,
+          "sha256": "191f919e180ca069b510ac9cbf5ab6208a408d8fd4efba3f83b354f8db7f501e",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+          "line": 112,
+          "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG04-02",
+      "classification": "preserve_historical_diagnostic_and_held_promotion",
+      "priority": "documentary",
+      "existing_ids": [
+        "REPO-DOCUMENTATION"
+      ],
+      "title": "Adjusted-impact persistence exists in history while promotion remains blocked",
+      "finding": "Main tasks83.1-83.3 report table installation and one model run/802 impact rows with held-out provenance.83.4/84 explicitly keep coefficients diagnostic; defense-specific target, rest/zone controls and stability remain promotion gates. Do not claim no adjusted model exists, equate historical MSE improvement with current model qualification, or infer production promotion.",
+      "next_documentary_action": "Preserve historical persistence credit and current diagnostic-only boundary. Broader Rankings remains parked; no fit, publication, new adjusted model or rollout task added.",
+      "dispatch": "None; proposed/parked or existing evidence gate only.",
+      "current_hosted_state": "Unverified; no external access.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+          "line": 657,
+          "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+          "line": 664,
+          "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG04-03",
+      "classification": "optional_future_capability_not_new_commitment",
+      "priority": "documentary",
+      "existing_ids": [
+        "PIPE-ROLLING-HISTORY-REPAIR",
+        "REPO-DOCUMENTATION"
+      ],
+      "title": "Buffered rolling guidance is not an implemented pollable async job",
+      "finding": "Task57.29 deliberately closes a guidance slice and leaves a true async job table as future work;57.28 adds bounding preflight after a19m50s run. Earlier cron batching decisions describe bounded sequential offsets. The dedicated Testing Grounds runner is a separate scope and does not complete legacy rolling async work.",
+      "next_documentary_action": "Retain explicit capability limitation; do not add a mandatory active task or reuse production maintenance routes. If an owner later selects async maintenance, reconcile existing job/lease contracts and exact scope first.",
+      "dispatch": "None; proposed/parked or existing evidence gate only.",
+      "current_hosted_state": "Unverified; no external access.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+          "line": 506,
+          "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+          "line": 507,
+          "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        },
+        {
+          "path": "tasks/artifacts/cron-loop-batching-decisions.md",
+          "line": 3,
+          "sha256": "44be13b2b7864fc0b790ef3b9e9400f6faae2c5c6e980fadfb447c554b6bb405",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG04-04",
+      "classification": "reconciliation_candidate_parked_not_current_absence_proof",
+      "priority": "documentary",
+      "existing_ids": [
+        "REPO-DOCUMENTATION",
+        "CRON-SCHEDULE-DISPOSITION"
+      ],
+      "title": "Audited composite publication is not evidence of scheduled refresh",
+      "finding": "Main task62.2 says composite publishing was invocation-audited but not yet scheduled postgame at that dated inventory. Local schedule-name search establishes no later exact equivalent and cannot prove hosted absence. Rankings pause and owner schedule gates prevent automatic activation.",
+      "next_documentary_action": "Keep a parked pointer to reconcile exact current composite/durable-ranking/team-unit writer identities and scheduler receipts if selected. Do not add jobs, invoke publishers or interpret audited manual publication as recurring freshness acceptance.",
+      "dispatch": "None; proposed/parked or existing evidence gate only.",
+      "current_hosted_state": "Unverified; no external access.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+          "line": 538,
+          "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+          "line": 539,
+          "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG04-05",
+      "classification": "high_priority_existing_id_scope_refinement",
+      "priority": "P1 source-reported retained evidence gate, not a new current defect",
+      "existing_ids": [
+        "SUSTAINABILITY-NATURAL"
+      ],
+      "title": "Retain exact P1 baseline committed-batch/natural proof obligation",
+      "finding": "Failed-jobs NEW6/C0019 requires the partial-write receipt to ship and one natural run to report committed batches.206-ID fields contain a generic Sustainability natural-run gate, without the exact baseline clause. Narrow current-source read at the correct db/sustainability path shows counters outside try, post-upsert increment and generic catch rowsUpserted/partialWrite; do not duplicate that implementation. The selected Oct20 marker receipt explicitly does not prove invocation/full population and supplies no exact baseline natural committed-batch closure.",
+      "next_documentary_action": "At the next consolidated register checkpoint, refine SUSTAINABILITY-NATURAL with the exact partial-write/release/natural-receipt alias after checking newer closure. Preserve local repair credit and marker evidence. No route call, test, release or scheduler change; current production outcome remains unknown.",
+      "dispatch": "None; proposed/parked or existing evidence gate only.",
+      "current_hosted_state": "Unverified; no external access.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md",
+          "line": 80,
+          "sha256": "6cf6c453c7fdd9bde677bbb916b70fbf51a567555da2f89f9684563a58325bf0",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        },
+        {
+          "path": "tasks/artifacts/codex-2026-10-20/REGISTER.md",
+          "line": 37,
+          "sha256": "3a17b4821b7d1bba83efe114905f631b5d6a5ef3224a8aa9d715bbfbc3058d69",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        },
+        {
+          "path": "tasks/artifacts/codex-2026-10-20/PRODUCTION-FINDINGS.md",
+          "line": 11,
+          "sha256": "c62977bcd631c042189bbd1b2ba28b61d7ee8ad960cb825633be77ea2f81b15d",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        }
+      ],
+      "narrow_source_evidence": [
+        {
+          "path": "web/pages/api/v1/db/sustainability/rebuild-baselines.ts",
+          "sha256": "f2f520a55957f47b9827fdc5cf2d95ac481cbe6697172d942570565c52238231",
+          "bytes": 13210,
+          "lines": 441,
+          "reviewed_ranges": [
+            [
+              186,
+              211
+            ],
+            [
+              355,
+              378
+            ],
+            [
+              409,
+              441
+            ]
+          ],
+          "scope": "Resolve exact old partial-write contradiction only: counters outside try, post-upsert increment, generic catch receipt present. No source edits/execution, application-wide review or release/natural proof."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG04-06",
+      "classification": "already_registered_no_parallel_task",
+      "priority": "documentary",
+      "existing_ids": [
+        "CRON-SCHEDULE-DISPOSITION",
+        "CRON-AUDIT-COVERAGE"
+      ],
+      "title": "Schedule-floor and inventory audit requirements already have stable homes",
+      "finding": "Audit taskNEW7/8 retain current hosted inventory/route coverage and13 fixed daily dispositions. Later owner policy is3AMlocal America/New_York for daily batch only, with recurring freshness excluded. Historical fixed08UTC/EST language is not year-round policy. Current C5 route-scope choices/reviews are separate from hosted inventory acceptance.",
+      "next_documentary_action": "Retain current IDs, accepted local gates and unfinished hosted/schedule proof. No scheduler mutations, duplicate whole-cron audit or blank scheduling shutdown.",
+      "dispatch": "None; proposed/parked or existing evidence gate only.",
+      "current_hosted_state": "Unverified; no external access.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+          "line": 135,
+          "sha256": "6991c42129c8c9c2375dddf34fe335eb7f6d5d23a93a1bd9e70ccf3151b6e925",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+          "line": 131,
+          "sha256": "6991c42129c8c9c2375dddf34fe335eb7f6d5d23a93a1bd9e70ccf3151b6e925",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG04-07",
+      "classification": "superseded_proposal_preserve_current_policy",
+      "priority": "documentary",
+      "existing_ids": [
+        "MASTER-D1",
+        "FPI-11.4",
+        "PIPE-NST207",
+        "REPO-DOCUMENTATION"
+      ],
+      "title": "Token-model rewrite proposal cannot override retained NST windows",
+      "finding": "Migration taskNEW10 leaves the four-window engine versus token proposal unresolved in dated text. Current register/rules retain40/80/100/180 windows and accepted pacing/continuation work, with cross-host durability unqualified. An old proposal to replace the model or permit40-request bursts is not new authority to relax limits or claim distributed coordination.",
+      "next_documentary_action": "Reconcile dated migration checklist wording to accepted retained design and precise cross-host/rollout gates; do not alter pacing, keys or live jobs.",
+      "dispatch": "None; proposed/parked or existing evidence gate only.",
+      "current_hosted_state": "Unverified; no external access.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md",
+          "line": 85,
+          "sha256": "6125fcba20456d11522b389c995327779b96eae9f4ce7d82f04f2e2947f79d4f",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/prd/prd-cron-failed-jobs-remediation.md",
+          "line": 50,
+          "sha256": "35b51d67c821656bc5b37eff913d34b2c907749b09b6f9ef2e12de97dda420cd",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG04-08",
+      "classification": "historical_failure_cohort_not_current_outage",
+      "priority": "documentary",
+      "existing_ids": [
+        "PIPE-NATURAL",
+        "CRON-REPORT",
+        "SUSTAINABILITY-NATURAL"
+      ],
+      "title": "Benchmark root-cause and natural audit evidence have different dates/scopes",
+      "finding": "The root-cause matrix describes older route/SQL/transport failures; the audit PRD records later natural projection/accuracy/report closures and subsequent four-route missing-audit recurrence. Scheduler submission/HTTP success, route-final audit persistence and complete batch/population acceptance are distinct. Counts59/59 or empty warning keys are not universal current closure.",
+      "next_documentary_action": "Preserve dated failures/closures and reconcile exact remaining terminal-audit/natural proofs. No benchmark replay, cron invocation, production experiment or inferred outage.",
+      "dispatch": "None; proposed/parked or existing evidence gate only.",
+      "current_hosted_state": "Unverified; no external access.",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/cron-failed-jobs-root-cause-matrix.md",
+          "line": 1,
+          "sha256": "25cb3d3572a51c46899bf55ca21c5606d8d9e302435ee12ff0baf9db13b30b40",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md",
+          "line": 5,
+          "sha256": "6419f112194d3d433fdb1b8af1e8635718edc90f51d781c251c4b7df34ce8995",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md",
+          "line": 166,
+          "sha256": "6419f112194d3d433fdb1b8af1e8635718edc90f51d781c251c4b7df34ce8995",
+          "scope": "Full documentary read unless path-specific partial ranges state otherwise; no underlying tests/provider/hosted verification."
+        }
+      ]
+    }
+  ],
+  "new_stable_ids_proposed": [],
+  "one_high_priority_existing_id_refinement": "SEG04-05",
+  "policy": "No fresh runtime defect, deployment completion, schedule change or approved new work is inferred from dated documents."
+}

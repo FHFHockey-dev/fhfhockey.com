@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-24T20:56:24.525177+00:00",
+  "status": "Prepared for focused offline composition verification; not committed or deployed",
+  "base": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "snapshot": "/tmp/fhfh-wigo-reader-release-xx5wxns_",
+  "paths": {
+    "web/utils/fetchWigoPlayerStats.ts": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f",
+    "web/utils/fetchWigoPlayerStats.test.ts": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1"
+  },
+  "patch_sha256": "34e0442afaae5987bd03901631143de3d8e77dccfe487d6712851f885d63dd1f",
+  "independent_review": "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW.md",
+  "scope": "Accepted reader-only pair, preserving production builder, wrappers, database state, forecasts, configurations and all other source bytes. Historical tracked .env files were initially included by Git archive; temporary copies were removed without reading contents. See TEMP-EXPORT-ENV-CORRECTION.json. Shared installed node_modules is read-only.",
+  "expected_deployments": {
+    "web": "One production build for exact selected commit",
+    "functions": "Ignored/canceled entry; unchanged functions tree",
+    "cms": "Ignored/canceled entry; unchanged cms tree",
+    "root": "Ignored/canceled entry; existing ignoreCommand exit 0"
+  },
+  "production_application_requests": 0
+}

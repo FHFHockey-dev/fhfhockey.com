@@ -1,0 +1,121 @@
+--- a/web/lib/player-forecasts/resolvedPlanningForecast.ts
++++ b/web/lib/player-forecasts/resolvedPlanningForecast.ts
+@@ -76,7 +76,10 @@
+     // Preserve admitted confirmation independently of the issued model weight.
+     // Rejected or expired source/participation inputs cannot retain that claim.
+     confirmedStart: original.confirmedStart && (detailUsed || start !== undefined),
+-    modelVersion: sources.find(source => source.kind === "detailed")?.policyVersion ?? sources[0]?.policyVersion ?? original.modelVersion,
++    // A baseline can borrow the issued row's participation without its means.
++    // Keep that code identity for target-use rechecks; rate policies stay in inputs.
++    modelVersion: sources.find(source => source.kind === "detailed")?.policyVersion
++      ?? (participation.some(row => !row.model) ? original.modelVersion : sources[0]?.policyVersion ?? original.modelVersion),
+     limitations: [...new Set([...original.limitations, ...Object.values(contributions).flatMap(row => row.limitations),
+       ...(modeledStart?.model?.limitations ?? [])])] };
+ }
+--- a/web/lib/player-forecasts/rsoUsePolicy.ts
++++ b/web/lib/player-forecasts/rsoUsePolicy.ts
+@@ -102,9 +102,13 @@
+   const contributions = forecast.contributions && { ...forecast.contributions };
+   for (const target of targets) {
+     const binding = forecast.rsoTargetBindings?.[target];
+-    const source = forecast.contributions?.[target]?.inputs?.detailed;
++    const inputs = forecast.contributions?.[target]?.inputs;
++    const source = inputs?.detailed;
++    // A baseline-only row may still depend on reviewed issued participation.
++    // Its aggregate cutoff can be newer than that participation's own cutoff.
++    const participation = inputs?.participation && !inputs.participation.model ? inputs.participation : undefined;
+     const bound = binding?.targetKey === target && binding.codeVersion === (source?.policyVersion ?? forecast.modelVersion)
+-      && binding.cutoffAt === (source?.cutoffAt ?? forecast.cutoffAt);
++      && binding.cutoffAt === (source?.cutoffAt ?? participation?.cutoffAt ?? forecast.cutoffAt);
+     const decision = resolveRsoTargetUse(compatible && bound ? binding : undefined, now, policy);
+     targetUses[target] = intersectRsoUses(forecast.targetAllowedUses?.[target] ?? forecast.allowedUses, decision.allowedUses);
+     const row = contributions?.[target];
+--- a/web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts
++++ b/web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts
+@@ -3,6 +3,7 @@
+ import { bindFixtureForecast, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
+ 
+ import { planRoster, scheduleFits, evaluatePlan } from "./planning";
++import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
+ import type { PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
+ import { forecastCalendarPolicy, type ContributionSource } from "../player-forecasts/contributions";
+ 
+@@ -173,10 +174,74 @@
+     }
+   };
+   it.each(["detailed", "blended"] as const)("reproduces admitted %s quality decisions across scoring profiles and input order", reproducesAdmittedQuality);
+-  // Known P07 defect, unchanged assertions: the first resolution admits a baseline rate that borrows the issued row's
+-  // reviewed participation, but the rebuilt row reports the rate's model version, so re-restriction no longer matches
+-  // the binding and denies it (fail-closed). Fixing it needs the participation receipt to carry the issued code version.
+-  it.fails("reproduces admitted baseline quality decisions across scoring profiles and input order", () => reproducesAdmittedQuality("baseline"));
++  it("reproduces admitted baseline quality decisions across scoring profiles and input order", () => reproducesAdmittedQuality("baseline"));
++
++  it.each(["points", "goalie"] as const)("keeps issued participation identity when %s baseline rates have a newer cutoff", profile => {
++    const snapshot = qualityFixture("baseline", profile);
++    snapshot.baselineSources = snapshot.baselineSources!.map(source => ({ ...source,
++      cutoffAt: "2026-10-03T02:00:00Z", issuedAt: "2026-10-03T03:00:00Z" }));
++    const target = profile === "goalie" ? "SAVES_GOALIE" : "GOALS";
++    const resolved = resolvePlanningContributions(snapshot, { consumer: "rso" });
++    const row = resolved.forecasts[0];
++    expect(row.stats[target]).not.toBeNull();
++    expect(row.contributions?.[target].sourceKind).toBe("baseline");
++    expect(row.contributions?.[target].inputs?.baseline?.policyVersion).toBe("fixture-rate-v1");
++    expect(row.modelVersion).toBe("fixture-forge-v1");
++    expect(row.cutoffAt).toBe("2026-10-03T02:00:00Z");
++    expect(row.contributions?.[target].inputs?.participation?.cutoffAt).toBe("2026-10-03T00:00:00Z");
++    const saved = JSON.parse(JSON.stringify(resolved));
++    expect(resolvePlanningContributions(saved, { consumer: "rso" }).forecasts).toEqual(resolved.forecasts);
++  });
++
++  it.each(["missing_review", "rate_review_only", "revoked_review", "expired_review", "missing_binding",
++    "changed_model", "changed_cutoff", "changed_artifact", "participation_identity", "expired_participation", "revoked_revision"])
++  ("withholds borrowed baseline participation after %s on replay", kind => {
++    const policy = fixtureRsoPolicy(["fixture-forge-v1"], ["GOALS", "ASSISTS"]);
++    const resolved = resolvePlanningContributions(qualityFixture("baseline"), { consumer: "rso", usePolicy: policy });
++    expect(resolved.forecasts[0].stats.GOALS).toBe(0.5);
++    const saved: PlanningSnapshot = JSON.parse(JSON.stringify(resolved));
++    const current = structuredClone(policy);
++    if (kind === "missing_review") current.reviews = [];
++    if (kind === "rate_review_only") current.reviews = fixtureRsoPolicy(["fixture-rate-v1"], ["GOALS", "ASSISTS"]).reviews;
++    if (kind === "revoked_review") current.revokedReviewIds = policy.reviews.map(review => review.id);
++    if (kind === "expired_review") current.reviews = current.reviews.map(review => ({ ...review, expiresAt: "2020-01-01T00:00:00Z" }));
++    if (kind === "revoked_revision") saved.forecastManifest!.issuedRevisionIds = [];
++    for (const row of saved.forecasts) {
++      if (kind === "missing_binding") row.rsoTargetBindings = undefined;
++      if (kind === "changed_model") row.modelVersion = "unreviewed-model";
++      for (const binding of Object.values(row.rsoTargetBindings ?? {})) {
++        if (kind === "changed_artifact") binding.artifactHash = "c".repeat(64);
++      }
++      for (const contribution of Object.values(row.contributions!)) {
++        const participation = contribution.inputs!.participation!;
++        if (kind === "changed_cutoff") participation.cutoffAt = "2026-10-02T12:00:00Z";
++        if (kind === "participation_identity") participation.nhlPlayerId++;
++        if (kind === "expired_participation") participation.expiresAt = saved.context.asOf;
++      }
++    }
++    const replayed = resolvePlanningContributions(saved, { consumer: "rso", usePolicy: current });
++    for (const row of replayed.forecasts) {
++      expect(row.stats).toMatchObject({ GOALS: null, ASSISTS: null });
++      expect(row.assignmentStats).toMatchObject({ GOALS: null, ASSISTS: null });
++      expect(row.contributions?.GOALS.allowedUses.comparison).toBe(false);
++    }
++  });
++
++  it("keeps borrowed baseline participation permissions specific to each target and use", () => {
++    const snapshot = qualityFixture("baseline");
++    snapshot.baselineSources = snapshot.baselineSources!.map(source => source.targetKey === "ASSISTS" ? { ...source, mean: 0 } : source);
++    const policy = fixtureRsoPolicy(["fixture-forge-v1"], ["GOALS", "ASSISTS"]);
++    policy.reviews = policy.reviews.map(review => ({ ...review, allowedUses: {
++      assignment: review.binding.targetKey === "GOALS", totals: review.binding.targetKey === "ASSISTS",
++      comparison: false, conditionalTieBreak: false,
++    } }));
++    const resolved = resolvePlanningContributions(snapshot, { consumer: "rso", usePolicy: policy });
++    expect(resolved.forecasts[0].stats).toMatchObject({ GOALS: null, ASSISTS: 0 });
++    expect(resolved.forecasts[0].assignmentStats).toMatchObject({ GOALS: 0.5, ASSISTS: null });
++    expect(resolved.forecasts[0].contributions?.GOALS.allowedUses.comparison).toBe(false);
++    expect(resolvePlanningContributions(JSON.parse(JSON.stringify(resolved)), { consumer: "rso", usePolicy: policy }).forecasts)
++      .toEqual(resolved.forecasts);
++  });
+ 
+   it.each(["daily", "weekly"] as const)("replays admitted quality forecasts with %s locks and realized results", lineupMode => {
+     const snapshot = qualityFixture("blended");

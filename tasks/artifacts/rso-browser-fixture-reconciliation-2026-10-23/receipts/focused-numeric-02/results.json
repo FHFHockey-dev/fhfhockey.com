@@ -1,0 +1,291 @@
+{
+  "config": {
+    "configFile": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/reconciliation.config.ts",
+    "rootDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focused-numeric-02/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium",
+        "name": "chromium",
+        "testDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "roster-schedule-optimizer.spec.ts"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "roster-schedule-optimizer.spec.ts",
+      "file": "roster-schedule-optimizer.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "assignment-only forecasts preserve their allowed uses in the browser",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1382,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T16:01:29.423Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "75e731aa0b382492d6e5-a13e22dcf3d048f9a005",
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 913,
+          "column": 7
+        },
+        {
+          "title": "unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (manual)",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 17319,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Matchup' }).locator('details').filter({ has: getByText('Selected lineup · estimate sources', { exact: true }) }).getByRole('article', { name: 'Alpha Center game 30 GOALS evidence' }).getByText(/^Baseline rate input/)\nExpected substring: \u001b[32m\"issued Sep 27, 1:00 AM UTC\"\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Matchup' }).locator('details').filter({ has: getByText('Selected lineup · estimate sources', { exact: true }) }).getByRole('article', { name: 'Alpha Center game 30 GOALS evidence' }).getByText(/^Baseline rate input/)\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Matchup' }).locator('details').filter({ has: getByText('Selected lineup · estimate sources', { exact: true }) }).getByRole('article', { name: 'Alpha Center game 30 GOALS evidence' }).getByText(/^Baseline rate input/)\nExpected substring: \u001b[32m\"issued Sep 27, 1:00 AM UTC\"\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Matchup' }).locator('details').filter({ has: getByText('Selected lineup · estimate sources', { exact: true }) }).getByRole('article', { name: 'Alpha Center game 30 GOALS evidence' }).getByText(/^Baseline rate input/)\u001b[22m\n\n    at expectSourceTimes (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1258:61)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1272:3",
+                    "location": {
+                      "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                      "column": 61,
+                      "line": 1258
+                    },
+                    "snippet": "  1256 |     await expect(goals).not.toContainText(\"Sep 29\");\n  1257 |     if (goalsBlended) {\n> 1258 |       await expect(goals.getByText(/^Baseline rate input/)).toContainText(\"issued Sep 27, 1:00 AM UTC\");\n       |                                                             ^\n  1259 |       await expect(goals.getByText(/^Baseline rate input/)).toContainText(\"expires Oct 9\");\n  1260 |     } else await expect(goals.getByText(/^Baseline rate input/)).toHaveCount(0);\n  1261 |     if (withAssists) {"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                        "column": 61,
+                        "line": 1258
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Matchup' }).locator('details').filter({ has: getByText('Selected lineup · estimate sources', { exact: true }) }).getByRole('article', { name: 'Alpha Center game 30 GOALS evidence' }).getByText(/^Baseline rate input/)\nExpected substring: \u001b[32m\"issued Sep 27, 1:00 AM UTC\"\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Matchup' }).locator('details').filter({ has: getByText('Selected lineup · estimate sources', { exact: true }) }).getByRole('article', { name: 'Alpha Center game 30 GOALS evidence' }).getByText(/^Baseline rate input/)\u001b[22m\n\n\n  1256 |     await expect(goals).not.toContainText(\"Sep 29\");\n  1257 |     if (goalsBlended) {\n> 1258 |       await expect(goals.getByText(/^Baseline rate input/)).toContainText(\"issued Sep 27, 1:00 AM UTC\");\n       |                                                             ^\n  1259 |       await expect(goals.getByText(/^Baseline rate input/)).toContainText(\"expires Oct 9\");\n  1260 |     } else await expect(goals.getByText(/^Baseline rate input/)).toHaveCount(0);\n  1261 |     if (withAssists) {\n    at expectSourceTimes (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1258:61)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1272:3"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T16:01:30.974Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focused-numeric-02/results/roster-schedule-optimizer--b41eb-articipation-expiry-manual--chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focused-numeric-02/results/roster-schedule-optimizer--b41eb-articipation-expiry-manual--chromium/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focused-numeric-02/results/roster-schedule-optimizer--b41eb-articipation-expiry-manual--chromium/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                    "column": 61,
+                    "line": 1258
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "75e731aa0b382492d6e5-a6c04ffcadc97d1d0480",
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1151,
+          "column": 5
+        },
+        {
+          "title": "unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (connected)",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 1403,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatchObject\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[33m@@ -7,11 +7,11 @@\u001b[39m\n\u001b[2m              \"inputs\": Object {\u001b[22m\n\u001b[2m                \"detailed\": Object {\u001b[22m\n\u001b[2m                  \"sourceWatermark\": \"captured-reads\",\u001b[22m\n\u001b[2m                },\u001b[22m\n\u001b[2m              },\u001b[22m\n\u001b[32m-             \"sourceKind\": \"blended\",\u001b[39m\n\u001b[31m+             \"sourceKind\": \"detailed\",\u001b[39m\n\u001b[2m            },\u001b[22m\n\u001b[2m          },\u001b[22m\n\u001b[2m          \"sourceWatermark\": \"captured-reads\",\u001b[22m\n\u001b[2m        },\u001b[22m\n\u001b[2m        Object {},\u001b[22m",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatchObject\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[33m@@ -7,11 +7,11 @@\u001b[39m\n\u001b[2m              \"inputs\": Object {\u001b[22m\n\u001b[2m                \"detailed\": Object {\u001b[22m\n\u001b[2m                  \"sourceWatermark\": \"captured-reads\",\u001b[22m\n\u001b[2m                },\u001b[22m\n\u001b[2m              },\u001b[22m\n\u001b[32m-             \"sourceKind\": \"blended\",\u001b[39m\n\u001b[31m+             \"sourceKind\": \"detailed\",\u001b[39m\n\u001b[2m            },\u001b[22m\n\u001b[2m          },\u001b[22m\n\u001b[2m          \"sourceWatermark\": \"captured-reads\",\u001b[22m\n\u001b[2m        },\u001b[22m\n\u001b[2m        Object {},\u001b[22m\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1234:19",
+                    "location": {
+                      "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                      "column": 19,
+                      "line": 1234
+                    },
+                    "snippet": "  1232 |     await page.getByRole(\"button\", { name: \"Save to account\" }).click();\n  1233 |     await expect(page.getByText(\"Saved to account.\")).toBeVisible();\n> 1234 |     expect(saved).toMatchObject({ snapshot: { forecasts: [{ sourceWatermark: \"captured-reads\",\n       |                   ^\n  1235 |       contributions: { GOALS: { sourceKind: \"blended\", inputs: { detailed: { sourceWatermark: \"captured-reads\" } } } } }, {}] } });\n  1236 |     await page.getByRole(\"button\", { name: \"View account save\" }).click();\n  1237 |     await expect(projected).toContainText(\"—\");"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                        "column": 19,
+                        "line": 1234
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatchObject\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n\u001b[32m- Expected  - 1\u001b[39m\n\u001b[31m+ Received  + 1\u001b[39m\n\n\u001b[33m@@ -7,11 +7,11 @@\u001b[39m\n\u001b[2m              \"inputs\": Object {\u001b[22m\n\u001b[2m                \"detailed\": Object {\u001b[22m\n\u001b[2m                  \"sourceWatermark\": \"captured-reads\",\u001b[22m\n\u001b[2m                },\u001b[22m\n\u001b[2m              },\u001b[22m\n\u001b[32m-             \"sourceKind\": \"blended\",\u001b[39m\n\u001b[31m+             \"sourceKind\": \"detailed\",\u001b[39m\n\u001b[2m            },\u001b[22m\n\u001b[2m          },\u001b[22m\n\u001b[2m          \"sourceWatermark\": \"captured-reads\",\u001b[22m\n\u001b[2m        },\u001b[22m\n\u001b[2m        Object {},\u001b[22m\n\n  1232 |     await page.getByRole(\"button\", { name: \"Save to account\" }).click();\n  1233 |     await expect(page.getByText(\"Saved to account.\")).toBeVisible();\n> 1234 |     expect(saved).toMatchObject({ snapshot: { forecasts: [{ sourceWatermark: \"captured-reads\",\n       |                   ^\n  1235 |       contributions: { GOALS: { sourceKind: \"blended\", inputs: { detailed: { sourceWatermark: \"captured-reads\" } } } } }, {}] } });\n  1236 |     await page.getByRole(\"button\", { name: \"View account save\" }).click();\n  1237 |     await expect(projected).toContainText(\"—\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1234:19"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T16:01:48.662Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focused-numeric-02/results/roster-schedule-optimizer--60f1d-icipation-expiry-connected--chromium/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focused-numeric-02/results/roster-schedule-optimizer--60f1d-icipation-expiry-connected--chromium/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/focused-numeric-02/results/roster-schedule-optimizer--60f1d-icipation-expiry-connected--chromium/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts",
+                    "column": 19,
+                    "line": 1234
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "75e731aa0b382492d6e5-ad5247c54bc4a5c829ae",
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1151,
+          "column": 5
+        },
+        {
+          "title": "Audit1 native candidate Worker finds complete swaps before any plan is selected",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 60000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "chromium",
+              "projectName": "chromium",
+              "results": [
+                {
+                  "workerIndex": 2,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1525,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T16:01:50.462Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "75e731aa0b382492d6e5-9a434f26221486aecf18",
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1581,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-23T16:01:28.912Z",
+    "duration": 23165.920000000002,
+    "expected": 2,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

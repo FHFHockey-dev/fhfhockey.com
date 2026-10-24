@@ -1,0 +1,65 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/player-forecasts/rsoUsePolicy.test.ts lib/rosterScheduleData/planning.test.ts lib/player-forecasts/planningContributions.test.ts lib/in-season/workspaceSchema.test.ts lib/integrations/yahoo/rosterPlanning.test.ts __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web
+
+ ✓ lib/rosterScheduleData/planning.test.ts (107 tests) 114ms
+(node:6541) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/integrations/yahoo/rosterPlanning.test.ts (75 tests) 49ms
+(node:6541) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/planningContributions.test.ts (101 tests) 32ms
+(node:6541) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/in-season/workspaceSchema.test.ts (50 tests) 27ms
+(node:6541) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts (7 tests | 1 failed) 182ms
+   ✓ /api/v1/roster-schedule-optimizer/data > selects legacy before activation without a lookup and keeps today's caching 3ms
+   × /api/v1/roster-schedule-optimizer/data > passes the one native selection to planning and never lets a shared copy outlive the catalog 4ms
+     → expected { now: 2026-10-15T12:00:00.000Z, …(3) } to deeply equal { now: 2026-10-15T12:00:00.000Z, …(2) }
+   ✓ /api/v1/roster-schedule-optimizer/data > reports the empty fallback reason; RSO has no legacy forecasts to serve 1ms
+   ✓ /api/v1/roster-schedule-optimizer/data > reports the legacy_flagged fallback reason; RSO has no legacy forecasts to serve 0ms
+   ✓ /api/v1/roster-schedule-optimizer/data > rejects an invalid range before selecting a source and redacts load failures 1ms
+   ✓ /api/v1/roster-schedule-optimizer/data > sends interim bridge projections compactly beside the strict transport, rebuilt exactly by the client 2ms
+   ✓ /api/v1/roster-schedule-optimizer/data > fits the whole response, bridge siblings included, in exact UTF-8 bytes by trimming the latest bridge rows 171ms
+(node:6541) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/rsoUsePolicy.test.ts (17 tests) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts > /api/v1/roster-schedule-optimizer/data > passes the one native selection to planning and never lets a shared copy outlive the catalog
+AssertionError: expected { now: 2026-10-15T12:00:00.000Z, …(3) } to deeply equal { now: 2026-10-15T12:00:00.000Z, …(2) }
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[33m@@ -1,6 +1,7 @@[39m
+[2m  {[22m
+[31m+   "consumer": "rso",[39m
+[2m    "forgeDailyBridge": true,[22m
+[2m    "now": 2026-10-15T12:00:00.000Z,[22m
+[2m    "source": {[22m
+[2m      "environment": {},[22m
+[2m      "expiresAt": "2026-10-15T12:01:00.000Z",[22m
+
+ ❯ __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts:53:41
+     51|     const res = await request();
+     52|     expect(mocks.select).toHaveBeenCalledTimes(1);
+     53|     expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), sou…
+       |                                         ^
+     54|     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=60, st…
+     55|     expect(res.body.forecastSource).toEqual({ kind: "native", headRevi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 5 passed (6)
+      Tests  1 failed | 356 passed (357)
+   Start at  10:16:22
+   Duration  2.51s (transform 693ms, setup 23ms, collect 913ms, tests 406ms, environment 730ms, prepare 161ms)
+

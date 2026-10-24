@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-24T17:46:32.193760+00:00",
+  "findings": [
+    {
+      "id": "S10-F01",
+      "register": "SITE-DRAFT-CSV-RESOLVER",
+      "status": "Proposed P2, unassigned; static verification target, runtime unverified",
+      "evidence": "debug1786–1796; prior main audit770–771; SOURCE-NARROW.md; September4 interface scope preserves imports",
+      "finding": "Four requested resolver follow-ups were not explicitly reconciled. Current name-keyed auto/manual choices, reset behavior and manual precedence require contextual assignment/provenance checks; current summary/search/metadata already exist.",
+      "next_action": "Check newer receipts/intentional supersession first, then future exact owner verifies duplicate-name/mixed-auto-manual cases before narrowly implementing any surviving request."
+    },
+    {
+      "id": "S10-F02",
+      "register": "REPO-DOCUMENTATION",
+      "status": "Narrower closure retained",
+      "evidence": "debug454–455,555–569,1876–1886",
+      "finding": "SHA/performance pending wording superseded by actual July13/Sept4 evidence; provider zero wins, actual/custom fallback stays null-safe. Missing-relative-baseline exception accepted; no30%gain, chunk yielding or mandatory virtualization/worker claim."
+    },
+    {
+      "id": "S10-F03",
+      "register": "SITE-DRAFTRANKER-HOMEPAGE",
+      "status": "Later in-season guard release remains unverified",
+      "evidence": "ranker task93–108, launch158–174, release7–19",
+      "finding": "July17 authenticated personal rollout is complete; July15 manifest staff/header paragraphs are historical. Phase8 retired and secondary/public features held. July89ace deployment does not establish latercc3be5c09 guard publication."
+    },
+    {
+      "id": "S10-F04",
+      "register": "SITE-PRIVACY-POLICY",
+      "status": "Owner fact reconciliation, no new policy promise",
+      "evidence": "decision265; community80–90",
+      "finding": "Consent withdrawal, private history, account cascade, aggregate rebuild and retained non-identifying snapshots are distinct contracts; no audit erasure test or exposure grant."
+    },
+    {
+      "id": "S10-F05",
+      "register": "SITE-PLAYER-CARDS",
+      "status": "Product/design acceptance unresolved",
+      "evidence": "Trusted parent steer captured in PARENT-STEER.json",
+      "finding": "TJ sees progress but preview is not exactly envisioned; technical local acceptance does not approve overall visual/product design."
+    }
+  ],
+  "preserved_boundaries": [
+    "No new provider/ranker activation or retired Phase8 revival",
+    "Older execution boundary no-AGENTS, security baseline and migration/clone advice are dated evidence, not current instructions",
+    "Existing auth/security residual IDs retain only unclosed exact scopes; historical advisor counts are not current exposure findings"
+  ]
+}

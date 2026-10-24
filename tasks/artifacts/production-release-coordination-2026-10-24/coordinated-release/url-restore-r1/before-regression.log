@@ -1,0 +1,80 @@
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf/web
+
+ ❯ components/SocialShare/SocialShare.test.tsx (4 tests | 1 failed | 3 skipped) 38ms
+   ↓ SocialShare edition loading > issues one API call per load under a React strict-mode double mount
+   ↓ SocialShare edition loading > restores the URL's week, days and card, and a remount (gate re-check on tab return) reuses the edition without a refetch
+   × SocialShare edition loading > preserves requested URL dates while the first edition read is pending 37ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "pathname": "/social-share/[format]",
+        "query": Object {
+          "card": "tiers",
+          "format": "game-grid",
+          "week": "2026-11-16",
+        },
+      },
+      undefined,
+      Object {
+        "scroll": false,
+        "shallow": true,
+      },
+    ]
+
+
+Number of calls: 1
+
+   ↓ SocialShare edition loading > writes the selection into the URL with a shallow replace
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 skipped (4)
+   Start at  19:36:58
+   Duration  820ms (transform 257ms, setup 9ms, collect 379ms, tests 38ms, environment 261ms, prepare 34ms)
+
+(node:51906) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/SocialShare/SocialShare.test.tsx > SocialShare edition loading > preserves requested URL dates while the first edition read is pending
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "pathname": "/social-share/[format]",
+        "query": Object {
+          "card": "tiers",
+          "format": "game-grid",
+          "week": "2026-11-16",
+        },
+      },
+      undefined,
+      Object {
+        "scroll": false,
+        "shallow": true,
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ components/SocialShare/SocialShare.test.tsx:71:34
+     69|     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+     70|     try {
+     71|       expect(router.replace).not.toHaveBeenCalled();
+       |                                  ^
+     72|     } finally {
+     73|       const generatedAt = new Date().toISOString();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+

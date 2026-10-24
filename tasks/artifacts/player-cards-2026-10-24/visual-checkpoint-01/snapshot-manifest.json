@@ -1,0 +1,311 @@
+{
+  "renderer": "fhfh-editorial-checkpoint-01",
+  "dimensions": {
+    "width": 1200,
+    "height": 900
+  },
+  "selectedMetrics": [
+    "atoi",
+    "sog60",
+    "iscf60",
+    "ixg60",
+    "xgf60",
+    "xgPct",
+    "ipp",
+    "shPct",
+    "oiShPct"
+  ],
+  "snapshot": {
+    "id": "synthetic-flow-v1-1001-L10-all-allow-known-short-proposed-complete",
+    "renderVersion": "player-card-v0",
+    "registryVersion": "proposed-nst-v0",
+    "source": "synthetic",
+    "capturedAt": "2026-10-24T02:00:00Z",
+    "settings": {
+      "season": 20262027,
+      "gameType": "regular",
+      "strength": "all",
+      "cutoff": "2026-10-24T00:00:00Z",
+      "period": {
+        "mode": "appearances",
+        "count": 10
+      },
+      "seasonPolicy": "season-only-proposed",
+      "shortSamplePolicy": "allow-known-short-proposed",
+      "rankPolicy": "competition-midrank-proposed"
+    },
+    "player": {
+      "id": "1001",
+      "name": "Alex Morgan",
+      "team": "Harbour · example",
+      "position": "RW"
+    },
+    "sample": {
+      "gp": 10,
+      "requested": 10,
+      "toiSeconds": 11015,
+      "firstDate": "2026-10-12",
+      "lastDate": "2026-10-23",
+      "gameIds": [
+        "2026100123",
+        "2026100122",
+        "2026100120",
+        "2026100119",
+        "2026100118",
+        "2026100117",
+        "2026100116",
+        "2026100115",
+        "2026100113",
+        "2026100112"
+      ]
+    },
+    "poolId": "synthetic-flow-v1-1001-L10-all-allow-known-short-proposed-complete:all-valid-by-metric",
+    "sourceVersion": "interaction-fixtures-v1",
+    "readings": [
+      {
+        "id": "atoi",
+        "value": 18.358333333333334,
+        "state": "valid",
+        "rank": {
+          "ordinal": 17,
+          "population": 18,
+          "percentile": 8.333333333333334,
+          "tied": false
+        }
+      },
+      {
+        "id": "sog60",
+        "value": 8.170676350431231,
+        "state": "valid",
+        "rank": {
+          "ordinal": 3,
+          "population": 18,
+          "percentile": 86.11111111111111,
+          "tied": false
+        }
+      },
+      {
+        "id": "icf60",
+        "value": 19.609623241034953,
+        "state": "valid",
+        "rank": {
+          "ordinal": 3,
+          "population": 18,
+          "percentile": 86.11111111111111,
+          "tied": false
+        }
+      },
+      {
+        "id": "iscf60",
+        "value": 8.170676350431231,
+        "state": "valid",
+        "rank": {
+          "ordinal": 3,
+          "population": 18,
+          "percentile": 86.11111111111111,
+          "tied": false
+        }
+      },
+      {
+        "id": "ixg60",
+        "value": 0.26146164321379933,
+        "state": "valid",
+        "rank": {
+          "ordinal": 16,
+          "population": 18,
+          "percentile": 13.88888888888889,
+          "tied": false
+        }
+      },
+      {
+        "id": "cf60",
+        "value": 76.80435769405356,
+        "state": "valid",
+        "rank": {
+          "ordinal": 2,
+          "population": 18,
+          "percentile": 91.66666666666667,
+          "tied": false
+        }
+      },
+      {
+        "id": "scf60",
+        "value": 34.316840671811164,
+        "state": "valid",
+        "rank": {
+          "ordinal": 2,
+          "population": 18,
+          "percentile": 91.66666666666667,
+          "tied": false
+        }
+      },
+      {
+        "id": "xgf60",
+        "value": 3.8729005901044036,
+        "state": "valid",
+        "rank": {
+          "ordinal": 2,
+          "population": 18,
+          "percentile": 91.66666666666667,
+          "tied": false
+        }
+      },
+      {
+        "id": "xgPct",
+        "value": 53.86363636363637,
+        "state": "valid",
+        "rank": {
+          "ordinal": 3,
+          "population": 18,
+          "percentile": 69.44444444444444,
+          "tied": true
+        }
+      },
+      {
+        "id": "ipp",
+        "value": 12,
+        "state": "valid",
+        "rank": {
+          "ordinal": 13,
+          "population": 18,
+          "percentile": 27.77777777777778,
+          "tied": true
+        }
+      },
+      {
+        "id": "shPct",
+        "value": 4,
+        "state": "valid",
+        "rank": {
+          "ordinal": 16,
+          "population": 18,
+          "percentile": 8.333333333333334,
+          "tied": true
+        }
+      },
+      {
+        "id": "oiShPct",
+        "value": 14.705882352941176,
+        "state": "valid",
+        "rank": {
+          "ordinal": 7,
+          "population": 18,
+          "percentile": 41.666666666666664,
+          "tied": true
+        }
+      }
+    ]
+  },
+  "coverage": {
+    "atoi": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "sog60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "icf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "iscf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "ixg60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "cf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "scf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "xgf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "xgPct": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "ipp": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "shPct": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    },
+    "oiShPct": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 18,
+      "knownUndefined": 0,
+      "missingIncomplete": 0,
+      "knownShort": 1,
+      "fullEligiblePopulationVerified": true
+    }
+  },
+  "liveActivation": false,
+  "premiumActivation": false
+}

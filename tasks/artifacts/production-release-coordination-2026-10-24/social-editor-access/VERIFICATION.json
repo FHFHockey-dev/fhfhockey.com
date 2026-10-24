@@ -1,0 +1,119 @@
+{
+  "custody": "CODEX-054 / CODEX-SOCIAL-EDITOR-ACCESS-20261024",
+  "status": "local_candidate_ready_for_review_not_deployed_no_account_grant",
+  "node": "22.11.0",
+  "checks": {
+    "focused_vitest": {
+      "files": 6,
+      "tests": 109,
+      "passed": true,
+      "log": "TESTS-initial.log"
+    },
+    "existing_admin_regressions": {
+      "files": 2,
+      "tests": 61,
+      "passed": true,
+      "log": "TESTS-admin.log"
+    },
+    "scoped_typescript": {
+      "passed": true,
+      "log": "TYPECHECK.log",
+      "config": "tsconfig.social-editor.json"
+    },
+    "scoped_eslint": {
+      "passed": true,
+      "log": "LINT.log"
+    },
+    "baseline_patch_dry_run": {
+      "passed": true,
+      "log": "PATCH-CHECK.log"
+    },
+    "preserved_source_pins": {
+      "web/components/SocialShare/SocialShare.tsx": true,
+      "web/lib/socialShare/server.ts": true,
+      "web/e2e/social-share.spec.ts": true
+    }
+  },
+  "files": [
+    {
+      "path": "web/contexts/AuthProviderContext/index.tsx",
+      "new": false,
+      "lines_before": 237,
+      "lines_after": 239
+    },
+    {
+      "path": "web/__tests__/contexts/AuthProviderContext.test.tsx",
+      "new": false,
+      "lines_before": 318,
+      "lines_after": 365
+    },
+    {
+      "path": "web/pages/social-share/[format].tsx",
+      "new": false,
+      "lines_before": 19,
+      "lines_after": 22
+    },
+    {
+      "path": "web/pages/api/v1/social-share/[format].ts",
+      "new": false,
+      "lines_before": 20,
+      "lines_after": 22
+    },
+    {
+      "path": "web/lib/socialShare/editionFetch.ts",
+      "new": false,
+      "lines_before": 20,
+      "lines_after": 36
+    },
+    {
+      "path": "web/lib/socialShare/editionFetch.test.ts",
+      "new": false,
+      "lines_before": 46,
+      "lines_after": 90
+    },
+    {
+      "path": "web/lib/socialShare/schedule.test.ts",
+      "new": false,
+      "lines_before": 420,
+      "lines_after": 426
+    },
+    {
+      "path": "web/components/SocialShare/SocialShare.test.tsx",
+      "new": false,
+      "lines_before": 29,
+      "lines_after": 32
+    },
+    {
+      "path": "web/lib/socialShare/access.ts",
+      "new": true,
+      "lines_before": 0,
+      "lines_after": 43
+    },
+    {
+      "path": "web/lib/socialShare/access.test.ts",
+      "new": true,
+      "lines_before": 0,
+      "lines_after": 117
+    },
+    {
+      "path": "web/components/SocialShare/SocialShareAccessGate.tsx",
+      "new": true,
+      "lines_before": 0,
+      "lines_after": 16
+    },
+    {
+      "path": "web/components/SocialShare/SocialShareAccessGate.test.tsx",
+      "new": true,
+      "lines_before": 0,
+      "lines_after": 77
+    }
+  ],
+  "patch_sha256": "aa929138adc11eed6eb2070aeddb90f28465c31c426f85314abf4dc94012da38",
+  "remaining_gates": [
+    "Parent/coordinator review and integration, including isolated C3 shared-test merge as needed.",
+    "Production release owned by coordinator; no deployment by this worker.",
+    "Separate explicit approval and serialized idempotent role-row initialization for the confirmed existing account; no identity in source/artifacts.",
+    "Browser/E2E not run; existing social-share fixtures need editor auth setup before executing gated pages."
+  ],
+  "external_actions_this_implementation": 0
+}

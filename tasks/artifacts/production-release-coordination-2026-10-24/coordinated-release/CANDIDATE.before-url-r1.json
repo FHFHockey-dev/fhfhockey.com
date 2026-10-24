@@ -1,0 +1,643 @@
+{
+  "at": "2026-10-24T23:30:04.857185+00:00",
+  "snapshot": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf",
+  "base_commit": "8f883c65269be83500b665b8be78f9d5e74d26b6",
+  "production_base": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "selected": {
+    "web/utils/fetchWigoPlayerStats.ts": {
+      "sha256": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f",
+      "source": "Qualified bundle270"
+    },
+    "web/utils/fetchWigoPlayerStats.test.ts": {
+      "sha256": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1",
+      "source": "Qualified bundle270"
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.module.scss": {
+      "sha256": "1352a81560e50128c75709d29ad65eed1295562834746e7cf2d18948e65d138b",
+      "source": "Qualified bundle270"
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx": {
+      "sha256": "fef6ef9c2b4b4fd754333d322b1ac31d5193c27a17b098c2c3d7a0b01a686536",
+      "source": "Qualified bundle270"
+    },
+    "web/components/GoalieShareChart/index.tsx": {
+      "sha256": "b632a0cae6a50174012264950b7a0ca1b22402811a7162024216c40ecf09949c",
+      "source": "Qualified bundle270"
+    },
+    "web/components/LineCombinations/LineCombinationsGrid.tsx": {
+      "sha256": "fb5c6a3c0d50f1c9f1abca1de82527420cc240b3ba3c4b125c466485b18c6de7",
+      "source": "Qualified bundle270"
+    },
+    "web/components/ShotVisualization/ShotVisualization.tsx": {
+      "sha256": "a563dadeed8e41915c11258019a0a97cbb0872622391307fa069a39daec2b921",
+      "source": "Qualified bundle270"
+    },
+    "web/components/TeamTabNavigation/TeamTabNavigation.test.tsx": {
+      "sha256": "6312ca9177389c01db342826b4833f99facc9729ddbacd4f737b21ae245dbae0",
+      "source": "Qualified bundle270"
+    },
+    "web/components/TeamTabNavigation/TeamTabNavigation.tsx": {
+      "sha256": "3e9fd15559b22ec0949e176086531be5348a92ac1efc0dcd4beebc2d92730fb6",
+      "source": "Qualified bundle270"
+    },
+    "web/hooks/useShotData.test.tsx": {
+      "sha256": "7c78ae8c32883b6c035c2ba3d12ee6f50e04b3c3b3293770f33f7d0529aee0f2",
+      "source": "Qualified bundle270"
+    },
+    "web/hooks/useShotData.ts": {
+      "sha256": "a5a77ced8be87b36e34ffe71003e4df48942f34c7af1de43608736f7074af4c1",
+      "source": "Qualified bundle270"
+    },
+    "web/pages/stats/team/[teamAbbreviation].tsx": {
+      "sha256": "561a048fe68f4f49fb4a7bc54eb3c87be39fcb90c87eca4002dd81f7b205957c",
+      "source": "Qualified bundle270"
+    },
+    "web/styles/Stats.module.scss": {
+      "sha256": "e0dbf85fab25a006ce4b5f7be97ef7c355c519e34edba385c5226a157f15d8d8",
+      "source": "Qualified bundle270"
+    },
+    "web/__tests__/pages/wigoCharts.test.tsx": {
+      "sha256": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b",
+      "source": "Qualified bundle270"
+    },
+    "web/pages/wigoCharts.tsx": {
+      "sha256": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151",
+      "source": "Qualified bundle270"
+    },
+    "web/__tests__/pages/stats/team/teamAbbreviation.test.tsx": {
+      "sha256": "71dd3fb4234009950c6bad3cb7f5b0b047aa6ff198fb8648888d08987c9de16b",
+      "source": "Qualified bundle270"
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.test.ts": {
+      "sha256": "250bfc553ce0caa0cb1901c7592e1d3f0dde93180e0e97255a0948b8435baeec",
+      "source": "Qualified bundle270"
+    },
+    "web/components/NewsFeed/NewsCard.tsx": {
+      "sha256": "ab46854d98aa3ee4f2ae1e433dfb4f38b55af2c875d5c88fa58e47f72a3a928a",
+      "source": "Qualified bundle270"
+    },
+    "web/components/NewsFeed/NewsCard.test.tsx": {
+      "sha256": "a9e031dac51da085f7d9ec14ce08ec62049e6fde50d4259e4243eb63a9aa52af",
+      "source": "Qualified bundle270"
+    },
+    "web/lib/sources/fixtures/homepageNewsReceipt.json": {
+      "sha256": "ac3e9711a02275749990f9020611e560ae8c07b6f06daa476f587bb14467a0a1",
+      "source": "Qualified bundle270"
+    },
+    "web/lib/supabase/browser-auth.ts": {
+      "sha256": "6c4f86fefb3219fb310513efc85aaafe3dc5b698a2fab24b78731628255ef2b0",
+      "source": "Qualified bundle270"
+    },
+    "web/__tests__/contexts/AuthProviderContext.test.tsx": {
+      "sha256": "c3cf3f66b7b51d992a11df5207a429ed22350bd88c03ba43993033e82ff1941b",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/components/SocialShare/SocialShare.module.scss": {
+      "sha256": "2c5190a761330c728b4447cad259078f241843d03d69e9795bcf69b4c190ae93",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/components/SocialShare/SocialShare.test.tsx": {
+      "sha256": "1fbcc0a3d8c5f5a65cb3a9fdfa984205fd5298b1e96abfc91ac426d2ee5c6bea",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/components/SocialShare/SocialShare.tsx": {
+      "sha256": "b0ac1fe9c30a6ceb89accb13b721885d57f141929a4d95ee29decbbb754273db",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/components/SocialShare/SocialShareAccessGate.test.tsx": {
+      "sha256": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/components/SocialShare/SocialShareAccessGate.tsx": {
+      "sha256": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/components/SocialShare/TeamBanner.tsx": {
+      "sha256": "f0aff1ab3d0139742c834d65893445ae18fb477600dc13dcfecb54901730867f",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/contexts/AuthProviderContext/index.tsx": {
+      "sha256": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/e2e/social-share.spec.ts": {
+      "sha256": "29e60bf08982c43d0fd4090f640abb8a7641c0a54d4a42dad39be1f98641c4ff",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/lib/socialShare/access.test.ts": {
+      "sha256": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/access.ts": {
+      "sha256": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/edition.ts": {
+      "sha256": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/editionFetch.test.ts": {
+      "sha256": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/editionFetch.ts": {
+      "sha256": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/export.ts": {
+      "sha256": "8dc961de8b11c6c79dc34b78c991fc51ce38eaf2cc2bbdd1a073a72bc034cabd",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/fixtures.ts": {
+      "sha256": "865e699e39f7d0895b3f1059327221111d7d2bc14a43e96c749ccffeb29944df",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/matchups.test.ts": {
+      "sha256": "3f01ea8f7acb5fe6fe276503809b154cbe6786c03c8acd1f271b4f118061246f",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/matchups.ts": {
+      "sha256": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/mondayGrid.test.ts": {
+      "sha256": "95fbb3ec80b05ebd2162c6b1d4c86a7f7da4b0585bc0507d0b6b642e8ea576eb",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/mondayGrid.ts": {
+      "sha256": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/pickupsFixture.ts": {
+      "sha256": "7aca611c24aca68bb936cc54217b7e9e5b174cdd687a303ae47bdc24597c80e9",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/lib/socialShare/playerSources.test.ts": {
+      "sha256": "5c2d61db9c4dc5932ddb0433b980c824dabd284a0125879c30badcf6f18345b5",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/lib/socialShare/playerSources.ts": {
+      "sha256": "19c57397078fa9a51e04edacad7e85c86e701702e4a12c573aa8aa637157f264",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/lib/socialShare/players.test.ts": {
+      "sha256": "e9447b5cc007dbd4b9af549af380a84599612c6a8a495d73d609502369728fea",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/lib/socialShare/players.ts": {
+      "sha256": "a27accd1f3a9ddad8bc25bac0454e7c37d71c2be4174740007a880616ef0117d",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/lib/socialShare/schedule.test.ts": {
+      "sha256": "1871a473280115576de43396e448f5a84ccfb3fa078c1d43a99420e4eafffaf0",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/lib/socialShare/schedule.ts": {
+      "sha256": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/server.ts": {
+      "sha256": "8bdd7975839c01e9cd33ccdb880cddee6cb8595049c3425d4daea780ca4afaf5",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/lib/socialShare/teamRates.test.ts": {
+      "sha256": "dcfdefa521aa64e9424da65ad9619dcc62ef41b53a048f684a2c3966b81b2913",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/teamRates.ts": {
+      "sha256": "b30ffcb491fc60213fc476b2cc67f41a3330a5be9e4a89d8599d446fb0f96a32",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/tiers.test.ts": {
+      "sha256": "f850e2657ec3dde749ccf7e2b4dcf18516ca1b1f4c001beb9c8ff6db08f10f8d",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/lib/socialShare/tiers.ts": {
+      "sha256": "9bbb92a2c70b8e0efa2daa7c2a79b45b0a3343b3980e05da3160de8a1ad52d84",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/lib/socialShare/trends.test.ts": {
+      "sha256": "2c8f535b243a7af5fba4c28480c505242399249b163853c5106722636ddb7028",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/trends.ts": {
+      "sha256": "03ffc190244f6657069dcaa402b5fddfe462d80029fba5e9fe0285bc6b71f943",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/trendsFixture.ts": {
+      "sha256": "c431b1c687e3dfc844510a1f74b848b9bedf62638d2344cf323dcd4702839101",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/types.ts": {
+      "sha256": "1f73d4957e8f0cd5df46882d452adfacd25c65538fd770630fe1d5550fe6d754",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/pages/api/v1/social-share/[format].ts": {
+      "sha256": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/pages/social-share/[format].tsx": {
+      "sha256": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/public/fonts/social-share/MartianMono-Variable.ttf": {
+      "sha256": "c3467843ec1c2574b05fbcfd7147c7bfbcf63ddca8fc2bcb9d117f1bfb1b22e7",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/public/fonts/social-share/RobotoCondensed-Variable.ttf": {
+      "sha256": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/public/fonts/social-share/TrainOne-Regular.ttf": {
+      "sha256": "07d67ad14231a4a41f0ee501b14bd6f9c7a9beada5ee6af2924114863a034623",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/public/fonts/social-share/martianmono-OFL.txt": {
+      "sha256": "00eef3688bb7b4fe6e76055ff925b6adf0ea9cb6e0b7600ddb9e0748716c1ea8",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/public/fonts/social-share/robotocondensed-OFL.txt": {
+      "sha256": "0b3098464626138c0e2b29b95239e9f27ffbe322c6256305852018d8a9587ede",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/public/fonts/social-share/trainone-OFL.txt": {
+      "sha256": "6818e49c39faebedf24e43b3601f1afa3a1fc9e960f8d3d667f8ddad432695a8",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/components/GameGrid/utils/scheduleOpportunity.ts": {
+      "sha256": "02198b9a732bc7b25e14e0ef285bae73b348ce5f645a26efe177ae52e773380c",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/e2e/fixtures/socialEditorSession.ts": {
+      "sha256": "ad3992ece8525016566a9e6ab3b889993a316b541305efc457abe814c96e91fa",
+      "source": "Qualified8f social/access cut"
+    },
+    "web/lib/socialShare/score.ts": {
+      "sha256": "c5ebea322dc770e71ae31630711f076754a4e3bca2d5bf5973e9ea29c3f6820f",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/lib/socialShare/score.test.ts": {
+      "sha256": "261810a0165cfc5022d95f63f54d7f6b3190044fa1e6f70135f3ad1fa994ddea",
+      "source": "SS1-15 final checkpoint after14; pins verified; independent C7 pending"
+    },
+    "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts": {
+      "sha256": "f1d3238b68c45d43eb15c77825bed0a6e718779c8bccf34efccadafdefc6c8c6",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts": {
+      "sha256": "c2de0f7e2d86d5e26e87592428e0f112004ac1c30d5407ec0d01356513cc977e",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts": {
+      "sha256": "f16fad19188630ced0a9d32c53a91b5a969cee0b4e45b6cee5c2e2ca98899b27",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/internal/yahoo-live-draft.ts": {
+      "sha256": "20c99628240be857c349a3a2b97c36fc48a58519f7a30c06cb33a71fd1f8abbe",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-drafted-prospects.ts": {
+      "sha256": "e4c5e476c50e57be341498a615ad0517ccd9f918937f42d85410f8a7c1df9881",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/lib/cron/withCronJobAudit.ts": {
+      "sha256": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/lib/cron/nhlOffSeason.ts": {
+      "sha256": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/lib/cron/cronAuditCoverage.ts": {
+      "sha256": "754a0df900b7cabd573838b4d229857ae63d83361e6ad94ad6a7f7ea084706b3",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/lib/cron/withCronJobAudit.test.ts": {
+      "sha256": "87db115af6c190a14020e1502eafcebd9174db5f9cfd9ed94a4592b14f755bb5",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/lib/cron/nhlOffSeason.test.ts": {
+      "sha256": "ca7dd5725c8529cd3b8e85e62ce130d3aa7c3d774065d2a47daa3c1d8935d5d6",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/internal/espn-sync.ts": {
+      "sha256": "f57c6a825fc70895da1b3ca799a63656c0c7615614a5326cb48fb67537a0fa14",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/internal/fantrax-sync.ts": {
+      "sha256": "6e1685d0564616c5d83e60c65d677a105b5e9d2c5c4ea5c3df866f9a5fa90b9a",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/internal/patreon-reconcile.ts": {
+      "sha256": "8cb1373b5b994e1acadf7e26cd5f906142c36ab2d287a51f8bed64aa34a892e2",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "tasks/TASKS/cron-operations/cron-schedule.md": {
+      "sha256": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/Teams/nst-team-stats.ts": {
+      "sha256": "01edee13cdfe2bdfb7f372947fe9750a14ce4c65fb6cf3990da9c035ec0d873e",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/backfill-goalie-underlying-season.ts": {
+      "sha256": "2d50d246e77da6174b74a8835e5d027d2bc1c12ed44c9c78a35ea72f383847ee",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/backfill-player-underlying-season.ts": {
+      "sha256": "60941ff55e77cef60dbe9f6bdae9ecf547f5c8b9632e9a9ed5dce6a568734e45",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/backfill-team-underlying-season.ts": {
+      "sha256": "e230fabbf2a340b1474b2f96cd08324f5feac566f1c2273506c84f7c8b2adf7a",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/calculate-wigo-stats.ts": {
+      "sha256": "69014f862d3a3013827cc1fff2e5335d0609da2e4cb02621bc4a964580d7e0ec",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/catch-up-goalie-underlying.ts": {
+      "sha256": "03203f91f6af2faee0631f329111e2477eb3c9bdeaed35d3ad50cfde3dec0f69",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/catch-up-player-underlying.ts": {
+      "sha256": "bb8a3df5102c4c5461fca04409296f16a1fcebfd351f90490f427fb1c5040414",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/catch-up-team-underlying.ts": {
+      "sha256": "f3ad1f80591c5fc5fd2091b741bfc9d6773b2df09d6fd96f82d3bd6a677e03ad",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/cron/update-stats-cron.ts": {
+      "sha256": "6632a3a231e6d99bf5e429335788234b6820cfd6d35a1155a385244b12fbf901",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/draft-ranker-health.ts": {
+      "sha256": "2ca0be1a8e50591c24d0ef766bc13e3789dd154f758131167241ef14e7c2dee5",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/powerPlayTimeFrame.ts": {
+      "sha256": "83a4331ced9dcd69e3f2e7446b94b99ceaa4e52968219956e919ba074c54cdaa",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/refresh-draft-ranker-community.ts": {
+      "sha256": "933d6d13d06e283e80c1a6b70c93b7c744beda0b4b8925a3515806871ff25231",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/refresh-draft-ranker-discovery.ts": {
+      "sha256": "3e6c8a34bea915f914c03c7ec8327d9702aed9acb493f49da6297a9af3901719",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/register-nhl-xg-model.ts": {
+      "sha256": "76b7dc863bcecbdb76a656df60d01cd6bc0a94012fdfc89fbfb2a51507731a3b",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/run-fetch-wgo-data.ts": {
+      "sha256": "657b1a98b85b483a75b411822724501359d74f819d3b68dc88932fb8dd5f9718",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/sustainability/rebuild-baselines.ts": {
+      "sha256": "68c02f34529aac043e665b1f073211f82d4409d76d0faedbdd81f8941844229c",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-PbP.ts": {
+      "sha256": "5cd4bdbc588d396ab91f4a05ef394260cb3d2c5b7e5f20212696d3f10c48d5d4",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-entity-metric-rankings.ts": {
+      "sha256": "f2a186ea2fb1d49f6d5a8d131f4ee18d7d22a7ca76e94be19f80886f1890816c",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-games.ts": {
+      "sha256": "671c2e12456ce5390380272007ef148d2bd8c42beec4bde16a1c044b67c63901",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-goalie-underlying-stats.ts": {
+      "sha256": "ec242cf14c83a8ec8e9939819cc2d037ca90a4b283f0fff91eb74a78cb3d60b0",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-goalie-underlying-summaries.ts": {
+      "sha256": "f2951808e7617c16191a2a37e50f4bed57669c1709bc944371ffd47c3dd8d993",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-line-combinations/[id].ts": {
+      "sha256": "0efc3fe33f77d327af9ccb097625ece7821fbc938a2e1748629da8e418cac115",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-line-combinations/index.ts": {
+      "sha256": "997896eb74b05f054402048e0bf1fb190f0b6375a8e0b0dfa5f2e784765c412e",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-lineup-deployment-tallies.ts": {
+      "sha256": "b24167dc68a6e91e5b0a4218aa0dca119dffb27e194a7213b1b6459765d1343e",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-market-prices.ts": {
+      "sha256": "1072c1eba8fb19772fc80ff4786a9ac16ee65427fad2e92216fba506a52752da",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-nhl-edge-stats.ts": {
+      "sha256": "f23721a71a166883fa4ba280ce2ec3a9e20e0fa6622aa0abd065030f6366c5d3",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-nhl-play-by-play.ts": {
+      "sha256": "78be7a8c17e75e77bb3e5e9f6566b8762da1986689de418cb04447fb84d391f4",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-nhl-shift-charts.ts": {
+      "sha256": "156da5b2b99868d4d039b796aa5190b2ec64ddfcd104cd0de2904642b67da80f",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-nhl-xg-aggregates.ts": {
+      "sha256": "b876769ee8d1f94bb51b06bccbb6076837092298b2548c756bbc120ee66bab06",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-nhl-xg-shot-predictions.ts": {
+      "sha256": "555bc676b180d3b1a5d5bd799db0dbba0a47b0f8c5bfbd77040802bdf6f3dc93",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-nhlscraper-contracts.ts": {
+      "sha256": "b1e3404bed8846d113718e648a3b012396e487934de7846086d58c9bf12a37a4",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-nst-current-season.ts": {
+      "sha256": "01cb818ffa53d4e30fcd594c7cc3ba84d95cfef021dd7873f8f5d037cf67db12",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-nst-goalies.ts": {
+      "sha256": "aeaddea4bd81b246e08ac176468915c1378a4be20dc907ffffd0207df019520e",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-nst-team-daily.ts": {
+      "sha256": "d710f6e73e89cfdc250238b890d6f4a48d7fe682a54656d333973010d56ca5c5",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-player-impact-ratings.ts": {
+      "sha256": "d76a4ae518e9048dfa8171d4077feaa63c06516852a744512dd5f4d0f436d4f2",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-player-trend-metrics.ts": {
+      "sha256": "0bc2e85776bcfd9b603259333517bec3bf662a7ace706b2fa70359476a0d8594",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-player-underlying-stats.ts": {
+      "sha256": "30dbcc33651f612f18c51feafa6ad8d0f46c61b059fda73893c365a2af5de36b",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-player-underlying-summaries.ts": {
+      "sha256": "e87a8eb5cceb305bf9115754ccd386c75921cc6ff5e37067f1ef204531433249",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-player/[playerId].ts": {
+      "sha256": "296204b91d978d9d074ed57083c1a3b0bdbd075728bbea27c5c04fec2a472d30",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-players.ts": {
+      "sha256": "a7b23ab40a1b183684a2c15cb5c0d84a97d684c223b764e21c8b4ae8f96b95b5",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-power-play-combinations/[gameId].ts": {
+      "sha256": "8c702065650099873efdb74967cb7ea648a310092b50c1f11d895cf192469ee3",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-power-play-combinations/index.ts": {
+      "sha256": "14a459c34cf47867012de4eefe86eb7e9eb8758d85ae7fc831dbbe90ae58d8be",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-rolling-games.ts": {
+      "sha256": "9b52f3e0053bb562729e5ddd2b6211920c8b6233e4ee11a7682334fdb5ff03b3",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-season-stats.ts": {
+      "sha256": "0f1f32281bf7be17c16770ec2eb33345e2a742a347e9a442d93157dd9c666354",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-seasons.ts": {
+      "sha256": "56cc24eea821952f2155ea2972209e5f80d46d3e11b880141e7dbe5df4ccde38",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-shifts.ts": {
+      "sha256": "865077cb645a8366edb4352d07531c264c8e406d7331e800d64742d078c93e0d",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-skater-composite-ratings.ts": {
+      "sha256": "6c79c199a648fe101992e37c3de71d52fedab8773f8c424e0ab6a7cb1cd53245",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-sko-stats.ts": {
+      "sha256": "a24656c35b3ad5c646c24ee2139cc4aceb66e3c30dd3e7fe35dfd28942eca718",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-standings-details/index.ts": {
+      "sha256": "7392a00af4f8c9abb44ddee40deb35f168dd76945fb3f56de500d6e0d28273c4",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-stats/[gameId].ts": {
+      "sha256": "bef48906227b6bc417c0009af8dac7d9439d9a517341c33c42e48591cf8d1b8c",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-team-ctpi-daily.ts": {
+      "sha256": "03a310525d41b5933dab7cedf9a1005b4cd9feec39fdabfd39c0471d0372ab98",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-team-power-ratings.ts": {
+      "sha256": "59e73eaaf30ee5c5affbca1b4275dc99aa62fa6a0b7c2df1ae7227f7d69a396a",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-team-sos.ts": {
+      "sha256": "8e48f8e2cdae155f509558fa2cfdd1abb56320a5761d175f37d77eb0f0668d1e",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-team-unit-toi.ts": {
+      "sha256": "9d1b9d2a04306bc94b2ed9211d17534e50650d58a9b0dc41ef2b727fc07fae4c",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-team-yearly-summary.ts": {
+      "sha256": "d781c99c9c166f6ef276f583ff2c618d89bb5562310673f0fffdad865975c25e",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-wgo-averages.ts": {
+      "sha256": "d5898943c8a34d603b7fc3576b6497495fecefaeec036ec60367c74ddc7c3241",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/update-wgo-goalie-totals.ts": {
+      "sha256": "85f457d25a453a9acd8475b0c9a1284101bd0000239c4abe40755ca05743b190",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/db/upsert-csv.ts": {
+      "sha256": "59bf75c7cd582c12ad20d890770de2552a84abbecd055d0c09b5146d2c7b9a49",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/game-predictions/accuracy-loop.ts": {
+      "sha256": "0d03ab046bce5c8239f3bb8af1111eb0bf4db2a6994814028c7ea55fb20545ea",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/game-predictions/backfill-feature-snapshots.ts": {
+      "sha256": "01d540273f6c5632754b060fadbd5d01fddd2e725a915a1fc6cac3f7fe1c5783",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/game-predictions/backtest-ablation.ts": {
+      "sha256": "27e790b39f6b0d73e8b23ac41ab265c61ac88561cbb0eb33d46e09073e48b092",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/game-predictions/backtest.ts": {
+      "sha256": "869ffb6f81a290c43644d317ff1c25fcdb606a9e1df020d5bfcdf248c957bbc4",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/game-predictions/feature-signal-analysis.ts": {
+      "sha256": "a75310407b574487f80713397e98f3db1ef6f080f68ada9725309290e4515cdd",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/game-predictions/forecast.ts": {
+      "sha256": "76b0f4c5ef06af5251f8ccdf2b253c24709ad87485140394bd60b1773613ca3c",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/game-predictions/generate.ts": {
+      "sha256": "a63d55bb72803a536b57a781586355cfc4707896ea23c83451d6e24290237c0b",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/game-predictions/import-market-odds.ts": {
+      "sha256": "02aeecd2854e9d57d76873e99faf57b4910e798d0b30f8e90d984291f82bdc75",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/game-predictions/ingest-espn-odds.ts": {
+      "sha256": "d74eeae404a9e4a3964b6f1fe92b0871e9bcb7eac0bcb8352f9df94d8eda617b",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/game-predictions/promote-model-version.ts": {
+      "sha256": "2fea72c2149b23ed9b8b44b4b66ade05ec154e868ee15642b330f267eeb50210",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/game-predictions/score.ts": {
+      "sha256": "048e5ee5965c1c6e6c5a17da0b744bea090b497a6e6ce0d0afb34cbc8d30a714",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/sustainability/process-recompute-queue.ts": {
+      "sha256": "020e436cf5267e2ff60fbb2863ba86b2289a24e6d8782dd3ad41e7c714774ed3",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/sustainability/rebuild-priors.ts": {
+      "sha256": "598a684cc388a9156bb8bc90a4ed030fafd1f4d97b983b102c707f0c04ae89b7",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/sustainability/rebuild-score.ts": {
+      "sha256": "6fddaeed41db6e5bf632d302606ffe57e76f5c8dcaef4a5259ec4d657e97859e",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/sustainability/rebuild-trend-bands.ts": {
+      "sha256": "aa0680d2459e0f30c6edc4987f8a40443293f55eb7dc503c25cee1564b64c256",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    },
+    "web/pages/api/v1/sustainability/rebuild-window-z.ts": {
+      "sha256": "0dffa59bc819f47f07603732a66ef841d91a36d24639226518496c43995dd401",
+      "source": "Independently reviewed C5 prerequisite candidate; business bodies preserved"
+    }
+  },
+  "selected_count": 157,
+  "C5_overlay_paths": 88,
+  "latest_SS1_receipt_sha256": "da932942016571cb26d8690aac21b0507465b18a3e420fbf92adf721fced6da0",
+  "latest_SS1_patch_sha256": "bc07718b4703490dd8bb616c15744ce7ecb246fc446b585eb16a8d77893a8ae5",
+  "status": "Initial final composition projection; other qualified lanes and C7 findings under reconciliation",
+  "env_files_copied": 0,
+  "canonical_edits": 0
+}

@@ -163,6 +163,8 @@ import {
   SKATER_TEAMMATE_ASSIST_PP_MAX_MULTIPLIER,
   SKATER_ASSIST_SHARE_MIN,
   SKATER_ASSIST_SHARE_MAX,
+  SKATER_TEAM_ASSISTS_PER_GOAL,
+  SKATER_GOAL_CONVERSION_PRIORS,
   SKATER_ROLE_TOP_TOI_ES_MIN,
   SKATER_ROLE_TOP_TOI_ES_MAX,
   SKATER_ROLE_TOP_TOI_PP_MIN,
@@ -256,14 +258,11 @@ import {
   computeSkaterPhysicalEventRates,
   computeSkaterAssistShare,
   computeSkaterShotRatePer60,
-  allocateTeamAssists,
   computeSkaterRestScheduleAdjustments,
   computeSkaterSampleShrinkageAdjustments,
   computeSkaterShotQualityAdjustments,
   computeSkaterTeamLevelContextAdjustments,
-  computeSupportedStrengthSplitConversionRates,
-  applySupportedSkaterConversionHeads,
-  resolveSkaterConversionRates,
+  computeStrengthSplitConversionRates,
   resolveAssistDenominators,
   skaterConversionPriorsAndBounds,
   SKATER_ASSIST_DENOMINATOR_DEFAULT,
@@ -1433,9 +1432,6 @@ export async function runPerGameSkaterStage(args: {
       goals: number;
       assists: number;
       powerPlayPoints: number;
-      goalsAvailable: boolean;
-      assistsAvailable: boolean;
-      powerPlayPointsAvailable: boolean;
       blockedShots: number;
       lineupSourceGameDate: string | null;
       lineupRecencyDays: number | null;
@@ -1560,7 +1556,7 @@ export async function runPerGameSkaterStage(args: {
     const seasonYear = Math.floor(game.id / 1_000_000);
     const bootstrapSeasonId = seasonYear * 10000 + seasonYear + 1;
     let bootstrap = args.seasonBootstrap
-      ? await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", false)
+      ? await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", true)
       : new Map<number, SeasonBootstrap>();
     const bootstrapEligible = () => new Set([...bootstrap].filter(([, prior]) => prior.currentSeasonGames === 0
       && (prior.historyGames > 0 || prior.sourceIds.length > 0)).map(([id]) => id));
@@ -1714,7 +1710,7 @@ export async function runPerGameSkaterStage(args: {
           return meta.position !== "G" && meta.team_id === teamId;
         });
 
-        if (args.seasonBootstrap) bootstrap = await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", false);
+        if (args.seasonBootstrap) bootstrap = await loadSeasonBootstrap(teamPositionFilteredSkaterIds, bootstrapSeasonId, asOfDate, "skater", true);
         evRows = await fetchRollingRows(
           teamPositionFilteredSkaterIds,
           "ev",
@@ -1942,18 +1938,13 @@ export async function runPerGameSkaterStage(args: {
         await fetchTeamRestDays(opponentTeamId, asOfDate),
       );
     }
-    const restScheduleArgs = {
+    const restScheduleAdjustment = computeSkaterRestScheduleAdjustments({
+      // The Q8 tiers remain an unqualified offline candidate; preserve Release C behavior.
+      buckets: "legacy",
       teamRestDays: teamRestDaysCache.get(teamDateKey(teamId)) ?? null,
       opponentRestDays:
         teamRestDaysCache.get(teamDateKey(opponentTeamId)) ?? null,
       isHome: teamId === game.homeTeamId,
-    };
-    const restScheduleAdjustment =
-      computeSkaterRestScheduleAdjustments(restScheduleArgs);
-    // Backtest-only: what the pre-Q8 buckets would have applied.
-    const restScheduleLegacyAdjustment = computeSkaterRestScheduleAdjustments({
-      ...restScheduleArgs,
-      buckets: "legacy",
     });
     if (restScheduleAdjustment.sampleWeight > 0) {
       metrics.data_quality.rest_schedule_teams_with_signal += 1;
@@ -2018,13 +2009,10 @@ export async function runPerGameSkaterStage(args: {
         toiPp: number;
         shotsEs: number;
         shotsPp: number;
-        conversionSupport: ReturnType<typeof computeSupportedStrengthSplitConversionRates>;
         goalRateEs: number;
         goalRatePp: number;
         assistRateEs: number;
         assistRatePp: number;
-        legacyAssistRateEs: number;
-        legacyAssistRatePp: number;
         hitsRate: number;
         blocksRate: number;
         physicalToiMultiplier: number;
@@ -2068,11 +2056,6 @@ export async function runPerGameSkaterStage(args: {
         restScheduleRestDelta: number;
         restScheduleTeamRestDays: number | null;
         restScheduleOpponentRestDays: number | null;
-        restScheduleIsHome: boolean;
-        restScheduleLegacyAdjustment: SkaterRestScheduleAdjustment;
-        conversionShrink: ReturnType<
-          typeof resolveSkaterConversionRates
-        >["conversionShrink"];
         smallSampleWeight: number;
         smallSampleIsLow: boolean;
         smallSampleUsedCallupFallback: boolean;
@@ -2257,9 +2240,40 @@ export async function runPerGameSkaterStage(args: {
       const shotsEs = computeShotsFromRate(boundedToiEs, sogPer60Ev);
       const shotsPp = computeShotsFromRate(boundedToiPp, sogPer60Pp);
 
-      // Conversion counts must share an explicitly retained canonical observation frame.
-      const splitRates = computeSupportedStrengthSplitConversionRates({
-        ev, pp,
+      // Online learning: blend recent and season-long conversion rates.
+      const goalsTotal = safeNumber(ev?.goals_total_all, 0);
+      const shotsTotal = safeNumber(ev?.shots_total_all, 0);
+      const assistsTotal = safeNumber(ev?.assists_total_all, 0);
+      const goalsRecent = safeNumber(ev?.goals_total_last5, 0);
+      const shotsRecent = safeNumber(ev?.shots_total_last5, 0);
+      const assistsRecent = safeNumber(ev?.assists_total_last5, 0);
+      const ppGoalsTotal = safeNumber(pp?.goals_total_all, 0);
+      const ppShotsTotal = safeNumber(pp?.shots_total_all, 0);
+      const ppAssistsTotal = safeNumber(pp?.assists_total_all, 0);
+      const ppGoalsRecent = safeNumber(pp?.goals_total_last5, 0);
+      const ppShotsRecent = safeNumber(pp?.shots_total_last5, 0);
+      const ppAssistsRecent = safeNumber(pp?.assists_total_last5, 0);
+      if (ppShotsTotal <= 0 && ppShotsRecent <= 0) {
+        metrics.data_quality.missing_pp_conversion_samples += 1;
+      }
+
+      learningCounters.players += 1;
+      if (shotsRecent > 0) learningCounters.goalRecent += 1;
+      if (goalsRecent > 0) learningCounters.assistRecent += 1;
+
+      const splitRates = computeStrengthSplitConversionRates({
+        evGoalsRecent: goalsRecent,
+        evShotsRecent: shotsRecent,
+        evGoalsAll: goalsTotal,
+        evShotsAll: shotsTotal,
+        evAssistsRecent: assistsRecent,
+        evAssistsAll: assistsTotal,
+        ppGoalsRecent,
+        ppShotsRecent,
+        ppGoalsAll: ppGoalsTotal,
+        ppShotsAll: ppShotsTotal,
+        ppAssistsRecent,
+        ppAssistsAll: ppAssistsTotal,
         goalRateMultiplier:
           shotQualityAdjustment.goalRateMultiplier *
           onIceContextAdjustment.goalEnvironmentMultiplier *
@@ -2271,18 +2285,15 @@ export async function runPerGameSkaterStage(args: {
           teamLevelContextAdjustment.assistRateMultiplier *
           opponentGoalieContextAdjustment.assistRateMultiplier *
           restScheduleAdjustment.assistRateMultiplier,
-        position: shotPosition,
+        position: playerMetaById.get(playerId)?.position ?? null,
       });
-      if (splitRates.goalRatePp === null) metrics.data_quality.missing_pp_conversion_samples += 1;
-      learningCounters.players += 1;
-      if ((splitRates.support.ev?.pairs.goalPerShot?.last5.denominator ?? 0) > 0) learningCounters.goalRecent += 1;
-      if ((splitRates.support.ev?.pairs.assistPerGoal?.last5.denominator ?? 0) > 0) learningCounters.assistRecent += 1;
-      // Fixed priors remain internal benchmarks. Missing learned heads are masked before persistence.
-      const {
-        goalRateEs,
-        goalRatePp,
-        conversionShrink,
-      } = resolveSkaterConversionRates({ splitRates, sampleWeight, position: shotPosition });
+      // Goals per shot shrink to the F/D prior by measured shots (task 4). The small-sample shrink
+      // stays, now toward that prior: it also damps the context goal multipliers above, which
+      // compound to about 1.3 for some skaters until task 9 sizes them (dropping it, Q7, raised
+      // forward goals per shot to 0.154 in the 10-13 pilot).
+      const goalPrior = SKATER_GOAL_CONVERSION_PRIORS[shotPosition === "D" ? "D" : "F"];
+      const goalRateEs = clamp(splitRates.goalRateEs * sampleWeight + (1 - sampleWeight) * goalPrior.es.perShot, 0.025, 0.3);
+      const goalRatePp = clamp(splitRates.goalRatePp * sampleWeight + (1 - sampleWeight) * goalPrior.pp.perShot, 0.04, 0.45);
       // Assist rates are shares of on-ice goals for (task 3), shrunk to F/D priors; the
       // team-goal environment carries the goal context terms, so no assist multiplier applies.
       const assistPosition = playerMetaById.get(playerId)?.position ?? null;
@@ -2290,22 +2301,6 @@ export async function runPerGameSkaterStage(args: {
         ippAllPct: ev?.ipp_all, position: assistPosition, strength: "es" }).share;
       const assistRatePp = computeSkaterAssistShare({ goalsAll: pp?.goals_total_all, assistsAll: pp?.assists_total_all,
         ippAllPct: pp?.ipp_all, position: assistPosition, strength: "pp" }).share;
-      // Ledger-only: the same path on the former per-two-goals assist scale.
-      const legacyAssistRates = resolveSkaterConversionRates({
-        splitRates: computeSupportedStrengthSplitConversionRates({
-          ev,
-          pp,
-          goalRateMultiplier: 1,
-          assistRateMultiplier:
-            onIceContextAdjustment.assistEnvironmentMultiplier *
-            teamLevelContextAdjustment.assistRateMultiplier *
-            opponentGoalieContextAdjustment.assistRateMultiplier *
-            restScheduleAdjustment.assistRateMultiplier,
-          assistDenominator: "per_two_goals",
-        }),
-        sampleWeight,
-        assistDenominator: "per_two_goals",
-      });
 
       const roleContinuity =
         roleTag != null
@@ -2357,7 +2352,6 @@ export async function runPerGameSkaterStage(args: {
       const trendGoalMultiplier = trendAdjustment?.goalRateMultiplier ?? 1;
       const trendAssistMultiplier = trendAdjustment?.assistRateMultiplier ?? 1;
       projected.set(playerId, {
-        conversionSupport: splitRates,
         toiEs: boundedToiEs * availabilityMultiplier,
         toiPp: boundedToiPp * availabilityMultiplier,
         shotsEs: shotsEs * availabilityMultiplier * trendShotMultiplier,
@@ -2366,18 +2360,6 @@ export async function runPerGameSkaterStage(args: {
         goalRatePp: clamp(goalRatePp * trendGoalMultiplier, 0.04, 0.45),
         assistRateEs: clamp(assistRateEs * trendAssistMultiplier, SKATER_ASSIST_SHARE_MIN, SKATER_ASSIST_SHARE_MAX),
         assistRatePp: clamp(assistRatePp * trendAssistMultiplier, SKATER_ASSIST_SHARE_MIN, SKATER_ASSIST_SHARE_MAX),
-        legacyAssistRateEs: clampSkaterAssistRate(
-          legacyAssistRates.assistRateEs * trendAssistMultiplier,
-          "es",
-          "trend",
-          "per_two_goals",
-        ),
-        legacyAssistRatePp: clampSkaterAssistRate(
-          legacyAssistRates.assistRatePp * trendAssistMultiplier,
-          "pp",
-          "trend",
-          "per_two_goals",
-        ),
         hitsRate: physicalRates.hitsPer60,
         blocksRate: physicalRates.blocksPer60,
         physicalToiMultiplier: physicalRates.toiMultiplier,
@@ -2436,9 +2418,6 @@ export async function runPerGameSkaterStage(args: {
         restScheduleRestDelta: restScheduleAdjustment.restDelta,
         restScheduleTeamRestDays: restScheduleAdjustment.teamRestDays,
         restScheduleOpponentRestDays: restScheduleAdjustment.opponentRestDays,
-        restScheduleIsHome: restScheduleArgs.isHome,
-        restScheduleLegacyAdjustment,
-        conversionShrink,
         smallSampleWeight: sampleShrinkage.sampleWeight,
         smallSampleIsLow: sampleShrinkage.isLowSample,
         smallSampleUsedCallupFallback: sampleShrinkage.usedCallupFallback,
@@ -2645,18 +2624,6 @@ export async function runPerGameSkaterStage(args: {
         SKATER_ASSIST_SHARE_MIN,
         SKATER_ASSIST_SHARE_MAX,
       );
-      p.legacyAssistRateEs = clampSkaterAssistRate(
-        p.legacyAssistRateEs * teammateCoupling.assistRateEsMultiplier,
-        "es",
-        "coupling",
-        "per_two_goals",
-      );
-      p.legacyAssistRatePp = clampSkaterAssistRate(
-        p.legacyAssistRatePp * teammateCoupling.assistRatePpMultiplier,
-        "pp",
-        "coupling",
-        "per_two_goals",
-      );
       p.teammateAssistEsMultiplier = teammateCoupling.assistRateEsMultiplier;
       p.teammateAssistPpMultiplier = teammateCoupling.assistRatePpMultiplier;
       p.teammateDependencyScore = teammateCoupling.dependencyScore;
@@ -2778,19 +2745,32 @@ export async function runPerGameSkaterStage(args: {
       assistsPp: 0,
     };
 
-    // Assists from team on-ice goals x assist share (task 3), reconciled to league assists per goal.
-    const assistIndexByPlayerId = new Map([...projected.keys()].map((id, index) => [id, index]));
-    const allocatedAssists = allocateTeamAssists([...projected.values()].map(p => ({
-      toiEs: p.toiEs, toiPp: p.toiPp, goalsEs: p.shotsEs * p.goalRateEs, goalsPp: p.shotsPp * p.goalRatePp,
-      assistShareEs: p.assistRateEs, assistSharePp: p.assistRatePp,
-    })));
+    // Assists come from the goals scored while a skater is on the ice: team goals at each
+    // strength x his share of the five skater slots x his assist share, scaled so the team's
+    // assists per goal match the league's at that strength.
+    const assistTeam = { goalsEs: 0, goalsPp: 0, toiEs: 0, toiPp: 0, rawEs: 0, rawPp: 0 };
+    for (const p of projected.values()) {
+      assistTeam.goalsEs += p.shotsEs * p.goalRateEs;
+      assistTeam.goalsPp += p.shotsPp * p.goalRatePp;
+      assistTeam.toiEs += p.toiEs;
+      assistTeam.toiPp += p.toiPp;
+    }
+    const onIceGoals = (toi: number, teamToi: number, teamGoals: number) =>
+      teamToi > 0 ? (teamGoals * 5 * toi) / teamToi : 0;
+    for (const p of projected.values()) {
+      assistTeam.rawEs += onIceGoals(p.toiEs, assistTeam.toiEs, assistTeam.goalsEs) * p.assistRateEs;
+      assistTeam.rawPp += onIceGoals(p.toiPp, assistTeam.toiPp, assistTeam.goalsPp) * p.assistRatePp;
+    }
+    const assistScaleEs = assistTeam.rawEs > 0 ? (SKATER_TEAM_ASSISTS_PER_GOAL.es * assistTeam.goalsEs) / assistTeam.rawEs : 0;
+    const assistScalePp = assistTeam.rawPp > 0 ? (SKATER_TEAM_ASSISTS_PER_GOAL.pp * assistTeam.goalsPp) / assistTeam.rawPp : 0;
 
     for (const [playerId, p] of projected.entries()) {
       let shotsEs = p.shotsEs;
       let shotsPp = p.shotsPp;
       const baseGoalsEs = shotsEs * p.goalRateEs;
       const baseGoalsPp = shotsPp * p.goalRatePp;
-      const { assistsEs: baseAssistsEs, assistsPp: baseAssistsPp } = allocatedAssists[assistIndexByPlayerId.get(playerId)!];
+      const baseAssistsEs = onIceGoals(p.toiEs, assistTeam.toiEs, assistTeam.goalsEs) * p.assistRateEs * assistScaleEs;
+      const baseAssistsPp = onIceGoals(p.toiPp, assistTeam.toiPp, assistTeam.goalsPp) * p.assistRatePp * assistScalePp;
       const scenarioBlend = blendSkaterScenarioStatLinesAcrossHorizon({
         currentRole: p.roleTag?.esRole ?? null,
         scenarios: p.roleScenarios,
@@ -2838,7 +2818,10 @@ export async function runPerGameSkaterStage(args: {
         ({ goalsEs, goalsPp, assistsEs, assistsPp, shotsEs, shotsPp } = seasonLine);
         projHits = seasonLine.hits; projBlocks = seasonLine.blocks;
       }
-      const naivePrior = buildSkaterNaivePriorBaseline({ shotsEs, shotsPp });
+      const naivePriorGoalsEs = shotsEs * 0.095;
+      const naivePriorGoalsPp = shotsPp * 0.145;
+      const naivePriorAssistsEs = naivePriorGoalsEs * 1.44;
+      const naivePriorAssistsPp = naivePriorGoalsPp * 0.95;
 
       teamTotals.toiEsSeconds += p.toiEs;
       teamTotals.toiPpSeconds += p.toiPp;
@@ -2910,14 +2893,14 @@ export async function runPerGameSkaterStage(args: {
             naive_prior: {
               definition:
                 "fixed_league_conversion_priors_on_reconciled_opportunities",
-              goal_rate_es: naivePrior.goal_rate_es,
-              goal_rate_pp: naivePrior.goal_rate_pp,
-              assist_per_goal_es: naivePrior.assist_per_goal_es,
-              assist_per_goal_pp: naivePrior.assist_per_goal_pp,
-              goals_es: Number(naivePrior.goals_es.toFixed(4)),
-              goals_pp: Number(naivePrior.goals_pp.toFixed(4)),
-              assists_es: Number(naivePrior.assists_es.toFixed(4)),
-              assists_pp: Number(naivePrior.assists_pp.toFixed(4)),
+              goal_rate_es: 0.095,
+              goal_rate_pp: 0.145,
+              assist_per_goal_es: 1.44,
+              assist_per_goal_pp: 0.95,
+              goals_es: Number(naivePriorGoalsEs.toFixed(4)),
+              goals_pp: Number(naivePriorGoalsPp.toFixed(4)),
+              assists_es: Number(naivePriorAssistsEs.toFixed(4)),
+              assists_pp: Number(naivePriorAssistsPp.toFixed(4)),
               shots_es: Number(shotsEs.toFixed(4)),
               shots_pp: Number(shotsPp.toFixed(4)),
               hits: Number(projHits.toFixed(4)),
@@ -3170,21 +3153,6 @@ export async function runPerGameSkaterStage(args: {
               assist_rate_multiplier: Number(
                 p.restScheduleAssistRateMultiplier.toFixed(4),
               ),
-              // Backtest inputs: days since previous game (B2B = 1).
-              rest: {
-                team_rest_days: p.restScheduleTeamRestDays,
-                opponent_rest_days: p.restScheduleOpponentRestDays,
-                is_home: p.restScheduleIsHome,
-              },
-              rest_legacy_multipliers: {
-                toi_multiplier: p.restScheduleLegacyAdjustment.toiMultiplier,
-                shot_rate_multiplier:
-                  p.restScheduleLegacyAdjustment.shotRateMultiplier,
-                goal_rate_multiplier:
-                  p.restScheduleLegacyAdjustment.goalRateMultiplier,
-                assist_rate_multiplier:
-                  p.restScheduleLegacyAdjustment.assistRateMultiplier,
-              },
             },
             small_sample: {
               sample_weight: Number(p.smallSampleWeight.toFixed(4)),
@@ -3201,14 +3169,8 @@ export async function runPerGameSkaterStage(args: {
               assist_rate_es: Number(p.assistRateEs.toFixed(4)),
               assist_rate_pp: Number(p.assistRatePp.toFixed(4)),
             },
-            // Backtest inputs: pre-shrink Bayes rate vs the former second shrink.
-            conversion_shrink: p.conversionShrink,
             assist_rate_scale: {
-              convention: { ...SKATER_ASSIST_DENOMINATOR_DEFAULT },
-              legacy_per_two_goals: {
-                assist_rate_es: Number(p.legacyAssistRateEs.toFixed(4)),
-                assist_rate_pp: Number(p.legacyAssistRatePp.toFixed(4)),
-              },
+              convention: { es: "per_goal", pp: "per_two_goals" },
             },
             pp_opportunity: {
               team_pp_target_seconds: p.ppOpportunityTeamTargetSeconds,
@@ -3236,7 +3198,7 @@ export async function runPerGameSkaterStage(args: {
         },
       });
 
-      const playerUpsert = applySupportedSkaterConversionHeads({
+      const playerUpsert = {
         run_id: runId,
         as_of_date: asOfDate,
         horizon_games: horizonGames,
@@ -3266,11 +3228,11 @@ export async function runPerGameSkaterStage(args: {
         proj_blocks: Number((projBlocks * teamHorizonTotalScalar).toFixed(3)),
         uncertainty: uncertaintyWithRole,
         updated_at: new Date().toISOString(),
-      }, p.conversionSupport);
+      };
       playerUpserts.push({
         ...playerUpsert,
         uncertainty: {
-          ...playerUpsert.uncertainty,
+          ...uncertaintyWithRole,
           native_goal_accounting: buildNativePlayerGoalAccounting(playerUpsert),
         },
       });
@@ -3287,12 +3249,10 @@ export async function runPerGameSkaterStage(args: {
         assists: Number(
           ((assistsEs + assistsPp) * teamHorizonTotalScalar).toFixed(3),
         ),
-        // Internal benchmark values are never exported when their heads are unavailable.
-        powerPlayPoints: Number((Number((goalsPp * teamHorizonTotalScalar).toFixed(3)) +
-          Number((assistsPp * teamHorizonTotalScalar).toFixed(3))).toFixed(3)),
-        goalsAvailable: playerUpsert.proj_goals_es !== null && playerUpsert.proj_goals_pp !== null,
-        assistsAvailable: playerUpsert.proj_assists_es !== null && playerUpsert.proj_assists_pp !== null,
-        powerPlayPointsAvailable: playerUpsert.proj_goals_pp !== null && playerUpsert.proj_assists_pp !== null,
+        // Match the PP heads consumed by the board; rounding raw totals again can disagree.
+        powerPlayPoints: Number(
+          (playerUpsert.proj_goals_pp + playerUpsert.proj_assists_pp).toFixed(3),
+        ),
         blockedShots: Number((projBlocks * teamHorizonTotalScalar).toFixed(3)),
         lineupSourceGameDate: lcContext.sourceGameDate,
         lineupRecencyDays: lcRecency.daysStale,
@@ -3336,9 +3296,6 @@ export async function runPerGameSkaterStage(args: {
       for (const [marketType, marketSummary] of Object.entries(
         marketSummaryByType,
       )) {
-        if ((["player_goals", "player_goal_scorer_anytime", "player_points"].includes(marketType) && !projectionInput.goalsAvailable)
-          || (["player_assists", "player_points"].includes(marketType) && !projectionInput.assistsAvailable)
-          || (marketType === "player_power_play_points" && !projectionInput.powerPlayPointsAvailable)) continue;
         const expectedValue = getProjectionValueForPropMarket({
           marketType,
           projection: {
@@ -3458,8 +3415,6 @@ export async function runPerGameSkaterStage(args: {
           horizonGames,
           teamHorizonScalars,
         ),
-        ...(teamGoalAccounting.reportedComponents.esMean === null ? { goals_es: null } : {}),
-        ...(teamGoalAccounting.reportedComponents.ppMean === null ? { goals_pp: null } : {}),
         native_goal_accounting: teamGoalAccounting,
         native_roster_contributor_coverage: nativeRosterCoverage,
       },

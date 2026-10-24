@@ -1,0 +1,171 @@
+import { FORGE_TREND_ADJUSTMENT_WINDOW_PRIORITY } from "lib/predictions/rollingWindows";
+
+export const GOALIE_STALE_SOFT_DAYS = 30;
+export const GOALIE_STALE_HARD_DAYS = 75;
+export const SKATER_STALE_SOFT_DAYS = 21;
+export const SKATER_STALE_HARD_DAYS = 45;
+export const SKATER_SOFT_STALE_MIN_MULTIPLIER = 0.15;
+export const LINE_COMBO_STALE_SOFT_DAYS = 10;
+export const LINE_COMBO_STALE_HARD_DAYS = 21;
+export const SKATER_ROLE_HISTORY_WINDOW_GAMES = 10;
+export const B2B_REPEAT_STARTER_PENALTY = 2.75;
+export const B2B_ALTERNATE_GOALIE_BOOST = 0.65;
+export const TEAM_STRENGTH_WEAKER_GAP = 0.35;
+export const WEAK_OPPONENT_GF_THRESHOLD = 2.6;
+export const WEAKER_TEAM_B2B_PRIMARY_PENALTY = 1.1;
+export const WEAKER_TEAM_B2B_BACKUP_BOOST = 0.45;
+export const WEAK_OPPONENT_PRIMARY_REST_PENALTY = 0.7;
+export const WEAK_OPPONENT_BACKUP_BOOST = 0.3;
+export const LINE_COMBO_RECENCY_DECAY = 0.82;
+export const LINE_COMBO_PRIOR_LOGIT_WEIGHT = 0.45;
+export const GOALIE_GSAA_PRIOR_MAX_ABS = 0.6;
+export const GOALIE_GSAA_PRIOR_WEIGHT = 0.5;
+export const GOALIE_SEASON_START_PCT_WEIGHT = 0.28;
+export const GOALIE_SEASON_START_PCT_BASELINE = 0.5;
+export const GOALIE_SEASON_GAMES_PLAYED_WEIGHT = 0.2;
+export const OPPONENT_RESTED_BOOST = 0.03;
+export const OPPONENT_B2B_PENALTY = 0.04;
+export const DEFENSE_B2B_FATIGUE_BOOST = 0.02;
+export const OPPONENT_HOME_BOOST = 0.02;
+export const OPPONENT_AWAY_PENALTY = 0.01;
+export const GOALIE_HEAVY_WORKLOAD_PENALTY = 0.025;
+export const GOALIE_VERY_HEAVY_WORKLOAD_PENALTY = 0.04;
+export const GOALIE_BACK_TO_BACK_PENALTY = 0.03;
+export const GOALIE_REST_SPLIT_MIN_GAMES = 2;
+export const GOALIE_REST_SPLIT_MAX_ADJUSTMENT = 0.012;
+export const TEAM_XG_BASELINE_PER_GAME = 2.95;
+export const TEAM_XG_SHOTS_AGAINST_MAX_PCT = 0.09;
+export const TEAM_XG_WIN_CONTEXT_MAX_PCT = 0.1;
+export const TEAM_5V5_SAVE_PCT_BASELINE = 0.922;
+export const TEAM_5V5_PDO_BASELINE = 1;
+export const TEAM_5V5_MIN_SAMPLE_GAMES = 8;
+export const TEAM_5V5_MAX_LEAGUE_SAVE_PCT_ADJ = 0.01;
+export const TEAM_5V5_MAX_CONTEXT_PCT_ADJ = 0.035;
+export const TEAM_NST_XGA_PER60_BASELINE = 2.5;
+export const TEAM_NST_MAX_CONTEXT_PCT_ADJ = 0.05;
+export const MAX_SUPPORTED_HORIZON_GAMES = 10;
+export const HORIZON_DECAY_PER_GAME = 0.015;
+export const HORIZON_B2B_PENALTY = 0.08;
+export const HORIZON_ZERO_REST_PENALTY = 0.12;
+export const HORIZON_LONG_REST_BOOST = 0.03;
+export const SKATER_IXG_PER_SHOT_BASELINE = 0.09;
+export const SKATER_RUSH_REBOUND_PER60_BASELINE = 1.1;
+export const SKATER_SHOT_QUALITY_MIN_MULTIPLIER = 0.82;
+export const SKATER_SHOT_QUALITY_MAX_MULTIPLIER = 1.2;
+export const SKATER_CONVERSION_MIN_MULTIPLIER = 0.78;
+export const SKATER_CONVERSION_MAX_MULTIPLIER = 1.3;
+export const SKATER_ON_ICE_XG_PER60_BASELINE = 2.45;
+export const SKATER_ON_ICE_POSSESSION_BASELINE = 0.5;
+export const SKATER_ON_ICE_SHOT_ENV_MIN_MULTIPLIER = 0.86;
+export const SKATER_ON_ICE_SHOT_ENV_MAX_MULTIPLIER = 1.16;
+export const SKATER_ON_ICE_GOAL_ENV_MIN_MULTIPLIER = 0.84;
+export const SKATER_ON_ICE_GOAL_ENV_MAX_MULTIPLIER = 1.2;
+export const SKATER_ON_ICE_ASSIST_ENV_MIN_MULTIPLIER = 0.82;
+export const SKATER_ON_ICE_ASSIST_ENV_MAX_MULTIPLIER = 1.22;
+export const SKATER_TEAM_LEVEL_SHOT_MIN_MULTIPLIER = 0.86;
+export const SKATER_TEAM_LEVEL_SHOT_MAX_MULTIPLIER = 1.18;
+export const SKATER_TEAM_LEVEL_GOAL_MIN_MULTIPLIER = 0.82;
+export const SKATER_TEAM_LEVEL_GOAL_MAX_MULTIPLIER = 1.2;
+export const SKATER_TEAM_LEVEL_ASSIST_MIN_MULTIPLIER = 0.84;
+export const SKATER_TEAM_LEVEL_ASSIST_MAX_MULTIPLIER = 1.2;
+export const SKATER_OPP_GOALIE_GOAL_MIN_MULTIPLIER = 0.82;
+export const SKATER_OPP_GOALIE_GOAL_MAX_MULTIPLIER = 1.22;
+export const SKATER_OPP_GOALIE_ASSIST_MIN_MULTIPLIER = 0.86;
+export const SKATER_OPP_GOALIE_ASSIST_MAX_MULTIPLIER = 1.18;
+export const SKATER_REST_TOI_MIN_MULTIPLIER = 0.88;
+export const SKATER_REST_TOI_MAX_MULTIPLIER = 1.1;
+export const SKATER_REST_SHOT_MIN_MULTIPLIER = 0.86;
+export const SKATER_REST_SHOT_MAX_MULTIPLIER = 1.14;
+export const SKATER_REST_GOAL_MIN_MULTIPLIER = 0.85;
+export const SKATER_REST_GOAL_MAX_MULTIPLIER = 1.16;
+export const SKATER_REST_ASSIST_MIN_MULTIPLIER = 0.86;
+export const SKATER_REST_ASSIST_MAX_MULTIPLIER = 1.15;
+export const SKATER_SMALL_SAMPLE_TOI_SECONDS_SCALE = 900;
+export const SKATER_SMALL_SAMPLE_SHOTS_SCALE = 45;
+export const SKATER_SMALL_SAMPLE_LOW_WEIGHT_THRESHOLD = 0.45;
+export const SKATER_SMALL_SAMPLE_CALLUP_WEIGHT_THRESHOLD = 0.22;
+// All-situation hits/blocks per 60. Priors are the 2024-25 + 2025-26 league
+// position rates (WGO), used when the league totals read is unavailable. Fitted
+// by Poisson deviance on games 2-30 of 2024-25 and 2025-26, as of the previous
+// game (2026-10-19/20): hits follow the recent window, blocks the baseline, and
+// prior seasons are rescaled to this season's league rate because league hit and
+// block rates keep falling (D hits 4.19 -> 3.35 -> 3.03, 2023-24 to 2025-26).
+export const SKATER_PHYSICAL_RATE_PRIORS = {
+  F: { hitsPer60: 4.9, blocksPer60: 2.1 },
+  D: { hitsPer60: 3.2, blocksPer60: 4.4 },
+} as const;
+/** Three-season minutes that weigh as much as the position prior. */
+export const SKATER_PHYSICAL_PRIOR_MINUTES = { hits: 50, blocks: 300 } as const;
+/** Baseline minutes the last-5 window is blended against. */
+export const SKATER_PHYSICAL_RECENT_SHRINK_MINUTES = { hits: 240, blocks: 1000 } as const;
+/** Weight on the two prior seasons' events and minutes against this season's. */
+export const SKATER_PHYSICAL_PRIOR_SEASON_WEIGHT = 0.5;
+/** League minutes (about 50 team-games) that shrink this season's league rate toward the prior two seasons'. */
+export const SKATER_PHYSICAL_LEAGUE_SHRINK_MINUTES = { F: 9000, D: 5750 } as const;
+/** Bounds on this season's league rate over the prior two seasons' when rescaling prior-season events. */
+export const SKATER_PHYSICAL_LEAGUE_SCALE_MIN = 0.7;
+export const SKATER_PHYSICAL_LEAGUE_SCALE_MAX = 1.3;
+/** Cap on all-situation over ES+PP TOI when adding PK time (2025-26 last-5 p99 is about 1.3). */
+export const SKATER_PHYSICAL_TOI_RATIO_MAX = 1.3;
+// Assist share of on-ice goals for, by position and strength: NST regular-season game logs
+// 2023-24..2025-26 (tasks/artifacts/forge-priors-2026-10-22). k is the on-ice goals that weigh as
+// much as the prior: method of moments on player-season totals (K-REFIT.json).
+export const SKATER_ASSIST_SHARE_PRIORS = {
+  F: { es: { share: 0.3747, k: 99 }, pp: { share: 0.3554, k: 20 } },
+  D: { es: { share: 0.2782, k: 98 }, pp: { share: 0.4838, k: 65 } },
+} as const;
+export const SKATER_ASSIST_SHARE_MIN = 0.02;
+export const SKATER_ASSIST_SHARE_MAX = 0.9;
+/** League assists per goal by strength over the same seasons; team assists are scaled to these. */
+export const SKATER_TEAM_ASSISTS_PER_GOAL = { es: 1.65, pp: 1.91 } as const;
+// Goals per shot and shots per 60 by position and strength over the same game logs (task 4). k is
+// the shots (conversion; method of moments, K-REFIT.json) or hours (shot rate; split halves, as the
+// moment fit over-disperses multi-season shot history) that weigh as much as the prior.
+export const SKATER_GOAL_CONVERSION_PRIORS = {
+  F: { es: { perShot: 0.1181, k: 224 }, pp: { perShot: 0.1589, k: 107 } },
+  D: { es: { perShot: 0.0537, k: 532 }, pp: { perShot: 0.0862, k: 934 } },
+} as const;
+export const SKATER_SHOT_RATE_PRIORS = {
+  F: { es: { per60: 6.62, kHours: 8.4 }, pp: { per60: 11.23, kHours: 10.3 } },
+  D: { es: { per60: 4.11, kHours: 12.3 }, pp: { per60: 8.39, kHours: 5 } },
+} as const;
+export const SKATER_TEAMMATE_ASSIST_ES_MIN_MULTIPLIER = 0.82;
+export const SKATER_TEAMMATE_ASSIST_ES_MAX_MULTIPLIER = 1.2;
+export const SKATER_TEAMMATE_ASSIST_PP_MIN_MULTIPLIER = 0.8;
+export const SKATER_TEAMMATE_ASSIST_PP_MAX_MULTIPLIER = 1.24;
+export const SKATER_ROLE_TOP_TOI_ES_MIN = 780;
+export const SKATER_ROLE_TOP_TOI_ES_MAX = 1500;
+export const SKATER_ROLE_TOP_TOI_PP_MIN = 120;
+export const SKATER_ROLE_TOP_TOI_PP_MAX = 560;
+export const SKATER_ROLE_MIDDLE_TOI_ES_MIN = 560;
+export const SKATER_ROLE_MIDDLE_TOI_ES_MAX = 1180;
+export const SKATER_ROLE_MIDDLE_TOI_PP_MIN = 40;
+export const SKATER_ROLE_MIDDLE_TOI_PP_MAX = 360;
+export const SKATER_ROLE_DEPTH_TOI_ES_MIN = 260;
+export const SKATER_ROLE_DEPTH_TOI_ES_MAX = 940;
+export const SKATER_ROLE_DEPTH_TOI_PP_MIN = 0;
+export const SKATER_ROLE_DEPTH_TOI_PP_MAX = 190;
+export const SKATER_ROLE_TOP_SOG_ES_MAX = 15;
+export const SKATER_ROLE_TOP_SOG_PP_MAX = 21;
+export const SKATER_ROLE_MIDDLE_SOG_ES_MAX = 11.5;
+export const SKATER_ROLE_MIDDLE_SOG_PP_MAX = 17;
+export const SKATER_ROLE_DEPTH_SOG_ES_MAX = 8.2;
+export const SKATER_ROLE_DEPTH_SOG_PP_MAX = 13;
+export const RECON_TOP_ES_SHARE_MAX = 0.24;
+export const RECON_TOP_PP_SHARE_MAX = 0.58;
+export const RECON_BLEND_TO_BASELINE = 0.4;
+export const ROLE_SCENARIO_REVERSION_PER_GAME = 0.18;
+export const ROLE_SCENARIO_VOLATILE_REVERSION_BONUS = 0.12;
+export const SKATER_POOL_TARGET_COUNT = 18;
+export const SKATER_POOL_MIN_VALID_COUNT = 15;
+export const SKATER_POOL_SUPPLEMENTAL_FETCH_COUNT = 24;
+export const SKATER_POOL_EMERGENCY_MAX_SINGLE_TOI_SECONDS = 2100;
+export const SKATER_POOL_EMERGENCY_MAX_AVG_TOI_SECONDS = 1200;
+export const TREND_BAND_METRIC_PRIORITY = [
+  "fantasy_score",
+  "ixg_per_60",
+  "shots_per_60",
+  "points_per_60_5v5",
+] as const;
+export const TREND_BAND_WINDOW_PRIORITY =
+  FORGE_TREND_ADJUSTMENT_WINDOW_PRIORITY;

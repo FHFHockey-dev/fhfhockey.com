@@ -1,0 +1,80 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:104:5 › manual workspace retains reviewed intent, protections and locks through recalculation and reload
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:104:5 › manual workspace retains reviewed intent, protections and locks through recalculation and reload 
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: locator.fill: Test timeout of 60000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('searchbox', { name: 'Find a player' })[22m
+
+
+      116 |     await expect(page.getByRole("heading", { name: "Roster Schedule Optimizer" })).toBeVisible();
+      117 |     if (!(await page.getByRole("button", { name: "Remove Alpha Center" }).isVisible())) {
+    > 118 |       await page.getByRole("searchbox", { name: "Find a player" }).fill("Alpha");
+          |                                                                    ^
+      119 |       await page.getByRole("button", { name: "Add", exact: true }).click();
+      120 |     }
+      121 |     await expect(page.getByRole("button", { name: "Remove Alpha Center" })).toBeVisible();
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:118:68
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../focus-01/results/roster-schedule-optimizer--c3669-gh-recalculation-and-reload-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../focus-01/results/roster-schedule-optimizer--c3669-gh-recalculation-and-reload-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../focus-01/results/roster-schedule-optimizer--c3669-gh-recalculation-and-reload-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../focus-01/results/roster-schedule-optimizer--c3669-gh-recalculation-and-reload-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1662:39 › compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels
+[1A[2K  2) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1662:39 › compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveAttribute[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByRole('slider', { name: 'Selected planning day' })
+    Expected: [32m"Wed, Oct 7"[39m
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveAttribute" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('slider', { name: 'Selected planning day' })[22m
+
+
+      1642 |   await page.goto("/roster-schedule-optimizer");
+      1643 |   await showScheduleView(page, "player");
+    > 1644 |   await expect(page.getByRole("slider", { name: "Selected planning day" })).toHaveAttribute("aria-valuetext", "Wed, Oct 7");
+           |                                                                             ^
+      1645 |   await expect(page.getByText(/Local planning lineup · GP/)).toBeVisible();
+      1646 |   return fixture;
+      1647 | }
+        at installCompactFixture (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1644:77)
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1664:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../focus-01/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../focus-01/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../focus-01/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../focus-01/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  2 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:104:5 › manual workspace retains reviewed intent, protections and locks through recalculation and reload 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1662:39 › compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels 

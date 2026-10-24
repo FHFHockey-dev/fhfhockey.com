@@ -1,0 +1,11 @@
+{
+  "snapshotNonE2EDrift": [
+    "web/next-env.d.ts"
+  ],
+  "files": {
+    "/Users/tim/Code/fhfhockey.com/web/e2e/roster-schedule-optimizer.spec.ts": "323b85d3b6aa3a7d4fae0b245f10d4f0eda61d7a087d579804f9553b0ea2a87f",
+    "/Users/tim/Code/fhfhockey.com/web/e2e/roster-schedule-optimizer-fixtures.ts": "eccabfd912185caa4fbc97ba38259bd2e3690eef9cb17494b451ec19d7328319",
+    "harness-v2/rso-p07-acceptance.spec.ts": "a7ba4795d0d9ee66ab0a9c4e0369f045341d3eb18ff847537159015286a265cc",
+    "FIXTURE-WIP.patch": "73df235fe8a91b829e407d0216c90ee5bd85623e4401a6c0745fdce33c32039e"
+  }
+}

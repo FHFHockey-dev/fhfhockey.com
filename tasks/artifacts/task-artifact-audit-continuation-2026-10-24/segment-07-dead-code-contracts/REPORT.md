@@ -1,0 +1,38 @@
+# Dead-code contracts and current owner checkpoint
+
+This coherent batch is complete; the whole recursive task-tree content audit remains unfinished. The auditor performed documentary and retained-data analysis only: no application source edits/imports/tests, new worker, Git command, production/provider/API/database/cron/natural invocation, browser/server or deployment. Library source reads and the requested canonical Library delivery are separate document operations.
+
+## Coverage
+
+[COVERAGE.json](COVERAGE.json) records23 repository files content-reviewed (267,818bytes),9 partially inspected,1 exact reviewed-text duplicate and47 metadata-only supporting files. Two complete current Library documents were also read: player-card PRDv1(178lines/26,797bytes) and tasklistv0(85lines/16,503bytes). The local task-list derivative was reviewed using the complete Library base plus every changed hunk; that method and initial exact installation comparison remain explicit. It is not still byte-identical to Libraryv0 after owner checkbox edits.
+
+Full reads include the burn-down plan, three cleanup/DRM PRDs, dead-code task pair, hidden-surface matrix, local-gates receipt, both WGO identity contracts, prior WGO-label receipt, current WiGO diagnostic/handoff records and player-card owner records. The large cleanup and DRM paired task lists were inspected only at exact relevant lines and remain next in the full-read queue. The historical1,927-line file inventory has only its introduction/tail reviewed; its main tree/list is not new repository coverage.
+
+Retained WiGO snapshots were inspected structurally across68rows for source groups/date-season identity/matching and selected arithmetic. This independently reproduces5/9/13 window matches and L5 sums6313seconds/1.82ixG/35iCF without an external call. It is not a full visual review of every numeric payload or new league-population proof. PNGs, HTML, app patches, owner test logs and supporting shift reports remain metadata-only unless explicitly listed otherwise; no visual or runtime acceptance is imported.
+
+## Reconciliation
+
+- **WGO-HISTORY:** retain the original season/date-label and105bad-date obligations; preserve the source-reported completed88-row Utah identity repair; keep the different376-row ATL/PHX physical repair held. NEW107's lineage/design closure does not prove physical historical repair. No new WGO repair ID or backfill dispatch.
+- **REPO-GENERATED-TRACKING:** NEW127/C0032/C0039/C0042 maps to existing CR-REL-03. Earlier July cleanup remains closed; an isolated candidate's exclusions do not prove current canonical tracking cleanup. No Git/index inspection was performed, so old tracked counts are dated evidence.
+- **PIPE-DRM-NATURAL:** preserve NEW49/50/51 scheduler/runtime/audit closures and narrower canaries. NEW86/C0074's October position-collision recurrence needs exact newer fix/release/natural reconciliation here. A generated helper-name inventory is insufficient closure evidence, and the old failure is not asserted current.
+- **SITE-WIGO:** record the existing investigator's two approved SELECTs/68rows/no writes and later four-file local handback, patcha63ef5a4e6dde4ee1255661a612f01b79a4e4306c5822f8d4fe078f89fbb394e. Owner58/58 and scoped lint pass are unaccepted owner evidence; whole-web TS exits2 on the known Luna errors. Stored L5 nulls are unchanged by code edits, the October5 gap stays unavailable, and refresh/backfill remains separately held. C4 workflow-link credit is preserved.
+- **SITE-PLAYER-CARDS:** one new stable ID for the distinct authorized product scope, cross-linked to existing WiGO/social ownership. TJ approved task generation and single-Sol bounded local implementation; this audit creates no worker. The synthetic nine-file preview/ranking/PNG slice reports10unit and10offline-browser passes with scoped static checks. Independent acceptance, pure window/aggregation/adapter work, real search/route, full population/completion/source evidence and premium enforcement remain incomplete. Exact defaults/paywall/season policies stay proposals. Existing RSO flags do not establish card entitlement.
+- **REPO-DOCUMENTATION:** preserve B-DEAD44/44 closure, active hidden owners, quarantine/retention decisions and superseded sKO burn-down. Older deletion, image/hook modernization and stale open boilerplate do not dispatch work. C6 allocation and all earlier documentation scopes remain.
+
+[CHANGELOG.json](CHANGELOG.json) records five changed rows and one new row:206→207IDs,925→955evidence entries. All206 prior scopes and evidence prefixes remain intact,201 existing JSON rows are unchanged, and32 legacy blocks remain byte-identical in each Markdown register. All189 handoff IDs remain; original188 preservation is transitive through the accepted v6 checkpoint. [VALIDATION-CANONICAL.json](VALIDATION-CANONICAL.json) will confirm guarded installation/readback; [CANONICAL-CHECKPOINT.patch](CANONICAL-CHECKPOINT.patch) retains the exact documentary diff. No application suite or Git-based check was run. UTF8/newline, added-whitespace, ID, evidence-prefix, scope and reference-path checks are proportionate document verification.
+
+## Live files, source snapshots and limits
+
+Canonical writes were stopped before execution when the card task list/ownership/requirements advanced. Every new task-list hunk and full changed owner record was read. Initially referenced handback files were absent; the subsequent explicit frozen-slice receipt supplied new evidence and one later read succeeded. No uncertain operation or acceptance followed the earlier failed reads. The guessed shift-folder HANDOFF.md did not exist; actual named task/PRD sources were used, leaving supporting reports metadata-only. Exact actions/reasons are in [TOOL-ISSUES.json](TOOL-ISSUES.json).
+
+Nine live reviewed source documents are frozen byte-for-byte under source-snapshots/, with original paths/hash/line identity retained in [SOURCE-SNAPSHOT-INDEX.json](SOURCE-SNAPSHOT-INDEX.json). Newer source changes after the declared cutoff are queued in POST-CUTOFF-CHANGES.json; they do not overwrite this dated checkpoint. Canonical hashes are guarded immediately before writing. Snapshots and own audit outputs are excluded from recursive re-audit.
+
+The card owner's Library output helper is reported blocked before preparation; no output ID or uncertain mutation is claimed. That is a separate owner delivery limitation, not permission for this auditor to publish their preview. Images remain unviewed here. No production request, approval, lease or test result transfers between workers merely because a document quotes it.
+
+## Resume
+
+The immutable base queue retains12,161pending entries after exact reviewed path/hash overlays. This is a historical queue count, not a fresh recursive inventory. [FOLDERS.json](FOLDERS.json) exposes each selected folder's coverage/remainder and two untraversed active-owner baseline/candidate folders. [CONTINUATION.json](CONTINUATION.json) resumes with full reads of tasks-prd-cleanup-tasks.md and tasks-prd-drm-refactor.md, preserving partial task clauses and all current narrower closures. Overall completion is not claimed.
+
+## Verified delivery
+
+Guarded canonical installation and readback succeeded.207IDs/955evidence entries; exact hashes are in FINAL-CHECKPOINT.json. Library replacement succeeded as version7 on existing identitylibfile_9987e7d9d1b8819181b366a318cc9a9c with expected prior version6. All returned xattrs were applied; native metadata readback and unchanged master bytes passed. No audit/custody/Library operation remains pending or uncertain. Independent application reviews and overall corpus content coverage remain unfinished.

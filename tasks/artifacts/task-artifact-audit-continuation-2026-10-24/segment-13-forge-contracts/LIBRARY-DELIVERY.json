@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-24T18:38:32.401044+00:00",
+  "expected_previous_version": 11,
+  "local_path": "/Users/tim/Code/fhfhockey.com/tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+  "local_sha256": "415d918354a7f40ceb6410aa732e8feebd6bc8c188631e282f49f128bb2f0b81",
+  "tool_confirmation": {
+    "status": "succeeded",
+    "current_version_number": 12,
+    "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "xattr_count": 1,
+    "helper_exit_code": 0
+  },
+  "original_full_result_saved": false,
+  "native_metadata_readback": {
+    "exit_code": 0,
+    "name": "user.library-file-version",
+    "value": "12",
+    "parsed_version": 12
+  },
+  "receipt_recovery": "Remote replacement success/version12 and helper0 directly returned. Local receipt serialization failed, then recovery incorrectly assumed object metadata; native metadata is scalar12. Reconstructed from direct confirmation plus native readback and local hash. No remote retry.",
+  "no_pending_replacement": true
+}

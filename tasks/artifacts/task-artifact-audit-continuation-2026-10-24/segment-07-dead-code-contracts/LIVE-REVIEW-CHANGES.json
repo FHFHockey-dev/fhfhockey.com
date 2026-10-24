@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-24T16:50:59.102818+00:00",
+  "canonical_write_guard_stopped_before_write": true,
+  "changes": [
+    {
+      "path": "tasks/tasks-prd-shareable-player-cards.md",
+      "before_sha256": "cb53ab650927530e84aadf398de38068b659183ef643d72dee132c93a75453c4",
+      "after_sha256": "6f2bc7e8f1b0ec976fbfcf6ee04194f1b3c3fd859af7672998021056b9047e38",
+      "resolution": "Entire task-list delta against complete reviewed Libraryv0 was read; ownership reread fully. Baseline review scope preserved."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/OWNERSHIP.json",
+      "before_sha256": "54154bd91b0751830fa4a461c666dfe88cad0bbf535a81377ce394e3811fc7f0",
+      "after_sha256": "3b2bbc5fa66cbb99bb7a6a4ebea3c777b165e13775e94013a8c365629cd1d88d",
+      "resolution": "Entire task-list delta against complete reviewed Libraryv0 was read; ownership reread fully. Baseline review scope preserved."
+    }
+  ]
+}

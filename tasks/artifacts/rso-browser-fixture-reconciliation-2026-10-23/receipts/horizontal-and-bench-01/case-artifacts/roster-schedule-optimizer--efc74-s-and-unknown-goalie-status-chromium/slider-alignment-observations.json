@@ -1,0 +1,938 @@
+[
+  {
+    "date": "Wed, Oct 7",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "thumbCenter": 306.140625,
+    "headerCenter": 306.1328125,
+    "delta": 0.0078125,
+    "geometry": {
+      "scheduleLegend": {
+        "rect": {
+          "x": 13,
+          "y": 487,
+          "width": 349,
+          "height": 236,
+          "top": 487,
+          "right": 362,
+          "bottom": 723,
+          "left": 13
+        },
+        "padding": "1px 3px",
+        "width": "349px"
+      },
+      "dayControls": {
+        "rect": {
+          "x": 16,
+          "y": 634,
+          "width": 650,
+          "height": 44,
+          "top": 634,
+          "right": 666,
+          "bottom": 678,
+          "left": 16
+        },
+        "padding": "0px 1px 0px 28px",
+        "width": "650px"
+      },
+      "compactScroll": {
+        "rect": {
+          "x": 13,
+          "y": 723,
+          "width": 349,
+          "height": 527.796875,
+          "top": 723,
+          "right": 362,
+          "bottom": 1250.796875,
+          "left": 13
+        },
+        "padding": "3px",
+        "width": "349px"
+      },
+      "compactTable": {
+        "rect": {
+          "x": 16,
+          "y": 261,
+          "width": 650,
+          "height": 1180,
+          "top": 261,
+          "right": 666,
+          "bottom": 1441,
+          "left": 16
+        },
+        "padding": "0px",
+        "width": "650px"
+      }
+    },
+    "selectedHeader": {
+      "x": 280.703125,
+      "y": 726,
+      "width": 50.859375,
+      "height": 44,
+      "top": 726,
+      "right": 331.5625,
+      "bottom": 770,
+      "left": 280.703125
+    }
+  },
+  {
+    "date": "Wed, Oct 7",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "thumbCenter": 186.140625,
+    "headerCenter": 186.1328125,
+    "delta": 0.0078125,
+    "geometry": {
+      "scheduleLegend": {
+        "rect": {
+          "x": 13,
+          "y": 487,
+          "width": 349,
+          "height": 236,
+          "top": 487,
+          "right": 362,
+          "bottom": 723,
+          "left": 13
+        },
+        "padding": "1px 3px",
+        "width": "349px"
+      },
+      "dayControls": {
+        "rect": {
+          "x": -104,
+          "y": 634,
+          "width": 650,
+          "height": 44,
+          "top": 634,
+          "right": 546,
+          "bottom": 678,
+          "left": -104
+        },
+        "padding": "0px 1px 0px 28px",
+        "width": "650px"
+      },
+      "compactScroll": {
+        "rect": {
+          "x": 13,
+          "y": 723,
+          "width": 349,
+          "height": 527.796875,
+          "top": 723,
+          "right": 362,
+          "bottom": 1250.796875,
+          "left": 13
+        },
+        "padding": "3px",
+        "width": "349px"
+      },
+      "compactTable": {
+        "rect": {
+          "x": -104,
+          "y": 261,
+          "width": 650,
+          "height": 1180,
+          "top": 261,
+          "right": 546,
+          "bottom": 1441,
+          "left": -104
+        },
+        "padding": "0px",
+        "width": "650px"
+      }
+    },
+    "selectedHeader": {
+      "x": 160.703125,
+      "y": 726,
+      "width": 50.859375,
+      "height": 44,
+      "top": 726,
+      "right": 211.5625,
+      "bottom": 770,
+      "left": 160.703125
+    }
+  },
+  {
+    "date": "Wed, Oct 7",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "thumbCenter": 246.140625,
+    "headerCenter": 246.1328125,
+    "delta": 0.0078125,
+    "geometry": {
+      "scheduleLegend": {
+        "rect": {
+          "x": 13,
+          "y": 487,
+          "width": 349,
+          "height": 236,
+          "top": 487,
+          "right": 362,
+          "bottom": 723,
+          "left": 13
+        },
+        "padding": "1px 3px",
+        "width": "349px"
+      },
+      "dayControls": {
+        "rect": {
+          "x": -44,
+          "y": 634,
+          "width": 650,
+          "height": 44,
+          "top": 634,
+          "right": 606,
+          "bottom": 678,
+          "left": -44
+        },
+        "padding": "0px 1px 0px 28px",
+        "width": "650px"
+      },
+      "compactScroll": {
+        "rect": {
+          "x": 13,
+          "y": 723,
+          "width": 349,
+          "height": 527.796875,
+          "top": 723,
+          "right": 362,
+          "bottom": 1250.796875,
+          "left": 13
+        },
+        "padding": "3px",
+        "width": "349px"
+      },
+      "compactTable": {
+        "rect": {
+          "x": -44,
+          "y": 261,
+          "width": 650,
+          "height": 1180,
+          "top": 261,
+          "right": 606,
+          "bottom": 1441,
+          "left": -44
+        },
+        "padding": "0px",
+        "width": "650px"
+      }
+    },
+    "selectedHeader": {
+      "x": 220.703125,
+      "y": 726,
+      "width": 50.859375,
+      "height": 44,
+      "top": 726,
+      "right": 271.5625,
+      "bottom": 770,
+      "left": 220.703125
+    }
+  },
+  {
+    "date": "Wed, Oct 7",
+    "viewport": {
+      "width": 375,
+      "height": 812
+    },
+    "thumbCenter": 186.140625,
+    "headerCenter": 186.1328125,
+    "delta": 0.0078125,
+    "geometry": {
+      "scheduleLegend": {
+        "rect": {
+          "x": 13,
+          "y": 487,
+          "width": 349,
+          "height": 236,
+          "top": 487,
+          "right": 362,
+          "bottom": 723,
+          "left": 13
+        },
+        "padding": "1px 3px",
+        "width": "349px"
+      },
+      "dayControls": {
+        "rect": {
+          "x": -104,
+          "y": 634,
+          "width": 650,
+          "height": 44,
+          "top": 634,
+          "right": 546,
+          "bottom": 678,
+          "left": -104
+        },
+        "padding": "0px 1px 0px 28px",
+        "width": "650px"
+      },
+      "compactScroll": {
+        "rect": {
+          "x": 13,
+          "y": 723,
+          "width": 349,
+          "height": 527.796875,
+          "top": 723,
+          "right": 362,
+          "bottom": 1250.796875,
+          "left": 13
+        },
+        "padding": "3px",
+        "width": "349px"
+      },
+      "compactTable": {
+        "rect": {
+          "x": -104,
+          "y": 261,
+          "width": 650,
+          "height": 1180,
+          "top": 261,
+          "right": 546,
+          "bottom": 1441,
+          "left": -104
+        },
+        "padding": "0px",
+        "width": "650px"
+      }
+    },
+    "selectedHeader": {
+      "x": 160.703125,
+      "y": 726,
+      "width": 50.859375,
+      "height": 44,
+      "top": 726,
+      "right": 211.5625,
+      "bottom": 770,
+      "left": 160.703125
+    }
+  },
+  {
+    "date": "Wed, Oct 7",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "thumbCenter": 306.140625,
+    "headerCenter": 306.1328125,
+    "delta": 0.0078125,
+    "geometry": {
+      "scheduleLegend": {
+        "rect": {
+          "x": 13,
+          "y": 256,
+          "width": 364,
+          "height": 218,
+          "top": 256,
+          "right": 377,
+          "bottom": 474,
+          "left": 13
+        },
+        "padding": "1px 3px",
+        "width": "364px"
+      },
+      "dayControls": {
+        "rect": {
+          "x": 16,
+          "y": 385,
+          "width": 650,
+          "height": 44,
+          "top": 385,
+          "right": 666,
+          "bottom": 429,
+          "left": 16
+        },
+        "padding": "0px 1px 0px 28px",
+        "width": "650px"
+      },
+      "compactScroll": {
+        "rect": {
+          "x": 13,
+          "y": 474,
+          "width": 364,
+          "height": 548.59375,
+          "top": 474,
+          "right": 377,
+          "bottom": 1022.59375,
+          "left": 13
+        },
+        "padding": "3px",
+        "width": "364px"
+      },
+      "compactTable": {
+        "rect": {
+          "x": 16,
+          "y": 463,
+          "width": 650,
+          "height": 1180,
+          "top": 463,
+          "right": 666,
+          "bottom": 1643,
+          "left": 16
+        },
+        "padding": "0px",
+        "width": "650px"
+      }
+    },
+    "selectedHeader": {
+      "x": 280.703125,
+      "y": 477,
+      "width": 50.859375,
+      "height": 44,
+      "top": 477,
+      "right": 331.5625,
+      "bottom": 521,
+      "left": 280.703125
+    }
+  },
+  {
+    "date": "Wed, Oct 7",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "thumbCenter": 186.140625,
+    "headerCenter": 186.1328125,
+    "delta": 0.0078125,
+    "geometry": {
+      "scheduleLegend": {
+        "rect": {
+          "x": 13,
+          "y": 256,
+          "width": 364,
+          "height": 218,
+          "top": 256,
+          "right": 377,
+          "bottom": 474,
+          "left": 13
+        },
+        "padding": "1px 3px",
+        "width": "364px"
+      },
+      "dayControls": {
+        "rect": {
+          "x": -104,
+          "y": 385,
+          "width": 650,
+          "height": 44,
+          "top": 385,
+          "right": 546,
+          "bottom": 429,
+          "left": -104
+        },
+        "padding": "0px 1px 0px 28px",
+        "width": "650px"
+      },
+      "compactScroll": {
+        "rect": {
+          "x": 13,
+          "y": 474,
+          "width": 364,
+          "height": 548.59375,
+          "top": 474,
+          "right": 377,
+          "bottom": 1022.59375,
+          "left": 13
+        },
+        "padding": "3px",
+        "width": "364px"
+      },
+      "compactTable": {
+        "rect": {
+          "x": -104,
+          "y": 463,
+          "width": 650,
+          "height": 1180,
+          "top": 463,
+          "right": 546,
+          "bottom": 1643,
+          "left": -104
+        },
+        "padding": "0px",
+        "width": "650px"
+      }
+    },
+    "selectedHeader": {
+      "x": 160.703125,
+      "y": 477,
+      "width": 50.859375,
+      "height": 44,
+      "top": 477,
+      "right": 211.5625,
+      "bottom": 521,
+      "left": 160.703125
+    }
+  },
+  {
+    "date": "Wed, Oct 7",
+    "viewport": {
+      "width": 1024,
+      "height": 768
+    },
+    "thumbCenter": 460.49479166666663,
+    "headerCenter": 460.4921875,
+    "delta": 0.002604166666628771,
+    "geometry": {
+      "scheduleLegend": {
+        "rect": {
+          "x": 13,
+          "y": 262,
+          "width": 998,
+          "height": 218,
+          "top": 262,
+          "right": 1011,
+          "bottom": 480,
+          "left": 13
+        },
+        "padding": "1px 3px",
+        "width": "998px"
+      },
+      "dayControls": {
+        "rect": {
+          "x": 16,
+          "y": 391,
+          "width": 992,
+          "height": 44,
+          "top": 391,
+          "right": 1008,
+          "bottom": 435,
+          "left": 16
+        },
+        "padding": "0px 1px 0px 28px",
+        "width": "992px"
+      },
+      "compactScroll": {
+        "rect": {
+          "x": 13,
+          "y": 480,
+          "width": 998,
+          "height": 499.1875,
+          "top": 480,
+          "right": 1011,
+          "bottom": 979.1875,
+          "left": 13
+        },
+        "padding": "3px",
+        "width": "998px"
+      },
+      "compactTable": {
+        "rect": {
+          "x": 16,
+          "y": 479,
+          "width": 992,
+          "height": 1180,
+          "top": 479,
+          "right": 1008,
+          "bottom": 1659,
+          "left": 16
+        },
+        "padding": "0px",
+        "width": "992px"
+      }
+    },
+    "selectedHeader": {
+      "x": 414.21875,
+      "y": 483,
+      "width": 92.546875,
+      "height": 44,
+      "top": 483,
+      "right": 506.765625,
+      "bottom": 527,
+      "left": 414.21875
+    }
+  },
+  {
+    "date": "Wed, Oct 7",
+    "viewport": {
+      "width": 1024,
+      "height": 768
+    },
+    "thumbCenter": 460.49479166666663,
+    "headerCenter": 460.4921875,
+    "delta": 0.002604166666628771,
+    "geometry": {
+      "scheduleLegend": {
+        "rect": {
+          "x": 13,
+          "y": 262,
+          "width": 998,
+          "height": 218,
+          "top": 262,
+          "right": 1011,
+          "bottom": 480,
+          "left": 13
+        },
+        "padding": "1px 3px",
+        "width": "998px"
+      },
+      "dayControls": {
+        "rect": {
+          "x": 16,
+          "y": 391,
+          "width": 992,
+          "height": 44,
+          "top": 391,
+          "right": 1008,
+          "bottom": 435,
+          "left": 16
+        },
+        "padding": "0px 1px 0px 28px",
+        "width": "992px"
+      },
+      "compactScroll": {
+        "rect": {
+          "x": 13,
+          "y": 480,
+          "width": 998,
+          "height": 499.1875,
+          "top": 480,
+          "right": 1011,
+          "bottom": 979.1875,
+          "left": 13
+        },
+        "padding": "3px",
+        "width": "998px"
+      },
+      "compactTable": {
+        "rect": {
+          "x": 16,
+          "y": 479,
+          "width": 992,
+          "height": 1180,
+          "top": 479,
+          "right": 1008,
+          "bottom": 1659,
+          "left": 16
+        },
+        "padding": "0px",
+        "width": "992px"
+      }
+    },
+    "selectedHeader": {
+      "x": 414.21875,
+      "y": 483,
+      "width": 92.546875,
+      "height": 44,
+      "top": 483,
+      "right": 506.765625,
+      "bottom": 527,
+      "left": 414.21875
+    }
+  },
+  {
+    "date": "Wed, Oct 7",
+    "viewport": {
+      "width": 320,
+      "height": 844
+    },
+    "thumbCenter": 306.140625,
+    "headerCenter": 306.1328125,
+    "delta": 0.0078125,
+    "geometry": {
+      "scheduleLegend": {
+        "rect": {
+          "x": 13,
+          "y": 298,
+          "width": 294,
+          "height": 236,
+          "top": 298,
+          "right": 307,
+          "bottom": 534,
+          "left": 13
+        },
+        "padding": "1px 3px",
+        "width": "294px"
+      },
+      "dayControls": {
+        "rect": {
+          "x": 16,
+          "y": 445,
+          "width": 650,
+          "height": 44,
+          "top": 445,
+          "right": 666,
+          "bottom": 489,
+          "left": 16
+        },
+        "padding": "0px 1px 0px 28px",
+        "width": "650px"
+      },
+      "compactScroll": {
+        "rect": {
+          "x": 13,
+          "y": 534,
+          "width": 294,
+          "height": 548.59375,
+          "top": 534,
+          "right": 307,
+          "bottom": 1082.59375,
+          "left": 13
+        },
+        "padding": "3px",
+        "width": "294px"
+      },
+      "compactTable": {
+        "rect": {
+          "x": 16,
+          "y": 509,
+          "width": 650,
+          "height": 1180,
+          "top": 509,
+          "right": 666,
+          "bottom": 1689,
+          "left": 16
+        },
+        "padding": "0px",
+        "width": "650px"
+      }
+    },
+    "selectedHeader": {
+      "x": 280.703125,
+      "y": 537,
+      "width": 50.859375,
+      "height": 44,
+      "top": 537,
+      "right": 331.5625,
+      "bottom": 581,
+      "left": 280.703125
+    }
+  },
+  {
+    "date": "Wed, Oct 7",
+    "viewport": {
+      "width": 320,
+      "height": 844
+    },
+    "thumbCenter": 186.140625,
+    "headerCenter": 186.1328125,
+    "delta": 0.0078125,
+    "geometry": {
+      "scheduleLegend": {
+        "rect": {
+          "x": 13,
+          "y": 298,
+          "width": 294,
+          "height": 236,
+          "top": 298,
+          "right": 307,
+          "bottom": 534,
+          "left": 13
+        },
+        "padding": "1px 3px",
+        "width": "294px"
+      },
+      "dayControls": {
+        "rect": {
+          "x": -104,
+          "y": 445,
+          "width": 650,
+          "height": 44,
+          "top": 445,
+          "right": 546,
+          "bottom": 489,
+          "left": -104
+        },
+        "padding": "0px 1px 0px 28px",
+        "width": "650px"
+      },
+      "compactScroll": {
+        "rect": {
+          "x": 13,
+          "y": 534,
+          "width": 294,
+          "height": 548.59375,
+          "top": 534,
+          "right": 307,
+          "bottom": 1082.59375,
+          "left": 13
+        },
+        "padding": "3px",
+        "width": "294px"
+      },
+      "compactTable": {
+        "rect": {
+          "x": -104,
+          "y": 509,
+          "width": 650,
+          "height": 1180,
+          "top": 509,
+          "right": 546,
+          "bottom": 1689,
+          "left": -104
+        },
+        "padding": "0px",
+        "width": "650px"
+      }
+    },
+    "selectedHeader": {
+      "x": 160.703125,
+      "y": 537,
+      "width": 50.859375,
+      "height": 44,
+      "top": 537,
+      "right": 211.5625,
+      "bottom": 581,
+      "left": 160.703125
+    }
+  },
+  {
+    "date": "Wed, Oct 7",
+    "viewport": {
+      "width": 720,
+      "height": 450
+    },
+    "thumbCenter": 319.71354166666663,
+    "headerCenter": 319.703125,
+    "delta": 0.010416666666628771,
+    "geometry": {
+      "scheduleLegend": {
+        "rect": {
+          "x": 13,
+          "y": -5,
+          "width": 694,
+          "height": 218,
+          "top": -5,
+          "right": 707,
+          "bottom": 213,
+          "left": 13
+        },
+        "padding": "1px 3px",
+        "width": "694px"
+      },
+      "dayControls": {
+        "rect": {
+          "x": 16,
+          "y": 124,
+          "width": 688,
+          "height": 44,
+          "top": 124,
+          "right": 704,
+          "bottom": 168,
+          "left": 16
+        },
+        "padding": "0px 1px 0px 28px",
+        "width": "688px"
+      },
+      "compactScroll": {
+        "rect": {
+          "x": 13,
+          "y": 213,
+          "width": 694,
+          "height": 292.5,
+          "top": 213,
+          "right": 707,
+          "bottom": 505.5,
+          "left": 13
+        },
+        "padding": "3px",
+        "width": "694px"
+      },
+      "compactTable": {
+        "rect": {
+          "x": 16,
+          "y": 212,
+          "width": 688,
+          "height": 1180,
+          "top": 212,
+          "right": 704,
+          "bottom": 1392,
+          "left": 16
+        },
+        "padding": "0px",
+        "width": "688px"
+      }
+    },
+    "selectedHeader": {
+      "x": 291.5625,
+      "y": 216,
+      "width": 56.28125,
+      "height": 44,
+      "top": 216,
+      "right": 347.84375,
+      "bottom": 260,
+      "left": 291.5625
+    }
+  },
+  {
+    "date": "Wed, Oct 7",
+    "viewport": {
+      "width": 720,
+      "height": 450
+    },
+    "thumbCenter": 319.71354166666663,
+    "headerCenter": 319.703125,
+    "delta": 0.010416666666628771,
+    "geometry": {
+      "scheduleLegend": {
+        "rect": {
+          "x": 13,
+          "y": -5,
+          "width": 694,
+          "height": 218,
+          "top": -5,
+          "right": 707,
+          "bottom": 213,
+          "left": 13
+        },
+        "padding": "1px 3px",
+        "width": "694px"
+      },
+      "dayControls": {
+        "rect": {
+          "x": 16,
+          "y": 124,
+          "width": 688,
+          "height": 44,
+          "top": 124,
+          "right": 704,
+          "bottom": 168,
+          "left": 16
+        },
+        "padding": "0px 1px 0px 28px",
+        "width": "688px"
+      },
+      "compactScroll": {
+        "rect": {
+          "x": 13,
+          "y": 213,
+          "width": 694,
+          "height": 292.5,
+          "top": 213,
+          "right": 707,
+          "bottom": 505.5,
+          "left": 13
+        },
+        "padding": "3px",
+        "width": "694px"
+      },
+      "compactTable": {
+        "rect": {
+          "x": 16,
+          "y": 212,
+          "width": 688,
+          "height": 1180,
+          "top": 212,
+          "right": 704,
+          "bottom": 1392,
+          "left": 16
+        },
+        "padding": "0px",
+        "width": "688px"
+      }
+    },
+    "selectedHeader": {
+      "x": 291.5625,
+      "y": 216,
+      "width": 56.28125,
+      "height": 44,
+      "top": 216,
+      "right": 347.84375,
+      "bottom": 260,
+      "left": 291.5625
+    }
+  }
+]

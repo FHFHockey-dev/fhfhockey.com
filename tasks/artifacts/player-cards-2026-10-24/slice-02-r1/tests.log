@@ -1,0 +1,19 @@
+
+> web@0.1.0 test
+> vitest --run lib/player-cards/domain.test.ts lib/player-cards/aggregation.r1.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:65658) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:65657) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-cards/aggregation.r1.test.ts (7 tests) 8ms
+ ✓ lib/player-cards/domain.test.ts (19 tests) 11ms
+
+ Test Files  2 passed (2)
+      Tests  26 passed (26)
+   Start at  13:19:02
+   Duration  401ms (transform 54ms, setup 5ms, collect 79ms, tests 19ms, environment 335ms, prepare 66ms)
+

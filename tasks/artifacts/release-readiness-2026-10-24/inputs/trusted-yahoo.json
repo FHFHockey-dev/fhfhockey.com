@@ -1,0 +1,138 @@
+{
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "status": "local candidate; independent review pending; not release acceptance",
+  "changed": [
+    "web/lib/integrations/yahoo/planningConfirmations.ts",
+    "web/lib/integrations/yahoo/planningConfirmations.test.ts",
+    "web/pages/api/v1/roster-schedule-optimizer/yahoo-current-data.ts",
+    "web/lib/integrations/yahoo/planningConfirmationRoute.test.ts",
+    "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.ts",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts",
+    "web/lib/rosterScheduleOptimizer/privatePlanningRead.ts",
+    "web/hooks/yahooPlanningReadBroker.ts",
+    "web/hooks/yahooPlanningReadBroker.test.ts",
+    "web/hooks/rosterPlanningExecution.ts",
+    "web/hooks/rosterPlanning.worker.ts",
+    "web/hooks/useRosterPlanning.ts",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+  ],
+  "pins": {
+    "web/lib/integrations/yahoo/planningConfirmations.ts": "21387c814e0e751d428a882d563fa142593a0b65b3f0f456d3a27b5fce884f61",
+    "web/lib/integrations/yahoo/planningConfirmations.test.ts": "a114587cb397460f6cd190e64aef253f888935a08735d3638c1d6752548e1b7a",
+    "web/pages/api/v1/roster-schedule-optimizer/yahoo-current-data.ts": "f37eedbd2887b68e6434aefc638bdc0e017b899b3b3d8bac2fd09a8d769f0e8b",
+    "web/lib/integrations/yahoo/planningConfirmationRoute.test.ts": "4927754fdd1641b471272b69fc0a2657c6ec0d2bcd1a9e5b75833f2cc458c318",
+    "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "e54bbb13d53a67400716fa329d90ab8f20e3c98c564a932f4f3224b71bf76adf",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.ts": "1d828365e56b2b0dd052e1bbaf95da25ca3d1a09769279df525cd58b90aedfda",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts": "7c6cbd9971a9f228d4773b46e4040d9cf1c0e00fd72ca83bb596252f6c6238f7",
+    "web/lib/rosterScheduleOptimizer/privatePlanningRead.ts": "59817ba72f6db530b8da8498e027614bdfb352ec9af8e86816601cfc99ba5e69",
+    "web/hooks/yahooPlanningReadBroker.ts": "a24d9ea7441a2093eb3621052f4c169898489b13b4d34f257c4d5d4e1f4eb1d9",
+    "web/hooks/yahooPlanningReadBroker.test.ts": "26d37f456e93dcd29c659bc8128150130748946a1ba308c7f9ebbf27ce0536ae",
+    "web/hooks/rosterPlanningExecution.ts": "e5d7f6ae500b94a8f3b386a3404780bafe7ff64e109d44180dcd84298fc1a9aa",
+    "web/hooks/rosterPlanning.worker.ts": "972b6c6a798a565c68c7b92515f6c25f384b7a9518e20370af4f1866f7877783",
+    "web/hooks/useRosterPlanning.ts": "fe82194f4d8b6111e1410b452708417b43eda28f6f43823f84664cdf58f43f9b",
+    "web/hooks/useRosterPlanning.test.tsx": "eaf307542ca1ee463bdfe16d232eb04d561930395dba92b9fec10a03f083992c",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "3d7e8ac4c48fe6decde41ef48ec8606af6ce58030586fea9e0ab50f4d277e803"
+  },
+  "patchSha256": "7013599e82c6c2b8bc2512e3d95abd2b73db6d58c69c8e8c3456847c3030f001",
+  "archiveSha256": "78e986e8b065e2c07cb971b6ae654f474b52545e5caf1856a33fe4bf5785214a",
+  "snapshotFiles": 3454,
+  "checks": {
+    "lib/rosterScheduleOptimizer/providerGoalieStarts.test.ts": {
+      "receipt": "attempt-01/tests.json",
+      "passed": 4,
+      "failed": 0
+    },
+    "lib/integrations/yahoo/planningConfirmationRoute.test.ts": {
+      "receipt": "attempt-01/tests.json",
+      "passed": 8,
+      "failed": 0
+    },
+    "lib/integrations/yahoo/planningConfirmations.test.ts": {
+      "receipt": "attempt-01/tests.json",
+      "passed": 29,
+      "failed": 0
+    },
+    "hooks/useRosterPlanning.test.tsx": {
+      "receipt": "tests.json",
+      "passed": 4,
+      "failed": 0
+    },
+    "hooks/yahooPlanningReadBroker.test.ts": {
+      "receipt": "tests.json",
+      "passed": 8,
+      "failed": 0
+    },
+    "lib/rosterScheduleOptimizer/executionAdapter.test.ts": {
+      "receipt": "tests.json",
+      "passed": 51,
+      "failed": 0
+    }
+  },
+  "static": {
+    "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-trusted-yahoo-4_xzzm18/snapshot/web",
+    "results": [
+      {
+        "name": "baseline-lint",
+        "argv": [
+          "npm",
+          "exec",
+          "--offline",
+          "--no",
+          "--",
+          "eslint",
+          "audit.before-rso.tsx",
+          "--format",
+          "json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "types",
+        "argv": [
+          "npm",
+          "exec",
+          "--offline",
+          "--no",
+          "--",
+          "tsc",
+          "--noEmit",
+          "--incremental",
+          "false",
+          "-p",
+          "audit.yahoo.tsconfig.json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "lint",
+        "argv": [
+          "npm",
+          "exec",
+          "--offline",
+          "--no",
+          "--",
+          "eslint",
+          "lib/integrations/yahoo/planningConfirmations.ts",
+          "lib/integrations/yahoo/planningConfirmations.test.ts",
+          "pages/api/v1/roster-schedule-optimizer/yahoo-current-data.ts",
+          "lib/integrations/yahoo/planningConfirmationRoute.test.ts",
+          "lib/rosterScheduleOptimizer/currentPlanningRead.ts",
+          "lib/rosterScheduleOptimizer/executionAdapter.ts",
+          "lib/rosterScheduleOptimizer/executionAdapter.test.ts",
+          "lib/rosterScheduleOptimizer/privatePlanningRead.ts",
+          "hooks/yahooPlanningReadBroker.ts",
+          "hooks/yahooPlanningReadBroker.test.ts",
+          "hooks/rosterPlanningExecution.ts",
+          "hooks/rosterPlanning.worker.ts",
+          "hooks/useRosterPlanning.ts",
+          "hooks/useRosterPlanning.test.tsx",
+          "components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx"
+        ],
+        "exit_code": 0
+      }
+    ]
+  },
+  "productionCalls": 0,
+  "gitMutations": 0
+}

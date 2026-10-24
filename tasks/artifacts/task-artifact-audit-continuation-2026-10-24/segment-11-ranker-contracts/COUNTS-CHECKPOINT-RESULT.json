@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-24T18:05:19.695673+00:00",
+  "baseline_parent_ids": 189,
+  "current_parent_ids": 209,
+  "audit_added_parent_ids": 20,
+  "original_existing_materially_changed": 18,
+  "original_existing_status_corrected": 13,
+  "count_categories_overlap": true,
+  "legacy_reopened": 0,
+  "readable_children_added": 10,
+  "current_evidence_entries": 1058,
+  "library_version": 11,
+  "comparison_receipt": "COUNTS-EXPLANATION.json"
+}

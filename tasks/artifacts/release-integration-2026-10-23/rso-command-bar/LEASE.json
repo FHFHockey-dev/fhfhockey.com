@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-23T16:10:31.719048+00:00",
+  "owner": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+  "paths": [
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss"
+  ],
+  "beforeSha256": "2146ff48eb395978d485b692b91f87949b8efaf7c530e82f9b6ef3b20edd9f61",
+  "scope": "Allow planning command bar and workspace action group to wrap when content exceeds available width; no JSX/data/forecast/billing changes",
+  "testLeaseExcluded": [
+    "web/e2e/roster-schedule-optimizer.spec.ts",
+    "web/e2e/roster-schedule-optimizer-fixtures.ts"
+  ],
+  "evidence": "worker preserved connected1180x757 screenshot and normal Refresh provider click fails outsideviewport",
+  "collisionCheck": "SCSS tracked diff empty; no active ledger lease for this SCSS; test worker owns separate E2E files",
+  "status": "before edit, isolated regression planned"
+}

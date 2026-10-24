@@ -1,0 +1,657 @@
+{
+  "recordedAt": "2026-10-24T15:53:09.673672+00:00",
+  "baseHead": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "checks": [
+    {
+      "group": "candidateHashes",
+      "path": "web/lib/forge-testing-grounds/runnerContracts.ts",
+      "expected": "eaefa7e188004b89fc305f886f9673316e1650107179795d0994caea81777eeb",
+      "actual": "eaefa7e188004b89fc305f886f9673316e1650107179795d0994caea81777eeb",
+      "matches": true
+    },
+    {
+      "group": "candidateHashes",
+      "path": "web/lib/forge-testing-grounds/memoryRunStore.ts",
+      "expected": "085abad213e05d0d2a973d54197896cd54a2d72c2d218ede70b3f95d5ccb9fdc",
+      "actual": "085abad213e05d0d2a973d54197896cd54a2d72c2d218ede70b3f95d5ccb9fdc",
+      "matches": true
+    },
+    {
+      "group": "candidateHashes",
+      "path": "web/lib/forge-testing-grounds/boundedWorker.test.ts",
+      "expected": "7a4cd4194686bb16823542d35e9a49f4c6d459480ec2a1d76a0d9a91b39833eb",
+      "actual": "7a4cd4194686bb16823542d35e9a49f4c6d459480ec2a1d76a0d9a91b39833eb",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "AGENTS.md",
+      "expected": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b",
+      "actual": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "mise-en-place.md",
+      "expected": "29ea87cbf4c9addcf1d6ef6225884606ea3d7f33b36dc19377d8012f2aedd9af",
+      "actual": "29ea87cbf4c9addcf1d6ef6225884606ea3d7f33b36dc19377d8012f2aedd9af",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "tasks/TASKS/prd-forge-testing-grounds.md",
+      "expected": "33f74b0c7df68483821bcf41e3c446d0eee26f788bbd101c3a92a0087cfbdaa5",
+      "actual": "33f74b0c7df68483821bcf41e3c446d0eee26f788bbd101c3a92a0087cfbdaa5",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "tasks/tasks-prd-forge-testing-grounds.md",
+      "expected": "a0a760cabc61fe15a496b768634858171b32d6673999f3abaf4d8cbcb321c9b2",
+      "actual": "a0a760cabc61fe15a496b768634858171b32d6673999f3abaf4d8cbcb321c9b2",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/package.json",
+      "expected": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "actual": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/package-lock.json",
+      "expected": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+      "actual": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/.nvmrc",
+      "expected": "6f7ebb0460b61089c4413e5740b5e2fa196a19281886e50ab1f99b15e0aeeb21",
+      "actual": "6f7ebb0460b61089c4413e5740b5e2fa196a19281886e50ab1f99b15e0aeeb21",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/vitest.config.mts",
+      "expected": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+      "actual": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/__tests__/vitest.setup.js",
+      "expected": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+      "actual": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/tsconfig.json",
+      "expected": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "actual": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/eslint.config.mjs",
+      "expected": "47974c70d20250ef3a11d698318026e2bd172589074956e7b89885520b623af6",
+      "actual": "47974c70d20250ef3a11d698318026e2bd172589074956e7b89885520b623af6",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/node_modules/zod/v3/types.js",
+      "expected": "9763a2938f0e7f983363ef4bf6530e7583e3f2d54f8a4a6684efad58febc6e8e",
+      "actual": "9763a2938f0e7f983363ef4bf6530e7583e3f2d54f8a4a6684efad58febc6e8e",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/node_modules/zod/package.json",
+      "expected": "70eedbe34fd52385a4ae2f3e5759b19682189f0118ea73a6e7c32c677f61668e",
+      "actual": "70eedbe34fd52385a4ae2f3e5759b19682189f0118ea73a6e7c32c677f61668e",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/node_modules/vitest/package.json",
+      "expected": "3f3dc1ef7acc6ffac8d0a7f10c4460f98e36026837b57f774426d962d546d740",
+      "actual": "3f3dc1ef7acc6ffac8d0a7f10c4460f98e36026837b57f774426d962d546d740",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/node_modules/typescript/package.json",
+      "expected": "1e03325943793f3bf11667b94fca412fe5ba617c85b84c16f0474933da156baa",
+      "actual": "1e03325943793f3bf11667b94fca412fe5ba617c85b84c16f0474933da156baa",
+      "matches": true
+    },
+    {
+      "group": "dependencyHashes",
+      "path": "web/node_modules/eslint/package.json",
+      "expected": "6d8e41c2b8902fe6d6a0b7f52886c330ef8c415d98fdf1036276b7551cd3608e",
+      "actual": "6d8e41c2b8902fe6d6a0b7f52886c330ef8c415d98fdf1036276b7551cd3608e",
+      "matches": true
+    },
+    {
+      "group": "referenceHashes",
+      "path": "web/lib/routeRunner/store.ts",
+      "expected": "895d850d59b632b07017ed6b974e5909e3906320be3eb8a4c2fa367ab7cfb033",
+      "actual": "895d850d59b632b07017ed6b974e5909e3906320be3eb8a4c2fa367ab7cfb033",
+      "matches": true
+    },
+    {
+      "group": "referenceHashes",
+      "path": "web/pages/api/v1/db/route-runner-tick.ts",
+      "expected": "2847f34e0544a0f05557ddc61fd2498aa29cbb4219b2896a7799ff91830b153c",
+      "actual": "2847f34e0544a0f05557ddc61fd2498aa29cbb4219b2896a7799ff91830b153c",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "web/lib/forge-testing-grounds/runStore.ts",
+      "expected": "07f197bf59d44187a8d93c98488b711e0e28edd6ba7db80f12962a6c5628fa8c",
+      "actual": "07f197bf59d44187a8d93c98488b711e0e28edd6ba7db80f12962a6c5628fa8c",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "web/lib/forge-testing-grounds/boundedWorker.ts",
+      "expected": "9395c902111a38f2eae4723cb4b9401f4fba53f989d17a041552f9dd9b4e85ac",
+      "actual": "9395c902111a38f2eae4723cb4b9401f4fba53f989d17a041552f9dd9b4e85ac",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/EVIDENCE.json",
+      "expected": "c08fc23157f91ec231f638303ea256cadee9800a0dd0e56f8f38bc7d70423600",
+      "actual": "c08fc23157f91ec231f638303ea256cadee9800a0dd0e56f8f38bc7d70423600",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/CAPABILITIES.md",
+      "expected": "224f6f4a494595071089b4e438990b27be8c915f609fe4958cd99a49d9e32e9a",
+      "actual": "224f6f4a494595071089b4e438990b27be8c915f609fe4958cd99a49d9e32e9a",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/checks.log",
+      "expected": "2a6ddb7d68335bf5433c3d9489730fe03ec8b2dead02520b4243126897ce83a3",
+      "actual": "2a6ddb7d68335bf5433c3d9489730fe03ec8b2dead02520b4243126897ce83a3",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/OWNERSHIP.md",
+      "expected": "3cc311281f50fa43aca6ecb8e5481759708801276db921b768dc946f9b7554ac",
+      "actual": "3cc311281f50fa43aca6ecb8e5481759708801276db921b768dc946f9b7554ac",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/SOURCE-RESOLUTION-AND-NEXT.md",
+      "expected": "1431646bedd6763aec7987b3301fc740ae13f9f32817b608114bb2169bca8ede",
+      "actual": "1431646bedd6763aec7987b3301fc740ae13f9f32817b608114bb2169bca8ede",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/HANDOFF.md",
+      "expected": "9b6e58fc5b55f666e76ec60b64acac48d27f7d86dab3f74d5b3fc183be9c3ecc",
+      "actual": "9b6e58fc5b55f666e76ec60b64acac48d27f7d86dab3f74d5b3fc183be9c3ecc",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/scoped-lint.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/scoped-ts.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/DECISION-RELAY.md",
+      "expected": "adb81537d05e0dae54e4b5bae3fea89c5e73845f313be6b214d2576309fe7b8a",
+      "actual": "adb81537d05e0dae54e4b5bae3fea89c5e73845f313be6b214d2576309fe7b8a",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/REVIEW-EVIDENCE.json",
+      "expected": "7b004f7ded85745cc4d09ff60b9f0f42236e1f34f00e415e970fd3c1ef0dfb5c",
+      "actual": "7b004f7ded85745cc4d09ff60b9f0f42236e1f34f00e415e970fd3c1ef0dfb5c",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/boundaries.log",
+      "expected": "a28ceadc98cb8e792e909544c5f79735ad8322e232f5b813a8bbea18356ba4a3",
+      "actual": "a28ceadc98cb8e792e909544c5f79735ad8322e232f5b813a8bbea18356ba4a3",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/review.vitest.config.mts",
+      "expected": "7657007ee7dd216f04fc03de1f912d3b31b75aa829c3f88d42b40bf051f4cf51",
+      "actual": "7657007ee7dd216f04fc03de1f912d3b31b75aa829c3f88d42b40bf051f4cf51",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/COMMANDS.json",
+      "expected": "dea06ea812b2a7017a2476b221a764fcfa143c9d43b3b95a7f0512300a01fa9f",
+      "actual": "dea06ea812b2a7017a2476b221a764fcfa143c9d43b3b95a7f0512300a01fa9f",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/DISCOVERY-NOTES.md",
+      "expected": "e689b63d18073b37075e4ca5d517a199603010fb772b24b1ca33dc1744878472",
+      "actual": "e689b63d18073b37075e4ca5d517a199603010fb772b24b1ca33dc1744878472",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/PINS.start.json",
+      "expected": "a488844752b035c9d28185398ceb79fe7ed3251aa19a926e2bf7e88483f5e991",
+      "actual": "a488844752b035c9d28185398ceb79fe7ed3251aa19a926e2bf7e88483f5e991",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/boundaries.test.ts",
+      "expected": "3dbf09778bfcf4aab35f37c58277722ace196a7e69245b383728961a7835b8a1",
+      "actual": "3dbf09778bfcf4aab35f37c58277722ace196a7e69245b383728961a7835b8a1",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/REVIEW.md",
+      "expected": "c0fdf08158476c3a4de4bc249c63f4c51f3e4b04271b516512ac28b773f11dcb",
+      "actual": "c0fdf08158476c3a4de4bc249c63f4c51f3e4b04271b516512ac28b773f11dcb",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/SHA256SUMS",
+      "expected": "cc9a687f877b50c51c6cb4f9e5960e8f95fa42b913137ede4f6d76d4b7e93a7e",
+      "actual": "cc9a687f877b50c51c6cb4f9e5960e8f95fa42b913137ede4f6d76d4b7e93a7e",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/PINS.end.json",
+      "expected": "8eaa70a64e60bbe47d685628b2224c1cdf320da26346c564897af9ff29c45bb5",
+      "actual": "8eaa70a64e60bbe47d685628b2224c1cdf320da26346c564897af9ff29c45bb5",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/EVIDENCE.json",
+      "expected": "145aff086b26bfa3704bc5439c92af8a3db50a101e9766af0066215f56178b0b",
+      "actual": "145aff086b26bfa3704bc5439c92af8a3db50a101e9766af0066215f56178b0b",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/checks.log",
+      "expected": "25f7c0277f7851ee593d0f7b428acbca172bd1f3e420c2498b6909d2f955d13b",
+      "actual": "25f7c0277f7851ee593d0f7b428acbca172bd1f3e420c2498b6909d2f955d13b",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/OWNERSHIP.md",
+      "expected": "fac13a76ad7fa4441a82481c934f71eb885a801f89e11a67d9227838018310bd",
+      "actual": "fac13a76ad7fa4441a82481c934f71eb885a801f89e11a67d9227838018310bd",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/HANDOFF.md",
+      "expected": "ee728acb3accea0c55fe470875ed51bcd53695cfe4c4573765bc4d56318d554e",
+      "actual": "ee728acb3accea0c55fe470875ed51bcd53695cfe4c4573765bc4d56318d554e",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02/DECISIONS.md",
+      "expected": "63ac92e56275363d23cd5a222264d8fea0619213cda6734794b579b7eceb89e9",
+      "actual": "63ac92e56275363d23cd5a222264d8fea0619213cda6734794b579b7eceb89e9",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "web/lib/forge-testing-grounds/operationalProgress.ts",
+      "expected": "60fdf02b9c1480b1c3a3066e5ebf4f22254bc9c7902c154300ce77015939b5c7",
+      "actual": "60fdf02b9c1480b1c3a3066e5ebf4f22254bc9c7902c154300ce77015939b5c7",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "web/lib/forge-testing-grounds/operationalProgress.test.ts",
+      "expected": "886d74890917da528fe1c787889d274f7cf004b3061606d406d5edfa973a33fd",
+      "actual": "886d74890917da528fe1c787889d274f7cf004b3061606d406d5edfa973a33fd",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "web/lib/forge-testing-grounds/dataHealth.ts",
+      "expected": "0205a7bfd011305e4fc109de9f81f1958b9b623f8a56f79808515ddb6d24e982",
+      "actual": "0205a7bfd011305e4fc109de9f81f1958b9b623f8a56f79808515ddb6d24e982",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "web/lib/forge-testing-grounds/dataHealth.test.ts",
+      "expected": "c806bcf60ccf4c19958e9bc735213481f0239749abc2ef358d063fcb821691d3",
+      "actual": "c806bcf60ccf4c19958e9bc735213481f0239749abc2ef358d063fcb821691d3",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "web/lib/forge-testing-grounds/ownerPolicy.ts",
+      "expected": "b0de88d27e731856e37470aee46cde57cf50af351fa6cc8ebeacb070842748c5",
+      "actual": "b0de88d27e731856e37470aee46cde57cf50af351fa6cc8ebeacb070842748c5",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "web/lib/forge-testing-grounds/ownerPolicy.test.ts",
+      "expected": "9d715c4577c2e98d28f641b96c7e46c3a08d1234db62e8bf7059a89f18fc776d",
+      "actual": "9d715c4577c2e98d28f641b96c7e46c3a08d1234db62e8bf7059a89f18fc776d",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1/checks.log",
+      "expected": "dba4a11b57827348c684aea085fab4d04ed12ef6401e54a0a5d7c95b978dbdb0",
+      "actual": "dba4a11b57827348c684aea085fab4d04ed12ef6401e54a0a5d7c95b978dbdb0",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1/OWNERSHIP.md",
+      "expected": "d274433fdeda8680bff26daf92b693de93b6c0fdfbed812ee781638360e3822f",
+      "actual": "d274433fdeda8680bff26daf92b693de93b6c0fdfbed812ee781638360e3822f",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1/HANDOFF.md",
+      "expected": "a8d4e643720b7181d9cab658ab8132677acf785e6709a399816d729f699106ae",
+      "actual": "a8d4e643720b7181d9cab658ab8132677acf785e6709a399816d729f699106ae",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1/r1.vitest.config.mts",
+      "expected": "ca3e389344feba62473692f9ee90334a05d5a33cd8faf767dc94e3f35464d4c0",
+      "actual": "ca3e389344feba62473692f9ee90334a05d5a33cd8faf767dc94e3f35464d4c0",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1/EVIDENCE.json",
+      "expected": "5a1939a8530854de65e1d7764b9c3501ac7a5bbded0996e10bbad0799f6ed950",
+      "actual": "5a1939a8530854de65e1d7764b9c3501ac7a5bbded0996e10bbad0799f6ed950",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/OWNERSHIP.md",
+      "expected": "1e45f9052a054ce2c5dac3fd7b29e96fe923057e25b4736b23c08cac5c8d9f32",
+      "actual": "1e45f9052a054ce2c5dac3fd7b29e96fe923057e25b4736b23c08cac5c8d9f32",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/OPERATING-PLAN.md",
+      "expected": "5790994ce1fdc05dfd66f5d796bbf27dd09f4c8ca83f26344341e4941c2e62ae",
+      "actual": "5790994ce1fdc05dfd66f5d796bbf27dd09f4c8ca83f26344341e4941c2e62ae",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/HANDOFF.md",
+      "expected": "b5676e54cda019c6238bcf2e3bbc6a96a13f47d627a81e926efb860251da2e4a",
+      "actual": "b5676e54cda019c6238bcf2e3bbc6a96a13f47d627a81e926efb860251da2e4a",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/checks.log",
+      "expected": "a517fe9aa05f5d818a5b9861e8477c3f25ba1fbb0e12447ab3bad1c137a72c1f",
+      "actual": "a517fe9aa05f5d818a5b9861e8477c3f25ba1fbb0e12447ab3bad1c137a72c1f",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03/EVIDENCE.json",
+      "expected": "0b893e358e7a49f62c3b2f54f469b833d5e7cab9342228cb0877a1574047b650",
+      "actual": "0b893e358e7a49f62c3b2f54f469b833d5e7cab9342228cb0877a1574047b650",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.tsx",
+      "expected": "fcfaaef571427d0304b1da4a809489de0fd9cb780da915cc8dfa4ded371532c9",
+      "actual": "fcfaaef571427d0304b1da4a809489de0fd9cb780da915cc8dfa4ded371532c9",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.module.scss",
+      "expected": "d810009a51f0385837c270f59cbb7d2861050f9f59b836b608fca9847ed6cf74",
+      "actual": "d810009a51f0385837c270f59cbb7d2861050f9f59b836b608fca9847ed6cf74",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "web/lib/forge-testing-grounds/preview/previewFixtures.ts",
+      "expected": "78a34b4eb07a588b95b0f6876152f1cd3fa4527bf35a6edcec5fc63cb551ddea",
+      "actual": "78a34b4eb07a588b95b0f6876152f1cd3fa4527bf35a6edcec5fc63cb551ddea",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.test.tsx",
+      "expected": "b0387ad5842fe963a1d5f0d41a09a018c4d13b7311cebd6a7ff2dfa653be0c22",
+      "actual": "b0387ad5842fe963a1d5f0d41a09a018c4d13b7311cebd6a7ff2dfa653be0c22",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/OWNERSHIP.md",
+      "expected": "4924ca8ea4591022eb6b0684e14cb3dd601e590475506926cb5f0988d356b9e4",
+      "actual": "4924ca8ea4591022eb6b0684e14cb3dd601e590475506926cb5f0988d356b9e4",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/HANDOFF.md",
+      "expected": "82bd3607a412a99c8700c86a61e71ad11cf3d1e94bb82f1128843008a37456c3",
+      "actual": "82bd3607a412a99c8700c86a61e71ad11cf3d1e94bb82f1128843008a37456c3",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/checks.log",
+      "expected": "d227b9895cf7bd049217247a300f38c949885b26629fcc25a1bf72f048ef35aa",
+      "actual": "d227b9895cf7bd049217247a300f38c949885b26629fcc25a1bf72f048ef35aa",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/render-preview.mjs",
+      "expected": "e9f769fd3781aa90a5959d54f6b2926b4354603a4fece3c7ff8aa9ec317e4ad7",
+      "actual": "e9f769fd3781aa90a5959d54f6b2926b4354603a4fece3c7ff8aa9ec317e4ad7",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/preview.html",
+      "expected": "cfe211db8833cbd2b566c9c1b43a0bf8da7abd21b7df63b1756ca2bbdebea15c",
+      "actual": "cfe211db8833cbd2b566c9c1b43a0bf8da7abd21b7df63b1756ca2bbdebea15c",
+      "matches": true
+    },
+    {
+      "group": "protectedHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/EVIDENCE.json",
+      "expected": "bb18262350fc13cb6a92b9bfdbe1f8357272031f1de0359ddc831b0825ebbadf",
+      "actual": "bb18262350fc13cb6a92b9bfdbe1f8357272031f1de0359ddc831b0825ebbadf",
+      "matches": true
+    },
+    {
+      "group": "reviewerEvidenceHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/scoped-lint.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matches": true
+    },
+    {
+      "group": "reviewerEvidenceHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/scoped-ts.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "actual": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matches": true
+    },
+    {
+      "group": "reviewerEvidenceHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW-EVIDENCE.json",
+      "expected": "aa95765164d69065409cb889068137c036f66117611cfc4b4ad2509982936497",
+      "actual": "aa95765164d69065409cb889068137c036f66117611cfc4b4ad2509982936497",
+      "matches": true
+    },
+    {
+      "group": "reviewerEvidenceHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/boundaries.log",
+      "expected": "b2e9a58e7569d031af36d0d5668d6453f5d63ff0cfb6f6983b0cef2dceba8bd9",
+      "actual": "b2e9a58e7569d031af36d0d5668d6453f5d63ff0cfb6f6983b0cef2dceba8bd9",
+      "matches": true
+    },
+    {
+      "group": "reviewerEvidenceHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/review.vitest.config.mts",
+      "expected": "f1356b48be396212e2f249e9b1db4da6819352f1a3284a56d316a94d8308abea",
+      "actual": "f1356b48be396212e2f249e9b1db4da6819352f1a3284a56d316a94d8308abea",
+      "matches": true
+    },
+    {
+      "group": "reviewerEvidenceHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/COMMANDS.json",
+      "expected": "21c787b3f3e78118fab3e2f3025b29c34002cd3384a647888e4f3cc4631b89e5",
+      "actual": "21c787b3f3e78118fab3e2f3025b29c34002cd3384a647888e4f3cc4631b89e5",
+      "matches": true
+    },
+    {
+      "group": "reviewerEvidenceHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/PINS.start.json",
+      "expected": "620bd1cd4a8ea0390b29bee4994116858f6e384d7fb0ae1fdd529c29a82dd6cb",
+      "actual": "620bd1cd4a8ea0390b29bee4994116858f6e384d7fb0ae1fdd529c29a82dd6cb",
+      "matches": true
+    },
+    {
+      "group": "reviewerEvidenceHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/boundaries.test.ts",
+      "expected": "e6f8977031483e7bd6a0d1a3acecacefd6360a9f8c71e8d45a0bbe4846e7703f",
+      "actual": "e6f8977031483e7bd6a0d1a3acecacefd6360a9f8c71e8d45a0bbe4846e7703f",
+      "matches": true
+    },
+    {
+      "group": "reviewerEvidenceHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW.md",
+      "expected": "41f48c946e65bc2cac404d356aa03b748a3836910bb4154225206d2be6421f80",
+      "actual": "41f48c946e65bc2cac404d356aa03b748a3836910bb4154225206d2be6421f80",
+      "matches": true
+    },
+    {
+      "group": "reviewerEvidenceHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/SHA256SUMS",
+      "expected": "b77edae6f89e7858b28e689e9764a8d38b1fc130764476778dcd470030783d7b",
+      "actual": "b77edae6f89e7858b28e689e9764a8d38b1fc130764476778dcd470030783d7b",
+      "matches": true
+    },
+    {
+      "group": "reviewerEvidenceHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/PINS.end.json",
+      "expected": "63e7afec892cb2cadafefe6b04f263efb18a207de60ef3ab898af67445390f96",
+      "actual": "63e7afec892cb2cadafefe6b04f263efb18a207de60ef3ab898af67445390f96",
+      "matches": true
+    },
+    {
+      "group": "artifactHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/OWNERSHIP.md",
+      "expected": "6128e51660f064314b7dd627507eaeed9e5e05de0d0fd39f078695ba1c97006d",
+      "actual": "6128e51660f064314b7dd627507eaeed9e5e05de0d0fd39f078695ba1c97006d",
+      "matches": true
+    },
+    {
+      "group": "artifactHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/HANDOFF.md",
+      "expected": "944706d9da7f935a6f67fe4753790bf7eef25013d696673716c95dcbc0a75124",
+      "actual": "944706d9da7f935a6f67fe4753790bf7eef25013d696673716c95dcbc0a75124",
+      "matches": true
+    },
+    {
+      "group": "artifactHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/checks.log",
+      "expected": "7c807bf1c5a0d9f12469e5cdc2778eca5a6a08409c3c363b10410c2bb6f1aa2c",
+      "actual": "7c807bf1c5a0d9f12469e5cdc2778eca5a6a08409c3c363b10410c2bb6f1aa2c",
+      "matches": true
+    },
+    {
+      "group": "artifactHashes",
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/r1.vitest.config.mts",
+      "expected": "1f4ae65339249df411ba49cb8eb7fed981377dc83769cf81777ce4dc7ad7b756",
+      "actual": "1f4ae65339249df411ba49cb8eb7fed981377dc83769cf81777ce4dc7ad7b756",
+      "matches": true
+    }
+  ],
+  "explicitReceiptChecks": [
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/HANDOFF.md",
+      "expected": "944706d9da7f935a6f67fe4753790bf7eef25013d696673716c95dcbc0a75124",
+      "actual": "944706d9da7f935a6f67fe4753790bf7eef25013d696673716c95dcbc0a75124",
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/EVIDENCE.json",
+      "expected": "c35fb395b92cfc094270617b3d42150476cd7a0ab0191df00e691ea8aec83fa9",
+      "actual": "c35fb395b92cfc094270617b3d42150476cd7a0ab0191df00e691ea8aec83fa9",
+      "matches": true
+    }
+  ],
+  "beforePinChecks": [
+    {
+      "path": "web/lib/forge-testing-grounds/runnerContracts.ts",
+      "declaredBefore": "ef89705e25178ec2f0670d27904829c1fdfb1f45cb74521b886267c0e746e23d",
+      "originalPin": "ef89705e25178ec2f0670d27904829c1fdfb1f45cb74521b886267c0e746e23d",
+      "matches": true
+    },
+    {
+      "path": "web/lib/forge-testing-grounds/memoryRunStore.ts",
+      "declaredBefore": "85dbf24a1110c619f58d3a7e56b99661a55b3328132607c6d7a6c15cc2d8b9c0",
+      "originalPin": "85dbf24a1110c619f58d3a7e56b99661a55b3328132607c6d7a6c15cc2d8b9c0",
+      "matches": true
+    },
+    {
+      "path": "web/lib/forge-testing-grounds/boundedWorker.test.ts",
+      "declaredBefore": "960ee0ffa1457f21281179af325518f315eb56840096d9a7ae1187b456715363",
+      "originalPin": "960ee0ffa1457f21281179af325518f315eb56840096d9a7ae1187b456715363",
+      "matches": true
+    }
+  ],
+  "slice04Scope": "Protected hash verification only; no UI code review/test."
+}

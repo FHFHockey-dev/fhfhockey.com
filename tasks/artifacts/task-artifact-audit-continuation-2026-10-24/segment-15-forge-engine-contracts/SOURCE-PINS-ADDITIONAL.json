@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-24T19:00:00.412679+00:00",
+  "files": [
+    {
+      "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+      "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
+      "bytes": 59363,
+      "lines": 287,
+      "mtime_ns": 1792348998389112160
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md",
+      "sha256": "42b41559b1561854dc410fe7222433a3c2135498a6eb7ef583cb694839f5b5e6",
+      "bytes": 71353,
+      "lines": 1258,
+      "mtime_ns": 1792348998389282827
+    }
+  ]
+}

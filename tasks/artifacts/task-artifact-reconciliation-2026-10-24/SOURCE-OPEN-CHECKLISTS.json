@@ -1,0 +1,937 @@
+[
+  {
+    "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+    "line": 199,
+    "text": "- [ ] NEW 17.0 Rotate sensitive credentials that were exposed during auth setup and debugging"
+  },
+  {
+    "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+    "line": 200,
+    "text": "- [ ] NEW 17.1 Rotate the Supabase service-role key and any other exposed Supabase secrets."
+  },
+  {
+    "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+    "line": 201,
+    "text": "- [ ] NEW 17.2 Rotate exposed third-party credentials, including Yahoo, Resend, database, and Google service-account secrets."
+  },
+  {
+    "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+    "line": 202,
+    "text": "- [ ] NEW 17.3 Update local and deployed environment configuration with the rotated values and verify dependent integrations still work."
+  },
+  {
+    "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+    "line": 344,
+    "text": "- [ ] NEW 46.0 **P2 OAuth PKCE migration dependency:** the browser client explicitly uses `flowType: \"pkce\"`; callback/reset routes exchange code responses, retain token-hash compatibility, scrub credential-bearing locations before processing, preserve safe return paths, and now fall back to credential-free hard navigation when post-auth router replacement rejects. The focused AuthForm/callback/reset/location/client group passes 5 files and 35/35 tests (2026-08-01). Hosted Confirm signup/Reset Password templates use `RedirectTo`/`TokenHash`; the authorized Production `dpl_47AFWu6itJvqzrpeWkd1fTuQkVjq` passed fresh value-free confirmation and recovery completion, including confirmed-user/profile/settings readback, password update/sign-out, and zero-residual cleanup. Current Google verification reached the expected Google OAuth identifier page with only parameter-name evidence; full provider completion remains intentionally open under the no-provider boundary before retiring legacy fragment compatibility."
+  },
+  {
+    "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+    "line": 357,
+    "text": "- [ ] NEW 51.0 **P1 legacy mailbox plaintext-credential retention:** a bounded Sent Items verification for an unrelated support reply unexpectedly exposed older messages containing plaintext credential material. Do not repeat, copy, test, or reuse any value. Treat the already-rotated FHFH password family as contained under NEW 48, identify the owner/system for every other affected credential without persisting values, verify each is retired or rotate and contain it, then obtain explicit owner approval before deleting the source messages and any recoverable mailbox copies. A follow-up metadata-only inventory found four candidate messages\u2014one `FHFH` subject from 2025 and three `fhfhockey.com` developer-account subjects from 2022\u2014sent only to a Gmail-domain recipient; no body, value, message ID, address, or link was read or persisted. Metadata cannot identify the exact provider/system or prove retirement, so obtain an owner-supplied redacted system/owner/status mapping before any rotation or deletion. No credential, session, provider, or message changed (updated 2026-07-21)."
+  },
+  {
+    "path": "tasks/TASKS/auth-user-settings-platform/tasks-prd-auth-user-settings-platform.md",
+    "line": 362,
+    "text": "- [ ] NEW 55.0 **P2 browser roles hold full grants on provider-linkage tables (2026-10-17 completion audit):** `anon` and `authenticated` hold ALL privileges, including TRUNCATE and TRIGGER, on `connected_accounts`, `external_leagues`, `external_teams`, `provider_sync_runs`, `user_entitlements` and `user_provider_preferences` (baseline l.43635-44659). The owner `insert_own` policy plus `idx_connected_accounts_provider_user_id_unique` (baseline l.34074) lets any signed-in user insert a row that squats another person's `(provider, provider_user_id)`, so the real owner's Patreon/Yahoo link fails with 23505. The browser only reads `connected_accounts` (`AccountSettingsPage.tsx:880,1025`). Cross-referenced by master NEW-028 (6.3). Close with a reviewed grant-tightening migration and a read-only production grant check. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G1-auth-draftranker.md`. _(Partial 2026-10-19: approved migration20261019052934 and dated grant readback cover connected_accounts,external_leagues,external_teams,provider_sync_runs only. user_entitlements and user_provider_preferences retain the source grant gap; legitimate owner preference upserts must be preserved. This row remains open for the fenced two-table repair and authorized effective-grant receipt.)_ [Precise proposal](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/continuation-review/R-RECEIPTS.md)."
+  },
+  {
+    "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md",
+    "line": 264,
+    "text": "- [ ] NEW 21.0 **P3 ranking reader lost entity and limit pushdown (2026-10-17 completion audit):** `a5ba66196` (in production) removed the `entityIds` DB filter and `limit` pushdown from `web/lib/rankings/entityMetricRankingReader.ts:233-252`; the reader now pages the full snapshot per metric and re-ranks in process. This is a deliberate full-cohort correctness fix, but it contradicts \"read only needed entity ids\" and the 6.1/6.2 sub-2-second budgets need re-measuring. Supersedes 4.2. Close by re-measuring and recording the accepted cost model, or restoring a correct pushdown. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md`. _(Local progress 2026-10-19: the actual-reader synthetic envelope now records100/1,000/10,000entities and up to8metrics with cold/warm and hydrated/unhydrated cases. Metadata hydration reuses the already-ranked output; Chef24reader tests plus16complete response comparisons and36unchanged workload pairs pass. Full-cohort query/rank semantics remain intact. This is local measurement, not accepted hosted cost or a production latency budget; the row stays open.)_ [Measured limits](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/continuation-cost/R-COST-HANDOFF.md)."
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+    "line": 208,
+    "text": "- [ ] NEW 12.0 **P2 report schedule and active inventory drifted from the closed rows (2026-10-17 completion audit):** pg_cron job 234 (`daily-cron-report`, 21:15 UTC) is inactive live (working-tree `tasks/TASKS/cron-operations/cron-schedule.md`, owner disable, last run 2026-10-15), so the only daily report is the Vercel `0 13 * * *` cron (`web/vercel.json`, since `c7a7b30c90`). At HEAD and in production the doc still lists job 234 as active, and active jobs 394 `player-forecasts-daily-seed`, 396 `player-forecasts-settlement` and 397 `player-forecasts-queue-drain` are absent from the inventory, so the report can never flag them missing. Supersedes 1.4 (C0005), 1.6 (C0007) and 3.2 (C0017). Close by recording the owner's report schedule in the rows and reconciling the inventory with the live `cron.job` set. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G2-cron-ops-lines.md`."
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+    "line": 138,
+    "text": "- [ ] NEW 7.0 **P2 frozen cron inventory and its fail-closed gate are out of sync with production (2026-10-17 completion audit):** The live `cron.job` snapshot (`tasks/artifacts/ops-health-2026-10-17/live-cron-job-2026-10-17.json`) has 58 active jobs against 55 in `cron-schedule.md`; jobs 394/396/397 are missing; `web/vercel.json` has 27 crons at HEAD and in production, not the 20 cited by master 5.1/5.1.1; and the Vercel crons sit outside the pg_cron-only audit/auth freeze. `web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:72-86` now fails (expects 47 routes / 51 jobs / 12 internal-server callers; the tree yields 46/50/11 after job 234 was disabled). Supersedes master 5.1.1 and the 6.5 report-ordering row (C0042, report now runs at 13:00 UTC, so evening jobs fall into the next day's report). Close with a reconciled inventory, updated freeze expectations and a gate that covers Vercel crons. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G2-cron-ops-lines.md`. _(Local partial 2026-10-19: the static Vercel gate retains all27configured entries across18normalized routes, with14reviewed adminOnly and4route-specific exact-secret source forms. Three unowned hourly integration routes now have auth-first invocation audits with safe primitive previews, honest aggregate-failure status and null row metrics. Fourteen routes/23entries are audit-qualified; starter-board,yahoo-live-draft,replay-player-aliases and update-drafted-prospects remain explicitly unqualified with Claude. Existing pg_cron46-route/50-job coverage is preserved; Chef independently passes59route/static cases plus18shared-wrapper cases. This is local source/mocked evidence only. Current hosted inventory/schedule parity and four audit-owner qualifications remain open.)_ [Local gate receipt](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/continuation-review/R-VERCEL-GATE-HANDOFF.md). [Hourly invocation receipt](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/continuation-review/R-PROVIDER-CRON-AUDIT-HANDOFF.md)."
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+    "line": 139,
+    "text": "- [ ] NEW 8.0 **P2 active jobs run before the 3:00 AM Eastern floor (2026-10-17 completion audit):** About a dozen active jobs start before 08:00 UTC: jobs 3/5/6/7 at 00:00-03:00 UTC, 271 at 04:00, 233/79/9/8/14/16/248/23 between 07:20 and 07:55, plus the `*/20` and `*/25` jobs 2 and 1. `cron-schedule.md` timeline L713-728 lists 02:20-02:55 EST and its \"03:00 EST Floor Cluster\" header is stale; the PRD requires 3:00 AM EST (`prd-cron-audit-and-schedule-optimization.md:68,103`). Supersedes 6.1 (C0038). Close by rescheduling or recording an owner-approved exception. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G2-cron-ops-lines.md`. _(Owner policy partial 2026-10-19: TJ chose3AMlocalEastern for the daily batch only, with recurring freshness jobs excluded. America/New_York therefore implies08:00UTC in EST and07:00UTC in EDT, not a fixed08:00UTC year-round floor. Disposition of the13enumerated fixed daily schedules is still pending; NEW8/C0045 remains open. No configuration/scheduler change or current hosted verification occurred.)_ [Reviewed exception packet](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/continuation-review/R-CRON-FLOOR-PROPOSAL.md)."
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md",
+    "line": 99,
+    "text": "- [ ] NEW 6.0 **P1 sustainability baselines failure hides partial writes (2026-10-17 completion audit):** At HEAD and in production `web/pages/api/v1/db/rebuild-baselines.ts` keeps `processed` inside `try`, so a failed run returns no write receipt. On 2026-10-17 the baselines run timed out with about 400 of ~968 rows written and nothing reported (ops-health OPS-02); job 374 (10:41) also overlapped the baselines run (10:40-10:41). The `rowsUpserted`/`partialWrite` receipt and the 10:38 reschedule are uncommitted. Supersedes 3.4 (C0019); the same tree's failing wrapper test also contradicts master 5.1.2 (tracked in the schedule list's NEW 7.0). Close when the receipt fix ships and one natural run reports committed batches. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G2-cron-ops-lines.md`."
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+    "line": 3,
+    "text": "- [ ] **NST-CATCHUP-21S \u2014 Optimize NST catch-up within 21-second pacing.** Sole implementation owner: `01a12abf-7e8b-775f-8139-163832d740f9`. Preserve at least 21 seconds between aggregate NST unique-URL requests and, conservatively, retries; no parallel-request or shared-key bypass. Focus on durable continuation/checkpoints, idempotency, redundant-fetch avoidance and realistic work/audit budgets. The existing two-file private claim is `web/pages/api/v1/db/update-nst-gamelog.ts` and `web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts`; additional shared paths need a separate collision check. The immutable 39-page burst candidate `nst-catchup-local-fix-v1` (manifest `ac1a37d0eaa2b0f5de6b313227870ea7d1813027084356be0fb81b975d1c5595`) is **SUPERSEDED: no acceptance or canonical application**. Thirty-nine spaced requests require at least 798 seconds before fetch/write latency, exceeding the 240-second function budget. A replacement must preserve the full resumable queue, confirmed-write bookmark ordering, deferred work and honest incomplete/coverage-unknown/audit outcomes; a nominal audit reserve is not a bound on uncancellable database latency. `deferredUrls` is per-run unattempted scope, not cumulative backlog, and the overnight difference does not establish an arrival rate. Return a compliant private candidate and bounded continuation/scheduling proposal for independent review. Canonical route/test application, shared pacing implementation, cron changes, provider calls, production repairs, credentials and release remain separately held. Existing task IDs, checkboxes and evidence are preserved."
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+    "line": 200,
+    "text": "- [ ] NEW 72.0 **P1 recurring natural route-audit observation gap after a prior clean report:** The non-preview Production `daily-cron-report` at `2026-08-04T13:00:32.210549Z` returned HTTP `200`/success with `59/59` scheduled activity and `jobsMissingLast=0`, but `warnMissingAudit=4` for `update-standings-details`, `update-nst-goalies`, `update-nst-team-daily`, and `update-nst-team-daily-incremental`. Read-only SQL confirms successful scheduler submissions for jobs `43/99/275/328` but no matching `cron_job_audit` rows; all four local routes still export `withCronJobAudit(adminOnly(...))`, and the affected wrapper/report cohort passes `28/28`. Keep open for a correlated deployed route receipt or approved runtime correction; do not invoke routes or mutate schedules/data (discovered 2026-08-04)."
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+    "line": 202,
+    "text": "- [ ] NEW 73.0 **P1 the NEW 61.0 owner/order gate never modelled job 374 or batch completeness (2026-10-17 completion audit):** The ordered sustainability chain claimed by NEW 61.0 still drops work: `web/lib/sustainability/incremental.ts:34-62` (HEAD and production, since `fbaf45caa`) skips the offset-250 and offset-500 score pages as `source_already_processed` after offset 0 writes, leaving about 250 skaters scored on 10-12 through 10-17 (OPS-01), and job 374's refresh (10:41) overlapped the baselines run (10:40-10:41). The score-batch defect is owned by `three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md` NEW 17.0; this row owns the scheduler order. Supersedes NEW 61.0 (C0065). Close when the shipped fix plus a natural non-overlapping chain receipt are recorded. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G2-cron-ops-lines.md`."
+  },
+  {
+    "path": "tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md",
+    "line": 116,
+    "text": "- [ ] NEW 10.0 **P3 the four-window NST model is still the enforcement engine (2026-10-17 completion audit):** `web/lib/cron/nstRateLimitPolicy.ts:24-29` still defines the 40/80/100/180 windows that `assessNstRequestPlan` (L60-100), `canBurstNstRequests` and `requestBudget.ts:5,99-105` enforce; the token constants (L31-40) only feed `burstPageCap`. `nstBurstPlans.ts:170` (`7f094c8e6`) lets gamelog burst at 0 ms for up to 40 requests, past `NST_MAX_BURST_REQUESTS` = 39, and the cross-job ledger is a local `tmpdir()` file (`requestBudget.ts:68-70`) that does not coordinate Vercel instances. Supersedes 4.1 (C0022). Close by replacing the model or recording the retained design. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G2-cron-ops-lines.md`."
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+    "line": 256,
+    "text": "- [ ] NEW 127.0 **P2 dependency cache and generated artifacts were committed again (2026-10-17 completion audit):** `7f094c8e6` (2026-10-17, octoberBranch only) added 482 tracked files / ~79 MB of an npm `_cacache` under `tasks/artifacts/security-audit-sprint-2026-10-15-0512/approved-dependency-audit/cache/`, raising the largest blob from 13,264,504 to 25,647,967 bytes; Playwright `.last-run.json`/`error-context.md` are tracked under `output/ui-acceptance-20261002/` and `tasks/artifacts/forge-rso-completion-2026-10-15/` (`output/**` is not ignored), and eight `supabase/.temp/cli-latest` files under `tasks/ifttt-integration-2026-10-16/`. Matches release-ledger request C2. Supersedes C0032, C0039 and C0042 and the history-hygiene clause of master 4.11 and 5.7.24. Close by untracking (or an approved rewrite) before release, with ignore rules. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G8-draft-yahoo-cleanup-drm.md`."
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 113,
+    "text": "- [ ] NEW 20.0 **P1 \u2014 Reconcile the two active `shift_charts` producer contracts and repair incomplete history.** Local containment now uses generated-schema completeness plus the exact paginated raw-shift player manifest, separates projection strength ownership from DRM relationship fields, normalizes numeric assignments/game types, deterministically pages positions, handles playoff OT, validates every shift-bearing PBP timeline and interval fail-closed, and invalidates only strength-owned columns before exact current-player replacement. The bounded inventory remains 14,976 relationship-incomplete rows/392 games and 12,279 current-season strength-incomplete rows/329 games. Keep open until one authoritative relationship materializer, transactional/versioned producer boundary, bounded history repair, production deployment, and rollback evidence are approved and verified. Raw/aggregate readers must continue exposing incomplete rows as partial/error rather than truthful zero. [Discovered during NEW 10/19; shared B-DRM/FORGE/cron dependency; local evidence 2026-07-19.]"
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 116,
+    "text": "- [ ] NEW 23.0 **P1 \u2014 Fail the derived-strength pipeline closed on incomplete player rows.** Local builders now reject incomplete clocks, identities, situations, PBP, and exact raw-player coverage; clear the requested game\u2019s prior team/player derived scope before rebuilding; stop the team/goalie dependency chain after failure; and retain the failed date as the resume cursor. Focused stale-player, nullable-metric, zero-clock, stage-order, and cursor regressions pass. Keep open until an exact durable derived-status/version gate, transactional replacement/serialization, production deployment, and bounded stale-history proof prevent partial multi-game/date reads. [Discovered during NEW 20; shared B-DRM/FORGE dependency; local evidence 2026-07-19.]"
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 117,
+    "text": "- [ ] NEW 24.0 **P1 \u2014 Give scheduled projection ingestion a durable completed-game window and cursor.** Local routes now default to the prior completed UTC slate, process every same-date game unless an explicit bound is supplied, accept deterministic date/game cursors, retain the exact failed date/game, and pass greater-than-six-game continuation regressions. Keep open because the cursor is response-only and the production jobs still require coordinated durable cursor storage/commands, deployment, bounded retry/runtime proof, and natural-run evidence. [Discovered during NEW 20; shared B-DRM/FORGE/cron dependency; local evidence 2026-07-19.]"
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 118,
+    "text": "- [ ] NEW 25.0 **P1 \u2014 Replace PBP presence with completeness and freshness semantics.** Final metadata, positive unique event IDs, more than terminal-only coverage, exactly one `game-end`, prevalidated shifts, exact PBP replacement, source fingerprints, shared per-game lock/versioned RPC, rollback/concurrency, deployed one-game production publication, and physical no-DML replay now pass. Keep open because active job 104 can still bypass the manifest through NEW 27 and no bounded historical/backfill verification has run. [Discovered during NEW 20; shared B-DRM/FORGE dependency; updated evidence 2026-07-21.]"
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 119,
+    "text": "- [ ] NEW 26.0 **P1 \u2014 Exact-replace relationship-owned `shift_charts` scope on corrected source snapshots.** Shared-lock/current-input CAS, relationship-only field clearing, strength preservation, exact current-player replacement/count receipt, source-correction/removal, rollback, idempotency, and one bounded production canary/replay now pass. Keep open for bounded affected-history repair, active canonical scheduler proof, natural writer evidence, and final legacy-owner retirement under NEW 20/27/29/38. [Discovered during the authorized Option-A producer audit; root dependency NEW 20; updated evidence 2026-07-21.]"
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 120,
+    "text": "- [ ] NEW 27.0 **P1 \u2014 Eliminate the active legacy PBP writer collision.** Exact authoritative checkpoint `58cca4e31e44981df3e3089b6ebd6f0cb1d20139` makes `update-PbP` one outer `adminOnly` plus audited compatibility adapter: `recent`, bounded/start-only/current-day, and exact ten-digit game requests delegate to the named unwrapped canonical input transaction; exact IDs resolve through the authorized request client and select only that game; invalid methods/IDs/lookups fail closed. The auth inventory is 20 admin-or-cron / 1 exact-cron-only / 31 unprotected and the focused 7-file/55-test group plus TypeScript passes. `games=all` intentionally remains the authenticated legacy writer for one release. Keep open for value-free/manual/untracked caller inventory, a replacement bounded backfill decision, guarded deployment, and job-104 previous-slate/exact-game/auth/non-writing/timing probes under temporary deactivation because its 100-second caller timeout is shorter than the canonical handler's 270-second default; require rollback/reactivation gates and final legacy retirement. [Discovered during the authorized Option-A producer audit; published remediation 2026-07-21.]"
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 122,
+    "text": "- [ ] NEW 29.0 **P1 \u2014 Make normalized Gamecenter scopes exact and version-addressable.** Immutable raw payloads already carry content hashes, but normalized roster/PBP/shift writes are upsert-only, so upstream removals can survive and poison the expected player/event manifest used by DRM, xG, underlying stats, and team-unit TOI. Under the same per-game lock, bind normalization to the latest immutable raw hashes, exact-replace each normalized game scope, publish parser/source fingerprints and exact counts, and prove correction-with-removal, bounded affected-history repair, downstream xG/TOI compatibility, rollback, and idempotency. [Discovered during the authorized Option-A producer audit; root dependency NEW 25; cross-initiative finding, 2026-07-20.]"
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 125,
+    "text": "- [ ] NEW 32.0 **P1 \u2014 Add expected input-version CAS to every dependent transaction.** Relationship and derived clients/RPCs carry and verify the input hash plus version under the shared game lock and final update predicate. Isolated ABA/version-race proof and the deployed production canary/replays pass. Keep open solely until NEW 27/29 contain every physical source writer that can otherwise mutate inputs without advancing the canonical version. [Discovered during NEW 28 contract review; updated evidence 2026-07-21.]"
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 126,
+    "text": "- [ ] NEW 33.0 **P1 \u2014 Keep the scheduled relationship queue on the authoritative latest-started season during the offseason.** The route uses shared server `getCurrentSeason()`; direct server and implicit-route tests prove a future season is excluded and the latest-started season ID reaches the paginated game query after the current season has ended. Keep open until a deployed bounded implicit-queue probe proves the same season with unchanged exact schedules. [Discovered during scheduled-queue review 2026-07-20; local behavioral proof 2026-07-21.]"
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 130,
+    "text": "- [ ] NEW 37.0 **P2 \u2014 Make relationship scheduling algorithm-version aware.** Local status reads include the stored relationship algorithm; a shared-selector route test proves a completed v2 row is queued and reaches the per-game processing path under the current v3 materializer. Keep open for a value-free legitimate candidate preflight plus one bounded deployed implicit-queue writer proving v3 publication, unchanged input identity, truthful audit, and zero unrelated mutation. [Discovered 2026-07-20; local behavioral proof 2026-07-21.]"
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 131,
+    "text": "- [ ] NEW 38.0 **P1 \u2014 Put the canonical relationship transaction in the active schedule and enforce input \u2192 relationship \u2192 derived order.** Local `run-projection-v2` now executes canonical input \u2192 relationship \u2192 derived with fail-stop/status gating, and job 16's `update-shifts?action=all` target is a compatibility adapter rather than a separate legacy implementation. Keep open because production schedules still run job 16 before input and cross-provider ownership is unresolved under NEW 49/50; require one authoritative cutover, rollback metadata, exact natural-order evidence, and final owner retirement through NEW 20/26/27. [Discovered 2026-07-20; local-order correction 2026-07-21.]"
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 132,
+    "text": "- [ ] NEW 39.0 **P1 \u2014 Make scheduled backlog/cursor identity durable across explicit coordinator arguments and day boundaries.** Implicit coordinator runs now preserve the input durable queue, resume the oldest unfinished input backlog, avoid explicit date/`maxGames` bypass, and stop downstream stages on failure. The owner-approved lifecycle uses per-game manifests plus stage-local cursors/leases and adds no global operation identity. Keep open for deployed next-day/stage-recovery and natural-run proof. [Discovered 2026-07-20; local-state correction 2026-07-21; ownership decision 2026-07-30.]"
+  },
+  {
+    "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+    "line": 183,
+    "text": "- [ ] NEW 86.0 **P1 same-name Yahoo collision aborts `update-shift-charts` (14 of 14 days failed) (2026-10-17 completion audit):** At HEAD and in production `web/pages/api/v1/db/shift-charts.ts:742` takes the first `yahoo_positions` row whose `full_name` matches, ordered by ascending `player_key` (`fetchAllPlayerPositions`, L632-650); the two Elias Petterssons make `resolveRelationshipPlayerPosition` (`web/lib/projections/relationshipPlayerPosition.ts`) throw `Conflicting relationship position` and abort the whole run (OPS-03: failed 10-04 to 10-17). The same lookup can silently pick a wrong-player or stale-season position for same-name skaters. `selectRelationshipYahooPosition` and its tests exist only as uncommitted changes. Supersedes NEW 48.0 (C0074) and the relationship-position closure in master 4.13. Close when the fix ships and a natural run succeeds. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G8-draft-yahoo-cleanup-drm.md`."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md",
+    "line": 66,
+    "text": "- [ ] Exercise a real authenticated Yahoo or ESPN provider session in the browser. Provider hooks, workflow logic, and live-panel components pass their local tests; no external account was used for this refactor."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md",
+    "line": 67,
+    "text": "- [ ] Design the detailed two-view settings experience shown beyond the requested foundation."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md",
+    "line": 109,
+    "text": "- [ ] NEW 15.0 **P3 Player Pickup reintroduced raw colors (2026-10-17 completion audit):** `web/components/GameGrid/PlayerPickupTable/PlayerPickupTable.module.scss:1748-1763` (`.yahooContext`, from `f90bb13cd`, 2026-09-17, in production) uses `rgba(255,255,255,0.16/0.25)`, `#77cfff`, `#20252d` and `#10384e`, so the zero-literal-white/black and empty raw-color scans no longer hold. Supersedes 4.4 (C0023), 8.1 (C0041) and the raw-color clauses of master 4.10 and 5.7.19. Close by moving the colors to shared tokens and re-running the scoped scan. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md`."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+    "line": 101,
+    "text": "- [ ] 6.0 Add operational scheduling, retries, and observability"
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+    "line": 105,
+    "text": "- [ ] 6.4 Make historical backfill resumable/idempotent with bounded date/player scopes and machine-readable telemetry; do not treat local log files as the sole operational record. The legacy endpoint does request genuine week-scoped ownership, but the canonical catalog contains no league identity: every `yahoo_game_keys.leagues` value is an empty array, connected-account storage contains nine distinct 2025 league keys, and it contains no older-season league. Do not choose one arbitrarily or port the fixed 2024/2025 IDs; require controlled provider discovery/equivalence evidence before finalizing the durable TypeScript cursor (verified read-only 2026-07-30)."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+    "line": 122,
+    "text": "- [ ] 8.0 Execute staged verification and synchronize the initiative"
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+    "line": 126,
+    "text": "- [ ] 8.3 Run staging/provider controlled verification only through a checkpoint; record counts without storing credentials or sensitive provider payloads."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+    "line": 127,
+    "text": "- [ ] 8.4 Reconcile one bounded end-to-end path from Yahoo source through history/mapping to Draft Dashboard/player visibility."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+    "line": 128,
+    "text": "- [ ] 8.5 Update the PRD, this list, auth/provider tasks, Draft Dashboard list, cron docs, runbook, and master ledger with final evidence."
+  },
+  {
+    "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+    "line": 139,
+    "text": "- [ ] NEW 9.5 **P1 incomplete ingestion lifecycle and fixed-season scheduling:** canonical metadata/weeks now defaults to Yahoo's `nhl` alias and atomically versions a complete normalized snapshot through service-only migration `20260730195000`; canonical player detail owns bounded complete Yahoo provider pagination plus deterministic active-scope Supabase paging and lifecycle-specific alert telemetry. Fresh local execution proves both snapshot RPCs' service-only grants, rollback-zero residue, idempotent replay, correction/removal, and two-session per-game serialization. An exact 12-job fixture proves the applied scheduler migration deactivates six duplicate owners, retains five distinct jobs, removes fixed `gameId=465`, and makes sheet export receipt-gated inside the player lifecycle. The required Production predeploy migrations are applied and read back in the hosted ledger. Keep open for controlled provider runtime/league discovery, legacy Python ownership retirement, and resumable historical backfill; do not select one of nine connected-account 2025 leagues as the global history owner without equivalence proof (updated 2026-07-31)."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md",
+    "line": 143,
+    "text": "- [ ] NEW 9.0 **P3 the canonical Command Center renders raw request details (2026-10-17 completion audit):** `web/lib/dashboard/clientFetchCache.ts:36` throws `Request failed (${status}) for ${url}`, `commandCenterData.ts:173-176` returns it as `module.error` and `components/forge-command-center/CommandCenterShell.tsx:155,172` renders it; `web/__tests__/pages/forge/command-center.test.tsx:420-455` asserts it. NEW 8.0's stable copy exists only on the legacy cards, which are now unreachable. Supersedes NEW 8.0 (C0048) and master 5.4.3. Close with stable module copy on the canonical surface and an updated test. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5b-forge-dashboards-trends.md`."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md",
+    "line": 144,
+    "text": "- [ ] NEW 10.0 **P3 the full dashboard these rows describe is now a redirect (2026-10-17 completion audit):** `4929392498` (2026-07-30, owner-approved) replaced the `web/pages/forge/dashboard.tsx` band composition with a 40-line redirect (-578 lines) and cut `dashboard.test.tsx` by about 2,365 lines; the six `components/forge-dashboard/*Card.tsx` files have no page-level tests. Supersedes 2.1 (C0009) and 7.3 (C0044). Close by recording the redirect disposition on the rows. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5b-forge-dashboards-trends.md`."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-trends-combo-project.md",
+    "line": 85,
+    "text": "- [ ] NEW 10.0 **P3 seven forge-dashboard components are orphaned (2026-10-17 completion audit):** After `4929392498`, the six `web/components/forge-dashboard/*Card.tsx` files and `TopAddsRail.tsx` have zero non-test importers, and `/forge/dashboard` is a redirect, not the named rollback route master 4.7 and 5.7.20 still describe. Supersedes 6.4 (C0032). Close with an owner decision to delete or keep them, and amended rollback-route text. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5b-forge-dashboards-trends.md`."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md",
+    "line": 310,
+    "text": "- [ ] OCT14-COMP Map and deliver TJ's ongoing versioned candidate-comparison and accountability-dashboard requirement through the authoritative [Projection V1 checklist](../v1/tasks-prd-projection-model.md#october-14-ongoing-candidate-comparison-and-accountability-requirements), `OCT14-COMP-0` through `OCT14-COMP-9`, and its [source PRD](../v1/prd/prd-projection-model.md#october-14-2026-versioned-candidate-comparison-and-accountability-program)."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+    "line": 42,
+    "text": "- [ ] 1.0 Measure and confirm the unread set before changing storage"
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+    "line": 48,
+    "text": "- [ ] 2.0 Sidecar payload diet (Q11)"
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+    "line": 54,
+    "text": "- [ ] 3.0 FORGE rolling read diet (S-F)"
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+    "line": 86,
+    "text": "- [ ] 7.0 Wide-table unread columns (S-G)"
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+    "line": 95,
+    "text": "- [ ] 7.5 Verify: a row-identical recompute for 20 players \u00d7 5 strengths, plus the rankings and trends tests."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+    "line": 98,
+    "text": "- [ ] 8.0 Release and record"
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+    "line": 99,
+    "text": "- [ ] 8.1 For each finished set: commit on octoberBranch with explicit paths, build a master candidate in a temporary index, gate it in a clean export (tests, lint, type check), push with TJ's approval and the Vercel check, smoke-test, and sync octoberBranch."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+    "line": 100,
+    "text": "- [ ] 8.2 Keep the migration ledger and `cron-schedule.md` in step with every production change."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 69,
+    "text": "- [ ] 1.0 Make the served-forecast ledger the standing gate (research P1; FP audit F10). **Waits on the Codex P08 lease** for the ledger and scoreboard files."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 71,
+    "text": "- [ ] 1.2 Report dressed-only FP and per-head bias, \u03a3actual/\u03a3predicted by **expected-FP** decile \u00d7 position (F/D/G) \u00d7 head, RMSE skill versus naive, the Mincer\u2013Zarnowitz slope, and an opportunity-versus-rate split (TOI and PP TOI versus per-60). Partly released in release A: dressed-only FP, per-head bias and expected-FP deciles are live. The F/D slices and the TOI/PP-TOI opportunity split report as unavailable until the ledger stores historical position and TOI."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 73,
+    "text": "- [ ] 1.4 Run FP audit Q3/Q4 once about a week of settled games exists (around 2026-10-29), each with TJ's approval. Record the R23 baseline that tasks 2\u20135 are gated against."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 75,
+    "text": "- [ ] 2.0 Ship history hydration together with the F/D-prior hits/blocks model (research P0; FP audit F3). It needs `skater-queries.ts` (**Codex P08 lease**) and `skater-stage.ts`."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 77,
+    "text": "- [ ] 2.1 Resume the audit session's export \"c\": master plus hydration `6767073ea`, plus the F3/F4 hits/blocks hunks (`b8fe1072e` FORGE parts and `34a5588db`), on current master (R23)."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 78,
+    "text": "- [ ] 2.2 Decide with TJ whether to apply migration 88 (league skater physical totals) first. Without it F4 runs without the league rescale."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 79,
+    "text": "- [ ] 2.3 Rerun the 62-game reconstruction backtest for variant \"c\" on post-R19 inputs. Clear the release only if FP, HIT and SOG bias and the top-decile ratios are back within \u00b110%."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 80,
+    "text": "- [ ] 2.4 Bring S-F (streamlining task 3.0) to full: the RPC reader with sidecar hydration replaces S-F-lite. Update the offline fixture and checksum."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 81,
+    "text": "- [ ] 2.5 Run streamlining 7.5 as this release's verification: a row-identical recompute for 20 players \u00d7 5 strengths, plus the rankings and trends tests."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 82,
+    "text": "- [ ] 2.6 Release with TJ's approval, then rerun FP audit Q5/Q6 to confirm zero hit/block projections stay below 10%."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 84,
+    "text": "- [ ] 3.0 Rebuild assists and PPP on on-ice goals \u00d7 point share (research P0; FP audit F2 and F4). Waits for task 2 because of the `skater-stage.ts` lease."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 86,
+    "text": "- [ ] 3.1 Measure in-house IPP baselines (ES and PP, F and D) from `nst_gamelog_*_oi` on-ice goals versus individual points for 2023-24 onward, and shrinkage k by split-half. Read-only, run once with TJ's approval."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 87,
+    "text": "- [ ] 3.2 Model assists as team on-ice goals (by strength) \u00d7 the player's assist share, shrunk to F/D priors. Remove the 0.4\u20133.4 assist-per-goal clamp and the per-two-goals PP scale."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 88,
+    "text": "- [ ] 3.3 Reconcile \u03a3 team assists / \u03a3 team goals to the observed ES and PP ratios (~1.8 PP A per PP G)."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 89,
+    "text": "- [ ] 3.4 Backtest A and PPP bias, RMSE and top decile by position (defencemen separately). Clear only if top-decile PPP is not over-predicted (the pp2 failure mode)."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 90,
+    "text": "- [ ] 3.5 Release with TJ's approval. Confirm PP A per PP G \u2248 1.8 on production rows (FP audit Q6)."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 92,
+    "text": "- [ ] 4.0 Position-specific, season-current priors (research P2; FP audit F1: forwards \u00d71.48, D \u00d70.94). Waits for task 2."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 93,
+    "text": "- [ ] 4.1 Fit F and D priors for ES and PP SOG/60 and shooting %, re-estimated each season from the current season to date. Fit the stat-specific k by split-half."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 94,
+    "text": "- [ ] 4.2 Retest removing the second conversion shrink (Q7) on hydrated inputs."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 95,
+    "text": "- [ ] 4.3 Backtest G and SOG by position. Target an MZ slope near 1, flat decile ratios, and fewer D in the top FP decile."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 97,
+    "text": "- [ ] 5.0 Shorthanded points and PK minutes (FP audit F5: about \u22120.04 FP per game; TJ's other league scores SHP). Waits for task 2."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 98,
+    "text": "- [ ] 5.1 Add SH goals and assists as shrunk season-rate terms to G and A, with PK TOI allocated per player instead of folded into ES."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 99,
+    "text": "- [ ] 5.2 Backtest G/A bias for PK-heavy players. Release with the next model batch."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 101,
+    "text": "- [ ] 6.0 Market probabilities instead of mean-versus-line flags (research P1). Owns `market-output-builders.ts`, which Codex hasn't pinned."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 107,
+    "text": "- [ ] 6.3 Add a `market` source to the ledger (waits on task 1's lease). Score model versus market Brier on closing lines."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 108,
+    "text": "- [ ] 6.4 Separate follow-up for TJ to decide: blend team goals with de-vigged implied team totals (research P1 team reconciliation, size L)."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 110,
+    "text": "- [ ] 7.0 Goalie model: save %, wins and shutouts (research P2; FP audit F6). Owns `goalieModel.ts` and `goalie-stage.ts`. Retiring the bridge win model waits on the Codex P08 lease."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 114,
+    "text": "- [ ] 7.3 Retire the bridge's separate Poisson-xG win model, so one win model serves."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 118,
+    "text": "- [ ] 8.0 Count distributions (research P2). Owns `uncertainty.ts`."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 124,
+    "text": "- [ ] 9.0 Context terms sized to evidence (research P3; FP audit F9). Waits for tasks 2\u20134 (the `skater-stage.ts` lease)."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 125,
+    "text": "- [ ] 9.1 Give each context effect a single owner: home \u00b14% at team level, rest about 3\u20134%, opponent goalie GSAx shrunk and damped 50%. Do not ship Q8 as written."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 126,
+    "text": "- [ ] 9.2 Express role stability as uncertainty, not a cut to the mean (F9)."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 127,
+    "text": "- [ ] 9.3 Run per-effect toggle backtests, checking SOG decile ratios."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 128,
+    "text": "- [ ] 9.4 Later: rink-adjusted hits and blocks; an aging curve and rookie prior; news-tier snapshots with a label \u2192 P(start) mapping fitted from history."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 130,
+    "text": "- [ ] 10.0 RSO display fixes (FP audit F7 and F8). The RSO component files sit next to Codex P07's uncommitted planning edits, so start only after P07 lands."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 131,
+    "text": "- [ ] 10.1 Show \"\u2014\" or a partial flag when a weighted stat key is missing, instead of summing the known keys (F7)."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 132,
+    "text": "- [ ] 10.2 Show goalie \"if starts\" FP beside the expected value (F8)."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 134,
+    "text": "- [ ] 11.0 Operations follow-ups from 2026-10-22. They're independent of each other and of tasks 1\u201310."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+    "line": 145,
+    "text": "- [ ] 11.5 Supabase disk: 40 GB provisioned, about 26 GB used after the vacuum, spend cap on. Decide with TJ whether to leave it as is or reduce provisioned size later."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+    "line": 94,
+    "text": "- [ ] NEW 10.0 **P2 a null goalie win probability is fabricated into a number (2026-10-17 completion audit):** `web/pages/api/v1/forge/goalies.ts:438` coerces `proj_win_prob ?? 0` and `normalizeLikelyStarterWinProbabilities` (L150-210) renormalizes to 100%, so after `7f094c8e6` started emitting null when team goals are unavailable (`goalie-stage.ts:616,635,755`; `goalieModel.ts:193`) an all-null matchup falls back to starter-probability weights and invents win probabilities. `forge/goalies.test.ts` has no null case. Supersedes 8.2. Close by preserving null, with a test. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md`."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+    "line": 95,
+    "text": "- [ ] NEW 11.0 **P3 goalie disclosure UI was removed and two source paths are wrong (2026-10-17 completion audit):** `be1aaa0b06` (2026-03-18) rewrote `web/pages/FORGE.tsx` and removed the goalie disclosure panel, the ticker above `.goalieDisclosure` and the floor/typical/ceiling blocks; `GoalieRiskCard.tsx` has no limitation copy. NEW 9.1 still lists `web/pages/FORGE.test.tsx` and `web/pages/api/v1/forge/goalies.test.ts`, which live under `web/__tests__/`. Supersedes 6.5, 8.1, 8.3 and NEW 9.1. Close by restoring or formally superseding the UI rows and fixing the paths. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md`."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 138,
+    "text": "- [ ] OCT11-G1 Supply genuine exact-target current confirmed EV or explicit-exclusion receipts, then resolve source validity/expiry, contradictions, later downgrades and supersession at the explicit diagnostic evaluation time. Accepted immutable PRIVATE BLOCKED readiness v3 remains unchanged; its held inputs do not establish current applicability."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 139,
+    "text": "- [ ] OCT11-G2 Supply authentic provider eligibility and a common legal slot/date for the two selected players through the RSO owner. Native wing positions, roster membership and stored `game_key=477` do not establish this."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 140,
+    "text": "- [ ] OCT11-G3 Obtain separately authorized genuine ordinary issuance/selection with actual clocks and a legitimate new cutoff after later evidence. The morning historical reconstruction keeps its original identity/cutoff and cannot become an issued context through this validator."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 141,
+    "text": "- [ ] OCT11-G4 Close the existing full ten-category consumer case only with supported/admitted G/A/PPP/SOG/HIT/BLK and W/GA/SV/SO inputs and actual required context. The retained provisional conditional HIT/BLK mechanics do not close missing heads or qualify predictive accuracy; goals-only team totals and goalie expected-start reports cannot substitute."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 142,
+    "text": "- [ ] OCT11-G5 Obtain separate release/public-serving authority and TJ's disposition of the paused RSO goal. No public imports, forecast admission, model-weight change, schema/data publish or goal resumption follows from private engineering acceptance."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 155,
+    "text": "- [ ] OCT14-COMP-0 Deliver the ongoing full-FORGE candidate-comparison program and accountability dashboard only after the granular requirements below have accepted evidence; the small conditional BLK pilot does not close this parent."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 156,
+    "text": "- [ ] OCT14-COMP-1 Version the protocol for each bounded run: target/estimand, units, conditioning, horizon, matched as-of input and player-game cohort, permitted allocations, training/validation/final/prospective separation, candidate/compute budget and stopping rule. Preserve unallocated dates under the latest reviewed allocation (January 14 onward at the October 15 planning reconciliation; January 8\u201313 was separately allocated development) and review new target allocations before labels; never rewrite historical clocks or previous experiment identities."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 157,
+    "text": "- [ ] OCT14-COMP-2 Retain a complete immutable trial and issuance ledger covering all candidate/feature/model versions, hashes, parameters, source/cohort manifests, real cutoff/issue/settlement clocks, revisions, failures, exposure, missingness, abstentions and selection decisions. Report requested and paired populations so exclusion of hard cases cannot manufacture improvement."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 158,
+    "text": "- [ ] OCT14-COMP-3 Compare native FORGE, expanding/recency baselines, shrinkage/exposure, count and probability families in predeclared finite stages. Add justified boosted trees/ensembles only after coverage and compute permit; test team Elo/Glicko only as a dated contextual-feature ablation, never as the whole player model. No duplicate model executor or open-ended score hunting."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 159,
+    "text": "- [ ] OCT14-COMP-4 Select expected means with squared error/MSE or appropriate proper distribution scores, never solely MAE. Report MAE/RMSE, bias, proper count/probability losses, calibration, interval coverage/width and coverage together. New loss policies get new reviewed versions; do not reinterpret the accepted MAE-selected historical pilot."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 160,
+    "text": "- [ ] OCT14-COMP-5 Evaluate paired, baseline-covered cohorts per target/horizon/conditioning/evidence class, including chronological stability, game/slate counts and defensible clustered/time-block uncertainty. Preserve missing forecasts and coverage differences; keep raw units separate, mark zero-denominator skill undefined, and show unsupported rookie/trade/role-change segments as not estimable."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 161,
+    "text": "- [ ] OCT14-COMP-6 Extend the existing accountability UI with time-series loss/coverage trends, signed/absolute-error histograms, per-target/horizon/version leaderboards, baseline skill, paired differences/sample sizes/uncertainty and supported cohort filters. Expose evidence stage, missingness and abstentions; no generic accuracy percentage or repeatedly mined held-out leaderboard as a promotion claim."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 162,
+    "text": "- [ ] OCT14-COMP-7 Measure lineup and drop/add net decision gains/regret with identical frozen scoring, roster, eligibility, locks, waiver/transaction/allowance and acquisition-cost rules; preserve matching issued inputs, shared-game dependence, legality and excluded-decision counts. Keep conditional BLK proxies and sensitivity comparisons distinct from realized roster/transaction gains."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 163,
+    "text": "- [ ] OCT14-COMP-8 Predeclare promotion and rollback criteria before final evaluation: sample/coverage floors, meaningful baseline skill, calibration/coherence and subgroup limits, original-input/issuance integrity, operating bounds and hash-pinned fallback. Independent evaluator seals final feedback; one declared final decision, new unexposed protocol for further selection, and separate release authority."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 164,
+    "text": "- [ ] OCT14-COMP-9 Inventory and reuse existing evaluation/storage/dashboard/accuracy/promotion/rollout contracts before adding a duplicate stack or migration. Implement only accepted gaps with focused tests/review. Preserve the original dated October 14 17:30 Eastern freeze and separate 17:50/18:15/18:30 live guards/BLK fallback as historical requirements, including missed-window handling; any future scheduled run, acquisition, publish or deployment needs its own approved bounds."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 166,
+    "text": "- [ ] NEW 6.0 **P1 canonical readers gate on an input label production runs never carry (octoberBranch release risk) (2026-10-17 completion audit):** `7f094c8e6` makes the readers require `metrics.input_provenance.external_fantasy_input_contract = excluded_from_native_inputs_v1` (`web/lib/projections/apiHelpers.ts:58-62`, `web/pages/api/v1/forge/players.ts:161`, `forge/goalies.ts:483`, `projections/{players,teams,goalies}.ts:62-71`, `consumerRevisionAdmission.ts:88`); production's `buildForgeInputProvenance` never wrote it. Per the serving-fix check (`tasks/artifacts/forge-serving-release-review-2026-10-17/BLOCKERS.md`, \"B1 side effect\") the release slice keeps those readers at production bytes; the slice's legacy Start Chart gate (Start Chart NEW 18.0) and a daily 422 from production `run-projection-accuracy` remain. The same gate fails `web/scripts/qualify-native-players-offline.test.ts` (8 of 56): `scripts/qualify-native-players-offline.ts:391` rebuilds `inputProvenance` without the label from `captured.snapshot.inputProvenance`. Supersedes the canonical-reader clauses of master 5.7.6. Close when TJ decides how unlabelled runs are served and the harness carries the label. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md`."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 167,
+    "text": "- [ ] NEW 7.0 **P2 team TOI/shot reconciliation has no test (2026-10-17 completion audit):** `web/lib/projections/reconcile.test.ts` was deleted in `7d72524715` (2026-01-07) and not replaced; `reconcileTeamToPlayers` (called at `web/lib/projections/stages/skater-stage.ts:2544`) is the sole enforcement of team TOI/shot totals, and `runProjectionV2.test.ts:1113` only covers `validateReconciledPlayerDistribution`. Supersedes 3.6. Close with a direct invariant test. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md`."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+    "line": 168,
+    "text": "- [ ] NEW 8.0 **P3 plain-language low/typical/high FORGE presentation was removed (2026-10-17 completion audit):** `be1aaa0b06` (2026-03-18) rewrote `web/pages/FORGE.tsx` and removed the floor/typical/ceiling and P10/P50/P90 presentation; only an API disclosure string remains (`web/pages/api/v1/forge/players.ts:453`). Supersedes the two embedded `prd/prd-projection-model.md` presentation rows (C0002, C0003). Close by restoring the presentation or recording the owner's supersession. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md`."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 177,
+    "text": "- [ ] 15.0 Close the release and Production-data gates before claiming 100% completion."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 178,
+    "text": "- [ ] 15.1 With explicit authorization, perform bounded dry-run/review/application and post-write proof for Sustainability NEW 2, 6\u201310, and eligible NEW 13 scopes. Do not rewrite quarantined legacy runs."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 184,
+    "text": "- [ ] 15.2 Complete the Yahoo audit's controlled provider/league equivalence, legacy-owner retirement, resumable historical-backfill, and provider/runtime evidence where applicable. Missing dated historical ownership may remain unavailable because it does not affect ranking."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 185,
+    "text": "- [ ] 15.3 Reconcile one representative current slate and one eligible historical slate from raw inputs through rolling rows, FORGE rows, API rank/source output, goalie coverage, and visible values after the authorized data work."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 186,
+    "text": "- [ ] 15.4 Run the model rollout gate over at least 14 distinct eligible matched holdout dates and record the selected/baseline versions, MAE, RMSE, naive-prior comparison, interval coverage, freshness, reader, and zero-row outcomes. Retain the last trusted model if the candidate fails."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 188,
+    "text": "- [ ] 15.6 After every prior gate passes and publication is explicitly authorized, deploy without an unnecessary rebuild, repeat exact desktop/tablet/mobile browser proof and bounded runtime/error checks, then link the deployment and evidence here."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 197,
+    "text": "- [ ] 17.0 Replace the rejected legacy CTPI series with a validated Recent Team Form contract before restoring live scores."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 204,
+    "text": "- [ ] 17.7 Obtain approval for PDO-as-separate-context, promote the candidate version, wire it into the writer/readers, and pass a strict-pregame raw\u2192persisted\u2192API trace."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 211,
+    "text": "- [ ] 17.7.5 Obtain product approval, promote the version, apply/regenerate the schema, switch the writer/approved readers, and complete the persisted/API/browser proof."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 212,
+    "text": "- [ ] 17.8 With explicit database authorization, perform a bounded dry run, review row/date/team deltas, persist/backfill the approved version without rewriting quarantined legacy rows, and repeat API/browser/source reconciliation before restoring the chart."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 214,
+    "text": "- [ ] NEW 18.0 **P1 legacy Start Chart path drops runs without the native-input label (octoberBranch release risk) (2026-10-17 completion audit):** `web/pages/api/v1/start-chart.ts:910-913` sets `forgeRun = null` when the selected run lacks `external_fantasy_input_contract`; production runs never carry it (see `tasks-prd-projection-model.md` NEW 6.0), so a release of the serving slice would degrade Focused Slate, the `/trends` projections, `SlateStripCard` and `TeamPowerCard`. The page now defaults to `forecast_source=game_expectations` and the route has three serving paths plus POST custom scoring (`start-chart.ts:1121-1128`). Supersedes the \"reads latest-succeeded run\" clause of master 5.7.23. Close with TJ's decision on serving unlabelled runs flagged as unverified, plus a regression. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md`."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 215,
+    "text": "- [ ] NEW 19.0 **P2 a partial scoring line is scored as complete (2026-10-17 completion audit):** `sumProjectionParts` (`web/pages/api/v1/start-chart.ts:739-744`) adds whichever parts are present; since `7f094c8e6` masks heads individually (`skater-adjustments.ts:625-628`), a null PP-goals or PP-assists head counts as zero and `hasCompleteScoringLine` (L1563-1570) still passes, under-reporting fantasy points and ranks on the dashboard and legacy path (`dataFetchers.ts:440`, `TeamPowerCard.tsx:129`, `SlateStripCard.tsx:161`, `FORGE.tsx:230`). Supersedes 11.5. Close by preserving null for incomplete lines, with a test. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md`."
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "line": 216,
+    "text": "- [ ] NEW 20.0 **P3 Start Chart disclosure and paging behaviors changed after being marked done (2026-10-17 completion audit):** `25c89d795` (2026-09-25) changed `INITIAL_POSITION_LIMIT` from 25 to 5 and \"Load 25 more\" to \"View all\" (`web/pages/start-chart.tsx:53,1098`); the tau/P75/category \"unavailable\" explanations are gone because live category scoring replaced those controls, while `START_CHART_RANKING_CONTRACT.unavailable.categoryMode` is still `true` (`startChartFantasyScoring.ts:60-61`) and `perfBudget.ts:18` still says 300,000 B. Supersedes 6.3, 12.4 and 15.5. Close by amending the rows and contract to the shipped behavior or restoring it. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md`."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "line": 169,
+    "text": "- [ ] 6.0 Verify unresolved-name email alerts are live across sources"
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "line": 172,
+    "text": "- [ ] 6.2 Confirm the alias review email route can be triggered in production with the configured admin secret/auth path."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "line": 205,
+    "text": "- [ ] 10.0 Validate end-to-end rollout"
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "line": 210,
+    "text": "- [ ] 10.4 Create and test the three IFTTT applets with one controlled event per GDL account."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "line": 212,
+    "text": "- [ ] 10.5 Process pending events and confirm rows land in source storage, first-arrival display, unresolved-name queue, and canonical `lineCombinations` where applicable."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "line": 226,
+    "text": "- [ ] NEW 13.0 **P0 IFTTT Webhooks provider-key exposure containment:** a read-only applet detail-page DOM snapshot rendered the Webhooks service credential into the private execution transcript. Never reproduce it. Before any controlled event, rotate that provider key, inventory and update every proven inbound Webhooks consumer value-free, verify retired-key rejection/current-key authorization without response bodies, and preserve unrelated outbound X-to-Webhooks applets."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "line": 228,
+    "text": "- [ ] NEW 14.0 **P1 existing GDL applet payload drift:** repair the three existing Connected applets without recreating them. Replace the GameDayLines literal `SOURCE_ACCOUNT` with `GameDayLines`, add the documented `tweet_embed_code`/`TweetEmbedCode` ingredient to all three payloads, retain the exact watched accounts/routes/POST/JSON/nonblank-header contract, and re-audit the redacted field shapes before promotion or one-event-per-account proof."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "line": 230,
+    "text": "- [ ] NEW 15.0 **P0 regenerated IFTTT Webhooks key remains authorized:** the provider issued a distinct current documentation key and the current key authorizes unique cache-busted probe events, but the retired key also remained accepted on two unique probes including a delayed retry. The single authorized signed-in repeat regeneration issued another distinct working replacement; unique cache-busted probes then proved that both prior generations still authorize. Official IFTTT guidance says regeneration invalidates all previous webhook URLs. Keep NEW 13/16 open and hold NEW 14, production promotion, and every controlled event pending NEW 17 resolution."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "line": 232,
+    "text": "- [ ] NEW 16.0 **P0 current IFTTT Webhooks key exposed in retained probe URL:** automatic-continuation tab inventory rendered the current credential-bearing Maker probe URL and showed that the tab had been left on that URL after handoff. The tab was immediately navigated to the IFTTT login page without inspecting session/password state. Treat the current key as exposed, fold its replacement into the already-authorized repeat regeneration, and require post-proof navigation to a non-credential IFTTT page before any tab listing/finalization. Never reproduce the value."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "line": 234,
+    "text": "- [ ] NEW 17.0 **P0 multi-generation IFTTT credential retirement resolution:** after a second successful regeneration, both prior credential generations still authorize unique cache-busted requests while the newest distinct credential also authorizes. The separately approved option-B remove/reconnect path completed without losing the five applets: the four production applets were restored Connected and the podcast applet was restored disconnected. However, a unique post-reconnect probe proved the immediately prior key still authorizes while the distinct replacement also authorizes, so the retirement gate failed again. Keep every downstream provider/deployment/event/email/data action held; provider-confirmed account-level revocation/support evidence is now required before closing NEW 13/15/16/17."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+    "line": 236,
+    "text": "- [ ] NEW 18.0 **P0 Webhooks remove/reconnect does not retire the prior key:** IFTTT archived all five applets, accepted a fresh service connection with a distinct current key, and allowed the prior four-Connected/one-disconnected state to be restored, but the pre-reconnect key still authorized a unique bounded no-listener event after reconnection. Preserve the restored state, submit a value-free provider-support request for account-level invalidation, and require prior-key rejection plus current-key authorization before any downstream action. This is additional remediation evidence for the existing provider-retirement root finding, not a second severity count. Evidence (2026-07-21): support first could not locate the account from the originally supplied identity; after the owner's identity-only clarification, Ryan found the account and assigned the historical-key validity issue to engineering. The owner then answered Ryan's risk question value-free: there is no suspected leak, and the refresh is precautionary after sharing with this Codex collaboration. No provider invalidation or rejection evidence was supplied. NEW 22 closes only account identification without storing any address or billing value. Owner-approved scheduling remains in force: keep this row bookmarked as a held external dependency, check the exact thread only at meaningful initiative checkpoints, and continue non-overlapping super-goal work without touching NEW 14/19 or held applet/event/email/data paths. Keep this row open until engineering confirms provider-side invalidation and direct prior-key rejection/current-key authorization pass."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 32,
+    "text": "- [ ] 1.0 Close pipeline, deployment-parity and downstream audit gaps"
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 34,
+    "text": "- [ ] 1.2 Record deployed commit/time, active flags, AI model/prompt versions, source configurations, caller dates and roster/alias/enrichment revisions through read-only evidence; compare CCC and GDL route behavior."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 39,
+    "text": "- [ ] 2.0 Review regression seeds and freeze a bounded labeled evaluation set"
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 41,
+    "text": "- [ ] 2.2 Cluster 24 exported holdout candidates by original/relay/thread/near-duplicate families; fill missing required controls with bounded read-only retrieval. Aim for at least two independent reviewed examples per class/control where available; document final sample and gaps."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 42,
+    "text": "- [ ] 2.3 Freeze source-time identity evidence, labels and development/holdout splits before tuning. Add named seeds to nearest existing tests after reviewed expectations are agreed; preserve correct existing behavior."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 46,
+    "text": "- [ ] 3.0 Tighten canonical identity and subject-to-claim binding"
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 47,
+    "text": "- [ ] 3.1 Trace team gating and empty-roster outcomes for partial PP, DTD, first-off and swap seeds. Preserve explicit team/hashtag evidence, conflicting candidate sets and valid manual mappings; resolve identity against publication/event-time membership where available."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 48,
+    "text": "- [ ] 3.2 Bind events to supported clauses/headings/relations; prevent unresolved or opponent names from extending another player's event. Support legitimate multiple claims and leave unsupported pronouns unresolved."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 53,
+    "text": "- [ ] 4.0 Prevent false injury, return and goalie confirmations first"
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 62,
+    "text": "- [ ] 5.0 Preserve PP/line structure, alternatives, partial changes and ordinals"
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 69,
+    "text": "- [ ] 6.0 Preserve source fidelity and separate temporal roles"
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 71,
+    "text": "- [ ] 6.2 Replace blanket tomorrow/yesterday rejection with claim-specific observation/reference/applicability interpretation using verified publication timezone. Accept current complete assertions with historical comparisons; retain review on genuinely ambiguous application time."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 72,
+    "text": "- [ ] 6.3 Preserve independent supported claims when another claim has ambiguous identity/time; carry specific reasons through existing review/snapshot metadata and invalidate stale parser/inference cache versions."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 76,
+    "text": "- [ ] 7.0 Verify safe reconciliation, end-to-end persistence and rollout gates"
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 77,
+    "text": "- [ ] 7.1 Audit and test same-input/same-version idempotency, semantic dedupe across versions/original relays, immutable prior outcomes, conflicts, corrections/retractions and out-of-order arrival. Preserve multiple legitimate events and manual review precedence."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 79,
+    "text": "- [ ] 7.3 Run frozen regression and holdout evaluation through equivalent full processing paths. Report false-confirmation/wrong-identity counts, labeled per-class precision/recall and review/abstention denominators, parity limits and correct-case regressions."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 84,
+    "text": "- [ ] 8.0 Separate historical repair proposal \u2014 dry-run inventory only"
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 85,
+    "text": "- [ ] 8.1 After corrected semantics and parity verification, inventory affected source/event/report/news/forecast keys, original evidence, proposed differences and downstream impacts using bounded read-only queries and non-mutating replay."
+  },
+  {
+    "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+    "line": 86,
+    "text": "- [ ] 8.2 Review conflicts/manual resolutions and present scoped correction/rollback mechanics for explicit approval; do not execute writes/backfills."
+  },
+  {
+    "path": "tasks/TASKS/nhl-game-prediction-model/tasks-prd-nhl-game-prediction-model.md",
+    "line": 197,
+    "text": "- [ ] NEW 16.0 **P2 the forecast cron is active and reports success while writing nothing (2026-10-17 completion audit):** `web/vercel.json:91` schedules `/api/v1/game-predictions/forecast` daily at 11:45 UTC (also in production `457435eb`) and pg_cron jobs 383-387 are active in `cron-schedule.md` (L563-610). With zero production model rows, `ensureServingModelVersion` refuses to persist (`web/lib/game-predictions/workflow.ts:756-784`, `:288-307`), per-game errors become `skippedReason` (`:1169-1180`) and `forecast.ts:82` still returns HTTP 200 `success:true`. Supersedes 14.0 (C0115) and the inactive-cron clause of master 5.7.9. Close by deactivating or health-flagging the jobs, or recording the owner's serving decision, with a production `cron.job` read. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G7-xg-prediction.md`."
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+    "line": 186,
+    "text": "- [ ] AUDIT-TASK-002.4 \u2014 Confirm post-rollout ACL state after separate authorization."
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+    "line": 329,
+    "text": "- [ ] AUDIT-TASK-004.3 \u2014 Verify test discovery and the credential-free steps."
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+    "line": 907,
+    "text": "- [ ] AUDIT-TASK-013.4 \u2014 Resolve the blocked per-document cleanup statuses."
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+    "line": 1703,
+    "text": "- [ ] AUDIT-TASK-026.1 \u2014 **OWNER DECISION:** classify active versus superseded."
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+    "line": 1710,
+    "text": "- [ ] AUDIT-TASK-026.2A \u2014 Active branch: remove import-time execution and validate configuration explicitly."
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+    "line": 1717,
+    "text": "- [ ] AUDIT-TASK-026.2B \u2014 Superseded branch: make the module inert with replacement evidence."
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+    "line": 1724,
+    "text": "- [ ] AUDIT-TASK-026.3 \u2014 Verify the chosen branch without credentials or I/O."
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+    "line": 1831,
+    "text": "- [ ] AUDIT-TASK-028.2 \u2014 Add credential-free PR/push workflow wiring."
+  },
+  {
+    "path": "tasks/TASKS/repository-audit-remediation/tasks-repository-audit-remediation.md",
+    "line": 1845,
+    "text": "- [ ] AUDIT-TASK-028.4 \u2014 Validate hosted behavior and branch-check reporting."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md",
+    "line": 116,
+    "text": "- [ ] NEW 7.0 **P1 Trends player page and validation console read compacted-null rolling fields (2026-10-17 completion audit):** Since `a8e1f5495d` (2026-06-11, in production) `splitRollingUpsertRowForDurableStorage` nulls every `_avg_`, `_last3`, `_all`, `_3ya`, `_career` key outside `ROLLING_RANKING_SELECT_FIELDS` in `rolling_player_game_metrics` (`web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts:380-403,445-482,736-757`) and moves them to `rolling_player_metric_support_payloads`, which only FORGE reads. The Trends player page still selects `goals/assists/points/shots/hits/blocks/pp_points_avg_*` from the wide row (`web/pages/trends/player/[playerId].tsx:440-492,748-753`), so those windows render empty, and `rollingPlayerValidationPayload.ts:2185-2193` with `compareValues` (`:600-630`) reports false mismatches. Page tests mock full rows. Supersedes 2.4 (C0011), 4.2 (C0024), remediation-blueprint 4.6 and master 5.2.7. Confirm with the read-only SQL in the evidence file, then close with a reader that rejoins the support payloads (or stops pruning those fields) plus a regression. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md`."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/site-roadmap/tasks-prd-fhfh-site-surface-expansion-roadmap.md",
+    "line": 228,
+    "text": "- [ ] NEW 16.0 **P2 Game Grid and WiGO workflow links were removed after being marked live (2026-10-17 completion audit):** `SurfaceWorkflowLinks`/`GAME_GRID_SURFACE_LINKS` were deleted from `web/pages/game-grid/[mode].tsx` by `f90bb13cd` (2026-09-17) and `getWigoSurfaceLinks` from `web/pages/wigoCharts.tsx` by `15caa26eac` (2026-08-01), both in production; the exports at `web/lib/navigation/siteSurfaceLinks.ts:134,157` now have zero consumers. Grid-to-Team HQ row links survive, but grid-to-trends/splits/lines and WGO-to-anything links are gone. Supersedes 7.6 (C0052), NEW 13.0 (C0069) and the cross-link clauses of master 3.7 and 5.7.4. Close by remounting the links or recording an owner decision and removing the dead exports. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md`."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+    "line": 181,
+    "text": "- [ ] NEW 17.0 **P1 scheduled score chain writes only players 0-249 on each source-advance day (2026-10-17 completion audit):** `detectSustainabilitySourceAdvance` (`web/lib/sustainability/incremental.ts:34-68`, identical at HEAD and production, since `fbaf45caa` 2026-07-23) compares the newest source date with the newest cutoff among the latest 100 `sustainability_scores` rows by `computed_at`, with no snapshot, batch or offset scope; after the 11:00 UTC offset-0 page writes, the 11:06/11:12 offset-250/500 pages (`web/vercel.json:50-61`) skip as `source_already_processed` (`rebuild-score.ts:55-68`). OPS-01 found about 250 players scored on 10-12, 13, 14, 15 and 17. `incremental.test.ts` covers only the classifier and `rebuild-score.test.ts` mocks the detector. The uncommitted fix still treats a batch as current once one player's cutoff reaches the source date, and three offsets cap coverage at 750 players. Supersedes 5.1 (C0044), 5.2 (C0045), 5.10 (C0053), NEW 12.0 (C0090), master 4.2 and 5.7.27. Close with the shipped fix, a batch-completeness test and the read-only U-1 SQL receipt. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G6-sustainability-variance-sko.md`. _(Local acceptance progress 2026-10-19: Chef independently passed6route tests, including1,001synthetic players across5batches and4windows, exactly4,004unique persisted keys and the real400-row chunker. The successful runAll path is covered; scheduled capacity/deployment and U-1/natural receipts remain open. No scheduler or model change.)_ [Fixture scope](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/continuation-review/R-SCORE-HANDOFF.md)."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+    "line": 182,
+    "text": "- [ ] NEW 18.0 **P2 scheduled production never produces distributions, quintiles or drift alerts (2026-10-17 completion audit):** Row 8.4 relies on an active nightly `runAll=true` score job, but pg_cron jobs 370/371/372 are inactive (`cron-schedule.md:496-510`) and the Vercel chain uses offset pages only; `rebuild-score.ts:146,205` writes the distribution snapshot, quintiles and drift only when `runAll`, and `process-recompute-queue` is not scheduled. `/api/internal/sustainability/health` reports only row counts and latest date, so it cannot see a partial snapshot. Supersedes 8.4 (C0075). Close by scheduling a finalizer or recording the accepted gap. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G6-sustainability-variance-sko.md`. _(Local acceptance progress 2026-10-19: successful runAll fixtures exercise real distribution/quintile construction and snapshot persistence over1,001players per window; dry mode computes the same complete population with no database client calls. Chef6/6route tests pass. Finalizer scheduling, accepted operational gap and natural/deployed receipts remain open.)_ [Fixture scope](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/continuation-review/R-SCORE-HANDOFF.md). _(Additional local health progress2026-10-19: latest-observed-score-date diagnostics now expose missing windows/quintiles, unequal counts and absent/ambiguous distribution evidence with at most6additional serialized queries and5data rows. Expected population remains null and coverage unverified even when counts match. Unknown exact counts fail closed. Chef18/18health tests pass; scheduling and natural/deployed/full-membership gates stay open.)_ [Bounded contract](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/continuation-review/R-HEALTH-HANDOFF.md)."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+    "line": 173,
+    "text": "- [ ] 5.0 Testing, docs, and performance"
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+    "line": 178,
+    "text": "- [ ] 5.2 Backtest accuracy vs career-only and recent-only baselines (MAE/RMSE; Brier for probs)."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+    "line": 194,
+    "text": "- [ ] NEW 7.0 Establish genuine historical projection/actual coverage before publishing calibration or baseline-win claims."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+    "line": 174,
+    "text": "- [ ] NEW 2.0 **P1 expected-shooting formula/identity drift:** the owner-approved canonical definition is now implemented as `individual xG / individual unblocked attempts * 100`, using `nst_ixg` and `nst_iff`; the existing persisted key `expected_shooting_pct` remains for compatibility, and a focused regression proves `2.5 / 10 = 25%`. A read-only `2026-02-05` repair preview reconstructs 408 source rows from the season start for the eight target players, produces exact 8/8 candidate identities, and classifies all eight as updates with zero inserts/deletes; before/candidate SHA-256 receipts are recorded in the bounded manifest. Local migration `20260828162000` adds a nullable forward-only version field and the calculator stamps `player-trend-v2-full-history-source-units` without relabeling legacy rows. Keep open for migration authorization/application, the bounded write, idempotent replay, and post-repair reader evidence."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+    "line": 178,
+    "text": "- [ ] NEW 6.0 **P1 missing-PDO unit/default ambiguity:** the owner-approved neutral policy is now implemented. Source nulls remain null instead of coercing to zero, PDO EWMA and league moments use observed values only, and a missing team records `pdo_observation_count=0`, `pdo_missing=true`, and neutral `pdo_z=0`, so it cannot trip `variance_flag`. The read-only `2026-02-05` team-rating preview verifies 14/14 recalculated teams have observed PDO and finds five variance-flag changes under final inputs; the bounded real cohort contains no missing-PDO team, so that branch remains proved only by the focused synthetic regression. Local migration `20260828162000` adds nullable calculation/source-through provenance; exact new rows stamp `team-power-v2-final-source-observed-pdo`, while carry-forward rows preserve their prior version or become explicitly `legacy_unversioned`. Keep open for migration/application/replay authorization and deployed missing-source evidence when a natural case exists."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+    "line": 179,
+    "text": "- [ ] NEW 7.0 **P1 player-trend playoff unit and cumulative-history corruption:** `wgo_skater_stats_playoffs.toi_per_game` is seconds while the shared calculator consumes minutes. Forward rebuilds now use a shared source adapter that converts seconds to minutes; a mixed regular/playoff regression reproduces `11.970075` shots/60 and retains the regular row in a two-game accumulator. The read-only two-season repair preview now defines exact source/output bounds and value-free hashes. For 2025\u201326 it reconstructs 79,704 rows, finds 55,233/55,404 persisted identities change, identifies 1,472 exactly 60\u00d7-low shot-rate rows, and separates 24,300 source-backed missing identities from repair of existing rows. For 2024\u201325 it finds 83,592 source-backed candidates and no persisted targets. Local migration `20260828162000` and the shared calculator stage the same forward version as NEW 2 while leaving legacy rows null. Keep the root open for migration authorization, separate approval for the existing-row repair versus missing-history fill, idempotent application, and post-write reader proof."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+    "line": 180,
+    "text": "- [ ] NEW 8.0 **P1 Sustainability source-cutoff provenance misstates freshness:** `score.ts` recorded the requested snapshot as the `player_stats_unified` cutoff even when inputs were months older. Forward score construction now reads the latest selected appearance date and uses explicit provenance v2 to separate requested snapshot, observed raw cutoff, derived window-z snapshot, season scope, and observed age in days; focused as-of/version regressions pass. The non-writing bounded repair preview proves all 2,496 July 22 rows make the false requested-date claim, while the partially migrated July 23 cohort contains 1,496 proven v2 rows preserved byte-for-byte and 1,000 false legacy claims. It freezes exact candidate hashes that retain scores/model/config values, move old dates under `legacy_claims`, and set observed cutoff/age to unknown. Keep the root open for authorized season-wide application, idempotent replay, and post-write reader proof."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+    "line": 181,
+    "text": "- [ ] NEW 9.0 **P1 team-rating final-source schedule inversion:** sampled ANA/VGK game-date ratings were written at 09:15 UTC before final NST rate rows arrived around 09:55 UTC; the next-day exact-date gate carried the stale rating forward instead of recomputing the completed game. Read-only production evidence now proves the owning NST ingest runs active at 09:55 UTC before the active no-parameter rating caller at 10:15 UTC, so ordering is already correct. The local forward repair makes only that default caller recompute the prior date before today's carry-forward; explicit dates/ranges, smoke tests, and empty-table backfills keep their former scope, and the focused final-source/carry regression passes. A read-only `2026-02-05` preview reconstructs 1,848 source rows, changes all 14 exact-source teams, preserves 18 carry-forward teams, and records exact before/candidate hashes. Local migration `20260828162000` and writer stamps stage durable formula/source-through provenance without upgrading carried legacy rows. Keep the root open for migration/application authorization, idempotent replay, reader proof, and the deployed natural dependency."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+    "line": 182,
+    "text": "- [ ] NEW 10.0 **P1 rolling-player date-scoped refresh resets history and contaminates FORGE:** daily bounded calls fetched only the requested source dates while recomputing cumulative/last-N fields from that truncated slice. The local forward repair reads each selected player's complete prior selected-scope history; new FORGE runs now record `full_selected_scope_through_end_date_v1`, while accuracy/calibration rejects missing/legacy provenance and historical projections remain immutable. The dry-run path now exposes exact primary/support batches to a non-writing audit. Its four-player full-season cohort produces 1,045 primary/support candidates with exact identity parity, but finds 15 missing primary rows, 823 missing support rows, 382 changed critical rows, 87 changed comparable support rows, and seven source-tail freshness blockers. Keep the root open until those sources are refreshed, a complete deterministic player sweep has zero blockers, grouped application/replay is authorized, and raw\u2192rolling\u2192new eligible FORGE reconstruction passes."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+    "line": 185,
+    "text": "- [ ] NEW 13.0 **P1 FORGE result/accuracy coverage and run-version gap:** canonical latest-succeeded-run eligibility has 6,179 matches and 1,344 missing across 18 zero-result and three partial dates. New runs record the repaired rolling-history input contract; the accuracy route and local atomic exact-replacement RPC reject missing/legacy provenance, preserve historical projection rows, and still remove stale result rows for eligible empty scopes. Keep open for migration application, bounded eligible-run dry-run/backfill, and post-write idempotency/coverage proof."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md",
+    "line": 156,
+    "text": "- [ ] 13.0 NEW: Provide live external odds-provider verification once a ParlayAPI key is available"
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md",
+    "line": 159,
+    "text": "- [ ] 13.3 Confirm at least one live prop market lands in `prop_market_prices_daily` and player matching succeeds for the target slate."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-ctpi-formula-audit.md",
+    "line": 6,
+    "text": "- [ ] Candidate activation remains approval-gated; no writer/reader switch, applied schema, persisted-row, backfill, schedule, model, or Production change is authorized by this task. The inactive candidate reuses the pre-specified no-PDO weights and cannot be treated as trusted data until approval and replay/persistence gates pass. One local nullable-component migration is staged but unapplied."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-ctpi-formula-audit.md",
+    "line": 84,
+    "text": "- [ ] 7.7 After product approval, promote the candidate version name, wire it into the writer/readers, and prove a no-look-ahead raw\u2192persisted\u2192API trace before any backfill."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-ctpi-formula-audit.md",
+    "line": 91,
+    "text": "- [ ] 7.7.5 Obtain product approval, promote the version, apply/regenerate the schema contract, switch the writer and approved readers, and complete the database/API trace."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-ctpi-formula-audit.md",
+    "line": 96,
+    "text": "- [ ] Representative raw-to-persisted-to-API traces pass with no look-ahead."
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md",
+    "line": 99,
+    "text": "- [ ] NEW 14.0 **P2 goalie-power pagination can truncate, and its claimed API tests do not exist (2026-10-17 completion audit):** `web/pages/api/v1/trends/goalie-power.ts:110` requests `PAGE_SIZE = 2000` and stops at the first short page (L432-460); with the repo's `max_rows = 1000` (`supabase/config.toml:18`) one capped page ends the scan and goalie rows are silently dropped (the hosted setting needs a read-only check). No test under `web/__tests__/pages/api/v1/trends/` imports `goalie-power` or `team-sos`. Supersedes 3.1 (C0013), 3.5 (C0017) and the canonical-reads clause of master 4.15. Close with a page size at or below the cap, short-page-safe looping and route tests for both endpoints. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G5b-forge-dashboards-trends.md`."
+  },
+  {
+    "path": "tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md",
+    "line": 535,
+    "text": "- [ ] 29.0 **NEW P2 leakage fix does not gate promotion; the serving champion predates it (2026-10-17 completion audit):** `missReasonBucket` and `isShortSideMiss` are blocked only in `buildEncodedBaselineDataset` (`web/lib/xg/baselineDataset.ts:239-244,324`); `buildApprovalGradeEligibility` (`web/scripts/train-nhl-xg-baseline.ts:471+`) and `auditXgArtifactFeatureContract` (`web/lib/xg/shotFeaturePersistence.ts:261+`) never check them, so the approved 2026-05-22 artifacts `cfg9bac2706` and `cfgf81a5112` stay eligible and a future `active=true&champion=true&confirmPromotion=true` registration would pass the 28.0 guards; 25.4 left the champion unchanged. Supersedes the leakage-remediation and promotion-safeguard clauses of master 5.7.12. Close with a forbidden-feature check in the artifact audit and the read-only registry check. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G7-xg-prediction.md`."
+  },
+  {
+    "path": "tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md",
+    "line": 536,
+    "text": "- [ ] 30.0 **NEW P2 daily xG feature and prediction scheduling was never enabled (2026-10-17 completion audit):** The only scheduling SQL is a commented block (`tasks/TASKS/cron-operations/cron-schedule.md:1569-1599`); no `update-nhl-xg-*` job is in the active inventory or `web/vercel.json`, so new games need manual runs. Supersedes 4.0 (C0020). Close by scheduling the jobs or recording the manual-run decision. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G7-xg-prediction.md`."
+  }
+]

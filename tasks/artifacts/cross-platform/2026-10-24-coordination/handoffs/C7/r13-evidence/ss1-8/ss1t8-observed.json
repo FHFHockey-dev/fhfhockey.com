@@ -1,0 +1,160 @@
+{
+  "G1": {
+    "out": {
+      "mondayReady": 1,
+      "wednesdayReady": 1,
+      "tuesday": 0,
+      "schedule503": 0,
+      "partial": 0,
+      "outOfSeason": 0,
+      "blocked": 0
+    },
+    "firstCallTeams": [
+      "WSH",
+      "NYI",
+      "MTL",
+      "STL",
+      "VAN",
+      "VGK",
+      "EDM",
+      "FLA",
+      "NYR",
+      "PIT"
+    ],
+    "teamCount": 10
+  },
+  "E1": {
+    "state": "ready",
+    "count": 30,
+    "extra": 0,
+    "sentinel": false,
+    "yahooKeys": false,
+    "keys": [
+      "nhlId",
+      "name",
+      "team",
+      "group",
+      "positions",
+      "ownership",
+      "gamesPlayed",
+      "pointsPerGame",
+      "hits",
+      "shots",
+      "blocks",
+      "gamesStarted",
+      "qualityStartPct",
+      "savePct"
+    ]
+  },
+  "C1": {
+    "ready": "public, max-age=0, s-maxage=300, stale-while-revalidate=300",
+    "stale": "public, max-age=0, s-maxage=60",
+    "missing": "public, max-age=0, s-maxage=60",
+    "notReady": "no-store",
+    "missingLeak": false
+  },
+  "F1": {
+    "fresh": [
+      "ready",
+      "2026-10-26",
+      30
+    ],
+    "someStale": [
+      "ready",
+      [
+        "Excluded 77 stale and 0 future-dated player rows."
+      ]
+    ],
+    "mostStale": [
+      "stale",
+      0
+    ]
+  },
+  "Q1": [
+    {
+      "table": "yahoo_players",
+      "select": "player_key,player_id,editorial_team_abbreviation,display_position,eligible_positions,percent_ownership,status,season,last_updated",
+      "filters": [
+        [
+          "eq",
+          "season",
+          2026
+        ],
+        [
+          "lt",
+          "percent_ownership",
+          50
+        ],
+        [
+          "in",
+          "editorial_team_abbreviation",
+          [
+            "NJD",
+            "NJ",
+            "TBL",
+            "TB",
+            "TOR"
+          ]
+        ],
+        [
+          "range",
+          0,
+          999
+        ]
+      ],
+      "writes": 0
+    },
+    {
+      "table": "wgo_skater_stats_totals",
+      "select": "player_id,player_name,season,games_played,points_per_game,shots,hits,blocked_shots,current_team_abbreviation,updated_at",
+      "filters": [
+        [
+          "eq",
+          "season",
+          "20262027"
+        ],
+        [
+          "in",
+          "current_team_abbreviation",
+          [
+            "NJD",
+            "TBL",
+            "TOR"
+          ]
+        ],
+        [
+          "range",
+          0,
+          799
+        ]
+      ],
+      "writes": 0
+    },
+    {
+      "table": "wgo_goalie_stats_totals",
+      "select": "goalie_id,goalie_name,season_id,games_played,games_started,quality_starts_pct,save_pct,current_team_abbreviation,updated_at",
+      "filters": [
+        [
+          "eq",
+          "season_id",
+          20262027
+        ],
+        [
+          "in",
+          "current_team_abbreviation",
+          [
+            "NJD",
+            "TBL",
+            "TOR"
+          ]
+        ],
+        [
+          "range",
+          0,
+          119
+        ]
+      ],
+      "writes": 0
+    }
+  ]
+}

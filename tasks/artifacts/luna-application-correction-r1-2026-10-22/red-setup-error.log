@@ -1,0 +1,47 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ❯ lib/sources/tweetIdentityReplacementReview.test.ts (18 tests | 2 failed | 16 skipped) 3ms
+   ↓ review-only two-subject replacement contract > stays off without reading inputs or transports
+   ↓ review-only two-subject replacement contract > uses an explicitly retrospective S06 development fixture with scripted identity output; retains literal direction and explicit PP1 while holding every effect and claim certainty
+   ↓ review-only two-subject replacement contract > holds reversed subject direction rather than trusting the supplied role labels
+   ↓ review-only two-subject replacement contract > preserves a synthetic Unicode wrapper and hostile trailing source text without granting authority
+   ↓ review-only two-subject replacement contract > rejects unmatched identity/source binding
+   ↓ review-only two-subject replacement contract > rejects invalid-id identity/source binding
+   ↓ review-only two-subject replacement contract > rejects duplicate-occurrence identity/source binding
+   ↓ review-only two-subject replacement contract > rejects tampered-source identity/source binding
+   ↓ review-only two-subject replacement contract > rejects tampered-span identity/source binding
+   ↓ review-only two-subject replacement contract > rejects wrong-directory identity/source binding
+   ↓ review-only two-subject replacement contract > rejects invented unit text, split offsets and cross-clause expansion
+   ↓ review-only two-subject replacement contract > keeps a synthetic source with no unit unknown instead of recovering PP1 from memory
+   ↓ review-only two-subject replacement contract > cannot turn identity confidence or hostile extra authority fields into permission
+   ↓ review-only two-subject replacement contract > rejects a consistently rebound conditional clause instead of reducing it to confirmed replacement
+   × R1 repeated-word grammatical slots > requires the outgoing occurrence to occupy the grammatical slot, not the repeated noun 2ms
+     → offlineIdentitySource is not defined
+   × R1 repeated-word grammatical slots > requires the outgoing occurrence to occupy the grammatical slot, not the repeated predicate 0ms
+     → offlineIdentitySource is not defined
+   ↓ R1 repeated-word grammatical slots > accepts the correct outgoing grammatical slot with repeated noun
+   ↓ R1 repeated-word grammatical slots > accepts the correct outgoing grammatical slot with repeated predicate
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/sources/tweetIdentityReplacementReview.test.ts > R1 repeated-word grammatical slots > requires the outgoing occurrence to occupy the grammatical slot, not the repeated noun
+ FAIL  lib/sources/tweetIdentityReplacementReview.test.ts > R1 repeated-word grammatical slots > requires the outgoing occurrence to occupy the grammatical slot, not the repeated predicate
+ReferenceError: offlineIdentitySource is not defined
+ ❯ fixture lib/sources/tweetIdentityReplacementReview.test.ts:139:18
+    137| }
+    138| function fixture(text = "Milo North will take spot's spot", outgoingSt…
+    139|   const source = offlineIdentitySource(prefix + text, at);
+       |                  ^
+    140|   const outName = e.players[1]!.lastName.toLowerCase();
+    141|   const mentions = [offlineIdentityMention(source.text, 'Milo North'),…
+ ❯ lib/sources/tweetIdentityReplacementReview.test.ts:155:56
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 16 skipped (18)
+   Start at  09:33:45
+   Duration  196ms (transform 52ms, setup 2ms, collect 68ms, tests 3ms, environment 0ms, prepare 27ms)
+

@@ -1,0 +1,41 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/player-cards-2026-10-24/slice-01-review/review.vitest.config.mts tasks/artifacts/player-cards-2026-10-24/slice-01-review/independent-controls.test.tsx --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+(node:60667) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ tasks/artifacts/player-cards-2026-10-24/slice-01-review/independent-controls.test.tsx (5 tests | 1 failed) 87ms
+   ✓ independent frozen player-card consistency > matches saved manifest settings, metric selection, sample and capabilities exactly 4ms
+   ✓ independent frozen player-card consistency > independently sorts each fabricated cohort to verify rank and midrank percentile from the same pool 3ms
+   × independent frozen player-card consistency > keeps missing, valid unranked and observed-zero presentations distinct 20ms
+     → expected 'Individual shots on goal per 60 minut…' to contain '2 of 2 · 25.0 pct'
+   ✓ independent frozen player-card consistency > matches retained browser SVG text for all four frozen scenarios without browser execution 45ms
+   ✓ independent frozen player-card consistency > hands the displayed SVG unchanged to the rasterizer with only fixed output dimensions and class removal 15ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tasks/artifacts/player-cards-2026-10-24/slice-01-review/independent-controls.test.tsx > independent frozen player-card consistency > keeps missing, valid unranked and observed-zero presentations distinct
+AssertionError: expected 'Individual shots on goal per 60 minut…' to contain '2 of 2 · 25.0 pct'
+
+Expected: "2 of 2 · 25.0 pct"
+Received: "Individual shots on goal per 60 minutes. shots/60SOG/600.00shots/602 of 2  · 25.0 pct"
+
+ ❯ tasks/artifacts/player-cards-2026-10-24/slice-01-review/independent-controls.test.tsx:60:34
+     58|     expect(incomplete.querySelectorAll("rect")).toHaveLength(0);
+     59|     expect(observed.textContent).toContain("0.00");
+     60|     expect(observed.textContent).toContain("2 of 2 · 25.0 pct");
+       |                                  ^
+     61|     expect(observed.querySelectorAll("rect")).toHaveLength(2);
+     62|     expect(observed.querySelectorAll("rect")[1].getAttribute("width"))…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  13:03:25
+   Duration  521ms (transform 131ms, setup 8ms, collect 183ms, tests 87ms, environment 135ms, prepare 29ms)
+

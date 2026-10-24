@@ -1,0 +1,14 @@
+{
+  "COMMANDS.md": "393b65da67d7209d017484f7ff21758644de358647955424417f196deda3884b",
+  "END-HASHES.json": "7a7bb16663daf08a738c9ec61ff524ae9da9c7d75e9d233cd20ed97ddd523b52",
+  "FIXED-SNAPSHOT.json": "ffc850d7fbef2acb0c3d6c308480711df4fcea929cf17d4860c6508909fa5cfd",
+  "REPORT.md": "02243124f495702bd35158dbc722e680c251c96dd2b57b79ee41b49d7ebd50f0",
+  "SCRATCH-PATH.txt": "1e7e4430b0341384281f9abf969612ac3fefe9c38b3df3d73e4a109a94f83902",
+  "START-HASHES.json": "12b9449a54b0ad310132816e24b2f964804b706ac37cb23587142cab407a722e",
+  "VERIFICATION.json": "ad9a6c280b2660efadd27bbe83469cbd34c7bd32f2fb19e774f01478d4a72232",
+  "audit-network-deny.cjs": "5fd1c8ce5bb65531ab0558bccf4fe9ef252e4c524c4bec4c944c37e4bd707c06",
+  "audit.offline.setup.ts": "7dbb56c149b2b620b5cc073456a414d2819b06cfbb5ec7c7f0cf02ef7d176a6f",
+  "audit.vitest.config.mts": "20dbbfaed440ddb30035436071ea3c9166eb4198cd50cbafe9ed126feb7865db",
+  "authority.log": "c0a318005541c230c3a94e75e75e80718441c04dddea3f45df79b8189de46c68",
+  "classification.log": "f9675cd80c1c424c5f655234210ac7f1851328b63010f0b1e7aabc514d8a2208"
+}

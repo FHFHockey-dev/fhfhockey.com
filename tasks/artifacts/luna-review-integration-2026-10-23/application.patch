@@ -1,0 +1,2322 @@
+diff --git a/web/lib/sources/tweetLunaReview.ts b/web/lib/sources/tweetLunaReview.ts
+new file mode 100644
+index 000000000..ca0414698
+--- /dev/null
++++ b/web/lib/sources/tweetLunaReview.ts
+@@ -0,0 +1,157 @@
++import { z } from "zod";
++import { timestampMicros } from "lib/projections/evidenceTime";
++import { identityDigest, indexPlayerIdentitySnapshot } from "./playerIdentitySnapshot";
++import { projectSavedPlayerIdentityEvidence, type IdentityEvidenceEvaluation } from "./playerIdentitySnapshotEvidence";
++import { exactIdentitySpan, prepareFixtureIdentityRequest, validateFixtureIdentityProposal,
++  type FixtureIdentityMention, type FixtureIdentityRequest } from "./tweetIdentityProposal";
++import { mapTweetDecisionReview, DECISION_REVIEW_BINDING_VERSION, type DecisionStatementBinding } from "./tweetDecisionReviewMapping";
++import { validateTweetDecisionReviewResult } from "./tweetDecisionReviewResults";
++import { createShadowAdapter } from "./decisionsReference/adapter.mjs";
++import { LUNA_MODEL, type LunaTransport } from "./tweetLunaTransport";
++import type { TweetReviewPacket } from "./tweetReviewSidecar";
++import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
++
++export const LUNA_REVIEW_VERSION = "ifttt-luna-review-v1";
++export const LUNA_REVIEW_AUTHORITY = { canPublish: false, canWriteAliases: false, canChangeStatus: false, canExecuteReplacement: false } as const;
++const span = z.object({ start: z.number().int().nonnegative(), end: z.number().int().positive(), text: z.string().min(1) }).strict();
++const statuses = z.array(z.object({ occurrenceId: z.string(), canonicalId: z.string(),
++  status: z.enum(["confirmed", "ruled_out", "likely", "projected", "unknown"]), evidence: span,
++}).strict()).max(32);
++export type LunaReviewInput = {
++  packet: TweetReviewPacket; extractionVersion: string; statements: DecisionStatementBinding[];
++  identity?: { evidence: unknown; evaluation: IdentityEvidenceEvaluation; asOf: string; mentions: FixtureIdentityMention[] };
++  decisions?: boolean;
++};
++
++function responsesWire(request: FixtureIdentityRequest) {
++  const enumString = (values: string[]) => ({ type: "string", enum: values });
++  const object = (properties: Record<string, unknown>) => ({ type: "object", additionalProperties: false, required: Object.keys(properties), properties });
++  const evidence = object({ start: { type: "integer" }, end: { type: "integer" }, text: { type: "string" } });
++  const occurrenceIds = request.content.occurrences.map(o => o.id);
++  const ids = [...new Set(request.content.occurrences.flatMap(o => o.candidateSet.candidates.map(c => c.row.canonicalId)))];
++  const schema = object({ identity: object({ version: enumString([request.content.version]), requestHash: enumString([request.hash]),
++    directoryHash: enumString([request.content.directory.hash]), occurrences: { type: "array", items: object({
++      occurrenceId: enumString(occurrenceIds), canonicalId: { type: ["string", "null"], enum: [...ids, null] },
++      status: enumString(["matched", "ambiguous", "missing", "conflicting", "not_player", "needs_widening"]),
++      evidence, identityConfidence: enumString(["strong", "tentative", "unknown"]),
++    }) } }), goalieStatuses: { type: "array", items: object({ occurrenceId: enumString(occurrenceIds),
++    canonicalId: { type: "string" }, status: enumString(["confirmed", "ruled_out", "likely", "projected", "unknown"]), evidence }) } });
++  return { model: LUNA_MODEL, input: JSON.stringify(request.content),
++    instructions: `${request.content.instructions.join("\n")}\nReturn {identity,goalieStatuses}. Identity follows the supplied identity contract. Optional goalieStatuses classify source wording only, never verified world truth. Each exact evidence span must contain just its named subject, not another occurrence. Never invent game/team/time fields. First-off, practice and uncertainty cannot confirm a start. No injury statement may bind to another subject. Return an empty goalieStatuses array when unsupported.`,
++    text: { format: { type: "json_schema", name: "ifttt_luna_review_v1", strict: true, schema } } };
++}
++
++/** Validates a proposal, not truth. Verified 100/0 must come through the existing accepted-evidence workflow. */
++export function validateLunaGoalieStatuses(request: FixtureIdentityRequest, identity: ReturnType<typeof validateFixtureIdentityProposal>, value: unknown) {
++  const result = statuses.parse(value);
++  if (new Set(result.map(s => s.occurrenceId)).size !== result.length) throw new Error("duplicate_goalie_subject");
++  return result.map(proposal => {
++    const occurrence = request.content.occurrences.find(o => o.id === proposal.occurrenceId);
++    const selected = identity.occurrences.find(o => o.occurrenceId === proposal.occurrenceId);
++    const candidate = occurrence?.candidateSet.candidates.find(c => c.row.canonicalId === proposal.canonicalId);
++    if (!occurrence || selected?.status !== "matched" || selected.canonicalId !== proposal.canonicalId
++      || !candidate?.row.positions.includes("G") || !exactIdentitySpan(request.content.source.text, proposal.evidence)
++      || proposal.evidence.start > occurrence.span.start || proposal.evidence.end < occurrence.span.end
++      || request.content.occurrences.some(o => o.id !== occurrence.id && o.span.start < proposal.evidence.end && o.span.end > proposal.evidence.start)) {
++      throw new Error("goalie_subject_binding_invalid");
++    }
++    if (["confirmed", "ruled_out"].includes(proposal.status)
++      && /\b(first off|first (?:goalie|goaltender) off|practice|morning skate|could|might|may|likely|projected|expected|probably|if|not confirmed|no decision|undecided)\b|\?/iu.test(proposal.evidence.text)) {
++      throw new Error("goalie_certainty_inflation");
++    }
++    if (["confirmed", "ruled_out"].includes(proposal.status)) {
++      const literal = extractTweetPlayerEvents({ text: proposal.evidence.text, publishedAt: request.content.source.publishedAt,
++        players: [{ playerId: candidate.row.nhlPlayerId, fullName: candidate.row.fullName, lastName: candidate.row.lastName,
++          position: "G", aliases: [occurrence.span.text] }] });
++      if (!literal.some(e => e.kind === "goalie" && e.playerId === candidate.row.nhlPlayerId && e.state === proposal.status)) {
++        throw new Error("goalie_definite_wording_unsupported");
++      }
++    }
++    return { ...proposal, verified: false as const, gameId: null, teamId: null, appliedOverride: null,
++      policyFloorAfterAcceptance: proposal.status === "likely" ? 0.8 : proposal.status === "projected" ? 0.65 : null,
++      holds: ["human_review_required", "game_and_source_time_binding_required", "conflict_retraction_check_required"] };
++  });
++}
++
++function outputJson(body: any) {
++  if (body.status !== "completed" || !Array.isArray(body.output)) throw new Error("luna_response_incomplete");
++  const content = body.output.flatMap((item: any) => item.type === "message" && item.role === "assistant" && Array.isArray(item.content) ? item.content : []);
++  if (content.length !== 1 || content[0].type !== "output_text" || typeof content[0].text !== "string") throw new Error("luna_response_shape");
++  return z.object({ identity: z.unknown(), goalieStatuses: z.unknown() }).strict().parse(JSON.parse(content[0].text));
++}
++
++/** Explicit post-retention caller. Deterministic packet is immutable; Luna suggestions
++ * are never fed back as canonical claims to the reviewer or to the publication path.
++ * One Responses call and optionally one Decisions call; no paid widening/retries.
++ */
++export async function runRetainedTweetLunaReview(args: {
++  enabled?: boolean; input: LunaReviewInput; transport?: LunaTransport; now?: () => string;
++}) {
++  const base = { version: LUNA_REVIEW_VERSION, ...LUNA_REVIEW_AUTHORITY, status: "disabled", holds: [] as string[],
++    lineage: null as null | { originalPostId: string | null; author: string | null; url: string | null; textVersion: string; packetHash: string },
++    identity: null as ReturnType<typeof validateFixtureIdentityProposal> | null,
++    goalieStatuses: [] as ReturnType<typeof validateLunaGoalieStatuses>, decisionReview: null as ReturnType<typeof validateTweetDecisionReviewResult> | null,
++    attempts: 0, requestIds: [] as (string | null)[], reviewQueueKey: null as string | null };
++  if (args.enabled !== true) return base;
++  const now = args.now ?? (() => new Date().toISOString());
++  try {
++    const input = structuredClone(args.input), packet = input.packet;
++    if (Buffer.byteLength(JSON.stringify(input)) > 512_000) throw new Error("review_input_too_large");
++    const mapped = mapTweetDecisionReview({ enabled: true, packet, extractionVersion: input.extractionVersion, statements: input.statements });
++    if (mapped.status !== "mapped") return { ...base, status: "held", holds: ["retained_packet_unresolved"] };
++    if (timestampMicros(now()) === null || timestampMicros(now())! < timestampMicros(packet.source.ingestedAt)!) throw new Error("review_clock_invalid");
++    base.lineage = { originalPostId: packet.source.originalPostId, author: packet.source.author, url: packet.source.url,
++      textVersion: packet.source.sourceTextVersionId, packetHash: mapped.packetHash };
++    base.reviewQueueKey = identityDigest([LUNA_REVIEW_VERSION, mapped.packetHash, input]);
++    base.status = "review_only";
++    if (!args.transport) return { ...base, status: "held", holds: ["explicit_transport_required"] };
++    if (input.identity) {
++      const id = input.identity;
++      if (timestampMicros(id.evaluation.sourcePublishedAt) !== timestampMicros(packet.source.publishedAt!)
++        || timestampMicros(id.asOf) === null || timestampMicros(id.asOf)! > timestampMicros(now())!) throw new Error("identity_source_clock_mismatch");
++      // Rebuild for this source: never reuse a later-cutoff bare snapshot.
++      const projection = projectSavedPlayerIdentityEvidence(id.evidence, { asOf: id.asOf, evaluation: id.evaluation });
++      const index = indexPlayerIdentitySnapshot(projection.snapshot);
++      if (!index.snapshot.content.rows.length) throw new Error("dated_identity_evidence_unavailable");
++      const prepared = prepareFixtureIdentityRequest({ enabled: true, index, mentions: id.mentions, source: {
++        id: packet.source.retainedSourceId, text: packet.source.text, originalPostId: packet.source.originalPostId!,
++        authorId: packet.source.author!, url: packet.source.url!, publishedAt: packet.source.publishedAt, receivedAt: packet.source.ingestedAt,
++        provenance: { kind: "approved_local", label: `retained-sidecar:${mapped.packetHash}`, lineageKey: packet.source.originalPostId! },
++      } });
++      if (prepared.status !== "prepared") throw new Error("identity_preparation_held");
++      base.attempts++;
++      const receipt = await args.transport("responses", responsesWire(prepared.request));
++      base.requestIds.push(receipt.requestId);
++      const raw = outputJson(receipt.body);
++      base.identity = validateFixtureIdentityProposal(prepared.request, raw.identity);
++      base.goalieStatuses = validateLunaGoalieStatuses(prepared.request, base.identity, raw.goalieStatuses);
++      if (base.identity.occurrences.some(o => o.status !== "matched")) base.holds.push("identity_abstention_or_widening_requires_review");
++      if (projection.evaluation.mode === "retrospective") base.holds.push("retrospective_development_evidence");
++    }
++    if (input.decisions === true) {
++      const transport = args.transport;
++      const adapter = createShadowAdapter({ now, config: { enabled: true, maxRequests: 1, maxInputTokens: 70_000,
++        maxEstimatedUsd: 1, maxInputBytesPerRequest: 65_536, maxReservedTokensPerRequest: 70_000, timeoutMs: 16_000 },
++      transport: async (request) => {
++        base.attempts++;
++        const receipt = await transport("decisions", request);
++        base.requestIds.push(receipt.requestId);
++        return { body: receipt.body, requestId: receipt.requestId ?? undefined };
++      } });
++      const sidecar = await adapter.evaluate(mapped.input);
++      base.decisionReview = validateTweetDecisionReviewResult(mapped, { bindingVersion: DECISION_REVIEW_BINDING_VERSION,
++        planHash: mapped.planHash, packetHash: mapped.packetHash, sidecar });
++      if (base.decisionReview.status !== "bound_review") base.holds.push("decisions_unresolved");
++    }
++    base.holds.push("human_review_required", "no_publication_authority");
++    return base;
++  } catch (error) {
++    // Do not propagate provider errors, input text or credentials into operational logs.
++    const safeReasons = new Set(["review_input_too_large", "review_clock_invalid", "identity_source_clock_mismatch",
++      "dated_identity_evidence_unavailable", "identity_preparation_held", "goalie_subject_binding_invalid", "goalie_certainty_inflation",
++      "goalie_definite_wording_unsupported", "luna_response_incomplete", "luna_response_shape", "luna_dispatch_disabled",
++      "luna_budget_stopped", "luna_budget_exhausted", "luna_unsettled_attempt", "luna_attempt_held_no_retry", "luna_request_too_large"]);
++    const reason = error instanceof Error && safeReasons.has(error.message) ? error.message : "invalid_or_unavailable_review";
++    return { ...base, status: "held", holds: [...base.holds, reason] };
++  }
++}
+diff --git a/web/lib/sources/tweetLunaTransport.ts b/web/lib/sources/tweetLunaTransport.ts
+new file mode 100644
+index 000000000..1f64f088a
+--- /dev/null
++++ b/web/lib/sources/tweetLunaTransport.ts
+@@ -0,0 +1,96 @@
++import { identityDigest } from "./playerIdentitySnapshot";
++
++export const LUNA_MODEL = "gpt-6-luna";
++export const LUNA_ENDPOINTS = { responses: "https://api.openai.com/v1/responses", decisions: "https://api.openai.com/v1/decisions" } as const;
++export type LunaEndpoint = keyof typeof LUNA_ENDPOINTS;
++// Full 1.05M context at long-input rates + 2048 output tokens, regional premium.
++// Explicit caching without breakpoints disables caching; unexpected cache usage is held.
++export const LUNA_RESERVATION_NANO_USD = 233_000_000;
++export const LUNA_MAX_OUTPUT_TOKENS = 2048;
++export type LunaReceipt = { body: any; requestId: string | null; endpoint: LunaEndpoint; chargeNanoUsd: number };
++export interface LunaAdmissionStore {
++  reserve(key: string, amountNanoUsd: number): Promise<{ status: "reserved" } | { status: "replay"; receipt: LunaReceipt }>;
++  settle(key: string, receipt: LunaReceipt): Promise<void>;
++  uncertain(key: string, requestId?: string | null): Promise<void>;
++}
++
++/** Standard rates checked 2026-10-23. Conservative regional ceiling, not invoice attribution. */
++export function priceLunaUsage(body: any, endpoint: LunaEndpoint): number {
++  const input = body?.usage?.input_tokens, output = endpoint === "decisions" ? 0 : body?.usage?.output_tokens;
++  const details = body?.usage?.input_tokens_details;
++  if (body?.model !== LUNA_MODEL || !Number.isSafeInteger(input) || input < 0 || input > 1_050_000
++    || !Number.isSafeInteger(output) || output < 0 || output > LUNA_MAX_OUTPUT_TOKENS
++    || (details?.cached_tokens ?? 0) !== 0 || (details?.cache_write_tokens ?? 0) !== 0
++    || (body.service_tier != null && body.service_tier !== "default")) throw new Error("luna_usage_unresolved");
++  const long = input > 272_000;
++  return Math.ceil((input * (long ? 200 : 100) + output * (long ? 750 : 500)) * 1.1);
++}
++
++/** No environment/key lookup, redirect, SDK retries, tools, or implicit endpoint. */
++export function createLunaTransport(args: {
++  enabled?: boolean; stopped: () => boolean; apiKey: () => string | undefined;
++  admission: LunaAdmissionStore; fetch?: typeof fetch; timeoutMs?: number;
++}) {
++  return async (endpoint: LunaEndpoint, input: Record<string, unknown>): Promise<LunaReceipt> => {
++    if (args.enabled !== true || args.stopped()) throw new Error("luna_dispatch_disabled");
++    const timeout = args.timeoutMs ?? 15_000;
++    if (!Number.isInteger(timeout) || timeout < 1 || timeout > 15_000 || input.model !== LUNA_MODEL
++      || typeof input.input !== "string" || (endpoint !== "responses" && endpoint !== "decisions")) throw new Error("invalid_luna_transport_input");
++    // Transport controls override input; callers cannot enable tools or server storage.
++    const body = endpoint === "responses" ? {
++      model: LUNA_MODEL, input: input.input, instructions: input.instructions, text: input.text,
++      max_output_tokens: LUNA_MAX_OUTPUT_TOKENS, reasoning: { effort: "none" }, tools: [],
++      store: false, service_tier: "default", prompt_cache_options: { mode: "explicit" },
++    } : { model: LUNA_MODEL, input: input.input, questions: input.questions, prompt_cache_options: { mode: "explicit" } };
++    const serialized = JSON.stringify(body);
++    if (Buffer.byteLength(serialized) > 65_536) throw new Error("luna_request_too_large");
++    const key = identityDigest({ endpoint, body });
++    const admission = await args.admission.reserve(key, LUNA_RESERVATION_NANO_USD);
++    if (admission.status === "replay") return admission.receipt;
++    let timer: ReturnType<typeof setTimeout> | undefined;
++    let observedRequestId: string | null = null;
++    const controller = new AbortController();
++    try {
++      // Check again after durable admission. A stop here retains reservation conservatively.
++      if (args.stopped()) throw new Error("luna_dispatch_disabled");
++      const keyValue = args.apiKey();
++      if (!keyValue) throw new Error("luna_existing_access_missing");
++      const operation = async () => {
++        const response = await (args.fetch ?? globalThis.fetch)(LUNA_ENDPOINTS[endpoint], {
++          method: "POST", redirect: "error", signal: controller.signal,
++          headers: { Authorization: `Bearer ${keyValue}`, "Content-Type": "application/json" }, body: serialized,
++        });
++        const headerId = response.headers.get("x-request-id");
++        observedRequestId = headerId && /^[A-Za-z0-9_-]{1,200}$/.test(headerId) ? headerId : null;
++        if (!response.ok || !response.body) throw new Error("luna_provider_failed");
++        const reader = response.body.getReader(), chunks: Uint8Array[] = [];
++        let bytes = 0;
++        try {
++          while (true) {
++            const part = await reader.read();
++            if (part.done) break;
++            bytes += part.value.byteLength;
++            if (bytes > 262_144) throw new Error("luna_response_too_large");
++            chunks.push(part.value);
++          }
++        } finally { await reader.cancel().catch(() => undefined); }
++        const value = JSON.parse(Buffer.concat(chunks).toString("utf8"));
++        const receipt: LunaReceipt = { body: value, requestId: observedRequestId, endpoint,
++          chargeNanoUsd: priceLunaUsage(value, endpoint) };
++        if (receipt.chargeNanoUsd > LUNA_RESERVATION_NANO_USD) throw new Error("luna_reservation_exceeded");
++        return receipt;
++      };
++      const receipt = await Promise.race([operation(), new Promise<never>((_, reject) => {
++        timer = setTimeout(() => { controller.abort(); reject(new Error("luna_timeout")); }, timeout);
++      })]);
++      await args.admission.settle(key, receipt);
++      return receipt;
++    } catch {
++      controller.abort();
++      await args.admission.uncertain(key, observedRequestId);
++      throw new Error("luna_attempt_held_no_retry");
++    } finally { if (timer) clearTimeout(timer); }
++  };
++}
++
++export type LunaTransport = ReturnType<typeof createLunaTransport>;
+diff --git a/web/lib/sources/tweetLunaLocalStore.ts b/web/lib/sources/tweetLunaLocalStore.ts
+new file mode 100644
+index 000000000..c7e74796e
+--- /dev/null
++++ b/web/lib/sources/tweetLunaLocalStore.ts
+@@ -0,0 +1,68 @@
++import { closeSync, fsyncSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
++import { z } from "zod";
++import { dirname } from "node:path";
++import type { LunaAdmissionStore, LunaReceipt } from "./tweetLunaTransport";
++
++const money = z.number().int().nonnegative().safe();
++const ledgerSchema = z.object({ version: z.literal("luna-local-admission-v1"), approvedPolicyId: z.string().min(1),
++  enabled: z.boolean(), blockedReason: z.string().nullable(), expiresAt: z.string().datetime({ offset: true }),
++  capNanoUsd: money, priorExposureNanoUsd: money, maxCalls: z.number().int().min(0).max(20),
++  attempts: z.record(z.object({ reservedNanoUsd: money, state: z.enum(["reserved", "settled", "uncertain"]),
++    requestId: z.string().nullable().optional(),
++    receipt: z.object({ body: z.unknown(), requestId: z.string().nullable(), endpoint: z.enum(["responses", "decisions"]), chargeNanoUsd: money }).nullable(),
++  }).strict()),
++}).strict();
++
++/** Single-host manual worker only. Never initializes/resets a ledger, clears a stop,
++ * frees uncertain reservations, or steals a stale lock. Not a serverless budget store.
++ * The reviewed existing ledger must include all prior exposure under its approval.
++ */
++export function openLunaLocalAdmission(path: string, now = () => Date.now()): LunaAdmissionStore {
++  const transaction = <T>(update: (ledger: z.infer<typeof ledgerSchema>) => T): T => {
++    const lock = `${path}.lock`, fd = openSync(lock, "wx", 0o600);
++    try {
++      const raw = readFileSync(path);
++      if (raw.length > 6_000_000) throw new Error("luna_ledger_too_large");
++      const ledger = ledgerSchema.parse(JSON.parse(raw.toString("utf8")));
++      const result = update(ledger), tmp = `${path}.${process.pid}.pending`;
++      const out = openSync(tmp, "wx", 0o600);
++      try { writeFileSync(out, JSON.stringify(ledger)); fsyncSync(out); } finally { closeSync(out); }
++      renameSync(tmp, path);
++      const directory = openSync(dirname(path), "r");
++      try { fsyncSync(directory); } finally { closeSync(directory); }
++      return result;
++    } finally { closeSync(fd); unlinkSync(lock); }
++  };
++  return {
++    async reserve(key, amount) {
++      return transaction(ledger => {
++        if (!ledger.enabled || ledger.blockedReason || Date.parse(ledger.expiresAt) <= now()) throw new Error("luna_budget_stopped");
++        const previous = ledger.attempts[key];
++        if (previous?.state === "settled" && previous.receipt) return { status: "replay" as const, receipt: previous.receipt as LunaReceipt };
++        const entries = Object.values(ledger.attempts);
++        if (entries.some(e => e.state !== "settled")) throw new Error("luna_unsettled_attempt");
++        const exposure = entries.reduce((sum, e) => sum + (e.receipt?.chargeNanoUsd ?? e.reservedNanoUsd), ledger.priorExposureNanoUsd);
++        if (!Number.isSafeInteger(amount) || amount <= 0 || !Number.isSafeInteger(exposure + amount)
++          || exposure + amount > ledger.capNanoUsd || entries.length >= ledger.maxCalls) throw new Error("luna_budget_exhausted");
++        ledger.attempts[key] = { reservedNanoUsd: amount, state: "reserved", receipt: null };
++        return { status: "reserved" as const };
++      });
++    },
++    async settle(key, receipt) {
++      transaction(ledger => {
++        const row = ledger.attempts[key];
++        if (!row || row.state !== "reserved" || !Number.isSafeInteger(receipt.chargeNanoUsd)
++          || receipt.chargeNanoUsd < 0 || receipt.chargeNanoUsd > row.reservedNanoUsd) throw new Error("luna_settlement_rejected");
++        row.state = "settled"; row.receipt = receipt;
++      });
++    },
++    async uncertain(key, requestId) {
++      transaction(ledger => {
++        if (ledger.attempts[key]?.state !== "settled") {
++          if (ledger.attempts[key]) { ledger.attempts[key]!.state = "uncertain"; ledger.attempts[key]!.requestId = requestId ?? null; }
++          ledger.blockedReason = ledger.blockedReason ?? "unknown_billed_outcome";
++        }
++      });
++    },
++  };
++}
+diff --git a/web/lib/sources/tweetLunaReview.test.ts b/web/lib/sources/tweetLunaReview.test.ts
+new file mode 100644
+index 000000000..f69a48a64
+--- /dev/null
++++ b/web/lib/sources/tweetLunaReview.test.ts
+@@ -0,0 +1,207 @@
++// @vitest-environment node
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import { createHash } from "node:crypto";
++import { qualifiedFixture } from "./fixtures/tweetClaimQualificationFixture";
++import library from "./fixtures/tweetLunaAdjudicatedLibrary.json";
++import { extractDurableTweetClaims, TWEET_CLAIM_EXTRACTION_VERSION } from "./tweetClaimExtraction";
++import { extractTweetPlayerEvents } from "./tweetPlayerEvents";
++import { prepareTweetReviewPacket } from "./tweetReviewSidecar";
++import { DECISION_REFERENCE_SHA256, DECISION_STATEMENT_VERSION } from "./tweetDecisionReviewMapping";
++import { runRetainedTweetLunaReview, type LunaReviewInput } from "./tweetLunaReview";
++import { createLunaTransport, LUNA_MODEL, LUNA_RESERVATION_NANO_USD, priceLunaUsage } from "./tweetLunaTransport";
++import { openLunaLocalAdmission } from "./tweetLunaLocalStore";
++import { getPublicNewsClaimPresentation } from "lib/newsFeed";
++
++const NOW = "2026-10-16T15:02:00Z";
++const dirs: string[] = [];
++afterEach(() => { for (const d of dirs.splice(0)) rmSync(d, { recursive: true, force: true }); });
++function fixture(text = "BOS Jeremy Swayman starts tonight."): LunaReviewInput {
++  const f = qualifiedFixture(); f.source.rawText = text; f.source.rawPayload = { text };
++  f.source.metadata.interpretation.events = extractTweetPlayerEvents({ text, publishedAt: f.source.tweetPostedAt, includeClaimAnchors: true,
++    players: [{ playerId: 8478499, fullName: "Jeremy Swayman", lastName: "Swayman", position: "G", teamId: 6 }] });
++  const packet = prepareTweetReviewPacket({ source: f.source,
++    receipt: { id: "receipt-1", eventTable: "line_source_ifttt_events", eventId: "event-1", receivedAt: f.source.observedAt,
++      inputRow: { tweet_id: f.source.tweetId, text, tweet_created_at: f.source.tweetPostedAt, link_to_tweet: f.source.sourceUrl, raw_payload: f.source.rawPayload } },
++    claims: extractDurableTweetClaims({ source: f.source, game: f.game, interpretedAt: f.asOf }) });
++  const statements: LunaReviewInput["statements"] = packet.candidates.map(c => ({ version: DECISION_STATEMENT_VERSION, observationId: c.observationId,
++    sourceId: packet.source.retainedSourceId, sourceTextVersionId: packet.source.sourceTextVersionId, extractionVersion: c.extractionVersion,
++    playerId: c.canonicalPlayerIds[0]!, statement: "The source identifies Jeremy Swayman as starting in the game it discusses.",
++    proposition: structuredClone({ fact: c.fact, scope: c.scope, modality: c.modality, effectiveAt: c.effectiveAt }), evidence: c.evidence }));
++  const start = text.indexOf("Jeremy Swayman");
++  return { packet, statements, extractionVersion: TWEET_CLAIM_EXTRACTION_VERSION, decisions: true, identity: {
++    evidence: { version: "saved-public-player-evidence-v1", cohort: "synthetic-integration",
++      players: [{ nhlId: 8478499, registryId: 1, fullName: "Jeremy Swayman", lastName: "Swayman", position: "G", provenance: "synthetic", knownAt: "2026-10-01T00:00:00Z" }],
++      aliases: [], memberships: [], completeness: { status: "partial", scope: "one synthetic identity", omittedRecords: null }, truncated: false },
++    evaluation: { mode: "causal_as_of", sourcePublishedAt: f.source.tweetPostedAt }, asOf: NOW,
++    mentions: [{ id: "subject", kind: "name", span: { start, end: start + 14, text: "Jeremy Swayman" }, teamHint: null, positionHint: null }],
++  } };
++}
++function harness(options: { mutate?: (body: any, endpoint: string, wire: any) => void; ledger?: Record<string, unknown>; timeout?: boolean; timeoutMs?: number; stopped?: boolean } = {}) {
++  const dir = mkdtempSync(join(tmpdir(), "luna-integration-")); dirs.push(dir); const path = join(dir, "ledger.json");
++  writeFileSync(path, JSON.stringify({ version: "luna-local-admission-v1", approvedPolicyId: "synthetic-no-paid-authority", enabled: true,
++    blockedReason: null, expiresAt: "2026-10-17T00:00:00Z", capNanoUsd: 520_000_000, priorExposureNanoUsd: 0, maxCalls: 4, attempts: {}, ...options.ledger }));
++  const fetcher = vi.fn(async (url: any, init: any) => {
++    if (options.timeout) return new Promise<Response>(() => undefined);
++    const wire = JSON.parse(init.body), endpoint = String(url).endsWith("responses") ? "responses" : "decisions";
++    let body: any = { id: "response-fixture", model: LUNA_MODEL, usage: { input_tokens: 100, output_tokens: 50 } };
++    if (endpoint === "responses") {
++      const request = JSON.parse(wire.input);
++      const identity = { version: request.version, requestHash: createHash("sha256").update(JSON.stringify(request)).digest("hex"),
++        directoryHash: request.directory.hash, occurrences: request.occurrences.map((o: any) => ({ occurrenceId: o.id,
++          canonicalId: o.candidateSet.candidates[0]?.row.canonicalId ?? null, status: o.candidateSet.candidates.length ? "matched" : "missing",
++          evidence: o.span, identityConfidence: "tentative" })) };
++      const proposed = { identity, goalieStatuses: [] };
++      body = { ...body, status: "completed", output: [{ type: "message", role: "assistant", content: [{ type: "output_text", text: JSON.stringify(proposed) }] }] };
++    } else body.answers = wire.questions.map((q: any) => q.type === "predicate" ? { name: q.name, type: q.type, probability: 0.9 }
++      : { name: q.name, type: q.type, choice: q.choices[0].value, confidence: 0.9,
++        probabilities: q.choices.map((c: any, i: number) => ({ value: c.value, probability: i === 0 ? 1 : 0 })) });
++    options.mutate?.(body, endpoint, wire);
++    return new Response(JSON.stringify(body), { headers: { "x-request-id": `request-${endpoint}` } });
++  });
++  const key = vi.fn(() => "synthetic-key");
++  const store = openLunaLocalAdmission(path, () => Date.parse(NOW));
++  const transport = createLunaTransport({ enabled: true, stopped: () => options.stopped === true, apiKey: key, admission: store,
++    fetch: fetcher as typeof fetch, timeoutMs: options.timeoutMs });
++  return { path, fetcher, key, transport, store, ledger: () => JSON.parse(readFileSync(path, "utf8")),
++    run: (input = fixture(), enabled = true) => runRetainedTweetLunaReview({ enabled, input, transport, now: () => NOW }) };
++}
++function changeProposal(body: any, endpoint: string, edit: (value: any) => void) {
++  if (endpoint !== "responses") return;
++  const value = JSON.parse(body.output[0].content[0].text); edit(value); body.output[0].content[0].text = JSON.stringify(value);
++}
++
++describe("bounded retained Luna caller", () => {
++  it("defaults off before reading input or invoking transport", async () => {
++    const h = harness(); const r = await h.run(fixture(), false);
++    expect(r.status).toBe("disabled"); expect(h.fetcher).not.toHaveBeenCalled(); expect(h.key).not.toHaveBeenCalled();
++  });
++  it("runs the real caller through mocked Responses then pinned Decisions without promoting facts", async () => {
++    const h = harness(), input = fixture(), before = structuredClone(input); const r = await h.run(input);
++    expect(r).toMatchObject({ status: "review_only", attempts: 2, canPublish: false, canChangeStatus: false, canWriteAliases: false,
++      lineage: { author: input.packet.source.author, originalPostId: "1000" }, decisionReview: { status: "bound_review" } });
++    expect(input).toEqual(before); expect(h.fetcher).toHaveBeenCalledTimes(2);
++    for (const [, init] of h.fetcher.mock.calls) expect(init.redirect).toBe("error");
++    const wire = JSON.parse(h.fetcher.mock.calls[0]![1].body);
++    expect(wire).toMatchObject({ model: "gpt-6-luna", store: false, tools: [], max_output_tokens: 2048, prompt_cache_options: { mode: "explicit" } });
++    expect(h.ledger().blockedReason).toBeNull();
++  });
++  it.each(["publishedAt", "author", "originalPostId"])("holds missing original %s before dispatch", async field => {
++    const h = harness(), input = fixture(); (input.packet.source as any)[field] = null;
++    expect((await h.run(input)).status).toBe("held"); expect(h.fetcher).not.toHaveBeenCalled();
++  });
++  it("rebuilds the snapshot for the exact source publication instant", async () => {
++    const h = harness(), input = fixture(); input.identity!.evaluation.sourcePublishedAt = "2026-10-17T00:00:00Z";
++    expect((await h.run(input)).status).toBe("held"); expect(h.fetcher).not.toHaveBeenCalled();
++  });
++  it("holds unavailable historical identity evidence without a paid request", async () => {
++    const h = harness(), input = fixture(); (input.identity!.evidence as any).players[0].knownAt = NOW;
++    expect((await h.run(input)).status).toBe("held"); expect(h.fetcher).not.toHaveBeenCalled();
++  });
++  it.each(["id", "span", "authority"])("rejects injected %s and stops before downstream fan-out", async kind => {
++    const h = harness({ mutate: (b, e) => changeProposal(b, e, v => {
++      if (kind === "id") v.identity.occurrences[0].canonicalId = "nhl:999";
++      if (kind === "span") v.identity.occurrences[0].evidence.start++;
++      if (kind === "authority") v.identity.canPublish = true;
++    }) });
++    expect((await h.run()).status).toBe("held"); expect(h.fetcher).toHaveBeenCalledTimes(1);
++  });
++  it("keeps missing/ambiguous candidates as abstentions without paid widening", async () => {
++    const h = harness({ mutate: (b, e) => changeProposal(b, e, v => { v.identity.occurrences[0].canonicalId = null; v.identity.occurrences[0].status = "needs_widening"; }) });
++    const input = fixture(); input.decisions = false;
++    expect((await h.run(input)).holds).toContain("identity_abstention_or_widening_requires_review"); expect(h.fetcher).toHaveBeenCalledTimes(1);
++  });
++  it("rejects a forced choice across colliding surnames", async () => {
++    const h = harness(), input = fixture("BOS Swayman starts tonight.");
++    input.identity!.mentions[0]!.span = { start: 4, end: 11, text: "Swayman" };
++    (input.identity!.evidence as any).players.push({ ...(input.identity!.evidence as any).players[0], nhlId: 999, registryId: 2, fullName: "Other Swayman" });
++    expect((await h.run(input)).status).toBe("held"); expect(h.fetcher).toHaveBeenCalledTimes(1);
++  });
++  it.each(["confirmed", "ruled_out"])("rejects practice certainty inflation to %s", async status => {
++    const input = fixture("Jeremy Swayman first off at morning skate."); input.decisions = false;
++    const h = harness({ mutate: (b, e) => changeProposal(b, e, v => { v.goalieStatuses = [{ occurrenceId: "subject", canonicalId: "nhl:8478499", status,
++      evidence: { start: 0, end: input.packet.source.text.length, text: input.packet.source.text } }]; }) });
++    expect((await h.run(input)).status).toBe("held");
++  });
++  it.each(["projected", "likely", "unknown", "confirmed", "ruled_out"])("keeps proposed %s separate from applied start probabilities", async status => {
++    const input = fixture(status === "ruled_out" ? "Jeremy Swayman will not start tonight." : undefined); input.decisions = false;
++    const h = harness({ mutate: (b, e) => changeProposal(b, e, v => { v.goalieStatuses = [{ occurrenceId: "subject", canonicalId: "nhl:8478499", status,
++      evidence: { start: 0, end: input.packet.source.text.length, text: input.packet.source.text } }]; }) });
++    const r = await h.run(input); expect(r.goalieStatuses[0]).toMatchObject({ verified: false, gameId: null, appliedOverride: null,
++      policyFloorAfterAcceptance: status === "likely" ? 0.8 : status === "projected" ? 0.65 : null });
++  });
++  it("reuses settled responses across processes without new dispatch", async () => {
++    const h = harness(); const first = await h.run(), second = await h.run();
++    expect(second.identity).toEqual(first.identity); expect(h.fetcher).toHaveBeenCalledTimes(2);
++    expect(Object.keys(h.ledger().attempts)).toHaveLength(2);
++  });
++  it("keeps a retraction/version separate and applies neither interpretation", async () => {
++    const h = harness(); const before = await h.run(), corrected = await h.run(fixture("Correction: Jeremy Swayman will not start tonight."));
++    expect(before.reviewQueueKey).not.toBe(corrected.reviewQueueKey);
++    expect(before.lineage?.originalPostId).toBe(corrected.lineage?.originalPostId);
++    expect([before.canChangeStatus, corrected.canChangeStatus]).toEqual([false, false]);
++  });
++  it("rejects a confirmed proposal that contradicts explicit not-starting wording", async () => {
++    const input = fixture("Jeremy Swayman will not start tonight."); input.decisions = false;
++    const h = harness({ mutate: (b, e) => changeProposal(b, e, v => { v.goalieStatuses = [{ occurrenceId: "subject", canonicalId: "nhl:8478499", status: "confirmed",
++      evidence: { start: 0, end: input.packet.source.text.length, text: input.packet.source.text } }]; }) });
++    expect((await h.run(input)).status).toBe("held");
++  });
++  it("retains timeout reservation, blocks replay and performs no retries", async () => {
++    const h = harness({ timeout: true, timeoutMs: 5 });
++    expect((await h.run()).status).toBe("held"); await h.run();
++    expect(h.fetcher).toHaveBeenCalledTimes(1); expect(h.ledger().blockedReason).toBe("unknown_billed_outcome");
++    expect(Object.values(h.ledger().attempts)[0]).toMatchObject({ state: "uncertain", reservedNanoUsd: LUNA_RESERVATION_NANO_USD });
++  });
++  it("preserves the historical global stop regardless of apparent headroom", async () => {
++    const h = harness({ ledger: { blockedReason: "unknown billed outcome", priorExposureNanoUsd: 262519843 } });
++    expect((await h.run()).status).toBe("held"); expect(h.fetcher).not.toHaveBeenCalled(); expect(h.key).not.toHaveBeenCalled();
++  });
++  it("enforces aggregate exposure before key lookup", async () => {
++    const h = harness({ ledger: { priorExposureNanoUsd: 300_000_000 } });
++    await h.run(); expect(h.fetcher).not.toHaveBeenCalled(); expect(h.key).not.toHaveBeenCalled();
++  });
++  it("honors kill switch before admission or key lookup", async () => {
++    const h = harness({ stopped: true }); await h.run(); expect(h.ledger().attempts).toEqual({}); expect(h.key).not.toHaveBeenCalled();
++  });
++  it("blocks unknown model billing without saving a successful receipt", async () => {
++    const h = harness({ mutate: b => { b.model = "substituted"; } }); await h.run();
++    expect(h.ledger().blockedReason).toBe("unknown_billed_outcome"); expect(h.fetcher).toHaveBeenCalledTimes(1);
++    expect(Object.values(h.ledger().attempts)[0]).toMatchObject({ requestId: "request-responses", state: "uncertain" });
++  });
++  it("does not mistake review proposals for the homepage's versioned event contract", async () => {
++    const input = fixture(), h = harness({ mutate: (b, e) => changeProposal(b, e, v => { v.goalieStatuses = [{ occurrenceId: "subject",
++      canonicalId: "nhl:8478499", status: "projected", evidence: { start: 0, end: input.packet.source.text.length, text: input.packet.source.text } }]; }) });
++    const r = await h.run(input);
++    expect(r.goalieStatuses).toHaveLength(1);
++    const presentation = getPublicNewsClaimPresentation({ headline: "Ignored model headline", blurb: input.packet.source.text,
++      metadata: { interpretation: { version: r.version, events: r.goalieStatuses, unresolved: [] } } });
++    expect(presentation.claims).toEqual([]); expect(presentation.unresolvedReason).toBeTruthy();
++  });
++  it("serializes admissions from independent store instances", async () => {
++    const h = harness(), second = openLunaLocalAdmission(h.path, () => Date.parse(NOW));
++    const results = await Promise.allSettled([h.store.reserve("one", LUNA_RESERVATION_NANO_USD), second.reserve("two", LUNA_RESERVATION_NANO_USD)]);
++    expect(results.filter(r => r.status === "fulfilled")).toHaveLength(1);
++  });
++  it("reserves above the full-context long-rate regional ceiling", () => {
++    expect(priceLunaUsage({ model: LUNA_MODEL, usage: { input_tokens: 1_050_000, output_tokens: 2048 } }, "responses")).toBeLessThan(LUNA_RESERVATION_NANO_USD);
++  });
++  it("preserves retained reference bytes", () => {
++    expect(createHash("sha256").update(readFileSync("lib/sources/decisionsReference/adapter.mjs")).digest("hex")).toBe(DECISION_REFERENCE_SHA256);
++  });
++});
++
++describe("provenance-preserving S01–S10 development library", () => {
++  it.each(library.groups)("retains $sampleId source lineage and separates labels from facts", group => {
++    expect(library.untouchedHoldout).toBe(false); expect(group.productionPublishable).toBe(false); expect(group.independentWorldTruth).toBeNull();
++    expect(group.ownerAnnotations.length).toBeGreaterThan(0);
++    for (const r of group.records) expect(createHash("sha256").update(r.text).digest("hex")).toBe(r.text_sha256);
++    for (const claim of group.observedSourceClaims) {
++      const r = group.records.find(r => r.record_id === claim.evidence.record_id)!;
++      expect(r.text.slice(claim.evidence.utf16_start, claim.evidence.utf16_end)).toBe(claim.evidence.quote);
++      expect(claim.label_authority).toBeTruthy();
++    }
++  });
++});
+diff --git a/web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json b/web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json
+new file mode 100644
+index 000000000..710d62960
+--- /dev/null
++++ b/web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json
+@@ -0,0 +1,1720 @@
++{
++  "version": "ifttt-adjudicated-development-library-v1",
++  "split": "previously_exposed_historical_development",
++  "untouchedHoldout": false,
++  "labelProvenance": "Human reviewed ten source groups. Assistant supplied explicit source-unit inventory/evidence and applied approved distinctions. This does not mean the owner independently graded every derived field.",
++  "trainingEffect": "Versioned review/evaluation examples only; not automatic model training or approved world truth.",
++  "sourcePins": {
++    "tasks/ifttt-integration-2026-10-16/human-adjudicated-benchmark-v1-2026-10-19/benchmark.json": "a0ee294d19555ed92cebb886765f040ca5ad0bb1761ba3815281e921ea7da876",
++    "tasks/ifttt-integration-2026-10-16/human-adjudicated-benchmark-v1-2026-10-19/evaluation-inputs.json": "09e29383836c8fbee139422ebcbf6258b9605847c315c5254dd28b6dab9d3452",
++    "tasks/ifttt-integration-2026-10-16/human-adjudicated-benchmark-v1-2026-10-19/approval-evidence.json": "6f79d8c77be0ac41bdb6e27b900e7f3c9c92782d37c8359013c3ba7e05341af4"
++  },
++  "groups": [
++    {
++      "sampleId": "S01",
++      "reviewStatus": "source_semantics_reviewed_not_world_verified",
++      "ownerAnnotations": [
++        "0001-owner-S01-S03"
++      ],
++      "records": [
++        {
++          "record_id": "S01",
++          "original_id": "2105434001074962845",
++          "text": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena. Anthony Stolarz for the Leafs.",
++          "text_sha256": "acfb5ddb91bfaba34b5fbc3cce4e75e0286fbb179cb933ee5f49dba808895bc2",
++          "author": "@ethan_sears",
++          "url": "https://x.com/ethan_sears/status/2105434001074962845",
++          "published_at": "2026-09-30T23:05:57.000Z",
++          "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
++          "received_at": "2026-09-30T23:17:40.673936+00:00",
++          "receipt_basis": "Retained matching-text relay ingestion receipt; original receipt time unknown. The text join is not new original-to-relay authentication."
++        }
++      ],
++      "retainedRelations": [],
++      "observedSourceClaims": [
++        {
++          "id": "S01-C01",
++          "subject_literal": "Ilya Sorokin",
++          "event": "warmup_goaltender",
++          "value": "leads_out_for_warmups",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": null,
++          "team_literal": "Islanders",
++          "qualifiers": [],
++          "evidence": {
++            "record_id": "S01",
++            "quote": "Ilya Sorokin leads the Islanders out for warmups at Scotiabank Arena.",
++            "utf16_start": 0,
++            "utf16_end": 69
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S01-C02",
++          "subject_literal": "Anthony Stolarz",
++          "event": "warmup_goaltender",
++          "value": "for_Leafs_in_warmup_context",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": null,
++          "team_literal": "Leafs",
++          "qualifiers": [
++            "Elliptical continuation of the preceding warmup sentence; retain full post context."
++          ],
++          "evidence": {
++            "record_id": "S01",
++            "quote": "Anthony Stolarz for the Leafs.",
++            "utf16_start": 70,
++            "utf16_end": 100
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        }
++      ],
++      "parsingConventions": [
++        {
++          "rule": "The owner classifies both qualifying warmup reports as confirmed starters. Preserve the warmup evidence basis; 100% is this category, never a calibrated probability.",
++          "authority": "owner_reviewed_assistant_adjudicated",
++          "semantic_projection": {
++            "category": "confirmed_starter",
++            "subjects": [
++              "Ilya Sorokin",
++              "Anthony Stolarz"
++            ]
++          }
++        }
++      ],
++      "analystInferences": [],
++      "contextPrerequisites": [
++        "Canonical roster/team identities and the actual game remain unverified. Owner city/team expansions are supplied context, not independent verification."
++      ],
++      "independentWorldTruth": null,
++      "productionPublishable": false
++    },
++    {
++      "sampleId": "S02",
++      "reviewStatus": "source_semantics_reviewed_not_world_verified",
++      "ownerAnnotations": [
++        "0001-owner-S01-S03"
++      ],
++      "records": [
++        {
++          "record_id": "S02",
++          "original_id": "2105343573784928457",
++          "text": "Sanderson skated before main practice today but didn't join his teammates. org is hopeful he will play this weekend. Burakovsky isn't close to returning (upper body). Foegele took rushes on the 1st line for second consecutive day. No decision has been made on his availability.",
++          "text_sha256": "ac219e9ad4e153172f4055033b281244e120bfe8fb16c4960135f533a8f53522",
++          "author": "@GraemeNichols",
++          "url": "https://x.com/GraemeNichols/status/2105343573784928457",
++          "published_at": "2026-09-30T17:06:38.000Z",
++          "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
++          "received_at": "2026-09-30T18:58:37.184924+00:00",
++          "receipt_basis": "Retained matching-text relay ingestion receipt; original receipt time unknown. The text join is not new original-to-relay authentication."
++        }
++      ],
++      "retainedRelations": [],
++      "observedSourceClaims": [
++        {
++          "id": "S02-C01",
++          "subject_literal": "Sanderson",
++          "event": "practice_attendance",
++          "value": "skated_before_main_practice",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "today",
++          "team_literal": null,
++          "qualifiers": [],
++          "evidence": {
++            "record_id": "S02",
++            "quote": "Sanderson skated before main practice today but didn't join his teammates.",
++            "utf16_start": 0,
++            "utf16_end": 74
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S02-C02",
++          "subject_literal": "Sanderson",
++          "event": "practice_attendance",
++          "value": "did_not_join_teammates",
++          "polarity": "negative",
++          "modality": "observation",
++          "time_literal": "today",
++          "team_literal": null,
++          "qualifiers": [],
++          "evidence": {
++            "record_id": "S02",
++            "quote": "Sanderson skated before main practice today but didn't join his teammates.",
++            "utf16_start": 0,
++            "utf16_end": 74
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S02-C03",
++          "subject_literal": "Sanderson",
++          "event": "availability",
++          "value": "organization_hopeful_he_will_play",
++          "polarity": "positive",
++          "modality": "tentative",
++          "time_literal": "this weekend",
++          "team_literal": null,
++          "qualifiers": [
++            "Hope is not selection or medical clearance.",
++            "Subject uses the retained preceding Sanderson sentence, not an isolated pronoun."
++          ],
++          "evidence": {
++            "record_id": "S02",
++            "quote": "org is hopeful he will play this weekend.",
++            "utf16_start": 75,
++            "utf16_end": 116
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S02-C04",
++          "subject_literal": "Burakovsky",
++          "event": "return_availability",
++          "value": "not_close_to_returning",
++          "polarity": "negative",
++          "modality": "reported",
++          "time_literal": null,
++          "team_literal": null,
++          "qualifiers": [
++            "upper body; retain the injury-related return context"
++          ],
++          "evidence": {
++            "record_id": "S02",
++            "quote": "Burakovsky isn't close to returning (upper body).",
++            "utf16_start": 117,
++            "utf16_end": 166
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S02-C05",
++          "subject_literal": "Foegele",
++          "event": "practice_role",
++          "value": "first_line_rushes",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "second consecutive day",
++          "team_literal": null,
++          "qualifiers": [],
++          "evidence": {
++            "record_id": "S02",
++            "quote": "Foegele took rushes on the 1st line for second consecutive day.",
++            "utf16_start": 167,
++            "utf16_end": 230
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S02-C06",
++          "subject_literal": "Foegele",
++          "event": "availability",
++          "value": "no_decision",
++          "polarity": "positive",
++          "modality": "unresolved",
++          "time_literal": null,
++          "team_literal": null,
++          "qualifiers": [
++            "Subject uses the preceding Foegele sentence; first-line practice is not game selection."
++          ],
++          "evidence": {
++            "record_id": "S02",
++            "quote": "No decision has been made on his availability.",
++            "utf16_start": 231,
++            "utf16_end": 277
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        }
++      ],
++      "parsingConventions": [
++        {
++          "rule": "Owner questionable/potential-to-play is an availability category for Foegele; retain the explicit no-decision state and practice observation separately.",
++          "authority": "owner_reviewed_assistant_adjudicated"
++        }
++      ],
++      "analystInferences": [
++        {
++          "text": "Sanderson unlikely to return in the next 1–2 games.",
++          "explicit_source_fact": false,
++          "authority": "owner_estimate; approved_as_analyst_inference",
++          "expected_source_extraction": false,
++          "mandatory_context": "The organization is also hopeful he will play this weekend."
++        },
++        {
++          "text": "Sanderson still injured is owner-supplied health context; the supplied sentence explicitly establishes skating/absence and hope, not a diagnosed injury.",
++          "explicit_source_fact": false,
++          "authority": "owner_supplied_context",
++          "independently_verified": false,
++          "expected_source_extraction": false
++        }
++      ],
++      "contextPrerequisites": [
++        "Full-name expansions Jake/Andre/Warren are owner supplied. No source-time roster IDs, game count or confirmed return date is verified."
++      ],
++      "independentWorldTruth": null,
++      "productionPublishable": false
++    },
++    {
++      "sampleId": "S03",
++      "reviewStatus": "source_semantics_reviewed_not_world_verified",
++      "ownerAnnotations": [
++        "0001-owner-S01-S03"
++      ],
++      "records": [
++        {
++          "record_id": "S03",
++          "original_id": "2108996072647573721",
++          "text": "Leevi Meriläinen leads the #Canucks into the ice Saturday in Newark. He’ll get the start @ Devils.",
++          "text_sha256": "92399fe517fbea14d91a765dab09c584fdf2a9a913f05f3136032638b9cdd5e0",
++          "author": "@ThomasDrance",
++          "url": "https://x.com/ThomasDrance/status/2108996072647573721",
++          "published_at": "2026-10-10T19:00:21.628Z",
++          "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
++          "received_at": "2026-10-11T12:28:57.359595+00:00",
++          "receipt_basis": "Retained ingestion receipt for this post."
++        }
++      ],
++      "retainedRelations": [],
++      "observedSourceClaims": [
++        {
++          "id": "S03-C01",
++          "subject_literal": "Leevi Meriläinen",
++          "event": "goalie_start",
++          "value": "will_start",
++          "polarity": "positive",
++          "modality": "reported",
++          "time_literal": "Saturday",
++          "team_literal": "#Canucks",
++          "qualifiers": [
++            "opponent literal: Devils; place literal: Newark"
++          ],
++          "evidence": {
++            "record_id": "S03",
++            "quote": "Leevi Meriläinen leads the #Canucks into the ice Saturday in Newark. He’ll get the start @ Devils.",
++            "utf16_start": 0,
++            "utf16_end": 98
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        }
++      ],
++      "parsingConventions": [
++        {
++          "rule": "Explicit will-get-the-start supports the owner confirmed-starter category; 100% is categorical, not calibrated probability.",
++          "authority": "owner_reviewed_assistant_adjudicated"
++        }
++      ],
++      "analystInferences": [],
++      "contextPrerequisites": [
++        "Vancouver is an owner-supplied team expansion; canonical player/team/game identities are not independently verified."
++      ],
++      "independentWorldTruth": null,
++      "productionPublishable": false
++    },
++    {
++      "sampleId": "S04",
++      "reviewStatus": "source_semantics_reviewed_not_world_verified",
++      "ownerAnnotations": [
++        "0002-owner-S04-S06"
++      ],
++      "records": [
++        {
++          "record_id": "S04",
++          "original_id": "2105364132128240008",
++          "text": "#SJSharks power play groups same as yesterday, but one wrinkle, see Misa doing some net front, which he did last year...  \n\nPP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg \n\nPP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
++          "text_sha256": "67c5e015065e538719eeccde66139d8debca0c27d157d405da77a5681c1cf655",
++          "author": "@Sheng_Peng",
++          "url": "https://x.com/Sheng_Peng/status/2105364132128240008",
++          "published_at": "2026-09-30T18:28:19.000Z",
++          "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
++          "received_at": "2026-09-30T18:40:40.937455+00:00",
++          "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown."
++        }
++      ],
++      "retainedRelations": [],
++      "observedSourceClaims": [
++        {
++          "id": "S04-C01",
++          "subject_literal": "Cagnoni",
++          "event": "pp_group_membership",
++          "value": "PP1",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "same as yesterday",
++          "team_literal": "#SJSharks",
++          "qualifiers": [
++            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
++          ],
++          "evidence": {
++            "record_id": "S04",
++            "quote": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg ",
++            "utf16_start": 124,
++            "utf16_end": 173
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S04-C02",
++          "subject_literal": "Celebrini",
++          "event": "pp_group_membership",
++          "value": "PP1",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "same as yesterday",
++          "team_literal": "#SJSharks",
++          "qualifiers": [
++            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
++          ],
++          "evidence": {
++            "record_id": "S04",
++            "quote": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg ",
++            "utf16_start": 124,
++            "utf16_end": 173
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S04-C03",
++          "subject_literal": "Smith",
++          "event": "pp_group_membership",
++          "value": "PP1",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "same as yesterday",
++          "team_literal": "#SJSharks",
++          "qualifiers": [
++            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
++          ],
++          "evidence": {
++            "record_id": "S04",
++            "quote": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg ",
++            "utf16_start": 124,
++            "utf16_end": 173
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S04-C04",
++          "subject_literal": "Chernyshov",
++          "event": "pp_group_membership",
++          "value": "PP1",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "same as yesterday",
++          "team_literal": "#SJSharks",
++          "qualifiers": [
++            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
++          ],
++          "evidence": {
++            "record_id": "S04",
++            "quote": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg ",
++            "utf16_start": 124,
++            "utf16_end": 173
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S04-C05",
++          "subject_literal": "Wennberg",
++          "event": "pp_group_membership",
++          "value": "PP1",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "same as yesterday",
++          "team_literal": "#SJSharks",
++          "qualifiers": [
++            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
++          ],
++          "evidence": {
++            "record_id": "S04",
++            "quote": "PP1: Cagnoni-Celebrini-Smith-Chernyshov-Wennberg ",
++            "utf16_start": 124,
++            "utf16_end": 173
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S04-C06",
++          "subject_literal": "Orlov",
++          "event": "pp_group_membership",
++          "value": "PP2",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "same as yesterday",
++          "team_literal": "#SJSharks",
++          "qualifiers": [
++            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
++          ],
++          "evidence": {
++            "record_id": "S04",
++            "quote": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
++            "utf16_start": 175,
++            "utf16_end": 217
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S04-C07",
++          "subject_literal": "Misa",
++          "event": "pp_group_membership",
++          "value": "PP2",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "same as yesterday",
++          "team_literal": "#SJSharks",
++          "qualifiers": [
++            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
++          ],
++          "evidence": {
++            "record_id": "S04",
++            "quote": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
++            "utf16_start": 175,
++            "utf16_end": 217
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S04-C08",
++          "subject_literal": "Stenberg",
++          "event": "pp_group_membership",
++          "value": "PP2",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "same as yesterday",
++          "team_literal": "#SJSharks",
++          "qualifiers": [
++            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
++          ],
++          "evidence": {
++            "record_id": "S04",
++            "quote": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
++            "utf16_start": 175,
++            "utf16_end": 217
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S04-C09",
++          "subject_literal": "Toffoli",
++          "event": "pp_group_membership",
++          "value": "PP2",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "same as yesterday",
++          "team_literal": "#SJSharks",
++          "qualifiers": [
++            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
++          ],
++          "evidence": {
++            "record_id": "S04",
++            "quote": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
++            "utf16_start": 175,
++            "utf16_end": 217
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S04-C10",
++          "subject_literal": "Marchment",
++          "event": "pp_group_membership",
++          "value": "PP2",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "same as yesterday",
++          "team_literal": "#SJSharks",
++          "qualifiers": [
++            "Observed/practice grouping; do not promote to a permanent role or confirmed game lineup."
++          ],
++          "evidence": {
++            "record_id": "S04",
++            "quote": "PP2: Orlov-Misa-Stenberg-Toffoli-Marchment",
++            "utf16_start": 175,
++            "utf16_end": 217
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S04-C11",
++          "subject_literal": "Misa",
++          "event": "practice_role",
++          "value": "some_net_front",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": null,
++          "team_literal": null,
++          "qualifiers": [
++            "some; historical comparison last year; not permanent assignment"
++          ],
++          "evidence": {
++            "record_id": "S04",
++            "quote": "see Misa doing some net front, which he did last year...",
++            "utf16_start": 64,
++            "utf16_end": 120
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        }
++      ],
++      "parsingConventions": [
++        {
++          "rule": "Owner confirmed practice lines means the reported practice PP groups, not confirmed game selection. Misa net-front remains a specific observed role within PP2.",
++          "authority": "owner_reviewed_assistant_adjudicated"
++        }
++      ],
++      "analystInferences": [],
++      "contextPrerequisites": [
++        "No exact practice date, canonical player roster, game, PP positional slots or eligibility is authenticated from this post alone."
++      ],
++      "independentWorldTruth": null,
++      "productionPublishable": false
++    },
++    {
++      "sampleId": "S05",
++      "reviewStatus": "source_semantics_reviewed_not_world_verified",
++      "ownerAnnotations": [
++        "0002-owner-S04-S06"
++      ],
++      "records": [
++        {
++          "record_id": "S05A",
++          "original_id": "2108958442983686184",
++          "text": "Joonas Korpisalo (lower body) is out 4 weeks from today. Joe Veleno (lower body) is out 3-3.5 months.",
++          "text_sha256": "acfd94546aaa932b4909086e0ac44c527d08ae674f074223620a84c7f18a6d7c",
++          "author": "@drosennhl",
++          "url": "https://x.com/drosennhl/status/2108958442983686184",
++          "published_at": "2026-10-10T16:30:50.017Z",
++          "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
++          "received_at": "2026-10-11T12:28:57.297049+00:00",
++          "receipt_basis": "Retained ingestion receipt for this post."
++        },
++        {
++          "record_id": "S05B",
++          "original_id": "2108957630253113386",
++          "text": "Igor Shesterkin will be out for the rest of the season with his lower body injury.",
++          "text_sha256": "425fab0de15d4059b5e2b618d22ce5ae046634a737ab3d2da8ee916463757492",
++          "author": "@drosennhl",
++          "url": "https://x.com/drosennhl/status/2108957630253113386",
++          "published_at": "2026-10-10T16:27:36.247Z",
++          "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
++          "received_at": "2026-10-11T12:28:57.695448+00:00",
++          "receipt_basis": "Retained ingestion receipt for this post."
++        }
++      ],
++      "retainedRelations": [],
++      "observedSourceClaims": [
++        {
++          "id": "S05-C01",
++          "subject_literal": "Joonas Korpisalo",
++          "event": "injury_availability",
++          "value": "out",
++          "polarity": "negative",
++          "modality": "reported",
++          "time_literal": "4 weeks from today",
++          "team_literal": null,
++          "qualifiers": [
++            "lower body",
++            "No at-least strengthening or until-next-update endpoint."
++          ],
++          "evidence": {
++            "record_id": "S05A",
++            "quote": "Joonas Korpisalo (lower body) is out 4 weeks from today.",
++            "utf16_start": 0,
++            "utf16_end": 56
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S05-C02",
++          "subject_literal": "Joe Veleno",
++          "event": "injury_availability",
++          "value": "out",
++          "polarity": "negative",
++          "modality": "reported",
++          "time_literal": "3-3.5 months",
++          "team_literal": null,
++          "qualifiers": [
++            "lower body"
++          ],
++          "evidence": {
++            "record_id": "S05A",
++            "quote": "Joe Veleno (lower body) is out 3-3.5 months.",
++            "utf16_start": 57,
++            "utf16_end": 101
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S05-C03",
++          "subject_literal": "Igor Shesterkin",
++          "event": "injury_availability",
++          "value": "out",
++          "polarity": "negative",
++          "modality": "reported",
++          "time_literal": "rest of the season",
++          "team_literal": null,
++          "qualifiers": [
++            "lower body injury",
++            "Not a retroactive absence for the entire season."
++          ],
++          "evidence": {
++            "record_id": "S05B",
++            "quote": "Igor Shesterkin will be out for the rest of the season with his lower body injury.",
++            "utf16_start": 0,
++            "utf16_end": 82
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        }
++      ],
++      "parsingConventions": [],
++      "analystInferences": [
++        {
++          "text": "Owner season label 2026-27 is contextual identification, not explicit source wording or an independently verified canonical season.",
++          "explicit_source_fact": false,
++          "authority": "owner_supplied_context",
++          "expected_source_extraction": false
++        }
++      ],
++      "contextPrerequisites": [
++        "Do not invent an exact return date, season ID, team, game or medical clearance. The publication clock anchors reported wording; it does not verify world truth."
++      ],
++      "independentWorldTruth": null,
++      "productionPublishable": false
++    },
++    {
++      "sampleId": "S06",
++      "reviewStatus": "source_semantics_reviewed_not_world_verified",
++      "ownerAnnotations": [
++        "0002-owner-S04-S06"
++      ],
++      "records": [
++        {
++          "record_id": "S06",
++          "original_id": "2104971594632454155",
++          "text": "Podkolzin will take RNH’s spot on the first unit powerplay… via Babcock.",
++          "text_sha256": "860b1c32b2f653225eb2a88463efdb984b91244ae58b8d9d6a300a049a0cc2ee",
++          "author": "@JasonGregor",
++          "url": "https://x.com/JasonGregor/status/2104971594632454155",
++          "published_at": "2026-09-29T16:28:31.000Z",
++          "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
++          "received_at": "2026-09-29T17:00:52.374726+00:00",
++          "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown."
++        }
++      ],
++      "retainedRelations": [],
++      "observedSourceClaims": [
++        {
++          "id": "S06-C01",
++          "subject_literal": "Podkolzin",
++          "event": "pp_replacement",
++          "value": "takes_RNH_spot_on_first_unit",
++          "polarity": "positive",
++          "modality": "reported",
++          "time_literal": null,
++          "team_literal": null,
++          "qualifiers": [
++            "outgoing subject literal: RNH",
++            "first unit explicit",
++            "via Babcock source attribution"
++          ],
++          "evidence": {
++            "record_id": "S06",
++            "quote": "Podkolzin will take RNH’s spot on the first unit powerplay… via Babcock.",
++            "utf16_start": 0,
++            "utf16_end": 72
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "related_subject_literal": "RNH"
++        }
++      ],
++      "parsingConventions": [
++        {
++          "rule": "One replacement relation links incoming Podkolzin to outgoing RNH on PP1. Paired in/out projections are one update, not independent double credit.",
++          "authority": "owner_reviewed_assistant_adjudicated"
++        }
++      ],
++      "analystInferences": [
++        {
++          "text": "Vasily Podkolzin and Ryan Nugent Hopkins are human-supplied name expansions, not independent canonical identity validation.",
++          "explicit_source_fact": false,
++          "authority": "owner_supplied_context",
++          "expected_source_extraction": false
++        }
++      ],
++      "contextPrerequisites": [
++        "The exact previous PP positional slot requires a retained prior lineup. Source-attributed replacement support is product intent only; no implementation or dispatch is authorized."
++      ],
++      "independentWorldTruth": null,
++      "productionPublishable": false
++    },
++    {
++      "sampleId": "S07",
++      "reviewStatus": "source_semantics_reviewed_not_world_verified",
++      "ownerAnnotations": [
++        "0003-owner-S07-S10"
++      ],
++      "records": [
++        {
++          "record_id": "S07",
++          "original_id": "2108961406007570942",
++          "text": "Carbery said it’s too early to tell whether Pierre-Luc Dubois will suit up tomorrow. Matt Roy skated again today and remains day-to-day. Team monitoring if it needs a recall",
++          "text_sha256": "b7357e8938e104a97418e922366c0bed6cef176c6d4bca5324a1bdaa8c0c0898",
++          "author": "@sammisilber",
++          "url": "https://x.com/sammisilber/status/2108961406007570942",
++          "published_at": "2026-10-10T16:42:36.457Z",
++          "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
++          "received_at": "2026-10-11T12:28:57.020953+00:00",
++          "receipt_basis": "Retained ingestion receipt for this post."
++        }
++      ],
++      "retainedRelations": [],
++      "observedSourceClaims": [
++        {
++          "id": "S07-C01",
++          "subject_literal": "Pierre-Luc Dubois",
++          "event": "availability",
++          "value": "too_early_to_tell_if_will_suit_up",
++          "polarity": "positive",
++          "modality": "unresolved",
++          "time_literal": "tomorrow",
++          "team_literal": null,
++          "qualifiers": [
++            "reported by Carbery; neither IN nor OUT is established"
++          ],
++          "evidence": {
++            "record_id": "S07",
++            "quote": "Carbery said it’s too early to tell whether Pierre-Luc Dubois will suit up tomorrow.",
++            "utf16_start": 0,
++            "utf16_end": 84
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S07-C02",
++          "subject_literal": "Matt Roy",
++          "event": "practice_attendance",
++          "value": "skated_again",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": "today",
++          "team_literal": null,
++          "qualifiers": [],
++          "evidence": {
++            "record_id": "S07",
++            "quote": "Matt Roy skated again today and remains day-to-day.",
++            "utf16_start": 85,
++            "utf16_end": 136
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S07-C03",
++          "subject_literal": "Matt Roy",
++          "event": "injury_status",
++          "value": "day_to_day",
++          "polarity": "positive",
++          "modality": "unresolved",
++          "time_literal": null,
++          "team_literal": null,
++          "qualifiers": [
++            "attendance is distinct from recovery, clearance and selection"
++          ],
++          "evidence": {
++            "record_id": "S07",
++            "quote": "Matt Roy skated again today and remains day-to-day.",
++            "utf16_start": 85,
++            "utf16_end": 136
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        },
++        {
++          "id": "S07-C04",
++          "subject_literal": "unspecified team",
++          "event": "possible_recall_need",
++          "value": "monitoring_if_needed",
++          "polarity": "positive",
++          "modality": "conditional",
++          "time_literal": null,
++          "team_literal": null,
++          "qualifiers": [
++            "team-only statement; not a completed recall or a named recalled player"
++          ],
++          "evidence": {
++            "record_id": "S07",
++            "quote": "Team monitoring if it needs a recall",
++            "utf16_start": 137,
++            "utf16_end": 173
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        }
++      ],
++      "parsingConventions": [
++        {
++          "rule": "Owner questionable for PLD preserves unresolved availability. DTD denotes the reported day-to-day injury status; it is not a specific diagnosed injury or game decision.",
++          "authority": "owner_reviewed_assistant_adjudicated"
++        }
++      ],
++      "analystInferences": [],
++      "contextPrerequisites": [
++        "The source does not name the team. Do not infer Capitals identity or a game/recall transaction from names alone."
++      ],
++      "independentWorldTruth": null,
++      "productionPublishable": false
++    },
++    {
++      "sampleId": "S08",
++      "reviewStatus": "source_semantics_reviewed_not_world_verified",
++      "ownerAnnotations": [
++        "0003-owner-S07-S10"
++      ],
++      "records": [
++        {
++          "record_id": "S08",
++          "original_id": "2109051291372777568",
++          "text": "The #Canes try for a fourth win in a row tonight as they take on the Blackhawks.\nCarrier - Aho - Svechnikov\nHall - Stankoven - Blake\nEhlers - Staal - Martinook\nRobinson - Jankowski - Kotkaniemi\nSlavin - Chatfield\nMiller - Walker\nGostisbehere - Reilly\nBussi pic.twitter.com/iVLdaOV5Ir",
++          "text_sha256": "1af523cd9908c0a54e552c243373d1e7204ed4589b37eeddb2e2f8a52f37ee06",
++          "author": "@WaltRuff",
++          "url": "https://x.com/WaltRuff/status/2109051291372777568",
++          "published_at": "2026-10-10T22:39:46.798Z",
++          "publication_basis": "Snowflake-derived from the retained matching original post ID; not a separately observed publication clock.",
++          "received_at": "2026-10-11T12:28:57.785302+00:00",
++          "receipt_basis": "Retained ingestion receipt for this post."
++        }
++      ],
++      "retainedRelations": [],
++      "observedSourceClaims": [
++        {
++          "id": "S08-C01",
++          "subject_literal": "Carrier",
++          "event": "lineup_row_membership",
++          "value": "Carrier - Aho - Svechnikov",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Carrier - Aho - Svechnikov",
++            "utf16_start": 81,
++            "utf16_end": 107
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 1
++        },
++        {
++          "id": "S08-C02",
++          "subject_literal": "Aho",
++          "event": "lineup_row_membership",
++          "value": "Carrier - Aho - Svechnikov",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Carrier - Aho - Svechnikov",
++            "utf16_start": 81,
++            "utf16_end": 107
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 1
++        },
++        {
++          "id": "S08-C03",
++          "subject_literal": "Svechnikov",
++          "event": "lineup_row_membership",
++          "value": "Carrier - Aho - Svechnikov",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Carrier - Aho - Svechnikov",
++            "utf16_start": 81,
++            "utf16_end": 107
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 1
++        },
++        {
++          "id": "S08-C04",
++          "subject_literal": "Hall",
++          "event": "lineup_row_membership",
++          "value": "Hall - Stankoven - Blake",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Hall - Stankoven - Blake",
++            "utf16_start": 108,
++            "utf16_end": 132
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 2
++        },
++        {
++          "id": "S08-C05",
++          "subject_literal": "Stankoven",
++          "event": "lineup_row_membership",
++          "value": "Hall - Stankoven - Blake",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Hall - Stankoven - Blake",
++            "utf16_start": 108,
++            "utf16_end": 132
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 2
++        },
++        {
++          "id": "S08-C06",
++          "subject_literal": "Blake",
++          "event": "lineup_row_membership",
++          "value": "Hall - Stankoven - Blake",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Hall - Stankoven - Blake",
++            "utf16_start": 108,
++            "utf16_end": 132
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 2
++        },
++        {
++          "id": "S08-C07",
++          "subject_literal": "Ehlers",
++          "event": "lineup_row_membership",
++          "value": "Ehlers - Staal - Martinook",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Ehlers - Staal - Martinook",
++            "utf16_start": 133,
++            "utf16_end": 159
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 3
++        },
++        {
++          "id": "S08-C08",
++          "subject_literal": "Staal",
++          "event": "lineup_row_membership",
++          "value": "Ehlers - Staal - Martinook",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Ehlers - Staal - Martinook",
++            "utf16_start": 133,
++            "utf16_end": 159
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 3
++        },
++        {
++          "id": "S08-C09",
++          "subject_literal": "Martinook",
++          "event": "lineup_row_membership",
++          "value": "Ehlers - Staal - Martinook",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Ehlers - Staal - Martinook",
++            "utf16_start": 133,
++            "utf16_end": 159
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 3
++        },
++        {
++          "id": "S08-C10",
++          "subject_literal": "Robinson",
++          "event": "lineup_row_membership",
++          "value": "Robinson - Jankowski - Kotkaniemi",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Robinson - Jankowski - Kotkaniemi",
++            "utf16_start": 160,
++            "utf16_end": 193
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 4
++        },
++        {
++          "id": "S08-C11",
++          "subject_literal": "Jankowski",
++          "event": "lineup_row_membership",
++          "value": "Robinson - Jankowski - Kotkaniemi",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Robinson - Jankowski - Kotkaniemi",
++            "utf16_start": 160,
++            "utf16_end": 193
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 4
++        },
++        {
++          "id": "S08-C12",
++          "subject_literal": "Kotkaniemi",
++          "event": "lineup_row_membership",
++          "value": "Robinson - Jankowski - Kotkaniemi",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Robinson - Jankowski - Kotkaniemi",
++            "utf16_start": 160,
++            "utf16_end": 193
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 4
++        },
++        {
++          "id": "S08-C13",
++          "subject_literal": "Slavin",
++          "event": "lineup_row_membership",
++          "value": "Slavin - Chatfield",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Slavin - Chatfield",
++            "utf16_start": 194,
++            "utf16_end": 212
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 5
++        },
++        {
++          "id": "S08-C14",
++          "subject_literal": "Chatfield",
++          "event": "lineup_row_membership",
++          "value": "Slavin - Chatfield",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Slavin - Chatfield",
++            "utf16_start": 194,
++            "utf16_end": 212
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 5
++        },
++        {
++          "id": "S08-C15",
++          "subject_literal": "Miller",
++          "event": "lineup_row_membership",
++          "value": "Miller - Walker",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Miller - Walker",
++            "utf16_start": 213,
++            "utf16_end": 228
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 6
++        },
++        {
++          "id": "S08-C16",
++          "subject_literal": "Walker",
++          "event": "lineup_row_membership",
++          "value": "Miller - Walker",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Miller - Walker",
++            "utf16_start": 213,
++            "utf16_end": 228
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 6
++        },
++        {
++          "id": "S08-C17",
++          "subject_literal": "Gostisbehere",
++          "event": "lineup_row_membership",
++          "value": "Gostisbehere - Reilly",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Gostisbehere - Reilly",
++            "utf16_start": 229,
++            "utf16_end": 250
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 7
++        },
++        {
++          "id": "S08-C18",
++          "subject_literal": "Reilly",
++          "event": "lineup_row_membership",
++          "value": "Gostisbehere - Reilly",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "Source row membership; position/line numbering projection is a separate hockey convention."
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Gostisbehere - Reilly",
++            "utf16_start": 229,
++            "utf16_end": 250
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "source_row_ordinal": 7
++        },
++        {
++          "id": "S08-C19",
++          "subject_literal": "Bussi",
++          "event": "lineup_name_listing",
++          "value": "listed_after_skater_rows",
++          "polarity": "positive",
++          "modality": "listing",
++          "time_literal": "tonight",
++          "team_literal": "#Canes",
++          "qualifiers": [
++            "opponent literal: Blackhawks; no explicit starter confirmation in the supplied text"
++          ],
++          "evidence": {
++            "record_id": "S08",
++            "quote": "Bussi pic.twitter.com/iVLdaOV5Ir",
++            "utf16_start": 251,
++            "utf16_end": 283
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        }
++      ],
++      "parsingConventions": [
++        {
++          "rule": "Rows 1–4 can be read as lines 1–4 with left-to-right LW/C/RW, rows 5–7 as pairs 1–3 with LD/RD. This is a parsing convention, not verified player eligibility.",
++          "authority": "owner_reviewed_assistant_adjudicated",
++          "forward_rows": [
++            [
++              "Carrier",
++              "Aho",
++              "Svechnikov"
++            ],
++            [
++              "Hall",
++              "Stankoven",
++              "Blake"
++            ],
++            [
++              "Ehlers",
++              "Staal",
++              "Martinook"
++            ],
++            [
++              "Robinson",
++              "Jankowski",
++              "Kotkaniemi"
++            ]
++          ],
++          "defense_rows": [
++            [
++              "Slavin",
++              "Chatfield"
++            ],
++            [
++              "Miller",
++              "Walker"
++            ],
++            [
++              "Gostisbehere",
++              "Reilly"
++            ]
++          ]
++        },
++        {
++          "rule": "The owner projected-goalie category for Bussi remains projected. A one-hour clock threshold alone never promotes it to confirmed; require explicit starter or qualifying warmup evidence.",
++          "authority": "owner_reviewed_assistant_adjudicated",
++          "confirmation_rule": {
++            "timing_alone_sufficient": false,
++            "category_from_current_input": "projected",
++            "new_evidence_required_for_confirmation": [
++              "explicit_starter_report",
++              "qualifying_warmup_evidence"
++            ]
++          }
++        }
++      ],
++      "analystInferences": [
++        {
++          "text": "The owner one-hour cutoff is a proposed product policy; it is not evidence establishing confirmation.",
++          "explicit_source_fact": false,
++          "authority": "owner_product_rule_reclassified_by_approved_distinction",
++          "adopted_for_confirmation": false
++        }
++      ],
++      "contextPrerequisites": [
++        "No game start clock or date/game binding is supplied. No canonical player eligibility, goalie confirmation or independent Carolina identity verification is established."
++      ],
++      "independentWorldTruth": null,
++      "productionPublishable": false
++    },
++    {
++      "sampleId": "S09",
++      "reviewStatus": "source_semantics_reviewed_not_world_verified",
++      "ownerAnnotations": [
++        "0003-owner-S07-S10"
++      ],
++      "records": [
++        {
++          "record_id": "S09",
++          "original_id": "2105000115090100612",
++          "text": "Carter Hart is the first goaltender off the ice.",
++          "text_sha256": "65dda8dca7ce84e90bdfa54588468e4657b0932ae883b27af024fef354afa4f1",
++          "author": "@h_kirk6",
++          "url": "https://x.com/h_kirk6/status/2105000115090100612",
++          "published_at": "2026-09-29T18:21:51.000Z",
++          "publication_basis": "Retained browser observation of the original article time element; not newly checked.",
++          "received_at": "2026-09-29T18:27:36.491805+00:00",
++          "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown."
++        }
++      ],
++      "retainedRelations": [],
++      "observedSourceClaims": [
++        {
++          "id": "S09-C01",
++          "subject_literal": "Carter Hart",
++          "event": "goalie_practice_observation",
++          "value": "first_goaltender_off_ice",
++          "polarity": "positive",
++          "modality": "observation",
++          "time_literal": null,
++          "team_literal": null,
++          "qualifiers": [],
++          "evidence": {
++            "record_id": "S09",
++            "quote": "Carter Hart is the first goaltender off the ice.",
++            "utf16_start": 0,
++            "utf16_end": 48
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        }
++      ],
++      "parsingConventions": [
++        {
++          "rule": "First-off supports a projected-start category, with the observation basis retained. It does not support a confirmed-start category.",
++          "authority": "owner_reviewed_assistant_adjudicated",
++          "semantic_projection": {
++            "category": "projected_starter",
++            "confirmed": false,
++            "game_binding_verified": false
++          }
++        }
++      ],
++      "analystInferences": [
++        {
++          "text": "Vegas Golden Knights team membership and next-game target were human supplied; neither appears in the source.",
++          "explicit_source_fact": false,
++          "authority": "owner_supplied_context",
++          "expected_source_extraction": false
++        }
++      ],
++      "contextPrerequisites": [
++        "Source-time roster and schedule evidence is required before binding Vegas or the next game."
++      ],
++      "independentWorldTruth": null,
++      "productionPublishable": false
++    },
++    {
++      "sampleId": "S10",
++      "reviewStatus": "source_semantics_reviewed_not_world_verified",
++      "ownerAnnotations": [
++        "0003-owner-S07-S10"
++      ],
++      "records": [
++        {
++          "record_id": "S10A",
++          "original_id": "2104644558701351383",
++          "text": "Might be much ado about nothing, but Olofsson is taking PP1 reps with Marner up top.",
++          "text_sha256": "eb7c67b031637df6598408b4eb0a718b3638ef0ccd69f85c9835413fe00c3372",
++          "author": "@DannyWebster21",
++          "url": "https://x.com/DannyWebster21/status/2104644558701351383",
++          "published_at": "2026-09-28T18:48:59.000Z",
++          "publication_basis": "Retained browser observation of the article time element; not newly checked.",
++          "received_at": null,
++          "receipt_basis": "Unknown."
++        },
++        {
++          "record_id": "S10B",
++          "original_id": "2104672698786013556",
++          "text": "Turns out this was, in fact, much ado about nothing.\n\nThis was a 5-on-3 drill. At ease.",
++          "text_sha256": "46e33b9db7ffed9a686fca2634595df4b1b0b60acfc2673aea865da63f3d610c",
++          "author": "@DannyWebster21",
++          "url": "https://x.com/DannyWebster21/status/2104672698786013556",
++          "published_at": "2026-09-28T20:40:48.000Z",
++          "publication_basis": "Retained browser observation of the article time element; not newly checked.",
++          "received_at": "2026-09-28T20:50:23.060892+00:00",
++          "receipt_basis": "Retained relay ingestion receipt; original receipt time unknown."
++        }
++      ],
++      "retainedRelations": [
++        {
++          "from": "S10B",
++          "relation": "quotes",
++          "to": "S10A"
++        }
++      ],
++      "observedSourceClaims": [
++        {
++          "id": "S10-C01",
++          "subject_literal": "Olofsson",
++          "event": "reported_drill_reps",
++          "value": "PP1_reps_with_Marner_up_top",
++          "polarity": "positive",
++          "modality": "tentative",
++          "time_literal": null,
++          "team_literal": null,
++          "qualifiers": [
++            "Might be much ado about nothing; retain predecessor as immutable evidence."
++          ],
++          "evidence": {
++            "record_id": "S10A",
++            "quote": "Might be much ado about nothing, but Olofsson is taking PP1 reps with Marner up top.",
++            "utf16_start": 0,
++            "utf16_end": 84
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null,
++          "related_subject_literal": "Marner"
++        },
++        {
++          "id": "S10-C02",
++          "subject_literal": "the drill referenced in S10A",
++          "event": "clarification",
++          "value": "5_on_3_drill",
++          "polarity": "positive",
++          "modality": "reported",
++          "time_literal": null,
++          "team_literal": null,
++          "qualifiers": [
++            "B quotes A according to the retained browser record."
++          ],
++          "evidence": {
++            "record_id": "S10B",
++            "quote": "This was a 5-on-3 drill. At ease.",
++            "utf16_start": 54,
++            "utf16_end": 87
++          },
++          "label_authority": "assistant_adjudicated_from_source",
++          "canonical_player_id": null,
++          "canonical_team_id": null,
++          "canonical_game_id": null,
++          "canonical_season_id": null
++        }
++      ],
++      "parsingConventions": [
++        {
++          "rule": "Final state is no regular-PP change. Retain the correction relationship and retract/supersede any regular-PP proposal derived from A; do not erase A or B.",
++          "authority": "owner_reviewed_assistant_adjudicated",
++          "final_state": {
++            "regular_pp_update": false,
++            "retain_both_sources": true,
++            "retract_or_supersede_A_regular_PP_proposal": true
++          }
++        }
++      ],
++      "analystInferences": [],
++      "contextPrerequisites": [
++        "No actual prior action is asserted. Retraction is a benchmark state transition, not authorization for live compensation."
++      ],
++      "independentWorldTruth": null,
++      "productionPublishable": false
++    }
++  ]
++}
+diff --git a/web/scripts/review-ifttt-luna.ts b/web/scripts/review-ifttt-luna.ts
+new file mode 100644
+index 000000000..c30391e2f
+--- /dev/null
++++ b/web/scripts/review-ifttt-luna.ts
+@@ -0,0 +1,38 @@
++import { closeSync, fsyncSync, openSync, readFileSync, writeFileSync } from "node:fs";
++import { resolve } from "node:path";
++import { createHash } from "node:crypto";
++import { runRetainedTweetLunaReview, type LunaReviewInput } from "../lib/sources/tweetLunaReview";
++import { createLunaTransport } from "../lib/sources/tweetLunaTransport";
++import { openLunaLocalAdmission } from "../lib/sources/tweetLunaLocalStore";
++import { DECISION_REFERENCE_SHA256 } from "../lib/sources/tweetDecisionReviewMapping";
++
++/** Manual post-retention worker. One saved packet; no DB read, scheduler or live intake hook.
++ * Default invocation never reads a key or ledger and never sends a request.
++ * A reviewed existing ledger, explicit --dispatch and runtime kill switch are all required.
++ */
++async function main() {
++  const args = process.argv.slice(2), dispatch = args.includes("--dispatch");
++  const value = (key: string) => { const i = args.indexOf(key); return i >= 0 ? args[i + 1] : undefined; };
++  const inputPath = value("--input"), outputPath = value("--output"), ledgerPath = value("--ledger");
++  if (!inputPath || !outputPath || (dispatch && !ledgerPath)) throw new Error("Expected --input packet.json --output new-review.json; dispatch also requires --ledger existing-approved-ledger.json");
++  if (resolve(inputPath) === resolve(outputPath) || ledgerPath && [inputPath, outputPath].some(p => resolve(p) === resolve(ledgerPath))) throw new Error("Input, output and ledger must be distinct");
++  const raw = readFileSync(inputPath);
++  if (raw.length > 512_000) throw new Error("Review packet exceeds local byte limit");
++  const ref = readFileSync(resolve("lib/sources/decisionsReference/adapter.mjs"));
++  if (createHash("sha256").update(ref).digest("hex") !== DECISION_REFERENCE_SHA256) throw new Error("Retained reference digest mismatch");
++  const input: LunaReviewInput = JSON.parse(raw.toString("utf8"));
++  const transport = dispatch ? createLunaTransport({ enabled: true,
++    stopped: () => process.env.IFTTT_LUNA_REVIEW_ENABLED !== "true" || process.env.IFTTT_LUNA_REVIEW_STOP !== "false",
++    apiKey: () => process.env.OPENAI_API_KEY, admission: openLunaLocalAdmission(ledgerPath!),
++  }) : undefined;
++  // Reserve the new output file before any dispatch; never overwrite an adjudication.
++  const output = openSync(outputPath, "wx", 0o600);
++  try {
++    const result = await runRetainedTweetLunaReview({ enabled: dispatch, input, transport });
++    writeFileSync(output, JSON.stringify(result, null, 2) + "\n"); fsyncSync(output);
++    process.stdout.write(JSON.stringify({ status: result.status, attempts: result.attempts, holds: result.holds }) + "\n");
++    if (result.status === "held") process.exitCode = 2;
++  } finally { closeSync(output); }
++}
++
++main().catch(() => { process.stderr.write("Luna review held; no automatic retry. Inspect the approved local packet and admission record.\n"); process.exitCode = 1; });

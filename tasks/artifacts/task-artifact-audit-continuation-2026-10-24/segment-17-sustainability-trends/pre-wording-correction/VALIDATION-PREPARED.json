@@ -1,0 +1,144 @@
+{
+  "at": "2026-10-24T19:34:20.493480+00:00",
+  "before_ids": 213,
+  "after_ids": 213,
+  "before_evidence": 1149,
+  "after_evidence": 1183,
+  "added_ids": [],
+  "changed_existing_ids": [
+    "TRENDS-HISTORICAL-REPAIRS",
+    "PIPE-ROLLING-HISTORY-REPAIR",
+    "FORGE-RESULTS-COVERAGE",
+    "REPO-DOCUMENTATION",
+    "SITE-FORGE-TESTING-GROUNDS",
+    "SITE-PLAYER-CARDS"
+  ],
+  "all_prior_ids_scopes_evidence_prefixes_preserved": true,
+  "legacy_blocks_byte_identical": 32,
+  "unchanged_existing_rows_identical": 207,
+  "readable_children_before": 36,
+  "readable_children_after": 45,
+  "scalar_label_checks": [
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "TRENDS-HISTORICAL-REPAIRS",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "PIPE-ROLLING-HISTORY-REPAIR",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "FORGE-RESULTS-COVERAGE",
+      "field": "implementation",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "FORGE-RESULTS-COVERAGE",
+      "field": "acceptance_release_gate",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-FORGE-TESTING-GROUNDS",
+      "field": "acceptance",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-FORGE-TESTING-GROUNDS",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-PLAYER-CARDS",
+      "field": "acceptance",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-PLAYER-CARDS",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "TRENDS-HISTORICAL-REPAIRS",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "PIPE-ROLLING-HISTORY-REPAIR",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "FORGE-RESULTS-COVERAGE",
+      "field": "implementation",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "FORGE-RESULTS-COVERAGE",
+      "field": "acceptance_release_gate",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-FORGE-TESTING-GROUNDS",
+      "field": "acceptance",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-FORGE-TESTING-GROUNDS",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-PLAYER-CARDS",
+      "field": "acceptance",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-PLAYER-CARDS",
+      "field": "verification",
+      "label_value_matched": true
+    }
+  ],
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "f7fcef85d38a396204b8919ee3763251cef6fe03865b297d167bbb341f3f1040",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "2d2858f86f18387077a1061959dfdb1b70a28dd3b7371871a36f79b6d454cfcd",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "a0054edbb0f92bf395f764914b4c8eeba7c72b297e8c4de92c869b7f0ce1ae02"
+  },
+  "candidate_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "f6a9d45949be216a258ff7dd32ef222704a0a1b2faef5dc3bab80ffe84b43e8f",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "55266ae5c67bdc8fe4b0bd477a52dc41df7932874daefca1891d1f803290c2e4",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "3c700ca1d47add2d5c350b51ae939800f949a8170919a7bafd24e1e855b65e11"
+  },
+  "no_added_trailing_whitespace": true,
+  "application_tests_git_or_external_operations": 0,
+  "whole_tree_content_audit_complete": false
+}

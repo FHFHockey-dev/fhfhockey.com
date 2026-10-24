@@ -1,0 +1,24 @@
+{
+  "at": "2026-10-24T22:03:14.564954+00:00",
+  "checks": [
+    {
+      "log": "focused-tests.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-latest-social-access-zbjtop5e/web/node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "/tmp/fhfh-latest-social-access-zbjtop5e/composition.vitest.config.mts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 6.192
+    }
+  ],
+  "selected_source_pins_unchanged": true,
+  "test_spec_exception": "Independent worker may adapt only isolated e2e spec/helper with separate before/after pins",
+  "canonical_edits": 0,
+  "hosted_requests": 0,
+  "environment_files_in_snapshot": 0
+}

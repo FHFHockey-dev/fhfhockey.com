@@ -1,0 +1,61 @@
+{
+  "verdict": "CHANGES REQUIRED",
+  "scope": "Frozen slice05 offline server/API/gate boundary only",
+  "findings": [
+    {
+      "id": "S05-R1",
+      "priority": "P2",
+      "file": "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.tsx",
+      "sourceSha256": "741008b25f39935a3bafcd34d83908f34e97d2802da34cd8f40893e7d4f2c529",
+      "lines": [
+        20,
+        31,
+        36,
+        46,
+        47,
+        50,
+        67,
+        68,
+        69
+      ],
+      "summary": "Auth refresh can remount sample after visibility withdrawal while document remains hidden",
+      "reproduction": [
+        "grant sample",
+        "visibility hidden withdraws",
+        "TOKEN_REFRESHED while hidden",
+        "fresh mock grant remounts while still hidden"
+      ],
+      "impactLimit": "No server owner bypass or real/sealed-result disclosure observed."
+    }
+  ],
+  "pinChecks": 127,
+  "pinMatches": 127,
+  "protectedPins": 104,
+  "pinDrift": 0,
+  "tests": {
+    "ownerPassed": 61,
+    "independentPassed": 7,
+    "independentFailed": 1,
+    "totalPassed": 68,
+    "totalFailed": 1,
+    "runs": 1
+  },
+  "scopedTypeScript": "passed",
+  "scopedESLint": "passed",
+  "readAdapterLimit": "Optional trusted operational/list payloads pass through unchanged; default store/executor is not connected.",
+  "reviewerDiscoveryFailure": "Pin script first resolved root mise-en-place.md under packet; corrected before tests, retained in PINS.start.",
+  "contextualGeneratedDrift": "Canonical next-env.d.ts changed concurrently, no reviewer write/restore/server; hashes retained.",
+  "activation": "owner config missing before verification; not TJ identity rejection; direct config/session read approval remains pending",
+  "staticStartup": "Prior auto-review denial binding; no retry/workaround or local HTTP request",
+  "sourceRepairs": 0,
+  "blockedReviewChecks": [],
+  "runningOperations": [],
+  "boundaries": {
+    "canonicalSourceWrites": 0,
+    "sharedWrites": 0,
+    "gitMutations": 0,
+    "liveAuthOrProviderCalls": 0,
+    "serverOrBrowserStarts": 0,
+    "newWorkers": 0
+  }
+}

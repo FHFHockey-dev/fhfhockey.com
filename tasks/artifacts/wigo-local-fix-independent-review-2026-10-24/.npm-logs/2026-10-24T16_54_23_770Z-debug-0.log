@@ -1,0 +1,18 @@
+0 verbose cli /usr/local/bin/node /usr/local/lib/node_modules/npm/bin/npm-cli.js
+1 info using npm@10.9.0
+2 info using node@v22.11.0
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/tim/Code/fhfhockey.com/web/.npmrc
+5 silly config load:file:/Users/tim/.npmrc
+6 silly config load:file:/usr/local/etc/npmrc
+7 verbose title npm exec eslint pages/api/v1/db/calculate-wigo-stats.ts utils/fetchWigoPlayerStats.ts __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts utils/fetchWigoPlayerStats.test.ts
+8 verbose argv "exec" "--yes" "false" "--" "eslint" "pages/api/v1/db/calculate-wigo-stats.ts" "utils/fetchWigoPlayerStats.ts" "__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts" "utils/fetchWigoPlayerStats.test.ts"
+9 verbose logfile logs-max:10 dir:/Users/tim/Code/fhfhockey.com/tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/.npm-logs/2026-10-24T16_54_23_770Z-
+10 verbose logfile /Users/tim/Code/fhfhockey.com/tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/.npm-logs/2026-10-24T16_54_23_770Z-debug-0.log
+11 silly logfile done cleaning log files
+12 verbose cwd /Users/tim/Code/fhfhockey.com/web
+13 verbose os Darwin 27.0.0
+14 verbose node v22.11.0
+15 verbose npm  v10.9.0
+16 verbose exit 0
+17 info ok

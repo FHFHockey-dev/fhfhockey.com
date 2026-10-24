@@ -1,0 +1,19 @@
+
+> web@0.1.0 test
+> vitest --run --config review-vitest.config.mts lib/projections/goalie/leagueSavePct.test.ts lib/projections/goaliePipeline.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-cache-recheck-cp6x37_2/web
+
+(node:93707) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/projections/goaliePipeline.test.ts (29 tests) 29ms
+(node:93709) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/projections/goalie/leagueSavePct.test.ts (2 tests) 1ms
+
+ Test Files  2 passed (2)
+      Tests  31 passed (31)
+   Start at  13:38:11
+   Duration  702ms (transform 129ms, setup 4ms, collect 168ms, tests 30ms, environment 269ms, prepare 57ms)
+

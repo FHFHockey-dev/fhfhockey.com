@@ -1,0 +1,43 @@
+{
+  "at": "2026-10-24T19:45:53.658994+00:00",
+  "source": "Existing inventory with exact content/role/partial overlays only",
+  "remaining_unique_candidates": 1636,
+  "remaining_by_kind": {
+    "unique-task-document": 1636,
+    "structured-evidence": 2524,
+    "binary-or-supporting-snapshot": 3814,
+    "duplicate-scope-check": 4088
+  },
+  "not_all_candidates_deep_read_obligations": true,
+  "next_contracts": [
+    "tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md",
+    "tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md"
+  ],
+  "related_start_chart_candidates": [
+    {
+      "path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md",
+      "sha256": "cf3ee0fd3cf0a7033dc77689170dec171f46212c96f99723ef3f7f5ae98a3044",
+      "bytes": 6332,
+      "kind": "unique-task-document"
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md",
+      "sha256": "3417e05f47f627991a2e8ca06aeecbadad107a7bc42e51ee4c5af4d0405f1f24",
+      "bytes": 17541,
+      "kind": "unique-task-document"
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+      "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+      "bytes": 47575,
+      "kind": "unique-task-document"
+    },
+    {
+      "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md",
+      "sha256": "1446518d759a0976159dd1da6030e000f1a86198b2d2a9e445e523c855dff49b",
+      "bytes": 21053,
+      "kind": "unique-task-document"
+    }
+  ],
+  "next_family_not_opened": true
+}

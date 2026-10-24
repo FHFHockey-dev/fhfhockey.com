@@ -1,0 +1,40 @@
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p02-r1-independent-ozi9g1iz/web
+
+(node:4732) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds the overview headline as well as context when a query row has unknown participation 18ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds the Trends summary for the same unknown-participation query row 1ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > preserves unavailable GAA and QS for the actual selected profile column shape 4ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > pairs known appearance counts and excludes only a known nonappearance consistently 3ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > retains true zero SV with paired positive-shot exposure in the production consumers 4ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > uses relief exposure for GAA and withholds an incomplete pair regardless of row order 0ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > retains incomplete start-classification coverage and excludes relief from the QS denominator 0ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds a playoff SV ratio when the played row lacks its paired saves count 2ms
+(node:4732) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds ratios before filtering unknown participation: null 14ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds ratios before filtering unknown participation: undefined 2ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds ratios before filtering unknown participation: -1 2ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds ratios before filtering unknown participation: NaN 1ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > does not infer participation from complete counts 3ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > pools complete appearance pairs and excludes a known zero despite missing counts 2ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > preserves observed zero ratios with positive exposure 1ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds a missing exposure pair even when participation is known 2ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds ratios before filtering unknown participation: null 2ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds ratios before filtering unknown participation: undefined 1ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds ratios before filtering unknown participation: -1 1ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds ratios before filtering unknown participation: NaN 1ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > does not infer participation from complete counts 2ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > pools complete appearance pairs and excludes a known zero despite missing counts 1ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > preserves observed zero ratios with positive exposure 1ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds a missing exposure pair even when participation is known 1ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > validates the selected Trends window when switching between regular season and playoffs 2ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > preserves skater count and shooting percentage summaries 2ms
+
+ Test Files  2 passed (2)
+      Tests  26 passed (26)
+   Start at  10:10:15
+   Duration  1.00s (transform 172ms, setup 14ms, collect 329ms, tests 73ms, environment 413ms, prepare 68ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/p02-r1-independent-review-2026-10-22/focused-tests.json

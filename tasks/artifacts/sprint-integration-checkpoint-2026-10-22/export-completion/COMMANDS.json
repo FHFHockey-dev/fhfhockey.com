@@ -1,0 +1,43 @@
+{
+  "cwd": "/tmp/fhfh-sprint-integration-u5ophe9k/snapshot/web",
+  "environment": {
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/tmp/fhfh-sprint-integration-u5ophe9k/snapshot/web/.audit-home",
+    "TMPDIR": "/tmp/fhfh-sprint-integration-u5ophe9k/snapshot/web/.audit-tmp",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://unit-tests.supabase.invalid",
+    "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY": "synthetic-public-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "synthetic-service-role-key",
+    "NODE_OPTIONS": "--require /tmp/fhfh-sprint-integration-u5ophe9k/snapshot/web/audit-network-deny.cjs --max-old-space-size=8192",
+    "npm_config_offline": "true",
+    "npm_config_audit": "false",
+    "npm_config_fund": "false",
+    "npm_config_update_notifier": "false",
+    "TZ": "UTC"
+  },
+  "commands": {
+    "migration-fixtures": [
+      "npm",
+      "test",
+      "--",
+      "--run",
+      "--config",
+      "audit.vitest.config.mts",
+      "lib/supabase/supportedBaselineMigration.test.ts",
+      "--reporter=json",
+      "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/sprint-integration-checkpoint-2026-10-22/export-completion/migration-fixtures.json"
+    ],
+    "application-types": [
+      "npm",
+      "exec",
+      "--offline",
+      "--no",
+      "--",
+      "tsc",
+      "--noEmit",
+      "--incremental",
+      "false",
+      "--project",
+      "audit.integration-application-tsconfig.json"
+    ]
+  }
+}

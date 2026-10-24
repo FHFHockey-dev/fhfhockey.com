@@ -1,0 +1,22 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+(node:63407) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx (14 tests | 7 skipped) 361ms
+(node:63411) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/lifecycle-controls.test.tsx (2 tests) 116ms
+(node:63413) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/gate-controls.test.tsx (3 tests | 1 skipped) 66ms
+
+ Test Files  3 passed (3)
+      Tests  11 passed | 8 skipped (19)
+   Start at  13:09:56
+   Duration  1.72s (transform 186ms, setup 5ms, collect 290ms, tests 543ms, environment 545ms, prepare 95ms)
+

@@ -1,0 +1,12 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c2-isolated/web
+
+(node:72940) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/homepageNewsCompatibility.test.tsx (56 tests) 86ms
+
+ Test Files  1 passed (1)
+      Tests  56 passed (56)
+   Start at  13:45:40
+   Duration  745ms (transform 236ms, setup 3ms, collect 383ms, tests 86ms, environment 150ms, prepare 30ms)
+

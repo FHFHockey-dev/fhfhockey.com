@@ -1,8 +1,37 @@
+> **October23 scoped update:** [active checkpoint](ACTIVE-CHECKPOINT-20261023.md) supersedes stale pause/release labels below. Five selected source inspections added to HEALTH.json: baseline re-resolution identity and Yahoo start-mark admission. No new behavior tests; current340-case receipt imported. The170-row ledger remains inventory, not whole-repository vetting.
+
 # Source-health coverage — 2026-10-22
 
-**The 151-entry ledger is an inventory, not a repository-wide clean bill of health.** This follow-up directly inspected selected source paths, reproduced four defect classes, and reconfirmed one documented native consumer gap. No whole feature, security boundary or release is certified from a handoff, test count or matching hash.
+**Final fixed integration snapshot remainsHELD:**1928pass/13fail/67files, applicationTS pass, lint0errors9warnings,3585files/110pins verified. This does not supersede narrow accepted slices or certify whole-tree health. Artifact-only TS2352 and task2cache reproducibility remain separate; no tests rerun by ledger auditor.
+
+**The 166-entry ledger is an inventory, not a repository-wide clean bill of health.** This follow-up directly inspected selected source paths, reproduced four defect classes, and reconfirmed one documented native consumer gap. No whole feature, security boundary or release is certified from a handoff, test count or matching hash.
 
 The exact inspection ranges, functions, checks, source hashes and untested boundaries are in [HEALTH.json](HEALTH.json). [SOURCE-PROBES.json](SOURCE-PROBES.json) pins the bytes exercised by six offline observations: five defect cases across four findings, plus one zero/null control. The source-extraction harness uses Node 22.11.0 and the installed TypeScript compiler; no application module, service, environment file or network is loaded. These successful reproductions demonstrate **failing product behavior**, not passing acceptance tests.
+
+**Expanded FPI tasklist:** [ownership and lease coordination](CURRENT-OWNERSHIP.md) is inventoried only. Named workers are implementing/testing; no whole model or new source-health claim follows from dispatch or historical pin transfer. Earlier scoped findings/acceptance below remain attached to their reviewed bytes.
+
+## Current follow-up checkpoint
+
+[P07-APPROVAL-BOUNDARY.md](P07-APPROVAL-BOUNDARY.md) and [P07-SOURCES.json](P07-SOURCES.json) now extend H05 from source inspection to **seven behavior checks** on named actual declarations. The older11-file table, six source observations and source-match flags below describe the13:02–13:07 inspection; they are historical after concurrent worker edits.
+
+| Area | Highest current scoped evidence | Finding / remaining boundary |
+|---|---|---|
+| P07 detailed forecast admission / task10 | Narrow R2 and combinedtask10R1 independently accepted; R2heavy checks pass | Combined22tests/39pins/3379files;8R2pins unchanged. Browser blocked1100/no retry; final whole-tree/model/release still unqualified. |
+| P01 calendar summary/date | Independentdateidentity24distinctcases eachUTC/NewYork; summarypreserved | Exact2filedateidentity accepted. Finality/OT,WGOgrain,zero-score/RWROW andbrowser/live remainheld. |
+| P04 search | Imported qualified independent local acceptance | Query ownership/status/navigation and prefetch correction qualified accepted;34cases, original hover/touch oracle0automaticcalls. No measured remote cost or browser/AT acceptance. |
+| P03 timeline / S08 / P05 ownership | Imported P03 32cases, S08route49cases andP05mountedexpiry31cases/originaloracle | P05 identity/expiry qualified accepted; zero fetches and correct stale0% filtering. FourR1pins/billingguards preserved; concurrent rosterPlanning.ts:322 P07change excluded. Realbrowser/persistedRSOaging unverified. |
+| P02 / goalie | Imported R1 independent26cases; current52hash closure | Unknown-participation summary gap closed for exact3files. Original9P02+13A7pins preserved;2oldcaller pins superseded. Earlier96tests remain historical. QS/time hydration, numericTOItypes and live validity/release open; harmful xGA double-count not established. |
+| NST R1 | Imported independent local acceptance181executions | Both original safety holds closed for5pins; realDB, old rows, version-consistent rollout and activebackfill remain outside. |
+| Billing | Parent-confirmed independent mounted-panel cancellation acceptance |29panel cases/oracle; reload recovery unverified; all release/service gates remain. |
+| Luna / CTPI | Owner/reproduction evidence with explicit review boundary | Luna R1 correction locally independently accepted45executions; original2failures now reject. Earlier-source reuse gate remains; flagsfalse. CTPI35fixed tests independently accepted; valid cohorts/trust boundary preserved, production/formula gates held. No live integration/publication acceptance. |
+
+Review receipts and task-specific limits are in [LEDGER.md](LEDGER.md). No additional tests were rerun for this reconciliation. Hash agreement establishes bytes only; source-level correctness checks do not establish whole-area security/performance/UX or deployed health.
+
+New [P07 decision provenance](P07-DECISION.md) preserves the established legacy/bridge/native decisions. The later [TJ option2 selection](P07-SELECTED-POLICY.md) closes policy selection; specific target reviews remain open. [Acceptance planning](P07-CONSUMER-ACCEPTANCE.md) adds no behavior-test or predictive acceptance. Source inspection confirms both Start Chart admission and its native loader share the proposed edit area; RSO empty admission can select the interim bridge. These coupling findings were not newly behavior-tested.
+
+Combined A1–A10+NST receipt now records31changedfiles/12dependency fences and770passing executions; applicationTS passed, all-fileTS has2unchanged external-fixture errors. This is imported bounded verification, not whole-archive health or release approval. See SPRINT-INTEGRATE.
+
+## Historical source-health pass (13:02–13:07 UTC)
 
 ## Substantive findings
 
@@ -44,3 +73,5 @@ Levels are explicit: **inventoried only**, **source inspected**, **behavior test
 The [A7 R1 review](/Users/tim/Code/fhfhockey.com/tasks/artifacts/claude-audit-independent-review-2026-10-22/a7-a9-stats/r1/REVIEW.md:3) closes the two earlier consumer-filter failures for the pinned local packet. The [D4 independent review](/Users/tim/Code/fhfhockey.com/tasks/artifacts/d4-grants-independent-review-2026-10-22/REVIEW.md:3) accepts the harness repair only. Old held labels remain in historical evidence; they are superseded in the current ledger. No acceptance is transferred to unrelated dirty bytes.
 
 No broad application suite, production request, DB connection, package install, build, browser, commit, push, deployment or worker dispatch ran. Source probes are retained and repeatable; no application fixes were made. The substantive source audit is **partial and explicitly bounded**, with uncovered file-health work proposed in [WORK-PACKETS.md](WORK-PACKETS.md). Security and performance were inspected where named above, but no whole-application security/performance assessment is claimed.
+
+Migration relocation and runnerR1 are now independently accepted locally: actualpreflight+19regressions; historical receipts unchanged and noSQL/network. [Batch source-pin comparison](BATCH-SOURCE-PINS.json) preserves the distinction between unchanged accepted files, P07 concurrent changes and the reviewed billing reference relocation. No new behavior tests by this auditor.

@@ -1,0 +1,19 @@
+{
+  "versions": {
+    "node": "v22.11.0",
+    "npm": "10.9.0"
+  },
+  "command": [
+    "npx",
+    "--no-install",
+    "tsc",
+    "--noEmit",
+    "--incremental",
+    "false",
+    "--project",
+    "audit.fixture-types-tsconfig.json"
+  ],
+  "exit_code": 2,
+  "duration_seconds": 3.44,
+  "fixture_sha256": "3ac4eb83022c96dcb1330eae4170068c4ad46b98129693d2493055cdb35e4347"
+}

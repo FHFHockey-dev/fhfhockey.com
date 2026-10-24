@@ -1,0 +1,7 @@
+# Yahoo start-mark authority correction
+
+Three-file local packet. Serialized Yahoo Starting/Not Starting labels no longer modify fresh server bridge forecasts before runtime authority is created. Labels remain available for display; server probabilities and totals remain unchanged. Quantitative provider overrides are withheld until supported by a fresh trusted server read. No provider authorization was weakened and no native target approval added.
+
+Original three-case oracle: 1 control pass, 2 safety failures (30% became 100%/0%, and totals remained authorized). Correction: 73/73 focused executions pass; then the incompatible old bridge positive assertion was reproduced red and updated to the new safe contract; full bridge suite 31/31 passes. Full isolated application types passed before that expectation-only edit; all three changed files pass ESLint. The other release gates passed 482/483 first; sole failure was private export TMPDIR inside the isolated source root. Corrected harness (no app change) passes Start Chart 104/104. Do not sum overlapping executions as unique tests.
+
+The parent-assigned investigator independently reports actual worker/fallback, copied-row, stale-source and bridge-transplant safety checks pass; final signed/pinned receipt pending. See CANDIDATE.json for hashes, packet.patch, and exact commands/results in the parent directory. No commit, push, deployment, DB or provider request.

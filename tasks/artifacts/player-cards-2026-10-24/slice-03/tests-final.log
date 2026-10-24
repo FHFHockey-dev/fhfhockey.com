@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run components/player-cards/PlayerCardFlow.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:64991) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/player-cards/PlayerCardFlow.test.tsx (7 tests) 272ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  13:15:03
+   Duration  915ms (transform 175ms, setup 3ms, collect 258ms, tests 272ms, environment 176ms, prepare 34ms)
+

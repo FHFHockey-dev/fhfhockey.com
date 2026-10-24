@@ -1,0 +1,6 @@
+{
+  "extends": "../../../web/tsconfig.json",
+  "compilerOptions": { "incremental": false },
+  "include": ["../../../web/lib/sources/tweetLuna*.ts", "../../../web/scripts/review-ifttt-luna.ts"],
+  "exclude": ["../../../web/node_modules", "../../../web/.next"]
+}

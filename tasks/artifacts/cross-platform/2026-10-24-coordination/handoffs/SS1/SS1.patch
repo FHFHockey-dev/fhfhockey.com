@@ -1,0 +1,555 @@
+diff --git a/web/components/SocialShare/SocialShare.module.scss b/web/components/SocialShare/SocialShare.module.scss
+index e59e89a11..308b4a2aa 100644
+--- a/web/components/SocialShare/SocialShare.module.scss
++++ b/web/components/SocialShare/SocialShare.module.scss
+@@ -109,6 +109,68 @@ $share-rail-size: 8px;
+   p strong { color: v.$color-blue-300; }
+ }
+ .watermark { display: block; margin-top: v.$space-sm; color: v.$color-blue-300; letter-spacing: v.$mobile-letter-spacing-wide; }
++// Monday best-schedules grid: two 16-team panels of square 44px day cells.
++$grid-padding: 36px;
++$grid-cell: 44px;
++$grid-gap: 4px;
++.gridSquare { padding: $grid-padding; gap: 14px; }
++.gridHeader { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: v.$space-md; height: 96px; }
++.gridBrand { display: grid; gap: v.$space-xxs; justify-items: start;
++  strong { font: 400 40px "Share Train One", sans-serif; color: v.$primary-color; }
++  span { font-size: 18px; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; }
++  img { display: block; }
++}
++.gridTitle { text-align: center;
++  p { font-size: 20px; font-weight: 700; color: v.$color-blue-300; text-transform: uppercase; letter-spacing: v.$mobile-letter-spacing-wide; }
++  h2 { font-size: 60px; line-height: 1; font-weight: 900; color: v.$color-white; letter-spacing: 0.01em; margin-top: v.$space-xxs; }
++}
++.gridWeek { display: grid; justify-items: end; gap: v.$space-xxs;
++  span { font-size: 16px; letter-spacing: v.$mobile-letter-spacing-wide; color: v.$text-secondary; }
++  strong { font: 600 24px "Share Martian Mono", monospace; color: v.$color-white; }
++}
++.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; min-height: 0; }
++.gridPanel { display: grid; grid-auto-rows: $grid-cell; row-gap: $grid-gap; align-content: start; }
++.gridRow { display: grid; grid-template-columns: 30px $grid-cell repeat(7, $grid-cell) 1fr; column-gap: 5px; align-items: center; position: relative; }
++.gridDays { height: 40px; align-self: end;
++  > span { display: grid; justify-items: center; gap: 1px; font-size: 13px; font-weight: 700; color: v.$text-secondary; letter-spacing: 0.04em; }
++  strong { font-size: 16px; color: v.$color-white; }
++  small { font: 500 12px "Share Martian Mono", monospace; }
++  .offNightDay { background: rgba(v.$success-color, 0.16); border-radius: 6px 6px 0 0; height: 40px; align-content: center;
++    strong, small { color: v.$success-color; }
++  }
++}
++.topRow::before { content: ""; position: absolute; inset: 4px auto 4px -10px; width: 4px; border-radius: 2px; background: v.$primary-color; }
++.gridRank { font: 600 18px "Share Martian Mono", monospace; color: v.$color-blue-300; text-align: right; padding-right: 2px; }
++.gridTeam { display: grid; place-items: center; width: $grid-cell; height: $grid-cell; img { display: block; } }
++.cell { position: relative; display: grid; place-items: center; width: $grid-cell; height: $grid-cell; border-radius: 6px; border: 2px solid transparent;
++  img { display: block; }
++}
++.offNightColumn { background: rgba(v.$success-color, 0.06); }
++.homeCell { background: rgba(v.$color-white, 0.12); }
++.awayCell { border-color: rgba(v.$color-white, 0.16); }
++.offNightGame { border-color: v.$success-color; }
++.dimmed { opacity: 0.35; }
++.awayMark, .doubleMark { position: absolute; font-style: normal; font-weight: 800; line-height: 1; border-radius: 3px; background: v.$background-dark; }
++.awayMark { top: -3px; left: -3px; font-size: 13px; padding: 1px 2px; color: v.$color-blue-300; }
++.doubleMark { bottom: -3px; right: -3px; font-size: 11px; padding: 1px 2px; color: v.$color-white; }
++.logoFallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: 13px; font-weight: 800; color: v.$color-white; letter-spacing: 0.02em; }
++.gridGames { display: grid; justify-items: center; line-height: 1;
++  strong { font: 600 22px "Share Martian Mono", monospace; color: v.$color-white; }
++  small { font-size: 11px; font-weight: 700; color: v.$success-color; margin-top: 3px; letter-spacing: 0.04em; }
++  .noOff { color: v.$text-secondary; }
++}
++.gridFooter { border-top: 1px solid v.$border-soft; padding-top: v.$space-xs; display: grid; gap: 6px; font-size: 15px; color: v.$text-secondary; line-height: 1.25;
++  p { display: flex; justify-content: space-between; gap: v.$space-md; align-items: baseline; }
++}
++.legend { display: flex; flex-wrap: wrap; gap: v.$space-xs v.$space-lg; color: v.$color-white; font-size: 17px;
++  span { display: inline-flex; align-items: center; gap: 6px; }
++  i { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 4px; font-style: normal; font-weight: 800; font-size: 14px; border: 2px solid transparent; }
++  b { color: v.$color-blue-300; }
++}
++.legendAway { color: v.$color-blue-300; border-color: rgba(v.$color-white, 0.16) !important; }
++.legendHome { background: rgba(v.$color-white, 0.12); }
++.legendOff { border-color: v.$success-color !important; }
++.gridWatermark { flex: none; color: v.$color-blue-300; letter-spacing: v.$mobile-letter-spacing-wide; }
+ @media (max-width: v.$breakpoint-tablet) {
+   .page { padding: v.$space-xs; }
+   .workspace { grid-template-columns: minmax(0, 1fr); }
+diff --git a/web/components/SocialShare/SocialShare.tsx b/web/components/SocialShare/SocialShare.tsx
+index 98539796a..66d8eedc0 100644
+--- a/web/components/SocialShare/SocialShare.tsx
++++ b/web/components/SocialShare/SocialShare.tsx
+@@ -1,8 +1,9 @@
+ /* eslint-disable @next/next/no-img-element -- Native owned SVG is decoded and embedded by html-to-image for exact PNG exports. */
+ import { useCallback, useEffect, useRef, useState } from "react";
+-import type { SocialShareFormat, SocialShareSnapshot, ShareTeamRow } from "lib/socialShare/types";
++import type { SocialShareFormat, SocialShareSnapshot, ShareTeam, ShareTeamRow } from "lib/socialShare/types";
+ import { calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
+-import { bounded, downloadSharePng, readyShareFonts, SHARE_SIZE } from "lib/socialShare/export";
++import { bounded, downloadSharePng, readyShareFonts, SHARE_SIZE, teamLogoDataUrl } from "lib/socialShare/export";
++import { mondayGridRows } from "lib/socialShare/mondayGrid";
+ import styles from "./SocialShare.module.scss";
+ 
+ const labels: Record<SocialShareFormat, string> = {
+@@ -13,6 +14,10 @@ const dateLabel = (date: string) => new Intl.DateTimeFormat("en-US", { month: "s
+ const yearDateLabel = (date: string) => `${dateLabel(date)}, ${date.slice(0, 4)}`;
+ const timeLabel = (value: string | null) => value ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/New_York", timeZoneName: "short" }).format(new Date(value)) : "Not available";
+ const scoreLabel = (row: ShareTeamRow) => row.remainingGames ? row.score.toFixed(1) : "No games";
++const titleDay = (label: string) => label.charAt(0) + label.slice(1, 3).toLowerCase();
++const cx = (...names: (string | false | null | undefined)[]) => names.filter(Boolean).join(" ");
++// Monday's Game Grid edition opens on the logo grid; other formats keep the leaders summary.
++const defaultGraphic = (format: SocialShareFormat) => format === "game-grid" ? "grid" : "leaders";
+ 
+ function futureItinerary(snapshot: SocialShareSnapshot, row: ShareTeamRow) {
+   return row.games.filter(game => snapshot.selectedDates.includes(game.date) && game.gameType === 2 && game.status === "scheduled" && game.startTimeUtc !== null && Date.parse(game.startTimeUtc) > Date.parse(snapshot.generatedAt))
+@@ -28,6 +33,50 @@ function altText(snapshot: SocialShareSnapshot, rows: ShareTeamRow[], trusted: b
+   return `FHFH ${labels[snapshot.format]}, ${yearDateLabel(snapshot.weekStart)} through ${yearDateLabel(snapshot.weekEnd)}. ${trusted ? "Schedule only" : "Unranked preview only; source or edition is not ready"}, remaining games after ${timeLabel(snapshot.generatedAt)}. Selected dates: ${snapshot.selectedDates.map(dateLabel).join(", ") || "none"}. ${rows.map(row => `${row.team.name}: ${row.remainingGames} ${trusted ? "remaining" : "known remaining"} games, ${row.offNightGames} ${trusted ? "" : "known "}off-night games${trusted ? `, Schedule Score ${scoreLabel(row)}` : "; ranking unavailable"}`).join("; ")}.${itinerary} NHL schedule checked ${timeLabel(snapshot.source.fetchedAt)}. Off-night density uses the full daily slate. Observed schedule only. No odds or player projections.`;
+ }
+ 
++function gridAltText(snapshot: SocialShareSnapshot, trusted: boolean) {
++  const dayLabel = (date: string) => titleDay(snapshot.days.find(day => day.date === date)!.label);
++  const offNights = snapshot.days.filter(day => day.offNight).map(day => titleDay(day.label)).join(", ") || "none";
++  const rows = mondayGridRows(snapshot, trusted).map(row => `${row.rank ? `${row.rank}. ` : ""}${row.team.name}: ${row.remainingGames} ${trusted ? "" : "known "}games left, ${row.offNightGames} off-night; ${row.cells.flatMap(cell => cell.games.map(game => `${dayLabel(cell.date)} ${game.home ? "vs" : "@"} ${game.opponent.abbreviation}${game.counted ? "" : " (not counted)"}`)).join(", ") || "no games"}`);
++  return `FHFH Best schedules, Monday streamer grid, ${yearDateLabel(snapshot.weekStart)} through ${yearDateLabel(snapshot.weekEnd)}. ${trusted ? "Teams ranked by FHFH Game Grid Week Score, schedule only" : "Unranked preview in alphabetical order; ranking unavailable because the source or edition is not ready"}. Selected dates: ${snapshot.selectedDates.map(dateLabel).join(", ") || "none"}. Off-nights (8 or fewer NHL games): ${offNights}. ${rows.join("; ")}. NHL schedule checked ${timeLabel(snapshot.source.fetchedAt)}. No odds or player projections.`;
++}
++
++function TeamMark({ team, logo, size }: { team: ShareTeam; logo: string | null | undefined; size: number }) {
++  return logo ? <img src={logo} alt="" width={size} height={size} /> : <b className={styles.logoFallback}>{team.abbreviation}</b>;
++}
++
++function MondayGrid({ snapshot, trusted, logos, brandLogo }: { snapshot: SocialShareSnapshot; trusted: boolean; logos: Record<string, string | null>; brandLogo: string | null }) {
++  const rows = mondayGridRows(snapshot, trusted);
++  return <>
++    <div className={styles.gridHeader}>
++      <div className={styles.gridBrand}>{brandLogo ? <img src={brandLogo} alt="FHFH" width="135" height="40" /> : <strong>FHFH</strong>}<span>FHFHOCKEY.COM</span></div>
++      <div className={styles.gridTitle}><p>{trusted ? "Monday · Streamer grid" : "Unranked preview"}</p><h2>{trusted ? "BEST SCHEDULES" : "KNOWN SCHEDULES"}</h2></div>
++      <div className={styles.gridWeek}><span>WEEK OF</span><strong>{dateLabel(snapshot.weekStart)} – {dateLabel(snapshot.weekEnd)}</strong><span>{snapshot.weekEnd.slice(0, 4)}</span></div>
++    </div>
++    <div className={styles.grid}>{[rows.slice(0, 16), rows.slice(16)].map((half, index) => <div key={index} className={styles.gridPanel}>
++      <div className={cx(styles.gridRow, styles.gridDays)}>
++        <span>{trusted ? "RK" : ""}</span><span>TEAM</span>
++        {snapshot.days.map(day => <span key={day.date} className={cx(day.offNight && styles.offNightDay, !day.selected && styles.dimmed)}><strong>{titleDay(day.label)}</strong><small>{day.leagueGames}</small></span>)}
++        <span>GP</span>
++      </div>
++      {half.map(row => <div key={row.team.id} data-team={row.team.abbreviation} className={cx(styles.gridRow, row.rank !== null && row.rank <= 3 && styles.topRow)}>
++        <span className={styles.gridRank}>{row.rank ?? ""}</span>
++        <span className={styles.gridTeam}><TeamMark team={row.team} logo={logos[row.team.abbreviation]} size={40} /></span>
++        {row.cells.map(cell => {
++          const game = cell.games[0];
++          return <span key={cell.date} data-date={cell.date} className={cx(styles.cell, cell.offNight && styles.offNightColumn, game && (game.home ? styles.homeCell : styles.awayCell), game && cell.offNight && game.counted && styles.offNightGame, game && !game.counted && styles.dimmed)}>
++            {game && <><TeamMark team={game.opponent} logo={logos[game.opponent.abbreviation]} size={32} />{!game.home && <i className={styles.awayMark}>@</i>}{cell.games.length > 1 && <i className={styles.doubleMark}>×{cell.games.length}</i>}</>}
++          </span>;
++        })}
++        <span className={styles.gridGames}><strong>{row.remainingGames}</strong><small className={cx(!row.offNightGames && styles.noOff)}>{row.offNightGames} OFF</small></span>
++      </div>)}
++    </div>)}</div>
++    <footer className={styles.gridFooter}>
++      <div className={styles.legend}><span><i className={styles.legendAway}>@</i>Away</span><span><i className={styles.legendHome} />Home</span><span><i className={styles.legendOff} />Off-night (≤8 NHL games)</span><span><b>GP</b> games left · <b>OFF</b> off-night games</span></div>
++      <p><span>{trusted ? "Ranked by Game Grid Week Score (games, off-nights, slate density)" : "Ranking unavailable · alphabetical order"} · No odds or projections · NHL schedule checked {timeLabel(snapshot.source.fetchedAt)}</span><strong className={styles.gridWatermark}>{trusted ? "SCHEDULE ONLY" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
++    </footer>
++  </>;
++}
++
+ export default function SocialShare({ format, asOf }: { format: SocialShareFormat; asOf: string }) {
+   const supported = format === "game-grid" || format === "remaining-week";
+   const [weekStart, setWeekStart] = useState(() => calendarWeekStart(asOf));
+@@ -37,7 +86,8 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
+   const [assetError, setAssetError] = useState("");
+   const [assetsReady, setAssetsReady] = useState(false);
+   const [logo, setLogo] = useState<string | null>(null);
+-  const [focusTeam, setFocusTeam] = useState("");
++  const [graphic, setGraphic] = useState(() => defaultGraphic(format));
++  const [teamLogos, setTeamLogos] = useState<Record<string, string | null>>({});
+   const [exporting, setExporting] = useState(false);
+   const [expired, setExpired] = useState(false);
+   const [feedback, setFeedback] = useState("");
+@@ -46,6 +96,9 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
+   const frame = useRef<HTMLDivElement>(null);
+   const requestId = useRef(0);
+   const selectedRef = useRef<string[] | undefined>(undefined);
++  const requestedLogos = useRef(new Set<string>());
++  const focusTeam = /^\d+$/.test(graphic) ? graphic : "";
++  const gridCard = graphic === "grid";
+ 
+   const prepareAssets = useCallback(async () => {
+     setAssetsReady(false); setAssetError("");
+@@ -68,7 +121,7 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
+       const next = await response.json();
+       if (!response.ok) throw new Error(next.error || "Schedule could not be loaded.");
+       if (id !== requestId.current) return;
+-      setSnapshot(next); selectedRef.current = next.selectedDates; setFocusTeam("");
++      setSnapshot(next); selectedRef.current = next.selectedDates; setGraphic(current => /^\d+$/.test(current) ? defaultGraphic(format) : current);
+     } catch (cause) { if (id === requestId.current) setError(cause instanceof Error ? cause.message : "Schedule unavailable."); }
+     finally { if (id === requestId.current) setLoading(false); }
+   }, [format]);
+@@ -85,6 +138,14 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
+     const timer = window.setTimeout(() => setExpired(true), Math.max(0, remaining));
+     return () => clearTimeout(timer);
+   }, [snapshot]);
++  useEffect(() => {
++    // Missing team logos settle to null and render as abbreviation tiles.
++    const missing = snapshot?.teams.map(team => team.abbreviation).filter(abbreviation => !requestedLogos.current.has(abbreviation)) ?? [];
++    if (!missing.length) return;
++    for (const abbreviation of missing) requestedLogos.current.add(abbreviation);
++    void Promise.all(missing.map(async abbreviation => [abbreviation, await teamLogoDataUrl(abbreviation).catch(() => null)] as const))
++      .then(entries => setTeamLogos(current => ({ ...current, ...Object.fromEntries(entries) })));
++  }, [snapshot]);
+   useEffect(() => {
+     if (!frame.current) return;
+     const observer = new ResizeObserver(entries => setScale(Math.min(1, entries[0].contentRect.width / SHARE_SIZE)));
+@@ -100,7 +161,10 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
+   const displayRows = snapshot ? (trusted ? snapshot.rows : [...snapshot.rows].sort((a, b) => a.team.abbreviation.localeCompare(b.team.abbreviation))) : [];
+   const rows = focusTeam ? displayRows.filter(row => String(row.team.id) === focusTeam && row.remainingGames > 0) : displayRows.filter(row => row.remainingGames > 0).slice(0, 3);
+   const itinerary = snapshot && focusTeam && rows[0] ? futureItinerary(snapshot, rows[0]) : [];
+-  const canExport = trusted && assetsReady && !loading && !!snapshot?.selectedDates.length && rows.some(row => row.remainingGames > 0);
++  const logosReady = !!snapshot && snapshot.teams.every(team => team.abbreviation in teamLogos);
++  const squareReady = assetsReady && (!gridCard || logosReady);
++  const squareAlt = (current: SocialShareSnapshot) => gridCard ? gridAltText(current, trusted) : altText(current, rows, trusted, !!focusTeam);
++  const canExport = trusted && squareReady && !loading && !!snapshot?.selectedDates.length && rows.some(row => row.remainingGames > 0);
+   const changeWeek = (value: string) => {
+     if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+     const monday = calendarWeekStart(`${value}T16:00:00Z`);
+@@ -114,8 +178,9 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
+         <div className={styles.controls}>
+           <label>Week of (Monday)<input type="date" value={weekStart} onChange={event => changeWeek(event.target.value)} disabled={loading || exporting} /></label>
+           <button type="button" disabled={loading || exporting} onClick={() => void load(weekStart, selectedRef.current)}>Refresh schedule</button>
+-          <label>Graphic<select value={focusTeam} onChange={event => { setFocusTeam(event.target.value); setFeedback(""); }} disabled={!snapshot || loading || exporting}>
+-            <option value="">{trusted ? "Top three schedule leaders" : "Known schedule context (unranked)"}</option>{snapshot?.teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
++          <label>Graphic<select value={graphic} onChange={event => { setGraphic(event.target.value); setFeedback(""); }} disabled={!snapshot || loading || exporting}>
++            <option value="grid">{trusted ? "Best schedules grid (Monday default)" : "Known schedules grid (unranked)"}</option>
++            <option value="leaders">{trusted ? "Top three schedule leaders" : "Known schedule context (unranked)"}</option>{snapshot?.teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+           </select></label>
+         </div>
+         <fieldset className={styles.days} disabled={!snapshot || !snapshotMatchesWeek || loading || exporting}><legend>Selected days · America/New_York</legend>
+@@ -139,9 +204,10 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
+       </div>
+       <div className={styles.workspace}>
+         <section className={styles.panel} aria-label="Graphic preview">
+-          <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{!trusted ? "Unranked context" : focusTeam ? "Team focus" : "Schedule leaders"}</span></div>
++          <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{!trusted ? "Unranked context" : gridCard ? "Best schedules grid" : focusTeam ? "Team focus" : "Schedule leaders"}</span></div>
+           <div className={styles.previewFrame} ref={frame} style={{ height: scale * SHARE_SIZE }}>
+-            {snapshot && assetsReady && <div ref={preview} className={styles.square} style={{ transform: `scale(${scale})` }} data-testid="share-square" role="img" aria-label={altText(snapshot, rows, trusted, !!focusTeam)}>
++            {snapshot && squareReady && <div ref={preview} className={cx(styles.square, gridCard && styles.gridSquare)} style={{ transform: `scale(${scale})` }} data-testid="share-square" role="img" aria-label={squareAlt(snapshot)}>
++              {gridCard ? <MondayGrid snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : <>
+               <div className={styles.squareBrand}>{logo ? <img src={logo} alt="FHFH" width="162" height="48" /> : <strong>FHFH</strong>}<span>FHFHOCKEY.COM</span></div>
+               <div className={styles.squareTitle}><p>{trusted ? "Schedule only" : "Unranked context"} / {labels[format]}</p><h2>{!trusted ? "KNOWN SCHEDULE\nCONTEXT" : focusTeam ? "YOUR TEAM’S\nOPPORTUNITY" : "THE WEEK’S\nSCHEDULE EDGE"}</h2><p>{yearDateLabel(snapshot.weekStart)} – {yearDateLabel(snapshot.weekEnd)} · {trusted ? "Remaining games" : "Known games · Ranking unavailable"}</p></div>
+               <div className={styles.leaders}>{rows.length ? rows.map(row => <div key={row.team.id} className={styles.leader}>
+@@ -155,8 +221,9 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
+               })}</div>{itinerary.length > 8 && <p>+{itinerary.length - 8} more selected games · Full itinerary on this page</p>}</div>}
+               </div>
+               <footer className={styles.squareFooter}><p><strong>SELECTED</strong> {snapshot.selectedDates.map(dateLabel).join(" · ") || "None"}</p><p>Remaining after {timeLabel(snapshot.generatedAt)}</p><p>NHL schedule checked {timeLabel(snapshot.source.fetchedAt)}</p><p>Score uses games, off-nights and slate density. No odds or player projections.</p><strong className={styles.watermark}>{!trusted ? "PREVIEW ONLY · REFRESH / CHECK SOURCE" : "SCHEDULE ONLY"}</strong></footer>
++              </>}
+             </div>}
+-            {!assetsReady && <p>Preparing local fonts and branding…</p>}
++            {!assetsReady ? <p>Preparing local fonts and branding…</p> : !squareReady && snapshot && <p>Preparing team logos…</p>}
+           </div>
+           <div className={styles.actions}><button type="button" disabled={!canExport || exporting} onClick={async () => {
+             if (!preview.current || !snapshot) return; setExporting(true); setFeedback("");
+@@ -165,10 +232,10 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
+             finally { setExporting(false); }
+           }}>{exporting ? "Creating PNG…" : "Download PNG"}</button>
+           <button type="button" disabled={!snapshot || exporting} onClick={async () => {
+-            try { await navigator.clipboard.writeText(altText(snapshot!, rows, trusted, !!focusTeam)); setFeedback("Alt text copied."); }
++            try { await navigator.clipboard.writeText(squareAlt(snapshot!)); setFeedback("Alt text copied."); }
+             catch { setFeedback("Alt text could not be copied. Select and copy the text below."); }
+           }}>Copy alt text</button></div><p role="status">{feedback}</p>
+-          {snapshot && <details><summary>Suggested alt text</summary><p>{altText(snapshot, rows, trusted, !!focusTeam)}</p></details>}
++          {snapshot && <details><summary>Suggested alt text</summary><p>{squareAlt(snapshot)}</p></details>}
+         </section>
+         <section className={styles.panel} aria-label="Complete ranked schedule"><div className={styles.panelHeader}><h2>All teams</h2><span>{snapshot?.rows.length || 0} teams</span></div>
+           <p className={styles.explanation}>Schedule Score compares remaining selected games, off-night games and full-slate density. Odds and player projections are excluded. Zero-game teams have no score to publish. Matchups below include context; elapsed, live, postponed and nonregular games do not count as opportunities.</p>
+diff --git a/web/e2e/social-share.spec.ts b/web/e2e/social-share.spec.ts
+index 3cb790bf9..e36361ca1 100644
+--- a/web/e2e/social-share.spec.ts
++++ b/web/e2e/social-share.spec.ts
+@@ -3,10 +3,11 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
+ import { buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "../lib/socialShare/schedule";
+ import type { SocialScheduleGame as GameData } from "../lib/socialShare/types";
+ import type { SocialShareFormat, SocialShareSnapshot } from "../lib/socialShare/types";
++import { fictionalLeagueWeek } from "../lib/socialShare/fixtures";
+ 
+ const evidence = process.env.SOCIAL_SHARE_EVIDENCE_DIR || "/tmp/fhf-social-card-readiness-evidence-20261008";
+ const upcomingWeek = calendarWeekStart(new Date(Date.now() + 7 * 86400000).toISOString());
+-type Mode = "ready" | "partial" | "stale" | "zero";
++type Mode = "ready" | "partial" | "stale" | "zero" | "league";
+ test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
+ 
+ // Fictional public schedule mechanics, deliberately separate from live NHL evidence.
+@@ -15,6 +16,7 @@ function fixture(format: SocialShareFormat, weekStart: string, mode: Mode): Soci
+   const year = Number(weekStart.slice(0, 4)) - (Number(weekStart.slice(5, 7)) < 8 ? 1 : 0);
+   const pairs = [[0, 1, 2], [0, 10, 8], [1, 3, 1], [2, 2, 4], [3, 1, 2], [4, 1, 3], [6, 2, 3]];
+   const abbreviations: Record<number, string> = { 1: "NJD", 2: "NYI", 3: "NYR", 4: "PHI", 8: "MTL", 10: "TOR" };
++  if (mode === "league") return structuredClone(buildScheduleSnapshot({ format, weekStart, generatedAt, schedule: fictionalLeagueWeek(weekStart, generatedAt) }));
+   const games: GameData[] = mode === "zero" ? [] : pairs.map(([day, home, away], i) => ({
+     id: year * 1000000 + 20000 + i, season: year * 10000 + year + 1, gameType: 2,
+     gameDate: dates[day], startTimeUTC: `${dates[day]}T23:00:00Z`, gameState: "FUT", gameScheduleState: "OK",
+@@ -178,6 +180,7 @@ test("long text and missing logo stay inside the square and export with a brande
+   const source = await install(page); source.longName = true;
+   await page.route("**/pictures/logo-fhfh.svg", route => route.abort());
+   await open(page);
++  await page.getByRole("combobox", { name: /^Graphic/ }).selectOption("leaders");
+   const square = page.getByTestId("share-square");
+   await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
+   await expect(square).toContainText("New Jersey Extremely Long Fantasy Hockey Team Name");
+@@ -265,3 +268,55 @@ test("edition expiry disables export and unsupported formats stay explicitly gat
+   }
+   expect((await page.goto("/social-share/not-a-format"))?.status()).toBe(404);
+ });
++
++test("Monday default grid ranks every team by Game Grid weekScore in square day cells and exports", async ({ page }) => {
++  const source = await install(page), errors: string[] = [];
++  source.mode = "league";
++  page.on("pageerror", error => errors.push(error.message));
++  await open(page);
++  const square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
++  await expect(page.getByRole("combobox", { name: /^Graphic/ })).toHaveValue("grid");
++  await expect(download).toBeEnabled();
++  await expect(square).toContainText("BEST SCHEDULES");
++  await expect(square).toContainText("SCHEDULE ONLY");
++  const edition = source.latest!;
++  const rows = square.locator("[data-team]");
++  await expect(rows).toHaveCount(32);
++  expect(await rows.evaluateAll(nodes => nodes.map(node => node.getAttribute("data-team")))).toEqual(edition.rows.map(row => row.team.abbreviation));
++  expect(await rows.evaluateAll(nodes => nodes.map(node => node.firstElementChild!.textContent))).toEqual(edition.rows.map(row => String(row.rank)));
++  const geometry = await square.evaluate(node => {
++    const square = node as HTMLElement, cells = Array.from(square.querySelectorAll<HTMLElement>("[data-team] > [data-date]"));
++    return {
++      cells: cells.length,
++      squareCells: cells.every(cell => cell.offsetWidth === cell.offsetHeight && cell.offsetWidth >= 40),
++      fits: square.scrollHeight <= square.offsetHeight && square.scrollWidth <= square.offsetWidth,
++      awayMarks: square.querySelectorAll("[data-team] i").length,
++      brokenImages: Array.from(square.querySelectorAll("img")).filter(image => !image.naturalWidth).length,
++    };
++  });
++  // One away mark per fixture game; the fictional week has no doubleheaders.
++  expect(geometry).toEqual({ cells: 32 * 7, squareCells: true, fits: true, awayMarks: edition.games.length, brokenImages: 0 });
++  await expect(square).toHaveAttribute("aria-label", new RegExp(`^FHFH Best schedules, Monday streamer grid.*1\\. ${edition.rows[0].team.name}: ${edition.rows[0].remainingGames} games left`));
++  await downloadedPng(page, "monday-best-schedules-grid");
++  await page.screenshot({ path: `${evidence}/monday-grid-page.png`, fullPage: true });
++  expect(errors).toEqual([]);
++});
++
++test("Monday grid falls back to abbreviation tiles and never ranks an untrusted edition", async ({ page }) => {
++  const source = await install(page);
++  source.mode = "league";
++  await page.route("**/teamLogos/NJD.png", route => route.abort());
++  await open(page);
++  const square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
++  await expect(download).toBeEnabled();
++  await expect(square.locator('[data-team="NJD"] b')).toHaveText("NJD");
++  await downloadedPng(page, "monday-grid-missing-logo");
++  source.mode = "partial";
++  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
++  await expect(download).toBeDisabled();
++  await expect(square).toContainText("Ranking unavailable");
++  await expect(square).toContainText("KNOWN SCHEDULES");
++  const order = await square.locator("[data-team]").evaluateAll(nodes => nodes.map(node => [node.getAttribute("data-team"), node.firstElementChild!.textContent]));
++  expect(order.map(([team]) => team)).toEqual(order.map(([team]) => team).sort());
++  expect(order.every(([, rank]) => rank === "")).toBe(true);
++});
+diff --git a/web/lib/socialShare/export.ts b/web/lib/socialShare/export.ts
+index 3198fd1f2..0ec3cadcf 100644
+--- a/web/lib/socialShare/export.ts
++++ b/web/lib/socialShare/export.ts
+@@ -23,6 +23,24 @@ export async function readyShareFonts() {
+   }
+ }
+ 
++/** Owned team logo, downscaled once to a small data URL so grid exports embed ~32 tiny images, not 768px files. */
++export async function teamLogoDataUrl(abbreviation: string, size = 96): Promise<string> {
++  if (!/^[A-Z]{3}$/.test(abbreviation)) throw new Error("Invalid team abbreviation.");
++  const image = new Image();
++  image.src = `/teamLogos/${abbreviation}.png`;
++  await bounded(image.decode(), "Team logo unavailable", 5000);
++  if (!image.naturalWidth || !image.naturalHeight) throw new Error("Team logo unavailable");
++  const canvas = document.createElement("canvas");
++  canvas.width = canvas.height = size;
++  const context = canvas.getContext("2d");
++  if (!context) throw new Error("Canvas unavailable");
++  context.imageSmoothingQuality = "high";
++  const scale = Math.min(size / image.naturalWidth, size / image.naturalHeight);
++  const width = image.naturalWidth * scale, height = image.naturalHeight * scale;
++  context.drawImage(image, (size - width) / 2, (size - height) / 2, width, height);
++  return canvas.toDataURL("image/png");
++}
++
+ export function assertExportable(snapshot: SocialShareSnapshot) {
+   if (snapshot.state !== "ready" || snapshot.source.state !== "ready") throw new Error("A complete, fresh schedule is required to download.");
+   if (!snapshot.expiresAt || Date.parse(snapshot.expiresAt) <= Date.now()) throw new Error("This edition expired. Refresh the schedule before downloading.");
+diff --git a/web/lib/socialShare/mondayGrid.ts b/web/lib/socialShare/mondayGrid.ts
+new file mode 100644
+index 000000000..cc3af2772
+--- /dev/null
++++ b/web/lib/socialShare/mondayGrid.ts
+@@ -0,0 +1,47 @@
++import type { ShareTeam, SocialShareSnapshot } from "./types";
++
++export type MondayGridGame = { id: number; opponent: ShareTeam; home: boolean; counted: boolean };
++export type MondayGridCell = { date: string; selected: boolean; offNight: boolean; games: MondayGridGame[] };
++export type MondayGridRow = {
++  team: ShareTeam;
++  /** Null for an untrusted edition (it never publishes order) and for teams with no remaining games (no score). */
++  rank: number | null;
++  score: number;
++  remainingGames: number;
++  offNightGames: number;
++  cells: MondayGridCell[];
++};
++
++/** Same opportunity rule as selectScheduleDates: selected, scheduled, regular, known future start. */
++export function countsAsOpportunity(snapshot: SocialShareSnapshot, game: SocialShareSnapshot["games"][number]) {
++  return game.gameType === 2 && game.status === "scheduled" && game.startTimeUtc !== null &&
++    snapshot.selectedDates.includes(game.date) && Date.parse(game.startTimeUtc) > Date.parse(snapshot.generatedAt);
++}
++
++/**
++ * One row per team in Game Grid weekScore order (trusted) or alphabetical order (untrusted),
++ * with one cell per Monday-Sunday date. Postponed, cancelled and nonregular games are omitted;
++ * elapsed, live, unknown and unselected games stay visible but do not count.
++ */
++export function mondayGridRows(snapshot: SocialShareSnapshot, trusted: boolean): MondayGridRow[] {
++  const rows = trusted ? snapshot.rows : [...snapshot.rows].sort((a, b) => a.team.abbreviation.localeCompare(b.team.abbreviation) || a.team.id - b.team.id);
++  return rows.map(row => ({
++    team: row.team,
++    rank: trusted && row.remainingGames > 0 ? row.rank : null,
++    score: row.score,
++    remainingGames: row.remainingGames,
++    offNightGames: row.offNightGames,
++    cells: snapshot.days.map(day => ({
++      date: day.date,
++      selected: day.selected,
++      offNight: day.offNight,
++      games: row.games
++        .filter(game => game.date === day.date && game.gameType === 2 && !["postponed", "cancelled"].includes(game.status))
++        .sort((a, b) => (a.startTimeUtc ?? "").localeCompare(b.startTimeUtc ?? "") || a.id - b.id)
++        .map(game => {
++          const home = game.homeTeam.id === row.team.id;
++          return { id: game.id, opponent: home ? game.awayTeam : game.homeTeam, home, counted: countsAsOpportunity(snapshot, game) };
++        }),
++    })),
++  }));
++}
+diff --git a/web/lib/socialShare/mondayGrid.test.ts b/web/lib/socialShare/mondayGrid.test.ts
+new file mode 100644
+index 000000000..f1f95f921
+--- /dev/null
++++ b/web/lib/socialShare/mondayGrid.test.ts
+@@ -0,0 +1,81 @@
++import { describe, expect, it } from "vitest";
++import calcWeekScore from "components/GameGrid/utils/calcWeekScore";
++import { buildScheduleSnapshot, selectScheduleDates, weekDates } from "./schedule";
++import { FICTIONAL_DAILY_GAMES, fictionalLeagueWeek } from "./fixtures";
++import { mondayGridRows } from "./mondayGrid";
++import type { SocialScheduleData } from "./types";
++
++const weekStart = "2026-10-26", now = "2026-10-26T12:00:00Z", dates = weekDates(weekStart);
++const edition = (schedule: SocialScheduleData = fictionalLeagueWeek(weekStart, now)) =>
++  buildScheduleSnapshot({ format: "game-grid", weekStart, generatedAt: now, schedule });
++
++describe("fictional league week fixture", () => {
++  it("is a complete, reconciled, ready edition with every team playing two to five times", () => {
++    const schedule = fictionalLeagueWeek(weekStart, now), snapshot = edition(schedule);
++    expect(snapshot.state).toBe("ready");
++    expect(snapshot.reasons).toEqual([]);
++    expect(snapshot.games).toHaveLength(FICTIONAL_DAILY_GAMES.reduce((sum, count) => sum + count, 0));
++    expect(snapshot.rows).toHaveLength(32);
++    for (const row of snapshot.rows) expect(row.remainingGames).toBeGreaterThanOrEqual(2), expect(row.remainingGames).toBeLessThanOrEqual(5);
++    for (const date of dates) {
++      const ids = snapshot.games.filter(game => game.date === date).flatMap(game => [game.homeTeam.id, game.awayTeam.id]);
++      expect(new Set(ids).size).toBe(ids.length);
++    }
++    expect(snapshot.days.filter(day => day.offNight).map(day => day.label)).toEqual(["MON", "WED", "FRI", "SUN"]);
++    expect(fictionalLeagueWeek(weekStart, now)).toEqual(schedule);
++  });
++});
++
++describe("Monday grid rows", () => {
++  it("keeps Game Grid weekScore order and ranks, with one square cell per day", () => {
++    const snapshot = edition(), rows = mondayGridRows(snapshot, true);
++    expect(rows.map(row => row.team.id)).toEqual(snapshot.rows.map(row => row.team.id));
++    expect(rows.map(row => row.rank)).toEqual(Array.from({ length: 32 }, (_, i) => i + 1));
++    for (let i = 1; i < rows.length; i++) expect(rows[i - 1].score).toBeGreaterThanOrEqual(rows[i].score);
++    for (const row of rows) {
++      expect(row.cells.map(cell => cell.date)).toEqual(dates);
++      const counted = row.cells.flatMap(cell => cell.games.filter(game => game.counted));
++      expect(counted).toHaveLength(row.remainingGames);
++      expect(row.cells.filter(cell => cell.offNight).flatMap(cell => cell.games)).toHaveLength(row.offNightGames);
++      const slate = row.cells.flatMap(cell => cell.games.map(() => snapshot.days.find(day => day.date === cell.date)!.leagueGames));
++      expect(row.score).toBe(calcWeekScore([], row.offNightGames, snapshot.games.length, row.remainingGames, slate, true));
++    }
++  });
++
++  it("leaves zero-game teams unranked, as Schedule Score does", () => {
++    const rows = mondayGridRows(selectScheduleDates(edition(), [dates[2]]), true);
++    expect(rows.filter(row => row.rank !== null)).toHaveLength(8);
++    expect(rows.every(row => (row.rank === null) === (row.remainingGames === 0))).toBe(true);
++  });
++
++  it("mirrors home and away marks between opponents", () => {
++    const rows = mondayGridRows(edition(), true);
++    for (const row of rows) for (const cell of row.cells) for (const game of cell.games) {
++      const other = rows.find(item => item.team.id === game.opponent.id)!.cells.find(item => item.date === cell.date)!.games.find(item => item.id === game.id)!;
++      expect(other.opponent.id).toBe(row.team.id);
++      expect(other.home).toBe(!game.home);
++    }
++  });
++
++  it("publishes no order or rank for an untrusted edition", () => {
++    const rows = mondayGridRows(edition(), false);
++    expect(rows.every(row => row.rank === null)).toBe(true);
++    expect(rows.map(row => row.team.abbreviation)).toEqual([...rows.map(row => row.team.abbreviation)].sort());
++  });
++
++  it("shows unselected, elapsed and final games without counting them, and omits postponed and nonregular games", () => {
++    const schedule = fictionalLeagueWeek(weekStart, now);
++    const [first, second, third, fourth] = schedule.games!;
++    Object.assign(first, { gameState: "OFF" });
++    Object.assign(second, { gameScheduleState: "PPD" });
++    Object.assign(third, { gameType: 1 });
++    const snapshot = selectScheduleDates(edition({ ...schedule, numGamesPerDay: [...schedule.numGamesPerDay] }), dates.filter(date => date !== fourth.gameDate));
++    const rows = mondayGridRows(snapshot, false);
++    const cellGame = (teamId: number, gameId: number) => rows.find(row => row.team.id === teamId)!.cells.flatMap(cell => cell.games).find(game => game.id === gameId);
++    expect(cellGame(first.homeTeam.id, first.id)).toMatchObject({ counted: false });
++    expect(cellGame(second.homeTeam.id, second.id)).toBeUndefined();
++    expect(cellGame(third.homeTeam.id, third.id)).toBeUndefined();
++    expect(cellGame(fourth.homeTeam.id, fourth.id)).toMatchObject({ counted: false, home: true });
++    expect(rows.find(row => row.team.id === fourth.awayTeam.id)!.cells.find(cell => cell.date === fourth.gameDate)!.selected).toBe(false);
++  });
++});
+diff --git a/web/lib/socialShare/fixtures.ts b/web/lib/socialShare/fixtures.ts
+new file mode 100644
+index 000000000..3bfac6784
+--- /dev/null
++++ b/web/lib/socialShare/fixtures.ts
+@@ -0,0 +1,35 @@
++import { teamsInfo, activeTeamAbbreviations } from "lib/teamsInfo";
++import { weekDates } from "./schedule";
++import type { SocialScheduleData, SocialScheduleGame } from "./types";
++
++/** Fictional slate sizes: four off-nights (<= 8 games) around three busy nights. */
++export const FICTIONAL_DAILY_GAMES = [6, 12, 4, 13, 5, 12, 7] as const;
++
++/**
++ * Deterministic, fictional league-wide week for tests and design evidence only.
++ * Real team identities, invented matchups: never presented as an NHL schedule.
++ */
++export function fictionalLeagueWeek(weekStart: string, fetchedAt: string, seed = 20261026): SocialScheduleData {
++  const dates = weekDates(weekStart);
++  const year = Number(weekStart.slice(0, 4)) - (Number(weekStart.slice(5, 7)) < 8 ? 1 : 0);
++  const teams = [...activeTeamAbbreviations].map(abbrev => ({ id: teamsInfo[abbrev].id, abbrev: String(abbrev) }));
++  let state = seed >>> 0;
++  const random = () => ((state = Math.imul(state ^ (state >>> 15), 2246822519) + 0x9e3779b9 >>> 0) / 4294967296);
++  const played = new Map(teams.map(team => [team.id, 0]));
++  const games: SocialScheduleGame[] = [];
++  dates.forEach((date, day) => {
++    // Fewer games so far plays first, with enough noise to spread weekly totals from two to five.
++    const order = teams.map(team => ({ team, key: played.get(team.id)! + random() * 2.2 })).sort((a, b) => a.key - b.key).map(item => item.team);
++    for (let i = 0; i < FICTIONAL_DAILY_GAMES[day]; i++) {
++      const [first, second] = [order[2 * i], order[2 * i + 1]];
++      const [home, away] = random() < 0.5 ? [first, second] : [second, first];
++      played.set(home.id, played.get(home.id)! + 1); played.set(away.id, played.get(away.id)! + 1);
++      games.push({
++        id: year * 1000000 + 20100 + games.length, season: year * 10000 + year + 1, gameType: 2,
++        gameDate: date, startTimeUTC: `${date}T23:00:00Z`, gameState: "FUT", gameScheduleState: "OK",
++        homeTeam: { id: home.id, abbrev: home.abbrev }, awayTeam: { id: away.id, abbrev: away.abbrev },
++      } as SocialScheduleGame);
++    }
++  });
++  return { data: {}, games, fetchedAt, coveredDates: dates, numGamesPerDay: [...FICTIONAL_DAILY_GAMES] };
++}

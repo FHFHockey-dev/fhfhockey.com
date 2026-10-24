@@ -1,0 +1,341 @@
+{
+  "at": "2026-10-24T19:10:55.687792+00:00",
+  "changes": {
+    "REPO-DOCUMENTATION": {
+      "fields": {
+        "verification": "Current source and retained receipts inspected; no application tests rerun. Segment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority. Segment15 distinguishes completed 36/36 modularization and approved scalar epsilon 0.005 from still-tracked PP-ACC-001–005 accuracy proposals. Meta A–K checkmarks do not close granular Sustainability or OCT14 requirements. Latest V1 tail supersedes earlier missing-identity, unresolved 73-slot and exact-cap-blocker statements; do not repeat those resolved decisions. Current canonical admission/reconciliation test packets remain authoritative over old NEW6/NEW7 issue wording."
+      },
+      "refs": [
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md",
+          131
+        ],
+        [
+          "tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md",
+          43
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          267
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          275
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          281
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          287
+        ]
+      ]
+    },
+    "SITE-FORGE-TESTING-GROUNDS": {
+      "fields": {
+        "verification": "Full local-owner-configuration HANDOFF read and declared hash matched. Worker reports private readback, ten unchanged source pins, one credential-free local GET at 17:25:58 UTC and hot reload without restart. No env contents, UUID, token, local request or app-source check by audit; 0 of 1 approved hosted Auth reads used per receipt. The newly cross-mapped OCT14-COMP6 accountability requirements need report/evidence-stage alignment with this existing UI/runner scope. An operational preview or configured owner gate does not establish matched numeric target support, proper-score reporting or full comparison-program acceptance. No new implementation, auth/runtime observation or second dashboard owner is inferred."
+      },
+      "refs": [
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          161
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          199
+        ]
+      ]
+    },
+    "FPI-03": {
+      "fields": {
+        "children": [
+          {
+            "child_id": "FPI-03/PP-ACC-001-disposition",
+            "title": "Reconcile the tracked post-parity assist-recency counter proposal",
+            "status": "Proposed/unverified disposition; no current bug reproduced",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Determine from later exact receipts whether the assistRecent/goalsRecent counter proposal was fixed, removed or superseded by accepted model changes. Retain only a demonstrated surviving diagnostic issue before any implementation; do not reopen Release C fitting.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md",
+              "line": 128
+            },
+            "approval_gate": "No app repair, model tuning or source/test execution by audit. Reconcile current ownership and evidence first; the parity refactor approved tracking only.",
+            "existing_work_credit": "Modularization/parity complete; Release C assist/PPP implementation and existing calibration holds remain."
+          }
+        ]
+      },
+      "refs": [
+        [
+          "tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md",
+          128
+        ]
+      ]
+    }
+  },
+  "additions": [
+    {
+      "row": {
+        "group": "Task-artifact audit proposed carry-forward",
+        "owner": "UNASSIGNED",
+        "reviewer": "UNASSIGNED",
+        "evidence": [],
+        "as_of": "2026-10-24T19:10:55.687792+00:00",
+        "dispatch_class": "Reconciliation-first; no new model owner, implementation or external dispatch",
+        "evidence_provenance": "Complete named task sources plus requirements prose and bounded historical appendix. External private receipts/hashes are source-attributed only and were not opened.",
+        "taskID": "FORGE-COMPARISON-PROGRAM",
+        "scope": "Reconcile the ongoing native candidate-comparison program and its staged evidence gates",
+        "user_impact": "A running experiment UI or a conditional pilot cannot establish full native forecast quality, target coverage or legal decision value. The requested program needs transparent versions, losses, cohorts, uncertainty and promotion decisions.",
+        "implementation": "OCT14-COMP-0 through 9 remain open in the owning V1 ledger; F00–F22 are aliases, not another task system. Existing code, accepted private engineering and historical experiments retain credit. F02 mapping is complete within its tranche; F03 metadata and fresh identity-only planning review are recorded accepted, not numeric-target or original-as-of admission.",
+        "acceptance": "Source records fresh identity-only planning acceptance and later exact A cap/positive-TOI conditional PIM approval. Actual independent reader/runtime gate and terminal A outcome were not established in this repo-only audit. Do not request the same identity/cap decision again or claim A never ran. B fitting/scoring and broader qualification remain separate.",
+        "release": "No full-program, dashboard or model release follows. Original BLK operation, accepted experiments and version-specific live guards remain independently owned. January 14 onward/reserved-label and blend holds are retained as recorded for this program, subject to legitimate later authority.",
+        "dependencies": "Current sole executor/evaluator custody; NATIVE-ISSUANCE and RSO-REAL-ACCEPTANCE; FPI-01, FORGE-GATE-HARNESS and FORGE-LEDGER-WEEK reusable evidence; SITE-FORGE-TESTING-GROUNDS for UI/runner integration. These narrower slices do not substitute for the full program.",
+        "verification": "Full V1 checklist and super-list read; PRD requirements prose reviewed. Latest checklist resolves older missing-identity, unresolved 73-slot and cap-blocker statements: fresh planning review accepted; baseline plus at most two complete challengers selected; exact 28,509,016-byte cap approved for 829 spans. External receipts/raw spans were not accessed, so statuses/hashes remain attributed to the dated source.",
+        "acceptance_release_gate": "No second executor, new A/B operation, private-source access, label allocation, fitting, capture, scheduling, publication or deployment is authorized by audit. Preserve existing exact A authority under its legitimate owner and required prior gate. New stages require their own scope; recorded metadata/current identity is not historical eligibility or numeric support.",
+        "next_action": "Through current coordination, reconcile later existing-owner reader/runtime/synthetic and terminal A receipts before new work. Preserve resolved identity/cap decisions and approved conditional-PIM exclusions. Reuse accepted contracts, then retain only surviving staged requirements below; no cap-only review, lookup retry, passed-window retry or automatic benchmark.",
+        "evidence_level": "Proposed/held program reconciliation; component approvals retained, full evidence/release unverified",
+        "evidence_scope": "OCT14-COMP0–9 owning requirements; F00–F22 aliases; component implementation, data support, evaluation, UI and release are distinct",
+        "source_inputs": [
+          "OCT14-COMP meta mapping and 0–9",
+          "October 15 F00–F22 amendment under the same owning ledger",
+          "Latest fresh identity review and exact-cap A decision, not new audit authority"
+        ]
+      },
+      "children": [
+        {
+          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-1",
+          "title": "Freeze target/population protocol after the bounded support stage",
+          "status": "A cap and conditional-PIM scope resolved; gate/result unverified",
+          "owner": "UNASSIGNED",
+          "depends_on": [
+            "NATIVE-ISSUANCE"
+          ],
+          "next_action": "Reconcile existing A gate/result first; retain positive-TOI PIM and explicit missing/penalty-only exclusions. Then pin estimands, anchors, cohorts, clocks, allocations and budgets before B.",
+          "source": {
+            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+            "line": 156
+          },
+          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
+          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
+        },
+        {
+          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-2",
+          "title": "Retain immutable complete trial and issuance history",
+          "status": "Partial reusable infrastructure; broader coverage unverified",
+          "owner": "UNASSIGNED",
+          "depends_on": [
+            "FPI-01",
+            "FORGE-LEDGER-WEEK"
+          ],
+          "next_action": "Link all candidate/feature versions, parameters, source/cohort manifests, actual clocks, failures, exposures, missingness and selections. Show requested and paired populations; reconstruction cannot become original issuance.",
+          "source": {
+            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+            "line": 157
+          },
+          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
+          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
+        },
+        {
+          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-3",
+          "title": "Preserve the selected finite first-wave comparison scope",
+          "status": "Menu decision resolved; no experiment authorization",
+          "owner": "UNASSIGNED",
+          "depends_on": [
+            "FORGE-ISOLATED-VARIANT"
+          ],
+          "next_action": "Use baseline plus at most two complete challengers for one support-qualified head/component; do not reopen the old 73-slot choice or run Cartesian sweeps. Separate mean-fixed diagnostics need their own declared inclusion; Elo/Glicko is optional context only.",
+          "source": {
+            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+            "line": 158
+          },
+          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
+          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
+        },
+        {
+          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-4",
+          "title": "Version target-appropriate expected-mean/distribution scoring",
+          "status": "Requirements open; old experiment scores unchanged",
+          "owner": "UNASSIGNED",
+          "depends_on": [
+            "FORGE-GATE-HARNESS"
+          ],
+          "next_action": "Freeze MSE/proper-score selection and report bias, RMSE, calibration, intervals and coverage by units/conditioning. Zero-baseline skill stays undefined; do not retrofit new selection onto the old MAE-selected pilot.",
+          "source": {
+            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+            "line": 159
+          },
+          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
+          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
+        },
+        {
+          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-5",
+          "title": "Qualify paired coverage and dependence-aware comparisons",
+          "status": "Metadata/current identities accepted only within planning scope",
+          "owner": "UNASSIGNED",
+          "depends_on": [
+            "NATIVE-ISSUANCE"
+          ],
+          "next_action": "Match baseline-covered target/horizon/evidence cohorts with chronological stability and justified game/slate uncertainty. Numeric target, participation and historical as-of support remain distinct from 927 identities / 829 spans.",
+          "source": {
+            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+            "line": 160
+          },
+          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
+          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
+        },
+        {
+          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-6",
+          "title": "Align the accountability report and existing dashboard work",
+          "status": "Existing UI remains separately owned; full report contract open",
+          "owner": "UNASSIGNED",
+          "depends_on": [
+            "SITE-FORGE-TESTING-GROUNDS",
+            "FPI-01"
+          ],
+          "next_action": "Reuse SITE-FORGE-TESTING-GROUNDS and existing accountability/ledger surfaces for signed-error histograms, loss/coverage trends, version/target tables and supported segments. Keep research, shadow and deployed evidence stages explicit; do not create a second dashboard stack.",
+          "source": {
+            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+            "line": 161
+          },
+          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
+          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
+        },
+        {
+          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-7",
+          "title": "Qualify complete-vector legal lineup and drop/add comparisons",
+          "status": "Authentic replay/consumer evidence unverified",
+          "owner": "UNASSIGNED",
+          "depends_on": [
+            "RSO-REAL-ACCEPTANCE",
+            "NATIVE-ISSUANCE"
+          ],
+          "next_action": "Use existing RSO/Start Chart owners and matching original scoring, roster, eligibility, locks, waivers, costs and issued inputs. Retain unchanged decisions as zero gain; conditional proxies/simulations are not realized roster utility.",
+          "source": {
+            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+            "line": 162
+          },
+          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
+          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
+        },
+        {
+          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-8",
+          "title": "Retain per-head promotion, sealed evaluation and rollback gates",
+          "status": "Held; implementation contracts do not establish predictive release",
+          "owner": "UNASSIGNED",
+          "depends_on": [
+            "NATIVE-ISSUANCE"
+          ],
+          "next_action": "Predeclare coverage/skill/coherence/subgroup/operating bounds, independent final-feedback custody and a pinned fallback. Preserve original version-specific gates, including older skater 14-matched-date/default-switch hold; they are not universal new research thresholds.",
+          "source": {
+            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+            "line": 163
+          },
+          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
+          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
+        },
+        {
+          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-9",
+          "title": "Reconcile reusable contracts and future runner ownership",
+          "status": "F02 mapping complete within tranche; implementation/cloud qualification open",
+          "owner": "UNASSIGNED",
+          "depends_on": [
+            "SITE-FORGE-TESTING-GROUNDS",
+            "FORGE-GATE-HARNESS"
+          ],
+          "next_action": "Inventory actual accepted storage/evaluation/UI gaps before migrations or duplicate code. Future nonsecret runner packaging, clock/owner/duplicate controls and prospective capture remain separately scoped; preserve existing missed-window handling.",
+          "source": {
+            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+            "line": 164
+          },
+          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
+          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
+        }
+      ],
+      "refs": [
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          155
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          172
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          219
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          246
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          271
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          277
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          287
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md",
+          213
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md",
+          273
+        ]
+      ]
+    },
+    {
+      "row": {
+        "group": "Task-artifact audit proposed carry-forward",
+        "owner": "UNASSIGNED",
+        "reviewer": "UNASSIGNED",
+        "evidence": [],
+        "as_of": "2026-10-24T19:10:55.687792+00:00",
+        "dispatch_class": "Reconciliation-first; no new model owner, implementation or external dispatch",
+        "evidence_provenance": "Complete named task sources plus requirements prose and bounded historical appendix. External private receipts/hashes are source-attributed only and were not opened.",
+        "taskID": "SITE-FORGE-RANGE-PRESENTATION",
+        "scope": "Reconcile the retained plain-language forecast-range presentation requirement",
+        "user_impact": "Users need a clear distinction between a point forecast and its supported low/typical/high range; API disclosure alone does not settle the requested UI presentation. Current runtime was not inspected.",
+        "implementation": "V1 NEW8 reopens embedded presentation rows after the old FORGE rewrite removed low/typical/high blocks. Older skater 6.4 checks retain their dated scope. No later owner supersession/restoration was established by this documentary pass; this is not a reproduced current UI failure.",
+        "acceptance": "Proposed P3/unassigned reconciliation and product-disposition follow-up, not an active repair claim.",
+        "release": "No UI change or release by audit. Preserve the canonical Command Center/preview route decision and existing model/distribution work.",
+        "dependencies": "FPI-08 supported quantile contracts; current canonical frontend custody; REPO-DOCUMENTATION and source NEW8/C0002/C0003. Different from descriptive player-card percentiles and SITE-START-CONTRACT paging.",
+        "verification": "Full V1 task list, shared PRD requirements/embedded presentation rows and skater checklist read. Later NEW8 source explicitly supersedes older completed presentation boxes. No application/browser/pixel or current API check performed.",
+        "acceptance_release_gate": "First reconcile a later exact owner supersession or UI acceptance receipt. If still requested, scoped owner verifies supported quantiles, honest unavailable states and wording before any presentation change. No model recalibration or unsupported ranges.",
+        "next_action": "Locate current owner disposition of the low/typical/high requirement. Record intentional supersession if applicable; otherwise propose the smallest canonical-surface presentation contract using actual supported outputs. Do not restore the retired dashboard or reimplement distributions from an old checklist.",
+        "evidence_level": "Proposed P3; source requirement/disposition unverified in current runtime",
+        "evidence_scope": "Forecast-range presentation/supersession only; no model-quality, interval-calibration or full UI acceptance",
+        "source_inputs": [
+          "Projection V1 NEW8 / embedded C0002,C0003",
+          "skater 6.4 and older completed presentation evidence"
+        ]
+      },
+      "refs": [
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+          168
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md",
+          568
+        ],
+        [
+          "tasks/TASKS/forge-projections/v1/tasks-skater-forge.md",
+          88
+        ]
+      ]
+    }
+  ],
+  "deduplication": {
+    "program": "One OCT14 owning program mapping, not a parallel F00–F22 register. Reuse existing TG/ledger/admission/consumer owners. Source cap/identity/menu decisions preserved; later gate/A result unverified.",
+    "ranges": "Separate canonical forecast UI disposition from backend count distributions, StartChart paging and descriptive player cards.",
+    "post_parity": "OnlyPP-ACC-001 status reconciliation becomes a proposed existing-parent child. Other post-parity concepts cross-link existing uncertainty/context/control work; no old refactor or new model dispatch."
+  }
+}

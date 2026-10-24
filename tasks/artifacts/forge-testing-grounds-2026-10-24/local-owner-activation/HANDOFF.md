@@ -1,0 +1,20 @@
+# Local owner activation checkpoint
+
+2026-10-24. **Authorized, but not yet executed.** TJ's approval is settled: one session-verification read, configuring only his verified UUID locally, and an owner-coordinated server reload. This checkpoint does not request that approval again.
+
+Completed preparation:
+
+- Confirmed the actual existing Chrome Testing Grounds tab displays the signed-in account menu and the same locked page. No navigation, reload, account click, token extraction or session verification was performed.
+- Read the current Supabase skill and the [official getUser contract](https://supabase.com/docs/reference/javascript/auth-getuser). That method verifies through an Auth-server request; a client role, email or decoded token is not equivalent evidence. The changelog markdown fetch was unsupported by the web parser; no Supabase implementation/version change was made.
+- Located the available browser capabilities. They provide UI/DOM observation and interaction, with JavaScript evaluation restricted to a read-only DOM scope. They do not expose current-session verification, browser storage access, request interception or a token-private network-call interface. The connected Supabase tools expose project/database/admin operations, not `getUser` for TJ's browser session. No unrelated admin/database query was substituted.
+- Reserved only `web/.env.development.local` → `FORGE_TESTING_GROUNDS_OWNER_USER_ID` as the eventual configuration target. Other entries must remain unchanged; no value has been inferred or written. No environment contents or hashes, tokens or private identity values are in this packet.
+- Asked the coordinator to establish ownership of the existing Next server (PID49759, npm run dev, tty ttys003) and coordinate its reload. Human/task owner remains unconfirmed in the information returned so far. No process was stopped or signaled.
+- Verified all ten frozen slice05 source hashes still match. No application or frozen receipt edits, tests, builds or new server attempts occurred in this activation step.
+
+Remaining concrete dependencies:
+
+1. **Supported session-verification transport.** The one approved Auth read must originate from TJ's existing session without exposing/exporting its bearer token. The current tool surfaces lack that operation. A developer-assisted verification in the existing browser, returning only the verified UUID, or a separately leased, reviewed one-shot local verification transport is needed. Do not scrape browser-profile storage, infer ownership from an admin/email/display name, or turn a broad database query into “session verification.” No helper endpoint or bootstrap authorization bypass was created.
+2. **Single-read and write containment.** The existing page invokes its server check after initial session retrieval and auth/visibility changes. The shared AuthProvider can read/write profile/settings on sign-in. Reloading or revisiting the app without containment could exceed the one-read budget or perform prohibited writes. Configuration approval does not authorize those extra operations. Do not fabricate a successful owner response or cache a bootstrap result as continuing authorization to avoid this constraint.
+3. **Server-owner coordination.** Once the verified UUID is available and the exact local setting is written, reload through the process owner. Do not kill an unidentified process. A later credential-free local check can confirm configuration is no longer the blocker without consuming another Auth read, but it cannot prove authenticated workspace access. Report that distinction if the one-read budget is already consumed.
+
+Budget/outcome: **0 of 1 approved Auth reads used; no owner configuration changed; no reload; no profile/settings or database writes; no model/provider/real-run calls.** The action is pending on transport/containment and process ownership, not denied by a new approval review. Earlier static-server startup rejection remains historical evidence; no retry or workaround was attempted in this step.

@@ -1,0 +1,19 @@
+{
+  "path": "tasks/artifacts/forge-projection-audit-2026-10-21/forge-model-release-inventory.md",
+  "bytes": 57635,
+  "lines": 626,
+  "sha256": "4983e152de3eea45fd8f764b4ec1304c860d40cf6b8cfc47042c5f6db0598be6",
+  "mtime_ns": 1792621960684179932,
+  "coverage": "partially-inspected",
+  "reviewed_ranges": [
+    [
+      30,
+      62
+    ],
+    [
+      140,
+      150
+    ]
+  ],
+  "review_scope": "Only release inventory lines30\u201362 and140\u2013150 fully read to reconcile null-win closure; keyword matches elsewhere are navigation, not full-content credit. Line149 explicitly records goalie reader null-safe from R7. No app/Git/release execution/current reader check; remaining inventory content unreviewed by this segment."
+}

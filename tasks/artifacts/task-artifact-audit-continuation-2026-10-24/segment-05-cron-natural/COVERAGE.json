@@ -1,0 +1,331 @@
+{
+  "at": "2026-10-24T16:24:09.698137+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+      "bytes": 107571,
+      "lines": 2537,
+      "sha256": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+      "status": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          1,
+          180
+        ],
+        [
+          732,
+          1055
+        ],
+        [
+          2450,
+          2537
+        ]
+      ],
+      "structured_scope": "First JSON fence lines62\u2013731: all73 records parsed and displayed with complete attributes; 57active16inactive73uniqueIDs. Body SHA256 3d05c7f692131db9bf05eb99828900a2d7a495fa6de0ef0d929cc445fea6e156. Remaining historical SQL templates1056\u20132449 unreviewed; no execution.",
+      "scope": "Bounded documentary and structured review, not hosted readback or full SQL visual review."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/prd/prd-cron-nst-audit-remediation.md",
+      "bytes": 76660,
+      "lines": 306,
+      "sha256": "4f36ba3e9b2c1e8aed8c37d7602518f2be5e4d9d86ad66ba44a5756c7b1a6b69",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          306
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          64
+        ],
+        [
+          65,
+          181
+        ],
+        [
+          182,
+          259
+        ],
+        [
+          260,
+          306
+        ]
+      ],
+      "scope": "Full documentary read in bounded chunks. Historical credentials described without values; no instructions executed; source-reported external receipts not independently reproduced."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+      "bytes": 81003,
+      "lines": 224,
+      "sha256": "844403dc2edf97cbf36db6684d4488955e681ebfa67cc82d69231c4c1abcbefe",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          224
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          81
+        ],
+        [
+          82,
+          164
+        ],
+        [
+          165,
+          195
+        ],
+        [
+          196,
+          224
+        ]
+      ],
+      "scope": "Full documentary read in bounded chunks. Historical credentials described without values; no instructions executed; source-reported external receipts not independently reproduced."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+      "bytes": 57015,
+      "lines": 222,
+      "sha256": "97e857115518a7c92dde1922f398cf2b3cee1838c1fbc3234c1a975959489572",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          222
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          101
+        ],
+        [
+          102,
+          198
+        ],
+        [
+          199,
+          222
+        ]
+      ],
+      "scope": "Full documentary read in bounded chunks. Historical credentials described without values; no instructions executed; source-reported external receipts not independently reproduced."
+    },
+    {
+      "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/HANDOFF.md",
+      "bytes": 6374,
+      "lines": 53,
+      "sha256": "e04c2a66a4c5cd161fc119689189660065eadf0a82d3372fdf1490c8d3187012",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          53
+        ]
+      ],
+      "scope": "Documentary evidence only; owner/reviewer checks not rerun and no release or hosted request made."
+    },
+    {
+      "path": "tasks/artifacts/fpi-11-4-job79-independent-review-2026-10-22/REVIEW.md",
+      "bytes": 5646,
+      "lines": 32,
+      "sha256": "32e1e67b9f8f5feab536224cefc494ce72ebb80a8e6cf7f7905714e1273a02cb",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          32
+        ]
+      ],
+      "scope": "Documentary evidence only; owner/reviewer checks not rerun and no release or hosted request made."
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CRON-FLOOR-PROPOSAL.md",
+      "bytes": 12086,
+      "lines": 95,
+      "sha256": "9bceec2d49b83ce96de30a28991504a1d3ee3e9d5695f1327e4aff8501ad4279",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          95
+        ]
+      ],
+      "scope": "Documentary evidence only; owner/reviewer checks not rerun and no release or hosted request made."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+      "bytes": 19274,
+      "lines": 145,
+      "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
+      "status": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          132,
+          147
+        ]
+      ],
+      "scope": "Documentary evidence only; owner/reviewer checks not rerun and no release or hosted request made."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/HANDOFF.md",
+      "bytes": 5473,
+      "lines": 40,
+      "sha256": "944706d9da7f935a6f67fe4753790bf7eef25013d696673716c95dcbc0a75124",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          40
+        ]
+      ],
+      "scope": "Full documentary read; owner19-case results not rerun."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1-review/REVIEW.md",
+      "bytes": 6530,
+      "lines": 59,
+      "sha256": "aa73c5ead0c74710a7f8e45987b6a1df2abbba1656bd267b4db7ec077ccaf79a",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          59
+        ]
+      ],
+      "scope": "Full independent reviewer receipt; exact limited verdict and11pass/24skip count, no auditor application execution."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1-review/REVIEW-EVIDENCE.json",
+      "bytes": 1096,
+      "lines": 34,
+      "sha256": "e5049b8760569274e95b24c44d270ba6be9a6196055006e7f1b459ba3fed8ac5",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          34
+        ]
+      ],
+      "scope": "All structured semantic fields read; reviewer pin checks reported, not reproduced by auditor."
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/EVIDENCE.json",
+      "bytes": 15266,
+      "lines": 162,
+      "sha256": "c35fb395b92cfc094270617b3d42150476cd7a0ab0191df00e691ea8aec83fa9",
+      "status": "partially-inspected",
+      "reviewed_ranges": [],
+      "scope": "All non-pin semantic fields read; hash-map key/schema inventory only, not full pin-by-pin/source validation."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "bytes": 33935,
+      "lines": 173,
+      "sha256": "93fe7535d9e986b09fff5cf2a3c2c3a4d9d9ff790f8ea711f5a5b55792d8661b",
+      "status": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          1,
+          26
+        ]
+      ],
+      "scope": "Current C3 isolated transfer and Testing Grounds ten-path grant read fully. Later tail attempted but output truncated; no full-file coverage claim."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+      "bytes": 23722,
+      "lines": 208,
+      "sha256": "45dfc5626683c9be5ffe9513f504ffa24d04309df700afd4df397cb845022376",
+      "status": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          191,
+          208
+        ]
+      ],
+      "scope": "Current CLAUDE013 acknowledgement/allocation read fully; preceding tail output truncated, no full-file coverage claim."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+      "bytes": 36524,
+      "lines": 202,
+      "sha256": "301563fbecab6d9ca3b5370e76523dcb645854237024f0b3064d45be945f087f",
+      "status": "partially-inspected",
+      "reviewed_ranges": [],
+      "scope": "Headings/selected allocation lines scanned for navigation only; no full content review."
+    }
+  ],
+  "counts": {
+    "partially-inspected": 6,
+    "content-reviewed": 9
+  },
+  "note": "Exact read receipts; inherited prior global keyword/structural coverage does not become full review.",
+  "live_change_check": [
+    {
+      "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/prd/prd-cron-nst-audit-remediation.md",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/HANDOFF.md",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/fpi-11-4-job79-independent-review-2026-10-22/REVIEW.md",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CRON-FLOOR-PROPOSAL.md",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/HANDOFF.md",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1-review/REVIEW.md",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1-review/REVIEW-EVIDENCE.json",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/EVIDENCE.json",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+      "unchanged": true
+    }
+  ]
+}

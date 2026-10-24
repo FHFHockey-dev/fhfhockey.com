@@ -1,0 +1,33 @@
+{
+  "cwd": "/tmp/fhfh-release-current-pzcctyxs/isolation/snapshot/web",
+  "environment": {
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/tmp/fhfh-release-current-pzcctyxs/isolation/snapshot/web/.audit-home",
+    "TMPDIR": "/tmp/fhfh-release-current-pzcctyxs/isolation/snapshot/web/.audit-tmp",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://unit-tests.supabase.invalid",
+    "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY": "synthetic-public-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "synthetic-service-role-key",
+    "NODE_OPTIONS": "--require /tmp/fhfh-release-current-pzcctyxs/isolation/snapshot/web/audit-network-deny.cjs",
+    "npm_config_offline": "true",
+    "npm_config_audit": "false",
+    "npm_config_fund": "false"
+  },
+  "argv": [
+    "npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "audit.vitest.config.mts",
+    "lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+    "lib/rosterScheduleData/forgeDailyBridge.test.ts",
+    "lib/projections/goalie/leagueSavePct.test.ts",
+    "lib/projections/runProjectionV2.test.ts",
+    "lib/player-forecasts/rsoUsePolicy.test.ts",
+    "lib/rosterScheduleOptimizer/executionAdapter.test.ts",
+    "lib/rosterScheduleOptimizer/providerGoalieStarts.test.ts",
+    "lib/integrations/yahoo/rosterPlanning.test.ts",
+    "--reporter=json",
+    "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/current-boundary-tests.json"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "at": "2026-10-24T21:51:17.175782+00:00",
+  "pending_publication_target": "270def4ec6b0abc05b0ceeb2f55d75445b27a35a",
+  "publication_approval": "Not received; replaces earlier pending WiGO-only request per parent, not an authorization",
+  "C5": {
+    "plain_name": "Scheduled Yahoo live-draft and drafted-prospect job audit coverage",
+    "original_19_failures": "Nine authorization-before-audit checks, nine provider audit/outcome/static-owner checks and one historical inventory count. They are missing predecessor composition, not 19 new defects in the two C5 routes.",
+    "local_result": "110 focused tests pass; unchanged-production-config whole-app TypeScript and scoped lint pass; independent accepted with limits, no changes-required finding",
+    "direct_scope": {
+      "paths": 88,
+      "API_handlers": 79,
+      "shared_modules": 3,
+      "tests": 5,
+      "historical_inventory_document": 1
+    },
+    "wrapper_scope": {
+      "declared": 75,
+      "existing_C5_auth_first": 1,
+      "production_preserving_moves": 74
+    },
+    "preservation": "Every transformed route business body/options is unchanged; imports unchanged except exact existing erased request/response type annotations for one callback. NST caller-secret/header changes excluded. Admission middleware, timings helper and provider sync implementations match production.",
+    "patch_sha256": "c1da3563ab3a160aaf8d809fa6e1de8d40660a874d67a3aad4a2b453c2c6ff26",
+    "report": "tasks/artifacts/production-release-coordination-2026-10-24/c5-prerequisite-r1-independent-review/REPORT.md",
+    "report_sha256": "2d0ea680d223dbf33f3ebdcf863aac213fd5f9af53b106a6679d692d1ec0161f",
+    "evidence_sha256": "2d3e74e2eda9a7eee1c4e10f4f8805952495f44fe04ce190b6412142bbcb156e",
+    "limits": [
+      "Not added to bundle270; no new C5 commit/publication",
+      "Authorized audit duration now excludes authentication; unexpected auth exceptions remain outside the audit wrapper",
+      "C5 opted-in summary filtering is not global HTTP redaction; default audit outcomes retain additional bounded diagnostics",
+      "Historical doc snapshot is not new live cron verification or schedule change",
+      "Yahoo static classifier remains unqualified; heartbeat can be missed/duplicated in the chosen minute and is not consumed by cron-report",
+      "No per-route live/DB/provider/cost qualification"
+    ]
+  },
+  "social_browser": {
+    "result": "Planned frozen access candidate browser gaps closed across distinct runs, not one original all-green run",
+    "R1_passed": 10,
+    "R1_harness_selector_failure_preserved": true,
+    "R2_distinct_passed": 4,
+    "bundle_sha256": "11c34cbd6e1f60ead0f111241f365ca402f148cee80ef79cb5d5a4f832ed51b8",
+    "checkpoint": "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/BROWSER-CHECKPOINT.json",
+    "checkpoint_sha256": "114511ea65b4eb3d1bb953e526530447ddd3b24370df66213f9dac98dfec5785",
+    "original_inputs_unchanged": true,
+    "actual_handler_boundary": "API method/format/no-store/direct access evidence comes from real-handler mocked unit checks, not browser interception stubs",
+    "remaining": "Latest advancing SS1 renderer/spec integration requires a separately pinned source cut; no live account, role grant, Next/full-E2E/PNG acceptance",
+    "publication": false,
+    "role_grant": false,
+    "source_edits": 0,
+    "external_application_requests": 0
+  },
+  "canonical_application_edits": 0,
+  "canonical_config_or_schedule_changes": 0,
+  "push_retries": 0,
+  "deployments": 0,
+  "active_checks_or_owned_servers": 0
+}

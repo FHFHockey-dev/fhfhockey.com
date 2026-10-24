@@ -1,0 +1,24 @@
+== unanchored start
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out resolves with no billing panel mounted 59ms
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out rejects with no billing panel mounted 60ms
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out times out with no billing panel mounted 15ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 22 passed (25)
+== unanchored end
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out resolves with no billing panel mounted 61ms
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out rejects with no billing panel mounted 58ms
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out times out with no billing panel mounted 8ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 22 passed (25)
+== case-sensitive
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out resolves with no billing panel mounted 59ms
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out rejects with no billing panel mounted 57ms
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out times out with no billing panel mounted 8ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 22 passed (25)
+== blanket version wildcard
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out resolves with no billing panel mounted 61ms
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out rejects with no billing panel mounted 59ms
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out times out with no billing panel mounted 8ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 22 passed (25)

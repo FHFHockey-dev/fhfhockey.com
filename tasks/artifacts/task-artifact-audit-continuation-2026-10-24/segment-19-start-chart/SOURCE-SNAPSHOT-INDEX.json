@@ -1,0 +1,47 @@
+{
+  "cutoff": "2026-10-24T19:52:54.099295+00:00",
+  "sources": {
+    "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+      "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+      "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+      "observed_at": "2026-10-24T19:52:54.099295+00:00",
+      "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+    },
+    "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/1446518d759a-G5a-forge-model-startchart.md",
+      "sha256": "1446518d759a0976159dd1da6030e000f1a86198b2d2a9e445e523c855dff49b",
+      "original_path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md",
+      "observed_at": "2026-10-24T19:52:54.099295+00:00",
+      "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+    },
+    "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-ctpi-formula-audit.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/e409808d5004-tasks-prd-ctpi-formula-audit.md",
+      "sha256": "e409808d50047a1f548b70391b7980929bbb932542beb36fb3660e52580e1cdd",
+      "original_path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-ctpi-formula-audit.md",
+      "observed_at": "2026-10-24T19:52:54.099295+00:00",
+      "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+    },
+    "tasks/TASKS/three-pillars-analytics/trends/ctpi-formula-audit-report.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/11e9b55fca23-ctpi-formula-audit-report.md",
+      "sha256": "11e9b55fca23fc6a8f52883dd287dbddba20a65992fff81334c726d464552703",
+      "original_path": "tasks/TASKS/three-pillars-analytics/trends/ctpi-formula-audit-report.md",
+      "observed_at": "2026-10-24T19:52:54.099295+00:00",
+      "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+    },
+    "tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/3417e05f47f6-prd-start-chart.md",
+      "sha256": "3417e05f47f627991a2e8ca06aeecbadad107a7bc42e51ee4c5af4d0405f1f24",
+      "original_path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md",
+      "observed_at": "2026-10-24T19:52:54.099295+00:00",
+      "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+    },
+    "tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/cf3ee0fd3cf0-prd-start-chart-model.md",
+      "sha256": "cf3ee0fd3cf0a7033dc77689170dec171f46212c96f99723ef3f7f5ae98a3044",
+      "original_path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md",
+      "observed_at": "2026-10-24T19:52:54.099295+00:00",
+      "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+    }
+  }
+}

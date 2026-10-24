@@ -1,0 +1,178 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/auditTemporalCutoff.test.ts lib/auditEdgecases.test.ts lib/auditStatsAsync.test.tsx __tests__/pages/api/v1/db/auditNstIndependent.test.ts __tests__/pages/api/v1/db/auditNstR1Additional.test.ts lib/reviewConsumerExposure.test.tsx lib/reviewNegativeExposure.test.tsx
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-combined-audit-nab8u8s6/isolation/snapshot/web
+
+(node:88281) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > does not mutate or reacquire an existing active NST lease
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > does not mutate or reacquire an existing expired NST lease
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > does not mutate or reacquire an existing missing NST lease
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > fences a newer durable hold written after the fresh acquisition read
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > fences a newer durable hold written after the fresh acquisition read
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > does not invoke NST after a committed acquisition returns a mismatched receipt
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > does not invoke NST after a committed acquisition returns a mismatched receipt
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > requires a durable handoff row when its acknowledgement was lost (committed=true)
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > requires a durable handoff row when its acknowledgement was lost (committed=true)
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > requires a durable handoff row when its acknowledgement was lost (committed=false)
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > requires a durable handoff row when its acknowledgement was lost (committed=false)
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > retains the normal bounded retry for an acknowledged non-ambiguous NST failure
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > retains the normal bounded retry for an acknowledged non-ambiguous NST failure
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > retains the normal bounded retry for an acknowledged non-ambiguous NST failure
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+ ✓ __tests__/pages/api/v1/db/auditNstR1Additional.test.ts (8 tests) 23ms
+(node:88281) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > must preserve a durable manual-review hold when another same-version invocation read state before the hold
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > must preserve a durable manual-review hold when another same-version invocation read state before the hold
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stdout | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > must preserve a durable manual-review hold when another same-version invocation read state before the hold
+REVIEW_RACE_OBSERVED {"nstCalls":1,"observerTermination":{"state":"stopped_on_blocking_failure","resumeRequired":false,"nextStartDate":null,"runKey":"daily_incremental:2026-10-19","nextStageId":"upstream_skater_sources","reason":"manual_review_required","detail":"NST persistence is unconfirmed; the durable review hold cannot be reacquired.","stagesRun":0},"finalStage":{"pipeline_key":"rolling_forge_pipeline","scope_key":"daily_incremental:2026-10-19","operation_key":"upstream_skater_sources","revision":3,"status":"failed","cursor_game_id":7,"cursor_date":"2026-10-19","range_start_date":"2026-10-19","range_end_date":"2026-10-19","lease_owner":null,"lease_expires_at":null,"last_error":"nst_persistence_unconfirmed","updated_at":"2026-10-19T10:05:00.000Z"}}
+
+stderr | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > must not advertise retry when a manual-review hold cannot be saved
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stdout | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > must not advertise retry when a manual-review hold cannot be saved
+REVIEW_FAILED_HOLD_FIRST {"termination":{"state":"stopped_on_blocking_failure","resumeRequired":false,"nextStartDate":null,"runKey":"daily_incremental:2026-10-19","nextStageId":"upstream_skater_sources","reason":"manual_review_required","detail":"State write failed: synthetic hold persistence failure","stagesRun":1},"row":{"pipeline_key":"rolling_forge_pipeline","scope_key":"daily_incremental:2026-10-19","operation_key":"upstream_skater_sources","revision":2,"status":"running","cursor_game_id":7,"cursor_date":"2026-10-19","range_start_date":"2026-10-19","range_end_date":"2026-10-19","lease_owner":"817a8c31-e76b-4534-82a6-8c94a1659416","lease_expires_at":"2026-10-19T10:09:30.000Z","last_error":null,"updated_at":"2026-10-19T10:05:00.000Z"}}
+
+stderr | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > must not advertise retry when a manual-review hold cannot be saved
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stdout | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > must not advertise retry when a manual-review hold cannot be saved
+REVIEW_FAILED_HOLD_NEXT {"nstCalls":1,"termination":{"state":"stopped_on_blocking_failure","resumeRequired":false,"nextStartDate":null,"runKey":"daily_incremental:2026-10-19","nextStageId":"upstream_skater_sources","reason":"manual_review_required","detail":"NST invocation ended without an acknowledged handoff; inspect persistence before retrying.","stagesRun":0},"row":{"pipeline_key":"rolling_forge_pipeline","scope_key":"daily_incremental:2026-10-19","operation_key":"upstream_skater_sources","revision":2,"status":"running","cursor_game_id":7,"cursor_date":"2026-10-19","range_start_date":"2026-10-19","range_end_date":"2026-10-19","lease_owner":"817a8c31-e76b-4534-82a6-8c94a1659416","lease_expires_at":"2026-10-19T10:09:30.000Z","last_error":null,"updated_at":"2026-10-19T10:05:00.000Z"}}
+
+stderr | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > rejects numeric cursor without advancing persisted progress
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > rejects unsafe integer cursor without advancing persisted progress
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > rejects array replay query without advancing persisted progress
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > rejects removed scope field without advancing persisted progress
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > keeps the Eastern completed date across UTC midnight with a new deadline
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstIndependent.test.ts > independent NST continuation safety review > keeps the Eastern completed date across UTC midnight with a new deadline
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+ ✓ __tests__/pages/api/v1/db/auditNstIndependent.test.ts (7 tests) 15ms
+(node:88281) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > keeps a complete exact-game forecast when tomorrow's newer row has null learned heads
+BRIDGE_OBSERVED {"forecasts":[{"sourceKind":"detailed","cutoffAt":"2026-10-21T10:00:00.000Z","expiresAt":"2026-10-21T23:00:00.000Z","sourceWatermark":"forge-daily-bridge-v1:today","issuedContext":{"version":"forge-issued-context-v1","playerId":"p1","gameId":"100","nhlPlayerId":11,"seasonId":20262027,"teamId":1,"scheduledAt":"2026-10-21T23:00:00Z","scheduleRevision":"s-100","rosterRevision":"r","observedAt":"2026-10-21T10:00:00.000Z","scheduleSourceUpdatedAt":null,"scheduleFetchedAt":null,"identityUpdatedAt":null,"membershipCreatedAt":[]},"allowedUses":{"assignment":true,"totals":true,"comparison":true,"conditionalTieBreak":false},"playerId":"p1","gameId":"100","stats":{"GOALS":0.35,"ASSISTS":0.45,"POINTS":0.8,"PP_GOALS":0.1,"PP_ASSISTS":0.15,"PP_POINTS":0.25,"SHOTS_ON_GOAL":3.1,"HITS":1.2,"BLOCKED_SHOTS":0.5,"TIME_ON_ICE_PER_GAME":18,"PENALTY_MINUTES":0,"PLUS_MINUS":0,"SH_GOALS":0,"SH_ASSISTS":0,"SH_POINTS":0,"GAME_WINNING_GOALS":0,"FACEOFFS_WON":0,"FACEOFFS_LOST":0},"conditioning":"unconditional","startProbability":null,"confirmedStart":false,"revisionId":"forge-daily-bridge-v1:today","issuedAt":"2026-10-21T10:00:00.000Z","modelVersion":"forge-daily-bridge-v1:a","limitations":["Interim FORGE projection: the player's latest FORGE game line, reused for this game."]}],"limitations":["Interim FORGE projections until native forecasts go live: each player's latest FORGE v2 daily line (runs 2026-10-21 to 2026-10-22) stands in for his remaining games; 1 of 1 teams covered.","Season rates could not be read, so penalty minutes, plus-minus, shorthanded points, game-winning goals and faceoffs count as 0.","Team strength could not be read, so future games reuse each FORGE line without an opponent adjustment.","Goalie starts use each goalie's last-10 start share (season share when missing), or FORGE's own starter probability for an already projected game. Per-start lines come from his latest FORGE line, or his team's when he has none.","Goalie news could not be read; start chances use start shares only.","1 skaters have a FORGE line with blank even-strength goals, assists or shots; such lines give no forecast."]}
+
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > does not produce season percentages from unpaired missing count columns
+AGGREGATE_OBSERVED {"nst":null,"wgo":null,"shots":null}
+
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > keeps a missing weighted actual stat unknown in the recorded Yahoo lineup
+PAST_POINTS_OBSERVED [{"date":"2026-10-20","source":"yahoo","entries":[{"playerId":"p1","name":"Synthetic player","position":"C","slotId":"C1","points":null}]}]
+
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > does not mark an absent player DNP just because one unrelated actual row arrived
+SETTLE_OBSERVED [{"dressed":null,"fp":null,"settled":null}]
+
+stdout | lib/auditEdgecases.test.ts > independent audit reproductions > recognizes an expired in-flight lease after a late durable checkpoint
+LATE_LEASE_OBSERVED {"state":{"status":"running","cursorGameId":11,"lastError":null,"updatedAt":"2026-10-21T10:03:35.000Z","leaseExpiresAt":"2026-10-21T10:04:30.000Z"},"dead":true}
+
+stdout | lib/auditEdgecases.test.ts > coverage includes dressed roster players who lack every prediction and naive history
+COVERAGE_UNIVERSE_OBSERVED [{"source":"bridge_exact","player_class":"skater","n":1,"dressed":2,"covered":1,"coverageStatus":"known","coverage":0.5,"phantoms":0,"heads":{"goals":{"n":1,"mae":0,"bias":0},"assists":{"n":1,"mae":0,"bias":0},"pp_points":{"n":1,"mae":0,"bias":0},"shots":{"n":1,"mae":0,"bias":0},"hits":{"n":1,"mae":0,"bias":0},"blocks":{"n":1,"mae":0,"bias":0}},"fantasyPoints":{"n":1,"mae":0,"bias":0},"decile10":{"n":1,"expected":1,"actual":1,"ratio":1},"reliability":{},"b2b":{"heads":{"goals":{"n":0,"mae":null,"bias":null},"assists":{"n":0,"mae":null,"bias":null},"pp_points":{"n":0,"mae":null,"bias":null},"shots":{"n":0,"mae":null,"bias":null},"hits":{"n":0,"mae":null,"bias":null},"blocks":{"n":0,"mae":null,"bias":null}},"fantasyPoints":{"n":0,"mae":null,"bias":null}}}]
+
+ ✓ lib/auditEdgecases.test.ts (6 tests) 5ms
+(node:88281) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/reviewNegativeExposure.test.tsx > retains invalid negative exposure in the wgo_team_stats consumer sample
+FILTER_AWARE_EXPOSURE_OBSERVED {"table":"wgo_team_stats","field":"games_played","observed":"Power Play—","incompleteNote":true}
+
+stdout | lib/reviewNegativeExposure.test.tsx > retains invalid negative exposure in the nst_team_5v5 consumer sample
+FILTER_AWARE_EXPOSURE_OBSERVED {"table":"nst_team_5v5","field":"gp","observed":"Corsi For %—","incompleteNote":true}
+
+ ✓ lib/reviewNegativeExposure.test.tsx (2 tests) 31ms
+(node:88281) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/reviewConsumerExposure.test.tsx > retains unknown exposure in the wgo_team_stats consumer sample
+FILTER_AWARE_EXPOSURE_OBSERVED {"table":"wgo_team_stats","field":"games_played","observed":"Power Play—","incompleteNote":true}
+
+stdout | lib/reviewConsumerExposure.test.tsx > retains unknown exposure in the nst_team_5v5 consumer sample
+FILTER_AWARE_EXPOSURE_OBSERVED {"table":"nst_team_5v5","field":"gp","observed":"Corsi For %—","incompleteNote":true}
+
+ ✓ lib/reviewConsumerExposure.test.tsx (2 tests) 31ms
+(node:88281) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | lib/auditStatsAsync.test.tsx > does not publish an incomplete page set as a complete season chart
+NHL API rate-limited some requests (429). Goalie data is unavailable.
+
+stdout | lib/auditStatsAsync.test.tsx > does not publish an incomplete page set as a complete season chart
+INCOMPLETE_PAGE_CHART_OBSERVED {"charts":[],"partialVisible":true}
+
+stdout | lib/auditStatsAsync.test.tsx > does not let an obsolete team request overwrite the cached current team's shots
+useShotData called with teamId: [33m1[39m season: 20262027
+
+stdout | lib/auditStatsAsync.test.tsx > does not let an obsolete team request overwrite the cached current team's shots
+Fetched games for team [33m1[39m : [33m1[39m
+
+stdout | lib/auditStatsAsync.test.tsx > does not let an obsolete team request overwrite the cached current team's shots
+All events count: [33m1[39m
+Processed 1 team shots and 0 opponent shots
+Sample team shot: {
+  xcoord: [33m10[39m,
+  ycoord: [33m5[39m,
+  typedesckey: [32m'goal'[39m,
+  hometeamdefendingside: [90mundefined[39m,
+  eventownerteamid: [33m1[39m
+}
+Final shot counts - Team: 1, Opponent: 0
+
+stdout | lib/auditStatsAsync.test.tsx > does not let an obsolete team request overwrite the cached current team's shots
+useShotData called with teamId: [33m2[39m season: 20262027
+
+stdout | lib/auditStatsAsync.test.tsx > does not let an obsolete team request overwrite the cached current team's shots
+SHOT_CACHE_OBSERVED {"visibleTeam":1,"shots":[{"xcoord":10,"ycoord":5,"typedesckey":"goal","eventownerteamid":1}],"calls":3}
+
+ ✓ lib/auditStatsAsync.test.tsx (2 tests) 21ms
+(node:88281) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/auditTemporalCutoff.test.ts > reconstruction excludes the target game's observed per-game context
+TARGET_DATE_CONTEXT_OBSERVED {"shot":{"sourceDate":"2026-10-19","nstShotsPer60":10,"nstIxgPer60":1,"nstRushAttemptsPer60":null,"nstReboundsCreatedPer60":null},"onIce":{"sourceDate":"2026-10-19","nstOiXgfPer60":2,"nstOiXgaPer60":null,"nstOiCfPct":null,"possessionPctSafe":null}}
+
+ ✓ lib/auditTemporalCutoff.test.ts (1 test) 1ms
+
+ Test Files  7 passed (7)
+      Tests  28 passed (28)
+   Start at  09:31:41
+   Duration  3.23s (transform 623ms, setup 34ms, collect 941ms, tests 128ms, environment 1.32s, prepare 271ms)
+

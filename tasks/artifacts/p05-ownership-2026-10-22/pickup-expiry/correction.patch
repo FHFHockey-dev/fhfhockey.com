@@ -1,0 +1,185 @@
+--- a/web/components/PlayerPickupTable/PlayerPickupTable.tsx
++++ b/web/components/PlayerPickupTable/PlayerPickupTable.tsx
+@@ -166,6 +166,8 @@
+   value?: number | string | null;
+ };
+ 
++const OWNERSHIP_MAX_AGE_MS = 3 * 86400000;
++
+ const ownershipPct = (value: unknown): number | null => {
+   const parsed = typeof value === "string" && /^\d+(\.\d+)?$/.test(value) ? Number(value)
+     : typeof value === "number" ? value : NaN;
+@@ -202,19 +204,25 @@
+     const value = ownershipPct(entry.value);
+     if (value === null || !Number.isFinite(parsedTimestamp) || new Date(parsedTimestamp).toISOString().slice(0, 10) !== entryDateRaw) continue;
+     if (!latest || entryDateRaw > latest.observedOn!) {
+-      const age = Date.now() - parsedTimestamp;
+-      latest = { value, observedOn: entryDateRaw, provider: "yahoo", status: age < 0 ? "unknown" : age <= 3 * 86400000 ? "fresh" : "stale" };
++      latest = { value, observedOn: entryDateRaw, provider: "yahoo", status: "unknown" };
+     }
+   }
+ 
+   return latest;
+ };
++
++function currentPickupOwnership(evidence: PlayerOwnershipContext["ownershipEvidence"], now: number): Pick<UnifiedPlayerData, "percent_ownership" | "ownershipEvidence"> {
++  if (!evidence) return { percent_ownership: null, ownershipEvidence: null };
++  const age = evidence.observedOn === null ? NaN : now - Date.parse(evidence.observedOn);
++  const status = !Number.isFinite(age) || age < 0 ? "unknown" : age <= OWNERSHIP_MAX_AGE_MS ? "fresh" : "stale";
++  return { percent_ownership: status === "fresh" ? evidence.value : null, ownershipEvidence: { ...evidence, status } };
++}
+ 
+ function resolvePickupOwnership(timeline: unknown, seasonValue: unknown, rowValue: unknown): Pick<UnifiedPlayerData, "percent_ownership" | "ownershipEvidence"> {
+   const dated = getLatestOwnershipEvidence(timeline);
+   const value = ownershipPct(seasonValue) ?? ownershipPct(rowValue);
+   const ownershipEvidence = dated ?? (value === null ? null : { value, observedOn: null, provider: "yahoo" as const, status: "unknown" as const });
+-  return { percent_ownership: ownershipEvidence?.status === "fresh" ? ownershipEvidence.value : null, ownershipEvidence };
++  return currentPickupOwnership(ownershipEvidence, Date.now());
+ }
+ 
+ function pickupOwnershipLabel(player: Pick<UnifiedPlayerData, "percent_ownership" | "ownershipEvidence">): string {
+@@ -1764,6 +1772,8 @@
+   const [selectedPositions, setSelectedPositions] =
+     useState<Record<string, boolean>>(defaultPositions); // State for positions
+   const [playersData, setPlayersData] = useState<UnifiedPlayerData[]>([]);
++  const [, setOwnershipClock] = useState(0);
++  const ownershipNow = Date.now();
+   const [loading, setLoading] = useState<boolean>(true);
+   const [loadError, setLoadError] = useState<string | null>(null);
+   const [currentPage, setCurrentPage] = useState<number>(1);
+@@ -1780,6 +1790,37 @@
+   const [playerGamesPlayedById, setPlayerGamesPlayedById] = useState<
+     Record<string, number>
+   >({});
++
++  useEffect(() => {
++    let timer: ReturnType<typeof setTimeout> | undefined;
++    const recheck = () => {
++      clearTimeout(timer);
++      setOwnershipClock(value => value + 1);
++      if (document.visibilityState === "hidden") return;
++      const now = Date.now();
++      let nextTransition = Infinity;
++      for (const player of playersData) {
++        const observedAt = Date.parse(player.ownershipEvidence?.observedOn ?? "");
++        if (!Number.isFinite(observedAt)) continue;
++        // The existing policy includes the exact three-day boundary.
++        const transition = observedAt > now ? observedAt : observedAt + OWNERSHIP_MAX_AGE_MS + 1;
++        if (transition > now) nextTransition = Math.min(nextTransition, transition);
++      }
++      if (Number.isFinite(nextTransition)) {
++        timer = setTimeout(recheck, Math.min(nextTransition - now, 2147483647));
++      }
++    };
++    recheck();
++    document.addEventListener("visibilitychange", recheck);
++    window.addEventListener("focus", recheck);
++    window.addEventListener("pageshow", recheck);
++    return () => {
++      clearTimeout(timer);
++      document.removeEventListener("visibilitychange", recheck);
++      window.removeEventListener("focus", recheck);
++      window.removeEventListener("pageshow", recheck);
++    };
++  }, [playersData]);
+ 
+   // --- Calculate all possible metrics once (for filter UI, presets, state init) ---
+   const allPossibleMetrics = useMemo(() => {
+@@ -2335,10 +2376,11 @@
+ 
+       return {
+         ...player,
++        ...currentPickupOwnership(player.ownershipEvidence ?? null, ownershipNow),
+         percent_games: computed ?? player.percent_games
+       };
+     });
+-  }, [playersData, playerGamesPlayedById, teamGamesPlayedByAbbr]);
++  }, [playersData, playerGamesPlayedById, teamGamesPlayedByAbbr, ownershipNow]);
+ 
+   // --- Filtered Players (Now depends on selectedPositions state) ---
+   const filteredPlayers = useMemo(() => {
+--- a/web/components/PlayerPickupTable/PlayerPickupTable.test.ts
++++ b/web/components/PlayerPickupTable/PlayerPickupTable.test.ts
+@@ -1,5 +1,5 @@
+ import React from "react";
+-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
++import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import PlayerPickupTable from "./PlayerPickupTable";
+ 
+@@ -61,7 +61,7 @@
+     return builder;
+   });
+ });
+-afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
++afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); vi.useRealTimers(); });
+ 
+ describe("Player pickup interactions", () => {
+   it("loads dated ownership from existing player rows and filters zero-owned players by team", async () => {
+@@ -168,3 +168,66 @@
+     expect(screen.getByText(staleName)).toBeTruthy();
+   });
+ });
++
++describe("mounted pickup ownership freshness", () => {
++  const staleLabel = "Last known 0% · 2026-10-19 (stale)";
++
++  async function mountBeforeExpiry(width = 1024) {
++    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
++    vi.useRealTimers();
++    vi.useFakeTimers({ toFake: ["Date", "setTimeout", "clearTimeout"] });
++    vi.setSystemTime(new Date("2026-10-21T23:59:59Z"));
++    vi.stubGlobal("innerWidth", width);
++    const fetchMock = vi.fn();
++    vi.stubGlobal("fetch", fetchMock);
++    state.rows = [{ ...rows[0], percent_ownership: 0, ownership_timeline: [{ date: "2026-10-19", value: 0 }] }];
++    await act(async () => { render(React.createElement(PlayerPickupTable)); });
++    const name = screen.getByText("F. Agent");
++    expect(within(name.closest("tr")!).getByRole("cell", { name: /^0%$/ })).toBeTruthy();
++    return { reads: state.from.mock.calls.length, fetchMock, visibility };
++  }
++
++  it.each([1024, 390])("expires a mounted zero at the existing three-day boundary without fetching (viewport %s)", async width => {
++    const { reads, fetchMock } = await mountBeforeExpiry(width);
++    await act(async () => { vi.advanceTimersByTime(1000); });
++    expect(screen.queryByText(staleLabel)).toBeNull();
++    await act(async () => { vi.advanceTimersByTime(1); });
++    expect(screen.getByText(staleLabel)).toBeTruthy();
++    const includeUnknown = screen.getByRole("checkbox", { name: "Include unknown ownership" });
++    fireEvent.click(includeUnknown);
++    expect(screen.queryByText("F. Agent")).toBeNull();
++    fireEvent.click(includeUnknown);
++    expect(screen.getByText(staleLabel)).toBeTruthy();
++    expect(state.from.mock.calls.length).toBe(reads);
++    expect(fetchMock).not.toHaveBeenCalled();
++  });
++
++  it.each(["visibilitychange", "focus", "pageshow"])("rechecks retained evidence after hidden clock suspension on %s", async resumeEvent => {
++    const { reads, fetchMock, visibility } = await mountBeforeExpiry();
++    const includeUnknown = screen.getByRole("checkbox", { name: "Include unknown ownership" });
++    fireEvent.click(includeUnknown);
++    visibility.mockReturnValue("hidden");
++    fireEvent(document, new Event("visibilitychange"));
++    // A suspended tab can miss its timeout; the resume event must use the current clock.
++    vi.setSystemTime(new Date("2026-10-22T00:00:01Z"));
++    visibility.mockReturnValue("visible");
++    fireEvent(resumeEvent === "visibilitychange" ? document : window, new Event(resumeEvent));
++    expect(screen.queryByText("F. Agent")).toBeNull();
++    fireEvent.click(includeUnknown);
++    expect(screen.getByText(staleLabel)).toBeTruthy();
++    expect(state.from.mock.calls.length).toBe(reads);
++    expect(fetchMock).not.toHaveBeenCalled();
++  });
++
++  it("rechecks ownership during a filter interaction even when the expiry timeout has not run", async () => {
++    const { reads, fetchMock } = await mountBeforeExpiry();
++    vi.setSystemTime(new Date("2026-10-22T00:00:01Z"));
++    const includeUnknown = screen.getByRole("checkbox", { name: "Include unknown ownership" });
++    fireEvent.click(includeUnknown);
++    expect(screen.queryByText("F. Agent")).toBeNull();
++    fireEvent.click(includeUnknown);
++    expect(screen.getByText(staleLabel)).toBeTruthy();
++    expect(state.from.mock.calls.length).toBe(reads);
++    expect(fetchMock).not.toHaveBeenCalled();
++  });
++});

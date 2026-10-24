@@ -1,0 +1,69 @@
+--- a/web/utils/fetchWigoPlayerStats.ts
++++ b/web/utils/fetchWigoPlayerStats.ts
+@@ -249,9 +249,9 @@
+     let lyValue = getAggregateValue(careerData, `ly_${baseColName}`);
+     let ya3Value = getAggregateValue(careerData, `ya3_${baseColName}`);
+     let caValue = getAggregateValue(careerData, `ca_${baseColName}`);
+-    let l5Value = getAggregateValue(recentData, `l5_${baseColName}`);
+-    let l10Value = getAggregateValue(recentData, `l10_${baseColName}`);
+-    let l20Value = getAggregateValue(recentData, `l20_${baseColName}`);
++    const l5Value = getAggregateValue(recentData, `l5_${baseColName}`);
++    const l10Value = getAggregateValue(recentData, `l10_${baseColName}`);
++    const l20Value = getAggregateValue(recentData, `l20_${baseColName}`);
+ 
+     if (metadata.isPerSixty && ratesData) {
+       const pickRate = (suffix: string) => {
+@@ -268,17 +268,12 @@
+       const rLy = pickRate("ly");
+       const rCa = pickRate("ca");
+       const r3ya = pickRate("3ya") ?? pickRate("ya3");
+-      const rL5 = pickRate("l5");
+-      const rL10 = pickRate("l10");
+-      const rL20 = pickRate("l20");
+ 
+       if (rStd !== undefined) stdValue = rStd;
+       if (rLy !== undefined) lyValue = rLy;
+       if (rCa !== undefined) caValue = rCa;
+       if (r3ya !== undefined) ya3Value = r3ya;
+-      if (rL5 !== undefined) l5Value = rL5;
+-      if (rL10 !== undefined) l10Value = rL10;
+-      if (rL20 !== undefined) l20Value = rL20;
++      // Recent rates and their coverage come from the same wigo_recent snapshot.
+     }
+ 
+     if (metadata.isPerSixty) {
+@@ -588,7 +583,7 @@
+ ): Promise<TableAggregateData[]> {
+   console.log(`Workspaceing pre-aggregated stats for Player ID: ${playerId}`);
+ 
+-  // Fetch base aggregates plus rates table (authoritative for per-60 by timeframe)
++  // Fetch aggregates plus legacy historical rates; recent rates use wigo_recent.
+   const [careerRes, recentRes, ratesRes, totalsRes] = await Promise.all([
+     supabase
+       .from("wigo_career")
+--- a/web/utils/fetchWigoPlayerStats.test.ts
++++ b/web/utils/fetchWigoPlayerStats.test.ts
+@@ -214,6 +214,23 @@
+     }
+   });
+ 
++  it.each([null, undefined, NaN, 0, 999])("keeps supported recent rates authoritative over legacy fields (%s)", (legacy) => {
++    const recent = { player_id: 1 } as any;
++    const rates: Record<string, number | null> = { pts_per_60_ly: 4 };
++    for (const n of [5, 10, 20]) {
++      Object.assign(recent, { [`l${n}_gp`]: 5, [`l${n}_atoi`]: 20, [`l${n}_pptoi`]: 120,
++        [`l${n}_pts_per_60`]: 6, [`l${n}_g_per_60`]: 0, [`l${n}_ppp_per_60`]: 12 });
++      if (legacy !== undefined) Object.assign(rates, { [`pts_per_60_l${n}`]: legacy, [`g_per_60_l${n}`]: legacy, [`ppp_per_60_l${n}`]: legacy });
++    }
++    const rows = buildPlayerAggregatedStats({ careerData: null, recentData: recent, ratesData: rates, totalsData: null });
++    for (const column of ["L5", "L10", "L20"] as const) {
++      expect(rows.find(row => row.label === "PTS/60")?.[column]).toBe(6);
++      expect(rows.find(row => row.label === "G/60")?.[column]).toBe(0);
++      expect(rows.find(row => row.label === "PPP/60")?.[column]).toBe(12);
++    }
++    expect(rows.find(row => row.label === "PTS/60")?.LY).toBe(4);
++  });
++
+   it("uses totals fallback for missing standard count values", () => {
+     const careerData = {
+       player_id: 1,

@@ -1,0 +1,10 @@
+after K1-default exit=0 stdout={"status":"disabled","attempts":0,"holds":[]} stderr=
+after K2-dispatch-killswitch exit=2 stdout={"status":"held","attempts":0,"holds":["decisions_unresolved","luna_dispatch_disabled"]} stderr=
+after K3-dispatch-enabled-no-ledger exit=2 stdout={"status":"held","attempts":0,"holds":["decisions_unresolved","invalid_or_unavailable_review"]} stderr=
+k1 {'status': 'disabled', 'attempts': 0, 'holds': [], 'requestIds': [], 'canPublish': False, 'canWriteAliases': False, 'canChangeStatus': False, 'canExecuteReplacement': False} decisionReview= None None
+k2 {'status': 'held', 'attempts': 0, 'holds': ['decisions_unresolved', 'luna_dispatch_disabled'], 'requestIds': [], 'canPublish': False, 'canWriteAliases': False, 'canChangeStatus': False, 'canExecuteReplacement': False} decisionReview= unknown reference_transport_or_response_error
+k3 {'status': 'held', 'attempts': 0, 'holds': ['decisions_unresolved', 'invalid_or_unavailable_review'], 'requestIds': [], 'canPublish': False, 'canWriteAliases': False, 'canChangeStatus': False, 'canExecuteReplacement': False} decisionReview= unknown reference_transport_or_response_error
+K3-dispatch-enabled-no-ledger.stderr
+K3-dispatch-enabled-no-ledger.stdout
+no sentinel leak
+K1 byte-identical to owner CLI-DISABLED-RESULT.json

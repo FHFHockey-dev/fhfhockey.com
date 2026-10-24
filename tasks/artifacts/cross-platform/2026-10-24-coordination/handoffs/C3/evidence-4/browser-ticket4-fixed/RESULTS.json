@@ -1,0 +1,176 @@
+{
+  "mode": "fixed",
+  "at": "2026-10-24T17:45:31.453Z",
+  "checks": [
+    {
+      "name": "network failure (Failed to fetch): no raw/private text",
+      "pass": true,
+      "shown": [
+        "We couldn't reach FHFH, so your refund request wasn't confirmed. Check your connection and try again, or contact support."
+      ]
+    },
+    {
+      "name": "network failure (Failed to fetch): retry stays available",
+      "pass": true
+    },
+    {
+      "name": "request timed out: no raw/private text",
+      "pass": true,
+      "shown": [
+        "We couldn't reach FHFH, so your refund request wasn't confirmed. Check your connection and try again, or contact support."
+      ]
+    },
+    {
+      "name": "request timed out: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "503 outage with HTML body: no raw/private text",
+      "pass": true,
+      "shown": [
+        "Your refund request couldn't be confirmed right now. Try again in a few minutes, or contact support if it keeps happening."
+      ]
+    },
+    {
+      "name": "503 outage with HTML body: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "422 forwarding a configuration error: no raw/private text",
+      "pass": true,
+      "shown": [
+        "The 7-day refund request window for this purchase has closed. Contact support if you need help."
+      ]
+    },
+    {
+      "name": "422 forwarding a configuration error: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "500 with database and email details: no raw/private text",
+      "pass": true,
+      "shown": [
+        "Your refund request couldn't be confirmed right now. Try again in a few minutes, or contact support if it keeps happening."
+      ]
+    },
+    {
+      "name": "500 with database and email details: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "404 with internal identifiers: no raw/private text",
+      "pass": true,
+      "shown": [
+        "This purchase isn't eligible for an account refund request. Contact support if you think this is wrong."
+      ]
+    },
+    {
+      "name": "404 with internal identifiers: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "401 expired authentication: no raw/private text",
+      "pass": true,
+      "shown": [
+        "Your sign-in has expired. Sign in again, then submit your refund request."
+      ]
+    },
+    {
+      "name": "401 expired authentication: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "400 validation error: no raw/private text",
+      "pass": true,
+      "shown": [
+        "Check your refund request: choose a purchase and reason, and write an explanation of 10 to 2,000 characters."
+      ]
+    },
+    {
+      "name": "400 validation error: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "409 existing open request: no raw/private text",
+      "pass": true,
+      "shown": [
+        "This purchase already has an open refund request. We'll review it case by case."
+      ]
+    },
+    {
+      "name": "409 existing open request: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "support link stays valid",
+      "pass": true
+    },
+    {
+      "name": "one POST per user submit (no automatic retries)",
+      "pass": true,
+      "posts": 10
+    },
+    {
+      "name": "every state screenshot is distinct",
+      "pass": true,
+      "count": 11
+    }
+  ],
+  "states": [
+    {
+      "state": "refund form before submit",
+      "file": "01-form-ready.png",
+      "sha256": "97345c38b35c590aa3ca874c5f451e69ede2fbbc517c42b35373a44e06ac8246"
+    },
+    {
+      "state": "network failure (Failed to fetch)",
+      "file": "02-network-failure.png",
+      "sha256": "9b43ae0d8c978fc1f4e97a4b03471c3d7310c37b0dce139f70b80ffda4371744"
+    },
+    {
+      "state": "request timed out",
+      "file": "03-timeout.png",
+      "sha256": "0651597996535281a4e612afba81ee4d765fbf67cf274f1235b75e30f85fda6f"
+    },
+    {
+      "state": "503 outage with HTML body",
+      "file": "04-outage-html.png",
+      "sha256": "5f6af8870fb15db082ec25589d8116b704383f8ea735b9b9119325b347148ddc"
+    },
+    {
+      "state": "422 forwarding a configuration error",
+      "file": "05-config-error.png",
+      "sha256": "564af6dfa1debbfd0a686467a90fe1150b8ac95a0fa5b93d167fcdd592fb6a64"
+    },
+    {
+      "state": "500 with database and email details",
+      "file": "06-server-private.png",
+      "sha256": "c5f49481b69d2e65b7dccf58fea9bdccfd4ddfe6044fa62e668030e40129c47a"
+    },
+    {
+      "state": "404 with internal identifiers",
+      "file": "07-not-found.png",
+      "sha256": "01793470739a58720b70c026e0dfd3445fc7bf7fe2f7f3cdc794f0e6191da0c5"
+    },
+    {
+      "state": "401 expired authentication",
+      "file": "08-auth-expired.png",
+      "sha256": "7090776eceb2e5ea17e9ce12d24d3d1446abbff53a3c9d7d810004650b35195e"
+    },
+    {
+      "state": "400 validation error",
+      "file": "09-validation.png",
+      "sha256": "34de3c14c161c28b87ba46a863284921793617c1ac414243796964d48f7b9436"
+    },
+    {
+      "state": "409 existing open request",
+      "file": "10-open-request.png",
+      "sha256": "78ab8c26bc9e67724e02c08c333c0203d344aa6ae712ae661a8d3902bf91e7b8"
+    },
+    {
+      "state": "manual retry confirmed (fixture 201)",
+      "file": "11-retry-confirmed.png",
+      "sha256": "712cdb1dabb643a75536381ed9e8f00e51b6b6e6e617460c13e8b69c6fe5e7e5"
+    }
+  ]
+}

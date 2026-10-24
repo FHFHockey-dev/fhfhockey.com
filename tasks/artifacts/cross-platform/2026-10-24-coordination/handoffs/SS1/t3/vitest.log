@@ -1,0 +1,9 @@
+ ✓ lib/socialShare/mondayGrid.test.ts (6 tests) 46ms
+ ✓ lib/socialShare/schedule.test.ts (28 tests) 38ms
+ ✓ lib/socialShare/matchups.test.ts (8 tests) 70ms
+
+ Test Files  4 passed (4)
+      Tests  45 passed (45)
+   Start at  13:08:30
+   Duration  709ms (transform 217ms, setup 13ms, collect 395ms, tests 157ms, environment 1.28s, prepare 176ms)
+

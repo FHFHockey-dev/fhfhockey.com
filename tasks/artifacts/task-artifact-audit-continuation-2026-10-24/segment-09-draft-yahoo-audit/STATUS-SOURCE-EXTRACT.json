@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-24T17:30:07.417761+00:00",
+  "scope": "Selected coordinator-recorded parent dispositions only; no grant to auditor for application/external work.",
+  "sources": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+      "sha256": "57c7ecb6b7fdcfa23dd390f60ab72e11eec557b5e688cc19444767a8cb73b657",
+      "reviewed_json_paths": [
+        "canonical_register_custody",
+        "active_exact_file_leases[id=CODEX-TG-S05-R1-20261024].parent_acceptance",
+        "active_exact_file_leases[id=CODEX-PLAYER-CARDS-S02-R1-20261024].parent_acceptance"
+      ]
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+      "sha256": "51e61899d5f006d7fb0e9148562262e1e06ae9104f10d3e373e266ec34cbdfdd",
+      "reviewed_ranges": [
+        [
+          260,
+          262
+        ]
+      ]
+    }
+  ],
+  "selected_leases": [
+    {
+      "id": "CODEX-TG-S05-R1-20261024",
+      "status": "Frozen S05-R1 correction handback; Scout-routed focused independent re-review pending; no further edits/operations reported.",
+      "parent_acceptance": "Locally accepted lifecycle correction; frozen; activation blocked0of1read used."
+    },
+    {
+      "id": "CODEX-PLAYER-CARDS-S02-R1-20261024",
+      "status": "Locally accepted bounded correction; frozen, no new edits granted.",
+      "parent_acceptance": {
+        "at": "2026-10-24T17:26:42.820385+00:00",
+        "source": "Explicit Scout acceptance from parent01a16eed-60f6-7096-879f-696c469db015 in current delegation",
+        "review": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review/HANDOFF.md",
+        "disposition": "Bounded player-card S02-R1 locally accepted; bothP2findings closed locally",
+        "evidence": "29/29original probes,26/26unit tests,scopedTS/lint,exact patch/pin verification by independent review/Scout",
+        "limits": "Production/source-readiness/population/rights/live/premium/route/deploy gates unchanged; frozen original packets/failures preserved. No tests duplicated by coordinator."
+      }
+    }
+  ],
+  "steer_lines": [
+    {
+      "line": 260,
+      "text": "### Parent dispositions after connection recovery \u2014 October 24, 2026"
+    },
+    {
+      "line": 261,
+      "text": ""
+    },
+    {
+      "line": 262,
+      "text": "Recorded CODEX-033/registry: player-card S01 locally accepted with43 matching pins,15unique offline cases,scoped TS/lint and PNG/manifest parity; phone readability remains TJ review,live data unaccepted. Testing Grounds S05-R1 locally accepted with unchanged reproducer,11passes/eight intentional skips,scoped checks and148pins; owner activation still blocked,zero of one Auth reads used. WiGO L5 dry-run has14 supported candidate changes but commitAllowed=false for incomplete/non-atomic inputs; no production repair approved. All freezes and active six-file S03 lease preserved. Parent dispositions recorded without coordinator retests,source/master/ledger/Git changes or external actions."
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+== no owner check on restore
+   × clears unresolved cancellation IDs on owner_change 23ms
+   × clears unresolved cancellation IDs on owner_change_without_event 19ms
+   × never recovers an unresolved cancellation ID after reload on foreign_owner_without_callback 21ms
+   × never recovers an unresolved cancellation ID after reload on foreign_owner_callback 21ms
+   × fails safe on another owner stored cancellation state 10ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  5 failed | 40 passed (45)
+== no expiry check
+   × fails safe on expired entry stored cancellation state 12ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 44 passed (45)
+== no future check
+   × fails safe on future entry stored cancellation state 11ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 44 passed (45)
+== no request-ID validation
+   × fails safe on malformed request ID stored cancellation state 12ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 44 passed (45)
+== sign-out keeps storage
+   × clears unresolved cancellation IDs on sign_out_then_same_owner 26ms
+   × never recovers an unresolved cancellation ID after reload on signed_out_then_same_owner 11ms
+   × never recovers an unresolved cancellation ID after reload on anonymous_reload_then_same_owner 10ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 42 passed (45)
+== no persistence (baseline-equivalent)
+   × reuses the same owner's unresolved cancellation ID after a browser reload without_callback 27ms
+   × reuses the same owner's unresolved cancellation ID after a browser reload INITIAL_SESSION 24ms
+   × reuses the same owner's unresolved cancellation ID after a browser reload TOKEN_REFRESHED 21ms
+   × never recovers an unresolved cancellation ID after reload on foreign_owner_without_callback 23ms
+   × never recovers an unresolved cancellation ID after reload on foreign_owner_callback 22ms
+   × never recovers an unresolved cancellation ID after reload on signed_out_then_same_owner 21ms
+   × never recovers an unresolved cancellation ID after reload on anonymous_reload_then_same_owner 21ms
+   × fails safe on corrupt JSON stored cancellation state 12ms
+   × fails safe on another owner stored cancellation state 11ms
+   × fails safe on expired entry stored cancellation state 10ms
+   × fails safe on future entry stored cancellation state 10ms
+   × fails safe on malformed request ID stored cancellation state 10ms
+   × fails safe on wrong shape stored cancellation state 10ms
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  13 failed | 32 passed (45)
+== keep entry after accepted
+   × drops the stored ID once cancellation is accepted 19ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  1 failed | 44 passed (45)

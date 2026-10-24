@@ -1,0 +1,7 @@
+{
+  "at": "2026-10-24T15:04:06.202536+00:00",
+  "command": "git --no-optional-locks diff --check -- <three canonical register files>",
+  "exit_code": 0,
+  "scope": "Only the canonical master/LEDGER.md/LEDGER.json, no application checks",
+  "correction": "Two new terminal blank lines removed before passing check."
+}

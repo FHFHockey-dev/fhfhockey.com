@@ -1,0 +1,20 @@
+{
+  "COMMANDS.md": "8bcc7ce1d20ca724fc6e5f8a2d279719a02ada19d0a2a337d20692d1f70ad149",
+  "CONCURRENT-OWNERSHIP.json": "cf0eae7d1a4859a973e54160acffd721e63c7b5071c329a536318b2eb4f77735",
+  "CONCURRENT-PLANNER.diff": "ba85982b977a5f6b5533decd2c0fba2acfb83e5793bbdc898cef0279ace9e0da",
+  "END-HASHES.json": "70b4e204746e90a40ccaa144e3d10c9a5c9d27d5259f016119a9517f2ec652a1",
+  "REPORT.md": "5931677975f40f8a5b52f8bbf6a9144a39073aa4a9e7b29ff2924071c57295a7",
+  "SCRATCH-PATH.txt": "aa91de821b7fba6b54a136002631688c1fc2c6065d062b1cca603e7ddb878ac1",
+  "SNAPSHOT-CHECK.json": "de04927f17a939cc748ef9404b06ad75834d69ddc3fe214b0439df4734c260c4",
+  "START-HASHES.json": "34f6413f2e2bc7f978b5d5b6e2ad58464322f7193cf2e0e632ad73ea0693949e",
+  "VERIFICATION.json": "93fa26ecd873e2bc3fd42ca9f695c8a80fb00689633b416fa7cc9401f21c4578",
+  "audit-network-deny.cjs": "5fd1c8ce5bb65531ab0558bccf4fe9ef252e4c524c4bec4c944c37e4bd707c06",
+  "audit.offline.setup.ts": "7dbb56c149b2b620b5cc073456a414d2819b06cfbb5ec7c7f0cf02ef7d176a6f",
+  "audit.vitest.config.mts": "3d9ec4ef8556da11e602d669f01c95a4ef7d50c5f71ec27776e8af8de7641059",
+  "focused.log": "3051abfc8235a4c7dadb4dbc0bd9854fd04f20739ba63ffbbe53c69c908bff90",
+  "independent-correlation.log": "5e481aba03a472ae23ef077dc1a3cd24100cc1dcd329e45036b78b991fd14d17",
+  "p07IndependentBoundary.test.ts.diff": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "p07IndependentComponent.test.tsx.diff": "10dc34923b3ae5ba9f22ffca5fd104c5481ded602eb1023e2366e9e843e68f55",
+  "p07R2IndependentCorrelation.test.ts": "d7575c6b57d81f9333edbf37f7ec4eab56180a6ec87a2fe3d392b913b270c562",
+  "p07ReviewFixture.ts.diff": "e30462ba8532e89597669e65d68d9037a35d0f3115df6d81adf4251ec81312cc"
+}

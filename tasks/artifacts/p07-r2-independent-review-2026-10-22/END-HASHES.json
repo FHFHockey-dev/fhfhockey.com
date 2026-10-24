@@ -1,0 +1,43 @@
+{
+  "head": "84cb1229cd1c1cdd037c43e660d2a181304ada51",
+  "canonical_files": {
+    "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx": "4970f2c79e66483aa9c341468ba38fdfaa8ab25e9007cf2aef9b0a753b4c48a4",
+    "web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts": "c105df6d6a5002ae60d1fa675fc7da783578f33f70ad2ef77c406ad24903ea6d",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx": "eb2381452a65065250b699f38883c5d9f15f4d1bda560d96698bb9fe05dc6be9",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx": "c3ff6cb96ea340c40ccd0719109fcdb0e09c1eb8e54518cd3d8eb0a6785611a7",
+    "web/components/RosterScheduleOptimizer/CompactSchedule.tsx": "e203017397116abb2a0cf1b3e98b41cff44f01cd6fad916c1ed96e6b5e8f1ec9",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "1c4d9ae48dabb34327a9e40f428f7c410b63e14fb397570e21f4f78e7c63742c",
+    "web/hooks/candidateMetrics.worker.ts": "25287ecadbb95d208de5609e421bd7c2a154552a93018cc202d09bec85aba87b",
+    "web/hooks/rosterPlanning.worker.ts": "d6c38e8966c2ef30b94960d1986c6fc691cd2618a86b96bf3c253b9edad564da",
+    "web/hooks/rosterPlanningExecution.ts": "be2ad204061d7fe770f0c5be37b6df03ea2242a13fd4505973515ea21aed08cf",
+    "web/hooks/useCandidateMetrics.test.tsx": "c0469023262a528eb2026bc9be1ef8cbc3c94f408216f4c7b59bc86172108ff8",
+    "web/hooks/useCandidateMetrics.ts": "cd29f4777000e43bd9383f04306ba77a2b180ce3fd678a5e788252860dccd2d5",
+    "web/hooks/useRosterPlanning.test.tsx": "eaf307542ca1ee463bdfe16d232eb04d561930395dba92b9fec10a03f083992c",
+    "web/hooks/useRosterPlanning.ts": "02719383dea7964f1f1efd67263e08a1bb39bcb808da585d75e932e700219f5e",
+    "web/lib/in-season/workspaceSchema.test.ts": "8d4f2908b418bbcf889f02ba0480ef1c977518027b911b6cc3db1607e9f8ff20",
+    "web/lib/in-season/workspaceSchema.ts": "e1f4718cb7f529495acc591fe0e4886e3854282cd156560a57b293f375045cd5",
+    "web/lib/integrations/yahoo/rosterPlanning.test.ts": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+    "web/lib/integrations/yahoo/rosterPlanning.ts": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+    "web/lib/player-forecasts/gameExpectationReader.ts": "440843c4f17bd18c91ddd2e3674827cbef8dce0e31b20053af318dd6db94b922",
+    "web/lib/player-forecasts/planningContributions.test.ts": "e69a921f9503504da870bc0a3f61d65043c4604042dd42fe95cb841850d69f01",
+    "web/lib/player-forecasts/planningContributions.ts": "37c472d95769790bc1c20535165f64486eabc4d0bcc825b18b821002aa42ad09",
+    "web/lib/player-forecasts/rsoUsePolicy.test.ts": "234ae88abcae41182a9673aa31e99aeea0db50bd39de4c4b1002de596e643e07",
+    "web/lib/player-forecasts/rsoUsePolicy.ts": "712730f58ba95e2890daab74b31c68e7a3f8840b9b2c1e66fe4ceae3a921455c",
+    "web/lib/rosterScheduleData/planning.test.ts": "4ac0ced587c384e74068a712d9d0d9e13b7cdd12dd3e6d52ce42013d37963a3b",
+    "web/lib/rosterScheduleData/planning.ts": "e945135114e21ff631a1f23b486490323e569db0c30d67b6c565deb2a87f5306",
+    "web/lib/rosterScheduleData/planningDataTransport.ts": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+    "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "bc3a9974663939132c977ae695164365f1a0448937b1098d496082b30d5370c2",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts": "7711471fc260851c9e3da56a72dec5e1aa9d843846a9ce6019dafb4bb569f042",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.ts": "e685dfdb937dc95f6cf8a3339e797002b686a0e76bab780f9cae77c7d68c03b8",
+    "web/lib/rosterScheduleOptimizer/planning.test.ts": "a2f4767c5e9b764b0d422cb86d042d33353d8bf16092e50793942fd16192a666",
+    "web/lib/rosterScheduleOptimizer/planning.ts": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474",
+    "web/lib/rosterScheduleOptimizer/planningTypes.ts": "0e45829a1aa0eaad17140668f01e63e0c0dfe63cc47b89e903a6be1847872e0c",
+    "web/pages/api/v1/roster-schedule-optimizer/data.ts": "a8549dccf6bfda665576ae2d41df6e39db9ca09e2be11098a467e85a5b63e049"
+  },
+  "canonical_mismatches": {
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "1c4d9ae48dabb34327a9e40f428f7c410b63e14fb397570e21f4f78e7c63742c",
+    "web/lib/rosterScheduleOptimizer/planning.ts": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474"
+  },
+  "r2_delta_mismatches": {},
+  "tested_32_pins_unchanged": true
+}

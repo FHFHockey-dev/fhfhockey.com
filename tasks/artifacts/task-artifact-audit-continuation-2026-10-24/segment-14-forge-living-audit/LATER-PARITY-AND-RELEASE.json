@@ -1,0 +1,64 @@
+{
+  "at": "2026-10-24T18:44:45.177523+00:00",
+  "files": [
+    {
+      "path": "tasks/artifacts/forge-task2-2026-10-22/r2/HANDOFF.md",
+      "sha256": "b68d86a69e7349adf2acba689fdaf6ef3c917991eb1f79a9f39d5fa2fed5ef0c",
+      "bytes": 7480,
+      "lines": 50,
+      "coverage": "partially-inspected",
+      "displayed_matches": [
+        {
+          "line": 34,
+          "excerpt": "Node 22.11.0/npm 10.9.0, existing dependencies, one Vitest worker, clean synthetic environment and transport-denial preload. [COMBINED-COMMAND.json](COMBINED-COMMAND.json) records exact command/environment; [COMBINED-TESTS.log](COMBINED-TESTS.log) reports **393 passed, 1 failed across 12 files**. Included are all 112 helper cases, 110 query cases, 37 native-stage cases, 11 unchanged independent oracles, four independent parity matrices and the actual market/NB/goalie dependency tests. The 56-case offline suite has 55 passes and the one reproducibility failure. The separate cache-cause diagnostic passed once. The isolated original reproduction was also red before diagnosis.",
+          "complete_line": true
+        },
+        {
+          "line": 50,
+          "excerpt": "Current-query real physical/all-strength cohort and variant c remain unavailable; real 20-player \u00d7 five-strength comparison, target-specific bias/RMSE/calibration and FP/HIT/SOG/top-decile \u00b110% gates remain open. Synthetic correctness tests establish no predictive qualification. No production request, database execution, migration, backfill, forecast rerun, paid call, commit, push or deployment was performed.",
+          "complete_line": true
+        }
+      ],
+      "method": "Bounded topic/receipt check only; omitted matches/content unreviewed."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-22-claude-forge-model-lane-handover.md",
+      "sha256": "b27a0139d90a18964583e3cc88c855276d2cf0ff711fee2b02e8bc9409b05413",
+      "bytes": 4145,
+      "lines": 50,
+      "coverage": "partially-inspected",
+      "displayed_matches": [
+        {
+          "line": 7,
+          "excerpt": "| **B** | `40b17b572` | task 2 (`721486d0f`: history hydration, full S-F reader, F/D-prior hits/blocks, paired count/exposure repair), the goalie model 7.x, market probabilities 6.x, NB distributions 8.x, nullable GF/W, and the 7.3 bridge |",
+          "complete_line": true
+        },
+        {
+          "line": 10,
+          "excerpt": "Release C measured against the Release B model on 62 games:",
+          "complete_line": true
+        },
+        {
+          "line": 35,
+          "excerpt": "5. **Hits run +11% and blocks +12%.** Candidate fixes are the migration 88 league rescale or a physical prior re-fit. Each needs its own gate.",
+          "complete_line": true
+        },
+        {
+          "line": 48,
+          "excerpt": "  - 1.2k reads for the row-identity check;",
+          "complete_line": true
+        }
+      ],
+      "method": "Bounded topic/receipt check only; omitted matches/content unreviewed."
+    },
+    {
+      "path": "tasks/artifacts/release-integration-2026-10-23/CURRENT-RESULT.json",
+      "sha256": "2968c48b5467e8563b5c164e213eba3618c6ca2f362c0fdd96de5e7cd45f0cf3",
+      "bytes": 98,
+      "lines": 5,
+      "coverage": "partially-inspected",
+      "displayed_matches": [],
+      "method": "Bounded topic/receipt check only; omitted matches/content unreviewed."
+    }
+  ]
+}

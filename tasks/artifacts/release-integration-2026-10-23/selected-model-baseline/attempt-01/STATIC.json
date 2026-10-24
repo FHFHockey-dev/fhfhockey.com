@@ -1,0 +1,59 @@
+{
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-q2mio4ku/snapshot/web",
+  "results": [
+    {
+      "name": "parity",
+      "argv": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "audit.vitest.config.mts",
+        "lib/projections/releaseModelParity.test.ts",
+        "--reporter=json",
+        "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/selected-model-baseline/parity.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "types",
+      "argv": [
+        "npm",
+        "exec",
+        "--offline",
+        "--no",
+        "--",
+        "tsc",
+        "--noEmit",
+        "--incremental",
+        "false",
+        "-p",
+        "audit.yahoo.tsconfig.json"
+      ],
+      "exit_code": 0
+    },
+    {
+      "name": "lint",
+      "argv": [
+        "npm",
+        "exec",
+        "--offline",
+        "--no",
+        "--",
+        "eslint",
+        "lib/projections/stages/skater-stage.ts",
+        "lib/projections/run-forge-projections.ts",
+        "lib/projections/apiHelpers.ts",
+        "pages/api/v1/forge/players.ts",
+        "pages/api/v1/forge/goalies.ts",
+        "pages/api/v1/projections/players.ts",
+        "pages/api/v1/projections/goalies.ts",
+        "pages/api/v1/projections/teams.ts",
+        "lib/projections/constants/projection-weights.ts",
+        "lib/projections/runProjectionV2.test.ts"
+      ],
+      "exit_code": 0
+    }
+  ]
+}

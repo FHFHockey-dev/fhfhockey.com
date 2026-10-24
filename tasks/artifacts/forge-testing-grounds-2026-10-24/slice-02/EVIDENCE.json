@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "scope": "Testing Grounds slice02 local owner policy and parent decision brief; no activation or independent acceptance",
+  "branch": "octoberBranch",
+  "baseHead": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "taskIds": [
+    "2.6 local owner fixtures",
+    "7.1 local policy only",
+    "1.x decision discovery"
+  ],
+  "candidateHashes": {
+    "web/lib/forge-testing-grounds/ownerPolicy.ts": {
+      "baseline": null,
+      "sha256": "b0de88d27e731856e37470aee46cde57cf50af351fa6cc8ebeacb070842748c5"
+    },
+    "web/lib/forge-testing-grounds/ownerPolicy.test.ts": {
+      "baseline": null,
+      "sha256": "9d715c4577c2e98d28f641b96c7e46c3a08d1234db62e8bf7059a89f18fc776d"
+    }
+  },
+  "dependencyHashes": {
+    "AGENTS.md": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b",
+    "mise-en-place.md": "29ea87cbf4c9addcf1d6ef6225884606ea3d7f33b36dc19377d8012f2aedd9af",
+    "tasks/TASKS/prd-forge-testing-grounds.md": "33f74b0c7df68483821bcf41e3c446d0eee26f788bbd101c3a92a0087cfbdaa5",
+    "tasks/tasks-prd-forge-testing-grounds.md": "a0a760cabc61fe15a496b768634858171b32d6673999f3abaf4d8cbcb321c9b2",
+    "web/utils/adminOnlyMiddleware.ts": "de749fa9e811aacbbd1c85a080140f380fd8c3d3794ad378caa9dd4025f444c5",
+    "web/lib/routeRunner/store.ts": "895d850d59b632b07017ed6b974e5909e3906320be3eb8a4c2fa367ab7cfb033",
+    "web/pages/api/v1/db/route-runner-tick.ts": "2847f34e0544a0f05557ddc61fd2498aa29cbb4219b2896a7799ff91830b153c",
+    "web/lib/player-forecasts/rollingWindowParticipation.ts": "b083fc00c982985d586e45e33d42214251657e19d0a854b6bbcfda44858e28df",
+    "web/lib/player-forecasts/rollingWindowParticipation.test.ts": "942d0474a08a09ae892c7ae99c7636761106827f2610e8f835264c540a5df937",
+    "web/lib/player-forecasts/modeledGoalieParticipation.ts": "f2d08511647d7de7e19bea506f412ee39154903212440805d28766184755b00e",
+    "web/lib/projections/constants/projection-weights.ts": "e98611fbd96d10c248951f14be15d6dcf56272a72beb90b6112f3ac0d023d035",
+    "web/lib/projections/calculators/skater-adjustments.ts": "258e9b4699d01ccdc89a30d746cc6332f3c708210c4598c69fe7c8f47f2ba9b6",
+    "web/lib/projections/stages/skater-stage.ts": "6adc2f970899251775587c08c906a8121eb8f38ed3394549abf2bc9774086b56",
+    "tasks/artifacts/forge-f6-ledger-week-2026-10-23/BASELINE-RECEIPTS.json": "2ba6cffb2f949ccd8236ed68fd9e52c3b2daedefc5d89fd42e379717facb74d5",
+    "tasks/artifacts/forge-f6-ledger-week-2026-10-23/FUTURE-APPROVAL.md": "de4f3b0672741f062966ae2449dc36cb3513db0d4a356cfc6fd488a40a902ee9",
+    "tasks/artifacts/forge-f6-ledger-week-2026-10-23/README.md": "4946f76681e29687f77df7a6eff1fd7c6589434578bf28681305acead24e7128",
+    "web/package.json": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+    "web/vitest.config.mts": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+    "web/__tests__/vitest.setup.js": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+    "web/tsconfig.json": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b"
+  },
+  "frozenSlice01Hashes": {
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/CAPABILITIES.md": "224f6f4a494595071089b4e438990b27be8c915f609fe4958cd99a49d9e32e9a",
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/EVIDENCE.json": "c08fc23157f91ec231f638303ea256cadee9800a0dd0e56f8f38bc7d70423600",
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/HANDOFF.md": "9b6e58fc5b55f666e76ec60b64acac48d27f7d86dab3f74d5b3fc183be9c3ecc",
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/OWNERSHIP.md": "3cc311281f50fa43aca6ecb8e5481759708801276db921b768dc946f9b7554ac",
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/SOURCE-RESOLUTION-AND-NEXT.md": "1431646bedd6763aec7987b3301fc740ae13f9f32817b608114bb2169bca8ede",
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01/checks.log": "2a6ddb7d68335bf5433c3d9489730fe03ec8b2dead02520b4243126897ce83a3",
+    "web/lib/forge-testing-grounds/operationalProgress.ts": "3d8112f72969ad567d827a237d71f7596df774a74b541f232cc7456070404daf",
+    "web/lib/forge-testing-grounds/operationalProgress.test.ts": "ec02afa4ad37b48f10f48e76fc9399f2c918c2ef8b1de31fdda93fede58daa8c",
+    "web/lib/forge-testing-grounds/dataHealth.ts": "0205a7bfd011305e4fc109de9f81f1958b9b623f8a56f79808515ddb6d24e982",
+    "web/lib/forge-testing-grounds/dataHealth.test.ts": "c806bcf60ccf4c19958e9bc735213481f0239749abc2ef358d063fcb821691d3"
+  },
+  "frozenSlice01Drift": [],
+  "artifactHashes": {
+    "checks.log": "25f7c0277f7851ee593d0f7b428acbca172bd1f3e420c2498b6909d2f955d13b",
+    "OWNERSHIP.md": "fac13a76ad7fa4441a82481c934f71eb885a801f89e11a67d9227838018310bd",
+    "HANDOFF.md": "ee728acb3accea0c55fe470875ed51bcd53695cfe4c4573765bc4d56318d554e",
+    "DECISIONS.md": "63ac92e56275363d23cd5a222264d8fea0619213cda6734794b579b7eceb89e9"
+  },
+  "checks": [
+    {
+      "command": "npm test -- --run lib/forge-testing-grounds/ownerPolicy.test.ts --maxWorkers=1 --no-file-parallelism",
+      "cwd": "web",
+      "exitCode": 0,
+      "result": "1 file,10 tests passed"
+    },
+    {
+      "command": "npx tsc --noEmit --strict --skipLibCheck --target es2015 --module esnext --moduleResolution bundler --esModuleInterop lib/forge-testing-grounds/ownerPolicy.ts lib/forge-testing-grounds/ownerPolicy.test.ts",
+      "cwd": "web",
+      "exitCode": 0,
+      "result": "no output"
+    },
+    {
+      "command": "npx eslint --report-unused-disable-directives-severity warn lib/forge-testing-grounds/ownerPolicy.ts lib/forge-testing-grounds/ownerPolicy.test.ts",
+      "cwd": "web",
+      "exitCode": 0,
+      "result": "no output"
+    },
+    {
+      "command": "Explicit new-source whitespace and frozen-slice SHA256 checks",
+      "exitCode": 0,
+      "result": "no whitespace issues, no frozen source or packet drift"
+    }
+  ],
+  "testFailures": [],
+  "originalOperationalFailure": {
+    "action": "Send exact lease/status to coordinator",
+    "target": "01a16e23-72b5-76ee-8ade-2d209d0e7002",
+    "result": "Could not determine whether thread exists; unavailable or failed host durable",
+    "delivery": "unconfirmed",
+    "retried": false
+  },
+  "notRun": [
+    "Shared model tests (source inspected only)",
+    "Full application checks",
+    "Browser tests",
+    "Hosted authorization/storage/runner validation",
+    "Real data fit or pilot"
+  ],
+  "boundaries": {
+    "sharedApplicationEdits": 0,
+    "serversStarted": 0,
+    "providerOrProductionRequests": 0,
+    "gitMutations": 0,
+    "deployments": 0,
+    "subagents": 0,
+    "liveOwnerConfiguration": false
+  },
+  "acceptance": "Implementation checks passed; independent review/integration/activation pending"
+}

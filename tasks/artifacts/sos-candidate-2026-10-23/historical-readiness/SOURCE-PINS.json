@@ -1,0 +1,28 @@
+{
+  "repo": "/Users/tim/Code/fhfhockey.com",
+  "scope": "source evidence only; no deployed-schema or row-coverage claim",
+  "files": {
+    "AGENTS.md": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b",
+    "tasks/artifacts/sos-candidate-2026-10-23/CANDIDATE.json": "d211aa5f1ac59bb396bb9f640de3acf47f30aea1ff5cccc7b425dd9311f2327b",
+    "tasks/artifacts/forge-skater-candidates-2026-10-22/task3-local-search.json": "f1114df8f51180c1dfa3da56d8bd7026a390ad300c52a594193fde17052febec",
+    "tasks/artifacts/forge-skater-candidates-2026-10-22/historical-calibration-final.json": "d7c74073f6c2bc799a1bdc85d6eb604c500bc80dc67fa7067964766783d349b5",
+    "tasks/artifacts/game-grid-lane-2026-10-18/crowding-experiment/PROTOCOL.md": "8105fd117be7ea80e24faebe2150d18e6c7455c3c7c7ccc6991883e17d1bc285",
+    "tasks/artifacts/game-grid-lane-2026-10-18/crowding-experiment/schedule-2025-03-17_04-07.json": "cfeb238ba3b7cdd473e1fb028f6ecfd1e78d6c0436a0740eefdc2396b42970dc",
+    "tasks/artifacts/nhl-game-prediction-supabase-source-audit.md": "302e63e91166e1bd912c53380e54a35883f8249d17ca8bd29083597e9457fd59",
+    "tasks/handoff-2026-10-20/diaries/fix-forge-team-strength.md": "7b175cbb9fa17adeed022c9077627d47e16d2bdaa9d783de68c97cf2fd5ff79c",
+    "tasks/TASKS/repository-audit-remediation/sko-output-provenance.md": "bd9033cb91cbd7f969de305d4a19e185e9de4e2cc3d068c2bead82f5df6f7be5",
+    "web/scripts/fixtures/forge-counterfactual-backtest/games.json": "6e5379f67083e55357d17cd526bc76940db36594dcc9834b61d5073c56549616",
+    "web/scripts/fixtures/forge-counterfactual-backtest/team_strength.json": "6b540b500a00df70aee10a09cad6e948842d4dcc11f3bcf4424984d9b4c8a572",
+    "web/scripts/forge-counterfactual-backtest.test.ts": "4cc1e0f81971af1c001fcf70a55c3f65aae6530fb2d76878ae5e023162d0e5e2",
+    "supabase/migrations/20260716112908_production_schema_baseline.sql": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d",
+    "supabase/migrations/20260720105524_add_projection_materialization_transactions.sql": "04806d4ba5c2d2a832081c41ae599bd0e8617cf22167a4719e4be7878267ffe2",
+    "supabase/migrations/20260802163747_add_player_forecast_foundation.sql": "d56beda964e2806cc5d547775ebf893dd54852676b74fd7721d78f036e97ec29",
+    "supabase/migrations/20260813001304_player_forecast_season_v3.sql": "e229cd1eaa142ff9fbe983d774550c0f8df80e3d27a3ac29ffbc98c1aa12fdc5",
+    "supabase/migrations/20260916012353_starter_board_game_revisions.sql": "b9010cce9b65ce587903e8a7ac489ffe706492f502b0d7b34bbd61ec18b18cde",
+    "web/lib/supabase/Upserts/nhlRawGamecenter.mjs": "12c41f34730c0dfc352580eda512e44681480d7408e579344e7b34195da0c365",
+    "web/lib/player-forecasts/baselineInputCapture.ts": "6d7d22aae7d17e2e6db4045b69758d4523d4c3c17e5e28bd94442ba04402b2a4",
+    "web/lib/player-forecasts/evaluation.ts": "a38c679034bad475ff6cc70ec6122e6d82a1bbbeda1dfcfba12991e1ba389f15",
+    "web/pages/api/v1/db/update-team-power-ratings.ts": "59e73eaaf30ee5c5affbca1b4275dc99aa62fa6a0b7c2df1ae7227f7d69a396a",
+    "web/scripts/import-player-forecast-season.ts": "a74605c3f1ce033cbcac25b046977c035ea4bd7e1d206dbd63ef1d706c75ded5"
+  }
+}

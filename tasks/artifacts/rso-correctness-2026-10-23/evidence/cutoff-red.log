@@ -1,0 +1,599 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/planningReproducibility.test.ts -t issued participation identity
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-rso-correctness-20261023/web
+
+(node:31889) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/rosterScheduleOptimizer/planningReproducibility.test.ts (20 tests | 2 failed | 18 skipped) 43ms
+   ↓ planning search reproducibility > keeps points manual and connected results equal for matching canonical inputs
+   ↓ planning search reproducibility > keeps categories manual and connected results equal for matching canonical inputs
+   ↓ planning search reproducibility > keeps goalie manual and connected results equal for matching canonical inputs
+   ↓ planning search reproducibility > reproduces admitted detailed quality decisions across scoring profiles and input order
+   ↓ planning search reproducibility > reproduces admitted blended quality decisions across scoring profiles and input order
+   ↓ planning search reproducibility > reproduces admitted baseline quality decisions across scoring profiles and input order
+   × planning search reproducibility > keeps issued participation identity when points baseline rates have a newer cutoff 24ms
+     → expected [ { playerId: '101', …(24) }, …(3) ] to deeply equal [ { playerId: '101', …(24) }, …(3) ]
+   × planning search reproducibility > keeps issued participation identity when goalie baseline rates have a newer cutoff 19ms
+     → expected [ { playerId: '101', …(24) }, …(3) ] to deeply equal [ { playerId: '101', …(24) }, …(3) ]
+   ↓ planning search reproducibility > replays admitted quality forecasts with daily locks and realized results
+   ↓ planning search reproducibility > replays admitted quality forecasts with weekly locks and realized results
+   ↓ planning search reproducibility > retains an eligible quality checkpoint when a deadline interrupts search
+   ↓ planning search reproducibility > bounds unchecked points bench decisions without inventing scoring evidence
+   ↓ planning search reproducibility > bounds unchecked categories bench decisions without inventing scoring evidence
+   ↓ planning search reproducibility > bounds unchecked goalie bench decisions without inventing scoring evidence
+   ↓ planning search reproducibility > prioritizes selected-plan explanations and shares duplicate receipts within the quota
+   ↓ planning search reproducibility > starts no bench rechecks after the response deadline and retains approved numerical inputs
+   ↓ planning search reproducibility > uses canonical schedule-fit and acquisition ordering across input permutations
+   ↓ planning search reproducibility > uses work quotas by default and labels an explicit time interruption
+   ↓ planning search reproducibility > bounds long-range default work by dates and available candidate groups
+   ↓ planning search reproducibility > bounds a 367-day catalog workload with 25 rostered and 300 available players
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleOptimizer/planningReproducibility.test.ts > planning search reproducibility > keeps issued participation identity when points baseline rates have a newer cutoff
+ FAIL  lib/rosterScheduleOptimizer/planningReproducibility.test.ts > planning search reproducibility > keeps issued participation identity when goalie baseline rates have a newer cutoff
+AssertionError: expected [ { playerId: '101', …(24) }, …(3) ] to deeply equal [ { playerId: '101', …(24) }, …(3) ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[33m@@ -6,29 +6,30 @@[39m
+[2m        "conditionalTieBreak": false,[22m
+[2m        "totals": false,[22m
+[2m      },[22m
+[2m      "appearanceProbability": 0.5,[22m
+[2m      "assignmentStats": {[22m
+[32m-       "ASSISTS": 0.25,[39m
+[32m-       "GOALS": 0.5,[39m
+[31m+       "ASSISTS": null,[39m
+[31m+       "GOALS": null,[39m
+[2m      },[22m
+[2m      "conditionalStats": undefined,[22m
+[2m      "conditioning": "unconditional",[22m
+[2m      "confirmedStart": false,[22m
+[2m      "contributions": {[22m
+[2m        "ASSISTS": {[22m
+[2m          "allowedUses": {[22m
+[32m-           "assignment": true,[39m
+[32m-           "comparison": true,[39m
+[31m+           "assignment": false,[39m
+[31m+           "comparison": false,[39m
+[2m            "conditionalTieBreak": true,[22m
+[32m-           "totals": true,[39m
+[31m+           "totals": false,[39m
+[2m          },[22m
+[2m          "basis": "per_appearance",[22m
+[2m          "blendWeight": null,[22m
+[2m          "conditionalMean": 0.5,[22m
+[2m          "exclusionReasons": [[22m
+[2m            "no_issued_revision",[22m
+[31m+           "use_not_approved",[39m
+[2m          ],[22m
+[2m          "game": {[22m
+[2m            "gameId": 30,[22m
+[2m            "nhlPlayerId": 1001,[22m
+[2m            "playerId": 101,[22m
+[33m@@ -74,14 +75,14 @@[39m
+[2m            },[22m
+[2m            "detailed": undefined,[22m
+[2m            "horizonDays": 14,[22m
+[2m            "participation": {[22m
+[2m              "allowedUses": {[22m
+[32m-               "assignment": true,[39m
+[32m-               "comparison": true,[39m
+[32m-               "conditionalTieBreak": true,[39m
+[32m-               "totals": true,[39m
+[31m+               "assignment": false,[39m
+[31m+               "comparison": false,[39m
+[31m+               "conditionalTieBreak": false,[39m
+[31m+               "totals": false,[39m
+[2m              },[22m
+[2m              "basis": "appearance",[22m
+[2m              "cutoffAt": "2026-10-03T00:00:00Z",[22m
+[2m              "expiresAt": "2026-10-15T00:00:00Z",[22m
+[2m              "gameId": 30,[22m
+[33m@@ -110,20 +111,21 @@[39m
+[2m          "unconditionalMean": 0.25,[22m
+[2m          "unit": "count",[22m
+[2m        },[22m
+[2m        "GOALS": {[22m
+[2m          "allowedUses": {[22m
+[32m-           "assignment": true,[39m
+[32m-           "comparison": true,[39m
+[31m+           "assignment": false,[39m
+[31m+           "comparison": false,[39m
+[2m            "conditionalTieBreak": true,[22m
+[32m-           "totals": true,[39m
+[31m+           "totals": false,[39m
+[2m          },[22m
+[2m          "basis": "per_appearance",[22m
+[2m          "blendWeight": null,[22m
+[2m          "conditionalMean": 1,[22m
+[2m          "exclusionReasons": [[22m
+[2m            "no_issued_revision",[22m
+[31m+           "use_not_approved",[39m
+[2m          ],[22m
+[2m          "game": {[22m
+[2m            "gameId": 30,[22m
+[2m            "nhlPlayerId": 1001,[22m
+[2m            "playerId": 101,[22m
+[33m@@ -169,14 +171,14 @@[39m
+[2m            },[22m
+[2m            "detailed": undefined,[22m
+[2m            "horizonDays": 14,[22m
+[2m            "participation": {[22m
+[2m              "allowedUses": {[22m
+[32m-               "assignment": true,[39m
+[32m-               "comparison": true,[39m
+[32m-               "conditionalTieBreak": true,[39m
+[32m-               "totals": true,[39m
+[31m+               "assignment": false,[39m
+[31m+               "comparison": false,[39m
+[31m+               "conditionalTieBreak": false,[39m
+[31m+               "totals": false,[39m
+[2m              },[22m
+[2m              "basis": "appearance",[22m
+[2m              "cutoffAt": "2026-10-03T00:00:00Z",[22m
+[2m              "expiresAt": "2026-10-15T00:00:00Z",[22m
+[2m              "gameId": 30,[22m
+[33m@@ -269,25 +271,25 @@[39m
+[2m      "sourceKind": "baseline",[22m
+[2m      "sourceWatermark": "captured-inputs",[22m
+[2m      "startParticipation": undefined,[22m
+[2m      "startProbability": null,[22m
+[2m      "stats": {[22m
+[32m-       "ASSISTS": 0.25,[39m
+[32m-       "GOALS": 0.5,[39m
+[31m+       "ASSISTS": null,[39m
+[31m+       "GOALS": null,[39m
+[2m      },[22m
+[2m      "targetAllowedUses": {[22m
+[2m        "ASSISTS": {[22m
+[32m-         "assignment": true,[39m
+[32m-         "comparison": true,[39m
+[32m-         "conditionalTieBreak": true,[39m
+[32m-         "totals": true,[39m
+[31m+         "assignment": false,[39m
+[31m+         "comparison": false,[39m
+[31m+         "conditionalTieBreak": false,[39m
+[31m+         "totals": false,[39m
+[2m        },[22m
+[2m        "GOALS": {[22m
+[32m-         "assignment": true,[39m
+[32m-         "comparison": true,[39m
+[32m-         "conditionalTieBreak": true,[39m
+[32m-         "totals": true,[39m
+[31m+         "assignment": false,[39m
+[31m+         "comparison": false,[39m
+[31m+         "conditionalTieBreak": false,[39m
+[31m+         "totals": false,[39m
+[2m        },[22m
+[2m      },[22m
+[2m      "tieBreakStats": {[22m
+[2m        "ASSISTS": 0.5,[22m
+[2m        "GOALS": 1,[22m
+[33m@@ -300,29 +302,30 @@[39m
+[2m        "conditionalTieBreak": false,[22m
+[2m        "totals": false,[22m
+[2m      },[22m
+[2m      "appearanceProbability": 0.5,[22m
+[2m      "assignmentStats": {[22m
+[32m-       "ASSISTS": 1.75,[39m
+[32m-       "GOALS": 3.5,[39m
+[31m+       "ASSISTS": null,[39m
+[31m+       "GOALS": null,[39m
+[2m      },[22m
+[2m      "conditionalStats": undefined,[22m
+[2m      "conditioning": "unconditional",[22m
+[2m      "confirmedStart": false,[22m
+[2m      "contributions": {[22m
+[2m        "ASSISTS": {[22m
+[2m          "allowedUses": {[22m
+[32m-           "assignment": true,[39m
+[32m-           "comparison": true,[39m
+[31m+           "assignment": false,[39m
+[31m+           "comparison": false,[39m
+[2m            "conditionalTieBreak": true,[22m
+[32m-           "totals": true,[39m
+[31m+           "totals": false,[39m
+[2m          },[22m
+[2m          "basis": "per_appearance",[22m
+[2m          "blendWeight": null,[22m
+[2m          "conditionalMean": 3.5,[22m
+[2m          "exclusionReasons": [[22m
+[2m            "no_issued_revision",[22m
+[31m+           "use_not_approved",[39m
+[2m          ],[22m
+[2m          "game": {[22m
+[2m            "gameId": 30,[22m
+[2m            "nhlPlayerId": 1002,[22m
+[2m            "playerId": 102,[22m
+[33m@@ -368,14 +371,14 @@[39m
+[2m            },[22m
+[2m            "detailed": undefined,[22m
+[2m            "horizonDays": 14,[22m
+[2m            "participation": {[22m
+[2m              "allowedUses": {[22m
+[32m-               "assignment": true,[39m
+[32m-               "comparison": true,[39m
+[32m-               "conditionalTieBreak": true,[39m
+[32m-               "totals": true,[39m
+[31m+               "assignment": false,[39m
+[31m+               "comparison": false,[39m
+[31m+               "conditionalTieBreak": false,[39m
+[31m+               "totals": false,[39m
+[2m              },[22m
+[2m              "basis": "appearance",[22m
+[2m              "cutoffAt": "2026-10-03T00:00:00Z",[22m
+[2m              "expiresAt": "2026-10-15T00:00:00Z",[22m
+[2m              "gameId": 30,[22m
+[33m@@ -404,20 +407,21 @@[39m
+[2m          "unconditionalMean": 1.75,[22m
+[2m          "unit": "count",[22m
+[2m        },[22m
+[2m        "GOALS": {[22m
+[2m          "allowedUses": {[22m
+[32m-           "assignment": true,[39m
+[32m-           "comparison": true,[39m
+[31m+           "assignment": false,[39m
+[31m+           "comparison": false,[39m
+[2m            "conditionalTieBreak": true,[22m
+[32m-           "totals": true,[39m
+[31m+           "totals": false,[39m
+[2m          },[22m
+[2m          "basis": "per_appearance",[22m
+[2m          "blendWeight": null,[22m
+[2m          "conditionalMean": 7,[22m
+[2m          "exclusionReasons": [[22m
+[2m            "no_issued_revision",[22m
+[31m+           "use_not_approved",[39m
+[2m          ],[22m
+[2m          "game": {[22m
+[2m            "gameId": 30,[22m
+[2m            "nhlPlayerId": 1002,[22m
+[2m            "playerId": 102,[22m
+[33m@@ -463,14 +467,14 @@[39m
+[2m            },[22m
+[2m            "detailed": undefined,[22m
+[2m            "horizonDays": 14,[22m
+[2m            "participation": {[22m
+[2m              "allowedUses": {[22m
+[32m-               "assignment": true,[39m
+[32m-               "comparison": true,[39m
+[32m-               "conditionalTieBreak": true,[39m
+[32m-               "totals": true,[39m
+[31m+               "assignment": false,[39m
+[31m+               "comparison": false,[39m
+[31m+               "conditionalTieBreak": false,[39m
+[31m+               "totals": false,[39m
+[2m              },[22m
+[2m              "basis": "appearance",[22m
+[2m              "cutoffAt": "2026-10-03T00:00:00Z",[22m
+[2m              "expiresAt": "2026-10-15T00:00:00Z",[22m
+[2m              "gameId": 30,[22m
+[33m@@ -563,25 +567,25 @@[39m
+[2m      "sourceKind": "baseline",[22m
+[2m      "sourceWatermark": "captured-inputs",[22m
+[2m      "startParticipation": undefined,[22m
+[2m      "startProbability": null,[22m
+[2m      "stats": {[22m
+[32m-       "ASSISTS": 1.75,[39m
+[32m-       "GOALS": 3.5,[39m
+[31m+       "ASSISTS": null,[39m
+[31m+       "GOALS": null,[39m
+[2m      },[22m
+[2m      "targetAllowedUses": {[22m
+[2m        "ASSISTS": {[22m
+[32m-         "assignment": true,[39m
+[32m-         "comparison": true,[39m
+[32m-         "conditionalTieBreak": true,[39m
+[32m-         "totals": true,[39m
+[31m+         "assignment": false,[39m
+[31m+         "comparison": false,[39m
+[31m+         "conditionalTieBreak": false,[39m
+[31m+         "totals": false,[39m
+[2m        },[22m
+[2m        "GOALS": {[22m
+[32m-         "assignment": true,[39m
+[32m-         "comparison": true,[39m
+[32m-         "conditionalTieBreak": true,[39m
+[32m-         "totals": true,[39m
+[31m+         "assignment": false,[39m
+[31m+         "comparison": false,[39m
+[31m+         "conditionalTieBreak": false,[39m
+[31m+         "totals": false,[39m
+[2m        },[22m
+[2m      },[22m
+[2m      "tieBreakStats": {[22m
+[2m        "ASSISTS": 3.5,[22m
+[2m        "GOALS": 7,[22m
+[33m@@ -594,29 +598,30 @@[39m
+[2m        "conditionalTieBreak": false,[22m
+[2m        "totals": false,[22m
+[2m      },[22m
+[2m      "appearanceProbability": 0.5,[22m
+[2m      "assignmentStats": {[22m
+[32m-       "ASSISTS": 2.75,[39m
+[32m-       "GOALS": 5.5,[39m
+[31m+       "ASSISTS": null,[39m
+[31m+       "GOALS": null,[39m
+[2m      },[22m
+[2m      "conditionalStats": undefined,[22m
+[2m      "conditioning": "unconditional",[22m
+[2m      "confirmedStart": false,[22m
+[2m      "contributions": {[22m
+[2m        "ASSISTS": {[22m
+[2m          "allowedUses": {[22m
+[32m-           "assignment": true,[39m
+[32m-           "comparison": true,[39m
+[31m+           "assignment": false,[39m
+[31m+           "comparison": false,[39m
+[2m            "conditionalTieBreak": true,[22m
+[32m-           "totals": true,[39m
+[31m+           "totals": false,[39m
+[2m          },[22m
+[2m          "basis": "per_appearance",[22m
+[2m          "blendWeight": null,[22m
+[2m          "conditionalMean": 5.5,[22m
+[2m          "exclusionReasons": [[22m
+[2m            "no_issued_revision",[22m
+[31m+           "use_not_approved",[39m
+[2m          ],[22m
+[2m          "game": {[22m
+[2m            "gameId": 30,[22m
+[2m            "nhlPlayerId": 1003,[22m
+[2m            "playerId": 103,[22m
+[33m@@ -662,14 +667,14 @@[39m
+[2m            },[22m
+[2m            "detailed": undefined,[22m
+[2m            "horizonDays": 14,[22m
+[2m            "participation": {[22m
+[2m              "allowedUses": {[22m
+[32m-               "assignment": true,[39m
+[32m-               "comparison": true,[39m
+[32m-               "conditionalTieBreak": true,[39m
+[32m-               "totals": true,[39m
+[31m+               "assignment": false,[39m
+[31m+               "comparison": false,[39m
+[31m+               "conditionalTieBreak": false,[39m
+[31m+               "totals": false,[39m
+[2m              },[22m
+[2m              "basis": "appearance",[22m
+[2m              "cutoffAt": "2026-10-03T00:00:00Z",[22m
+[2m              "expiresAt": "2026-10-15T00:00:00Z",[22m
+[2m              "gameId": 30,[22m
+[33m@@ -698,20 +703,21 @@[39m
+[2m          "unconditionalMean": 2.75,[22m
+[2m          "unit": "count",[22m
+[2m        },[22m
+[2m        "GOALS": {[22m
+[2m          "allowedUses": {[22m
+[32m-           "assignment": true,[39m
+[32m-           "comparison": true,[39m
+[31m+           "assignment": false,[39m
+[31m+           "comparison": false,[39m
+[2m            "conditionalTieBreak": true,[22m
+[32m-           "totals": true,[39m
+[31m+           "totals": false,[39m
+[2m          },[22m
+[2m          "basis": "per_appearance",[22m
+[2m          "blendWeight": null,[22m
+[2m          "conditionalMean": 11,[22m
+[2m          "exclusionReasons": [[22m
+[2m            "no_issued_revision",[22m
+[31m+           "use_not_approved",[39m
+[2m          ],[22m
+[2m          "game": {[22m
+[2m            "gameId": 30,[22m
+[2m            "nhlPlayerId": 1003,[22m
+[2m            "playerId": 103,[22m
+[33m@@ -757,14 +763,14 @@[39m
+[2m            },[22m
+[2m            "detailed": undefined,[22m
+[2m            "horizonDays": 14,[22m
+[2m            "participation": {[22m
+[2m              "allowedUses": {[22m
+[32m-               "assignment": true,[39m
+[32m-               "comparison": true,[39m
+[32m-               "conditionalTieBreak": true,[39m
+[32m-               "totals": true,[39m
+[31m+               "assignment": false,[39m
+[31m+               "comparison": false,[39m
+[31m+               "conditionalTieBreak": false,[39m
+[31m+               "totals": false,[39m
+[2m              },[22m
+[2m              "basis": "appearance",[22m
+[2m              "cutoffAt": "2026-10-03T00:00:00Z",[22m
+[2m              "expiresAt": "2026-10-15T00:00:00Z",[22m
+[2m              "gameId": 30,[22m
+[33m@@ -857,25 +863,25 @@[39m
+[2m      "sourceKind": "baseline",[22m
+[2m      "sourceWatermark": "captured-inputs",[22m
+[2m      "startParticipation": undefined,[22m
+[2m      "startProbability": null,[22m
+[2m      "stats": {[22m
+[32m-       "ASSISTS": 2.75,[39m
+[32m-       "GOALS": 5.5,[39m
+[31m+       "ASSISTS": null,[39m
+[31m+       "GOALS": null,[39m
+[2m      },[22m
+[2m      "targetAllowedUses": {[22m
+[2m        "ASSISTS": {[22m
+[32m-         "assignment": true,[39m
+[32m-         "comparison": true,[39m
+[32m-         "conditionalTieBreak": true,[39m
+[32m-         "totals": true,[39m
+[31m+         "assignment": false,[39m
+[31m+         "comparison": false,[39m
+[31m+         "conditionalTieBreak": false,[39m
+[31m+         "totals": false,[39m
+[2m        },[22m
+[2m        "GOALS": {[22m
+[32m-         "assignment": true,[39m
+[32m-         "comparison": true,[39m
+[32m-         "conditionalTieBreak": true,[39m
+[32m-         "totals": true,[39m
+[31m+         "assignment": false,[39m
+[31m+         "comparison": false,[39m
+[31m+         "conditionalTieBreak": false,[39m
+[31m+         "totals": false,[39m
+[2m        },[22m
+[2m      },[22m
+[2m      "tieBreakStats": {[22m
+[2m        "ASSISTS": 5.5,[22m
+[2m        "GOALS": 11,[22m
+[33m@@ -888,29 +894,30 @@[39m
+[2m        "conditionalTieBreak": false,[22m
+[2m        "totals": false,[22m
+[2m      },[22m
+[2m      "appearanceProbability": 0.5,[22m
+[2m      "assignmentStats": {[22m
+[32m-       "ASSISTS": 1.5,[39m
+[32m-       "GOALS": 3,[39m
+[31m+       "ASSISTS": null,[39m
+[31m+       "GOALS": null,[39m
+[2m      },[22m
+[2m      "conditionalStats": undefined,[22m
+[2m      "conditioning": "unconditional",[22m
+[2m      "confirmedStart": false,[22m
+[2m      "contributions": {[22m
+[2m        "ASSISTS": {[22m
+[2m          "allowedUses": {[22m
+[32m-           "assignment": true,[39m
+[32m-           "comparison": true,[39m
+[31m+           "assignment": false,[39m
+[31m+           "comparison": false,[39m
+[2m            "conditionalTieBreak": true,[22m
+[32m-           "totals": true,[39m
+[31m+           "totals": false,[39m
+[2m          },[22m
+[2m          "basis": "per_appearance",[22m
+[2m          "blendWeight": null,[22m
+[2m          "conditionalMean": 3,[22m
+[2m          "exclusionReasons": [[22m
+[2m            "no_issued_revision",[22m
+[31m+           "use_not_approved",[39m
+[2m          ],[22m
+[2m          "game": {[22m
+[2m            "gameId": 31,[22m
+[2m            "nhlPlayerId": 1004,[22m
+[2m            "playerId": 104,[22m
+[33m@@ -956,14 +963,14 @@[39m
+[2m            },[22m
+[2m            "detailed": undefined,[22m
+[2m            "horizonDays": 14,[22m
+[2m            "participation": {[22m
+[2m              "allowedUses": {[22m
+[32m-               "assignment": true,[39m
+[32m-               "comparison": true,[39m
+[32m-               "conditionalTieBreak": true,[39m
+[32m-               "totals": true,[39m
+[31m+               "assignment": false,[39m
+[31m+               "comparison": false,[39m
+[31m+               "conditionalTieBreak": false,[39m
+[31m+               "totals": false,[39m
+[2m              },[22m
+[2m              "basis": "appearance",[22m
+[2m              "cutoffAt": "2026-10-03T00:00:00Z",[22m
+[2m              "expiresAt": "2026-10-15T00:00:00Z",[22m
+[2m              "gameId": 31,[22m
+[33m@@ -992,20 +999,21 @@[39m
+[2m          "unconditionalMean": 1.5,[22m
+[2m          "unit": "count",[22m
+[2m        },[22m
+[2m        "GOALS": {[22m
+[2m          "allowedUses": {[22m
+[32m-           "assignment": true,[39m
+[32m-           "comparison": true,[39m
+[31m+           "assignment": false,[39m
+[31m+           "comparison": false,[39m
+[2m            "conditionalTieBreak": true,[22m
+[32m-           "totals": true,[39m
+[31m+           "totals": false,[39m
+[2m          },[22m
+[2m          "basis": "per_appearance",[22m
+[2m          "blendWeight": null,[22m
+[2m          "conditionalMean": 6,[22m
+[2m          "exclusionReasons": [[22m
+[2m            "no_issued_revision",[22m
+[31m+           "use_not_approved",[39m
+[2m          ],[22m
+[2m          "game": {[22m
+[2m            "gameId": 31,[22m
+[2m            "nhlPlayerId": 1004,[22m
+[2m            "playerId": 104,[22m
+[33m@@ -1051,14 +1059,14 @@[39m
+[2m            },[22m
+[2m            "detailed": undefined,[22m
+[2m            "horizonDays": 14,[22m
+[2m            "participation": {[22m
+[2m              "allowedUses": {[22m
+[32m-               "assignment": true,[39m
+[32m-               "comparison": true,[39m
+[32m-               "conditionalTieBreak": true,[39m
+[32m-               "totals": true,[39m
+[31m+               "assignment": false,[39m
+[31m+               "comparison": false,[39m
+[31m+               "conditionalTieBreak": false,[39m
+[31m+               "totals": false,[39m
+[2m              },[22m
+[2m              "basis": "appearance",[22m
+[2m              "cutoffAt": "2026-10-03T00:00:00Z",[22m
+[2m              "expiresAt": "2026-10-15T00:00:00Z",[22m
+[2m              "gameId": 31,[22m
+[33m@@ -1151,25 +1159,25 @@[39m
+[2m      "sourceKind": "baseline",[22m
+[2m      "sourceWatermark": "captured-inputs",[22m
+[2m      "startParticipation": undefined,[22m
+[2m      "startProbability": null,[22m
+[2m      "stats": {[22m
+[32m-       "ASSISTS": 1.5,[39m
+[32m-       "GOALS": 3,[39m
+[31m+       "ASSISTS": null,[39m
+[31m+       "GOALS": null,[39m
+[2m      },[22m
+[2m      "targetAllowedUses": {[22m
+[2m        "ASSISTS": {[22m
+[32m-         "assignment": true,[39m
+[32m-         "comparison": true,[39m
+[32m-         "conditionalTieBreak": true,[39m
+[32m-         "totals": true,[39m
+[31m+         "assignment": false,[39m
+[31m+         "comparison": false,[39m
+[31m+         "conditionalTieBreak": false,[39m
+[31m+         "totals": false,[39m
+[2m        },[22m
+[2m        "GOALS": {[22m
+[32m-         "assignment": true,[39m
+[32m-         "comparison": true,[39m
+[32m-         "conditionalTieBreak": true,[39m
+[32m-         "totals": true,[39m
+[31m+         "assignment": false,[39m
+[31m+         "comparison": false,[39m
+[31m+         "conditionalTieBreak": false,[39m
+[31m+         "totals": false,[39m
+[2m        },[22m
+[2m      },[22m
+[2m      "tieBreakStats": {[22m
+[2m        "ASSISTS": 3,[22m
+[2m        "GOALS": 6,[22m
+
+ ❯ lib/rosterScheduleOptimizer/planningReproducibility.test.ts:196:80
+    194|     expect(row.contributions?.[target].inputs?.participation?.cutoffAt…
+    195|     const saved = JSON.parse(JSON.stringify(resolved));
+    196|     expect(resolvePlanningContributions(saved, { consumer: "rso" }).fo…
+       |                                                                                ^
+    197|   });
+    198| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 18 skipped (20)
+   Start at  12:19:57
+   Duration  390ms (transform 101ms, setup 9ms, collect 107ms, tests 43ms, environment 132ms, prepare 27ms)
+

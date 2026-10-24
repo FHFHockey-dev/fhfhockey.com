@@ -1,0 +1,117 @@
+{
+  "evidenceType": "synthetic offline function execution; no live-input claims",
+  "network": "No application module can import a real transport or database client; fetch throws.",
+  "cases": [
+    {
+      "name": "null rates-table field erases a supported recent rate",
+      "status": "passed",
+      "observed": {
+        "recent": 6,
+        "rates": null,
+        "displayed": null
+      }
+    },
+    {
+      "name": "numeric rates-table field overrides supported recent rate without a freshness check",
+      "status": "passed",
+      "observed": {
+        "recent": 6,
+        "rates": 999,
+        "displayed": 999
+      }
+    },
+    {
+      "name": "recent coverage guard prevents revival when TOI is missing",
+      "status": "passed",
+      "observed": {
+        "displayed": null
+      }
+    },
+    {
+      "name": "prior-season totals fallback can be displayed as STD",
+      "status": "passed",
+      "observed": {
+        "totalsSeason": "20242025",
+        "displayedStdPoints": 100
+      }
+    },
+    {
+      "name": "existing rank helper supports competition ties and same-pool midrank percentiles including zero",
+      "status": "passed",
+      "observed": {
+        "pool": [
+          10,
+          8,
+          8,
+          0
+        ],
+        "tiedRank": 2,
+        "denominator": 4,
+        "tiedPercentile": 50,
+        "zeroRank": 4,
+        "zeroPercentile": 12.5,
+        "singletonPercentile": 50
+      }
+    },
+    {
+      "name": "complete five-game NHL/NST intersection yields correct seconds-to-per60 math",
+      "status": "passed",
+      "observed": {
+        "gp": 5,
+        "atoiMinutes": 20,
+        "sogPer60": 12
+      }
+    },
+    {
+      "name": "one missing NST game invalidates affected whole-window metrics and preserves NHL counts",
+      "status": "passed",
+      "observed": {
+        "gp": 5,
+        "sog": 20,
+        "sogPer60": null,
+        "ixg": null
+      }
+    },
+    {
+      "name": "recent window crosses season boundary and L10/L20 can contain fewer games than their label",
+      "status": "passed",
+      "observed": {
+        "currentSeasonGames": 1,
+        "priorSeasonGames": 4,
+        "l5Gp": 5,
+        "l10Gp": 5,
+        "l20Gp": 5
+      }
+    },
+    {
+      "name": "NST read error is treated as empty input and route still reports success",
+      "status": "passed",
+      "observed": {
+        "routeStatus": 200,
+        "sogPer60": null
+      }
+    },
+    {
+      "name": "a nonappearance row is admitted to the recent window if present upstream",
+      "status": "passed",
+      "observed": {
+        "l5Gp": 5,
+        "sogPer60": null,
+        "participationFilter": [
+          [
+            "eq",
+            "player_id",
+            8476453
+          ]
+        ]
+      }
+    }
+  ],
+  "sourceSha256": {
+    "web/utils/formattingUtils.ts": "3f4b75b950cfe9832d992dcb56a7ccb6cad8640e030794f16fa821868b88383d",
+    "web/components/WiGO/statMetadata.ts": "8ef22249e8066164e3bf1ce13fe4693f3e37fba9d907cc881c1af8c9c2b435d3",
+    "web/utils/fetchWigoPlayerStats.ts": "fc89f01637a332d5cb30b7f90e9991724bd4431ec9799a0ff39c20b941469210",
+    "web/utils/calculatePercentiles.ts": "e60b7c0a3c72b0018bd73cf29ccaf62d75ccb8984183d4d0b493a495fe7df558",
+    "web/pages/api/v1/db/calculate-wigo-stats.ts": "69014f862d3a3013827cc1fff2e5335d0609da2e4cb02621bc4a964580d7e0ec"
+  }
+}

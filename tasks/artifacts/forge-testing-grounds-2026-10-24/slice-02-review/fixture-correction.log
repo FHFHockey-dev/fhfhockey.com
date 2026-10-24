@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02-review/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism -t canonicalizes an exact UUID
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+ ✓ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-02-review/boundaries.test.ts (12 tests | 11 skipped) 3ms
+ ↓ web/lib/forge-testing-grounds/ownerPolicy.test.ts (10 tests | 10 skipped)
+
+ Test Files  1 passed | 1 skipped (2)
+      Tests  1 passed | 21 skipped (22)
+   Start at  11:01:10
+   Duration  239ms (transform 27ms, setup 3ms, collect 29ms, tests 3ms, environment 0ms, prepare 58ms)
+

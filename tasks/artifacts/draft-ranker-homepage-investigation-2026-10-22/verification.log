@@ -1,0 +1,19 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/index.test.tsx components/HomePage/HomepageDraftRanker.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:36779) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:36780) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/HomepageDraftRanker.test.tsx (4 tests) 88ms
+ ✓ __tests__/index.test.tsx (5 tests) 70ms
+
+ Test Files  2 passed (2)
+      Tests  9 passed (9)
+   Start at  11:40:01
+   Duration  1.11s (transform 282ms, setup 5ms, collect 889ms, tests 158ms, environment 557ms, prepare 73ms)
+

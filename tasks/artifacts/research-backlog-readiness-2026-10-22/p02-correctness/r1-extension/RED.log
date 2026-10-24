@@ -1,0 +1,574 @@
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p02-check-pJ8lfj/isolation/snapshot/web
+
+(node:1845) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ × components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds ratios before filtering unknown participation: null 15ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<article[39m
+  [33mclass[39m=[32m"_metric_c49f35"[39m
+  [33mdata-tone[39m=[32m"rate"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_metricLabel_c49f35"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</span>[39m
+  [36m<strong[39m
+    [33mclass[39m=[32m"_metricValue_c49f35"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</strong>[39m
+  [36m<small[39m
+    [33mclass[39m=[32m"_metricNote_c49f35"[39m
+  [36m>[39m
+    [0mSaves ÷ shots against[0m
+  [36m</small>[39m
+[36m</article>[39m
+ × components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds ratios before filtering unknown participation: undefined 2ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<article[39m
+  [33mclass[39m=[32m"_metric_c49f35"[39m
+  [33mdata-tone[39m=[32m"rate"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_metricLabel_c49f35"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</span>[39m
+  [36m<strong[39m
+    [33mclass[39m=[32m"_metricValue_c49f35"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</strong>[39m
+  [36m<small[39m
+    [33mclass[39m=[32m"_metricNote_c49f35"[39m
+  [36m>[39m
+    [0mSaves ÷ shots against[0m
+  [36m</small>[39m
+[36m</article>[39m
+ × components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds ratios before filtering unknown participation: -1 2ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<article[39m
+  [33mclass[39m=[32m"_metric_c49f35"[39m
+  [33mdata-tone[39m=[32m"rate"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_metricLabel_c49f35"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</span>[39m
+  [36m<strong[39m
+    [33mclass[39m=[32m"_metricValue_c49f35"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</strong>[39m
+  [36m<small[39m
+    [33mclass[39m=[32m"_metricNote_c49f35"[39m
+  [36m>[39m
+    [0mSaves ÷ shots against[0m
+  [36m</small>[39m
+[36m</article>[39m
+ × components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds ratios before filtering unknown participation: NaN 2ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<article[39m
+  [33mclass[39m=[32m"_metric_c49f35"[39m
+  [33mdata-tone[39m=[32m"rate"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_metricLabel_c49f35"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</span>[39m
+  [36m<strong[39m
+    [33mclass[39m=[32m"_metricValue_c49f35"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</strong>[39m
+  [36m<small[39m
+    [33mclass[39m=[32m"_metricNote_c49f35"[39m
+  [36m>[39m
+    [0mSaves ÷ shots against[0m
+  [36m</small>[39m
+[36m</article>[39m
+ × components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > does not infer participation from complete counts 2ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<article[39m
+  [33mclass[39m=[32m"_metric_c49f35"[39m
+  [33mdata-tone[39m=[32m"rate"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_metricLabel_c49f35"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</span>[39m
+  [36m<strong[39m
+    [33mclass[39m=[32m"_metricValue_c49f35"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</strong>[39m
+  [36m<small[39m
+    [33mclass[39m=[32m"_metricNote_c49f35"[39m
+  [36m>[39m
+    [0mSaves ÷ shots against[0m
+  [36m</small>[39m
+[36m</article>[39m
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > pools complete appearance pairs and excludes a known zero despite missing counts 2ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > preserves observed zero ratios with positive exposure 1ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds a missing exposure pair even when participation is known 2ms
+ × components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds ratios before filtering unknown participation: null 2ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ × components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds ratios before filtering unknown participation: undefined 1ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ × components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds ratios before filtering unknown participation: -1 1ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ × components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds ratios before filtering unknown participation: NaN 1ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ × components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > does not infer participation from complete counts 2ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > pools complete appearance pairs and excludes a known zero despite missing counts 1ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > preserves observed zero ratios with positive exposure 1ms
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds a missing exposure pair even when participation is known 1ms
+ × components/PlayerStats/PlayerGoalieSummaries.test.tsx > validates the selected Trends window when switching between regular season and playoffs 2ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ✓ components/PlayerStats/PlayerGoalieSummaries.test.tsx > preserves skater count and shooting percentage summaries 2ms
+(node:1845) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ × components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds the overview headline as well as context when a query row has unknown participation 19ms
+   → expected '0.900' to be '-' // Object.is equality
+ × components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds the Trends summary for the same unknown-participation query row 2ms
+   → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > preserves unavailable GAA and QS for the actual selected profile column shape 4ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > pairs known appearance counts and excludes only a known nonappearance consistently 3ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > retains true zero SV with paired positive-shot exposure in the production consumers 3ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > uses relief exposure for GAA and withholds an incomplete pair regardless of row order 0ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > retains incomplete start-classification coverage and excludes relief from the QS denominator 0ms
+ ✓ components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds a playoff SV ratio when the played row lacks its paired saves count 2ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds ratios before filtering unknown participation: null
+ FAIL  components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds ratios before filtering unknown participation: undefined
+ FAIL  components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds ratios before filtering unknown participation: -1
+ FAIL  components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > withholds ratios before filtering unknown participation: NaN
+TestingLibraryElementError: Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<article[39m
+  [33mclass[39m=[32m"_metric_c49f35"[39m
+  [33mdata-tone[39m=[32m"rate"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_metricLabel_c49f35"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</span>[39m
+  [36m<strong[39m
+    [33mclass[39m=[32m"_metricValue_c49f35"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</strong>[39m
+  [36m<small[39m
+    [33mclass[39m=[32m"_metricNote_c49f35"[39m
+  [36m>[39m
+    [0mSaves ÷ shots against[0m
+  [36m</small>[39m
+[36m</article>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ expectRates components/PlayerStats/PlayerGoalieSummaries.test.tsx:18:57
+     16| const log = (...rows: ReturnType<typeof row>[]) => rows as unknown as …
+     17| const expectRates = (sv: string, gaa: string) => {
+     18|   expect(within(screen.getByText("SV%").parentElement!).getByText(sv))…
+       |                                                         ^
+     19|   expect(within(screen.getByText("GAA").parentElement!).getByText(gaa)…
+     20| };
+ ❯ components/PlayerStats/PlayerGoalieSummaries.test.tsx:33:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Overview' goalie summary > does not infer participation from complete counts
+TestingLibraryElementError: Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<article[39m
+  [33mclass[39m=[32m"_metric_c49f35"[39m
+  [33mdata-tone[39m=[32m"rate"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_metricLabel_c49f35"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</span>[39m
+  [36m<strong[39m
+    [33mclass[39m=[32m"_metricValue_c49f35"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</strong>[39m
+  [36m<small[39m
+    [33mclass[39m=[32m"_metricNote_c49f35"[39m
+  [36m>[39m
+    [0mSaves ÷ shots against[0m
+  [36m</small>[39m
+[36m</article>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ expectRates components/PlayerStats/PlayerGoalieSummaries.test.tsx:18:57
+     16| const log = (...rows: ReturnType<typeof row>[]) => rows as unknown as …
+     17| const expectRates = (sv: string, gaa: string) => {
+     18|   expect(within(screen.getByText("SV%").parentElement!).getByText(sv))…
+       |                                                         ^
+     19|   expect(within(screen.getByText("GAA").parentElement!).getByText(gaa)…
+     20| };
+ ❯ components/PlayerStats/PlayerGoalieSummaries.test.tsx:38:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds ratios before filtering unknown participation: null
+ FAIL  components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds ratios before filtering unknown participation: undefined
+ FAIL  components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds ratios before filtering unknown participation: -1
+ FAIL  components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > withholds ratios before filtering unknown participation: NaN
+TestingLibraryElementError: Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ expectRates components/PlayerStats/PlayerGoalieSummaries.test.tsx:18:57
+     16| const log = (...rows: ReturnType<typeof row>[]) => rows as unknown as …
+     17| const expectRates = (sv: string, gaa: string) => {
+     18|   expect(within(screen.getByText("SV%").parentElement!).getByText(sv))…
+       |                                                         ^
+     19|   expect(within(screen.getByText("GAA").parentElement!).getByText(gaa)…
+     20| };
+ ❯ components/PlayerStats/PlayerGoalieSummaries.test.tsx:33:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  components/PlayerStats/PlayerGoalieSummaries.test.tsx > P02-R1 'Trends' goalie summary > does not infer participation from complete counts
+TestingLibraryElementError: Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ expectRates components/PlayerStats/PlayerGoalieSummaries.test.tsx:18:57
+     16| const log = (...rows: ReturnType<typeof row>[]) => rows as unknown as …
+     17| const expectRates = (sv: string, gaa: string) => {
+     18|   expect(within(screen.getByText("SV%").parentElement!).getByText(sv))…
+       |                                                         ^
+     19|   expect(within(screen.getByText("GAA").parentElement!).getByText(gaa)…
+     20| };
+ ❯ components/PlayerStats/PlayerGoalieSummaries.test.tsx:38:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  components/PlayerStats/PlayerGoalieSummaries.test.tsx > validates the selected Trends window when switching between regular season and playoffs
+TestingLibraryElementError: Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ expectRates components/PlayerStats/PlayerGoalieSummaries.test.tsx:18:57
+     16| const log = (...rows: ReturnType<typeof row>[]) => rows as unknown as …
+     17| const expectRates = (sv: string, gaa: string) => {
+     18|   expect(within(screen.getByText("SV%").parentElement!).getByText(sv))…
+       |                                                         ^
+     19|   expect(within(screen.getByText("GAA").parentElement!).getByText(gaa)…
+     20| };
+ ❯ components/PlayerStats/PlayerGoalieSummaries.test.tsx:67:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds the overview headline as well as context when a query row has unknown participation
+AssertionError: expected '0.900' to be '-' // Object.is equality
+
+Expected: [32m"-"[39m
+Received: [31m"0.900"[39m
+
+ ❯ components/PlayerStats/p02-independent.test.tsx:34:29
+     32|     render(<><PlayerSummaryStrip gameLog={rawLog(log)} isGoalie window…
+     33|     expect(contextualCard('Save Percentage').getByText('-')).toBeTruth…
+     34|     expect(headline('SV%')).toBe('-');
+       |                             ^
+     35|   });
+     36|   it('withholds the Trends summary for the same unknown-participation …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  components/PlayerStats/p02-independent.test.tsx > P02 independent production-consumer controls > withholds the Trends summary for the same unknown-participation query row
+TestingLibraryElementError: Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_summaryCard_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryLabel_8ca369"[39m
+  [36m>[39m
+    [0mSV%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryValue_8ca369"[39m
+  [36m>[39m
+    [0m0.900[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_summaryDescription_8ca369"[39m
+  [36m>[39m
+    [0m1[0m
+    [0m games played[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/PlayerStats/p02-independent.test.tsx:39:59
+     37|     const log = [row(), row({ date: '2026-10-21', games_played: null, …
+     38|     render(<PlayerStatsSummary gameLog={rawLog(log)} selectedStats={['…
+     39|     expect(within(screen.getByText('SV%').parentElement!).getByText('-…
+       |                                                           ^
+     40|   });
+     41|   it('preserves unavailable GAA and QS for the actual selected profile…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  13 failed | 13 passed (26)
+   Start at  10:03:03
+   Duration  769ms (transform 157ms, setup 13ms, collect 264ms, tests 75ms, environment 264ms, prepare 56ms)
+

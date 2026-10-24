@@ -1,0 +1,14 @@
+0d049c966a2906ade3aac1650295136d71844928768e81756c4f9250b40b2bc2  tasks/artifacts/p05-ownership-2026-10-22/pickup/COMMANDS.json
+2d367beb3a7d50085db484f73826f68c9c79bdb226f092778ba185c57e0e7f06  tasks/artifacts/p05-ownership-2026-10-22/pickup/FILE-HASHES.json
+e52fbef923c050bc7b6cac657cf335fe90a7fee0e0ee53fbc50df4ea2da6583b  tasks/artifacts/p05-ownership-2026-10-22/pickup/HANDOFF.md
+78dbe2627d8f853f877a3e595958fd86c52b8e47650cda84d11618a49bf0ed82  tasks/artifacts/p05-ownership-2026-10-22/pickup/SHA256SUMS
+5daa1e88019362e4d79fc500ffd728931e2bed9765e84799f939552d73ea5ff5  tasks/artifacts/p05-ownership-2026-10-22/pickup/audit-pickup.tsconfig.json
+d7bab666f3fb8e38e1b090e8dbd38ff9a791e4538174650813e0f5ad4a3bc660  tasks/artifacts/p05-ownership-2026-10-22/pickup/correction.patch
+7a5c3bc4bbc6ce6760c3995f9aac681f7c60550af863038a8a314f77b8b95a22  tasks/artifacts/p05-ownership-2026-10-22/pickup/fixed-source.tar.gz
+fcf1177540e3d4ea996771aa436c9c29fea771b0a73a4e92de575dae30d2b052  tasks/artifacts/p05-ownership-2026-10-22/pickup/green.log
+5db5872cd4d9eaef0fb79be5f8c16bed8bde0194eec72345b78e9e478ba411c8  tasks/artifacts/p05-ownership-2026-10-22/pickup/initial-fixture-green-attempt.log
+b77f7e0bae2d58e145133e90668df517353aa4cadf68a3c117bd73f0e385266a  tasks/artifacts/p05-ownership-2026-10-22/pickup/initial-fixture-red.log
+3b6e3dbfe117b164decb9dac7a3c2bce1c106fc65f3c9653a7f5e1089d5709ba  tasks/artifacts/p05-ownership-2026-10-22/pickup/initial-types.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  tasks/artifacts/p05-ownership-2026-10-22/pickup/lint.log
+09d3186161f4b6c72f7991f91425926d390ad52459677df21083b7d687652020  tasks/artifacts/p05-ownership-2026-10-22/pickup/red.log
+e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855  tasks/artifacts/p05-ownership-2026-10-22/pickup/types.log

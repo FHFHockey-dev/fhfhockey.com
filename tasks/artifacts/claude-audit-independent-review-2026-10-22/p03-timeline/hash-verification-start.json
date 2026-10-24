@@ -1,0 +1,36 @@
+{
+  "checked_at": "2026-10-22T13:30:21.816382+00:00",
+  "head": "fd58ba2452c0175b201e50285df156cb7f91b4f4",
+  "branch": "octoberBranch",
+  "snapshot": "/tmp/fhfh-queue-check-vq86bjk4/isolation/snapshot/web",
+  "candidate_sha256": "480166b2afec0e96ab1decaa8e6e728b5d3eae65db77784e28fa7bae34690b3f",
+  "patch_sha256": "1964b22ee8a8615ae79936e27ebabef28b8c11ed8695dc15bc77b85c0cc3bf5c",
+  "reverse_snapshot": "/tmp/fhfh-p03-review-reverse-u6v2do19",
+  "files": [
+    {
+      "path": "web/components/MetricsTimeline/MetricsTimeline.tsx",
+      "operation": "modify",
+      "before_sha256": "987e32c5e7a92de1efc062d1d5002834e7656fc4de5666e44cbd0c31ae6adbc3",
+      "after_sha256": "07bb3c3919ae684504551ab05afddada6dfe9fb71b8af282ccd11ea562779ebe"
+    },
+    {
+      "path": "web/components/MetricsTimeline/metricsTimelineData.ts",
+      "operation": "modify",
+      "before_sha256": "4cf82af3ff7f1dbabb0c207b45fac988f568415c2e057fe0ba71cbc0ce137b93",
+      "after_sha256": "59ad16886a71aa2c8d0e0d555f1b426439b6b6242dcc887d187dee85eb9bd441"
+    },
+    {
+      "path": "web/components/MetricsTimeline/metricsTimelineData.test.ts",
+      "operation": "modify",
+      "before_sha256": "ac0ebc952022011dc55fe9db239f1657406e1b9d00703d84b00789f7d1d98089",
+      "after_sha256": "fabc0c29b1e1e772fb6e8f9461f881584ebff7cb58ecab2b2588608ce5c13622"
+    },
+    {
+      "path": "web/components/MetricsTimeline/MetricsTimeline.test.tsx",
+      "operation": "add",
+      "before_sha256": null,
+      "after_sha256": "83766270718f896c4d810509d1c4a6b67036c8dac65534aadc26be23720465b4"
+    }
+  ],
+  "a7_a9_13_pins_match": true
+}

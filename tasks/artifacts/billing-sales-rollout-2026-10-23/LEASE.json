@@ -1,0 +1,51 @@
+{
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "owner": "BILLING 01a15f1d-cb9f-7584-a4fd-2d1e9499f03f",
+  "coordination": "Release owner latest read_thread confirms billing flags/account/checkout/promotions and providerSyncAccessServer ownership; trusted-yahoo/LEASE.json excludes billing. All listed existing paths clean before edits. No overlap with its 15 paths.",
+  "before": {
+    "web/components/account/DraftProPanel.tsx": "750b244315753b8f04159d50d6eb1945fd492ad8a2dc9236e194fd7653bc9982",
+    "web/components/account/DraftProPanel.test.tsx": "e3d4484c5bddea96dba1c46da6005238e74ba7ac219a184864fb6ea435a0d0bf",
+    "web/lib/draft-pro/features.ts": "18a3113a1d0f22a3042836df82746143aae56099175049e7511a3cb217d0a03b",
+    "web/lib/draft-pro/features.test.ts": "b9aeeafd002007b5e334eb0d0678c8879834f551c7f39bc1880af73924b6d022",
+    "web/lib/draft-pro/account/index.ts": "33bad366b4af6acf944a2237cc92d9bb7ea7da75adc496386ef08f09c001a584",
+    "web/lib/draft-pro/account/index.test.ts": "72f91330c01b23ca6dc6b287091a15c9377c8ba1345a02985f49766728e3047b",
+    "web/pages/api/v1/account/draft-pro/checkout.ts": "b984304817424ddbe6b8fd28969683e5ae80daaacd2941e734091e12b90ecd74",
+    "web/lib/draft-pro/api-tests/checkout.test.ts": "f7d235d8a0506255047df718d1ab29d56957457114330ffaa582d12ff24308bc",
+    "web/lib/integrations/providerSyncAccess.ts": "5e34f581be828b4f0b45cbfbb0e0851b65567f81fc35795000af4e79f7483ae5",
+    "web/lib/integrations/providerSyncAccessServer.ts": "6feba64d25aad65ae6322fcc812be8ad202c18545ba38eaaf4566f3379dd0bf1",
+    "web/lib/integrations/providerSyncAccess.test.ts": "e02a9e1efedefae017aa5259cdaadf6f9cbc5bca247201f0c1adcf1ef52b2103",
+    "web/pages/api/v1/account/provider-sync.ts": "cd25296a5adb9a9cca8374355f2e0ff6e9706fd6ad2fba4a009db878db7662c3",
+    "web/hooks/useProviderSyncAccess.ts": "dec528a76adc17c7add38011e38f07a2a850ea590aeb9ce91122f149ddeafafb",
+    "web/hooks/useDraftProAccess.test.tsx": "5a87f0fc984002561a17d00b9e34872794a2fefde1d3d87657a956618b81fbc1",
+    "web/components/account/InSeasonPanel.tsx": "aa8b536ee039599c6d41167841b5c1a177f0350c895d03ae0b6ed0acfd76a167",
+    "web/components/account/InSeasonPanel.test.tsx": "9111c5524568150797b0cc232e3b4f2584758102206531d9b26d408ba8abdd10",
+    "web/pages/api/v1/account/in-season/checkout.ts": "53508ada83a494e9ecfb9f9ddc1416eafe9c62f270b01d5081a826914c144c3f",
+    "web/lib/in-season/billingRoutes.test.ts": "ed71429ee5e16193c280f33d570390107ac970a55dff6aa001501be078cab9aa",
+    "web/lib/integrations/yahoo/liveDraftAccess.ts": "776cf89f0af055a3f48d160435d06225b0818a70ae37d375aaf8b9f2f597c810",
+    "web/lib/integrations/yahoo/pickupApi.test.ts": "eda835c3ee8ca2e10ce3765234cc71339afe00740b2ebfba05d4398d612ad8b5",
+    "web/components/DraftDashboard/DraftWorkspaceHeader.tsx": "ef2b9830791a53dde782071924a9551d644f3038a8fa32dd46d13e73ee2a4638",
+    "web/components/DraftDashboard/DraftSettingsShell.tsx": "639b9410015753f31c745318c2cbf57c2dba148e34469d078fe870a738cf7ffe",
+    "web/components/DraftDashboard/GodView.tsx": "6b6cb3056ba678afe2aca8accdc5873fd8ce00fc55df85ab3ccf3d13ad3e4764",
+    "web/components/DraftDashboard/MockDraftWorkspace.tsx": "69d65715ec31355dfbc8ea199c84d62ad9c7015b08b4831dde7cb9318857a886",
+    "web/components/DraftDashboard/SuggestedPicks.tsx": "ad7d5cdaba2b3eeec36063bf0a035c1d73e79cc2fb10bff7d2cd9fd90a8a2e2e",
+    "web/__tests__/components/DraftDashboard/SuggestedPicks.test.tsx": "82fbfb90f524560bf11524a3a6e431394071a9efe1dea22e2a98c6ee5f6c4376",
+    "web/__tests__/components/DraftDashboard/DraftSettingsShell.test.tsx": "11ce5dead1b5368ba92249df6e4135582674fa7e0166848eac9d4edf611306f0",
+    "web/pages/index.tsx": "db387e7d5b5a025b2585854fad930ad98eced970eaf0c3e1c34c65315ac760e1",
+    "web/pages/draft-pro/policies.tsx": "9482b86d04482ae28c9cdb42f75253c44c824f6b7a95fdb1936472f7932bbafa",
+    "web/e2e/god-view.spec.ts": "0482ac66a546ef6f6866995a0ab27fbab3e40c7d9d2e8bad108f0acc7b3d264d",
+    "web/e2e/draft-layout.spec.ts": "98702b0ae8cc5434a93daee6d37c5b9715300d855825a6b7c2c8cbc006a0f506",
+    "web/lib/integrations/providerSyncPaywall.test.ts": "d1ed5ef030e2af624fbc9029f8958bae3915f2bc3e7ae8cd34b97d7aa562637b",
+    "web/lib/integrations/yahoo/liveDraftApi.test.ts": "9fbc433875095a6dcbd0318d8752ed066bd452ef1bcd9a086a73e469daa7397d"
+  },
+  "new": [
+    "web/lib/integrations/providerSyncRolloutRoutes.test.ts"
+  ],
+  "excluded": [
+    "Yahoo trusted planning lease",
+    "PlayerPickupTable",
+    "monthly lifecycle",
+    "SQL and schema",
+    "Git index",
+    "environment and credentials"
+  ]
+}

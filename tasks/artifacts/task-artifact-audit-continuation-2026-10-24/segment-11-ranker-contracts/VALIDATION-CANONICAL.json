@@ -1,0 +1,37 @@
+{
+  "at": "2026-10-24T17:59:01.031091+00:00",
+  "before_ids": 209,
+  "after_ids": 209,
+  "before_evidence": 1030,
+  "after_evidence": 1058,
+  "changed_existing_ids": [
+    "REPO-DOCUMENTATION",
+    "SECURITY-RESIDUAL-ACL",
+    "YAHOO-HISTORY-RETIREMENT",
+    "SITE-DRAFTRANKER-HOMEPAGE",
+    "SITE-DRAFT-CSV-RESOLVER"
+  ],
+  "added_ids": [],
+  "all_prior_ids_scopes_and_evidence_prefixes_preserved": true,
+  "legacy_blocks_byte_identical_each_markdown": 32,
+  "unchanged_existing_rows_identical": 204,
+  "no_added_trailing_whitespace": true,
+  "readable_children": 10,
+  "readable_child_parents": [
+    "YAHOO-HISTORY-RETIREMENT",
+    "SITE-DRAFT-CSV-RESOLVER"
+  ],
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "f0580083b1af1708509104dcf103adc1623f52a31124ee5f68a33601693eaffa",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "a5177d320cae2004589baf53e061018151da8ce11098a785f4a11f6f95bd9c8b",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "e32feecb77d79b89c8c6e1e6e01bd681c84a4315a151a8ee7276deed795819df"
+  },
+  "candidate_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "493e31e256b456e724ce5e76600c3132f874a44bf879528ba967be5aa3fd9925",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "6758a380de00ec854622e2769b9a97cb32b347c4b1e3a5bd0f29a16fb491b7ba",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "2b4265ce9f77f1eff4f59df1737474ea244b22c916e3cf51635de67dc174fe75"
+  },
+  "application_git_or_production_operations": 0,
+  "whole_tree_content_audit_complete": false,
+  "canonical_written_and_read_back": true
+}

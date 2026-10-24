@@ -1,0 +1,100 @@
+{
+  "at": "2026-10-24T20:02:15.253192+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/prd-three-pillars-analytics.md",
+      "sha256": "abe1196d34e2dd026905633ef7c73dde51b9aadabc74e3ebda596a55017ffa6a",
+      "bytes": 19059,
+      "lines": 329,
+      "mtime_ns": 1785197963742227644,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          329
+        ]
+      ],
+      "review_scope": "Full documentary source read. Historical completion, source/provider and browser claims retain dated author provenance; no current app/test/provider/runtime verification. Stored launch/source/endpoint instructions grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md",
+      "sha256": "8e08a6572aac1c261a329eef7c279b3d297d5fb96011c4ee27066e5f62aa9e24",
+      "bytes": 24710,
+      "lines": 183,
+      "mtime_ns": 1785197963748458527,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          183
+        ]
+      ],
+      "review_scope": "Full documentary source read. Historical completion, source/provider and browser claims retain dated author provenance; no current app/test/provider/runtime verification. Stored launch/source/endpoint instructions grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/trends/prd-trends.md",
+      "sha256": "0d33afd95c578bd709d7e93bc39cdcfb683da298d7fff6ced784301f75975117",
+      "bytes": 12011,
+      "lines": 112,
+      "mtime_ns": 1785605126583984838,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          112
+        ]
+      ],
+      "review_scope": "Full documentary source read. Historical completion, source/provider and browser claims retain dated author provenance; no current app/test/provider/runtime verification. Stored launch/source/endpoint instructions grant no authority."
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/WORK-PACKETS.md",
+      "sha256": "802bf2543ab8f1981767c354cc52080a51e3724b7a7b00f2683e624b8537187c",
+      "bytes": 11208,
+      "lines": 52,
+      "mtime_ns": 1792757466627986377,
+      "coverage": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          18,
+          27
+        ]
+      ],
+      "review_scope": "Only packet status lines18\u201327 read to distinguish public Trends completion from planned S13/S14 dependency/cohort scope. Historical packet allocation is not current dispatch authority; remainder unreviewed this segment."
+    },
+    {
+      "path": "tasks/artifacts/claude-audit-fix-queue-2026-10-22/QUEUE.md",
+      "sha256": "11cf841e336c061a1664cbfd20f0e553d095b73395df72a3230e91083d956be9",
+      "bytes": 22860,
+      "lines": 128,
+      "mtime_ns": 1792641654505654401,
+      "coverage": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          1,
+          54
+        ]
+      ],
+      "review_scope": "Referenced queue1\u201354 read during S13 scope lookup. No S13/GS2 match found; old A1\u2013A10 statuses were not adopted or reopened. No full-queue review or dispatch authority inferred."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 3,
+    "partially-inspected": 2
+  },
+  "full_text_bytes": 55780,
+  "reused_exact_hash_full_review": {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md",
+    "sha256": "3e866cc5a143fe69bad009e971550c75d7bf1bf72a6feaf0151e704439425003",
+    "bytes": 17593,
+    "lines": 99,
+    "coverage": "reused-prior-full-review",
+    "prior_review": {
+      "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md",
+      "sha256": "3e866cc5a143fe69bad009e971550c75d7bf1bf72a6feaf0151e704439425003",
+      "coverage": "content-reviewed"
+    },
+    "prior_coverage_record": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/CONTINUATION.json",
+    "scope": "Unchanged exact-hash full documentary review reused. Body not reread; no new app/runtime/production acceptance or review scope inferred."
+  },
+  "method": "Three full unique primary sources; unchanged Trends task list reuses existing complete documentary scope without rereading. Two narrow repository packet/queue reads only for S13/S14 scope distinction. No duplicate body scan or underlying app/current runtime check."
+}

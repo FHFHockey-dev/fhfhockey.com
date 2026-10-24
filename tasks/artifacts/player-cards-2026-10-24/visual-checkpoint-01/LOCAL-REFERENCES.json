@@ -1,0 +1,56 @@
+{
+  "at": "2026-10-24T19:41:20.309761+00:00",
+  "route": "Direct user-supplied local attachments after supported Library transfer failed; no transfer retry/upload",
+  "references": [
+    {
+      "role": "ARIndex",
+      "userLocalPath": "/Users/tim/Downloads/ChatGPT Image Oct 24, 2026, 03_35_47 PM.png",
+      "existingLibraryId": "libfile_cb6962a837208191a953eeb3846a0303",
+      "libraryVersion": 0,
+      "bytes": 121350,
+      "sha256": "22300f96859fc3e45dcdf3a8aa6736d244730a146a6dd32200d6a3f79c9ffb5e",
+      "pixelsInspected": true,
+      "inspection": "view_image on executor, individually; original user images untouched"
+    },
+    {
+      "role": "JFresh",
+      "userLocalPath": "/Users/tim/Downloads/ChatGPT Image Oct 24, 2026, 03_35_54 PM.png",
+      "existingLibraryId": "libfile_ccfe1ea19da48191b24829f38ed416e7",
+      "libraryVersion": 0,
+      "bytes": 636727,
+      "sha256": "545206acda3ec11ea247e2c43c549f359018920ce5efd942807757fd34dcfd34",
+      "pixelsInspected": true,
+      "inspection": "view_image on executor, individually; original user images untouched"
+    },
+    {
+      "role": "Athletic Connor",
+      "userLocalPath": "/Users/tim/Downloads/ChatGPT Image Oct 24, 2026, 03_35_57 PM.png",
+      "existingLibraryId": "libfile_4b2465f970388191b9096759fd1f787b",
+      "libraryVersion": 0,
+      "bytes": 1411268,
+      "sha256": "c3d75c9cc5cb24562bfb5bf1d199835ba37a83c9d1adb97a8f36478afe131067",
+      "pixelsInspected": true,
+      "inspection": "view_image on executor, individually; original user images untouched"
+    },
+    {
+      "role": "Athletic Alex",
+      "userLocalPath": "/Users/tim/Downloads/ChatGPT Image Oct 24, 2026, 03_36_01 PM.png",
+      "existingLibraryId": "libfile_9bb2b4d41e588191b68c748a8c608df7",
+      "libraryVersion": 0,
+      "bytes": 2412606,
+      "sha256": "31f2de7b0302d33b8c503ded4741f2573b42031d258af6316bddceabfff26350",
+      "pixelsInspected": true,
+      "inspection": "view_image on executor, individually; original user images untouched"
+    },
+    {
+      "role": "Annotated Athletic",
+      "userLocalPath": "/Users/tim/Downloads/ChatGPT Image Oct 24, 2026, 03_36_04 PM.png",
+      "existingLibraryId": "libfile_0bb563ac1710819184fb4cd4eeaa73bf",
+      "libraryVersion": 0,
+      "bytes": 1287919,
+      "sha256": "a5a951c4e3a1fb91a5175f942ad6ae1d93aa44ef913c6c8230fe1a4d7678aa30",
+      "pixelsInspected": true,
+      "inspection": "view_image on executor, individually; original user images untouched"
+    }
+  ]
+}

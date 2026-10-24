@@ -1,0 +1,114 @@
+{
+  "fixture": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-r1-independent-ksvb02so",
+  "originalFrozenFixture": "/tmp/fhfh-task2-review-et29jk5z",
+  "base": "84cb1229cd1c1cdd037c43e660d2a181304ada51",
+  "packetHashes": {
+    "before-skater-adjustments.ts": "39b0c8ed9745902fd387b3db01da72c3ac411adeb185bab82259053116dc7636",
+    "OPERATIONS.md": "7b3f8735abb4d9760504821c6fd6a1e6ca4986eb89aa41b364eb6d6bbec07677",
+    "SOURCE-PINS.json": "b2383be515ea88535d88b78bcbd119c3c95947bf8e49051cb60ada4229218596",
+    "LINT.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "r1.patch": "b75b26430bb4559eeb7470160b01fd90cc39a0d8bd9e0a8474a9cfdf79543aae",
+    "r1-source.tar.gz": "d745aad6252dcb1f054610b8915497d633517c86582057e7fb6295521944c907",
+    "NATIVE-GREEN.log": "fbae8e9bda50f6830a267cb4744820ed9319949878a4b0ca875b3eebf0aaccee",
+    "R1-SNAPSHOT.json": "e332f15c21657e77e18e2494795f3f023316dd1f8fa171f952bf3a83c3000008",
+    "ISOLATED-GREEN.log": "d6cea66678215befb665a75f9850866287b1cdf6ff4cc069f0727eb8e7da4f21",
+    "PARTIAL-PAIR-RED.log": "ac7d2fa99d8b2d67c2115efb29ab5577515debe2468d4c1d42b0e3b68b5fe0c7",
+    "FOCUSED-GREEN.log": "7689f26fc4e724c21422c12005340a97925da6eb4718c963f20654260347e1dc",
+    "HANDOFF.md": "1e43e3e9fbbc2efc2947939e9a62ed2dfe58587bfc8d79f3e0fe415f797082d3",
+    "before-runProjectionV2.test.ts": "82e6a983efbd16bbc35362fa1d280fd1d72fa09fe4f02b4016c8ede5fce0e8c0",
+    "RECEIPT.json": "c14bca6c73f6dd92eab7e9c64b5c9294286063dbbb01ad7504f6e2a4fe7c087b"
+  },
+  "patchCheck": {
+    "exitCode": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "overlayFiles": [
+    "web/lib/projections/calculators/skater-adjustments.ts",
+    "web/lib/projections/runProjectionV2.test.ts"
+  ],
+  "sourcePins": [
+    {
+      "path": "web/lib/projections/queries/skater-queries.ts",
+      "advertisedSha256": "4589f8d79dd6c30be4c2653fe82af1166535b97450eaaa5fd049459c54441893",
+      "actualFrozenSha256": "4589f8d79dd6c30be4c2653fe82af1166535b97450eaaa5fd049459c54441893",
+      "matches": true
+    },
+    {
+      "path": "web/lib/projections/queries/skater-queries.test.ts",
+      "advertisedSha256": "cdc0a351a4c71db1d30879c25763023fc4da36f148ab0313e317af1346ac9c15",
+      "actualFrozenSha256": "cdc0a351a4c71db1d30879c25763023fc4da36f148ab0313e317af1346ac9c15",
+      "matches": true
+    },
+    {
+      "path": "web/lib/projections/stages/skater-stage.ts",
+      "advertisedSha256": "fe8357390ed4d5ed599bbd0429df5ea6150f703c9f8b121819198d6b4fc8c05b",
+      "actualFrozenSha256": "e0f760d1bccf50ef02ba33cbb934ff3317e8abedd54df3801e721b890098d966",
+      "matches": false
+    },
+    {
+      "path": "web/lib/projections/nativeGoalAccounting.test.ts",
+      "advertisedSha256": "ab32053a3ee2a4fc030c55c89fc0ba1b9425d9b9da0d2aa9ac0aa1188d26e1d8",
+      "actualFrozenSha256": "ab32053a3ee2a4fc030c55c89fc0ba1b9425d9b9da0d2aa9ac0aa1188d26e1d8",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/fixtures/native-player-offline-synthetic.json",
+      "advertisedSha256": "12953ed69ad7ab160c91f712bee24b3f891ce62092ce12ac7d0962a489d538fe",
+      "actualFrozenSha256": "12953ed69ad7ab160c91f712bee24b3f891ce62092ce12ac7d0962a489d538fe",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/qualify-native-players-offline.ts",
+      "advertisedSha256": "d345fcc4913c8e9ecf87b00f6500aa811a9f9f64e0f6e7988dfb8da61bcb7275",
+      "actualFrozenSha256": "d345fcc4913c8e9ecf87b00f6500aa811a9f9f64e0f6e7988dfb8da61bcb7275",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/qualify-native-players-offline.test.ts",
+      "advertisedSha256": "cf99e337551c94231b7d0df81a045dcf1a0c497f2a093c16d80e8be526d1dfbc",
+      "actualFrozenSha256": "cf99e337551c94231b7d0df81a045dcf1a0c497f2a093c16d80e8be526d1dfbc",
+      "matches": true
+    },
+    {
+      "path": "web/scripts/qualify-native-players-offline.md",
+      "advertisedSha256": "13d962de7c6975bfc773a302f0992e32c2d4302cceb73578c9fa9628eb25f8d9",
+      "actualFrozenSha256": "13d962de7c6975bfc773a302f0992e32c2d4302cceb73578c9fa9628eb25f8d9",
+      "matches": true
+    },
+    {
+      "path": "web/lib/projections/calculators/skater-adjustments.ts",
+      "advertisedSha256": "89cf0e544daac80c01f9af267a7774a31ce523d2e483fd87074d999c18fd119b",
+      "actualFrozenSha256": "89cf0e544daac80c01f9af267a7774a31ce523d2e483fd87074d999c18fd119b",
+      "matches": true
+    },
+    {
+      "path": "web/lib/projections/constants/projection-weights.ts",
+      "advertisedSha256": "1200d9379191de7e569bed14f680777e307829df2d92520b2ed67609ea14792e",
+      "actualFrozenSha256": "1200d9379191de7e569bed14f680777e307829df2d92520b2ed67609ea14792e",
+      "matches": true
+    },
+    {
+      "path": "web/lib/projections/types/run-forge-projections.types.ts",
+      "advertisedSha256": "2f7ddc868b55e8cb042abf2c0ef3c5904777cb8817b3d985440e1fe40f07e1a6",
+      "actualFrozenSha256": "2f7ddc868b55e8cb042abf2c0ef3c5904777cb8817b3d985440e1fe40f07e1a6",
+      "matches": true
+    },
+    {
+      "path": "web/lib/projections/runProjectionV2.test.ts",
+      "advertisedSha256": "b669fbeb639c733c27dfee2f27003c9ae0d7359c282e0ee495e45792663ca5d3",
+      "actualFrozenSha256": "b669fbeb639c733c27dfee2f27003c9ae0d7359c282e0ee495e45792663ca5d3",
+      "matches": true
+    },
+    {
+      "path": "supabase/migrations/20261021182129_forge_latest_rolling_rows.sql",
+      "advertisedSha256": "7f1ef23da246a8f535e4e00a5a3aef33e70f7772f7d502d1baef5e233da70fce",
+      "actualFrozenSha256": "7f1ef23da246a8f535e4e00a5a3aef33e70f7772f7d502d1baef5e233da70fce",
+      "matches": true
+    }
+  ],
+  "ownerTestedStageSha256": "e0f760d1bccf50ef02ba33cbb934ff3317e8abedd54df3801e721b890098d966",
+  "capturedAdvertisedStageSha256": "fe8357390ed4d5ed599bbd0429df5ea6150f703c9f8b121819198d6b4fc8c05b",
+  "unchangedIndependentOracleSha256": "2783b8afa538b285b257af0ab5bcde9284cc4b5315c5e5100e1fc815034a3e8f",
+  "originalIndependentOracleSha256": "2783b8afa538b285b257af0ab5bcde9284cc4b5315c5e5100e1fc815034a3e8f"
+}

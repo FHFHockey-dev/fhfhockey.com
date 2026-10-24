@@ -1,0 +1,7 @@
+{
+  "status": "failed",
+  "checks": 4,
+  "requests": 4,
+  "aborted": 0,
+  "error": "expect(locator).toBeVisible() failed\n\nLocator: getByText(/Schedule partial: EDITION_B2_5/)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for getByText(/Schedule partial: EDITION_B2_5/)\n"
+}

@@ -1,0 +1,90 @@
+{
+  "lane": "C2",
+  "snapshot": "/tmp/fhfh-claude-c2-reconcile-de0wwl0t",
+  "corrected_baseline_pins": [
+    {
+      "path": "web/lib/sources/tweetLunaReview.ts",
+      "sha256": "1dc24189c12333628eb536f37556fe7fc958c2cac16163d77fd80b0a2dba2b94",
+      "source": "Current six-file local Luna base; absent from frozen release r1 context"
+    },
+    {
+      "path": "web/lib/sources/tweetLunaTransport.ts",
+      "sha256": "129dfdf337fee692fbf07959a5041651222108836631ecc192436edee988ada2",
+      "source": "Current six-file local Luna base; absent from frozen release r1 context"
+    },
+    {
+      "path": "web/lib/sources/tweetLunaReview.test.ts",
+      "sha256": "8a3e8adacd888215aa9ba4226331b3e3576c98e8d2fcc113e01a305a22074ce2",
+      "source": "Current six-file local Luna base; absent from frozen release r1 context"
+    },
+    {
+      "path": "web/scripts/review-ifttt-luna.ts",
+      "sha256": "03d37708a0ed6902162459cd61e82f70a1828c581e806e30eef4854bf9fa532d",
+      "source": "Current six-file local Luna base; absent from frozen release r1 context"
+    }
+  ],
+  "original_baseline_error": "Frozen r1 omits the four Luna patch base files; initial apply result preserved unchanged in CLAUDE-SOURCE-RECONCILIATION.json",
+  "patch_checks": [
+    {
+      "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C2/C2-LUNA-F1-F2-F3.patch",
+      "sha256": "b6dc017e138caaa6edc0d8cc000c7cad5fbdebae4492a648610220dce8bfc249",
+      "apply_check": 0,
+      "diagnostic": ""
+    },
+    {
+      "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C2/C2-NEWS-METADATA-R1.patch",
+      "sha256": "c7f29a2cdd9d762cccbb9c266b1b5969f164e015d6aef6b975ab4d608bdae04e",
+      "apply_check": 0,
+      "diagnostic": ""
+    },
+    {
+      "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C2/C2-NEWS-COPY.patch",
+      "sha256": "ded81fc5afb8ba7d7e935b51ad98539b45bc008d68e16b315256e7506e2e86a3",
+      "apply_check": 0,
+      "diagnostic": ""
+    }
+  ],
+  "final_files": [
+    {
+      "path": "web/components/NewsFeed/NewsCard.test.tsx",
+      "candidate_sha256": "49afc689051a6f097f3edf4edd43827f2fe474ecad1cb7b7b4df63e87bcc6170",
+      "canonical_sha256": "21f1e4feaa47763690c224d51d8710821dbd6d1dd4827f0c9566c679cde28591"
+    },
+    {
+      "path": "web/components/NewsFeed/NewsCard.tsx",
+      "candidate_sha256": "c517e65adab1bb1b76097f7ac403f3f4d4781ae5b46f204aba334dc4c4d627c7",
+      "canonical_sha256": "29e36122471afc47cc85fd5678d528ee3b68338b5e0836bbc63579cb80f3315d"
+    },
+    {
+      "path": "web/lib/homepageNewsCompatibility.test.tsx",
+      "candidate_sha256": "2c9c2e1fb1f5f5e4bd86c9199fd10cad980683d44e6da4dff889c8822043d3fe",
+      "canonical_sha256": "48321a8a5add55a9e9f4534cfd751dcf2e68d62b8576b696860a70288fde7ca7"
+    },
+    {
+      "path": "web/lib/sources/tweetLunaReview.test.ts",
+      "candidate_sha256": "8294f598b5209f531db93331498a84cc4de529c2a857f4e559a5a4c99d0dd36b",
+      "canonical_sha256": "8a3e8adacd888215aa9ba4226331b3e3576c98e8d2fcc113e01a305a22074ce2"
+    },
+    {
+      "path": "web/lib/sources/tweetLunaReview.ts",
+      "candidate_sha256": "818d85c4c9f183d857b852aef774d0d395e2ebe34c4dadebfe3c5e7785e9f9aa",
+      "canonical_sha256": "1dc24189c12333628eb536f37556fe7fc958c2cac16163d77fd80b0a2dba2b94"
+    },
+    {
+      "path": "web/lib/sources/tweetLunaTransport.ts",
+      "candidate_sha256": "6f67f0e819766eb8b7e712114f063681833ea87266b08443701231461e4d12d1",
+      "canonical_sha256": "129dfdf337fee692fbf07959a5041651222108836631ecc192436edee988ada2"
+    },
+    {
+      "path": "web/pages/api/v1/db/tweet-pattern-review.ts",
+      "candidate_sha256": "9c4f95ab257e088e0cbacb3dbdae36a1f85b2fa3f2cc6a13bb6cf176aea0aaea",
+      "canonical_sha256": "0145984ba46c82bc09698b047b00a395018b0e9488acd52cb5f1d9c616083445"
+    },
+    {
+      "path": "web/scripts/review-ifttt-luna.ts",
+      "candidate_sha256": "b3407da148f11fe4dd3185e8521f3c1c9b4688232acbff675c9d104902cec8e8",
+      "canonical_sha256": "03d37708a0ed6902162459cd61e82f70a1828c581e806e30eef4854bf9fa532d"
+    }
+  ],
+  "boundaries": "Isolated reconstruction only. No canonical write, test, production request or publication. News duplicate identity proposal excluded."
+}

@@ -1,0 +1,5 @@
+   × GoalieShareChart recovery and selected team > retries a withheld season on request and stays withheld until complete 15ms
+   × GoalieShareChart recovery and selected team > on a narrow screen > shows the first team with data when the default team has none 6ms
+   × GoalieShareChart recovery and selected team > on a narrow screen > hides the team selector when the season is withheld 4ms
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  3 failed | 17 passed (20)

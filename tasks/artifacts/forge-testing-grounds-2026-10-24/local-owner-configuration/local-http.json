@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-24T17:25:58Z",
+  "command": "curl --noproxy '*' --max-time 10 --silent --show-error --include http://127.0.0.1:3000/api/v1/forge/testing-grounds/access",
+  "exit_code": 0,
+  "credentials": "none; no Authorization or Cookie header",
+  "status": 401,
+  "body": {
+    "error": "unauthenticated"
+  },
+  "cache_control": "private, no-store, max-age=0",
+  "x_robots_tag": "noindex, nofollow",
+  "prior_receipt": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05/local-http.json",
+  "prior_status": 503,
+  "prior_error": "owner_not_configured",
+  "interpretation": "Existing server now accepts owner configuration syntax and denies absent credentials. This does not prove authenticated owner access.",
+  "provider_calls_from_this_request": 0,
+  "provider_call_evidence": "serverOwnerBoundary rejects missing bearer before lazy requireApiUser import",
+  "listener_pid_before_and_after": 49759,
+  "manual_restart_or_signal": false
+}

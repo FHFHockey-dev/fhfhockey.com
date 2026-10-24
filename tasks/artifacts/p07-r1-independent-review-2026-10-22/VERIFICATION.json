@@ -1,0 +1,20 @@
+{
+  "status": "held_two_reproduced_boundary_defects",
+  "application_edits": 0,
+  "external_calls": 0,
+  "independent_selected_tests": {
+    "passed": 81,
+    "failed": 3,
+    "findings": 2
+  },
+  "candidate_pins": 32,
+  "unchanged_reserved_pins": 3,
+  "fixed_snapshot_pins": 3372,
+  "extra_boundary_matches": 9,
+  "prior_stats_matches": 25,
+  "billing_files_preserved": 28,
+  "final_head": "84cb1229cd1c1cdd037c43e660d2a181304ada51",
+  "final_candidate_changes": [],
+  "original_C08": "passed_unchanged",
+  "blockers": []
+}

@@ -1,0 +1,46 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1901:5 › compact day and bench controls preserve saved intent and keyboard selection
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1901:5 › compact day and bench controls preserve saved intent and keyboard selection 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByText('· Local simulated Bench, not Yahoo placement. 6 players / 0 configured places · 6 over capacity; all retained.', { exact: true })
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByText('· Local simulated Bench, not Yahoo placement. 6 players / 0 configured places · 6 over capacity; all retained.', { exact: true })[22m
+
+
+      1966 |     expect(note.x + note.width).toBeLessThanOrEqual(page.viewportSize()!.width);
+      1967 |   };
+    > 1968 |   await expect(capacityDisclosure).toBeVisible();
+           |                                    ^
+      1969 |   await expect(bench).toHaveAccessibleDescription(await capacityDisclosure.innerText());
+      1970 |   await expectCapacityAboveSchedule();
+      1971 |   await bench.focus(); await page.keyboard.press("Space");
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1968:36
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../final-disclosure-controls-01/results/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../final-disclosure-controls-01/results/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../final-disclosure-controls-01/results/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../final-disclosure-controls-01/results/roster-schedule-optimizer--46fdc-tent-and-keyboard-selection-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:2238:32 › compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile
+[1A[2K  1 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1901:5 › compact day and bench controls preserve saved intent and keyboard selection 
+  1 passed (25.5s)

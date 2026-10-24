@@ -1,0 +1,26 @@
+{
+  "at": "2026-10-24T18:57:06.379580+00:00",
+  "files": [
+    {
+      "path": "tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md",
+      "sha256": "b4dcc57990546a990aef1cad73fa962caf5dea744fdf833c177f7d364d5e0a6c",
+      "bytes": 37398,
+      "lines": 324,
+      "mtime_ns": 1792043698052590217
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md",
+      "sha256": "b177dc88ceaf19310c46246aff5c8cdbc70023d93b6b81914660c64b21a25c37",
+      "bytes": 11598,
+      "lines": 194,
+      "mtime_ns": 1785605126561093475
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md",
+      "sha256": "9f445b650d174be733e048c722a86b2fd864cbce16cd583985f15f7bee1f18b9",
+      "bytes": 18568,
+      "lines": 146,
+      "mtime_ns": 1785605126561843606
+    }
+  ]
+}

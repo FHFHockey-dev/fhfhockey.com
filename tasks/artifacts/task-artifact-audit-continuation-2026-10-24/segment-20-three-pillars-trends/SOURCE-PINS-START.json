@@ -1,0 +1,23 @@
+[
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/prd-three-pillars-analytics.md",
+    "sha256": "abe1196d34e2dd026905633ef7c73dde51b9aadabc74e3ebda596a55017ffa6a",
+    "bytes": 19059,
+    "lines": 329,
+    "mtime_ns": 1785197963742227644
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md",
+    "sha256": "8e08a6572aac1c261a329eef7c279b3d297d5fb96011c4ee27066e5f62aa9e24",
+    "bytes": 24710,
+    "lines": 183,
+    "mtime_ns": 1785197963748458527
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/prd-trends.md",
+    "sha256": "0d33afd95c578bd709d7e93bc39cdcfb683da298d7fff6ced784301f75975117",
+    "bytes": 12011,
+    "lines": 112,
+    "mtime_ns": 1785605126583984838
+  }
+]

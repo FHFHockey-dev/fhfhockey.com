@@ -1,0 +1,94 @@
+--- web/lib/player-cards/aggregation.ts
++++ web/lib/player-cards/aggregation.ts
+@@ -41,6 +41,13 @@
+ /** Arithmetic only; this function makes no source, window or league-coverage claim. */
+ export function pooledMetric(metric: MetricDefinition, records: readonly Components[], gp: number): PooledValue {
+   if (!Number.isSafeInteger(gp) || gp < 0 || records.length !== gp) return missing("Metric rows do not match actual appearances");
++  for (const record of records) {
++    const numerator = sum([record], metric.numerator);
++    const denominator = metric.formula === "atoi" ? 1 : sum([record], metric.denominator);
++    if (numerator === null || denominator === null) return missing("Required component is missing, invalid or has incompatible TOI units");
++    if (metric.formula === "per60" && denominator === 0 && numerator > 0) return missing("Game events have zero compatible time exposure");
++    if (metric.formula === "percentage" && numerator > denominator) return missing("Game ratio numerator exceeds its compatible denominator");
++  }
+   const numerator = sum(records, metric.numerator);
+   const denominator = metric.formula === "atoi" ? gp : sum(records, metric.denominator);
+   if (numerator === null || denominator === null) return missing("Required component is missing, invalid or has incompatible TOI units");
+--- web/lib/player-cards/domain.test.ts
++++ web/lib/player-cards/domain.test.ts
+@@ -122,7 +122,7 @@
+     expect(aggregateWindow(selected, [r, r], source).values.sog60.state).toBe("missing");
+   });
+   it("withholds impossible, nonfinite and missing components without manufacturing zero", () => {
+-    const a = components(); a.individual.shots = 0;
++    const a = components(); a.individual.shots = 0; a.individual.goals = 0;
+     expect(pooledMetric(metric("shPct"), [a], 1).state).toBe("undefined");
+     a.individual.shots = 1; a.individual.goals = 2;
+     expect(pooledMetric(metric("shPct"), [a], 1).state).toBe("missing");
+@@ -135,7 +135,7 @@
+ 
+ describe("local adapter coverage and inactive integration boundaries", () => {
+   it("uses the complete declared same-definition population with no GP/TOI/position threshold", () => {
+-    const data = input(); data.players[1].records.forEach(row => { row.individual.toi = 1; row.individual.shots = 0; });
++    const data = input(); data.players[1].records.forEach(row => { row.individual.toi = 1; row.individual.shots = 0; row.individual.goals = 0; });
+     const result = adaptLocalSnapshot(data, 1001);
+     expect(result.state).not.toBe("rejected"); if (result.state === "rejected") return;
+     expect(result.readings.find(row => row.id === "sog60")?.rank).toMatchObject({ ordinal: 1, population: 2, percentile: 75 });
+--- /dev/null
++++ web/lib/player-cards/aggregation.r1.test.ts
+@@ -0,0 +1,55 @@
++import {describe,expect,it} from "vitest";
++import {pooledMetric,type Components} from "./aggregation";
++import {adaptLocalSnapshot,type LocalCardInput} from "./adapter";
++import {METRICS} from "./registry";
++import type {MetricId} from "./contracts";
++
++const metric=(id:MetricId)=>METRICS.find(metric=>metric.id===id)!;
++const counts=():Components=>({toiUnit:"seconds",individual:{toi:600,shots:2,goals:1,icf:4,iscfs:2,ixg:0.25,total_points:1},onIce:{toi:600,cf:10,scf:5,xgf:0.5,xga:1.5,gf:2,sf:8}});
++function population():LocalCardInput {
++  const settings:LocalCardInput["settings"]={season:20262027,gameType:"regular",strength:"all",cutoff:"2026-10-24T00:00:00Z",period:{mode:"appearances",count:5},seasonPolicy:"season-only-proposed",shortSamplePolicy:"allow-known-short-proposed",rankPolicy:"competition-midrank-proposed"};
++  const players=[1,2].map(playerId=>{
++    const appearances=[20,21].map(day=>({playerId,gameId:2026020000+day,season:20262027,gameType:"regular" as const,date:`2026-10-${day}`,played:true,completion:{status:"verified-final" as const,completedAt:`2026-10-${day}T23:00:00Z`,reference:"synthetic-final"}}));
++    return {frame:{playerId,season:20262027,gameType:"regular" as const,dateBasis:"UTC" as const,completeHistory:true,historyThrough:settings.cutoff,historyReference:"synthetic-history",appearances},records:appearances.map(game=>({...counts(),playerId,gameId:game.gameId,season:game.season,date:game.date,strength:"all" as const,sourceDefinition:"synthetic",sourceVersion:"v1",capturedAt:"2026-10-24T01:00:00Z",state:"ready" as const}))};
++  });
++  return {id:"synthetic-r1",origin:"synthetic",capturedAt:"2026-10-24T01:00:00Z",settings,source:{definition:"synthetic",version:"v1",definitionReference:"synthetic-definition",verifiedMetrics:METRICS.map(metric=>metric.id)},population:{scope:"synthetic-all-values",complete:true,reference:"synthetic-population",expectedPlayerIds:[1,2]},players};
++}
++
++describe("R1 per-game consistency before pooling",()=>{
++  it("does not borrow another game's TOI for positive individual or on-ice events",()=>{
++    const a=counts(),b=counts();a.individual.toi=0;a.individual.shots=10;b.individual.shots=0;
++    expect(pooledMetric(metric("sog60"),[a,b],2).state).toBe("missing");
++    a.onIce.toi=0;a.onIce.cf=10;b.onIce.cf=0;
++    expect(pooledMetric(metric("cf60"),[a,b],2).state).toBe("missing");
++    expect(pooledMetric(metric("atoi"),[a,b],2).value).toBe(5);
++  });
++  it.each(["shPct","oiShPct","ipp"] as const)("does not hide an impossible %s row in a valid pooled ratio",id=>{
++    const a=counts(),b=counts();
++    if(id==="shPct"){a.individual.goals=2;a.individual.shots=1;b.individual.goals=0;b.individual.shots=9;}
++    else if(id==="oiShPct"){a.onIce.gf=2;a.onIce.sf=1;b.onIce.gf=0;b.onIce.sf=9;}
++    else {a.individual.total_points=2;a.onIce.gf=1;b.individual.total_points=0;b.onIce.gf=9;}
++    expect(pooledMetric(metric(id),[a,b],2).state).toBe("missing");
++  });
++  it("distinguishes inconsistent positive/zero ratios from complete zero/zero ratios",()=>{
++    const a=counts();a.individual.goals=1;a.individual.shots=0;
++    expect(pooledMetric(metric("shPct"),[a],1).state).toBe("missing");
++    a.individual.goals=0;
++    expect(pooledMetric(metric("shPct"),[a],1).state).toBe("undefined");
++    a.individual.toi=0;
++    expect(pooledMetric(metric("sog60"),[a],1).state).toBe("undefined");
++    const b=counts();b.individual.shots=1;
++    expect(pooledMetric(metric("sog60"),[a,b],2).value).toBe(6);
++  });
++  it.each(["exposure","ratio"] as const)("propagates an inconsistent %s peer to affected coverage and rank only",kind=>{
++    const data=population(),peer=data.players[1].records;
++    if(kind==="exposure"){peer[0].individual.toi=0;peer[0].individual.shots=10;peer[1].individual.shots=0;}
++    else {peer[0].individual.goals=1;peer[0].individual.shots=0;}
++    const result=adaptLocalSnapshot(data,1);if(result.state==="rejected")throw new Error(result.reason);
++    const id=kind==="exposure"?"sog60":"shPct";
++    expect(result.readings.find(row=>row.id===id)?.value).not.toBeNull();
++    expect(result.readings.find(row=>row.id===id)?.rank).toBeNull();
++    expect(result.coverage[id]).toMatchObject({valid:1,knownUndefined:0,missingIncomplete:1,fullEligiblePopulationVerified:false});
++    expect(result.readings.find(row=>row.id==="atoi")?.rank?.population).toBe(2);
++    expect(result.selection.actualGp).toBe(2);
++  });
++});

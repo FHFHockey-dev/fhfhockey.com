@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:22236) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx (14 tests) 246ms
+
+ Test Files  1 passed (1)
+      Tests  14 passed (14)
+   Start at  14:48:49
+   Duration  1.19s (transform 194ms, setup 3ms, collect 400ms, tests 246ms, environment 276ms, prepare 40ms)
+

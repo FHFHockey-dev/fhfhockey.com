@@ -1,0 +1,8 @@
+__tests__/pages/api/v1/db/auditNstR1Additional.test.ts(355,41): error TS2345: Argument of type '(name: string, args: any) => Promise<{ data: null; error: { message: string; }; } | { data: any[]; error: null; } | { data: any[]; error: { message: string; }; }>' is not assignable to parameter of type 'NormalizedProcedure<(_name: string, a: any) => Promise<{ data: null; error: { message: string; }; } | { data: any[]; error: null; }>>'.
+  Type 'Promise<{ data: null; error: { message: string; }; } | { data: any[]; error: null; } | { data: any[]; error: { message: string; }; }>' is not assignable to type 'Promise<{ data: null; error: { message: string; }; } | { data: any[]; error: null; }>'.
+    Type '{ data: null; error: { message: string; }; } | { data: any[]; error: null; } | { data: any[]; error: { message: string; }; }' is not assignable to type '{ data: null; error: { message: string; }; } | { data: any[]; error: null; }'.
+      Type '{ data: any[]; error: { message: string; }; }' is not assignable to type '{ data: null; error: { message: string; }; } | { data: any[]; error: null; }'.
+        Type '{ data: any[]; error: { message: string; }; }' is not assignable to type '{ data: any[]; error: null; }'.
+          Types of property 'error' are incompatible.
+            Type '{ message: string; }' is not assignable to type 'null'.
+__tests__/pages/api/v1/db/auditNstR1Additional.test.ts(359,41): error TS18047: 'result.data' is possibly 'null'.

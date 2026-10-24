@@ -1,0 +1,8 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts scripts/qualify-native-players-offline.test.ts lib/player-forecasts/nativeContributionAdmission.test.ts lib/rosterScheduleData/forgeDailyBridge.test.ts lib/rosterScheduleData/planning.test.ts --reporter=json --outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/production-model-prototype/compatibility.json
+
+fatal: not a git repository (or any of the parent directories): .git
+(node:33855) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/production-model-prototype/compatibility.json

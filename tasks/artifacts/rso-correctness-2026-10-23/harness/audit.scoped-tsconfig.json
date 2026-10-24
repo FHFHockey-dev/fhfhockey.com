@@ -1,0 +1,20 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "incremental": false
+  },
+  "include": [
+    "next-bootstrap.d.ts",
+    "yahoo-fantasy.d.ts",
+    "lib/player-forecasts/resolvedPlanningForecast.ts",
+    "lib/player-forecasts/rsoUsePolicy.ts",
+    "lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+    "lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    ".next",
+    ".next-*",
+    "next-env.d.ts"
+  ]
+}

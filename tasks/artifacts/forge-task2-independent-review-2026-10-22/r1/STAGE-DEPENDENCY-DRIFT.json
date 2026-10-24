@@ -1,0 +1,24 @@
+{
+  "path": "web/lib/projections/utils/market-output-builders.ts",
+  "testedSha256": "0fb7462f4f0b89b5938b8afb18e191f894de553f639c71f4bd7b57e2460bb776",
+  "currentObservedSha256": "1daa4512af0109f4aa99bbff6ed97065a9516a34446d52f7a3f57d79b9067b43",
+  "newStageImports": {
+    "buildModelMarketProbabilityFlagRow": {
+      "existsInTestedDependency": false,
+      "existsInCurrentDependency": true
+    },
+    "compareModelWithMarket": {
+      "existsInTestedDependency": false,
+      "existsInCurrentDependency": true
+    },
+    "forgePropOverProbability": {
+      "existsInTestedDependency": false,
+      "existsInCurrentDependency": true
+    },
+    "quotesFromMarketSummary": {
+      "existsInTestedDependency": false,
+      "existsInCurrentDependency": true
+    }
+  },
+  "meaning": "Declared new stage requires symbols absent from tested dependency. Concurrent source bytes are observed evidence, not accepted as candidate scope."
+}

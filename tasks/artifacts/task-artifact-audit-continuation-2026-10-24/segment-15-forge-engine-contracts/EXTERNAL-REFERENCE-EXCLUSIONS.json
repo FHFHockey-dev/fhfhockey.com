@@ -1,0 +1,62 @@
+{
+  "at": "2026-10-24T19:10:55.687792+00:00",
+  "entries": [
+    {
+      "source": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+      "line": 215,
+      "external_reference": "/Users/tim/Documents/FHFH-private/forge-metadata-feasibility-20251007-20260113-v1/REPORT.md",
+      "coverage": "metadata-only reference; outside authorized tasks audit tree, not opened",
+      "claim_scope": "Any hash/status is inherited from this dated source, not independently checked here."
+    },
+    {
+      "source": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+      "line": 216,
+      "external_reference": "/Users/tim/Documents/FHFH-private/forge-metadata-feasibility-20251007-20260113-v1/cohort-proposal.json",
+      "coverage": "metadata-only reference; outside authorized tasks audit tree, not opened",
+      "claim_scope": "Any hash/status is inherited from this dated source, not independently checked here."
+    },
+    {
+      "source": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+      "line": 217,
+      "external_reference": "/Users/tim/Documents/FHFH-private/forge-metadata-feasibility-20251007-20260113-v1/protocol/reviews/completed-metadata-feasibility-acceptance-v1.json",
+      "coverage": "metadata-only reference; outside authorized tasks audit tree, not opened",
+      "claim_scope": "Any hash/status is inherited from this dated source, not independently checked here."
+    },
+    {
+      "source": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+      "line": 225,
+      "external_reference": "/tmp/forge-identity-mapping-review-20261015/evaluator-admission-v1.json",
+      "coverage": "metadata-only reference; outside authorized tasks audit tree, not opened",
+      "claim_scope": "Any hash/status is inherited from this dated source, not independently checked here."
+    },
+    {
+      "source": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+      "line": 226,
+      "external_reference": "/Users/tim/Documents/FHFH-private/forge-broader-benchmark-approval-20261015-v1/PROPOSAL.md",
+      "coverage": "metadata-only reference; outside authorized tasks audit tree, not opened",
+      "claim_scope": "Any hash/status is inherited from this dated source, not independently checked here."
+    },
+    {
+      "source": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+      "line": 227,
+      "external_reference": "/Users/tim/Documents/FHFH-private/forge-broader-benchmark-approval-20261015-v1/proposed-allocation.json",
+      "coverage": "metadata-only reference; outside authorized tasks audit tree, not opened",
+      "claim_scope": "Any hash/status is inherited from this dated source, not independently checked here."
+    },
+    {
+      "source": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+      "line": 228,
+      "external_reference": "/Users/tim/Documents/FHFH-private/forge-broader-benchmark-approval-20261015-v1/proposal-review-v1.json",
+      "coverage": "metadata-only reference; outside authorized tasks audit tree, not opened",
+      "claim_scope": "Any hash/status is inherited from this dated source, not independently checked here."
+    },
+    {
+      "source": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+      "line": 277,
+      "external_reference": "/Users/tim/Documents/FHFH-private/forge-identity-offline-rereview-20261015-v1/current-identity-offline-review-v1.json",
+      "coverage": "metadata-only reference; outside authorized tasks audit tree, not opened",
+      "claim_scope": "Any hash/status is inherited from this dated source, not independently checked here."
+    }
+  ],
+  "action": "No external private file/body/archive access, identity lookup, allocation, data acquisition or model execution."
+}

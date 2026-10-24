@@ -1,0 +1,31 @@
+{
+  "packet": "P05 pickup",
+  "branch": "octoberBranch",
+  "handoffHead": "a565238f670edc4cf65da79ad52ba82ec41f3b71",
+  "beforeSnapshot": "/tmp/fhfh-queue-check-krtch0yz/isolation/snapshot",
+  "testedSnapshot": "/tmp/fhfh-queue-check-o5qw7xve/isolation/snapshot",
+  "testedHead": "a565238f670edc4cf65da79ad52ba82ec41f3b71",
+  "applicationFiles": {
+    "web/components/PlayerPickupTable/PlayerPickupTable.tsx": {
+      "before": "b022eec9f26e9ae6fe292ed3480fea9a245cc94b7df8fa7c2461d8fcac8994b1",
+      "fixed": "40b103735d4b43ae665a983bfaf5813ea2bcf996681037e9a8e788f85d87d670"
+    },
+    "web/components/PlayerPickupTable/PlayerPickupTable.test.ts": {
+      "before": "0ba8f93940814366ee4ab697ffa8593b268b8930b0ffa921840d8485c17aeecd",
+      "fixed": "7e81c1c4afc077edb848226ea5fc0135742f0a367ed48063a755880590c901ed"
+    }
+  },
+  "retainedDependencies": {
+    "web/lib/integrations/yahoo/rosterPlanning.ts": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+    "web/lib/integrations/yahoo/rosterPlanning.test.ts": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+    "web/pages/api/v1/transactions/ownership-trends.ts": "48c6d6ec40975bc96323debfa01053f61bbfc93521a4b7760616e294a400efc6",
+    "web/lib/dashboard/playerOwnership.ts": "d0070eabdfd00edf91dfc7bb810747a7c30855acf9cf4b3b935b443ae79238de"
+  },
+  "billingProtectedSections": {
+    "provider_sync_state_and_entire_effect": "eae18979618e400aefd9e98b3d3499041a7ae6bb74f7120a4b3c4782c60e0eaa",
+    "provider_notice_and_eligibility_ui": "8abd0722535e438c0b530238573a9ccc4c1d8f701470ff68653b1b6ca4a84d14",
+    "import { useProviderSyncAccess }": "10c75218eb4f8199cdbba99b9aeb33d698cdf38b6e66b8312018c13a73472cbb",
+    "import ProviderSyncNotice": "fc01e8d34cfa96af3f1803ac3da5c6d04d92988cdcd1233d3229654e4bedfdab",
+    "if (leagueContext && !isYahooPickupPlayer": "da9a36bba3c2f7336765891c4fa10d4f290435a907f420b96e2f171fce2e0eeb"
+  }
+}

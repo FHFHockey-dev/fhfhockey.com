@@ -1,0 +1,210 @@
+
+> web@0.1.0 test
+> vitest --run components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx -t does not require goalie-only
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:76185) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx (13 tests | 2 failed | 6 skipped) 1125ms
+   ✓ RSO live grid points callback > does not require goalie-only weighted WINS_GOALIE to complete a skater game 268ms
+   × RSO live grid points callback > does not require goalie-only weighted LOSSES_GOALIE to complete a skater game 157ms
+     → Unable to find a label with the text of: Expected fantasy points: 7.0
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33maria-label[39m=[32m"Synthetic player, C, 2026-10-23"[39m
+  [33mclass[39m=[32m"_cellButton_5a1c93"[39m
+  [33mdata-chip[39m=[32m"7"[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_nameLine_5a1c93"[39m
+  [36m>[39m
+    [36m<img[39m
+      [33malt[39m=[32m""[39m
+      [33mclass[39m=[32m"_logo_5a1c93"[39m
+      [33mdata-nimg[39m=[32m"1"[39m
+      [33mdecoding[39m=[32m"async"[39m
+      [33mheight[39m=[32m"18"[39m
+      [33mloading[39m=[32m"lazy"[39m
+      [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FMIN.png&w=48&q=75"[39m
+      [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FMIN.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&w=48&q=75 2x"[39m
+      [33mstyle[39m=[32m"color: transparent;"[39m
+      [33mwidth[39m=[32m"18"[39m
+    [36m/>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_name_5a1c93"[39m
+    [36m>[39m
+      [0mplayer[0m
+    [36m</span>[39m
+    [36m<span[39m
+      [33maria-label[39m=[32m"Locked"[39m
+      [33mclass[39m=[32m"_lock_5a1c93"[39m
+      [33mtitle[39m=[32m"Locked"[39m
+    [36m>[39m
+      [0m🔒[0m
+    [36m</span>[39m
+  [36m</span>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_opp_5a1c93"[39m
+  [36m>[39m
+    [0mvsTOR[0m
+  [36m</span>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_forecastPoints_5a1c93"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33maria-label[39m=[32m"Expected fantasy points: unavailable"[39m
+      [33mclass[39m=[32m"_points_5a1c93"[39m
+      [33mtitle[39m=[32m"Expected fantasy points unavailable: an applicable weighted stat or its approved use is missing."[39m
+    [36m>[39m
+      [0m—[0m
+    [36m</span>[39m
+  [36m</span>[39m
+[36m</button>[39m
+   ✓ RSO live grid points callback > does not require goalie-only weighted GOALS_AGAINST_GOALIE to complete a skater game 146ms
+   ✓ RSO live grid points callback > does not require goalie-only weighted SHOTS_AGAINST_GOALIE to complete a skater game 153ms
+   ✓ RSO live grid points callback > does not require goalie-only weighted SAVES_GOALIE to complete a skater game 137ms
+   ✓ RSO live grid points callback > does not require goalie-only weighted SHUTOUTS_GOALIE to complete a skater game 130ms
+   × RSO live grid points callback > does not require goalie-only weighted GAMES_STARTED to complete a skater game 132ms
+     → Unable to find a label with the text of: Expected fantasy points: 7.0
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33maria-label[39m=[32m"Synthetic player, C, 2026-10-23"[39m
+  [33mclass[39m=[32m"_cellButton_5a1c93"[39m
+  [33mdata-chip[39m=[32m"7"[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_nameLine_5a1c93"[39m
+  [36m>[39m
+    [36m<img[39m
+      [33malt[39m=[32m""[39m
+      [33mclass[39m=[32m"_logo_5a1c93"[39m
+      [33mdata-nimg[39m=[32m"1"[39m
+      [33mdecoding[39m=[32m"async"[39m
+      [33mheight[39m=[32m"18"[39m
+      [33mloading[39m=[32m"lazy"[39m
+      [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FMIN.png&w=48&q=75"[39m
+      [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FMIN.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&w=48&q=75 2x"[39m
+      [33mstyle[39m=[32m"color: transparent;"[39m
+      [33mwidth[39m=[32m"18"[39m
+    [36m/>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_name_5a1c93"[39m
+    [36m>[39m
+      [0mplayer[0m
+    [36m</span>[39m
+    [36m<span[39m
+      [33maria-label[39m=[32m"Locked"[39m
+      [33mclass[39m=[32m"_lock_5a1c93"[39m
+      [33mtitle[39m=[32m"Locked"[39m
+    [36m>[39m
+      [0m🔒[0m
+    [36m</span>[39m
+  [36m</span>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_opp_5a1c93"[39m
+  [36m>[39m
+    [0mvsTOR[0m
+  [36m</span>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_forecastPoints_5a1c93"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33maria-label[39m=[32m"Expected fantasy points: unavailable"[39m
+      [33mclass[39m=[32m"_points_5a1c93"[39m
+      [33mtitle[39m=[32m"Expected fantasy points unavailable: an applicable weighted stat or its approved use is missing."[39m
+    [36m>[39m
+      [0m—[0m
+    [36m</span>[39m
+  [36m</span>[39m
+[36m</button>[39m
+   ↓ RSO live grid points callback > renders complete FP from the current admitted read
+   ↓ RSO live grid points callback > renders unavailable FP for a missing weighted key instead of the known subtotal
+   ↓ RSO live grid points callback > renders goalie expected and if-starts FP with distinct semantics
+   ↓ RSO live grid points callback > does not invent an if-starts estimate at start probability 0
+   ↓ RSO live grid points callback > does not invent an if-starts estimate at start probability null
+   ↓ RSO live grid points callback > does not admit numeric native forecasts without target review
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx > RSO live grid points callback > does not require goalie-only weighted LOSSES_GOALIE to complete a skater game
+ FAIL  components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx > RSO live grid points callback > does not require goalie-only weighted GAMES_STARTED to complete a skater game
+TestingLibraryElementError: Unable to find a label with the text of: Expected fantasy points: 7.0
+
+Ignored nodes: comments, script, style
+[36m<button[39m
+  [33maria-label[39m=[32m"Synthetic player, C, 2026-10-23"[39m
+  [33mclass[39m=[32m"_cellButton_5a1c93"[39m
+  [33mdata-chip[39m=[32m"7"[39m
+  [33mtype[39m=[32m"button"[39m
+[36m>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_nameLine_5a1c93"[39m
+  [36m>[39m
+    [36m<img[39m
+      [33malt[39m=[32m""[39m
+      [33mclass[39m=[32m"_logo_5a1c93"[39m
+      [33mdata-nimg[39m=[32m"1"[39m
+      [33mdecoding[39m=[32m"async"[39m
+      [33mheight[39m=[32m"18"[39m
+      [33mloading[39m=[32m"lazy"[39m
+      [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FMIN.png&w=48&q=75"[39m
+      [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FMIN.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&w=48&q=75 2x"[39m
+      [33mstyle[39m=[32m"color: transparent;"[39m
+      [33mwidth[39m=[32m"18"[39m
+    [36m/>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_name_5a1c93"[39m
+    [36m>[39m
+      [0mplayer[0m
+    [36m</span>[39m
+    [36m<span[39m
+      [33maria-label[39m=[32m"Locked"[39m
+      [33mclass[39m=[32m"_lock_5a1c93"[39m
+      [33mtitle[39m=[32m"Locked"[39m
+    [36m>[39m
+      [0m🔒[0m
+    [36m</span>[39m
+  [36m</span>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_opp_5a1c93"[39m
+  [36m>[39m
+    [0mvsTOR[0m
+  [36m</span>[39m
+  [36m<span[39m
+    [33mclass[39m=[32m"_forecastPoints_5a1c93"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33maria-label[39m=[32m"Expected fantasy points: unavailable"[39m
+      [33mclass[39m=[32m"_points_5a1c93"[39m
+      [33mtitle[39m=[32m"Expected fantasy points unavailable: an applicable weighted stat or its approved use is missing."[39m
+    [36m>[39m
+      [0m—[0m
+    [36m</span>[39m
+  [36m</span>[39m
+[36m</button>[39m
+ ❯ Object.getElementError node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getAllByLabelText node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/queries/label-text.js:111:38
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx:66:19
+     64|     "does not require goalie-only weighted %s to complete a skater gam…
+     65|       const { cell } = await mount({ stats: { GOALS: 1, ASSISTS: 2 }, …
+     66|       expect(cell.getByLabelText("Expected fantasy points: 7.0")).toBe…
+       |                   ^
+     67|     });
+     68| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 5 passed | 6 skipped (13)
+   Start at  12:47:00
+   Duration  2.08s (transform 372ms, setup 3ms, collect 637ms, tests 1.12s, environment 135ms, prepare 30ms)
+

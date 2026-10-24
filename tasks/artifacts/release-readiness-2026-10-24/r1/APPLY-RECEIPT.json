@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-24T14:42:30.683126+00:00",
+  "leasePath": "web/__tests__/pages/api/v1/start-chart.test.ts",
+  "before": "9f70e810de91003b78d4b64d3e8a06c6740493d1902a99331f94e41405664504",
+  "after": "eebd86016d6cc3809ab15b2e936b884464d41666519d689ce26112a967d203c7",
+  "patch": "a8a2f2bf20949e303b550383047d38daa13eae2d6d4d169511ce6a5a694aa0cf",
+  "onlyChangedCandidatePath": [
+    "web/__tests__/pages/api/v1/start-chart.test.ts"
+  ],
+  "canonicalAfterSha256": "eebd86016d6cc3809ab15b2e936b884464d41666519d689ce26112a967d203c7",
+  "oldArchiveStillMatches": true,
+  "oldFailureReceiptSha256": "7ce563890c23c5a51baba9180a66c0d85580a48b15a16643745f0d14deb713a4",
+  "oldDiagnosticsReceiptSha256": "0dc3abb4b34a7c2d871e2b4e7b45b153bd8b3e46b7602ce5e992b9a6eedbffb0",
+  "sourceRef": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "stagedPaths": []
+}

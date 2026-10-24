@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-24T20:58:50.778350+00:00",
+  "action": "git push exact candidate SHA to refs/heads/master",
+  "repository": "FHFHockey-dev/fhfhockey.com",
+  "candidate_commit": "212d38c65c3f48fc6f6ec820cd4edbacd1d364e8",
+  "target_project": "fhfhockey / prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+  "target_team": "team_KVFicHhQJARTbO6wRD2x6jpq",
+  "target_environment": "production",
+  "status": "Denied by automatic approval review before process creation; command did not execute. No uncertain outcome.",
+  "reason": "Push to protected/default master creates an external production-release commitment and likely triggers deployments; review found no trusted user authorization for this exact publication.",
+  "completed": [
+    "Two-file production-based commit prepared in temporary object directory; canonical index and local refs unchanged",
+    "25 focused tests passed; scoped TypeScript and ESLint passed",
+    "Current remote master and all four linked Vercel project settings/ignore commands verified",
+    "Exact-SHA pre-publication deployment lookup returned zero entries"
+  ],
+  "expected_deployments": {
+    "entries": 4,
+    "web_builds": 1,
+    "ignored_companions": 3
+  },
+  "required_next": "Direct trusted user approval for exact candidate publication and resulting web production deployment. Do not retry or route around denial through GitHub API, alternate ref, another worker or deployment command.",
+  "production_requests": 0,
+  "production_writes": 0,
+  "builds_started": 0,
+  "retries": 0
+}

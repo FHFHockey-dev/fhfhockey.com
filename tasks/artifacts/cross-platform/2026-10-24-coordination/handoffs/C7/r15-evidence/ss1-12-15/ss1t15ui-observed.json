@@ -1,0 +1,25 @@
+{
+  "M1": {
+    "calls": [
+      [
+        "/api/v1/social-share/game-grid?weekStart=2026-10-26&selectedDates=2026-10-27%2C2026-10-28",
+        "Bearer tok-editor-a"
+      ],
+      [
+        "/api/v1/social-share/game-grid?weekStart=2026-10-26&selectedDates=2026-10-27%2C2026-10-28",
+        "Bearer tok-editor-b"
+      ]
+    ]
+  },
+  "M2": {
+    "calls": 2
+  },
+  "M3": {
+    "thrown": "Invalid as-of timestamp.",
+    "apiCalls": 0
+  },
+  "M4": {
+    "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26",
+    "card": "grid"
+  }
+}

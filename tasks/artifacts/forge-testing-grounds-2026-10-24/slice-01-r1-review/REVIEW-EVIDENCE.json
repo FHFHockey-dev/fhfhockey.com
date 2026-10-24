@@ -1,0 +1,46 @@
+{
+  "verdict": "ACCEPT WITH LIMITS",
+  "finding": "R1/P2 resolved on new pins only",
+  "baseHead": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "candidateHashes": {
+    "web/lib/forge-testing-grounds/operationalProgress.ts": "60fdf02b9c1480b1c3a3066e5ebf4f22254bc9c7902c154300ce77015939b5c7",
+    "web/lib/forge-testing-grounds/operationalProgress.test.ts": "886d74890917da528fe1c787889d274f7cf004b3061606d406d5edfa973a33fd"
+  },
+  "pinChecks": {
+    "new": 27,
+    "protected": 28,
+    "matches": 55,
+    "drift": 0
+  },
+  "tests": {
+    "originalR1CounterexamplesPassed": 2,
+    "additionalPrecisionControlsPassed": 6,
+    "unrelatedSkipped": 18,
+    "failed": 0,
+    "executions": 1
+  },
+  "scopedTypeScript": "passed es2015 target",
+  "scopedESLint": "passed",
+  "originalFailureEvidence": "unchanged",
+  "priorOwnerFailures": "documented in retained owner checks.log; not reproduced or erased",
+  "blockedChecks": [],
+  "runningOperations": [],
+  "notRun": [
+    "owner27-test/full application suite",
+    "runner-A namespace review",
+    "browser/Next server/build",
+    "host/provider/production/model pilot"
+  ],
+  "boundaries": {
+    "ownerFilesEdited": 0,
+    "sharedFilesEdited": 0,
+    "gitMutations": 0,
+    "subagents": 0,
+    "externalRequests": 0
+  },
+  "remainingLimits": [
+    "approximate numeric duration display",
+    "pure helpers do not provide durable runner/auth/storage/cohort/sealing/live-data acceptance",
+    "Scout retains acceptance/integration authority"
+  ]
+}

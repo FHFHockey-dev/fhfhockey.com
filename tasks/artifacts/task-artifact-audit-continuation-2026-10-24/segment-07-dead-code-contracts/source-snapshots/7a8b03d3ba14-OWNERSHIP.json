@@ -1,0 +1,26 @@
+{
+  "id": "WIGO-DATA-FIX-20261024",
+  "at": "2026-10-24T16:33:32.024418+00:00",
+  "owner": "Codex WiGO investigator, delegated by Scout; no workers",
+  "authorization": "TJ approval relayed in trusted parent delegation for local WiGO fixes and focused tests",
+  "checkout": "/Users/tim/Code/fhfhockey.com",
+  "branch": "octoberBranch per sole-checkout instruction; Git inspection prohibited",
+  "write_paths": {
+    "web/pages/api/v1/db/calculate-wigo-stats.ts": "69014f862d3a3013827cc1fff2e5335d0609da2e4cb02621bc4a964580d7e0ec",
+    "web/utils/fetchWigoPlayerStats.ts": "fc89f01637a332d5cb30b7f90e9991724bd4431ec9799a0ff39c20b941469210",
+    "web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts": "6cc5edf0cfcb0071fb82f6a662176a3ea804a372b7ea5ec32367c6297220a283",
+    "web/utils/fetchWigoPlayerStats.test.ts": "fcd21583653912ff8c19345909abcc103b148c74f74bda1a7bd0605cf6f68ef6"
+  },
+  "baseline_note": "Captured current working-tree bytes; source pins unchanged from offline investigation. Exact Git dirty state unqueried under explicit no-Git restriction. All pre-existing bytes preserved in baseline copies. No matching lease for these four exact files in current coordinator/Claude lease records.",
+  "preserved_read_only": [
+    "web/pages/wigoCharts.tsx",
+    "web/__tests__/pages/wigoCharts.test.tsx",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/REPORT.md",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/offline-results.json",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/**"
+  ],
+  "scope": "Align NST to valid unique NHL recent appearances; fail source reads; prevent legacy rate override of supported recent rates; focused offline regression tests. Preserve cross-season regular-season semantics; do not fill true gaps.",
+  "resources": "No server/ports/cache; shared /private/tmp/fhfh-heavy.lock acquired atomically before checks, never stolen.",
+  "limits": "No Git, live reads, writes/jobs/backfill/refresh/deploy/dependencies/lockfile/schema changes. Independent review required before acceptance.",
+  "status": "local implementation starting"
+}

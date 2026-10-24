@@ -1,0 +1,155 @@
+{
+  "at": "2026-10-24T21:08:53.688780+00:00",
+  "base": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "snapshot": "/tmp/fhfh-claude-production-compose-vh5ae_ra",
+  "selected": {
+    "web/components/GoalieShareChart/GoalieShareChart.module.scss": {
+      "sha256": "1352a81560e50128c75709d29ad65eed1295562834746e7cf2d18948e65d138b",
+      "source": "Exact C1 reconstructed final patch chain"
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx": {
+      "sha256": "fef6ef9c2b4b4fd754333d322b1ac31d5193c27a17b098c2c3d7a0b01a686536",
+      "source": "Exact C1 reconstructed final patch chain"
+    },
+    "web/components/GoalieShareChart/index.tsx": {
+      "sha256": "b632a0cae6a50174012264950b7a0ca1b22402811a7162024216c40ecf09949c",
+      "source": "Exact C1 reconstructed final patch chain"
+    },
+    "web/components/LineCombinations/LineCombinationsGrid.tsx": {
+      "sha256": "fb5c6a3c0d50f1c9f1abca1de82527420cc240b3ba3c4b125c466485b18c6de7",
+      "source": "Exact C1 reconstructed final patch chain"
+    },
+    "web/components/ShotVisualization/ShotVisualization.tsx": {
+      "sha256": "a563dadeed8e41915c11258019a0a97cbb0872622391307fa069a39daec2b921",
+      "source": "Exact C1 reconstructed final patch chain"
+    },
+    "web/components/TeamTabNavigation/TeamTabNavigation.test.tsx": {
+      "sha256": "6312ca9177389c01db342826b4833f99facc9729ddbacd4f737b21ae245dbae0",
+      "source": "Exact C1 reconstructed final patch chain"
+    },
+    "web/components/TeamTabNavigation/TeamTabNavigation.tsx": {
+      "sha256": "3e9fd15559b22ec0949e176086531be5348a92ac1efc0dcd4beebc2d92730fb6",
+      "source": "Exact C1 reconstructed final patch chain"
+    },
+    "web/hooks/useShotData.test.tsx": {
+      "sha256": "7c78ae8c32883b6c035c2ba3d12ee6f50e04b3c3b3293770f33f7d0529aee0f2",
+      "source": "Exact C1 reconstructed final patch chain"
+    },
+    "web/hooks/useShotData.ts": {
+      "sha256": "a5a77ced8be87b36e34ffe71003e4df48942f34c7af1de43608736f7074af4c1",
+      "source": "Exact C1 reconstructed final patch chain"
+    },
+    "web/pages/stats/team/[teamAbbreviation].tsx": {
+      "sha256": "561a048fe68f4f49fb4a7bc54eb3c87be39fcb90c87eca4002dd81f7b205957c",
+      "source": "Exact C1 reconstructed final patch chain"
+    },
+    "web/styles/Stats.module.scss": {
+      "sha256": "e0dbf85fab25a006ce4b5f7be97ef7c355c519e34edba385c5226a157f15d8d8",
+      "source": "Exact C1 reconstructed final patch chain"
+    },
+    "web/__tests__/pages/wigoCharts.test.tsx": {
+      "sha256": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b",
+      "source": "Exact C4 reconstructed final patch chain"
+    },
+    "web/components/buyLowSellHigh/BlshPlayerDetail.module.scss": {
+      "sha256": "3527dd432fb53cafdb426e69b08e395e684103fb85ca512c0743a0b37e200cff",
+      "source": "Exact C4 reconstructed final patch chain"
+    },
+    "web/components/buyLowSellHigh/BlshPlayerDetail.tsx": {
+      "sha256": "8d599804461848e162fa566bea5e571375f45f965bbc54afbbc3b3475613fb3b",
+      "source": "Exact C4 reconstructed final patch chain"
+    },
+    "web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx": {
+      "sha256": "6bf7a3a0e9788564ab4889b5377634be1aefccf730f0c8aa56c187ce643d86c7",
+      "source": "Exact C4 reconstructed final patch chain"
+    },
+    "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx": {
+      "sha256": "400ccb4b711560ae32168deba45d371301f79199ad704b695b678091b40135e0",
+      "source": "Exact C4 reconstructed final patch chain"
+    },
+    "web/pages/wigoCharts.tsx": {
+      "sha256": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151",
+      "source": "Exact C4 reconstructed final patch chain"
+    },
+    "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts": {
+      "sha256": "f1d3238b68c45d43eb15c77825bed0a6e718779c8bccf34efccadafdefc6c8c6",
+      "source": "Exact C5 reconstructed final patch chain"
+    },
+    "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts": {
+      "sha256": "c2de0f7e2d86d5e26e87592428e0f112004ac1c30d5407ec0d01356513cc977e",
+      "source": "Exact C5 reconstructed final patch chain"
+    },
+    "web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts": {
+      "sha256": "f16fad19188630ced0a9d32c53a91b5a969cee0b4e45b6cee5c2e2ca98899b27",
+      "source": "Exact C5 reconstructed final patch chain"
+    },
+    "web/pages/api/internal/yahoo-live-draft.ts": {
+      "sha256": "20c99628240be857c349a3a2b97c36fc48a58519f7a30c06cb33a71fd1f8abbe",
+      "source": "Exact C5 reconstructed final patch chain"
+    },
+    "web/pages/api/v1/db/update-drafted-prospects.ts": {
+      "sha256": "e4c5e476c50e57be341498a615ad0517ccd9f918937f42d85410f8a7c1df9881",
+      "source": "Exact C5 reconstructed final patch chain"
+    },
+    "web/hooks/useTeams.ts": {
+      "sha256": "9ee3009176c2f1a30e701c7dcfc3ceac0a51b4b502644c7ef486d00118f4b284",
+      "source": "Final accepted r1 Grid reader prerequisite",
+      "earlier_manifest_sha256": "9ee3009176c2f1a30e701c7dcfc3ceac0a51b4b502644c7ef486d00118f4b284"
+    },
+    "web/lib/NHL/client/index.ts": {
+      "sha256": "4bc8d78b73ea4c04bb8325f9504980ee140ccf954f001c70199e805b11b89546",
+      "source": "Final accepted r1 Grid reader prerequisite",
+      "earlier_manifest_sha256": "4bc8d78b73ea4c04bb8325f9504980ee140ccf954f001c70199e805b11b89546"
+    },
+    "web/lib/NHL/client/sharedRead.ts": {
+      "sha256": "d3692fb7eedb6ac8ba9e3e440ff611248ddd818ba84ba37562c3e43c184d582d",
+      "source": "Final accepted r1 Grid reader prerequisite",
+      "earlier_manifest_sha256": "d3692fb7eedb6ac8ba9e3e440ff611248ddd818ba84ba37562c3e43c184d582d"
+    },
+    "web/lib/NHL/client/sharedRead.test.ts": {
+      "sha256": "ea4cf9ab6036d762c8687a8bb9a5d3e03797c18b95902eda3e32076a43585e66",
+      "source": "Final accepted r1 Grid reader prerequisite",
+      "earlier_manifest_sha256": "ea4cf9ab6036d762c8687a8bb9a5d3e03797c18b95902eda3e32076a43585e66"
+    },
+    "web/lib/NHL/client/index.test.tsx": {
+      "sha256": "89b43299bf5d0a6e15a300802456166fa5c02beeee0ad29466990eb46fc8f597",
+      "source": "Final accepted r1 Grid reader prerequisite",
+      "earlier_manifest_sha256": "60ae4231e3b77a15776788ca2d769ae447c57b32a87698891344fede6f51b985"
+    },
+    "web/lib/dashboard/clientFetchCache.ts": {
+      "sha256": "33d64d2cd4e0e4441a012aae6beec075781fcf8961e35182c993bdfd4ad140a3",
+      "source": "Final accepted r1 Grid reader prerequisite",
+      "earlier_manifest_sha256": "33d64d2cd4e0e4441a012aae6beec075781fcf8961e35182c993bdfd4ad140a3"
+    },
+    "web/lib/dashboard/clientFetchCache.test.ts": {
+      "sha256": "2616754e8e787c8917893048f6401055ee6ee6b3ebfe8eded9ce01f9a75eeb31",
+      "source": "Final accepted r1 Grid reader prerequisite",
+      "earlier_manifest_sha256": "2616754e8e787c8917893048f6401055ee6ee6b3ebfe8eded9ce01f9a75eeb31"
+    },
+    "web/__tests__/pages/stats/team/teamAbbreviation.test.tsx": {
+      "sha256": "71dd3fb4234009950c6bad3cb7f5b0b047aa6ff198fb8648888d08987c9de16b",
+      "source": "Exact C1 retained reviewed team-page tests"
+    }
+  },
+  "test_files": [
+    "components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+    "components/TeamTabNavigation/TeamTabNavigation.test.tsx",
+    "hooks/useShotData.test.tsx",
+    "__tests__/pages/wigoCharts.test.tsx",
+    "components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx",
+    "__tests__/pages/api/internal/yahoo-live-draft.test.ts",
+    "__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+    "__tests__/pages/api/v1/db/update-drafted-prospects.test.ts",
+    "lib/NHL/client/sharedRead.test.ts",
+    "lib/NHL/client/index.test.tsx",
+    "lib/dashboard/clientFetchCache.test.ts",
+    "__tests__/pages/stats/team/teamAbbreviation.test.tsx"
+  ],
+  "lanes": [
+    "C1",
+    "C4",
+    "C5"
+  ],
+  "status": "Prepared for offline production composition checks, no publication",
+  "boundaries": "No model/runner/data activation, env, SQL or application writes in canonical checkout. Social access and C3 isolated sources excluded."
+}

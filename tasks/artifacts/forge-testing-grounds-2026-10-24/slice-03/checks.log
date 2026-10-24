@@ -1,0 +1,39 @@
+COMMAND: npm test -- --run lib/forge-testing-grounds/boundedWorker.test.ts --maxWorkers=1 --no-file-parallelism
+
+> web@0.1.0 test
+> vitest --run lib/forge-testing-grounds/boundedWorker.test.ts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/forge-testing-grounds/boundedWorker.test.ts (15 tests) 18ms
+
+ Test Files  1 passed (1)
+      Tests  15 passed (15)
+   Start at  11:21:34
+   Duration  223ms (transform 42ms, setup 2ms, collect 49ms, tests 18ms, environment 0ms, prepare 36ms)
+
+
+EXIT: 0; elapsedSeconds: 0.68
+COMMAND: npm test -- --run lib/forge-testing-grounds/boundedWorker.test.ts --maxWorkers=1 --no-file-parallelism
+
+> web@0.1.0 test
+> vitest --run lib/forge-testing-grounds/boundedWorker.test.ts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/forge-testing-grounds/boundedWorker.test.ts (16 tests) 23ms
+
+ Test Files  1 passed (1)
+      Tests  16 passed (16)
+   Start at  11:22:46
+   Duration  204ms (transform 37ms, setup 2ms, collect 45ms, tests 23ms, environment 0ms, prepare 29ms)
+
+
+EXIT: 0; elapsedSeconds: 0.607
+COMMAND: npx --no-install tsc --noEmit --strict --skipLibCheck --target es2015 --lib dom,dom.iterable,esnext --module esnext --moduleResolution bundler --esModuleInterop lib/forge-testing-grounds/runnerContracts.ts lib/forge-testing-grounds/runStore.ts lib/forge-testing-grounds/memoryRunStore.ts lib/forge-testing-grounds/boundedWorker.ts lib/forge-testing-grounds/boundedWorker.test.ts
+EXIT: 0; output: (none)
+
+COMMAND: npx --no-install eslint --report-unused-disable-directives-severity warn lib/forge-testing-grounds/runnerContracts.ts lib/forge-testing-grounds/runStore.ts lib/forge-testing-grounds/memoryRunStore.ts lib/forge-testing-grounds/boundedWorker.ts lib/forge-testing-grounds/boundedWorker.test.ts
+EXIT: 0; output: (none)

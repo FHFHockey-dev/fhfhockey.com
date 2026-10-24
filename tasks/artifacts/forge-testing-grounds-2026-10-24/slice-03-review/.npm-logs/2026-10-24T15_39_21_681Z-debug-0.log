@@ -1,0 +1,19 @@
+0 verbose cli /usr/local/bin/node /usr/local/bin/npm
+1 info using npm@10.9.0
+2 info using node@v22.11.0
+3 silly config load:file:/usr/local/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/tim/Code/fhfhockey.com/web/.npmrc
+5 silly config load:file:/Users/tim/.npmrc
+6 silly config load:file:/usr/local/etc/npmrc
+7 verbose title npm test --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+8 verbose argv "test" "--" "--run" "--config" "../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/review.vitest.config.mts" "--maxWorkers=1" "--no-file-parallelism"
+9 verbose logfile logs-max:10 dir:/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/.npm-logs/2026-10-24T15_39_21_681Z-
+10 verbose logfile /Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/.npm-logs/2026-10-24T15_39_21_681Z-debug-0.log
+11 silly logfile done cleaning log files
+12 http fetch GET https://registry.npmjs.org/npm attempt 1 failed with ENOTFOUND
+13 verbose cwd /Users/tim/Code/fhfhockey.com/web
+14 verbose os Darwin 27.0.0
+15 verbose node v22.11.0
+16 verbose npm  v10.9.0
+17 verbose exit 1
+18 verbose code 1

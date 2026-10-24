@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-24T20:54:51.428977+00:00",
+  "parent_priority": "Verified current Scout/Claude work toward release",
+  "release_coordinator": "01a16e23-72b5-76ee-8ade-2d209d0e7002",
+  "message_sent": true,
+  "send_tool_isError": false,
+  "canonical_snapshot_stable": true,
+  "canonical_write_or_library_operation_pending": false,
+  "canonical_writer_custody": "Audit worker retained; no transfer",
+  "next_family_started": false,
+  "library_version": 21,
+  "note": "Exact three canonical hashes, counts and receipt paths sent as parent explicitly requested. No claim that coordinator read or accepted the message; no release authority supplied by audit."
+}

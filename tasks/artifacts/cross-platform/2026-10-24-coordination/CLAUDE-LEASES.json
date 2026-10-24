@@ -1,0 +1,609 @@
+{
+  "owner": "Claude orchestrator",
+  "as_of_utc": "2026-10-24T22:17Z",
+  "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "status": "closeout CLAUDE-020 + addendum CLAUDE-027; all lanes handed back",
+  "shared_resources": {
+    "isolated_next_dev": "SS1 holds :3110",
+    "snapshot_servers": {
+      "C3": ":3120 from /private/tmp/fhfh-c3-isolated/web",
+      "C2": ":3130 from /private/tmp/fhfh-c2-isolated/web (only if needed)"
+    },
+    "heavy_lock": "/private/tmp/fhfh-heavy.lock (shared, never stolen)",
+    "blender": "Q1",
+    "unity": "Q2",
+    "codex_reserved": "player-card worker :3125 and web/{lib,components}/player-cards/**; TJ/Codex server :3000"
+  },
+  "leases": [
+    {
+      "lane": "Q1",
+      "ids": [
+        "QUEST-SCOUT (outside FHFH register)"
+      ],
+      "scope": "Scout V41 trial03 geometry/rig refinement; new named candidate only",
+      "write_paths": [
+        "/Users/tim/Documents/Codex/2026-10-15/task-3/ \u2014 NEW versioned candidate/export/review files only (V42+ names)",
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q1/"
+      ],
+      "read_only": [
+        "V40 and V41 candidates, concept references, existing handoffs"
+      ],
+      "resources": [
+        "Blender app and its scene (sole Blender owner)"
+      ],
+      "forbidden": [
+        "Unity projects",
+        "other mechs",
+        "texture/weathering",
+        "main-project integration",
+        "Git"
+      ],
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "active \u2014 ticket 10 (V51 next gap) 2026-10-24T22:14Z; working candidate V50 per TJ",
+      "start_utc": "2026-10-24T14:22:50Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_2f9bc26b-1412-46a2-b634-45654a119ac4 (q1-scout-geometry)",
+      "outputs": {
+        "scout_rear_spine_v42.blend": "d6a6b7012c6ec6438ea5d1827ab1c0ac360dcdeceb3abea4925b7b373b2cf149",
+        "scout_v42_rear_spine_unscaled.glb": "68d90270cae7dd0132d7c77c9e8624854f4238a739dd4a0e55856d5157abd17b",
+        "SCOUT_V42_REVIEW_PACKET.md": "ef61fcb101dbb0ea6c8cf65adc0390435aea714dd2fb8fe8c6660c13d8e9fa62",
+        "note": "worker-reported; orchestrator verification pending"
+      }
+    },
+    {
+      "lane": "Q2",
+      "ids": [
+        "QUEST-RADARASCENT-MAP (outside FHFH register)"
+      ],
+      "scope": "v13 RadarAscent isolated map visual/playability pass; new scene version only",
+      "write_paths": [
+        "Isolated validation project named in /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023C/FINAL_HANDOFF.md \u2014 new scene version and lane outputs only",
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/"
+      ],
+      "read_only": [
+        "v13 scene",
+        "main Unity project (611-file baseline must stay unchanged)"
+      ],
+      "resources": [
+        "Unity Editor/project/Play Mode (sole Unity owner)"
+      ],
+      "forbidden": [
+        "Scout Blender inputs/outputs",
+        "package/Editor upgrades",
+        "main-project integration",
+        "Git"
+      ],
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "handed back 2026-10-24T19:19Z \u2014 v18 saved",
+      "start_utc": "2026-10-24T14:22:50Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_fb82e1b0-a532-4eb9-ab7c-1f5e84262517 (q2-unity-map)"
+    },
+    {
+      "lane": "C1",
+      "ids": [
+        "STATS-S06",
+        "STATS-S05"
+      ],
+      "scope": "Team lines and shot-map tab correctness slice",
+      "write_paths": [
+        {
+          "path": "web/pages/stats/team/[teamAbbreviation].tsx",
+          "baseline_sha256": "6f64bdfc68d1b8bfe7c98ba7b263923f001d369e1ca96827238cc58ad3f65be5",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/LineCombinations/LineCombinationsGrid.tsx",
+          "baseline_sha256": "6a606f4a7dec24a5525ae42da63cc39e57b2e8dbf4adf6398e9ba0937da579cd",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/hooks/useShotData.ts",
+          "baseline_sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/hooks/useShotData.test.tsx",
+          "baseline_sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/ShotVisualization/ShotVisualization.tsx",
+          "baseline_sha256": "65357ab5681c8b5dc11ce9cd5b51e9fd6a01c919aae79d4d0132e6da38902e1e",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/TeamTabNavigation/TeamTabNavigation.tsx",
+          "baseline_sha256": "ce601088433bdfa422dabc86df20fa53b6b611e8eb461aeb34ec963711a9bed4",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/TeamTabNavigation/TeamTabNavigation.test.tsx",
+          "baseline_sha256": "40ad88b2eb67298eff2d57461065c74f6aa9ad687b0536b011c10f2a4d98adbf",
+          "git_state": "clean"
+        },
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C1/"
+        }
+      ],
+      "resources": [
+        "Isolated Next slot released at handoff (:3110 confirmed free ~15:05Z)"
+      ],
+      "forbidden": [
+        "siteSurfaceLinks.ts and shared nav",
+        "global CSS/Layout/Header",
+        "A9 cache files incl. web/lib/dashboard/clientFetchCache.ts, web/hooks/useTeams.ts",
+        "player hydration/other S-IDs",
+        "Git"
+      ],
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "handed back 2026-10-24T18:14Z \u2014 awaiting Codex integration (CLAUDE-020/-027)",
+      "start_utc": "2026-10-24T14:22:50Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_bb5804ab-c83a-446e-8acc-6be5b5b2f828 (c1-team-tabs)",
+      "slice2_write_paths": [
+        {
+          "path": "web/components/GoalieShareChart/index.tsx",
+          "baseline_sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.module.scss",
+          "baseline_sha256": "54ef5a57ddd62f32cb5d9d495fb9abd89b1a17136a9924a9a45cbe83041b221c",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.test.ts",
+          "baseline_sha256": "250bfc553ce0caa0cb1901c7592e1d3f0dde93180e0e97255a0948b8435baeec",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+          "baseline_sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/styles/Stats.module.scss",
+          "baseline_sha256": "66596f49ac1246ea9911df5cf607fa8cf4a1b2e7f90775becb9d74da6cd12312",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/styles/TeamStatsPage.module.scss",
+          "baseline_sha256": "95729a78494dde4f7d1973a751651e97063ddfe0397423b7a4e5d5d3122b05f1",
+          "git_state": "clean"
+        }
+      ]
+    },
+    {
+      "lane": "C4",
+      "ids": [
+        "SITE-WIGO",
+        "BLSH-3.1/3.4"
+      ],
+      "scope": "Connect existing supported WiGO workflow links",
+      "write_paths": [
+        {
+          "path": "web/pages/wigoCharts.tsx",
+          "baseline_sha256": "96806e645d81076869dbd9f139afa4338af6643b54c0bd7a5ac2fcac6444bb15",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/__tests__/pages/wigoCharts.test.tsx",
+          "baseline_sha256": null,
+          "git_state": "absent (new file allowed)"
+        },
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/"
+        }
+      ],
+      "read_only": [
+        "web/lib/navigation/siteSurfaceLinks.ts",
+        "web/components/SurfaceWorkflowLinks/**"
+      ],
+      "resources": [
+        "Isolated Next slot .next-playwright on :3110 \u2014 granted after C1 released it (~15:05Z)"
+      ],
+      "forbidden": [
+        "Game Grid",
+        "global nav",
+        "sKO/forecast formulas",
+        "BLSH follow-up",
+        "tasks/tasks-README.md (C6)",
+        "Git"
+      ],
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "handed back 2026-10-24T18:14Z \u2014 awaiting Codex integration (CLAUDE-020/-027)",
+      "start_utc": "2026-10-24T14:22:50Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_2837d829-8bba-4240-9356-0d1bef41b5a2 (c4-wigo-links)",
+      "slice2_write_paths": [
+        {
+          "path": "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx",
+          "baseline_sha256": "2f2141c56fca99e87cf91153a1c190c53f0aa2d51d66fe76637b73642ff314d9",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx",
+          "baseline_sha256": "4707412981f71c191ad0aa75a1bca1a62df633d62077df035b7df41a0c173efc",
+          "git_state": "clean"
+        }
+      ],
+      "slice2_read_only": [
+        "web/lib/buyLowSellHigh/**",
+        "web/lib/skoElement/**",
+        "web/lib/sko/**",
+        "web/components/skoElement/**"
+      ]
+    },
+    {
+      "lane": "C5",
+      "ids": [
+        "CRON-AUDIT-COVERAGE"
+      ],
+      "scope": "Existing audit-wrapper adoption for two routes",
+      "write_paths": [
+        {
+          "path": "web/pages/api/internal/yahoo-live-draft.ts",
+          "baseline_sha256": "ce7c6553d8085ea1431dbddef01a5fc5150d59e2a8648514a6eed7168ea92c69",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/pages/api/v1/db/update-drafted-prospects.ts",
+          "baseline_sha256": "980b050f88509ae0f333a458d4726a4c2b32986ed630b23c27c61d5d4b2b2c9c",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts",
+          "baseline_sha256": "fba094aa3ac7f1ea4a49014e3c5f8afb56ec51b0246c102530e34fe9f353f5b1",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts",
+          "baseline_sha256": "995d6da8e75b0b4d015f22a64d2f6cdf52b10788500544b37043f1da90762c1e",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+          "baseline_sha256": "e4d387ce6d35f2532ce88fe437c82a13aadc81cdf49cea825d2cfacda98ad451",
+          "git_state": "clean"
+        },
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C5/"
+        }
+      ],
+      "resources": [
+        "none (no server, all services mocked)"
+      ],
+      "forbidden": [
+        "shared audit wrapper/auth helpers",
+        "cron config/inventory source",
+        "provider writers",
+        "remote route execution",
+        "Git"
+      ],
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "handed back 2026-10-24T18:14Z \u2014 awaiting Codex integration (CLAUDE-020/-027)",
+      "start_utc": "2026-10-24T14:22:50Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_ab65c5a7-3c1e-4bba-ac12-131d4ce62e10 (c5-route-audit)"
+    },
+    {
+      "lane": "C7",
+      "ids": [
+        "LUNA-LOCAL",
+        "SITE-SOCIAL-SHARE",
+        "STATS-S06",
+        "SITE-WIGO",
+        "LEAGUE-CONFIG-ANALYTICS"
+      ],
+      "scope": "Independent read-only review of pinned six-file Luna packet + four protected pins",
+      "write_paths": [
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/",
+        "isolated review scratch outside web/ source"
+      ],
+      "read_only": [
+        {
+          "path": "web/lib/sources/tweetLunaReview.ts",
+          "baseline_sha256": "1dc24189c12333628eb536f37556fe7fc958c2cac16163d77fd80b0a2dba2b94",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/tweetLunaTransport.ts",
+          "baseline_sha256": "129dfdf337fee692fbf07959a5041651222108836631ecc192436edee988ada2",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/tweetLunaLocalStore.ts",
+          "baseline_sha256": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/tweetLunaReview.test.ts",
+          "baseline_sha256": "8a3e8adacd888215aa9ba4226331b3e3576c98e8d2fcc113e01a305a22074ce2",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json",
+          "baseline_sha256": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+          "git_state": "??"
+        },
+        {
+          "path": "web/scripts/review-ifttt-luna.ts",
+          "baseline_sha256": "03d37708a0ed6902162459cd61e82f70a1828c581e806e30eef4854bf9fa532d",
+          "git_state": "??"
+        }
+      ],
+      "resources": [
+        "Released :3110 after social-share run (15:20:57Z)"
+      ],
+      "forbidden": [
+        "any application source edit",
+        "paid/model calls",
+        "alias writes",
+        "hosted activation",
+        "Git"
+      ],
+      "owner": "Claude orchestrator session (this thread) \u2192 lane session",
+      "status": "handed back 2026-10-24T18:14Z \u2014 awaiting Codex integration (CLAUDE-020/-027)",
+      "start_utc": "2026-10-24T14:22:50Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_f9ee2dca-cbf5-4df7-9274-66687e6ea435 (c7-luna-review)"
+    },
+    {
+      "lane": "C3",
+      "ids": [
+        "BILLING-CANCEL-RELOAD"
+      ],
+      "scope": "Isolated pinned candidate only (CODEX-20261024-003); canonical bytes must not change",
+      "canonical_read_only": [
+        {
+          "path": "web/components/account/InSeasonPanel.tsx",
+          "baseline_sha256": "e5cde3349ee10bd4d8c9623e8051eb56853c4f72d50f7a9657fef257d4c70352",
+          "git_state": "M"
+        },
+        {
+          "path": "web/components/account/InSeasonPanel.test.tsx",
+          "baseline_sha256": "d21fd263ef203b557c3f34030205ff9a8fd9ce32d2fa040babb93c0f6eb8b76c",
+          "git_state": "M"
+        },
+        {
+          "path": "web/components/account/InSeasonPanel.rollout.test.tsx",
+          "baseline_sha256": "b63510f723564a0707ed92f581f83f02a1f6db114550ff4415ab770db9d0e930",
+          "git_state": "??"
+        }
+      ],
+      "write_paths": [
+        "/private/tmp/fhfh-c3-isolated/web/** (snapshot copy of working-tree web/, no .env*/node_modules/.next*)",
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/"
+      ],
+      "resources": [
+        "snapshot-local Next server on :3120",
+        "/private/tmp/fhfh-heavy.lock for heavy checks, shared, never stolen"
+      ],
+      "forbidden": [
+        "canonical InSeasonPanel writes",
+        "auth/API/RPC/schema/Stripe/entitlement policy",
+        "real cancellation/refund",
+        "Git"
+      ],
+      "owner": "Claude orchestrator \u2192 lane session",
+      "session": "local_d400a595-ead2-4f50-80a6-862b4414be6e (c3-cancel-reload)",
+      "status": "handed back 2026-10-24T18:14Z \u2014 awaiting Codex integration (CLAUDE-020/-027)",
+      "start_utc": "2026-10-24T15:03Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "transfer": "CODEX-20261024-003",
+      "exception_CODEX_012": {
+        "files_copied_read_only_into_snapshot": [
+          {
+            "path": "web/lib/supabase/browser-auth.ts",
+            "baseline_sha256": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+            "git_state": "clean"
+          },
+          {
+            "path": "web/__tests__/contexts/AuthProviderContext.test.tsx",
+            "baseline_sha256": "7e9bb5e5f6370b1e8ffb69eca11dbcc4385fab0aa441facceb62de66758d8074",
+            "git_state": "clean"
+          }
+        ],
+        "scope": "anchored /^fhfh:in-season-cancellation:v1$/i cleanup pattern + focused regressions, snapshot only"
+      }
+    },
+    {
+      "lane": "SS1",
+      "ids": [
+        "SITE-SOCIAL-SHARE"
+      ],
+      "scope": "Game Grid social-share Monday edition: default 1:1 ranked logo-grid card + specced extra cards (fixtures only)",
+      "write_paths": [
+        "web/lib/socialShare/**",
+        "web/components/SocialShare/**",
+        "web/pages/social-share/[format].tsx",
+        "web/pages/api/v1/social-share/[format].ts",
+        "web/e2e/social-share.spec.ts",
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/"
+      ],
+      "read_only": [
+        "web/components/GameGrid/**",
+        "weekScore source",
+        "web/lib/dashboard/commandCenterData.ts",
+        "web/public/fonts/social-share/**"
+      ],
+      "resources": [
+        "Isolated Next slot .next-playwright on :3110"
+      ],
+      "forbidden": [
+        "Game Grid/ownership contract edits",
+        "global nav/links",
+        "Supabase/NHL reads",
+        "auto-posting",
+        "Git"
+      ],
+      "owner": "Claude orchestrator \u2192 lane session",
+      "session": "local_4542f7f4-e6a6-4e51-83eb-74e26e54ff0f (ss1-gamegrid-share)",
+      "status": "active \u2014 ticket 14 (live tier rows + ticket-13 e2e) 2026-10-24T22:17Z; Codex returned 12 paths (CODEX-056)",
+      "start_utc": "2026-10-24T15:34Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "spec": "CLAUDE-20261024-009/-010",
+      "approved_production_reads": "TJ pop-up 2026-10-24T19:25Z: \u22645 sequential local GETs on :3110; read-only yahoo_players(<50%, current season), wgo_skater_stats_totals, wgo_goalie_stats_totals, NHL schedule; no writes",
+      "read_only_security_paths": [
+        "web/contexts/AuthProviderContext/index.tsx",
+        "web/__tests__/contexts/AuthProviderContext.test.tsx (merged canonical test pending per CODEX-056; never replace)",
+        "web/lib/socialShare/access.ts",
+        "web/lib/socialShare/access.test.ts",
+        "web/components/SocialShare/SocialShareAccessGate.tsx",
+        "web/components/SocialShare/SocialShareAccessGate.test.tsx",
+        "auth lines of web/pages/social-share/[format].tsx and web/pages/api/v1/social-share/[format].ts"
+      ]
+    },
+    {
+      "lane": "C2",
+      "ids": [
+        "LUNA-LOCAL",
+        "NEWS-SOURCE-PRESENTATION"
+      ],
+      "scope": "Implementation owner for Luna F1/F2/F3 repair, then news metadata-loss reproduction; isolated snapshot only",
+      "canonical_read_only": [
+        {
+          "path": "web/lib/sources/tweetLunaReview.ts",
+          "baseline_sha256": "1dc24189c12333628eb536f37556fe7fc958c2cac16163d77fd80b0a2dba2b94",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/tweetLunaTransport.ts",
+          "baseline_sha256": "129dfdf337fee692fbf07959a5041651222108836631ecc192436edee988ada2",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/tweetLunaLocalStore.ts",
+          "baseline_sha256": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/tweetLunaReview.test.ts",
+          "baseline_sha256": "8a3e8adacd888215aa9ba4226331b3e3576c98e8d2fcc113e01a305a22074ce2",
+          "git_state": "??"
+        },
+        {
+          "path": "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json",
+          "baseline_sha256": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+          "git_state": "??"
+        },
+        {
+          "path": "web/scripts/review-ifttt-luna.ts",
+          "baseline_sha256": "03d37708a0ed6902162459cd61e82f70a1828c581e806e30eef4854bf9fa532d",
+          "git_state": "??"
+        },
+        {
+          "path": "web/pages/api/v1/db/tweet-pattern-review.ts",
+          "baseline_sha256": "0145984ba46c82bc09698b047b00a395018b0e9488acd52cb5f1d9c616083445",
+          "git_state": "M"
+        },
+        {
+          "path": "web/lib/sources/tweetPatternReview.ts",
+          "baseline_sha256": "96d441ee89b959a9b785498a98819aaec2237f26e9beba9ff1a2735111ba3244",
+          "git_state": "clean"
+        },
+        {
+          "path": "web/lib/newsFeed.ts",
+          "baseline_sha256": "de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d",
+          "git_state": "M"
+        }
+      ],
+      "write_paths": [
+        "/private/tmp/fhfh-c2-isolated/web/** (snapshot)",
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C2/"
+      ],
+      "forbidden": [
+        "protected pins (adapter.mjs, tweetIdentityReplacementReview*, aggregate-budget.sqlite)",
+        "dispatch on, paid calls, alias writes, public claims",
+        "homepage, schema, Git"
+      ],
+      "owner": "Claude orchestrator \u2192 lane session",
+      "status": "handed back 2026-10-24T18:14Z \u2014 awaiting Codex integration (CLAUDE-020/-027)",
+      "start_utc": "2026-10-24T16:11Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_d396b1e2-0db8-45a7-8200-b02c31cd14a9 (c2-luna-news)",
+      "exception_CODEX_024": {
+        "files_copied_read_only_into_snapshot": {
+          "web/components/NewsFeed/NewsCard.tsx": "29e36122471afc47cc85fd5678d528ee3b68338b5e0836bbc63579cb80f3315d",
+          "web/components/NewsFeed/NewsCard.test.tsx": "21f1e4feaa47763690c224d51d8710821dbd6d1dd4827f0c9566c679cde28591"
+        }
+      }
+    },
+    {
+      "lane": "C6",
+      "ids": [
+        "REPO-DOCUMENTATION"
+      ],
+      "scope": "One verified stale-pointer correction",
+      "write_paths": [
+        {
+          "path": "tasks/tasks-README.md",
+          "baseline_sha256": "28fc17b6954a2d78660555cabd8124c30816bf761dc444f7d143706b711f2497",
+          "git_state": "clean"
+        },
+        {
+          "path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
+          "baseline_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
+          "git_state": "clean"
+        },
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C6/"
+        }
+      ],
+      "forbidden": [
+        "canonical master/LEDGER",
+        "release manifests",
+        "app code",
+        "untracking/deletion",
+        "Git"
+      ],
+      "owner": "Claude orchestrator \u2192 lane session",
+      "status": "handed back 2026-10-24T18:14Z \u2014 awaiting Codex integration (CLAUDE-020/-027)",
+      "start_utc": "2026-10-24T16:11Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+      "session": "local_65db6ff7-f175-47b6-ad79-7a2d2a3735c4 (c6-doc-pointers)"
+    },
+    {
+      "lane": "RSO-FREE",
+      "ids": [
+        "RSO (analysis only)",
+        "SITE-SOCIAL-SHARE"
+      ],
+      "scope": "Read-only analysis doc: social-share pickups logic + free RSO option",
+      "write_paths": [
+        "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/RSO-FREE/FREE-RSO-ANALYSIS.md",
+        "its own tasks/diaries/ diary"
+      ],
+      "read_only": [
+        "web/pages/roster-schedule-optimizer.tsx",
+        "web/components/RosterScheduleOptimizer/**",
+        "web/lib/rosterScheduleOptimizer/**",
+        "web/pages/api/v1/roster-schedule-optimizer/**",
+        "web/lib/socialShare/**",
+        "web/components/SocialShare/**"
+      ],
+      "forbidden": [
+        "any source edit (RSO is Codex-reserved)",
+        "production reads",
+        "servers",
+        "Git"
+      ],
+      "owner": "Claude orchestrator \u2192 lane session",
+      "session": "local_6ba5e439-2e6a-48c4-8808-33ef36170b72 (rso-free-analysis)",
+      "status": "handed back 2026-10-24T21:26Z \u2014 FREE-RSO-ANALYSIS.md c84a2488\u2026",
+      "start_utc": "2026-10-24T21:19Z",
+      "base_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5"
+    }
+  ],
+  "held_or_blocked": [],
+  "holds": [
+    {
+      "note": "TJ's earlier C7/C5 holds released by TJ's autonomy steer 2026-10-24T16:11Z and CODEX-007"
+    }
+  ],
+  "operating_mode": {
+    "source": "TJ direct in Claude chat 2026-10-24T16:11Z + CODEX-20261024-007/S12",
+    "rule": "Claude lanes proceed autonomously inside assigned lanes and exact leases; Codex vets and sends corrections after lanes finish. No routine Scout acknowledgement or TJ courier step. TJ direct popup approvals for production/spend/migration/push/deploy and Codex Git/release custody unchanged."
+  }
+}

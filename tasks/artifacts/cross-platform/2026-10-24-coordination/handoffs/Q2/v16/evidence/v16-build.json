@@ -1,0 +1,85 @@
+{
+    "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+    "source": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+    "utc": "2026-10-24T16:22:48.1918520Z",
+    "hudPath": "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/V16 player HUD[4]",
+    "eyeLocal": {
+        "x": 0.0,
+        "y": 2.3499999046325684,
+        "z": 0.0
+    },
+    "hudLocal": {
+        "x": 0.0,
+        "y": 2.0299999713897705,
+        "z": 0.9200000166893005
+    },
+    "hudEuler": {
+        "x": 19.179006576538086,
+        "y": 0.0,
+        "z": 0.0
+    },
+    "proxyRadius": 1.100000262260437,
+    "hudMaxHorizontalRadius": 0.9782987833023071,
+    "lines": [
+        {
+            "name": "HUD objective line",
+            "longestText": "A ENERGY   CAPTURING 100%",
+            "characterSize": 0.0043356637470424175,
+            "measuredHeight": 0.03099999576807022,
+            "measuredWidth": 0.410153865814209,
+            "fitted": true
+        },
+        {
+            "name": "HUD weapon line",
+            "longestText": "TARGETS 3/3   RELEASE TRIGGER",
+            "characterSize": 0.0037762236315757036,
+            "measuredHeight": 0.027000000700354576,
+            "measuredWidth": 0.4048112630844116,
+            "fitted": true
+        },
+        {
+            "name": "HUD controls hint",
+            "longestText": "TRIGGER / SPACE  FIRE   STICK / WASD  MOVE",
+            "characterSize": 0.00293706264346838,
+            "measuredHeight": 0.020999999716877937,
+            "measuredWidth": 0.428811252117157,
+            "fitted": true
+        }
+    ],
+    "playerRenderers": [
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/V16 player HUD[4]/HUD backing[0]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/V16 player HUD[4]/HUD accent rule[1]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/V16 player HUD[4]/HUD progress track[2]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/V16 player HUD[4]/HUD progress pivot[3]/HUD progress fill[0]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/V16 player HUD[4]/HUD objective line[4]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/V16 player HUD[4]/HUD weapon line[5]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/V16 player HUD[4]/HUD controls hint[6]"
+    ],
+    "debugRenderers": [
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/Cockpit capture readout[1]/Readout backing[0]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/Cockpit capture readout[1]/Readout progress track[1]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/Cockpit capture readout[1]/Readout progress pivot[2]/Readout progress fill[0]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/Cockpit capture readout[1]/Readout label[3]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/Cockpit capture readout[1]/Pilot controls and restart status[4]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/Cockpit capture readout[1]/Pilot controls backing[5]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/Cockpit capture readout[1]/Practice weapon status[6]",
+        "Vesper Basin / First Slice[0]/Mech test proxy / WASD[23]/Cockpit capture readout[1]/Practice status backing[7]",
+        "V11 / Practice range (provisional)[7]/Practice target 1[0]/Target state[1]",
+        "V11 / Practice range (provisional)[7]/Practice target 2[1]/Target state[1]",
+        "V11 / Practice range (provisional)[7]/Practice target 3[2]/Target state[1]"
+    ],
+    "nearViewRenderers": [
+        "V12 Canyon Outpost[8]/Terrain[0]/Playable Islands[0]/Grounded outpost islands[0] V14 strata 01 Oxide shadow beds,V14 strata 02 Red sandstone,V14 strata 03 Pale sediment seams,V14 strata 04 Sunworn sandstone caps,V14 strata 05 Deep basin silt,06 Deep teal water,07 Teal current ribbons min=(-146.11, -27.00, -93.00) max=(140.87, 2.74, 89.30)",
+        "V12 Canyon Outpost[8]/V12 Industrial structures[1]/Red fortified outpost service detail__Weathered blue steel[36] Weathered blue steel min=(-112.10, 3.48, -21.15) max=(-101.54, 8.61, 21.15)",
+        "V12 Canyon Outpost[8]/V12 Industrial structures[1]/Red fortified outpost service detail__Warm ceramic armor[35] Warm ceramic armor min=(-112.26, 3.22, -21.31) max=(-101.57, 8.83, 21.31)",
+        "V02 / Reference-derived composition[2]/North base connector[0] Road graphite min=(-108.55, 0.02, -2.75) max=(-84.45, 0.18, 30.75)",
+        "V02 / Reference-derived composition[2]/South base connector[3] Road graphite min=(-96.00, 0.02, -36.25) max=(-84.00, 0.18, 0.25)",
+        "Vesper Basin / First Slice[0]/RED BASE / protected spawn[12]/Spawn pad[0] Red base min=(-114.00, -0.25, -13.00) max=(-94.00, 0.25, 13.00)",
+        "V02 / Reference-derived composition[2]/Red base foundation[5] Road graphite min=(-116.47, 0.00, -16.63) max=(-91.53, 0.22, 16.63)",
+        "V12 Canyon Outpost[8]/V12 Industrial structures[1]/Red fortified outpost service detail__Deep service recess[34] Deep service recess min=(-112.10, 3.35, -21.15) max=(-101.69, 8.70, 21.15)",
+        "V13 North Ascent[9]/Terrain[2]/Lower terraced boundary ridges[2] V14 strata 01 Warm shaded sandstone,V14 strata 02 Rust sediment,V14 strata 03 Dusty sandstone,V14 strata 04 Pale exposed ledges,V14 strata 05 Oxide seams,V14 strata 06 Weathered plateau caps min=(-286.27, -28.00, -219.29) max=(325.39, 36.09, 272.25)",
+        "V12 Canyon Outpost[8]/V12 Industrial structures[1]/Red fortified outpost__Red base enamel[33] Red base enamel min=(-112.35, 1.98, -20.90) max=(-101.83, 14.18, 20.90)",
+        "V13 North Ascent[9]/Terrain[2]/Distant open skyline[3] V14 strata 01 Warm shaded sandstone,V14 strata 02 Rust sediment,V14 strata 03 Dusty sandstone,V14 strata 04 Pale exposed ledges,V14 strata 05 Oxide seams,V14 strata 06 Weathered plateau caps min=(-442.12, -29.00, -404.77) max=(439.92, 43.52, 405.79)"
+    ],
+    "note": "v15 preserved and read-only. v16 adds one HUD subtree under the pilot proxy and saves the original debug readout + target-label renderers disabled (player mode). No gameplay, collider or other object change. Debug mode (Inspector flag, F3, or V16PlayerHud.SetDebugMode) swaps back. No Scout import, package, project-settings or main-project change."
+}

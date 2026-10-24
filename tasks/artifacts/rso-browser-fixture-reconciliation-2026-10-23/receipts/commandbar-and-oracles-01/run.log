@@ -1,0 +1,111 @@
+
+Running 10 tests using 1 worker
+
+[1A[2K[1/10] [chromium] › e2e/roster-schedule-optimizer.spec.ts:57:5 › connected refresh fixtures preserve nonzero intent through offline, cooldown, Undo and reopen
+[1A[2K[2/10] [chromium] › e2e/roster-schedule-optimizer.spec.ts:199:5 › readiness controls reach existing inputs across the required viewports
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:199:5 › readiness controls reach existing inputs across the required viewports 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveValue[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByLabel('Lineup mode', { exact: true })
+    Expected: [32m"daily"[39m
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toHaveValue" with timeout 15000ms[22m
+    [2m  - waiting for getByLabel('Lineup mode', { exact: true })[22m
+
+
+      227 |     await expect(page.locator("#rso-rule-settings > summary")).toBeFocused();
+      228 |     await expect(page.getByText("Review league rules, scoring, locked assignments and player availability. Confirm again when these inputs change.", { exact: false })).toBeVisible();
+    > 229 |     await expect(page.getByLabel("Lineup mode", { exact: true })).toHaveValue("daily");
+          |                                                                   ^
+      230 |     await page.getByRole("button", { name: "Review coverage", exact: true }).focus();
+      231 |     await page.keyboard.press("Enter");
+      232 |     await expect(page.locator("#rso-matchup-heading")).toBeFocused();
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:229:67
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../commandbar-and-oracles-01/results/roster-schedule-optimizer--6983b-ross-the-required-viewports-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../commandbar-and-oracles-01/results/roster-schedule-optimizer--6983b-ross-the-required-viewports-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../commandbar-and-oracles-01/results/roster-schedule-optimizer--6983b-ross-the-required-viewports-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../commandbar-and-oracles-01/results/roster-schedule-optimizer--6983b-ross-the-required-viewports-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/10] [chromium] › e2e/roster-schedule-optimizer.spec.ts:261:5 › streams A to B to C through successive conditional acquisitions and keeps expanded desktop layout
+[1A[2K[4/10] [chromium] › e2e/roster-schedule-optimizer.spec.ts:345:8 › fixture category tradeoffs use only startable post-acquisition games on desktop and mobile
+[1A[2K[5/10] [chromium] › e2e/roster-schedule-optimizer.spec.ts:345:8 › fixture category gains use only startable post-acquisition games on desktop and mobile
+[1A[2K[6/10] [chromium] › e2e/roster-schedule-optimizer.spec.ts:345:8 › fixture category unavailable baseline use only startable post-acquisition games on desktop and mobile
+[1A[2K[7/10] [chromium] › e2e/roster-schedule-optimizer.spec.ts:958:5 › connected refresh and account save preserve forecast permissions and exclusions
+[1A[2K  2) [chromium] › e2e/roster-schedule-optimizer.spec.ts:958:5 › connected refresh and account save preserve forecast permissions and exclusions 
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 60000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: 'Continue manually' })[22m
+    [2m    - locator resolved to <button>Continue manually</button>[22m
+    [2m  - attempting click action[22m
+    [2m    2 × waiting for element to be visible, enabled and stable[22m
+    [2m      - element is visible, enabled and stable[22m
+    [2m      - scrolling into view if needed[22m
+    [2m      - done scrolling[22m
+    [2m      - <div class="RosterScheduleOptimizer_notice__Jc5Ct">…</div> intercepts pointer events[22m
+    [2m    - retrying click action[22m
+    [2m    - waiting 20ms[22m
+    [2m    2 × waiting for element to be visible, enabled and stable[22m
+    [2m      - element is visible, enabled and stable[22m
+    [2m      - scrolling into view if needed[22m
+    [2m      - done scrolling[22m
+    [2m      - <div class="RosterScheduleOptimizer_notice__Jc5Ct">…</div> intercepts pointer events[22m
+    [2m    - retrying click action[22m
+    [2m      - waiting 100ms[22m
+    [2m    112 × waiting for element to be visible, enabled and stable[22m
+    [2m        - element is visible, enabled and stable[22m
+    [2m        - scrolling into view if needed[22m
+    [2m        - done scrolling[22m
+    [2m        - <div class="RosterScheduleOptimizer_notice__Jc5Ct">…</div> intercepts pointer events[22m
+    [2m      - retrying click action[22m
+    [2m        - waiting 500ms[22m
+
+
+      1074 |   releaseAccess();
+      1075 |   await page.screenshot({ path: testInfo.outputPath("rso-switched-account.png") });
+    > 1076 |   await page.getByRole("button", { name: "Continue manually" }).click();
+           |                                                                 ^
+      1077 |   await expect(setup).not.toHaveAttribute("disabled", "");
+      1078 |   await expect(setup.getByRole("combobox", { name: "Source", exact: true })).toBeEnabled();
+      1079 |   await expect(rosterPanel).not.toHaveAttribute("inert", "true");
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1076:65
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../commandbar-and-oracles-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../commandbar-and-oracles-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../commandbar-and-oracles-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../commandbar-and-oracles-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[8/10] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1708:39 › compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels
+[1A[2K[9/10] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1708:39 › compact layout accounts for 20 slots with a maximum of 20 slot rows and internal labels
+[1A[2K[10/10] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1708:39 › compact layout accounts for 29 slots with a maximum of 20 slot rows and internal labels
+[1A[2K  2 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:199:5 › readiness controls reach existing inputs across the required viewports 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:958:5 › connected refresh and account save preserve forecast permissions and exclusions 
+  8 passed (1.7m)

@@ -1,0 +1,375 @@
+{
+  "mode": "DRY_RUN_ONLY_PARTIAL_HISTORICAL_PROJECTION",
+  "commitAllowed": false,
+  "target": {
+    "projectRef": "fyhftlxokyjtpndbkfse",
+    "table": "public.wigo_recent",
+    "playerId": 8476453,
+    "maximumForwardRows": 1
+  },
+  "source": {
+    "acceptedBuilderSha256": "f438eb129e1f70dd0691151916e78a8ea2225412ec63847ce93e334bc9ee9fa6",
+    "exactSourceRanges": [
+      {
+        "name": "pure arithmetic helpers",
+        "startLine": 127,
+        "endLine": 160,
+        "sha256": "1366dd75c5f73642f73eb1d977005d3b2129c399dab1ef4abcbc43c7904a0979"
+      },
+      {
+        "name": "NHL identity/frame validation",
+        "startLine": 305,
+        "endLine": 323,
+        "sha256": "d9cff2c2798656626486ace71fe37e09d2dcc5a044a741e08aa37d88bb4bca78"
+      },
+      {
+        "name": "season/date join and missing-value mapping",
+        "startLine": 352,
+        "endLine": 393,
+        "sha256": "e79223fb5f0f4065ebc4abf50d318bf8354842823434017afd63d498eddff186"
+      },
+      {
+        "name": "recent window calculation and coverage gates",
+        "startLine": 978,
+        "endLine": 1227,
+        "sha256": "66f51b9c39c022e9fb53e35842b46086cc823c060113fec19ac720fdf59762ae"
+      }
+    ],
+    "compiledProjectionSha256": "c39c22802be8d31a250bad91a3220d2e8b57e0e5075736fd176824428c6d4924",
+    "inputHashes": {
+      "local-fix/candidate/web/pages/api/v1/db/calculate-wigo-stats.ts": "f438eb129e1f70dd0691151916e78a8ea2225412ec63847ce93e334bc9ee9fa6",
+      "production-diagnostic/query-1-rows.json": "38804083b42d7a8a62104bf3f881069f03754a34b899feca55edc68500506736",
+      "production-diagnostic/query-2-rows.json": "52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+      "production-diagnostic/summary.json": "fe17c8310839e30c7bc57c725ef4db6f9f27522752b2da51b64e92397c28f8e1"
+    },
+    "capturedAt": [
+      "2026-10-24T16:25:33.354Z",
+      "2026-10-24T16:26:03.736Z"
+    ],
+    "cutoff": "2026-10-23",
+    "preimageLastUpdated": "2026-10-24T08:52:04.25+00:00",
+    "execution": "Exact pure source ranges only; no route/handler, application module imports, database client, credentials, transport, endpoint or write mode."
+  },
+  "candidatePatch": {
+    "kind": "partial field mask, not a complete row or executable mutation",
+    "fieldValues": {
+      "l5_atoi": 21.043333333333333,
+      "l5_ixg": 1.82,
+      "l5_ipp": 0.625,
+      "l5_oi_sh_pct": 0.13793103448275862,
+      "l5_icf": 35,
+      "l5_g_per_60": 1.7107555837161412,
+      "l5_a_per_60": 1.1405037224774275,
+      "l5_pts_per_60": 2.8512593061935685,
+      "l5_pts1_per_60": 2.281007444954855,
+      "l5_sog_per_60": 11.975289086012989,
+      "l5_ixg_per_60": 1.037858387454459,
+      "l5_icf_per_60": 19.95881514335498,
+      "l5_ihdcf_per_60": 1.7107555837161412,
+      "l5_iscf_per_60": 6.272770473625851
+    },
+    "changes": [
+      {
+        "field": "l5_atoi",
+        "before": null,
+        "after": 21.043333333333333
+      },
+      {
+        "field": "l5_ixg",
+        "before": null,
+        "after": 1.82
+      },
+      {
+        "field": "l5_ipp",
+        "before": null,
+        "after": 0.625
+      },
+      {
+        "field": "l5_oi_sh_pct",
+        "before": null,
+        "after": 0.13793103448275862
+      },
+      {
+        "field": "l5_icf",
+        "before": null,
+        "after": 35
+      },
+      {
+        "field": "l5_g_per_60",
+        "before": null,
+        "after": 1.7107555837161412
+      },
+      {
+        "field": "l5_a_per_60",
+        "before": null,
+        "after": 1.1405037224774275
+      },
+      {
+        "field": "l5_pts_per_60",
+        "before": null,
+        "after": 2.8512593061935685
+      },
+      {
+        "field": "l5_pts1_per_60",
+        "before": null,
+        "after": 2.281007444954855
+      },
+      {
+        "field": "l5_sog_per_60",
+        "before": null,
+        "after": 11.975289086012989
+      },
+      {
+        "field": "l5_ixg_per_60",
+        "before": null,
+        "after": 1.037858387454459
+      },
+      {
+        "field": "l5_icf_per_60",
+        "before": null,
+        "after": 19.95881514335498
+      },
+      {
+        "field": "l5_ihdcf_per_60",
+        "before": null,
+        "after": 1.7107555837161412
+      },
+      {
+        "field": "l5_iscf_per_60",
+        "before": null,
+        "after": 6.272770473625851
+      }
+    ],
+    "timestamp": "A later approved operation must supply one fixed new last_updated after fresh input/preimage validation."
+  },
+  "historicalProjection": {
+    "player_id": 8476453,
+    "l5_gp": 5,
+    "l5_atoi": 21.043333333333333,
+    "l5_pptoi": 249,
+    "l5_g": 3,
+    "l5_a": 2,
+    "l5_pts": 5,
+    "l5_pts1_pct": 0.8,
+    "l5_sog": 21,
+    "l5_s_pct": 0.14285714285714285,
+    "l5_ixg": 1.82,
+    "l5_ipp": 0.625,
+    "l5_oi_sh_pct": 0.13793103448275862,
+    "l5_icf": 35,
+    "l5_ppp": 2,
+    "l5_g_per_60": 1.7107555837161412,
+    "l5_a_per_60": 1.1405037224774275,
+    "l5_pts_per_60": 2.8512593061935685,
+    "l5_pts1_per_60": 2.281007444954855,
+    "l5_sog_per_60": 11.975289086012989,
+    "l5_ixg_per_60": 1.037858387454459,
+    "l5_icf_per_60": 19.95881514335498,
+    "l5_ihdcf_per_60": 1.7107555837161412,
+    "l5_iscf_per_60": 6.272770473625851,
+    "l5_ppp_per_60": 5.783132530120482,
+    "l10_gp": 10,
+    "l10_atoi": null,
+    "l10_pptoi": 304.5,
+    "l10_g": 4,
+    "l10_a": 9,
+    "l10_pts": 13,
+    "l10_pts1_pct": 0.7692307692307693,
+    "l10_sog": 28,
+    "l10_s_pct": 0.14285714285714285,
+    "l10_ixg": null,
+    "l10_ipp": null,
+    "l10_oi_sh_pct": null,
+    "l10_icf": null,
+    "l10_ppp": 4,
+    "l10_g_per_60": null,
+    "l10_a_per_60": null,
+    "l10_pts_per_60": null,
+    "l10_pts1_per_60": null,
+    "l10_sog_per_60": null,
+    "l10_ixg_per_60": null,
+    "l10_icf_per_60": null,
+    "l10_ihdcf_per_60": null,
+    "l10_iscf_per_60": null,
+    "l10_ppp_per_60": 4.729064039408867,
+    "l20_gp": 20,
+    "l20_atoi": null,
+    "l20_pptoi": 274,
+    "l20_g": 8,
+    "l20_a": 15,
+    "l20_pts": 23,
+    "l20_pts1_pct": 0.6956521739130435,
+    "l20_sog": 55,
+    "l20_s_pct": 0.14545454545454545,
+    "l20_ixg": null,
+    "l20_ipp": null,
+    "l20_oi_sh_pct": null,
+    "l20_icf": null,
+    "l20_ppp": 6,
+    "l20_g_per_60": null,
+    "l20_a_per_60": null,
+    "l20_pts_per_60": null,
+    "l20_pts1_per_60": null,
+    "l20_sog_per_60": null,
+    "l20_ixg_per_60": null,
+    "l20_icf_per_60": null,
+    "l20_ihdcf_per_60": null,
+    "l20_iscf_per_60": null,
+    "l20_ppp_per_60": 3.9416058394160585
+  },
+  "coverage": [
+    {
+      "window": 5,
+      "nhlAppearances": 5,
+      "sources": [
+        {
+          "source": "individual",
+          "matchedInCapture": 5,
+          "provenAbsentInCapturedLatest20": [],
+          "notCapturedBelowOldLimit": []
+        },
+        {
+          "source": "onIce",
+          "matchedInCapture": 5,
+          "provenAbsentInCapturedLatest20": [],
+          "notCapturedBelowOldLimit": []
+        }
+      ]
+    },
+    {
+      "window": 10,
+      "nhlAppearances": 10,
+      "sources": [
+        {
+          "source": "individual",
+          "matchedInCapture": 9,
+          "provenAbsentInCapturedLatest20": [
+            {
+              "season": 20262027,
+              "date": "2026-10-05"
+            }
+          ],
+          "notCapturedBelowOldLimit": []
+        },
+        {
+          "source": "onIce",
+          "matchedInCapture": 9,
+          "provenAbsentInCapturedLatest20": [
+            {
+              "season": 20262027,
+              "date": "2026-10-05"
+            }
+          ],
+          "notCapturedBelowOldLimit": []
+        }
+      ]
+    },
+    {
+      "window": 20,
+      "nhlAppearances": 20,
+      "sources": [
+        {
+          "source": "individual",
+          "matchedInCapture": 13,
+          "provenAbsentInCapturedLatest20": [
+            {
+              "season": 20262027,
+              "date": "2026-10-05"
+            }
+          ],
+          "notCapturedBelowOldLimit": [
+            {
+              "season": 20252026,
+              "date": "2026-04-07"
+            },
+            {
+              "season": 20252026,
+              "date": "2026-04-06"
+            },
+            {
+              "season": 20252026,
+              "date": "2026-04-04"
+            },
+            {
+              "season": 20252026,
+              "date": "2026-04-02"
+            },
+            {
+              "season": 20252026,
+              "date": "2026-03-31"
+            },
+            {
+              "season": 20252026,
+              "date": "2026-03-26"
+            }
+          ]
+        },
+        {
+          "source": "onIce",
+          "matchedInCapture": 13,
+          "provenAbsentInCapturedLatest20": [
+            {
+              "season": 20262027,
+              "date": "2026-10-05"
+            }
+          ],
+          "notCapturedBelowOldLimit": [
+            {
+              "season": 20252026,
+              "date": "2026-04-07"
+            },
+            {
+              "season": 20252026,
+              "date": "2026-04-06"
+            },
+            {
+              "season": 20252026,
+              "date": "2026-04-04"
+            },
+            {
+              "season": 20252026,
+              "date": "2026-04-02"
+            },
+            {
+              "season": 20252026,
+              "date": "2026-03-31"
+            },
+            {
+              "season": 20252026,
+              "date": "2026-03-26"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "preservedButNotRevalidatedMetrics": [
+    "hit",
+    "blk",
+    "pim",
+    "ppg",
+    "ppa",
+    "pp_pct",
+    "ozs_pct",
+    "hit_per_60",
+    "blk_per_60",
+    "pim_per_60",
+    "ppg_per_60",
+    "ppa_per_60"
+  ],
+  "blockers": [
+    "Historical capture only; no fresh production input/preimage read is authorized by this preparation.",
+    "Six older L20 NST individual/on-ice rows were below the old capture limit; their existence is unknown.",
+    "NHL hits/blocks/PIM/PP-goals/PP-assists/PP-share and on-ice zone-start source fields were not captured; a complete row cannot be certified.",
+    "The preimage and source rows came from separate read-only transactions; no common atomic source/preimage version is proven.",
+    "No reviewed bounded apply path or production release verification exists in this artifact."
+  ],
+  "requiredBeforeAnyLaterCommit": [
+    "Separate approval and independently reviewed bounded executor; this program must remain unable to write.",
+    "Verify approved production project and exact accepted calculation/runner hashes; verify hosted release separately so old scheduled code cannot overwrite the repair.",
+    "Capture fresh complete source frame and full target preimage with an explicit cutoff; retain both hashes and a newly reviewed exact candidate/field mask.",
+    "Conditional single-row UPDATE with target preimage equality and exact input/frame version equality at the write snapshot; reject changes, missing target or non-one row count.",
+    "Fixed operation ID/timestamp, five-second statement timeout, one-second lock timeout, sixty-second total budget; retain prior/postimage and no blind retry on uncertainty.",
+    "Any compensating restore must be separately within approval and require this operation exact postimage; no October5 repair or other table/player writes."
+  ]
+}

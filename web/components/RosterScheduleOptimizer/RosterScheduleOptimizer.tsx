@@ -603,6 +603,7 @@ export default function RosterScheduleOptimizer() {
     allowRead: !networkSuspended && online && !planHeld,
     publicContext: !viewingSaved && (workspace.context.provider === "manual" || !supplemented),
     yahooEligibility: usingRetainedRoster ? yahooEligibility.receipt : null,
+    yahooPrincipalId: workspace.context.provider === "yahoo" ? user?.id ?? null : null,
     refreshKey: JSON.stringify([accountKey, user?.id, viewingSaved, scheduleReadRevision?.contextKey === contextKey ? scheduleReadRevision.token : null]),
   };
   const { result: rawResult, error: planningError, loading: planningLoading, displaySnapshot, data: currentData, healthyReserves } = useRosterPlanning(inputSnapshot, workspace.intent, executionOptions);

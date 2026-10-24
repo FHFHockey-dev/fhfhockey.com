@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-23T16:04:36.902035+00:00",
+  "status": "local data prerequisite complete; empirical cohort not qualified; proposed remote reads not authorized or executed",
+  "base_candidate_manifest_sha256": "d211aa5f1ac59bb396bb9f640de3acf47f30aea1ff5cccc7b425dd9311f2327b",
+  "scope": "SoS artifact-only historical-readiness addendum",
+  "files": {
+    "CHECKPOINT.md": "d9e94a470851545fee0c368691609a093655def45db5e4eaa0d5dfb697cd03d0",
+    "DATA-MANIFEST.json": "21930a5e9459a277eb55642629f4b7124b0b73efd43ff2594cf475ce63d19331",
+    "EXTRACTION-PROPOSAL.md": "170879209824cb21194c0bf9b9786a4e273376c18329afd41d72319e76b5eabd",
+    "LOCAL-INVENTORY.json": "39d065029ce20785288001df28403666ec99771e6b05a0184c4f891bfafa7ec7",
+    "README.md": "9f16912bb3290990070f81dece669a4c00db2d8b34147ff2f2fb6f2c7a34078f",
+    "SOURCE-PINS.json": "f659f70c400679c162f90789854a71eaa065ad059175632db814b70114f658ce",
+    "VERIFICATION.json": "5ea72a21e9136f9e11417969c97a7c6573f4b90cc350f96cd7c9c2b02c58c423",
+    "availability-preflight.sql": "5db76921158d94a7334b51a1189cbac67e1c9b80720bca91b8467fa647142ca0",
+    "inventory.py": "5302e1d3eb9ece804b82b1d08a08cd07f4abaf23d6d7f6d375442f3d104eb94a"
+  }
+}

@@ -1,0 +1,201 @@
+## Relevant Files
+
+- `web/pages/api/v1/sustainability/recompute.ts` - API route to trigger nightly recompute and append snapshot data.
+- `web/__tests__/pages/api/v1/sustainability/recompute.test.ts` - Route validation for method/date/batch bounds and partial-failure responses.
+- `web/lib/sustainability/recompute.ts` - Bounded active-skater source loading, WGO projection shaping, opponent adjustment, partial-failure isolation, and persistence orchestration.
+- `web/lib/sustainability/recompute.test.ts` - Deterministic snapshot/opponent row and partial-success orchestration coverage.
+- `web/pages/api/v1/sustainability/player/[playerId].ts` - API route to fetch score, probabilities, projections, flags, explanations.
+- `web/pages/api/v1/sustainability/upcoming/[playerId].ts` - API route to fetch per-opponent per-game projections and rollups.
+- `web/lib/sustainability/read.ts` - Bounded public-read assembly for player score/bands/projections and grouped upcoming-game projections.
+- `web/lib/sustainability/read.test.ts` - Stable payload, flags, explanation, calibration-state, and game-grouping coverage.
+- `web/__tests__/pages/api/v1/sustainability/player-read.test.ts` - Player/upcoming route validation, success, and missing-data behavior.
+- `web/lib/sustainability/data.ts` - Data access layer: fetch WGO/NST windows, career baselines, joins, opponent context.
+- `web/lib/sustainability/data.test.ts` - Unit tests for sustainability data-access shaping helpers.
+- `web/lib/sustainability/features.ts` - Feature engineering: rolling windows, z-scores, priors, shrinkage, usage deltas, opponent adjustments, count distributions, and forecast bands/calibration helpers.
+- `web/lib/sustainability/model.ts` - Modeling functions: probability model, projections, bands, explainability stubs.
+- `web/lib/sustainability/persist.ts` - Persistence: upsert into sustainability_trend_bands and sustainability_projections.
+- `web/lib/sustainability/persist.test.ts` - Unit tests for persistence helpers and chunked upsert behavior.
+- `web/lib/sustainability/types.ts` - Shared types/interfaces and JSON schemas.
+- `web/sql/sustainability/001_create_sustainability_projections.sql` - Creates the sustainability projection snapshot table used for aggregate and per-opponent projection rows.
+- `web/lib/sustainability/data.ts` - Typed data-access helpers to fetch and aggregate last-N windows from WGO/NST.
+- `web/lib/sustainability/data.ts` - Now includes player team resolution, upcoming schedule retrieval, opponent strength pulls, and `getUpcomingOpponents(playerId, nGames)` for joined schedule/context output.
+- `web/lib/sustainability/priors.ts` - League and player prior builder; now contains explicit rookie/limited-sample fallback toward position-level league averages.
+- `web/lib/sustainability/priors.test.ts` - Unit tests covering the rookie/limited-sample fallback behavior in `priors.ts`.
+- `web/lib/sustainability/identity.ts` - Read-only WGO-to-players alignment validator and known display-name variant list; confirms no ID crosswalk is currently required.
+- `web/lib/sustainability/identity.test.ts` - Unit tests for sustainability player-name normalization and known WGO display variants.
+- `web/lib/sustainability/dates.ts` - Shared date normalization helpers for WGO dates, NST `date_scraped`, and snapshot/date query params.
+- `web/lib/sustainability/dates.test.ts` - Unit tests covering date normalization and WGO-vs-NST game date precedence.
+- `web/lib/sustainability/bandService.ts` - Now consumes the shared date helper instead of keeping duplicate inline normalization logic.
+- `web/lib/sustainability/features.ts` - Typed feature-engineering helpers for rates, z-scores, weighting, shrinkage, usage/context deltas, opponent adjustments, count-distribution rollups, and 50%/80% forecast band + calibration utilities.
+- `web/lib/sustainability/features.test.ts` - Unit tests covering rate helpers, z-score calculations, rolling-window weighting, empirical-Bayes shrinkage, usage/context deltas, opponent adjustment factors, count-distribution rollups, and forecast band calibration.
+- `web/lib/sustainability/bandCalculator.ts` - Sustainability band and score guardrail calculations used by dashboard/API outputs.
+- `web/lib/sustainability/bandCalculator.test.ts` - Regression tests for band calculation and score guardrail behavior.
+- `web/lib/sustainability/backtest.ts` - Baseline count-error and multiclass probability/Brier evaluation helpers.
+- `web/lib/sustainability/backtest.test.ts` - Unit tests for count-baseline and probability-calibration metrics.
+- `web/lib/sustainability/dataJoins.ts` - Data-join/runtime shaping helpers for sustainability inputs.
+- `web/lib/sustainability/dataJoins.test.ts` - Regression tests for sustainability data-join behavior.
+- `web/lib/sustainability/featureDictionary.ts` - Canonical feature dictionary for sustainability inputs and explanations.
+- `web/lib/sustainability/featureDictionary.test.ts` - Tests covering feature dictionary completeness and lookup behavior.
+- `web/lib/sustainability/guardrails.ts` - Guardrail helpers that prevent invalid sustainability outputs from being served as normal predictions.
+- `web/lib/sustainability/guardrails.test.ts` - Unit tests for sustainability guardrail states and warnings.
+- `web/lib/sustainability/runtimeContract.ts` - Runtime contract for sustainability payloads served to dashboard/API consumers.
+- `web/lib/sustainability/runtimeContract.test.ts` - Unit tests for sustainability runtime contract shape and defaults.
+- `web/lib/sustainability/windows.ts` - Sustainability window constants and helpers.
+- `web/lib/sustainability/windows.test.ts` - Verifies complete paginated snapshot-player loading and position filtering.
+- `web/lib/sustainability/backtestHarness.ts` - Paginated historical projection loader, actual-resolution seam, coverage gate, and metric orchestration.
+- `web/lib/sustainability/backtestHarness.test.ts` - Pagination, unavailable-history, and resolved-outcome harness coverage.
+- `tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md` - Consolidated endpoint, feature, backtest-coverage, operations, security, and performance contract.
+- `web/lib/sustainability/model.ts` - Modeling helpers for Hot/Normal/Cold target labeling, future logistic scoring, and projection output shaping.
+- `web/lib/sustainability/model.test.ts` - Unit tests covering canonical sustainability training-target label generation.
+- `web/lib/sustainability/score.ts` - Canonical TypeScript sustainability score builder and flag logic.
+- `web/pages/api/v1/sustainability/rebuild-priors.ts` - Sustainability priors rebuild route with bounded runtime/error handling.
+- `web/pages/api/v1/sustainability/trends.ts` - Sustainability trends serving route with guarded runtime output.
+- `web/lib/sustainability/trendsIdentity.ts` - Paginated sustainability score loader and bounded canonical player-identity fallback.
+- `web/lib/sustainability/trendsIdentity.test.ts` - Pagination, chunking, and canonical-name precedence coverage for sustainability trends.
+- `web/__tests__/pages/api/v1/sustainability/trends.test.ts` - Route regression proving canonical identity is emitted in hot/cold API rows.
+- `web/components/forge-dashboard/SustainabilityCard.tsx` - Dashboard card for guarded sustainability output.
+- `functions/lib/sustainability/README.md` - Notes for the non-canonical Python sustainability path and current TypeScript ownership.
+- `web/lib/supabase/Upserts/fetchRollingPlayerAverages.ts` - Rolling metrics backfill/upsert pipeline; now also persists explicit season, 3-year, and career averages alongside existing cumulative and rolling-window outputs.
+- `web/lib/supabase/Upserts/rollingMetricAggregation.ts` - Shared rolling ratio accumulator utilities for percentage and composite metrics such as shooting%, IPP, zone-start%, and PDO.
+- `web/lib/supabase/Upserts/rollingMetricAggregation.test.ts` - Unit tests for rolling ratio aggregation and historical ratio snapshots.
+- `web/lib/supabase/Upserts/rollingPlayerMetricMath.ts` - Shared helpers for reconstructing `/60` metric components from raw totals, TOI, and rate fallbacks.
+- `web/lib/supabase/Upserts/rollingPlayerMetricMath.test.ts` - Unit tests for weighted `/60` aggregation and mixed-source fallback behavior.
+- `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.ts` - Source-coverage and suspicious-output diagnostics for rolling player metric runs.
+- `web/lib/supabase/Upserts/rollingPlayerPipelineDiagnostics.test.ts` - Unit tests for rolling pipeline completeness and bounded-metric diagnostics.
+- `web/lib/supabase/Upserts/rollingHistoricalAverages.ts` - Shared historical-average accumulator utilities for season-to-date, 3-year, and career snapshots used by the rolling metrics pipeline.
+- `web/lib/supabase/Upserts/rollingHistoricalAverages.test.ts` - Unit tests covering historical-average and GP% snapshot aggregation logic across season windows.
+- `web/pages/api/v1/db/update-rolling-player-averages.ts` - API entrypoint for full refreshes, resume runs, and runtime controls for rolling player metric recomputation.
+- `migrations/20260309_add_explicit_historical_averages_to_rolling_player_game_metrics.sql` - Adds explicit `*_avg_season`, `*_avg_3ya`, and `*_avg_career` columns to `rolling_player_game_metrics`.
+- `web/lib/supabase/database-generated.types.ts` - Generated Supabase `Database` types; updated so `rolling_player_game_metrics` row/insert/update types include the explicit historical average fields.
+- `web/pages/trends/player/[playerId].tsx` - Player trend chart page; now lets the user compare rolling values against season, 3-year, career, or cumulative baselines.
+- `web/pages/trends/player/playerTrendPage.module.scss` - Styling for the new baseline-mode control on the player trend page.
+- `web/sql/sustainability/*.sql` - Parameterized SQL for metric retrieval and inserts.
+- `web/sql/sustainability/wgo_last_n_games.sql` - Returns last-N game rows from WGO per-player for rolling windows.
+- `web/sql/sustainability/wgo_last_n_aggregate.sql` - Aggregates last-N window for surface stats and TOI splits.
+- `web/sql/sustainability/nst_last_n_counts.sql` - Returns last-N NST gamelog individual counts rows per player.
+- `web/sql/sustainability/nst_last_n_counts_aggregate.sql` - Aggregates last-N NST counts window totals and FO%.
+- `web/sql/sustainability/nst_last_n_rates.sql` - Returns last-N NST gamelog individual rates rows per player.
+- `web/sql/sustainability/nst_last_n_rates_aggregate.sql` - Aggregates last-N NST rates window as averages.
+- `web/sql/sustainability/nst_game_date_map.sql` - NST date_scraped passthrough as canonical game_date (placeholder for future mapping).
+- `web/sql/sustainability/nst_career_baseline_counts.sql` - Aggregates seasonlong NST counts across seasons; includes derived per-60.
+- `web/sql/sustainability/nst_career_baseline_rates.sql` - TOI-weighted averages from seasonlong NST rates across seasons.
+- `web/__tests__/sustainability/*.test.ts` - Unit tests for data, features, model, and API.
+- `functions/lib/sustainability` - Optional: if compute is moved to Python functions later; for now, keep in web.
+
+### Notes
+
+- Unit tests should typically be placed alongside the code files they are testing (e.g., `MyModule.ts` and `MyModule.test.ts` in the same directory).
+- Use `npx vitest` to run tests in this workspace (web uses Vitest). You can scope to a file, e.g., `npx vitest web/__tests__/sustainability/data.test.ts`.
+- Cross-provider natural-schedule ownership for overlapping priors and window-z writers is tracked only by B-CRON-NST NEW 61, now closed by the Aug 1 Production handoff and non-overlapping natural chain. This list is 86/89; do not duplicate or close that operational checkbox here.
+
+## Tasks
+
+- [x] 1.0 Data access and joins
+  - [x] 1.1 Implement SQL/queries to fetch rolling windows (3/5/10/25/50) from WGO and NST per player and date.
+    - [x] 1.1.1 Add SQL files in `web/sql/sustainability/` to compute last-N games by player for WGO per-game stats (goals, assists, shots, pp_points, hits, blocks, pim, plus_minus, fow/fo%, toi splits).
+    - [x] 1.1.2 Add SQL files for NST gamelogs (counts/rates) to compute last-N windows for ixG, iCF/FF/SF, rush_attempts, rebounds_created, first/second assists.
+  - [x] 1.1.3 Implement a canonical game_date selection (prefer WGO date; map NST `date_scraped` to game_date).
+  - [x] 1.1.4 Expose typed data access helpers in `web/lib/sustainability/data.ts` with input: {playerId, snapshotDate, windows[]}.
+  - [x] 1.2 Implement career all-strengths baselines from NST seasonlong views and/or seasonal tables.
+    - [x] 1.2.1 Create queries to aggregate multi-season career baselines from `nst_seasonlong_as_counts` and `nst_seasonlong_as_rates`.
+    - [x] 1.2.2 Implement per-60 baselines and variance estimates (for priors) in `data.ts`.
+    - [x] 1.2.3 Add fallback for rookies/limited data: shrink toward league-average by position.
+  - [x] 1.3 Normalize keys (players.id vs wgo player_id) and dates (WGO `date`, NST `date_scraped`).
+    - [x] 1.3.1 Validate that `wgo_skater_stats.player_id` aligns to `players.id`; if not, add internal non-Yahoo crosswalk.
+    - [x] 1.3.2 Implement date normalization utility and unit tests.
+- [x] 1.4 Implement opponent mapping for next 5/10 games via `games` (and team views if needed).
+  - [x] 1.4.1 Query upcoming schedule for a player’s team and list next 10 games with opponent and dates.
+  - [x] 1.4.2 Add team strength pulls from `nst_team_stats` and/or `nst_team_all` for opponent adjustments.
+  - [x] 1.4.3 Expose a function getUpcomingOpponents(playerId, nGames) in `data.ts`.
+- [x] 1.5 Extend rolling metrics pipeline
+  - [x] 1.5.1 Persist season-to-date, 3-year, and career averages for every metric tracked in `rolling_player_game_metrics`.
+  - [x] 1.5.2 Expose additional aggregates in Supabase schema/types and surface them to trend visualizations.
+
+- [x] 2.0 Feature engineering
+- [x] 2.1 Compute per-60 rates and recent-vs-career deltas/z-scores for surface and underlying metrics.
+    - [x] 2.1.1 Implement per-60 and per-game rate calculators in `features.ts` with type-safe inputs.
+    - [x] 2.1.2 Compute z-scores: (recent_rate - career_rate) / career_sd; store alongside raw.
+    - [x] 2.1.3 Add window weighting (e.g., greater weight to 3/5 vs 25/50 where configured).
+- [x] 2.2 Build Empirical Bayes shrinkage toward career priors with window-weighting.
+    - [x] 2.2.1 Implement EB shrinker for key rates (goals/60, assists/60, shots/60, ixg/60, SCF/60, HDCF/60, IPP).
+    - [x] 2.2.2 Unit-test shrinkage behavior for small-N vs large-N windows.
+- [x] 2.3 Compute usage deltas (ΔESTOI/PPTOI/SHTOI) and context features (PDO, oiSH%, OZS%).
+    - [x] 2.3.1 Add usage delta calculators using WGO TOI splits vs career baselines.
+    - [x] 2.3.2 Compute context: PDO, on-ice SH%, OZS% from NST OI tables; compute deltas vs career.
+  - [x] 2.4 Aggregate opponent-adjusted per-game distributions and roll up to 5/10 horizons with uncertainty.
+    - [x] 2.4.1 Derive opponent adjustment factors from opponent defensive rates (xGA/60, CA/60, PK).
+    - [x] 2.4.2 Produce per-game Poisson/NegBin approximations for counting stats; simulate or analytically sum to 5/10.
+    - [x] 2.4.3 Emit bands (50%/80%) via quantiles; verify calibration with small backtest.
+
+- [x] 3.0 Modeling and outputs
+  - [x] 3.1 Implement baseline probability model (logistic) for Hot/Normal/Cold using feature set; add calibration.
+    - [x] 3.1.1 Define Hot/Cold labels from historical z-scores or quantiles; create training target.
+    - [x] 3.1.2 Fit logistic regression; add isotonic/Platt calibration; return class probabilities.
+    - [x] 3.1.3 Add feature importance extraction and simple explanation text generator.
+  - [x] 3.2 Convert rate expectations to counting projections for goals/assists/points/shots/pp_points/hits/blocks/pim/+/−/fow/fo%.
+    - [x] 3.2.1 Compute expected per-game counts from rate×TOI; aggregate to 5/10; include variance.
+    - [x] 3.2.2 Handle FO% as a rate with appropriate aggregation and bands.
+  - [x] 3.3 Compute Sustainability Score (0–100) and generate over/underperforming flags.
+    - [x] 3.3.1 Define score formula combining calibrated streak probs and deltas vs baseline.
+    - [x] 3.3.2 Set thresholds for over/underperforming; expose flags.
+  - [x] 3.4 Generate explanations (top drivers); simple importance first.
+    - [x] 3.4.1 Map top features to human-readable bullets (e.g., "PP TOI up +40% vs career").
+    - [x] 3.4.2 Include up to 3 reasons with direction and magnitude.
+  - [x] 3.5 Visualization coverage
+  - [x] 3.5.1 Plot all metrics captured in `rolling_player_game_metrics` with time-frame toggles (3/5/10/20/cumulative).
+  - [x] 3.5.2 Add trend toggles for career/3-year season baselines to highlight sustained streaks.
+
+- [x] A.0 Rolling Player Metrics Detour
+  - [x] A.1 Audit and correct rolling-player-metric percentage and rate calculations before continuing sustainability persistence work.
+    - [x] A.1.1 Fix percentage metric aggregation in `fetchRollingPlayerAverages.ts` so totals/last-N values are derived from aggregated numerators and denominators rather than summed per-game percentages.
+    - [x] A.1.2 Audit `/60` rate metrics in the rolling pipeline to ensure each one is computed from total metric value and total TOI for the relevant horizon, with unit tests covering edge cases and mixed-source fallbacks.
+    - [x] A.1.3 Investigate `powerPlayCombinations.percentageOfPP` values above `1.0`, determine the correct source definition, and either normalize the data path or explicitly document/guard the source semantics.
+    - [x] A.1.4 Audit the full rolling-player-metrics run path for completeness, logging, retry behavior, batching, null coverage, and accuracy; triage any remaining issues and improve runtime observability where needed.
+    - [x] A.1.5 Re-run targeted validations for `rolling_player_game_metrics`, summarize findings/fixes, and resume the main task list at `4.2.2`.
+
+- [x] 4.0 Persistence and API
+- [x] 4.1 Reuse `sustainability_trend_bands` for metric bands; implement upsert API in `persist.ts`.
+    - [x] 4.1.1 Write insert/upsert helpers for trend bands keyed by (player_id, snapshot_date, metric_key, window_code).
+    - [x] 4.1.2 Add unit tests for idempotency and conflict handling.
+- [x] 4.2 Create `sustainability_projections` table migration (SQL) and types; store snapshots and per-opponent breakdowns.
+  - [x] 4.2.1 Author SQL migration in `web/sql/sustainability/001_create_sustainability_projections.sql`.
+  - [x] 4.2.2 Add TS types/interfaces in `types.ts` and serialization helpers in `persist.ts`.
+    - Evidence (2026-07-11): the new typed input contract covers snapshot and opponent-game projections, supported distribution models, bands, rates, TOI, attempts, opponent adjustments, summaries, and metadata. Serialization enforces SQL horizon/band/game-scope invariants; chunked upserts use the full six-column primary-key conflict contract. Persistence tests pass 7/7 and TypeScript passes.
+  - [x] 4.3 Implement POST `/api/v1/sustainability/recompute` endpoint.
+    - [x] 4.3.1 Validate input date; default to yesterday; enforce server-side auth.
+    - [x] 4.3.2 Orchestrate data->features->models->persist; return summary.
+      - Evidence (2026-07-11): the admin/cron-protected POST route validates strict dates, defaults to yesterday UTC, bounds offset/limit to a maximum 50-player page, and supports dry runs. The service-role path loads current skaters with an explicit `.range()`, resolves each latest WGO source row as of the snapshot, uses the shared count-distribution/opponent-adjustment model for 5/10-game and per-opponent rows, upserts on the canonical key, isolates player failures, reports pagination/timing, and returns 207 for partial success. Focused persistence/data/recompute/route tests pass 14/14; the broader pagination regression group passes 17/17 and TypeScript passes.
+  - [x] 4.4 Implement GET `/api/v1/sustainability/player/:playerId` and `/api/v1/sustainability/upcoming/:playerId` endpoints.
+    - [x] 4.4.1 Support query params window (3/5/10/25/50) and horizon (5/10); validate.
+    - [x] 4.4.2 Return JSON schema with score, probs, projections, bands, flags, explanations; include metadata.
+      - Evidence (2026-07-11): public GET routes validate positive player IDs and documented window/horizon/game options, return 404 for absent snapshots, and use bounded score/band/projection reads. The player payload includes score, raw score, bands, projection intervals, flags, top z-driver explanations, and metadata; Hot/Normal/Cold fields are explicitly `pending_calibration` rather than fabricated. Upcoming rows are grouped by game with opponent provenance. Live grants confirm anon/authenticated SELECT-only access, service-role-only writes, and RLS enabled on all three tables. Read/route tests pass 4/4 within the 98-test sustainability suite; TypeScript passes.
+
+- [ ] 5.0 Testing, docs, and performance
+  - [x] 5.1 Unit tests for data, features, model, and API (Vitest).
+    - [x] 5.1.1 Add tests: date normalization, window selection, priors/shrinkage, opponent adjustment.
+    - [x] 5.1.2 Add tests: probability calibration sanity, projection aggregation, API responses.
+      - Evidence (2026-07-11): all 24 sustainability library/API test files pass, 98/98 tests total, covering dates, windows/pagination, priors, shrinkage, opponent factors, count distributions/bands, probability model/calibration paths, score guardrails, persistence, recompute, and read APIs. TypeScript passes.
+  - [ ] 5.2 Backtest accuracy vs career-only and recent-only baselines (MAE/RMSE; Brier for probs).
+    - [x] 5.2.1 Write a small backtest harness over past snapshots; record metrics. Evidence (2026-07-18): the paginated harness evaluates persisted snapshot projections against resolved actuals and career/season/recent/naive baselines, reports MAE/RMSE/bias/sample coverage plus multiclass Brier metrics, and returns an explicit insufficient-history state instead of fabricating results; backtest suites pass 7/7.
+    - [x] 5.2.2 Document results and targets in README. Evidence (2026-07-18): the consolidated runbook records the harness contract, metrics, pagination, zero-row production coverage, pending-calibration response, and the exact prospective-history gate. Parent 5.2 remains open until NEW 7 supplies genuine matured projection/actual evidence.
+  - [x] 5.3 Add README section with endpoint schema and feature dictionary.
+    - [x] 5.3.1 Document endpoint paths, params, response fields, and examples.
+      - Evidence (2026-07-11): the consolidated runbook documents auth, bounded recompute paging/dry-run/partial status, player/upcoming parameters and payloads, pending-calibration behavior, executable feature dictionary ownership, and examples.
+  - [x] 5.4 Ensure nightly batch SLA; basic logging and error handling.
+    - [x] 5.4.1 Add timing logs and error counters; ensure idempotent recompute.
+    - [x] 5.4.2 Identify slow queries and add indexes if needed.
+      - Evidence (2026-07-11): recompute returns route and orchestration timing, processed/inserted counts, page state, and isolated player errors; six-column upserts are idempotent. Live index inventory plus `EXPLAIN` showed index scans for latest-player and exact player/snapshot/horizon/type reads (estimated total costs 2.36/2.37), so no speculative index was added to the currently empty projection table. The runbook records the <15-minute target and measurement procedure.
+
+- [x] NEW 6.0 Prevent silent PostgREST truncation in legacy sustainability score/window rebuild player loading.
+  - [x] NEW 6.1 Page `player_baselines` by stable player order until a short page instead of trusting the default response cap.
+  - [x] NEW 6.2 Add regression coverage proving multi-page aggregation and goalie exclusion remain correct.
+    - Evidence (2026-07-11): `loadPlayersForSnapshot` now requests stable `player_id` pages with `.range()` until a short page, retains only F/D position groups, and supports a test client/page size. The combined score/window/recompute regression group passes 17/17 and TypeScript passes.
+
+- [ ] NEW 7.0 Establish genuine historical projection/actual coverage before publishing calibration or baseline-win claims.
+  - Production evidence (2026-07-11): `sustainability_projections` contains 0 rows, while `sustainability_scores` contains 219,568 rows across 2025-10-14–2026-07-11 and `sustainability_trend_bands` contains 10,849,256 rows across 2024-10-04–2026-07-11. Build/test the bounded harness and document its coverage gate now; leave result/calibration claims pending until prospective or approved backfilled projection snapshots have matured into actual outcomes.
+
+- [x] NEW 8.0 Populate stable player identity/display names in `/api/v1/sustainability/trends` hot/cold rows consumed by the FORGE Command Center.
+  - Discovery evidence (2026-07-12): selected-date reconciliation returned 25 hot and 25 cold rows for requested `2026-03-14` / resolved `2026-03-07`, but every sampled `player_name` was null, so the Command Center correctly exposes named-row sub-empty states rather than fabricating Trust/Fade candidates. Resolve names through the canonical player identity contract with bounded/paginated reads where applicable, add focused API coverage, and verify named Trust/Fade rows render before closure.
+  - Local remediation (2026-07-18): score reads now page in stable 500-row ranges until a short page; exact score-player identities query snapshot baselines and canonical `players` in independent 200-ID chunks; canonical `fullName`/position wins over null or stale baseline metadata. Helper/API suites pass 4/4, backtest suites pass 7/7, and project TypeScript passes. Value-free production reads prove 634/634 selected score IDs are readable from the anon canonical-player contract, while the currently deployed route still returns 25/25 hot and 25/25 cold null names. Exact reviewed code/control scope is preserved locally at checkpoint `0b4a41d55c573f20f2a1c67f8ccf0dcca3b0cdb8`; nothing was pushed or deployed. Keep NEW 8 open until guarded publication/deployment and a named-row route/Command Center probe pass.
+  - Authorization checkpoint (2026-07-18): generic continuation of non-overlapping work did not grant the separately recorded production publication/deployment authority. Safe adjacent Wave-A work is exhausted; this row remains open pending the exact guarded `octoberBranch` publication, isolated production deployment, and bounded hot/cold plus Command Center named-row verification authorization.
+  - Closure evidence (2026-07-30): the already-published current Production route returns 25/25 named hot and 25/25 named cold rows for requested `2026-03-14` / resolved `2026-03-07`, with zero null names, 25 unique IDs per direction, and complete position codes. A bounded public Command Center browser check renders one Top Trust and one Regression Risk region, four nonblank player links in each, and zero browser errors. No deployment, writer, migration, or database mutation was needed for this evidence-only reconciliation.

@@ -1,0 +1,210 @@
+import { describe, expect, it } from "vitest";
+import { forecastCalendarPolicy, type ContributionParticipation, type ContributionSource } from "lib/player-forecasts/contributions";
+import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
+import { candidatePlanForSort, candidatePlanMetrics } from "./candidatePlanMetrics";
+import { contributionLedger } from "./contributionLedger";
+import { evaluatePlan, planRoster } from "./planning";
+import { defaultWorkspace } from "./workspace";
+import { refreshForecastInputs, type SharedForecastRead } from "./refreshForecastInputs";
+import type { PlanningSnapshot } from "./planningTypes";
+
+/** Synthetic contract fixture only; never a real player forecast or provider acceptance. */
+function fixture() {
+  const workspace = defaultWorkspace(new Date("2026-10-12T12:00:00Z"));
+  workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "fixture-league", teamId: "fixture-team",
+    startDate: "2026-10-12", endDate: "2026-10-18", timeZone: "UTC", asOf: "2026-10-12T12:00:00Z" };
+  const players = ["CAR", "TOR", "NYR"].map((team, index) => ({ id: String(index + 1), nhlId: 1001 + index,
+    nhlTeamId: index + 1, name: `Synthetic ${index + 1}`, teamAbbreviation: team, rosterRevision: `fixture-roster-${index + 1}`,
+    playerClass: "skater" as const, eligiblePositions: ["C"], eligibilityVerified: true, availability: index === 2 ? "free_agent" as const : "rostered" as const,
+    canDrop: true, reserveEligibility: [], ownership: null, holdValue: null }));
+  const games = players.map((player, index) => ({ id: String(index + 101), date: index === 2 ? "2026-10-12" : "2026-10-13",
+    startsAt: index === 2 ? "2026-10-12T20:00:00Z" : "2026-10-13T20:00:00Z", teamAbbreviation: player.teamAbbreviation,
+    opponent: "OTT", home: true, status: "scheduled" as const, scheduleRevision: "fixture-schedule" }));
+  const snapshot: PlanningSnapshot = { id: "fixture-provider", context: workspace.context, players,
+    roster: players.slice(0, 2).map(player => ({ playerId: player.id, position: "active" as const })), games, forecasts: [],
+    rules: { ...workspace.rules, rosterSlots: { C: 1, BN: 1 }, scoring: { mode: "points", weights: { GOALS: 1 }, categories: [] },
+      acquisitionTiming: "same_day", acquisitionCost: 1, periods: [{ id: "fixture-period", start: "2026-10-12T00:00:00Z", end: "2026-10-19T00:00:00Z", remaining: 2, source: "manager" }], unsupported: [] },
+    lockedAssignments: [], realized: {}, opponent: null,
+    evidence: Object.fromEntries(["roster", "availability", "schedule", "rules"].map(key => [key,
+      { source: `fixture-${key}`, asOf: workspace.context.asOf, seasonId: workspace.context.seasonId, completeness: "complete", limitations: [] }])) };
+  const sources: ContributionSource[] = players.map((player, index) => ({ kind: "baseline", sourceId: `synthetic-rate-${player.id}`,
+    policyVersion: "synthetic-v1", released: true, allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: true },
+    playerId: Number(player.id), nhlPlayerId: player.nhlId, seasonId: snapshot.context.seasonId, teamId: player.nhlTeamId,
+    targetKey: "GOALS", unit: "count", basis: "per_team_game", mean: [10, 1, 2][index], participationIntegrated: true,
+    cutoffAt: "2026-10-12T10:00:00Z", issuedAt: "2026-10-12T12:01:00Z", expiresAt: "2026-10-19T00:00:00Z",
+    sourceWatermark: "synthetic-only", scheduleRevision: "fixture-schedule", rosterRevision: player.rosterRevision }));
+  const read: SharedForecastRead = { context: { ...workspace.context }, checkedAt: "2026-10-12T12:02:00Z", data: {
+    players, games, forecasts: [], baselineSources: sources, evidence: {
+      forecasts: { source: "synthetic shared read", asOf: "2026-10-12T12:01:00Z", completeness: "partial", seasonId: snapshot.context.seasonId, limitations: [] },
+    }, forecastManifest: { version: "planning-forecasts-v1", id: "synthetic-manifest", seasonId: snapshot.context.seasonId,
+      asOf: "2026-10-12T12:01:00Z", calendarPolicy: forecastCalendarPolicy(), scheduleRevision: "fixture-schedule",
+      rosterRevision: "fixture-roster", issuedRevisionIds: [], baselineChecksum: "synthetic-only", requiredOpportunities: 3,
+      forecastedOpportunities: 0, exclusionCounts: {} } } };
+  return { snapshot, read, intent: { ...workspace.intent, protectedPlayerIds: ["2"] } };
+}
+
+describe("shared forecast reload for the owned roster", () => {
+  it("runs released baseline→legal optimized week→complete timed swap, with GP/AGP/bench and points tradeoff", () => {
+    const { snapshot, read, intent } = fixture();
+    expect(evaluatePlan(snapshot, intent, "outcome").projectedValue).toBeNull();
+    const before = JSON.stringify({ snapshot, read, intent });
+    const refreshed = refreshForecastInputs(snapshot, read);
+    const result = planRoster(refreshed, intent);
+    expect(result.baseline).toMatchObject({ legal: true, comparisonEligible: true, activeGames: 1, projectedValue: 10 });
+    const ledger = [...contributionLedger(refreshed, result.baseline, intent).values()];
+    expect(ledger.reduce((sum, player) => sum + (player.scheduledGames ?? 0), 0)).toBe(2);
+    expect(ledger.reduce((sum, player) => sum + (player.activeGames ?? 0), 0)).toBe(1);
+    expect(ledger.reduce((sum, player) => sum + (player.benchGames ?? 0), 0)).toBe(1);
+    const metrics = candidatePlanMetrics(refreshed, intent);
+    const swap = candidatePlanForSort(metrics.candidates.find(row => row.playerId === "3")!.plans, "points")!;
+    expect(swap).toMatchObject({ netAGP: 1, netPoints: -7, dropped: [{ playerId: "1", lostAGP: 1, lostPoints: 10 }] });
+    const selected = evaluatePlan(refreshed, { ...intent, steps: swap.steps }, swap.objective);
+    expect(selected).toMatchObject({ legal: true, budgetVerified: true, activeGames: 2, projectedValue: 3 });
+    expect(selected.forecastInputs?.every(row => row.sourceKind === "baseline")).toBe(true);
+    expect(selected.forecastInputs?.flatMap(row => Object.values(row.contributions ?? {})).every(row => row.sourceIds.every(id => id.startsWith("synthetic-rate-")))).toBe(true);
+    expect(JSON.stringify({ snapshot, read, intent })).toBe(before);
+  });
+
+  it("preserves provider authority and timestamps while re-evaluating at the new shared read time", () => {
+    const { snapshot, read } = fixture();
+    snapshot.lockedAssignments = [{ date: "2026-10-12", playerId: "1", slotId: "C#1", source: "provider" }];
+    const refreshed = refreshForecastInputs(snapshot, read);
+    for (const key of ["players", "games", "roster", "rules", "lockedAssignments", "realized", "opponent"] as const) expect(refreshed[key]).toBe(snapshot[key]);
+    expect(refreshed.context.asOf).toBe(read.checkedAt);
+    expect(refreshed.evidence.roster).toBe(snapshot.evidence.roster);
+    expect(refreshed.evidence.availability).toBe(snapshot.evidence.availability);
+    expect(refreshed.evidence.schedule).toBe(snapshot.evidence.schedule);
+    expect(refreshed.id).not.toBe(snapshot.id);
+    expect(refreshed.forecasts).toBe(read.data.forecasts);
+  });
+
+  it("does not let a forecast refresh revive a schedule witness that expired before planning time", () => {
+    const { snapshot, read, intent } = fixture();
+    // Schedule observed 35.5h before the provider snapshot: still fresh when the snapshot was taken.
+    snapshot.evidence.schedule = { ...snapshot.evidence.schedule!, asOf: "2026-10-11T00:30:00Z" };
+    const fresh = planRoster(refreshForecastInputs(snapshot, read), intent);
+    expect(fresh.baseline).toMatchObject({ comparisonEligible: true, projectedValue: 10 });
+    expect(fresh.baseline.limitations.some(line => line.includes("Reload the schedule"))).toBe(false);
+    // A later forecast read moves the planning clock to 36.5h past the schedule observation.
+    const refreshed = refreshForecastInputs(snapshot, { ...read, checkedAt: "2026-10-12T13:00:00Z" });
+    expect(refreshed.context.asOf).toBe("2026-10-12T13:00:00Z");
+    expect(refreshed.evidence.schedule).toBe(snapshot.evidence.schedule);
+    const stale = planRoster(refreshed, intent);
+    expect(stale.baseline).toMatchObject({ comparisonEligible: false, projectedValue: null, recommendation: { eligible: false } });
+    expect(stale.baseline.limitations).toContain("Schedule evidence observed 2026-10-11T00:30:00.000Z expired 2026-10-12T12:30:00.000Z; planning time is 2026-10-12T13:00:00.000Z. Reload the schedule; a forecast refresh does not renew it.");
+    expect(stale.alternatives.every(plan => !plan.steps.length)).toBe(true);
+  });
+
+  it("shows no Best Fit net games or points once the schedule witness has expired", () => {
+    const { snapshot, read, intent } = fixture();
+    snapshot.evidence.schedule = { ...snapshot.evidence.schedule!, asOf: "2026-10-11T00:30:00Z" };
+    const fresh = candidatePlanMetrics(refreshForecastInputs(snapshot, read), intent);
+    expect(fresh.candidates.flatMap(row => row.plans).some(plan => plan.netAGP !== null)).toBe(true);
+    const stale = candidatePlanMetrics(refreshForecastInputs(snapshot, { ...read, checkedAt: "2026-10-12T13:00:00Z" }), intent);
+    const plans = stale.candidates.flatMap(row => row.plans);
+    expect(plans.length).toBeGreaterThan(0);
+    expect(plans.every(plan => plan.netAGP === null && plan.netPoints === null)).toBe(true);
+    expect(stale.diagnostics.find(row => row.playerId === "3")?.reasons).toContain("Schedule evidence observed 2026-10-11T00:30:00.000Z expired 2026-10-12T12:30:00.000Z; planning time is 2026-10-12T13:00:00.000Z. Reload the schedule; a forecast refresh does not renew it.");
+  });
+
+  it("keeps legacy schedule evidence without an observation time usable, with a visible note", () => {
+    const { snapshot, read, intent } = fixture();
+    const refreshed = refreshForecastInputs(snapshot, { ...read, checkedAt: "2026-10-14T00:00:00Z",
+      data: { ...read.data, forecastManifest: { ...read.data.forecastManifest!, asOf: "2026-10-13T23:59:00Z" } } });
+    const withSchedule = (asOf: string | null) => planRoster({ ...refreshed, games: refreshed.games.map(game => ({ ...game, date: "2026-10-15", startsAt: "2026-10-15T20:00:00Z" })),
+      evidence: { ...refreshed.evidence, schedule: { ...snapshot.evidence.schedule!, asOf } } }, intent).baseline;
+    // Saved or legacy evidence with no observation time: today's behavior plus a note, never a silent block.
+    const legacy = withSchedule(null);
+    expect(legacy).toMatchObject({ comparisonEligible: true, projectedValue: 10 });
+    expect(legacy.limitations).toContain("Schedule evidence has no observation time, so its freshness was not rechecked at planning time. Reload the schedule to confirm it.");
+    // A witness observed after an older planning clock (a restored manual workspace, client clock skew) has not expired.
+    const newer = withSchedule("2026-10-14T06:00:00Z");
+    expect(newer).toMatchObject({ comparisonEligible: true, projectedValue: 10 });
+    expect(newer.limitations.some(line => line.startsWith("Schedule evidence"))).toBe(false);
+    // An expired observation still blocks.
+    expect(withSchedule("2026-10-12T00:00:00Z")).toMatchObject({ comparisonEligible: false, projectedValue: null });
+  });
+
+  it("replaces the participation catalog and evidence while preserving provider state and denied uses", () => {
+    const { snapshot, read } = fixture();
+    const receipt: ContributionParticipation = { playerId: 1, nhlPlayerId: 1001, seasonId: snapshot.context.seasonId,
+      gameId: 101, teamId: 1, scheduledAt: snapshot.games[0].startsAt!, basis: "appearance", probability: 0.5,
+      revisionId: "synthetic-participation", released: true, scheduleRevision: "fixture-schedule", rosterRevision: "fixture-roster-1",
+      allowedUses: { assignment: false, totals: false, comparison: false, conditionalTieBreak: true },
+      issuedAt: read.checkedAt, cutoffAt: snapshot.context.asOf, expiresAt: "2026-10-19T00:00:00Z" };
+    snapshot.participationSources = [{ ...receipt, revisionId: "old" }];
+    read.data.participationSources = [receipt];
+    read.data.evidence.participation = { source: "Synthetic uncalibrated participation", seasonId: snapshot.context.seasonId,
+      asOf: read.checkedAt, completeness: "partial", limitations: ["Calibration unavailable."] };
+    const refreshed = refreshForecastInputs(snapshot, read);
+    expect(refreshed.participationSources).toBe(read.data.participationSources);
+    expect(refreshed.participationSources?.[0].allowedUses?.totals).toBe(false);
+    expect(refreshed.evidence.participation).toBe(read.data.evidence.participation);
+    expect(refreshed.roster).toBe(snapshot.roster);
+    expect(refreshed.rules).toBe(snapshot.rules);
+    expect(refreshed.lockedAssignments).toBe(snapshot.lockedAssignments);
+    expect(refreshed.evidence.roster).toBe(snapshot.evidence.roster);
+    for (const catalog of [[], undefined]) {
+      const next = refreshForecastInputs(refreshed, { ...read, checkedAt: "2026-10-12T12:04:00Z", data: {
+        ...read.data, participationSources: catalog, evidence: {},
+        forecastManifest: { ...read.data.forecastManifest!, asOf: "2026-10-12T12:03:00Z" },
+      } });
+      expect(next.participationSources).toBe(catalog);
+      expect(next.evidence.participation).toMatchObject({ completeness: "partial", limitations: ["Participation coverage is unverified."] });
+      expect(snapshot.participationSources?.[0].revisionId).toBe("old");
+    }
+  });
+
+  it.each(["provider", "seasonId", "leagueId", "teamId", "startDate", "endDate", "timeZone"] as const)("rejects a read for another %s", key => {
+    const { snapshot, read } = fixture(); (read.context as any)[key] = key === "seasonId" ? 20252026 : "other";
+    expect(refreshForecastInputs(snapshot, read)).toBe(snapshot);
+  });
+  it.each(["no manifest", "wrong season", "old manifest", "future manifest", "bad time", "newer provider"])("retains the provider bundle for %s", reason => {
+    const { snapshot, read } = fixture();
+    if (reason === "no manifest") read.data.forecastManifest = undefined;
+    if (reason === "wrong season") read.data.forecastManifest!.seasonId = 20252026;
+    if (reason === "old manifest") read.data.forecastManifest!.asOf = "2026-10-12T11:59:00Z";
+    if (reason === "future manifest") read.data.forecastManifest!.asOf = "2026-10-12T12:03:00Z";
+    if (reason === "bad time") read.checkedAt = "bad";
+    if (reason === "newer provider") snapshot.context.asOf = "2026-10-12T12:03:00Z";
+    expect(refreshForecastInputs(snapshot, read)).toBe(snapshot);
+  });
+
+  it.each(["unreleased", "permissions", "missing target", "conditional only", "stale", "schedule revision", "roster revision"])("keeps %s inputs unavailable without inventing net points", problem => {
+    const { snapshot, read, intent } = fixture();
+    for (const source of read.data.baselineSources!) {
+      if (problem === "unreleased") source.released = false;
+      if (problem === "permissions") source.allowedUses = { assignment: false, totals: false, comparison: false, conditionalTieBreak: false };
+      if (problem === "missing target") source.targetKey = "ASSISTS";
+      if (problem === "conditional only") { source.basis = "per_appearance"; source.participationIntegrated = false; }
+      if (problem === "stale") source.expiresAt = read.checkedAt;
+      if (problem === "schedule revision") source.scheduleRevision = "other";
+      if (problem === "roster revision") source.rosterRevision = "other";
+    }
+    const refreshed = refreshForecastInputs(snapshot, read);
+    expect(evaluatePlan(refreshed, intent, "outcome").projectedValue).toBeNull();
+    const metrics = candidatePlanMetrics(refreshed, intent);
+    expect(metrics.candidates.flatMap(row => row.plans).every(plan => plan.netPoints === null)).toBe(true);
+    expect(metrics.candidates[0].plans[0].netAGP).toBe(1);
+  });
+
+  it("removes revoked source inputs rather than retaining an old positive projection", () => {
+    const { snapshot, read, intent } = fixture();
+    const refreshed = refreshForecastInputs(snapshot, read);
+    expect(evaluatePlan(refreshed, intent, "outcome").projectedValue).toBe(10);
+    const revoked = { ...read, checkedAt: "2026-10-12T12:04:00Z", data: { ...read.data, baselineSources: [],
+      forecastManifest: { ...read.data.forecastManifest!, id: "revoked", asOf: "2026-10-12T12:03:00Z" } } };
+    const next = refreshForecastInputs(refreshed, revoked);
+    expect(evaluatePlan(next, intent, "outcome").projectedValue).toBeNull();
+  });
+
+  it("applies next-day acquisition timing before crediting the candidate's games", () => {
+    const { snapshot, read, intent } = fixture();
+    snapshot.rules.acquisitionTiming = "next_day";
+    snapshot.games[2].date = "2026-10-12"; snapshot.games[2].startsAt = "2026-10-12T21:00:00Z";
+    const refreshed = refreshForecastInputs(snapshot, read);
+    expect(candidatePlanMetrics(refreshed, intent).candidates[0].plans).toEqual([]);
+    // Baselines remain per-game inputs, never a next-N aggregate stretched onto a missing game.
+    expect(resolvePlanningContributions(refreshed).forecasts).toHaveLength(3);
+  });
+});

@@ -283,6 +283,113 @@
       ],
       "finding_and_untested_boundary": "H05 source-only existing requirementgap; no fullruntime counterexample or exploit",
       "current_matches_at_final": true
+    },
+    {
+      "path": "web/lib/player-forecasts/resolvedPlanningForecast.ts",
+      "sha256": "2070019c4ea4d9c8cda19b11da5050b2da845825732eacde30b02da1e46ef745",
+      "observed_at": "2026-10-23T12:11:06+00:00",
+      "ranges": [
+        [
+          19,
+          84
+        ]
+      ],
+      "functions": [
+        "forecastFromContributions"
+      ],
+      "checks": [
+        "correctness: selected rate identity vs issued participation identity across re-resolution",
+        "security: source binding must remain fail-closed"
+      ],
+      "finding_and_untested_boundary": "Known expected-failure remains. No new execution or production effect verified.",
+      "evidence_level": "source inspected",
+      "current_matches_at_final": null
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+      "sha256": "08317c82847edd961ac5cfbc36083900016ca1d261a49ae2e135698610bbe976",
+      "observed_at": "2026-10-23T12:11:06+00:00",
+      "ranges": [
+        [
+          126,
+          179
+        ]
+      ],
+      "functions": [
+        "reproducesAdmittedQuality"
+      ],
+      "checks": [
+        "verification integrity: it.fails marks known behavior; numerical assertions unchanged in viewed current test"
+      ],
+      "finding_and_untested_boundary": "Current340selection excludes this suite. Do not report full planner health.",
+      "evidence_level": "source inspected",
+      "current_matches_at_final": null
+    },
+    {
+      "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+      "sha256": "712730f58ba95e2890daab74b31c68e7a3f8840b9b2c1e66fe4ceae3a921455c",
+      "observed_at": "2026-10-23T12:11:06+00:00",
+      "ranges": [
+        [
+          40,
+          78
+        ],
+        [
+          92,
+          108
+        ]
+      ],
+      "functions": [
+        "resolveRsoTargetUse",
+        "restrictRsoForecast"
+      ],
+      "checks": [
+        "security: native catalog empty; target binding compares codeVersion/cutoffAt; expiry and catalog cardinality"
+      ],
+      "finding_and_untested_boundary": "Inspected selected policy logic only; no new target qualification or full authority proof.",
+      "evidence_level": "source inspected",
+      "current_matches_at_final": null
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts",
+      "sha256": "9f2f29c50a6af4e7d6c12265e4ed1552ffa52e79b171f568cf7230aac046daab",
+      "observed_at": "2026-10-23T12:11:06+00:00",
+      "ranges": [
+        [
+          83,
+          115
+        ]
+      ],
+      "functions": [
+        "withCurrentPlanningRead"
+      ],
+      "checks": [
+        "security/correctness: serialized provider mark mutation occurs before current-read authority fingerprinting"
+      ],
+      "finding_and_untested_boundary": "Cross-platform request for review remains; no adversarial oracle run here.",
+      "evidence_level": "source inspected",
+      "current_matches_at_final": null
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/providerGoalieStarts.ts",
+      "sha256": "a5e86e0b12ef6ca3d056f9811e3de81b991130b0edee807181a44c745f33032b",
+      "observed_at": "2026-10-23T12:11:06+00:00",
+      "ranges": [
+        [
+          18,
+          65
+        ]
+      ],
+      "functions": [
+        "applyProviderGoalieStarts"
+      ],
+      "checks": [
+        "correctness: conflicting starter/missing conditional/game-start guards, team probability rescaling",
+        "security: mark selection reads snapshot fields; authority/provenance requires caller-level review"
+      ],
+      "finding_and_untested_boundary": "No demonstrated exploit. No observed performance defect from bounded source read; full provider/browser path untested by auditor.",
+      "evidence_level": "source inspected",
+      "current_matches_at_final": null
     }
   ],
   "source_probe_receipt": "SOURCE-PROBES.json",
@@ -331,13 +438,37 @@
       "line": 3,
       "sha256": "e69d2a9f0588c9f21fc004ce10e2038437a0f46ed7451d7e87f9582167f75b36",
       "observed_at": "2026-10-22T13:04:39+00:00"
+    },
+    {
+      "path": "tasks/artifacts/luna-r1-independent-review-2026-10-22/REVIEW.md",
+      "line": 3,
+      "sha256": "e7ac3cbbbe1b59a0f81652f5cc2cef84dbbaeab085b7153a24aa106d56965798",
+      "observed_at": "2026-10-22T13:45:55+00:00"
+    },
+    {
+      "path": "tasks/artifacts/research-backlog-readiness-2026-10-22/p02-correctness/REPORT.md",
+      "line": 3,
+      "sha256": "6c5e4b72494b9360252e66f25032a7b5dac91b01453803d56db1b09e82978d2c",
+      "observed_at": "2026-10-22T13:47:25+00:00"
+    },
+    {
+      "path": "tasks/artifacts/research-backlog-readiness-2026-10-22/p02-correctness/LEASE.md",
+      "line": 3,
+      "sha256": "be0e96383aec497245c9c9b6320fe93616880b081a9c7f4827eedce59e5a0ac8",
+      "observed_at": "2026-10-22T13:47:25+00:00"
+    },
+    {
+      "path": "tasks/artifacts/claude-audit-independent-review-2026-10-22/p04-search/prefetch-correction/REVIEW.md",
+      "line": 3,
+      "sha256": "9f349d57006a002ddf1b0d330df0234883907b24cf08e5c31b43a269abdb073c",
+      "observed_at": "2026-10-22T13:49:28+00:00"
     }
   ],
   "writes": "only dedicated ledger directory and own diary",
   "application_suite_runs": 0,
   "remote_calls": 0,
   "pending_or_denied_auditor_actions": [],
-  "latest_metadata_update": "2026-10-22T13:27:32+00:00",
+  "latest_metadata_update": "2026-10-23T12:12:51+00:00",
   "parent_status_updates": [
     {
       "owner_thread": "01a15fd2-1d7a-75ac-b30d-a34a7d3d3026",
@@ -348,6 +479,36 @@
       "as_of": "2026-10-22T13:27:32+00:00",
       "status": "Latest dispatch and review states recorded in LEDGER.json; NST R1 and mounted-panel billing accepted, P04 qualified acceptance with prefetch caveat; P01/Luna pending; P02 actual-path proof assigned; CTPI job279 assigned.",
       "provenance": "Parent dispatch plus read linked current local receipts; no accepted checks rerun."
+    },
+    {
+      "as_of": "2026-10-22T13:32:51+00:00",
+      "status": "P03 ready27tests review queued; P05 ready41tests BILLING-REVIEW assigned and pickup UI lease pending; CTPI ready22tests NST-REVIEW assigned; Luna P2 outgoing-subject offsets2oraclesfail, correction assigned and flagsfalse.",
+      "provenance": "Latest trusted parent delegation; tests not rerun by auditor."
+    },
+    {
+      "as_of": "2026-10-22T13:40:43+00:00",
+      "status": "P01 accepted21,P03 qualified32,P04 qualified24behavior withprefetchhold;P05 ambiguity-fallbackP2 correction plus pickupUIlease transferred;usage48%13:31:43Z.",
+      "provenance": "Trusted parent; P01/P03 current reports read and pinned."
+    },
+    {
+      "as_of": "2026-10-22T13:42:18+00:00",
+      "status": "CTPI qualified local acceptance35fixedtests; originalroute6expectedfailures; validcohort/legacy_unapproved preserved.",
+      "provenance": "Parent update and current CTPI independent review read/pinned; no tests rerun."
+    },
+    {
+      "as_of": "2026-10-22T13:45:55+00:00",
+      "status": "Luna R1 locally accepted45executions with2overlap; original2oraclesreject and validcontrols pass;40trialpins intact. Earlier-source reuse integration gate remains; no nextimplementation assigned.",
+      "provenance": "Parent update and current independent receipt read/pinned."
+    },
+    {
+      "as_of": "2026-10-22T13:47:25+00:00",
+      "status": "P02 ownercomplete96actual imported-code tests after38baseline assertion failures;9filelease,13A7pins intact; independent REVIEW assigned; profileQS/time hydration remains separate. Usage43%13:44:59Z.",
+      "provenance": "Current REPORT/LEASE and trusted parent dispatch; no auditor rerun."
+    },
+    {
+      "as_of": "2026-10-22T13:49:28+00:00",
+      "status": "P04 P3prefetch finding closed;34passing executions and0automaticcalls in fixture. P07 exact matrix extracted and concrete TJ choices included.",
+      "provenance": "Current independent review and exact canonical source; no tests rerun or policy selected."
     }
   ],
   "final_source_fence_at": "2026-10-22T13:07:52+00:00",
@@ -363,5 +524,1151 @@
     "evidence_level": "behavior tested",
     "finding": "H05 broad grant reproduced; downstream narrower-use controls work",
     "untested": "Full adapter/plan/RPC/schema/browser/deployment; actual policy receipt not selected."
+  },
+  "p07_decision_followup": {
+    "report": "P07-DECISION.md",
+    "pins": "P07-DECISION-SOURCES.json",
+    "evidence_level": "source inspected",
+    "new_behavior_tests": 0,
+    "findings": "No FE-02c selection found; adjacent explicit policies retained. Start Chart/shared-loader and RSO bridge fallback coupling require consumer-specific placement.",
+    "exact_matrix": "P07-RETAINED-MATRIX.md"
+  },
+  "combined_candidate_receipt": {
+    "path": "tasks/artifacts/claude-audit-fixes-2026-10-22/combined-audit-nst/CANDIDATE.json",
+    "sha256": "c6511c243f6979781606b2484fa6383ab7a0735d5a2e69da99e3e93ceff936de",
+    "evidence_level": "behavior tested",
+    "provenance": "Imported owner combined verification; prior independent component reviews retained",
+    "boundary": "31changedfiles/12dependencies;770executions notdistinctscenarios;all-fileTS2fixtureerrors;58excluded differences;notrelease-ready"
+  },
+  "p07_selected_policy": {
+    "option": 2,
+    "status": "explicitly selected by TJ; implementation and target qualification not accepted",
+    "recorded_at": "2026-10-22T13:59:58+00:00",
+    "source_thread_id": "01a15411-3560-7632-8d31-1dd2447ba00e",
+    "exact_user_decision": "move forward with 2, require target-by-target review before native numeric use",
+    "exact_accuracy_priority": "Which option would give us the best model? I don't want to sacrifice accuracy for ease",
+    "receipt": "P07-SELECTED-POLICY.md",
+    "acceptance_matrix": "P07-CONSUMER-ACCEPTANCE.md",
+    "implementation_owner": "FORGE",
+    "independent_reviewer": "UNASSIGNED"
+  },
+  "p07_acceptance_planning": {
+    "sources": "P07-ACCEPTANCE-SOURCES.json",
+    "evidence_level": "source inspected",
+    "files": 7,
+    "new_tests": 0,
+    "new_application_edits": 0,
+    "status": "10 consumer/mechanism oracles and4 separate qualification tracks specified; not executed"
+  },
+  "concurrent_migration_report": {
+    "recorded_at": "2026-10-22T14:39:42+00:00",
+    "status": "relocation and runnerR1 independently accepted locally",
+    "test": "supportedBaselineMigration.test.ts",
+    "migration": "20261021210000_in_season_sandbox_billing.sql",
+    "reported_commit": "fd58ba245",
+    "report": "Original review accepted98/98registry parity but found frozen-manifest preflight regression; R1 closes it with actualofflinepreflight+14owner+5independentcases, original assertion/ENOENT failures verified, receipt collision guards.14candidate/preservedpins and5historicalrecords reviewed; noSQL/client/config/network work.",
+    "verification_owner": "GRANTS",
+    "provenance_owner": "BILLING",
+    "next_action": "Preserve accepted current relocation/provenance pins and historical receipts. No relocation fix remains; SQL/PG15/PostgREST/JWT/hosted/current-chain gates remain separate and no canonical approval for draft.",
+    "draft_path": "tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql",
+    "sql_sha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12",
+    "reviewer": "NST-REVIEW",
+    "review_report": "tasks/artifacts/billing-migration-relocation-independent-review-2026-10-22/r1/REVIEW.md"
+  },
+  "latest_qualified_slice_updates": {
+    "as_of": "2026-10-22T14:01:48+00:00",
+    "source": "parent trusted dispatch; no new receipt paths supplied",
+    "P05": "R1 actual-handler/client identity accepted; mounted-age expiry/resume pickup correction held and assigned",
+    "P02": "Nine-file slice qualified96+6; two inherited summary consumers dropnullGP, extension assigned withSTATS no-conflict"
+  },
+  "p02_r1_acceptance": {
+    "as_of": "2026-10-22T14:15:07+00:00",
+    "report": "tasks/artifacts/p02-r1-independent-review-2026-10-22/REVIEW.md",
+    "tests": 26,
+    "counts_not_added_to_historical96": true,
+    "preserved_original_p02_files": 9,
+    "preserved_a7_files": 13,
+    "current_closure_hashes": 52,
+    "historical_caller_pins_superseded": 2,
+    "boundaries": "QS/time hydration, numericTOItypes, live validity/grain/seasonjoins, broaderS03/S07/S12 and release remain open"
+  },
+  "p05_mounted_expiry_acceptance": {
+    "as_of": "2026-10-22T14:16:11+00:00",
+    "source": "parent trusted independent-review dispatch; exact independent receipt path not yet supplied",
+    "tests": 31,
+    "original_oracle": "passed",
+    "additional_fetches": 0,
+    "preserved": "4R1ambiguitypins and billingguards",
+    "pin_exception": {
+      "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+      "line": 322,
+      "change": "consumer: 'rso'",
+      "owner": "FORGE",
+      "outside_p05_acceptance": true
+    },
+    "held": "realbrowser and persistedRSOaging"
+  },
+  "batch_checkpoint": {
+    "recorded_at": "2026-10-22T14:39:42+00:00",
+    "report": "BATCH-CHECKPOINT.md",
+    "source_pins": "BATCH-SOURCE-PINS.json",
+    "hash_checked_at": "2026-10-22T14:35:51+00:00",
+    "manifest_packets": 12,
+    "meaning": "Acceptedlocal/pending/held separation; exactcurrent hashes are identity evidence only; no new tests; no new workers",
+    "P07": "running; no verified result",
+    "usage": "35%weeklyremaining14:27:04Z"
+  },
+  "continuation_dispatch": {
+    "as_of": "2026-10-22T14:42:08+00:00",
+    "source_thread_id": "01a15411-3560-7632-8d31-1dd2447ba00e",
+    "S08": {
+      "owner": "STATS",
+      "status": "assigned active; offline actual-path reproduction beforeminimalfix"
+    },
+    "calendar": {
+      "owner": "CALENDAR",
+      "status": "assigned active; preserve acceptedsummary; offline repro beforeminimalfix"
+    },
+    "goalie_hydration": "held for exact typedinputcontract; no implementation assigned",
+    "P07": "awaiting verified result",
+    "limits": "no broadredesign or production"
+  },
+  "p07_candidate_status": {
+    "recorded_at": "2026-10-22T14:43:36+00:00",
+    "status": "R1 independently held on two P2 findings; R2 correction active",
+    "report": "tasks/artifacts/p07-rso-use-policy-2026-10-22/REPORT.md",
+    "candidate_manifest": "tasks/artifacts/p07-rso-use-policy-2026-10-22/CANDIDATE.json",
+    "manifest_sha256": "23a5af194914cac57daad3b56a753a4d696e56611941f1c2a4e7b1d870c08d4b",
+    "source_files": 17,
+    "leased_files": 19,
+    "owner_tests": 541,
+    "separate_failing_acceptance_oracles": 1,
+    "failure": "Editable rsoUsePolicy.bridgeRevisionIds can impersonate trusted server bridge selection after saved/JSON/worker transfer",
+    "production_approval_catalog": "empty; no target approvals fabricated",
+    "producer_identity_gate": "Actual producer lacks reviewed configuration/artifact identity for a future positive detailed review; no hash substitution",
+    "independent_architecture_reviewer": "01a160f3-6d90-774f-a641-a0b6afdd4029",
+    "next_action": "One bounded R2 correction, then unchanged C08, independent adversarial fixtures and affected tests; independent acceptance required before integration.",
+    "checks_by_auditor": "Read REPORT and CANDIDATE; current source hashes only; no tests rerun",
+    "pins": [
+      {
+        "path": "web/lib/player-forecasts/rsoUsePolicy.ts",
+        "expected_sha256": "0220aad16417e0073898f8b805ad3e139b88f70a4a4064f73173d1db3bbfc8ab",
+        "current_sha256": "0220aad16417e0073898f8b805ad3e139b88f70a4a4064f73173d1db3bbfc8ab",
+        "matches": true
+      },
+      {
+        "path": "web/lib/player-forecasts/rsoUsePolicy.test.ts",
+        "expected_sha256": "234ae88abcae41182a9673aa31e99aeea0db50bd39de4c4b1002de596e643e07",
+        "current_sha256": "234ae88abcae41182a9673aa31e99aeea0db50bd39de4c4b1002de596e643e07",
+        "matches": true
+      },
+      {
+        "path": "web/lib/rosterScheduleData/planning.ts",
+        "expected_sha256": "e945135114e21ff631a1f23b486490323e569db0c30d67b6c565deb2a87f5306",
+        "current_sha256": "e945135114e21ff631a1f23b486490323e569db0c30d67b6c565deb2a87f5306",
+        "matches": true
+      },
+      {
+        "path": "web/lib/rosterScheduleData/planning.test.ts",
+        "expected_sha256": "579f1c5e44824ce3453518d61f2286f42ccffd578f6037b48f10f292d6d47aa3",
+        "current_sha256": "579f1c5e44824ce3453518d61f2286f42ccffd578f6037b48f10f292d6d47aa3",
+        "matches": true
+      },
+      {
+        "path": "web/lib/rosterScheduleOptimizer/planningTypes.ts",
+        "expected_sha256": "0e45829a1aa0eaad17140668f01e63e0c0dfe63cc47b89e903a6be1847872e0c",
+        "current_sha256": "0e45829a1aa0eaad17140668f01e63e0c0dfe63cc47b89e903a6be1847872e0c",
+        "matches": true
+      },
+      {
+        "path": "web/lib/player-forecasts/planningContributions.ts",
+        "expected_sha256": "b0837ce323c1815687c76426e98234296f5fc74568404e69a8de935d537453d1",
+        "current_sha256": "b0837ce323c1815687c76426e98234296f5fc74568404e69a8de935d537453d1",
+        "matches": true
+      },
+      {
+        "path": "web/lib/player-forecasts/planningContributions.test.ts",
+        "expected_sha256": "e69a921f9503504da870bc0a3f61d65043c4604042dd42fe95cb841850d69f01",
+        "current_sha256": "e69a921f9503504da870bc0a3f61d65043c4604042dd42fe95cb841850d69f01",
+        "matches": true
+      },
+      {
+        "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+        "expected_sha256": "f3ba1b151776a6fb1060a0b20d24eb2d28c2998cbab14682489c913c4f7791c9",
+        "current_sha256": "f3ba1b151776a6fb1060a0b20d24eb2d28c2998cbab14682489c913c4f7791c9",
+        "matches": true
+      },
+      {
+        "path": "web/lib/rosterScheduleOptimizer/planning.test.ts",
+        "expected_sha256": "a2f4767c5e9b764b0d422cb86d042d33353d8bf16092e50793942fd16192a666",
+        "current_sha256": "a2f4767c5e9b764b0d422cb86d042d33353d8bf16092e50793942fd16192a666",
+        "matches": true
+      },
+      {
+        "path": "web/lib/rosterScheduleData/planningDataTransport.ts",
+        "expected_sha256": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+        "current_sha256": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+        "matches": true
+      },
+      {
+        "path": "web/lib/in-season/workspaceSchema.ts",
+        "expected_sha256": "e1f4718cb7f529495acc591fe0e4886e3854282cd156560a57b293f375045cd5",
+        "current_sha256": "e1f4718cb7f529495acc591fe0e4886e3854282cd156560a57b293f375045cd5",
+        "matches": true
+      },
+      {
+        "path": "web/lib/in-season/workspaceSchema.test.ts",
+        "expected_sha256": "8d4f2908b418bbcf889f02ba0480ef1c977518027b911b6cc3db1607e9f8ff20",
+        "current_sha256": "8d4f2908b418bbcf889f02ba0480ef1c977518027b911b6cc3db1607e9f8ff20",
+        "matches": true
+      },
+      {
+        "path": "web/pages/api/v1/roster-schedule-optimizer/data.ts",
+        "expected_sha256": "dc7f5814046448fa23a201401b1ab0d1f744908b5330cee21177459594cb16ce",
+        "current_sha256": "dc7f5814046448fa23a201401b1ab0d1f744908b5330cee21177459594cb16ce",
+        "matches": true
+      },
+      {
+        "path": "web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts",
+        "expected_sha256": "a1ce00fc369634c8642115113b213daa416f312ddc4ca17e449426a1c502872e",
+        "current_sha256": "a1ce00fc369634c8642115113b213daa416f312ddc4ca17e449426a1c502872e",
+        "matches": true
+      },
+      {
+        "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+        "expected_sha256": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+        "current_sha256": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+        "matches": true
+      },
+      {
+        "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+        "expected_sha256": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+        "current_sha256": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+        "matches": true
+      },
+      {
+        "path": "web/lib/player-forecasts/gameExpectationReader.ts",
+        "expected_sha256": "440843c4f17bd18c91ddd2e3674827cbef8dce0e31b20053af318dd6db94b922",
+        "current_sha256": "440843c4f17bd18c91ddd2e3674827cbef8dce0e31b20053af318dd6db94b922",
+        "matches": true
+      }
+    ],
+    "status_updated_at": "2026-10-22T16:00:32+00:00",
+    "candidate_pin_checked_at": "2026-10-22T14:43:36+00:00",
+    "architecture_followup": {
+      "recorded_at": "2026-10-22T14:57:27+00:00",
+      "report": "tasks/artifacts/p07-independent-architecture-2026-10-22/REPORT.md",
+      "report_sha256": "3e0d87556959036fa1702683b69ae3b7f6cad08f5e1a1d8813378df07d1ab991",
+      "status": "architecture review complete; C08confirmed; localcorrection authorized byparent, not accepted",
+      "independent_checks": "17policy tests pass; original C08 intentionally fails;25reviewedfiles stable atreview, not freshly rechecked byledger",
+      "trusted_boundary": "Fresh actualserver data response replaces whole forecastgraph before quantitativeexecution; runtimeauthority outside serializedsavedstate, minted inexecutionrealm",
+      "strict_budget": "One boundedcurrentread per quantitativegeneration, shared plan/display, abortobsolete/coalesce, no polling/retry/provider/candidateloopreads; mockedtests only inauthorized work",
+      "failure_behavior": "No savednumericfallback; preserve manualcapacity/locks/rules/intent/realizedinputs and show qualityunavailable",
+      "display_and_execution": "Sameadapter forworker/fallback; admittedview used byCompactSchedule and RSOgoaliecallers",
+      "scope": "Parentauthorized localleaseextension hook/worker/adapter/CompactSchedule/RSOcomponent/tests; exactpaths/pins ownedbyFORGE",
+      "held": "Integration/release and fixedcandidate independentacceptance remainheld; actualproducerconfig/artifactidentity andtargetreviews separate",
+      "prohibited_in_this_packet": "Newsecret/schema/storage/infrastructure or actualservice/provider/productioncalls"
+    },
+    "r1_review": {
+      "recorded_at": "2026-10-22T15:45:15+00:00",
+      "status": "Owner handoff reviewed independently: held on R1-01/R1-02; R2 active",
+      "owner": "FORGE",
+      "reviewer": "REVIEW",
+      "report": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r1/REPORT.md",
+      "candidate_manifest": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r1/CANDIDATE.json",
+      "candidate_manifest_sha256": "99bb51f9c1f49d724cc2c6890d96f30cce66ba210317b7bc150cbd2e0f464e3a",
+      "candidate_source_pins": 32,
+      "r1_changed_paths": 17,
+      "owner_test_cases": 807,
+      "matched_test_files": 16,
+      "original_C08": "Passes unchanged; included in 807, not an additional count",
+      "typecheck": "Application scope passed; four pre-existing external reviewer fixtures excluded",
+      "lint": "Zero errors, six hook-dependency warnings; owner identifies unchanged declarations",
+      "source_overlay_sha256": "a973d8ec1052033e9f6bd0f6fe49a89f6a1ce4c39130c8e1c2a657879ca631ac",
+      "fixed_snapshot_files": 3372,
+      "snapshot_limit": "Accepted A1–A10/NST archive plus P07 overlay and verification tooling; excludes unrelated newer P01–P05/CTPI/Luna work. Not a clean release tree or current-tree qualification.",
+      "source_pins": {
+        "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx": "4970f2c79e66483aa9c341468ba38fdfaa8ab25e9007cf2aef9b0a753b4c48a4",
+        "web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts": "a1ce00fc369634c8642115113b213daa416f312ddc4ca17e449426a1c502872e",
+        "web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx": "eb2381452a65065250b699f38883c5d9f15f4d1bda560d96698bb9fe05dc6be9",
+        "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx": "c3ff6cb96ea340c40ccd0719109fcdb0e09c1eb8e54518cd3d8eb0a6785611a7",
+        "web/components/RosterScheduleOptimizer/CompactSchedule.tsx": "e203017397116abb2a0cf1b3e98b41cff44f01cd6fad916c1ed96e6b5e8f1ec9",
+        "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "d7257a7a89e14af496b9c849473115b07bc95c65044c60bab17bca72246a3d30",
+        "web/hooks/candidateMetrics.worker.ts": "25287ecadbb95d208de5609e421bd7c2a154552a93018cc202d09bec85aba87b",
+        "web/hooks/rosterPlanning.worker.ts": "d6c38e8966c2ef30b94960d1986c6fc691cd2618a86b96bf3c253b9edad564da",
+        "web/hooks/rosterPlanningExecution.ts": "be2ad204061d7fe770f0c5be37b6df03ea2242a13fd4505973515ea21aed08cf",
+        "web/hooks/useCandidateMetrics.test.tsx": "c0469023262a528eb2026bc9be1ef8cbc3c94f408216f4c7b59bc86172108ff8",
+        "web/hooks/useCandidateMetrics.ts": "cd29f4777000e43bd9383f04306ba77a2b180ce3fd678a5e788252860dccd2d5",
+        "web/hooks/useRosterPlanning.test.tsx": "40f5ab5d18cfaa445cbc60e3fb4dd69dfaecb5e891b28b173f90bf7b7e72d4fc",
+        "web/hooks/useRosterPlanning.ts": "339bb37a2885a2c2fb5b84c0f3743196607e5e586f772f54cd54e24d88a1b9f3",
+        "web/lib/in-season/workspaceSchema.test.ts": "8d4f2908b418bbcf889f02ba0480ef1c977518027b911b6cc3db1607e9f8ff20",
+        "web/lib/in-season/workspaceSchema.ts": "e1f4718cb7f529495acc591fe0e4886e3854282cd156560a57b293f375045cd5",
+        "web/lib/integrations/yahoo/rosterPlanning.test.ts": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+        "web/lib/integrations/yahoo/rosterPlanning.ts": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+        "web/lib/player-forecasts/gameExpectationReader.ts": "440843c4f17bd18c91ddd2e3674827cbef8dce0e31b20053af318dd6db94b922",
+        "web/lib/player-forecasts/planningContributions.test.ts": "e69a921f9503504da870bc0a3f61d65043c4604042dd42fe95cb841850d69f01",
+        "web/lib/player-forecasts/planningContributions.ts": "b0837ce323c1815687c76426e98234296f5fc74568404e69a8de935d537453d1",
+        "web/lib/player-forecasts/rsoUsePolicy.test.ts": "234ae88abcae41182a9673aa31e99aeea0db50bd39de4c4b1002de596e643e07",
+        "web/lib/player-forecasts/rsoUsePolicy.ts": "712730f58ba95e2890daab74b31c68e7a3f8840b9b2c1e66fe4ceae3a921455c",
+        "web/lib/rosterScheduleData/planning.test.ts": "4ac0ced587c384e74068a712d9d0d9e13b7cdd12dd3e6d52ce42013d37963a3b",
+        "web/lib/rosterScheduleData/planning.ts": "e945135114e21ff631a1f23b486490323e569db0c30d67b6c565deb2a87f5306",
+        "web/lib/rosterScheduleData/planningDataTransport.ts": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+        "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "12607b7951226ed6ba8b760c1cfde01278693a84f212e67f385775e64c1c2433",
+        "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts": "9a5b8c4380ceab54e2c59ef92e9a270f3d2588851613750269d68ebe2f8a37fe",
+        "web/lib/rosterScheduleOptimizer/executionAdapter.ts": "9b37ea3a3d7ba0a46ef5b1a8204ec9500e1677f60e04e03a8681063f39fa6e6f",
+        "web/lib/rosterScheduleOptimizer/planning.test.ts": "a2f4767c5e9b764b0d422cb86d042d33353d8bf16092e50793942fd16192a666",
+        "web/lib/rosterScheduleOptimizer/planning.ts": "f3ba1b151776a6fb1060a0b20d24eb2d28c2998cbab14682489c913c4f7791c9",
+        "web/lib/rosterScheduleOptimizer/planningTypes.ts": "0e45829a1aa0eaad17140668f01e63e0c0dfe63cc47b89e903a6be1847872e0c",
+        "web/pages/api/v1/roster-schedule-optimizer/data.ts": "dc7f5814046448fa23a201401b1ab0d1f744908b5330cee21177459594cb16ce"
+      },
+      "auditor_check": "Read owner report and manifest only; no tests or application hash checks rerun in this documentation update",
+      "held": "Independent acceptance, current-tree qualification, browser/Worker runtime, predictive Q01–Q04, authentic producer identity and target/use reviews, operational release",
+      "production_target_reviews": 0
+    },
+    "r1_independent_review": {
+      "recorded_at": "2026-10-22T16:00:32+00:00",
+      "status": "R1 independently held; R2 correction active",
+      "report": "tasks/artifacts/p07-r1-independent-review-2026-10-22/REPORT.md",
+      "report_sha256": "8022c9b17b23d8a101ed07dd9451b04dc62363c793ebf618a7b13dd4787591d6",
+      "passed_selected_cases": 81,
+      "failed_adversarial_cases": 3,
+      "findings": [
+        {
+          "taskID": "P07-R1-01",
+          "priority": "P2",
+          "finding": "Browser/server clock skew of plus or minus five seconds rejects an otherwise valid current read.",
+          "boundary": "Fails closed as an availability regression; no permission escalation or private-data leak demonstrated.",
+          "required_acceptance": "Correlate current requests across independent clocks and evaluate deadlines using server time plus bounded monotonic elapsed time. Skewed clients remain usable; obsolete generations, stale/revoked policy and expired/future evidence still fail closed."
+        },
+        {
+          "taskID": "P07-R1-02",
+          "priority": "P2",
+          "finding": "A review deadline expiring during calculation does not invalidate returned permissions/display.",
+          "boundary": "Synthetic positive-native review reproducer; production review catalog remains empty, no current production exposure demonstrated.",
+          "required_acceptance": "Capture applicable source/review deadlines before work and recheck immediately before publication; withhold or rebuild affected plan, metrics and display consistently. Coordinate with the corrected clock model."
+        }
+      ],
+      "original_C08": "Passes unchanged and is independently closed on reviewed bytes",
+      "preservation": "32 candidate + 3 reserved pins and all3372 snapshot hashes matched review; prior stats and billing preservation verified within described scope, not current-tree release acceptance",
+      "owner": "FORGE",
+      "correction_turn_id": "01a16455-c09f-739b-a1a7-7a6f7a24f7bf",
+      "reviewer": "REVIEW",
+      "next_action": "One bounded R2 correction, then unchanged C08, independent adversarial fixtures and affected tests; independent acceptance required before integration.",
+      "production_gates": "Closed; no new approvals, browser/runtime, schema, services or release authority",
+      "auditor_action": "Read review and update documentation only; no tests rerun or application edits"
+    }
+  },
+  "p01_date_candidate": {
+    "recorded_at": "2026-10-22T14:54:32+00:00",
+    "status": "owner-local dateidentity candidate; independent review pending",
+    "owner": "CALENDAR",
+    "reviewer": "STATS-REVIEW",
+    "changed_files": 2,
+    "test_cases": 14,
+    "timezones": [
+      "UTC",
+      "America/New_York"
+    ],
+    "test_count_note": "Same14cases run under twozones; not28distinctcases.8preservedsummary+6newdatecases.",
+    "behavior": "Preserve date-only joins/grid/labels; actualstartTimeUTC formatted separately in explicitEastern zone; invalid/missingstart unavailable",
+    "blocked_source_contracts": "Authoritative season/game finality and regulation/OT/SO/last-period fields absent from selectedconsumer inputs; WGOgrain/coverage unestablished",
+    "remaining_display_gaps": "Zero-score truthiness defect; RW/ROW naming separate; untouched under one-issue scope",
+    "pins": [
+      {
+        "path": "web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx",
+        "expected_sha256": "a8514752a748ff9cd39e18037a2a2648e4290e684c96e3398901aac3cc8e85a3",
+        "current_sha256": "a8514752a748ff9cd39e18037a2a2648e4290e684c96e3398901aac3cc8e85a3",
+        "matches": true
+      },
+      {
+        "path": "web/components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx",
+        "expected_sha256": "ee6424542b502ec0448eb70f7bf21e590d91837b56d2adb1bad5ace2cb2ae124",
+        "current_sha256": "ee6424542b502ec0448eb70f7bf21e590d91837b56d2adb1bad5ace2cb2ae124",
+        "matches": true
+      },
+      {
+        "path": "web/hooks/useTeamSchedule.ts",
+        "expected_sha256": "c526df196651bb5c94ffba17b54bbc70133754bafc77b26c3bfb27602ba47826",
+        "current_sha256": "c526df196651bb5c94ffba17b54bbc70133754bafc77b26c3bfb27602ba47826",
+        "matches": true
+      },
+      {
+        "path": "web/hooks/useTeamStatsHeaderData.ts",
+        "expected_sha256": "1a493766a110a9f2905ebc4a6ca4251cb87dbb360de3547d643c5d8c514ed9b2",
+        "current_sha256": "1a493766a110a9f2905ebc4a6ca4251cb87dbb360de3547d643c5d8c514ed9b2",
+        "matches": true
+      },
+      {
+        "path": "web/hooks/useTeamScheduleWgoStats.ts",
+        "expected_sha256": "d98958762c6dc037c97ba1d6decf05a5082aaa04f128b41605f71ffed7497158",
+        "current_sha256": "d98958762c6dc037c97ba1d6decf05a5082aaa04f128b41605f71ffed7497158",
+        "matches": true
+      }
+    ],
+    "report": "p01-semantics/HANDOFF.md",
+    "patch": "p01-semantics/changes.patch",
+    "no_new_tests_by_auditor": true
+  },
+  "p07_architecture_followup": {
+    "recorded_at": "2026-10-22T14:57:27+00:00",
+    "report": "tasks/artifacts/p07-independent-architecture-2026-10-22/REPORT.md",
+    "report_sha256": "3e0d87556959036fa1702683b69ae3b7f6cad08f5e1a1d8813378df07d1ab991",
+    "status": "architecture review complete; C08confirmed; localcorrection authorized byparent, not accepted",
+    "independent_checks": "17policy tests pass; original C08 intentionally fails;25reviewedfiles stable atreview, not freshly rechecked byledger",
+    "trusted_boundary": "Fresh actualserver data response replaces whole forecastgraph before quantitativeexecution; runtimeauthority outside serializedsavedstate, minted inexecutionrealm",
+    "strict_budget": "One boundedcurrentread per quantitativegeneration, shared plan/display, abortobsolete/coalesce, no polling/retry/provider/candidateloopreads; mockedtests only inauthorized work",
+    "failure_behavior": "No savednumericfallback; preserve manualcapacity/locks/rules/intent/realizedinputs and show qualityunavailable",
+    "display_and_execution": "Sameadapter forworker/fallback; admittedview used byCompactSchedule and RSOgoaliecallers",
+    "scope": "Parentauthorized localleaseextension hook/worker/adapter/CompactSchedule/RSOcomponent/tests; exactpaths/pins ownedbyFORGE",
+    "held": "Integration/release and fixedcandidate independentacceptance remainheld; actualproducerconfig/artifactidentity andtargetreviews separate",
+    "prohibited_in_this_packet": "Newsecret/schema/storage/infrastructure or actualservice/provider/productioncalls"
+  },
+  "latest_calendar_s08_acceptance": {
+    "recorded_at": "2026-10-22T15:08:45+00:00",
+    "calendar": "Qualifieddateidentityaccepted;24distinctcases eachUTC/NewYork,8summarydeclarations preserved; semanticcontracts/browser/liveheld",
+    "S08": "Qualified2filerouteaccepted49cases inclA-B-A staleerrors,independentpanels,odds/unknowns; unchangedH2Htimezone andbrowser/liveheld",
+    "pins": [
+      {
+        "path": "web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx",
+        "expected_sha256": "a8514752a748ff9cd39e18037a2a2648e4290e684c96e3398901aac3cc8e85a3",
+        "current_sha256": "a8514752a748ff9cd39e18037a2a2648e4290e684c96e3398901aac3cc8e85a3",
+        "matches": true
+      },
+      {
+        "path": "web/components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx",
+        "expected_sha256": "ee6424542b502ec0448eb70f7bf21e590d91837b56d2adb1bad5ace2cb2ae124",
+        "current_sha256": "ee6424542b502ec0448eb70f7bf21e590d91837b56d2adb1bad5ace2cb2ae124",
+        "matches": true
+      },
+      {
+        "path": "web/pages/stats/game/[gameId].tsx",
+        "expected_sha256": "dc4f19d8ee1b688a34a816a562fc5e4c01d4bac0e862cd91f272b06b2fa6156f",
+        "current_sha256": "dc4f19d8ee1b688a34a816a562fc5e4c01d4bac0e862cd91f272b06b2fa6156f",
+        "matches": true
+      },
+      {
+        "path": "web/__tests__/pages/statsGame.test.tsx",
+        "expected_sha256": "09807279a24a8fe98bd57e802103e894e21411fa1896b2d437fad7ba4d36b88a",
+        "current_sha256": "09807279a24a8fe98bd57e802103e894e21411fa1896b2d437fad7ba4d36b88a",
+        "matches": true
+      }
+    ],
+    "usage": "Parent31%weeklyremaining15:00:27Z",
+    "P07": "Correctionstillrunning; fixedcandidateacceptanceheld"
+  },
+  "p07_r1_review": {
+    "recorded_at": "2026-10-22T15:45:15+00:00",
+    "status": "Owner handoff complete; independent review active, not accepted",
+    "owner": "FORGE",
+    "reviewer": "REVIEW",
+    "report": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r1/REPORT.md",
+    "candidate_manifest": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r1/CANDIDATE.json",
+    "candidate_manifest_sha256": "99bb51f9c1f49d724cc2c6890d96f30cce66ba210317b7bc150cbd2e0f464e3a",
+    "candidate_source_pins": 32,
+    "r1_changed_paths": 17,
+    "owner_test_cases": 807,
+    "matched_test_files": 16,
+    "original_C08": "Passes unchanged; included in 807, not an additional count",
+    "typecheck": "Application scope passed; four pre-existing external reviewer fixtures excluded",
+    "lint": "Zero errors, six hook-dependency warnings; owner identifies unchanged declarations",
+    "source_overlay_sha256": "a973d8ec1052033e9f6bd0f6fe49a89f6a1ce4c39130c8e1c2a657879ca631ac",
+    "fixed_snapshot_files": 3372,
+    "snapshot_limit": "Accepted A1–A10/NST archive plus P07 overlay and verification tooling; excludes unrelated newer P01–P05/CTPI/Luna work. Not a clean release tree or current-tree qualification.",
+    "source_pins": {
+      "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx": "4970f2c79e66483aa9c341468ba38fdfaa8ab25e9007cf2aef9b0a753b4c48a4",
+      "web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts": "a1ce00fc369634c8642115113b213daa416f312ddc4ca17e449426a1c502872e",
+      "web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx": "eb2381452a65065250b699f38883c5d9f15f4d1bda560d96698bb9fe05dc6be9",
+      "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx": "c3ff6cb96ea340c40ccd0719109fcdb0e09c1eb8e54518cd3d8eb0a6785611a7",
+      "web/components/RosterScheduleOptimizer/CompactSchedule.tsx": "e203017397116abb2a0cf1b3e98b41cff44f01cd6fad916c1ed96e6b5e8f1ec9",
+      "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "d7257a7a89e14af496b9c849473115b07bc95c65044c60bab17bca72246a3d30",
+      "web/hooks/candidateMetrics.worker.ts": "25287ecadbb95d208de5609e421bd7c2a154552a93018cc202d09bec85aba87b",
+      "web/hooks/rosterPlanning.worker.ts": "d6c38e8966c2ef30b94960d1986c6fc691cd2618a86b96bf3c253b9edad564da",
+      "web/hooks/rosterPlanningExecution.ts": "be2ad204061d7fe770f0c5be37b6df03ea2242a13fd4505973515ea21aed08cf",
+      "web/hooks/useCandidateMetrics.test.tsx": "c0469023262a528eb2026bc9be1ef8cbc3c94f408216f4c7b59bc86172108ff8",
+      "web/hooks/useCandidateMetrics.ts": "cd29f4777000e43bd9383f04306ba77a2b180ce3fd678a5e788252860dccd2d5",
+      "web/hooks/useRosterPlanning.test.tsx": "40f5ab5d18cfaa445cbc60e3fb4dd69dfaecb5e891b28b173f90bf7b7e72d4fc",
+      "web/hooks/useRosterPlanning.ts": "339bb37a2885a2c2fb5b84c0f3743196607e5e586f772f54cd54e24d88a1b9f3",
+      "web/lib/in-season/workspaceSchema.test.ts": "8d4f2908b418bbcf889f02ba0480ef1c977518027b911b6cc3db1607e9f8ff20",
+      "web/lib/in-season/workspaceSchema.ts": "e1f4718cb7f529495acc591fe0e4886e3854282cd156560a57b293f375045cd5",
+      "web/lib/integrations/yahoo/rosterPlanning.test.ts": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+      "web/lib/integrations/yahoo/rosterPlanning.ts": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+      "web/lib/player-forecasts/gameExpectationReader.ts": "440843c4f17bd18c91ddd2e3674827cbef8dce0e31b20053af318dd6db94b922",
+      "web/lib/player-forecasts/planningContributions.test.ts": "e69a921f9503504da870bc0a3f61d65043c4604042dd42fe95cb841850d69f01",
+      "web/lib/player-forecasts/planningContributions.ts": "b0837ce323c1815687c76426e98234296f5fc74568404e69a8de935d537453d1",
+      "web/lib/player-forecasts/rsoUsePolicy.test.ts": "234ae88abcae41182a9673aa31e99aeea0db50bd39de4c4b1002de596e643e07",
+      "web/lib/player-forecasts/rsoUsePolicy.ts": "712730f58ba95e2890daab74b31c68e7a3f8840b9b2c1e66fe4ceae3a921455c",
+      "web/lib/rosterScheduleData/planning.test.ts": "4ac0ced587c384e74068a712d9d0d9e13b7cdd12dd3e6d52ce42013d37963a3b",
+      "web/lib/rosterScheduleData/planning.ts": "e945135114e21ff631a1f23b486490323e569db0c30d67b6c565deb2a87f5306",
+      "web/lib/rosterScheduleData/planningDataTransport.ts": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+      "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "12607b7951226ed6ba8b760c1cfde01278693a84f212e67f385775e64c1c2433",
+      "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts": "9a5b8c4380ceab54e2c59ef92e9a270f3d2588851613750269d68ebe2f8a37fe",
+      "web/lib/rosterScheduleOptimizer/executionAdapter.ts": "9b37ea3a3d7ba0a46ef5b1a8204ec9500e1677f60e04e03a8681063f39fa6e6f",
+      "web/lib/rosterScheduleOptimizer/planning.test.ts": "a2f4767c5e9b764b0d422cb86d042d33353d8bf16092e50793942fd16192a666",
+      "web/lib/rosterScheduleOptimizer/planning.ts": "f3ba1b151776a6fb1060a0b20d24eb2d28c2998cbab14682489c913c4f7791c9",
+      "web/lib/rosterScheduleOptimizer/planningTypes.ts": "0e45829a1aa0eaad17140668f01e63e0c0dfe63cc47b89e903a6be1847872e0c",
+      "web/pages/api/v1/roster-schedule-optimizer/data.ts": "dc7f5814046448fa23a201401b1ab0d1f744908b5330cee21177459594cb16ce"
+    },
+    "auditor_check": "Read owner report and manifest only; no tests or application hash checks rerun in this documentation update",
+    "held": "Independent acceptance, current-tree qualification, browser/Worker runtime, predictive Q01–Q04, authentic producer identity and target/use reviews, operational release",
+    "production_target_reviews": 0
+  },
+  "homepage_investigation": {
+    "recorded_at": "2026-10-22T15:46:58+00:00",
+    "owner": "HOMEPAGE",
+    "status": "Local guard already implemented; release pending; worker checking existing release receipts",
+    "source_commit": "cc3be5c09f062ea855adc0676293c134156f6b14",
+    "cached_local_master": "457435eb3010c5b3dd92d2e1a46d9c75d851780a",
+    "cached_origin_master": "6d5664f761132ab479a7febec60548d0fa9ee6ff",
+    "current_october_homepage_blob": "e7e495d0e213a691c57a8e0322b53324e4485278",
+    "cached_master_homepage_blob": "7f56c4470c34e071866116eae963ae014bedcf8b",
+    "evidence": "R5 MANIFEST.md:185 excludes homepage/test; isolated existing patch reverse-check passes; owner reports9offline tests across2files",
+    "production_limit": "Exact currently aliased source SHA unverified. ClientOnly means absent server-extracted text is not visual proof; no cache diagnosis.",
+    "report": "tasks/artifacts/draft-ranker-homepage-investigation-2026-10-22/REPORT.md",
+    "patch": "tasks/artifacts/draft-ranker-homepage-investigation-2026-10-22/hide-ranker.patch",
+    "patch_sha256": "bfb3301d3b8f3713c3651e84e4ddc74bf81127180b7d364a98c5a9fe82e0d497",
+    "next_action": "Parent confirms exact production deployment/alias source through the release workflow and includes isolated gate/test in a separately authorized release candidate. No application edits needed locally."
+  },
+  "audit_lane_constraint": "Resumed. Dedicated optimization audit active; ledger does not duplicate broad tests or launch competing implementation.",
+  "p07_r1_independent_review": {
+    "recorded_at": "2026-10-22T16:00:32+00:00",
+    "status": "R1 independently held; R2 correction active",
+    "report": "tasks/artifacts/p07-r1-independent-review-2026-10-22/REPORT.md",
+    "report_sha256": "8022c9b17b23d8a101ed07dd9451b04dc62363c793ebf618a7b13dd4787591d6",
+    "passed_selected_cases": 81,
+    "failed_adversarial_cases": 3,
+    "findings": [
+      {
+        "taskID": "P07-R1-01",
+        "priority": "P2",
+        "finding": "Browser/server clock skew of plus or minus five seconds rejects an otherwise valid current read.",
+        "boundary": "Fails closed as an availability regression; no permission escalation or private-data leak demonstrated.",
+        "required_acceptance": "Correlate current requests across independent clocks and evaluate deadlines using server time plus bounded monotonic elapsed time. Skewed clients remain usable; obsolete generations, stale/revoked policy and expired/future evidence still fail closed."
+      },
+      {
+        "taskID": "P07-R1-02",
+        "priority": "P2",
+        "finding": "A review deadline expiring during calculation does not invalidate returned permissions/display.",
+        "boundary": "Synthetic positive-native review reproducer; production review catalog remains empty, no current production exposure demonstrated.",
+        "required_acceptance": "Capture applicable source/review deadlines before work and recheck immediately before publication; withhold or rebuild affected plan, metrics and display consistently. Coordinate with the corrected clock model."
+      }
+    ],
+    "original_C08": "Passes unchanged and is independently closed on reviewed bytes",
+    "preservation": "32 candidate + 3 reserved pins and all3372 snapshot hashes matched review; prior stats and billing preservation verified within described scope, not current-tree release acceptance",
+    "owner": "FORGE",
+    "correction_turn_id": "01a16455-c09f-739b-a1a7-7a6f7a24f7bf",
+    "reviewer": "REVIEW",
+    "next_action": "One bounded R2 correction, then unchanged C08, independent adversarial fixtures and affected tests; independent acceptance required before integration.",
+    "production_gates": "Closed; no new approvals, browser/runtime, schema, services or release authority",
+    "auditor_action": "Read review and update documentation only; no tests rerun or application edits"
+  },
+  "projection_improvement_dispatch": {
+    "as_of": "2026-10-22T16:12:11+00:00",
+    "status": "Expanded implementation sprint active; historical P08 pins retained as baseline, not editing locks",
+    "ownership_map": "CURRENT-OWNERSHIP.md",
+    "leases": "LEASE-TRANSITIONS.json",
+    "tasklist_snapshot": "TASKLIST-20261022-SNAPSHOT.md",
+    "tasklist_sha256": "6c08e45eb8f0549280f81be63e6d5b735bce7bb65370c6761d29613b9d6ae0c1",
+    "named_new_threads": {
+      "FPI-LEDGER": "01a16459-e44c-7528-a602-b703dc9cb0f5",
+      "FPI-HYDRATION": "01a1645a-1237-713f-8590-9540223b40d2",
+      "FPI-MODEL": "01a1645a-3fe7-7289-8d44-11e216d6e0c5",
+      "FPI-DISPLAY": "01a1645a-6c9d-77ac-a105-0513908cb0fc"
+    },
+    "claude_tasks": [
+      6,
+      7,
+      8,
+      11
+    ],
+    "remaining_unassigned": "Task11.4 independent reviewer and other new-packet reviewers not confirmed here; implementation custodians remain named.",
+    "live_authority": "No new production reads, migrations, runtime, deployments or spending authority",
+    "p07_boundary": "Independently accepted narrow R2 behavior on pinned snapshot; TS/lint and task10 combined integration held",
+    "task11_4": {
+      "assigned_at": "2026-10-22T16:15:03+00:00",
+      "owner": "PIPELINE",
+      "thread": "01a16391-ed12-75cc-9dc8-e1c04ad170fa",
+      "exact_paths": "Nine-path isolated artifact overlay declared; no canonical application lease",
+      "scope": "Job79/399 docs and constant/test, advisory-burst helper/tests, rate policy and focused inventory/wrapper fixtures; narrower NST query evidence read-only",
+      "status": "Local preparation complete; independent review and release pending",
+      "fixture_checkpoint": {
+        "recorded_at": "2026-10-22T16:24:48+00:00",
+        "source": "Direct PIPELINE owner update; raw fixture receipts not inspected or rerun by ledger auditor",
+        "status": "Rechecking after artifact-only ninth-path addition; no acceptance",
+        "negative_control": "Retirement-only fixture reproduced20URL pacing21seconds instead of intended0",
+        "initial_coupled_run": {
+          "passed": 100,
+          "total": 102,
+          "failed": 2,
+          "reported_cause": "Omitted existing e89 policy tests still expected4seconds for81URLs"
+        },
+        "correction": "Add web/lib/cron/nstRateLimitPolicy.test.ts from pinned current tests; preserve21second minimum",
+        "canonical_application_edits": false,
+        "next_action": "Await corrected coupled-run receipt and exact candidate pins; independent review/release remain separate"
+      },
+      "reviewer": "UNASSIGNED",
+      "local_completion": {
+        "recorded_at": "2026-10-22T16:32:36+00:00",
+        "status": "Local preparation complete; independent review and release pending",
+        "report": {
+          "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/HANDOFF.md",
+          "line": 1,
+          "sha256": "e04c2a66a4c5cd161fc119689189660065eadf0a82d3372fdf1490c8d3187012",
+          "observed_at": "2026-10-22T16:32:36+00:00"
+        },
+        "manifest": {
+          "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/MANIFEST.json",
+          "line": 1,
+          "sha256": "56623a29e21e24a3ca49b60aade8f511796fd8350a01054e6a7d2f443156f6ae",
+          "observed_at": "2026-10-22T16:32:36+00:00"
+        },
+        "patch_sha256": "4e0b4db7da44e883dd278f611c787db646b83874af8b9e7d624d4fd5c75389ec",
+        "base": "6d5664f761132ab479a7febec60548d0fa9ee6ff",
+        "overlay_paths": 9,
+        "tests_passed": 102,
+        "test_files": 7,
+        "scoped_types_lint": "Owner passed; patch apply/output hashes passed",
+        "progress_read_checks": 7,
+        "progress_read_limit": "Synthetic semantics only. Current query already filters job/exact scope; saved error lacks SQLSTATE/timing/plan, so no new route/index change justified. Bounded live diagnostic authority remains separate.",
+        "canonical_edits": false,
+        "inventory": "Base-relative56pg/86total, not broader canonical57/87",
+        "retained_negative_control": "Retirement alone reproduces20URL pacing21s instead0; advisory coupling required",
+        "auditor_execution": "Handoff imported; raw tests not rerun"
+      }
+    },
+    "task2_function_lease": {
+      "path": "web/lib/projections/calculators/skater-adjustments.ts",
+      "function": "computeSkaterPhysicalEventRates",
+      "scope": "Function-only correction and physical tests; no whole-file rewrite",
+      "other_functions_and_stage_owner": "FPI-MODEL"
+    }
+  },
+  "p07_r2_review_pending": {
+    "recorded_at": "2026-10-22T16:22:27+00:00",
+    "status": "Owner-complete; independent review active on pinned R2; not accepted",
+    "owner": "FORGE",
+    "reviewer": "REVIEW",
+    "report": {
+      "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/REPORT.md",
+      "line": 1,
+      "sha256": "d181e798f9055c5820f853b79f9592d65504445501379580cfd224d9fd5f6743",
+      "observed_at": "2026-10-22T16:22:27+00:00"
+    },
+    "manifest": {
+      "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/CANDIDATE.json",
+      "line": 1,
+      "sha256": "45ee9b32b5b1ffff216b7c8e7a31d81febcd0483f233b3ae2f13f820e0062609",
+      "observed_at": "2026-10-22T16:22:27+00:00"
+    },
+    "changed_files": 8,
+    "pinned_candidate_files": 32,
+    "owner_tests": {
+      "passed": 294,
+      "test_files": 10,
+      "source": "Owner receipt, not rerun by ledger auditor"
+    },
+    "typecheck": "Pending shared heavy-lock coordination per owner receipt; not run/passed for R2",
+    "lint": "Pending shared heavy-lock coordination per owner receipt; not run/passed for R2",
+    "heavy_lock": "/private/tmp/fhfh-heavy.lock (documented location; availability/owner not inspected by ledger auditor)",
+    "original_oracles": "Owner reports original three failures corrected and unchanged C08 passing; independent R2 decision pending",
+    "source_overlay_sha256": "13c85ce88e9ec109791470315f724a61caafe324d6fcc9ea8a08197d83eec4b2",
+    "excluded_current_planner": {
+      "recorded_at": "2026-10-22T16:22:27+00:00",
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "owner": "FPI-DISPLAY",
+      "thread": "01a1645a-6c9d-77ac-a105-0513908cb0fc",
+      "sha256": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474",
+      "basis": "Task10 HANDOFF and diary explicitly name gameForecastPoints helper; task10 candidate SHA equals R2 excluded canonical SHA and the current observed file. Attribution is for task10 helper delta, not every historical line or model authorship.",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task10-display-2026-10-22/HANDOFF.md",
+          "line": 7,
+          "sha256": "683b12d5abfaf39957fdef2e18cc1c87a2ff96066f155bc9333f66169098364d",
+          "observed_at": "2026-10-22T16:22:27+00:00"
+        },
+        {
+          "path": "tasks/artifacts/task10-display-2026-10-22/candidate.json",
+          "line": 1,
+          "sha256": "61148a0455a6e908f3145911f1a03ced6e91793c119401b0537bb0df0b1ead9f",
+          "observed_at": "2026-10-22T16:22:27+00:00"
+        },
+        {
+          "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/CANONICAL-COMPARISON.json",
+          "line": 1,
+          "sha256": "e85252ff45f9be730fb9817f5b56fbc59d65812d44bc3883655a361044006363",
+          "observed_at": "2026-10-22T16:22:27+00:00"
+        }
+      ],
+      "current_tree_acceptance": false
+    },
+    "current_tree_acceptance": false,
+    "next_action": "Independent pinned R2 review and coordinated TS/lint, then explicit integration/review with separate task10 planner/display candidate; no silent overlay or production approval"
+  },
+  "task10_integration": {
+    "recorded_at": "2026-10-22T16:22:27+00:00",
+    "status": "Precise display lease granted; task10 integrating",
+    "owner": "FPI-DISPLAY",
+    "thread": "01a1645a-6c9d-77ac-a105-0513908cb0fc",
+    "release_receipt": {
+      "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/DISPLAY-LEASE-RELEASE.md",
+      "line": 1,
+      "sha256": "14df72ff73a4966968cb29fadcd06d4de78d11bb88102c83b6750e85693d4f51",
+      "observed_at": "2026-10-22T16:22:27+00:00"
+    },
+    "handoff": {
+      "path": "tasks/artifacts/task10-display-2026-10-22/HANDOFF.md",
+      "line": 1,
+      "sha256": "683b12d5abfaf39957fdef2e18cc1c87a2ff96066f155bc9333f66169098364d",
+      "observed_at": "2026-10-22T16:22:27+00:00"
+    },
+    "handoff_pins": {
+      "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "d7257a7a89e14af496b9c849473115b07bc95c65044c60bab17bca72246a3d30",
+      "web/components/RosterScheduleOptimizer/SlotWeekGrid.tsx": "b41a20e6dc7229ec015a66f1440faf788790bfaaaeae2ddc9a498e40011ccefd"
+    },
+    "scope": "RSO points callback/import/prop plus SlotWeekGrid render/tiers/legend and task-specific helpers/tests. Preserve P07 gate and compare handoff hashes before edits.",
+    "owner_tests_before_integration": 27,
+    "finding": "Owner executed actual current RSO pointsFor: GOALS1×3 plus missing weighted ASSISTS returned3; required unavailable. Not an integration acceptance pass.",
+    "planner_attribution": {
+      "recorded_at": "2026-10-22T16:22:27+00:00",
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "owner": "FPI-DISPLAY",
+      "thread": "01a1645a-6c9d-77ac-a105-0513908cb0fc",
+      "sha256": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474",
+      "basis": "Task10 HANDOFF and diary explicitly name gameForecastPoints helper; task10 candidate SHA equals R2 excluded canonical SHA and the current observed file. Attribution is for task10 helper delta, not every historical line or model authorship.",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task10-display-2026-10-22/HANDOFF.md",
+          "line": 7,
+          "sha256": "683b12d5abfaf39957fdef2e18cc1c87a2ff96066f155bc9333f66169098364d",
+          "observed_at": "2026-10-22T16:22:27+00:00"
+        },
+        {
+          "path": "tasks/artifacts/task10-display-2026-10-22/candidate.json",
+          "line": 1,
+          "sha256": "61148a0455a6e908f3145911f1a03ced6e91793c119401b0537bb0df0b1ead9f",
+          "observed_at": "2026-10-22T16:22:27+00:00"
+        },
+        {
+          "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/CANONICAL-COMPARISON.json",
+          "line": 1,
+          "sha256": "e85252ff45f9be730fb9817f5b56fbc59d65812d44bc3883655a361044006363",
+          "observed_at": "2026-10-22T16:22:27+00:00"
+        }
+      ],
+      "current_tree_acceptance": false
+    },
+    "limits": "Separate candidate review/current-tree integration required. Handoff pins are dated; no assertion they remain unchanged during authorized task10 edits."
+  },
+  "task1_local_candidate": {
+    "recorded_at": "2026-10-22T16:22:27+00:00",
+    "status": "Local implementation ready for independent review; no further edits planned",
+    "owner": "FPI-LEDGER",
+    "report": {
+      "path": "tasks/artifacts/forge-task1-scoreboard-2026-10-22/HANDOFF.md",
+      "line": 1,
+      "sha256": "6cc6c752efcaac94ac2a2e957bf03884619a828948e23b3788049e9f38437b64",
+      "observed_at": "2026-10-22T16:22:27+00:00"
+    },
+    "manifest": {
+      "path": "tasks/artifacts/forge-task1-scoreboard-2026-10-22/SOURCE-PINS.json",
+      "line": 1,
+      "sha256": "0dec491d94c7a8f09e1ed6c83846eb0af27a97b556bcf730b5b06c78ee9f8976",
+      "observed_at": "2026-10-22T16:22:27+00:00"
+    },
+    "changed_file_pins": {
+      "web/lib/player-forecasts/servedForecastLedger.ts": "464c108f990e5e9e5cfdd2f618cf41d2771f5ae14eacd90223ad83e4f8727e80",
+      "web/lib/player-forecasts/servedForecastLedger.test.ts": "4e1d8198f86439e4aa9a26d2011f30da8513933cd8ec32fb22ba3bed83ccc22e",
+      "web/pages/api/v1/forge/scoreboard.ts": "126b8eeada95e8a497feb3a7567eb4a5af1fa46430052b88c226322c7b1961cc",
+      "web/tests/api/forge-scoreboard.test.ts": "2104bb8cb215b6752b9adc0925c5b1706dc718355693985a01e6abacf541e541"
+    },
+    "owner_verification": {
+      "focusedTests": {
+        "status": "passed",
+        "files": 4,
+        "tests": 32
+      },
+      "scopedTypes": {
+        "status": "passed",
+        "exitCode": 0
+      },
+      "scopedLint": {
+        "status": "passed",
+        "exitCode": 0
+      },
+      "diffCheck": "passed"
+    },
+    "auditor_tests_run": 0,
+    "task1_2_partial": "Historical F/D position and expected/actual TOI/PP-TOI absent; position slices/opportunity-rate decomposition explicitly unavailable",
+    "held": "Independent review; A3 authoritative completeness/A4 durable universe; Q3/Q4 production evidence and R23 qualification; no bridge/snapshot/settle changes or predictive acceptance",
+    "lease_state": "Ready for parent review/handoff; no automatic task6.3 shared editor"
+  },
+  "p07_r2_independent_acceptance": {
+    "recorded_at": "2026-10-22T16:32:36+00:00",
+    "status": "Independently accepted narrow R2 behavior on pinned snapshot; TS/lint and task10 combined integration held",
+    "report": {
+      "path": "tasks/artifacts/p07-r2-independent-review-2026-10-22/REPORT.md",
+      "line": 1,
+      "sha256": "5931677975f40f8a5b52f8bbf6a9144a39073aa4a9e7b29ff2924071c57295a7",
+      "observed_at": "2026-10-22T16:32:36+00:00"
+    },
+    "reviewer": "REVIEW",
+    "tests_passed": 63,
+    "failed": 0,
+    "verified_snapshot_files": 3375,
+    "candidate_pins": 32,
+    "delta_files": 8,
+    "original_findings": "R1 clock-skew and expiry-during-computation findings closed on reviewed R2 bytes; unchanged C08 passes",
+    "preservation": "Reviewer reports32pins unchanged after tests; no current-tree qualification",
+    "held": [
+      "R2 application-scoped TS/lint; owner requested actual shared-lock inspection and pinned checks",
+      "Task10/P07 combined fixed snapshot and actual admitted UI inputs",
+      "Real browser worker packaging/cross-realm lifecycle",
+      "Target-specific native and predictive/data/release gates"
+    ],
+    "auditor_execution": "Imported exact independent report; no tests or lock inspection by ledger owner"
+  },
+  "task1_independent_acceptance": {
+    "recorded_at": "2026-10-22T16:32:36+00:00",
+    "status": "Independently accepted tasks1.1/1.3 and supported1.2 only",
+    "report": {
+      "path": "tasks/artifacts/forge-task1-independent-review-2026-10-22/REVIEW.md",
+      "line": 1,
+      "sha256": "5f5fddf9d0f66232bd96e4e3416d1d0792c56469a225f0156953cc07ef6d04ea",
+      "observed_at": "2026-10-22T16:32:36+00:00"
+    },
+    "reviewer": "FPI-LEDGER-REVIEW",
+    "tests_passed": 35,
+    "independent_cases": 10,
+    "pins": "8owner pins and23-file frozen snapshot matched per reviewer",
+    "important_boundary": "Goalie known nonstarts remain in event/Brier population; count/FP metrics use dressed cohort",
+    "held": "Historical F/D and TOI/PP-TOI opportunity-rate decomposition, durable full-population coverage, Q3/Q4 and predictive/release qualification",
+    "auditor_execution": "Report imported; tests not rerun"
+  },
+  "task2_independent_hold": {
+    "recorded_at": "2026-10-22T16:32:36+00:00",
+    "status": "Held on one P2 in retained physical-rate helper; narrow R1 correction authorized",
+    "report": {
+      "path": "tasks/artifacts/forge-task2-independent-review-2026-10-22/REVIEW.md",
+      "line": 1,
+      "sha256": "3b172f07ad35c5bfeb4c055c3306ee450b5a4d04b78141dd69f6e3abe9dc0d62",
+      "observed_at": "2026-10-22T16:32:36+00:00"
+    },
+    "finding": "Missing current-season count with known positive exposure becomes observed zero; inverse partial pair also requires coverage. Predates eight-file query delta.",
+    "checks": "311 focused cases verified (receipt case rerun with two-query pinned Git metadata adapter);9/11 independent adversarial cases pass,2fail;13pins matched",
+    "owner": "FPI-HYDRATION",
+    "function_lease": {
+      "path": "web/lib/projections/calculators/skater-adjustments.ts",
+      "function": "computeSkaterPhysicalEventRates",
+      "scope": "Function-only correction and physical tests; no whole-file rewrite",
+      "other_functions_and_stage_owner": "FPI-MODEL"
+    },
+    "held": "R1 independent correction review; matched current-query/variant-c cohort, all-head calibration, real20×5 row identity, migration/production/release",
+    "auditor_execution": "Read-only receipt reconciliation; no counterexample rerun"
+  },
+  "task11_4_local_complete": {
+    "recorded_at": "2026-10-22T16:32:36+00:00",
+    "status": "Local preparation complete; independent review and release pending",
+    "report": {
+      "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/HANDOFF.md",
+      "line": 1,
+      "sha256": "e04c2a66a4c5cd161fc119689189660065eadf0a82d3372fdf1490c8d3187012",
+      "observed_at": "2026-10-22T16:32:36+00:00"
+    },
+    "manifest": {
+      "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/MANIFEST.json",
+      "line": 1,
+      "sha256": "56623a29e21e24a3ca49b60aade8f511796fd8350a01054e6a7d2f443156f6ae",
+      "observed_at": "2026-10-22T16:32:36+00:00"
+    },
+    "patch_sha256": "4e0b4db7da44e883dd278f611c787db646b83874af8b9e7d624d4fd5c75389ec",
+    "base": "6d5664f761132ab479a7febec60548d0fa9ee6ff",
+    "overlay_paths": 9,
+    "tests_passed": 102,
+    "test_files": 7,
+    "scoped_types_lint": "Owner passed; patch apply/output hashes passed",
+    "progress_read_checks": 7,
+    "progress_read_limit": "Synthetic semantics only. Current query already filters job/exact scope; saved error lacks SQLSTATE/timing/plan, so no new route/index change justified. Bounded live diagnostic authority remains separate.",
+    "canonical_edits": false,
+    "inventory": "Base-relative56pg/86total, not broader canonical57/87",
+    "retained_negative_control": "Retirement alone reproduces20URL pacing21s instead0; advisory coupling required",
+    "auditor_execution": "Handoff imported; raw tests not rerun"
+  },
+  "latest_parent_usage": {
+    "remaining_weekly_percent": 10,
+    "source": "TJ checkpoint message relayed by parent",
+    "reset": "User expects reset soon; not reverified here",
+    "automatic_resume": false
+  },
+  "latest_coherent_checkpoint": {
+    "as_of": "2026-10-22T16:59:14+00:00",
+    "p07_heavy": {
+      "recorded_at": "2026-10-22T16:59:14+00:00",
+      "status": "Pinned R2 application-scoped TypeScript and eight-file lint passed exit0",
+      "receipt": {
+        "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/heavy-verification/RECEIPT.md",
+        "line": 1,
+        "sha256": "9ef03483ec2026b6fcbdd3e7e538290e544b612c5765a535b5b32f70fa8032ff",
+        "observed_at": "2026-10-22T16:59:14+00:00"
+      },
+      "integrity": "3375source hashes/manifest/overlay unchanged before and after per owner receipt",
+      "scope": "R1 application tsconfig excludes four preserved unrelated reviewer fixtures/generated Next/node_modules; not full repository typing",
+      "lock": "Owner atomically acquired/released own shared heavy lock; ledger auditor did not inspect or mutate lock",
+      "tests_rerun_by_auditor": 0
+    },
+    "p07_task10_combined": {
+      "recorded_at": "2026-10-22T16:59:14+00:00",
+      "status": "Independently accepted pinned combined P07R2 + task10R1 local slice; T10-C1 closed",
+      "receipt": {
+        "path": "tasks/artifacts/p07-task10-r1-independent-review-2026-10-22/REPORT.md",
+        "line": 1,
+        "sha256": "02243124f495702bd35158dbc722e680c251c96dd2b57b79ee41b49d7ebd50f0",
+        "observed_at": "2026-10-22T16:59:14+00:00"
+      },
+      "tests_passed": 22,
+      "combined_pins": 39,
+      "snapshot_files": 3379,
+      "p07_r2_pins_preserved": 8,
+      "planner_sha256": "d1300a64ac98d97765b9daff8017f3fe8341aa8757984ff176a177fc3a2674f2",
+      "finding_closed": "Known goalie-only LOSSES_GOALIE/GAMES_STARTED weights excluded from skater totals; both prior mountedUI failures pass with assertions unchanged",
+      "held": "Independent browser/full application-worker runtime, whole FHFH tree, target/predictive qualification and release",
+      "browser": {
+        "status": "Blocked/denied by local runtime; no uncertain outcome",
+        "action": "One independent sandbox Chromium launch for offline static-grid inspection",
+        "target": "Installed headless shell; no page/context opened",
+        "reason": "bootstrap_check_in MachPortRendezvousServer permission denied1100; process exited SIGTRAP, cleanup completed",
+        "receipt": {
+          "path": "tasks/artifacts/p07-task10-independent-review-2026-10-22/REPORT.md",
+          "line": 50,
+          "sha256": "8a38ff1709353725a24c67dafc20efeb8ef7f28c750f44a3bc1444efcd5caacb",
+          "observed_at": "2026-10-22T16:59:14+00:00"
+        },
+        "retry": "None; no escalation/workaround. Existing owner screenshots remain historical, not independent browser acceptance."
+      },
+      "next_action": "Original FORGE lead pins coherent integration checkpoint excluding unreviewed Claude changes; preserve exact accepted bytes and explicit exceptions"
+    },
+    "task2_partial": {
+      "recorded_at": "2026-10-22T16:59:14+00:00",
+      "status": "Exact two-file physical helper repair independently accepted; advertised combined R1 manifest and working-tree reproducibility held",
+      "receipt": {
+        "path": "tasks/artifacts/forge-task2-independent-review-2026-10-22/r1/REVIEW.md",
+        "line": 1,
+        "sha256": "c7372af0d059ad5d57ccfdbd9d232d3750230f21219bbe1d1280e133fa604db5",
+        "observed_at": "2026-10-22T16:59:14+00:00"
+      },
+      "accepted_checks": 128,
+      "accepted_scope": "Only computeSkaterPhysicalEventRates and existing runProjectionV2 tests on original frozen candidate; outside-function bytes unchanged",
+      "accepted_calculator_sha256": "89cf0e544daac80c01f9af267a7774a31ce523d2e483fd87074d999c18fd119b",
+      "accepted_test_sha256": "b669fbeb639c733c27dfee2f27003c9ae0d7359c282e0ee495e45792663ca5d3",
+      "held_packet_finding": "Advertised skater-stage fe835739 differs from tested e0f760d1; two-file archive cannot produce third-file executable/dependency changes.12other combined pins match. Concurrent stage imports absent from tested market dependency.",
+      "reproducibility": "Frozen repair unchanged reproducibility oracle passes; earlier canonical working-tree result-hash mismatch unresolved. Proven stage drift does not establish cause of that failure.",
+      "owner": "FPI-HYDRATION",
+      "current_action": "R2 complete frozen manifest/snapshot and unchanged reproducibility work active per parent; no broader source edit authority",
+      "release": "Matched current-query physical/all-strength/variant-c cohort,20×5 writer identity,bias/RMSE/calibration and operational authorization held",
+      "latest_r2": {
+        "recorded_at": "2026-10-22T17:03:00+00:00",
+        "report": {
+          "path": "tasks/artifacts/forge-task2-2026-10-22/r2/HANDOFF.md",
+          "line": 1,
+          "sha256": "b68d86a69e7349adf2acba689fdaf6ef3c917991eb1f79a9f39d5fa2fed5ef0c",
+          "observed_at": "2026-10-22T17:03:00+00:00"
+        },
+        "status": "Coherent R2 packet complete; combined acceptance held by unchanged reproducibility failure",
+        "base": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+        "source_archive_sha256": "416c54bda8b28e48611fbdd3f9499d82b610aa6d1794d96b0283f89693eacd85",
+        "archived_files": 1975,
+        "owner_tests_passed": 393,
+        "owner_tests_failed": 1,
+        "test_files": 12,
+        "diagnostic_passed": 1,
+        "integrity": "All1975 archived/tested bytes match;54prior evidence files unchanged per owner receipt",
+        "cause": "Actual fixed-snapshot diagnostic isolates module-lifetime goalie leagueSavePct cache: first capture100reads, warm capture99, omitting forge_goalie_game query; forecasts/source hashes identical. Original reproducibility assertion remains red.",
+        "required_owner": "Claude task7 / parent coordination, not task2 helper lease",
+        "target": "web/lib/projections/goalie/leagueSavePct.ts:82",
+        "proposed_after_resume": "Owner-scoped cache lifetime/provenance correction, repeated same-input and different retained-input same-date regression, then independent combined review. Do not weaken hash/read-count oracle.",
+        "current_action": "Checkpoint only; no fix or new implementation launched",
+        "limits": "Earlier exact working-tree hashes cannot be reconstructed; this proves a fixed-snapshot mechanism, not historical production impact. Model/data/release gates remain held."
+      }
+    },
+    "job79_overlay": {
+      "recorded_at": "2026-10-22T16:59:14+00:00",
+      "status": "Qualified independent local acceptance of nine-file overlay; release held",
+      "receipt": {
+        "path": "tasks/artifacts/fpi-11-4-job79-independent-review-2026-10-22/REVIEW.md",
+        "line": 1,
+        "sha256": "32e1e67b9f8f5feab536224cefc494ce72ebb80a8e6cf7f7905714e1273a02cb",
+        "observed_at": "2026-10-22T16:59:14+00:00"
+      },
+      "review_checks_passed": 36,
+      "overlay_paths": 9,
+      "fixture_hashes": 79,
+      "patch_sha256": "4e0b4db7da44e883dd278f611c787db646b83874af8b9e7d624d4fd5c75389ec",
+      "coupling": "Retirement-only20URL negative control fails as expected; complete advisory/retirement package passes. Preserve full-job counts, rolling windows,21s floor and master diagnostic return shape.",
+      "runtime_limit": "Dispatch coordination is same-user local filesystem; completion-spacing/concurrency metadata is not a global runtime job lock or cross-host guarantee.",
+      "held": "Exact release reconciliation/approval; current deployed replacement schedule/pipeline health not confirmed. Progress-read filter/index proposal lacks error/timing/plan evidence; no new route/index fix justified."
+    },
+    "skater_candidates": {
+      "recorded_at": "2026-10-22T16:59:14+00:00",
+      "status": "Executable offline helper/scoring/validator candidates complete; empirical inputs, runtime integration and predictive acceptance held",
+      "receipt": {
+        "path": "tasks/artifacts/forge-skater-candidates-2026-10-22/HANDOFF.md",
+        "line": 1,
+        "sha256": "c8b3979f70d054c3130b947987a4bd7a4203e3c32bd9e107e29e58be969ea791",
+        "observed_at": "2026-10-22T16:59:14+00:00"
+      },
+      "pilot_request": {
+        "path": "tasks/artifacts/forge-skater-candidates-2026-10-22/TASK3-DATA-ASK.md",
+        "line": 1,
+        "sha256": "c2247356c14947d7af8195ff66de7cf5fb1e4527eab1d3530a0ab90c950fd6a1",
+        "observed_at": "2026-10-22T16:59:14+00:00"
+      },
+      "mechanical_tests": 24,
+      "receiver_validator_tests": 13,
+      "static_checks": "Owner scopedlint and current-tree fullTS pass at recorded checkpoint; no full-tree behavioral or release acceptance",
+      "historical_evidence": "2074dressed rows/62games are preR19 a/b/a0/b0 reconstruction, not current c or new helper predictions; no fitted production coefficients",
+      "data_gate": "Exact pilot approved/executed once by ROOT and stored in Library. Mac materialization/deep validation pending after TJ resume; no second query.",
+      "scope_boundary": "No stage/calculator edits by model worker; stage/calculator editing lease returned unused. Task2 retains physical repair custody; future runtime integration needs explicit coordinated lease and qualified inputs.",
+      "authority": "No production read/migration/deploy authorized by this checkpoint"
+    },
+    "coherent_integration": {
+      "owner": "FORGE",
+      "thread": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+      "status": "HELD — final fixed integration snapshot verified, combined acceptance blocked by13tests",
+      "report": {
+        "path": "tasks/artifacts/sprint-integration-checkpoint-2026-10-22/REPORT.md",
+        "line": 1,
+        "sha256": "5a924494242ea59c88f517a1fed8ff5fe3b1eb5d38b687eff1b4789e76ee75b6",
+        "observed_at": "2026-10-22T17:15:04+00:00"
+      },
+      "excludes": "Task2R2/newerClaude6/7/8/11 and unqualified skater changes; other canonical differences outside named accepted overlays. Two accepted query pins retain older A1 bytes, not held task2query."
+    },
+    "draft_ranker": "Local guard remains implemented/release-pending; exact production alias confirmation still unverified"
+  },
+  "sprint_control": {
+    "state": "active per trusted parent relay of TJ resume",
+    "model_preference": "ALL ASTRA; runtime not independently confirmed",
+    "release_owner": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+    "ledger_scope": "documentation and read-only source/status reconciliation",
+    "parent_retains_dispatch": true,
+    "production_boundary": "No authority for new DB/cron/NST/provider/migration actions inferred; release actions sequenced exclusively by named release owner under exact candidate safeguards."
+  },
+  "task3_pilot_export": {
+    "recorded_at": "2026-10-22T17:03:00+00:00",
+    "source": "Trusted parent execution/checkpoint report; ledger auditor did not query, retrieve or inspect export bytes",
+    "approval": {
+      "decision": "TJ Yes to exact pilot request",
+      "at_utc": "2026-10-22T16:55:58Z"
+    },
+    "execution": {
+      "executor": "ROOT",
+      "at_utc": "2026-10-22T16:56:40.473Z",
+      "status": "One read-only export succeeded",
+      "reported_rows": 5219,
+      "reported_bytes_before_newline": 3363724,
+      "truncated": false,
+      "retries": 0,
+      "writes": 0
+    },
+    "root_cloud_files": {
+      "json": "/workspace/scratch/28bd2529354b/task3-pilot-export.json",
+      "sql": "/workspace/scratch/28bd2529354b/task3-executed-query.sql"
+    },
+    "library": {
+      "json": {
+        "id": "libfile_bdb4847bbdbc8191b5a958bce4ab9fde",
+        "name": "task3-pilot-export.json",
+        "bytes_including_newline": 3363725
+      },
+      "executed_sql": {
+        "id": "libfile_abe8480e81248191989de2276fa092cd",
+        "name": "task3-executed-query.sql"
+      }
+    },
+    "local_mac_state": "Not materialized; deep local validation not run",
+    "next_after_TJ_resume": "Materialize the existing Library JSON and exact executed SQL on Mac, hash/verify identity and size, then run existing local validator into a fresh output. Never repeat the production query.",
+    "acceptance": "Successful export is not matched-input validity, fitted coefficients, predictive quality, historical as-of proof or release acceptance."
+  },
+  "task2_r2_checkpoint": {
+    "recorded_at": "2026-10-22T17:03:00+00:00",
+    "report": {
+      "path": "tasks/artifacts/forge-task2-2026-10-22/r2/HANDOFF.md",
+      "line": 1,
+      "sha256": "b68d86a69e7349adf2acba689fdaf6ef3c917991eb1f79a9f39d5fa2fed5ef0c",
+      "observed_at": "2026-10-22T17:03:00+00:00"
+    },
+    "status": "Coherent R2 packet complete; combined acceptance held by unchanged reproducibility failure",
+    "base": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+    "source_archive_sha256": "416c54bda8b28e48611fbdd3f9499d82b610aa6d1794d96b0283f89693eacd85",
+    "archived_files": 1975,
+    "owner_tests_passed": 393,
+    "owner_tests_failed": 1,
+    "test_files": 12,
+    "diagnostic_passed": 1,
+    "integrity": "All1975 archived/tested bytes match;54prior evidence files unchanged per owner receipt",
+    "cause": "Actual fixed-snapshot diagnostic isolates module-lifetime goalie leagueSavePct cache: first capture100reads, warm capture99, omitting forge_goalie_game query; forecasts/source hashes identical. Original reproducibility assertion remains red.",
+    "required_owner": "Claude task7 / parent coordination, not task2 helper lease",
+    "target": "web/lib/projections/goalie/leagueSavePct.ts:82",
+    "proposed_after_resume": "Owner-scoped cache lifetime/provenance correction, repeated same-input and different retained-input same-date regression, then independent combined review. Do not weaken hash/read-count oracle.",
+    "current_action": "Checkpoint only; no fix or new implementation launched",
+    "limits": "Earlier exact working-tree hashes cannot be reconstructed; this proves a fixed-snapshot mechanism, not historical production impact. Model/data/release gates remain held."
+  },
+  "final_integration_checkpoint": {
+    "recorded_at": "2026-10-22T17:15:04+00:00",
+    "status": "HELD — final fixed integration snapshot verified, combined acceptance blocked by13tests",
+    "report": {
+      "path": "tasks/artifacts/sprint-integration-checkpoint-2026-10-22/REPORT.md",
+      "line": 1,
+      "sha256": "5a924494242ea59c88f517a1fed8ff5fe3b1eb5d38b687eff1b4789e76ee75b6",
+      "observed_at": "2026-10-22T17:15:04+00:00"
+    },
+    "observed_head": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+    "archive": "tasks/artifacts/sprint-integration-checkpoint-2026-10-22/export-completion/fixed-source.tar.gz",
+    "archive_sha256": "09bd763bc9b740159f2d4aa5b0c97d19ce3839872b1ac27762b21cbd6596beff",
+    "verified_files": 3585,
+    "accepted_pins": 110,
+    "retained_dependencies": 244,
+    "verification": {
+      "selected_test_files": 67,
+      "latest_passed": 1928,
+      "latest_failed": 13,
+      "accounting": "Original1925pass/16fail;21-case migration file rerun after3export-only inputs supplied replaces original migration result, not added to total. Counts are test executions/selection results, not distinct semantic coverage.",
+      "application_types": "Passed application-only config, all production/application sources retained",
+      "exported_review_fixture_types": "Open TS2352 in artifact-only p07Task10Serialization.test.ts:34; fixture absent from canonicalweb; original bytes/diagnostic preserved",
+      "lint": "97acceptedTS/TSX paths;0errors,9warnings (3raw-image,6hook dependencies)",
+      "relocation_oracles": "14/14passed",
+      "relocation_preflight": "Passed actual runner with7pinned inputs, no DB/client/target load",
+      "integrity": "All3585files and110accepted pins match per final owner receipt; ledger auditor did not rerun tests/extract archive"
+    },
+    "open_followups": [
+      {
+        "taskID": "INTEGRATE-PLANNER-CONTRACT",
+        "owner": "UNASSIGNED",
+        "custodian": "PARENT",
+        "paths": [
+          "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+          "web/lib/rosterScheduleData/forgeDailyBridge.test.ts:348"
+        ],
+        "failures": 13,
+        "scope": "12direct-native-fixture quantitative expectations and1directbridge/weightedunknown expectation. Require trusted target/current-read context and all nonzero weighted inputs; preserve original numerical assertions and denial controls.",
+        "gate": "New precise two-test-file lease and evidence before deciding test-contract versus actual runtime correction; no fix authorized by checkpoint."
+      },
+      {
+        "taskID": "INTEGRATE-REVIEW-FIXTURE-TYPES",
+        "owner": "REVIEW",
+        "path": "tasks/artifacts/p07-task10-independent-review-2026-10-22/p07Task10Serialization.test.ts:34",
+        "scope": "Versioned reviewer-owned typing correction; synthetic contribution record missing required ResolvedContribution fields (TS2352). Preserve historical fixture/receipt; no application error claim."
+      }
+    ],
+    "excluded": "Task2R2/newerClaude6/7/8/11 and unqualified skater changes; other canonical differences outside named accepted overlays. Two accepted query pins retain older A1 bytes, not held task2query.",
+    "task2_separate_hold": "1975matchingfiles/393pass1unchanged captured-input cache failure; Claude7leagueSavePct warmcache outside helper lease. Not part of1928/13selection.",
+    "next_after_resume": "Read final report and replay.py. Safe default replay only extracts/verifies archive; targeted --failed-planner requires resumed parent assignment. No new fix/test now.",
+    "release_ready": false
+  },
+  "resumed_reconciliation": {
+    "at": "2026-10-23T12:12:51+00:00",
+    "head": "86ddf9f585a25d79fcf94a86d9fecccc31a254d0",
+    "report": "ACTIVE-CHECKPOINT-20261023.md",
+    "source_fence": "RECONCILIATION-20261023.json",
+    "new_behavior_tests_by_auditor": 0,
+    "imported_current_boundary_result": "340/340,8suites,exit0,no drift",
+    "prior_claims": "Original historical inspections/reproductions/acceptances retain timestamps and exact-byte limits."
   }
 }

@@ -1,0 +1,478 @@
+{
+    "utc": "2026-10-24T18:25:54.0587490Z",
+    "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+    "method": "Occlusion-correct material-family masks via magenta slot swaps; 480x270 renders, threshold 0.10 summed RGB difference; env view (pilot, targets, text hidden).",
+    "views": [
+        {
+            "view": "route-overview",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+            "playerHeight": false,
+            "shares": [
+                {
+                    "family": "road deck (v17 industrial deck)",
+                    "fraction": 0.14014659821987152,
+                    "luminanceStdDev": 0.024848802015185356
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.47185957431793213,
+                    "luminanceStdDev": 0.10258941352367401
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.09942129999399185,
+                    "luminanceStdDev": 0.17601485550403595
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.06831789761781693,
+                    "luminanceStdDev": 0.051533907651901245
+                },
+                {
+                    "family": "rim industrial skyline (v18)",
+                    "fraction": 0.019768519327044487,
+                    "luminanceStdDev": 0.14885371923446655
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.20048610866069794,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "compounds-overview",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+            "playerHeight": false,
+            "shares": [
+                {
+                    "family": "road deck (v17 industrial deck)",
+                    "fraction": 0.26315587759017944,
+                    "luminanceStdDev": 0.0239279605448246
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.5318981409072876,
+                    "luminanceStdDev": 0.13764195144176483
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.14076389372348785,
+                    "luminanceStdDev": 0.16467314958572388
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.032484568655490875,
+                    "luminanceStdDev": 0.05221091955900192
+                },
+                {
+                    "family": "rim industrial skyline (v18)",
+                    "fraction": 0.013464505784213543,
+                    "luminanceStdDev": 0.11582226306200027
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.018233025446534157,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "basin-overview-west",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+            "playerHeight": false,
+            "shares": [
+                {
+                    "family": "road deck (v17 industrial deck)",
+                    "fraction": 0.19063271582126617,
+                    "luminanceStdDev": 0.048000749200582504
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.44978395104408264,
+                    "luminanceStdDev": 0.1620924174785614
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.09942129999399185,
+                    "luminanceStdDev": 0.1820678412914276
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.1182175949215889,
+                    "luminanceStdDev": 0.08592454344034195
+                },
+                {
+                    "family": "rim industrial skyline (v18)",
+                    "fraction": 0.02399691380560398,
+                    "luminanceStdDev": 0.06832391768693924
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.1179475337266922,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "spawn-cockpit",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v17 industrial deck)",
+                    "fraction": 0.11406635493040085,
+                    "luminanceStdDev": 0.10531583428382874
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.12286265194416046,
+                    "luminanceStdDev": 0.2011234611272812
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.3825463056564331,
+                    "luminanceStdDev": 0.2234017699956894
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "rim industrial skyline (v18)",
+                    "fraction": 0.009783950634300709,
+                    "luminanceStdDev": 0.0818159282207489
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.3732175827026367,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "lower-approach",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v17 industrial deck)",
+                    "fraction": 0.006604938302189112,
+                    "luminanceStdDev": 0.09606170654296875
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.11325617134571075,
+                    "luminanceStdDev": 0.17849108576774597
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.532353401184082,
+                    "luminanceStdDev": 0.1259588897228241
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "rim industrial skyline (v18)",
+                    "fraction": 0.0007021604687906802,
+                    "luminanceStdDev": 0.15791663527488708
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.3516820967197418,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "middle-ascent",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v17 industrial deck)",
+                    "fraction": 0.007592592388391495,
+                    "luminanceStdDev": 0.016618039458990097
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.04800154268741608,
+                    "luminanceStdDev": 0.14726532995700836
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.39358025789260864,
+                    "luminanceStdDev": 0.13290096819400787
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "rim industrial skyline (v18)",
+                    "fraction": 0.0015046296175569296,
+                    "luminanceStdDev": 0.17962273955345154
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.5512191653251648,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "radar-to-energy",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v17 industrial deck)",
+                    "fraction": 0.055771604180336,
+                    "luminanceStdDev": 0.0916614830493927
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.16739968955516815,
+                    "luminanceStdDev": 0.18493632972240448
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.4986959993839264,
+                    "luminanceStdDev": 0.143938809633255
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "rim industrial skyline (v18)",
+                    "fraction": 0.018688270822167397,
+                    "luminanceStdDev": 0.076731838285923
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.26901233196258545,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "radar-to-artillery",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v17 industrial deck)",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.15322530269622803,
+                    "luminanceStdDev": 0.13143262267112732
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.38484567403793335,
+                    "luminanceStdDev": 0.185471311211586
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "rim industrial skyline (v18)",
+                    "fraction": 0.026126543059945107,
+                    "luminanceStdDev": 0.1639757603406906
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.4358796179294586,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "a-plaza-to-se-logistics",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v17 industrial deck)",
+                    "fraction": 0.07580246776342392,
+                    "luminanceStdDev": 0.08385413140058517
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.35512346029281616,
+                    "luminanceStdDev": 0.16953711211681366
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.2467515468597412,
+                    "luminanceStdDev": 0.11417680233716965
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "rim industrial skyline (v18)",
+                    "fraction": 0.026813272386789322,
+                    "luminanceStdDev": 0.0733613595366478
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.40230709314346313,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "a-plaza-to-ne-service",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v17 industrial deck)",
+                    "fraction": 0.23765432834625244,
+                    "luminanceStdDev": 0.05421517416834831
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.11969907581806183,
+                    "luminanceStdDev": 0.16762007772922516
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.32360339164733887,
+                    "luminanceStdDev": 0.18396295607089996
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "rim industrial skyline (v18)",
+                    "fraction": 0.003395061707124114,
+                    "luminanceStdDev": 0.10977751016616821
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.3279552459716797,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "spawn-road-east",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v18_RimSkyline.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v17 industrial deck)",
+                    "fraction": 0.3552932143211365,
+                    "luminanceStdDev": 0.07246335595846176
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.11918981373310089,
+                    "luminanceStdDev": 0.14170338213443756
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.17981481552124023,
+                    "luminanceStdDev": 0.18079209327697754
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "rim industrial skyline (v18)",
+                    "fraction": 0.009282407350838184,
+                    "luminanceStdDev": 0.07866033911705017
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.34112653136253357,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        }
+    ],
+    "overviewMean": [
+        {
+            "family": "road deck (v17 industrial deck)",
+            "fraction": 0.19797839224338531,
+            "luminanceStdDev": 0.03225916996598244
+        },
+        {
+            "family": "canyon rock (v14 strata)",
+            "fraction": 0.48451387882232666,
+            "luminanceStdDev": 0.13410793244838715
+        },
+        {
+            "family": "structures and props",
+            "fraction": 0.11320216208696365,
+            "luminanceStdDev": 0.17425194382667542
+        },
+        {
+            "family": "water",
+            "fraction": 0.07300668954849243,
+            "luminanceStdDev": 0.06322312355041504
+        },
+        {
+            "family": "rim industrial skyline (v18)",
+            "fraction": 0.019076645374298096,
+            "luminanceStdDev": 0.11099996417760849
+        },
+        {
+            "family": "sky / background",
+            "fraction": 0.11222222447395325,
+            "luminanceStdDev": 0.0
+        }
+    ],
+    "playerHeightMean": [
+        {
+            "family": "road deck (v17 industrial deck)",
+            "fraction": 0.10659819096326828,
+            "luminanceStdDev": 0.06502371281385422
+        },
+        {
+            "family": "canyon rock (v14 strata)",
+            "fraction": 0.1498447060585022,
+            "luminanceStdDev": 0.16526368260383606
+        },
+        {
+            "family": "structures and props",
+            "fraction": 0.3677739202976227,
+            "luminanceStdDev": 0.16132545471191406
+        },
+        {
+            "family": "water",
+            "fraction": 0.0,
+            "luminanceStdDev": 0.0
+        },
+        {
+            "family": "rim industrial skyline (v18)",
+            "fraction": 0.012037036940455437,
+            "luminanceStdDev": 0.11523276567459106
+        },
+        {
+            "family": "sky / background",
+            "fraction": 0.3815499544143677,
+            "luminanceStdDev": 0.0
+        }
+    ]
+}

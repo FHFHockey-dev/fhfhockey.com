@@ -1,0 +1,37 @@
+{
+  "at": "2026-10-24T14:43:30.095289+00:00",
+  "onlyCandidateChange": "web/__tests__/pages/api/v1/start-chart.test.ts",
+  "unchangedCandidatePaths": 3636,
+  "protectedProof": {
+    "web/lib/player-forecasts/rsoUsePolicy.ts": {
+      "r0": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215",
+      "r1": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215",
+      "canonical": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215"
+    },
+    "web/lib/player-forecasts/rsoUsePolicy.fixtures.ts": {
+      "r0": "4e75f0e7e90576fa5e2b29b300e715d28a7620d169d85a07eabe975ad9b37811",
+      "r1": "4e75f0e7e90576fa5e2b29b300e715d28a7620d169d85a07eabe975ad9b37811",
+      "canonical": "4e75f0e7e90576fa5e2b29b300e715d28a7620d169d85a07eabe975ad9b37811"
+    },
+    "web/lib/rosterScheduleOptimizer/planning.ts": {
+      "r0": "d1300a64ac98d97765b9daff8017f3fe8341aa8757984ff176a177fc3a2674f2",
+      "r1": "d1300a64ac98d97765b9daff8017f3fe8341aa8757984ff176a177fc3a2674f2",
+      "canonical": "d1300a64ac98d97765b9daff8017f3fe8341aa8757984ff176a177fc3a2674f2"
+    },
+    "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": {
+      "r0": "e54bbb13d53a67400716fa329d90ab8f20e3c98c564a932f4f3224b71bf76adf",
+      "r1": "e54bbb13d53a67400716fa329d90ab8f20e3c98c564a932f4f3224b71bf76adf",
+      "canonical": "e54bbb13d53a67400716fa329d90ab8f20e3c98c564a932f4f3224b71bf76adf"
+    },
+    "web/pages/api/v1/start-chart.ts": {
+      "r0": "37b34456ed5f02a05b6fe61edee46d7b153217fd886ecdca8b13ab9a3aaad4a8",
+      "r1": "37b34456ed5f02a05b6fe61edee46d7b153217fd886ecdca8b13ab9a3aaad4a8",
+      "canonical": "37b34456ed5f02a05b6fe61edee46d7b153217fd886ecdca8b13ab9a3aaad4a8"
+    }
+  },
+  "productionCatalog": "frozen empty reviews array unchanged; fixture mocks never modify it",
+  "oldManifestSha256": "a266fa1296cf961b60dbeb620e15479b827a035c048bcefc0e4d28444b91ce3a",
+  "oldArchiveSha256": "a08f698fa74f07da67fdc188224fa7a3d4c5f5c245eb109b9c6a1b63fc4ab664",
+  "oldFailureReceiptSha256": "7ce563890c23c5a51baba9180a66c0d85580a48b15a16643745f0d14deb713a4",
+  "oldDiagnosticReceiptSha256": "0dc3abb4b34a7c2d871e2b4e7b45b153bd8b3e46b7602ce5e992b9a6eedbffb0"
+}

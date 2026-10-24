@@ -1,0 +1,178 @@
+{
+  "mode": "active-turn direct fresh-tool checks; persistent automation unavailable",
+  "threshold_remaining_percent": 5,
+  "interval_seconds": 90,
+  "max_readings": 20,
+  "records": [
+    {
+      "at": "2026-10-23 15:52:10 UTC",
+      "used_percent": 86,
+      "remaining_percent": 14,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 15:53:40 UTC",
+      "used_percent": 86,
+      "remaining_percent": 14,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 15:55:11 UTC",
+      "used_percent": 87,
+      "remaining_percent": 13,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 15:56:42 UTC",
+      "used_percent": 87,
+      "remaining_percent": 13,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 15:58:13 UTC",
+      "used_percent": 88,
+      "remaining_percent": 12,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 15:59:52 UTC",
+      "used_percent": null,
+      "remaining_percent": null,
+      "window_minutes": null,
+      "resets_at_unix": null,
+      "available": false
+    },
+    {
+      "at": "2026-10-23 16:01:20 UTC",
+      "used_percent": 88,
+      "remaining_percent": 12,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 16:03:46 UTC",
+      "source": "direct get_usage_limits",
+      "used_percent": 89,
+      "remaining_percent": 11,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 16:08:24 UTC",
+      "source": "direct get_usage_limits",
+      "used_percent": 90,
+      "remaining_percent": 10,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 16:11:30 UTC",
+      "source": "direct get_usage_limits",
+      "used_percent": 91,
+      "remaining_percent": 9,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 16:13:05 UTC",
+      "source": "direct get_usage_limits",
+      "used_percent": 91,
+      "remaining_percent": 9,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 16:17:01 UTC",
+      "source": "direct get_usage_limits",
+      "used_percent": 92,
+      "remaining_percent": 8,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 16:20:28 UTC",
+      "source": "direct get_usage_limits",
+      "used_percent": 93,
+      "remaining_percent": 7,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 16:22:53 UTC",
+      "source": "direct get_usage_limits",
+      "used_percent": 93,
+      "remaining_percent": 7,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 16:25:11 UTC",
+      "source": "direct get_usage_limits",
+      "used_percent": 94,
+      "remaining_percent": 6,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 16:28:48 UTC",
+      "source": "direct get_usage_limits",
+      "used_percent": 95,
+      "remaining_percent": 5,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 16:33:53 UTC",
+      "source": "direct get_usage_limits",
+      "used_percent": 96,
+      "remaining_percent": 4,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    },
+    {
+      "at": "2026-10-23 16:37:00 UTC",
+      "source": "direct get_usage_limits",
+      "used_percent": 96,
+      "remaining_percent": 4,
+      "window_minutes": 10080,
+      "resets_at_unix": 1793293921,
+      "available": true
+    }
+  ],
+  "threshold_reached": true,
+  "finished": true,
+  "stop_protocol": "TJ latest authority: at<=5% noncritical lanes finish naturally and checkpoint, no interruption. Protected release-blocking RSO fixture/command-bar correction, focused verification/release coordination and master consolidation may continue to0% within existing scope. Save incremental checkpoints; no waiver/broadening/duplicate suites.",
+  "automation_created": false,
+  "recovery_note": "Fresh available-tool call succeeded after recorded15:59:52unavailability; no threshold inferred during gap.",
+  "protected_threads": [
+    "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+    "01a168af-30c9-71b7-af0a-f25a9d90a02a",
+    "01a16391-47f8-74d9-9cab-9f20cf1b50e0"
+  ],
+  "policy_updated_at": "2026-10-23T16:20:18.412808+00:00",
+  "authority_quote": "8% \n\nPrepare the checkpoint calls, allow the highest priority threads to work to 0%",
+  "threshold_first_observed": "2026-10-23 16:28:48 UTC",
+  "phase": "5% threshold protocol completed; this active-turn watcher ends at the saved ledger checkpoint",
+  "continuing_watch": "No background automation. Parent/release owner continues current protected-lane usage checks; latest verified meter is 4% at16:37UTC."
+}

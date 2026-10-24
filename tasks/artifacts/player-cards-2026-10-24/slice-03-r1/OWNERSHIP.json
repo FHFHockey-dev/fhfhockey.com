@@ -1,0 +1,20 @@
+{
+  "status": "Implemented/frozen under CODEX-PLAYER-CARDS-S03-R1-20261024; independent acceptance and R1content handoff pending",
+  "source_paths": [
+    {
+      "path": "web/components/player-cards/InteractiveCard.tsx",
+      "baseline_sha256": "181a0cd3dd36b14433ce845c864209ce36103ecf14853037826faf6bec8e06fe"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.tsx",
+      "baseline_sha256": "83d75fc766229367aa7599b89413f9dc1b8754b00910bd75bf4b0e20f22d0926"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.test.tsx",
+      "baseline_sha256": "a3372616fa57559d7717e7b43d667986e7fdbe2ece06fbf948c8ec23b123f7dc"
+    }
+  ],
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1",
+  "scope": "Only PC-S03-01/02 semantic/export/accessibility errors; preserve calculations/design/original evidence and server ownership",
+  "served_preview": "Restored original frozenS03 only, PID76261/session88560; R1notactivated"
+}

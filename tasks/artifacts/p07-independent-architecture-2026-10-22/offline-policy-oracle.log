@@ -1,0 +1,40 @@
+
+> test
+> vitest --run --config audit.vitest.config.mts lib/player-forecasts/rsoUsePolicy.test.ts lib/player-forecasts/bridge-claim-oracle.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-p07-independent-t6aa89me/web
+
+ ✓ lib/player-forecasts/rsoUsePolicy.test.ts (17 tests) 3ms
+ ❯ lib/player-forecasts/bridge-claim-oracle.test.ts (1 test | 1 failed) 7ms
+   × C08: client manifest cannot approve a native row by claiming a bridge selection 5ms
+     → expected true to be false // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/player-forecasts/bridge-claim-oracle.test.ts > C08: client manifest cannot approve a native row by claiming a bridge selection
+AssertionError: expected true to be false // Object.is equality
+
+- Expected
++ Received
+
+- false
++ true
+
+ ❯ lib/player-forecasts/bridge-claim-oracle.test.ts:13:79
+     11|   const claimed = { rsoUsePolicy: { version: policy.version, revision:…
+     12|   const result = restrictRsoForecast(JSON.parse(JSON.stringify(row)), …
+     13|   expect(result.targetAllowedUses?.HITS.totals ?? result.allowedUses?.…
+       |                                                                               ^
+     14| });
+     15| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 17 passed (18)
+   Start at  10:47:29
+   Duration  404ms (transform 47ms, setup 0ms, collect 61ms, tests 10ms, environment 0ms, prepare 125ms)
+
+

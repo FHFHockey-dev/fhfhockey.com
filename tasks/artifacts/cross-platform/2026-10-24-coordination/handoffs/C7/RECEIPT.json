@@ -1,0 +1,83 @@
+{
+  "lane": "C7",
+  "id": "LUNA-LOCAL",
+  "reviewer": "Claude C7 independent review session",
+  "createdUtc": "2026-10-24T14:50:00Z",
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "candidateManifest": "tasks/artifacts/luna-review-integration-2026-10-23/CANDIDATE.json",
+  "pinsVerified": {
+    "at": [
+      "2026-10-24T14:40:24Z",
+      "2026-10-24T14:47:02Z"
+    ],
+    "newFiles": {
+      "web/lib/sources/tweetLunaReview.ts": "1dc24189c12333628eb536f37556fe7fc958c2cac16163d77fd80b0a2dba2b94",
+      "web/lib/sources/tweetLunaTransport.ts": "129dfdf337fee692fbf07959a5041651222108836631ecc192436edee988ada2",
+      "web/lib/sources/tweetLunaLocalStore.ts": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+      "web/lib/sources/tweetLunaReview.test.ts": "8a3e8adacd888215aa9ba4226331b3e3576c98e8d2fcc113e01a305a22074ce2",
+      "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+      "web/scripts/review-ifttt-luna.ts": "03d37708a0ed6902162459cd61e82f70a1828c581e806e30eef4854bf9fa532d"
+    },
+    "protectedPins": {
+      "web/lib/sources/decisionsReference/adapter.mjs": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+      "web/lib/sources/tweetIdentityReplacementReview.ts": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a",
+      "web/lib/sources/tweetIdentityReplacementReview.test.ts": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451",
+      "tasks/ifttt-integration-2026-10-16/comparison-retry-execution-2026-10-19/aggregate-budget.sqlite": "e8418735afaeff893177e550df6774600c6c6fec4f49c2b01c183712cdc064f2"
+    },
+    "patchSha256": "3a80fdab6f4920361d06eccba128adac2bbd98ec40032599e6e1195d6f67bd6a",
+    "result": "10/10 match before and after; patch matches"
+  },
+  "closureDrift": {
+    "path": "web/lib/newsFeed.ts",
+    "pinned": "fc5466e95cba33a833831aff27fbdc3c8a3cc4827968f39631d66783cc1275d1",
+    "current": "de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d",
+    "note": "test-only import; current equals release-readiness-2026-10-24 candidate pin"
+  },
+  "verdict": {
+    "defaultOffScope": "accepted",
+    "admissionTransportBinding": "accepted (offline synthetic)",
+    "dispatchUse": "blocked pending F1,F2",
+    "live/hosted/releaseC": "unqualified"
+  },
+  "findings": {
+    "F1": "medium: Decisions-leg stop/failure masked as review_only, CLI exit 0 (tweetLunaReview.ts:141-144)",
+    "F2": "low: attempts counts transport invocations (tweetLunaReview.ts:122,136)",
+    "F3": "observation: soft goalie statuses not wording-checked",
+    "F4": "observation: missing key after admission blocks ledger",
+    "F5": "unqualified live provider shape/model string",
+    "F6": "closure pin drift newsFeed.ts"
+  },
+  "repairOwner": "C2 / packet author (news+Luna lane); C7 made no fixes",
+  "executed": {
+    "ownerRerun": "41/41 pass",
+    "c7Controls": "40/40 pass final; run1 1 reviewer-expectation failure (C18), run2 C24 mis-targeted; originals preserved",
+    "cliRuns": 7,
+    "scopedTsc": 0,
+    "scopedEslint": 0
+  },
+  "noEffects": {
+    "paidRequests": 0,
+    "networkAttempts": 0,
+    "gitWrites": 0,
+    "servers": 0,
+    "productionAccess": 0,
+    "ledgerOpened": false,
+    "applicationEdits": 0
+  },
+  "evidenceSha256": {
+    "evidence/c7LunaAdversarial.test.ts": "1979f4e2747b7de190b77e62fbb706526f4c8b484f3b516b6bffdaa318739d1b",
+    "evidence/cli-controls.log": "143b12f1f5c06239d91c0e3445e1a372c204f486eda8a17f44fe562457bfa47a",
+    "evidence/cli-controls.sh": "15abca04bf0ee75d32c376a99ccdb977700c2961b010f8ece72ed3c3a4e4dac3",
+    "evidence/controls-observed.json": "a545821edd88cf289d77059711392644eb6b4b94c7802e1240f6ebdf0252913a",
+    "evidence/controls-run1-original.log": "3777666b447e8836400376ecc022ab0d64b185bb4fc4671cf252359431c5633f",
+    "evidence/controls-run2.log": "9ab7982d6508b3fe2ed6cfbd83ee00744bda8e2d456510173d3dffdee1a7002e",
+    "evidence/controls.log": "39db850d77b45113c440256a7eefd05b4b74b25ce08ab781a4b5e9411556a789",
+    "evidence/eslint.log": "f148dcc4ade04b51677789f034ee82bbdb384fda76a278507119fdfc87958fda",
+    "evidence/owner-rerun.json": "d494e7840924cf7c47b654d142e3ab9d35af4863820af98d9aa47ffc03aed1e7",
+    "evidence/tsc.log": "a6ce7f41eaf235b981cdbfe9a3d6a5d9a3502b6bd605ffc2acf78679a4ee9a2f",
+    "evidence/vitest.c7.mjs": "b86fbe921f575609067533af5d6a59b38c22597ce8d1eaa8f3816e651ec8dbfe",
+    "evidence/cli-outputs/k1.json": "d7c7708f0600c59be239d5ec933bedb962d6744ff3aa048855cc868308cf0226",
+    "evidence/cli-outputs/k2.json": "3d13836b4587fa883de2296725b753c8135f3c387560a84c7b647c1cb3231035",
+    "evidence/cli-outputs/k3.json": "3d13836b4587fa883de2296725b753c8135f3c387560a84c7b647c1cb3231035"
+  }
+}

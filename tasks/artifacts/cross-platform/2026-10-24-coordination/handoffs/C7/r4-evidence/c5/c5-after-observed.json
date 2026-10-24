@@ -1,0 +1,75 @@
+{
+  "Y1 suspended": {
+    "rows": 1,
+    "statuses": [
+      "success"
+    ],
+    "distinctResponses": [
+      "{\"suspended\":true,\"resumesAt\":\"2027-08-01T00:00:00-04:00\"}200"
+    ],
+    "at": [
+      null
+    ]
+  },
+  "Y1 disabled": {
+    "rows": 1,
+    "statuses": [
+      "success"
+    ],
+    "distinctResponses": [
+      "{\"disabled\":true}200"
+    ],
+    "at": [
+      null
+    ]
+  },
+  "Y2": {
+    "rows": 2
+  },
+  "Y4 11:00": {
+    "status": 503,
+    "rows": [
+      "failure"
+    ]
+  },
+  "Y4 12:00": {
+    "status": 503,
+    "rows": [
+      "failure"
+    ]
+  },
+  "Y5": {
+    "status": 503,
+    "body": {
+      "error": "Yahoo polling coordinator unavailable"
+    },
+    "rows": [
+      "failure"
+    ],
+    "leaks": false
+  },
+  "P1": {
+    "no header": {
+      "status": 401,
+      "rows": 0
+    },
+    "non-bearer": {
+      "status": 401,
+      "rows": 0
+    },
+    "bad token": {
+      "status": 401,
+      "rows": 0
+    },
+    "non-admin": {
+      "status": 403,
+      "rows": 0
+    }
+  },
+  "P2": {
+    "status": 405,
+    "rows": [
+      "failure"
+    ]
+  }
+}

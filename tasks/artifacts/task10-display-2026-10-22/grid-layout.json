@@ -1,0 +1,128 @@
+[
+  {
+    "right": 122.703125,
+    "parentRight": 128.703125,
+    "height": 28,
+    "parentHeight": 64,
+    "nameWidth": 71.703125,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 215.421875,
+    "parentRight": 221.421875,
+    "height": 28,
+    "parentHeight": 64,
+    "nameWidth": 71.71875,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 308.140625,
+    "parentRight": 314.140625,
+    "height": 28,
+    "parentHeight": 64,
+    "nameWidth": 71.71875,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 400.84375,
+    "parentRight": 406.84375,
+    "height": 28,
+    "parentHeight": 64,
+    "nameWidth": 71.703125,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 493.5625,
+    "parentRight": 499.5625,
+    "height": 28,
+    "parentHeight": 64,
+    "nameWidth": 71.71875,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 586.28125,
+    "parentRight": 592.28125,
+    "height": 28,
+    "parentHeight": 64,
+    "nameWidth": 71.71875,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 679,
+    "parentRight": 685,
+    "height": 28,
+    "parentHeight": 64,
+    "nameWidth": 71.71875,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 122.703125,
+    "parentRight": 128.703125,
+    "height": 23,
+    "parentHeight": 40,
+    "nameWidth": 36.6875,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 215.421875,
+    "parentRight": 221.421875,
+    "height": 23,
+    "parentHeight": 40,
+    "nameWidth": 36.703125,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 308.140625,
+    "parentRight": 314.140625,
+    "height": 23,
+    "parentHeight": 40,
+    "nameWidth": 36.703125,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 400.84375,
+    "parentRight": 406.84375,
+    "height": 23,
+    "parentHeight": 40,
+    "nameWidth": 36.6875,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 493.5625,
+    "parentRight": 499.5625,
+    "height": 23,
+    "parentHeight": 40,
+    "nameWidth": 36.703125,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 586.28125,
+    "parentRight": 592.28125,
+    "height": 23,
+    "parentHeight": 40,
+    "nameWidth": 36.703125,
+    "overflowX": false,
+    "overflowY": false
+  },
+  {
+    "right": 679,
+    "parentRight": 685,
+    "height": 23,
+    "parentHeight": 40,
+    "nameWidth": 36.703125,
+    "overflowX": false,
+    "overflowY": false
+  }
+]

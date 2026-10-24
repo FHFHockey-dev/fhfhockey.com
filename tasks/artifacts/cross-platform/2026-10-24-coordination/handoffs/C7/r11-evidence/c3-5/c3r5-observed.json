@@ -1,0 +1,58 @@
+{
+  "S1": {
+    "leaks": [],
+    "shown": {
+      "400": "unavailable",
+      "401": "signIn",
+      "403": "unavailable",
+      "404": "unavailable",
+      "500": "unavailable",
+      "502": "unavailable",
+      "503": "unavailable"
+    }
+  },
+  "S2": {
+    "leaks": [],
+    "shown": {
+      "400": "That code couldn't be redeemed. Check it and try again, or c",
+      "401": "Your sign-in has expired. Sign in again, then redeem your co",
+      "403": "That code couldn't be redeemed. Check it and try again, or c",
+      "429": "Too many attempts. Wait a minute, then try your code again.",
+      "500": "That code couldn't be redeemed. Check it and try again, or c",
+      "200-not-redeemed": "That code could not activate Draft Pro. Contact support if y",
+      "502-html": "That code couldn't be redeemed. Check it and try again, or c",
+      "network": "We couldn't reach FHFH, so your code wasn't confirmed. Check"
+    }
+  },
+  "S3": {
+    "leaks": [],
+    "shown": {
+      "400": "Your purchase status couldn't be checked",
+      "401": "Sign in to confirm your Draft Pro purchase",
+      "403": "Your purchase status couldn't be checked",
+      "409": "Your purchase status couldn't be checked",
+      "429": "Please wait a minute before checking again",
+      "500": "Your purchase status couldn't be checked",
+      "503": "Your purchase status couldn't be checked"
+    }
+  },
+  "S4": {
+    "leaks": []
+  },
+  "T1": {
+    "+90s": "Refund eligibility: window_closed. The request window ends October 24, 2026 Eastern.",
+    "-90s": "Refund eligibility: window_closed. The request window ended October 24, 2026 Eastern.",
+    "+400d": "Refund eligibility: window_closed. The request window ends November 28, 2027 Eastern.",
+    "invalid": "Refund eligibility: window_closed. The request window ended Unavailable Eastern."
+  },
+  "F1": {
+    "401": "Your sign-in has expired. Sign in again, then submit your refund reque",
+    "proxy 404 html": "Your refund request couldn't be confirmed right now. Try again in a fe",
+    "404 other code": "Your refund request couldn't be confirmed right now. Try again in a fe",
+    "409 other": "Your refund request couldn't be confirmed right now. Try again in a fe",
+    "422 config own code": "Your refund request couldn't be confirmed right now. Try again in a fe",
+    "422 no code": "Your refund request couldn't be confirmed right now. Try again in a fe",
+    "400 no code": "Your refund request couldn't be confirmed right now. Try again in a fe",
+    "422 window (authentic)": "The 7-day refund request window for this purchase has closed. Contact "
+  }
+}

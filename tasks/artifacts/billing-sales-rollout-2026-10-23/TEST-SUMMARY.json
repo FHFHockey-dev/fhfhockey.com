@@ -1,0 +1,109 @@
+{
+  "count_basis": "Latest result per test file across overlapping runs. Final type-only assertion does not change runtime.",
+  "files": {
+    "hooks/useDraftProAccess.test.tsx": {
+      "tests": 18,
+      "passed": 18,
+      "receipt": "tests.json"
+    },
+    "components/account/DraftProPanel.test.tsx": {
+      "tests": 25,
+      "passed": 25,
+      "receipt": "corrected-tests.json"
+    },
+    "components/account/InSeasonPanel.test.tsx": {
+      "tests": 29,
+      "passed": 29,
+      "receipt": "tests.json"
+    },
+    "lib/draft-pro/access.test.ts": {
+      "tests": 11,
+      "passed": 11,
+      "receipt": "tests.json"
+    },
+    "lib/draft-pro/features.test.ts": {
+      "tests": 3,
+      "passed": 3,
+      "receipt": "tests.json"
+    },
+    "lib/integrations/providerSyncAccess.test.ts": {
+      "tests": 23,
+      "passed": 23,
+      "receipt": "tests.json"
+    },
+    "lib/integrations/providerSyncPaywall.test.ts": {
+      "tests": 49,
+      "passed": 49,
+      "receipt": "tests.json"
+    },
+    "lib/integrations/providerSyncRolloutRoutes.test.ts": {
+      "tests": 6,
+      "passed": 6,
+      "receipt": "corrected-tests.json"
+    },
+    "lib/in-season/billingRoutes.test.ts": {
+      "tests": 51,
+      "passed": 51,
+      "receipt": "tests.json"
+    },
+    "__tests__/components/DraftDashboard/DraftSettingsShell.test.tsx": {
+      "tests": 4,
+      "passed": 4,
+      "receipt": "tests.json"
+    },
+    "__tests__/components/DraftDashboard/GodView.test.tsx": {
+      "tests": 1,
+      "passed": 1,
+      "receipt": "tests.json"
+    },
+    "__tests__/components/DraftDashboard/SuggestedPicks.test.tsx": {
+      "tests": 20,
+      "passed": 20,
+      "receipt": "tests.json"
+    },
+    "lib/draft-pro/account/index.test.ts": {
+      "tests": 10,
+      "passed": 10,
+      "receipt": "tests.json"
+    },
+    "lib/draft-pro/api-tests/checkout-verify.test.ts": {
+      "tests": 20,
+      "passed": 20,
+      "receipt": "tests.json"
+    },
+    "lib/draft-pro/api-tests/checkout.test.ts": {
+      "tests": 5,
+      "passed": 5,
+      "receipt": "tests.json"
+    },
+    "lib/integrations/fantrax/liveDraftServer.test.ts": {
+      "tests": 8,
+      "passed": 8,
+      "receipt": "tests.json"
+    },
+    "lib/integrations/stripe/fulfillment.test.ts": {
+      "tests": 18,
+      "passed": 18,
+      "receipt": "tests.json"
+    },
+    "lib/integrations/yahoo/liveDraftAccess.test.ts": {
+      "tests": 7,
+      "passed": 7,
+      "receipt": "tests.json"
+    },
+    "lib/integrations/yahoo/pickupApi.test.ts": {
+      "tests": 4,
+      "passed": 4,
+      "receipt": "tests.json"
+    },
+    "lib/integrations/yahoo/liveDraftApi.test.ts": {
+      "tests": 8,
+      "passed": 8,
+      "receipt": "starter-board-tests.json"
+    }
+  },
+  "unique_tests": 320,
+  "passed": 320,
+  "browser": "not run",
+  "build": "not run"
+}

@@ -1,0 +1,20 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts components/RosterScheduleOptimizer/p07Task10Independent.test.tsx lib/rosterScheduleOptimizer/gameForecastPoints.test.ts -t does not require goalie-only|removes displayed numbers|preserves all observed zeros|requires weighted|unknown missing|weighted goalie=(false key=GOALS|true key=LOSSES_GOALIE|true key=GAMES_STARTED) is absent
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task10-r1-review-00578qzp/web
+
+(node:79205) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/p07Task10Independent.test.tsx (43 tests | 27 skipped) 2745ms
+(node:79205) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/gameForecastPoints.test.ts (22 tests | 19 skipped) 2ms
+
+ Test Files  2 passed (2)
+      Tests  19 passed | 46 skipped (65)
+   Start at  12:53:06
+   Duration  3.77s (transform 358ms, setup 11ms, collect 592ms, tests 2.75s, environment 252ms, prepare 52ms)
+
+

@@ -1,0 +1,17 @@
+# P02 goalie correctness independent review
+
+- Scope: nine-file P02 packet, imported production-call compatibility, weighted GAA, paired SV, valid QS start denominator, missing values. Read-only application review; no live calls or VuDu formulas.
+- Where: octoberBranch, starting HEAD a565238f670edc4cf65da79ad52ba82ec41f3b71. Owner packet tasks/artifacts/research-backlog-readiness-2026-10-22/p02-correctness. Separate receipts tasks/artifacts/p02-goalie-independent-review-2026-10-22.
+- State: current AGENTS, owner report/lease/candidate/patch and principal changed modules read. Unknown profile time/QS is explicitly a hydration gate. Actual callers being followed.
+- Next: pin nine files/13 fences/import closure, stage isolated offline tests, investigate caller admission assumptions.
+- Blockers: none. Preserve all concurrent files; only review artifact/diary writes.
+
+- Checkpoint: all nine candidate files, 13 A7–A9 fences and 50 owner import-closure hashes match; isolated 96 owner tests pass. Eight independent controls: six pass, two reproduce an inherited caller omission. Nullable GP row with incomplete SV pair is dropped by Overview/Trends summaries, leaving 0.900 while corrected context is unavailable. Both summary files are outside nine-file lease and unchanged since d3f057c6. Source profile query directly returns nullable GP and omits QS/time. Scoped TS/lint pass. No app edits/external actions. Next: deliver qualified packet assessment with the remaining caller gap and narrow ownership extension recommendation.
+
+- Handoff complete: REVIEW.md/COMMANDS.md, original eight-control fixture, logs/JSON, fingerprints and reviewed-source.tar.gz saved separately. Nine-file fixes locally verified; P02-R1 inherited incomplete-window SV in two unleased summary consumers remains open. Parent should coordinate narrow lease extension before implementation. No release/model qualification, app edits or external actions; no tool blocker.
+
+- R1 extension re-review start: three-file owner packet received on unchanged HEAD a565238f670edc4cf65da79ad52ba82ec41f3b71. Scope is two consumer admission checks plus focused test; original ratio helpers/formulas unchanged. Read current packet and exact patch. Next: reconcile source-path pins (historical caller hashes intentionally superseded), reconstruct pinned prior archive plus extension, run original oracles/new controls offline. No application edits or network; no blocker.
+
+- R1 extension checkpoint: prior pinned archive plus extension.patch reconstructed exactly. Original 9 and A7–A9 13 paths unchanged; old owner closure has 49 unchanged + intentional Strip change; old independent 51-file closure has 49 unchanged + both consumers changed; extension adds one test (52-source closure). All 26 imported controls pass, TS/lint exit 0, original oracle untouched. No formulas or application source edited by reviewer. Next: record qualified local closure of R1 with hydration/live/broader P02 gates retained.
+
+- R1 extension handoff complete: qualified local acceptance in tasks/artifacts/p02-r1-independent-review-2026-10-22/REVIEW.md. Original two failures now pass; 26/26, TS/lint clean, exact 9+13 preservation reconciled with two intentionally superseded historical caller hashes. Current 52-file closure pinned. P02-R1 closed for 3956e592… / 7dbddd62… plus test 97422008…; hydration/type/live/broader P02/release gates remain. No execution blocker or application/external mutation.

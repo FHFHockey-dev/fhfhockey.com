@@ -1,0 +1,227 @@
+{
+  "at": "2026-10-24T18:17:34.362692+00:00",
+  "initial_three_pins_preserved": {
+    "at": "2026-10-24T18:08:40.391405+00:00",
+    "files": [
+      {
+        "path": "tasks/TASKS/forge-projections/command-center/prd-forge-command-center-rebuild.md",
+        "sha256": "f2993446200478cbaff5194fe7dfa0d647ea5eb61cfa7272be0fd3e403714257",
+        "bytes": 21543,
+        "lines": 386,
+        "mtime_ns": 1785605126554588286
+      },
+      {
+        "path": "tasks/TASKS/forge-projections/command-center/tasks-prd-forge-command-center-rebuild.md",
+        "sha256": "a9628ebf4f10b4d62d45f8da75e506e420149525f8939056e5b6680610559a1b",
+        "bytes": 17061,
+        "lines": 126,
+        "mtime_ns": 1785605126554751695
+      },
+      {
+        "path": "tasks/artifacts/forge-command-center-reconciliation-checklist.md",
+        "sha256": "9e0cfd367fc68662e16ca71fc498e3e0c88b11fe05d057ee53e39a5ff7321d7d",
+        "bytes": 5358,
+        "lines": 23,
+        "mtime_ns": 1785605126592941827
+      }
+    ]
+  },
+  "current_selected_pins": [
+    {
+      "path": "tasks/TASKS/forge-projections/command-center/prd-forge-command-center-rebuild.md",
+      "sha256": "f2993446200478cbaff5194fe7dfa0d647ea5eb61cfa7272be0fd3e403714257",
+      "bytes": 21543,
+      "lines": 386,
+      "mtime_ns": 1785605126554588286
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/command-center/tasks-prd-forge-command-center-rebuild.md",
+      "sha256": "a9628ebf4f10b4d62d45f8da75e506e420149525f8939056e5b6680610559a1b",
+      "bytes": 17061,
+      "lines": 126,
+      "mtime_ns": 1785605126554751695
+    },
+    {
+      "path": "tasks/artifacts/forge-command-center-reconciliation-checklist.md",
+      "sha256": "9e0cfd367fc68662e16ca71fc498e3e0c88b11fe05d057ee53e39a5ff7321d7d",
+      "bytes": 5358,
+      "lines": 23,
+      "mtime_ns": 1785605126592941827
+    },
+    {
+      "path": "tasks/artifacts/draft-lane-2026-10-18/S-19-command-center-errors.md",
+      "sha256": "980e15291033ff101b77ee7e12d2a3d80faafb7bfc77dbfe90bd0543f089949e",
+      "bytes": 2441,
+      "lines": 22,
+      "mtime_ns": 1792349854138386496
+    },
+    {
+      "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5b-forge-dashboards-trends.md",
+      "sha256": "27ab108f411561f99e9a019a4bfb9a64555e68a52d8ff1a9d4b0bc2e2eb1fc9a",
+      "bytes": 23522,
+      "lines": 169,
+      "mtime_ns": 1792277895463668743
+    },
+    {
+      "path": "tasks/artifacts/draft-lane-2026-10-18/DIARY.md",
+      "sha256": "ee6f435b5a1f882bc6fbad3cbba9a9fea8f1ab6c7f864a07cb34091b27fdcf7d",
+      "bytes": 10188,
+      "lines": 71,
+      "mtime_ns": 1792348630951776752
+    },
+    {
+      "path": "tasks/artifacts/draft-lane-2026-10-18/CHECKPOINT-DIARY-2026-10-18.md",
+      "sha256": "ac0aff5d3b78b5a33c7e257b8136738c732edabcd4a08f31d5c654d5bee75970",
+      "bytes": 6173,
+      "lines": 92,
+      "mtime_ns": 1792350582700694451
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md",
+      "sha256": "dbcc5358b6e0c4b06fd5d150e060070a00b32025ba9ffa52aa830c8e77b58381",
+      "bytes": 22000,
+      "lines": 144,
+      "mtime_ns": 1792348998390386949
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md",
+      "sha256": "3e866cc5a143fe69bad009e971550c75d7bf1bf72a6feaf0151e704439425003",
+      "bytes": 17593,
+      "lines": 99,
+      "mtime_ns": 1792348998390180825
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-4-audit-remediation.md",
+      "sha256": "48636bfa4e23c2ecfd46a7575d8b17bd23d575f28371f08e09d43d2d0bbac1be",
+      "bytes": 32583,
+      "lines": 210,
+      "mtime_ns": 1785605126557912752
+    },
+    {
+      "path": "tasks/TASKS/super-goal/security-boundary-reconciliation.md",
+      "sha256": "b04279f96a09f40fc35902796881aaa634eac14fafc56fd4a93579c6cc6e3df4",
+      "bytes": 8856,
+      "lines": 59,
+      "mtime_ns": 1785977520207525542
+    },
+    {
+      "path": "tasks/artifacts/security-audit-fixes-2026-10-18/DIARY.md",
+      "sha256": "5e81ee27988b49e89bfe11e5e583c033631e2e2398b099a2810311e7e894bb61",
+      "bytes": 6395,
+      "lines": 71,
+      "mtime_ns": 1792350676584763578
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard-component-health.md",
+      "sha256": "96e8ee3f4fff357b7625b0c6f8f62de2e9bf7e5c25219e0ed682fa22524d5335",
+      "bytes": 26045,
+      "lines": 157,
+      "mtime_ns": 1785605126555757980
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard-component-health.md",
+      "sha256": "e5d1f7234c45120ae1a5d52192fcc8818ae29a9b4cde5ab7eb852e0f5e8c9368",
+      "bytes": 21091,
+      "lines": 277,
+      "mtime_ns": 1785605126554902563
+    },
+    {
+      "path": "tasks/artifacts/forge-dashboard-component-health-matrix.md",
+      "sha256": "c69756618b5c6236be900dae069a8a2c755ad38929e620848915d14fe2826d2d",
+      "bytes": 7193,
+      "lines": 65,
+      "mtime_ns": 1785605126593347724
+    },
+    {
+      "path": "tasks/artifacts/forge-dashboard-component-remediation-closeout.md",
+      "sha256": "89b21a4aba22132d4e29ed78d57948873759d5d28df77594dd391a42e96f0166",
+      "bytes": 6518,
+      "lines": 61,
+      "mtime_ns": 1785605126593980277
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md",
+      "sha256": "401ac54a9bd9213099efd9e8e6eba45bb115c0a156fe9d557a34c976b6052493",
+      "bytes": 34998,
+      "lines": 187,
+      "mtime_ns": 1785605126555450370
+    },
+    {
+      "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+      "sha256": "4458ec50593056026baa680ee997932d25fe5ee9ea03e44732cbd9ef7fa4caaa",
+      "bytes": 1783269,
+      "lines": 5991,
+      "mtime_ns": 1792456686568580563
+    },
+    {
+      "path": "tasks/TASKS/super-goal/super-goal-final-summary.md",
+      "sha256": "b99e7bfde3fd4579acf9ae870b85a855b79deb1ee8a072da9978a2d2278acf82",
+      "bytes": 342964,
+      "lines": 1124,
+      "mtime_ns": 1792692629008497853
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+      "sha256": "5a38142ba66e3f3bef29bff05152c74907eb24ee144b7b6d53cfbc814f3f5e4f",
+      "bytes": 50730,
+      "lines": 489,
+      "mtime_ns": 1792865695524016748
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+      "sha256": "ff6abb41d00c11c6651ce7cdf038b5256de5e84b0ff0ee012dd93472ccf70417",
+      "bytes": 76636,
+      "lines": 357,
+      "mtime_ns": 1792865734502898598
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/STEER-LOG.md",
+      "sha256": "549d80021c41a83522aded37026b709386ee2b853175c549ab53dba71150aec3",
+      "bytes": 60135,
+      "lines": 312,
+      "mtime_ns": 1792865734807816618
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md",
+      "sha256": "e5e12382bd3bd8d70884a4606c83ab21f2346cc17604b53f188dd6c74d76ec8b",
+      "bytes": 23735,
+      "lines": 190,
+      "mtime_ns": 1792758072642748746
+    },
+    {
+      "path": "tasks/sprint-2026-10-18/CHEF-REGISTER-2026-10-19.md",
+      "sha256": "21cd27576dc057528c9ad4a40ff733072cf5379793b871ade0fd8b40b5277b90",
+      "bytes": 78947,
+      "lines": 584,
+      "mtime_ns": 1792458600819427905
+    },
+    {
+      "path": "tasks/sprint-2026-10-18/SPRINT-REGISTER.md",
+      "sha256": "91688dbcb8b280f0292ebd0d0e3add18cd4d30348dc0f53622363edbaf512742",
+      "bytes": 26359,
+      "lines": 190,
+      "mtime_ns": 1792361771600058358
+    },
+    {
+      "path": "tasks/sprint-2026-10-18/HANDOFF-2026-10-18.md",
+      "sha256": "829345deebcdc66b5a246e38ecc3bba23fd52fb229cccc75af8572cef1f26fa4",
+      "bytes": 130410,
+      "lines": 1518,
+      "mtime_ns": 1792405912312995566
+    },
+    {
+      "path": "tasks/artifacts/release-ledger-2026-10-17/COMMIT-PLAN-2026-10-18.md",
+      "sha256": "c32cfde11345a1c06497fdf7c28d8a99e63f67128f6aa6e95ce06b14a03263cd",
+      "bytes": 20094,
+      "lines": 144,
+      "mtime_ns": 1792351263005621247
+    },
+    {
+      "path": "tasks/artifacts/release-ledger-2026-10-17/PATH-LEDGER.md",
+      "sha256": "bba2faad2415e8cb8933d3636c37fadb5c4bc60dd9a65f3f6ce49dd371f723d2",
+      "bytes": 63071,
+      "lines": 433,
+      "mtime_ns": 1792267839397728884
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "patchApplication": {
+    "exitCode": 0,
+    "matchesArchive": {
+      "web/lib/projections/calculators/skater-adjustments.ts": true,
+      "web/lib/projections/runProjectionV2.test.ts": true
+    },
+    "stdout": "",
+    "stderr": ""
+  },
+  "calculatorOutsideFunctionUnchanged": true,
+  "reviewedPacketUnchanged": {
+    "before-skater-adjustments.ts": true,
+    "OPERATIONS.md": true,
+    "SOURCE-PINS.json": true,
+    "LINT.log": true,
+    "r1.patch": true,
+    "r1-source.tar.gz": true,
+    "NATIVE-GREEN.log": true,
+    "R1-SNAPSHOT.json": true,
+    "ISOLATED-GREEN.log": true,
+    "PARTIAL-PAIR-RED.log": true,
+    "FOCUSED-GREEN.log": true,
+    "HANDOFF.md": true,
+    "before-runProjectionV2.test.ts": true,
+    "RECEIPT.json": true
+  },
+  "originalPacketUnchanged": {
+    "SOURCE-PINS.json": true,
+    "HANDOFF.md": true,
+    "task2.patch": true,
+    "task2-source.tar.gz": true
+  },
+  "reviewedFrozenPinsUnchanged": {
+    "web/lib/projections/queries/skater-queries.ts": true,
+    "web/lib/projections/queries/skater-queries.test.ts": true,
+    "web/lib/projections/stages/skater-stage.ts": true,
+    "web/lib/projections/nativeGoalAccounting.test.ts": true,
+    "web/scripts/fixtures/native-player-offline-synthetic.json": true,
+    "web/scripts/qualify-native-players-offline.ts": true,
+    "web/scripts/qualify-native-players-offline.test.ts": true,
+    "web/scripts/qualify-native-players-offline.md": true,
+    "web/lib/projections/calculators/skater-adjustments.ts": true,
+    "web/lib/projections/constants/projection-weights.ts": true,
+    "web/lib/projections/types/run-forge-projections.types.ts": true,
+    "web/lib/projections/runProjectionV2.test.ts": true,
+    "supabase/migrations/20261021182129_forge_latest_rolling_rows.sql": true
+  },
+  "assertionsUnchanged": true
+}

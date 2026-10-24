@@ -1,0 +1,18 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-latest-social-access-zbjtop5e/web
+
+(node:30595) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/schedule.test.ts (32 tests) 67ms
+(node:30597) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/matchups.test.ts (9 tests) 65ms
+(node:30600) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/SocialShare/SocialShare.test.tsx (1 test) 52ms
+
+ Test Files  3 passed (3)
+      Tests  42 passed (42)
+   Start at  18:09:48
+   Duration  1.39s (transform 259ms, setup 10ms, collect 385ms, tests 185ms, environment 452ms, prepare 97ms)
+

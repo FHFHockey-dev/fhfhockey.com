@@ -1,0 +1,381 @@
+{
+    "utc": "2026-10-24T17:45:15.1691730Z",
+    "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+    "method": "Occlusion-correct material-family masks via magenta slot swaps; 480x270 renders, threshold 0.10 summed RGB difference; env view (pilot, targets, text hidden).",
+    "views": [
+        {
+            "view": "route-overview",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": false,
+            "shares": [
+                {
+                    "family": "road deck (v16 Road graphite / v17 industrial deck)",
+                    "fraction": 0.14014659821987152,
+                    "luminanceStdDev": 0.009298089891672134
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.49026235938072205,
+                    "luminanceStdDev": 0.10177087038755417
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.09942129999399185,
+                    "luminanceStdDev": 0.17601485550403595
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.06831789761781693,
+                    "luminanceStdDev": 0.051533907651901245
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.20185184478759766,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "compounds-overview",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": false,
+            "shares": [
+                {
+                    "family": "road deck (v16 Road graphite / v17 industrial deck)",
+                    "fraction": 0.26315587759017944,
+                    "luminanceStdDev": 0.012989863753318787
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.5440123677253723,
+                    "luminanceStdDev": 0.13695397973060608
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.14077159762382507,
+                    "luminanceStdDev": 0.16467055678367615
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.032484568655490875,
+                    "luminanceStdDev": 0.05221091955900192
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.019583333283662796,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "basin-overview-west",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": false,
+            "shares": [
+                {
+                    "family": "road deck (v16 Road graphite / v17 industrial deck)",
+                    "fraction": 0.19063271582126617,
+                    "luminanceStdDev": 0.04294327646493912
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.4670756161212921,
+                    "luminanceStdDev": 0.16079892218112946
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.09942129999399185,
+                    "luminanceStdDev": 0.1820678412914276
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.1182175949215889,
+                    "luminanceStdDev": 0.08592454344034195
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.12465278059244156,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "spawn-cockpit",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v16 Road graphite / v17 industrial deck)",
+                    "fraction": 0.11406635493040085,
+                    "luminanceStdDev": 0.10446969419717789
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.12351851910352707,
+                    "luminanceStdDev": 0.20063918828964233
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.3825463056564331,
+                    "luminanceStdDev": 0.22340182960033417
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.38235339522361755,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "lower-approach",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v16 Road graphite / v17 industrial deck)",
+                    "fraction": 0.006604938302189112,
+                    "luminanceStdDev": 0.09362711012363434
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.11359567940235138,
+                    "luminanceStdDev": 0.17827342450618744
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.532353401184082,
+                    "luminanceStdDev": 0.12596945464611053
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.3520524799823761,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "middle-ascent",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v16 Road graphite / v17 industrial deck)",
+                    "fraction": 0.007592592388391495,
+                    "luminanceStdDev": 0.014719907194375992
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.04800154268741608,
+                    "luminanceStdDev": 0.14726532995700836
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.39358025789260864,
+                    "luminanceStdDev": 0.13290096819400787
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.55272376537323,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "radar-to-energy",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v16 Road graphite / v17 industrial deck)",
+                    "fraction": 0.055771604180336,
+                    "luminanceStdDev": 0.08496731519699097
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.1684645116329193,
+                    "luminanceStdDev": 0.18478898704051971
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.49871140718460083,
+                    "luminanceStdDev": 0.14401639997959137
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.2866358160972595,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "a-plaza-to-se-logistics",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v16 Road graphite / v17 industrial deck)",
+                    "fraction": 0.07580246776342392,
+                    "luminanceStdDev": 0.0810629352927208
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.3570910394191742,
+                    "luminanceStdDev": 0.16937966644763947
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.2467438280582428,
+                    "luminanceStdDev": 0.11422357708215714
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.4271527826786041,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "a-plaza-to-ne-service",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v16 Road graphite / v17 industrial deck)",
+                    "fraction": 0.23765432834625244,
+                    "luminanceStdDev": 0.048975929617881775
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.11986111104488373,
+                    "luminanceStdDev": 0.1675185114145279
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.32374998927116394,
+                    "luminanceStdDev": 0.18389827013015747
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.33118826150894165,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        },
+        {
+            "view": "spawn-road-east",
+            "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+            "playerHeight": true,
+            "shares": [
+                {
+                    "family": "road deck (v16 Road graphite / v17 industrial deck)",
+                    "fraction": 0.3552932143211365,
+                    "luminanceStdDev": 0.07748502492904663
+                },
+                {
+                    "family": "canyon rock (v14 strata)",
+                    "fraction": 0.11986111104488373,
+                    "luminanceStdDev": 0.14138227701187134
+                },
+                {
+                    "family": "structures and props",
+                    "fraction": 0.17981481552124023,
+                    "luminanceStdDev": 0.18079209327697754
+                },
+                {
+                    "family": "water",
+                    "fraction": 0.0,
+                    "luminanceStdDev": 0.0
+                },
+                {
+                    "family": "sky / background",
+                    "fraction": 0.34973764419555664,
+                    "luminanceStdDev": 0.0
+                }
+            ]
+        }
+    ],
+    "overviewMean": [
+        {
+            "family": "road deck (v16 Road graphite / v17 industrial deck)",
+            "fraction": 0.19797839224338531,
+            "luminanceStdDev": 0.021743742749094963
+        },
+        {
+            "family": "canyon rock (v14 strata)",
+            "fraction": 0.5004501342773438,
+            "luminanceStdDev": 0.1331745982170105
+        },
+        {
+            "family": "structures and props",
+            "fraction": 0.11320473253726959,
+            "luminanceStdDev": 0.17425107955932617
+        },
+        {
+            "family": "water",
+            "fraction": 0.07300668954849243,
+            "luminanceStdDev": 0.06322312355041504
+        },
+        {
+            "family": "sky / background",
+            "fraction": 0.11536265164613724,
+            "luminanceStdDev": 0.0
+        }
+    ],
+    "playerHeightMean": [
+        {
+            "family": "road deck (v16 Road graphite / v17 industrial deck)",
+            "fraction": 0.12182649970054626,
+            "luminanceStdDev": 0.07218684256076813
+        },
+        {
+            "family": "canyon rock (v14 strata)",
+            "fraction": 0.15005621314048767,
+            "luminanceStdDev": 0.16989248991012573
+        },
+        {
+            "family": "structures and props",
+            "fraction": 0.3653571307659149,
+            "luminanceStdDev": 0.1578860878944397
+        },
+        {
+            "family": "water",
+            "fraction": 0.0,
+            "luminanceStdDev": 0.0
+        },
+        {
+            "family": "sky / background",
+            "fraction": 0.383120596408844,
+            "luminanceStdDev": 0.0
+        }
+    ]
+}

@@ -1,0 +1,19 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-wigo-reader-release-xx5wxns_/web
+
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  utils/fetchWigoPlayerStats.test.ts [ utils/fetchWigoPlayerStats.test.ts ]
+Error: Cannot find module '/private/tmp/fhfh-wigo-reader-release-xx5wxns_/offline-release-setup.ts'
+Caused by: Error: Failed to load url /private/tmp/fhfh-wigo-reader-release-xx5wxns_/offline-release-setup.ts (resolved id: /private/tmp/fhfh-wigo-reader-release-xx5wxns_/offline-release-setup.ts). Does the file exist?
+ ❯ loadAndTransform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35835:17
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  16:56:36
+   Duration  134ms (transform 8ms, setup 0ms, collect 0ms, tests 0ms, environment 0ms, prepare 36ms)
+

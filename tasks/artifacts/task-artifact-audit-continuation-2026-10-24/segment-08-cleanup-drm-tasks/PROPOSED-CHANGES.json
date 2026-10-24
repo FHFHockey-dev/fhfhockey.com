@@ -1,0 +1,176 @@
+{
+  "at": "2026-10-24T17:13:23.460838+00:00",
+  "changes": {
+    "SITE-WIGO": {
+      "fields": {
+        "implementation": "The exact four-file local WiGO correction at patcha63ef5a4e6dde4ee1255661a612f01b79a4e4306c5822f8d4fe078f89fbb394e now has independent ACCEPT WITH LIMITS and parent acceptance with limits. Preserve C4 workflow-link credit and both original diagnosis/failure packets; no persisted aggregate was refreshed by these local changes.",
+        "acceptance": "Independent75/75 offline checks (58owner+17new controls), scoped lint and46unchanged pins support exact local acceptance only. Parent accepts with limits. Whole-web TypeScript still has the two prior Luna errors; no auth/browser/query-plan/population-wide/live-data or whole-WiGO acceptance follows.",
+        "verification": "Full independent REVIEW and REVIEW-EVIDENCE read. Reviewer reports exact four-file patch reconstruction, eight baseline/candidate copies and46pins; no reviewer source repair or hosted action. Auditor reran no application tests. Retained68-row matching remains5/9/13; absent legacy-rate row means that separate fix is not the demonstrated Kucherov cause. True gaps and source-arrival chronology remain qualified.",
+        "next_action": "Preserve accepted exact pins for parent integration and separate authorized release; do not repeat the completed review without a changed candidate. Stored L5 nulls, October5 source ingestion and any bounded refresh/backfill remain unapproved. Broad-route partial commits/population compatibility and the separate historical STD fallback are outside acceptance; no broad calculate-wigo-stats invocation or card-cohort claim.",
+        "dispatch_class": "Exact local correction independently and parent accepted with limits; production refresh/backfill and wider feature qualification held"
+      },
+      "refs": [
+        [
+          "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW.md",
+          3
+        ],
+        [
+          "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW-EVIDENCE.json",
+          1
+        ],
+        [
+          "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json",
+          1
+        ]
+      ]
+    },
+    "SITE-FORGE-TESTING-GROUNDS": {
+      "fields": {
+        "implementation": "Preserve accepted limited timestamp/policy and S03-R1 correction credit. Slice05 adds local server/API/owner-gate/page boundaries with inactive actions, but independent review found P2 S05-R1: TOKEN_REFRESHED can remount the synthetic workspace after hidden-page withdrawal. Owner has frozen a two-file lifecycle correction for focused re-review; no acceptance of that revision is established.",
+        "acceptance": "S03-R1 limited verdict retained. Original slice05 CHANGES REQUIRED: one68pass/1fail invocation (owner61/61, independent7/8),127pins unchanged. Owner R1 reports9focused passes/8intentional skips and138preserved pins; independent correction acceptance remains pending. No wrong-owner grant/server-owner bypass or real/sealed-result disclosure was demonstrated.",
+        "verification": "Full slice05 REVIEW/REVIEW-EVIDENCE and R1 HANDOFF read. Hidden auth callback/remount reproduction is distinct from server identity; optional trusted adapter payloads pass through unvalidated and no default store/executor is connected. R1 owner preserves pagehide latch and fresh visible-return checks but does not implement single-use live verification budgeting. Auditor performed no source/test/browser/auth/provider operation.",
+        "dependencies": "Dedicated runner A remains selected; durability, actual trusted request/session/worker integration, safe read-adapter projections/sealing, scientific/model/pilot and approved hosted runtime/storage/retention/cost remain open. Local owner activation is separately approved but blocked with0of1approved auth reads used: private verification transport, inherited AuthProvider profile/settings-write containment and existing-server ownership unresolved. Missing owner configuration is not rejection of TJ identity.",
+        "next_action": "Same reviewer evaluates the frozen two-file S05-R1 correction; preserve the original failure and exact boundary without importing owner passes as acceptance. Resolve safe private verification transport/budget and inherited-write containment before the already-approved owner activation; no additional auth call or new approval request from this audit. No actual read adapter/runner/model or real-run acceptance; payload/owner/sealing and scientific gates remain separate.",
+        "dispatch_class": "Single Astra correction frozen for focused re-review; S05-R1 not yet accepted, local owner activation blocked0of1authreadsused"
+      },
+      "refs": [
+        [
+          "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW.md",
+          3
+        ],
+        [
+          "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW-EVIDENCE.json",
+          1
+        ],
+        [
+          "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1/HANDOFF.md",
+          18
+        ],
+        [
+          "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1/HANDOFF.md",
+          25
+        ],
+        [
+          "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json",
+          1
+        ]
+      ]
+    },
+    "SITE-PLAYER-CARDS": {
+      "fields": {
+        "acceptance": "Task list is parent-reviewed for dispatch; slice01 independent review is ongoing, not accepted. Owner synthetic preview10unit/10offline-browser/scoped static passes retain only owner-evidence status. Confirmed free/public/basic PNG and premium comparison choices remain; exact allocation, season/incomplete-N policy, defaults/rank/visual proposals and observed integration stay open.",
+        "dispatch_class": "Existing single Sol card implementation; slice01 independent review ongoing, no acceptance or release inferred"
+      },
+      "refs": [
+        [
+          "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json",
+          1
+        ]
+      ]
+    },
+    "PAID-SYNC": {
+      "fields": {
+        "next_action": "Release owner preserves the exact accepted35-path sales-off/paid-sync packet, existing/grandfathered grants, cancellation/recovery and manual workflows. Retain the older Yahoo live-draft readiness clauses as held reconciliation: supervised sub-minute worker substrate, exact target migration/runtime and closed-browser/provider rehearsal are not established by UI/OAuth/local fixture passes. The August24 tracker is NO-GO, not proof current infrastructure is absent. Reconcile newer owner receipts before any future restoration; do not activate a worker, change sales/rollout or invoke the rehearsal. Previously issued Stripe links remain an external risk with no mutation/refund authority.",
+        "verification": "Existing paid-sync packet acceptance remains unchanged in scope. Full Yahoo private-beta runbook/readiness/backlog read: local OAuth/coordinator/harness evidence is distinct from durable deployed execution and real provider latency/pick completeness. Recurrent Vercel request-only functions are not the documented sub-minute worker substitute. Deferred adjacent features and proposed cadences remain parked, not new dispatches."
+      },
+      "refs": [
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md",
+          7
+        ],
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          11
+        ],
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          20
+        ],
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          34
+        ],
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/yahoo-live-draft-backlog.md",
+          3
+        ]
+      ]
+    },
+    "SITE-PRIVACY-POLICY": {
+      "fields": {
+        "next_action": "Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code. Preserve the Oct19 approved linked-lifetime/same-purpose credential contract. Fact sheet must distinguish local disconnect/actual-auth-user deletion cleanup from user-facing account-deletion workflow, hosted cascade, backups/logs/derived-data erasure and upstream invalidation/provider rights, all unqualified by the reviewed policy. No new deletion feature or changed lifetime policy is requested. Full Draft/Yahoo source review adds separate session/pick/audit/rehearsal retention facts: the dated design has30-day poll observations but no automatic completed-session/pick deletion, with owner/legal policy needed before broad rollout. Reconcile current facts first;30days is not a new linked-credential or league-data lifetime policy."
+      },
+      "refs": [
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md",
+          132
+        ],
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          30
+        ],
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md",
+          171
+        ]
+      ]
+    },
+    "YAHOO-HISTORY-RETIREMENT": {
+      "fields": {
+        "verification": "Full Yahoo current-inventory and schema documentation read. Dated July31 normalized-reader cutover/revocation/atomic writer receipts retain closure; August3 pagination and legacy guard fixtures do not close controlled provider/runtime, per-season league equivalence, Python retirement or resumable historical backfill. Static older table/gap paragraphs coexist with later closure overlays and require documentary reconciliation, not another writer repair. Source tables/types are contracts, not current coverage.",
+        "next_action": "Reconcile retained newer value-free lifecycle/equivalence/retirement receipts against the existing gated historical scope before proposing any bounded slice. Preserve completed canonical-reader cutover and local guard work; do not revive old unsafe legacy owners, guess a global league from accounts, launch backfill or count private-beta fixture/UI work as provider equivalence."
+      },
+      "refs": [
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          3
+        ],
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          13
+        ],
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          29
+        ],
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          83
+        ],
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md",
+          1
+        ]
+      ]
+    },
+    "REPO-DOCUMENTATION": {
+      "fields": {
+        "next_action": "Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion."
+      },
+      "refs": [
+        [
+          "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+          139
+        ],
+        [
+          "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+          253
+        ],
+        [
+          "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          143
+        ],
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md",
+          3
+        ],
+        [
+          "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          29
+        ]
+      ]
+    }
+  },
+  "added_ids": [],
+  "scope": "Dated documentary clauses and current parent steers only; no app/runtime authority."
+}

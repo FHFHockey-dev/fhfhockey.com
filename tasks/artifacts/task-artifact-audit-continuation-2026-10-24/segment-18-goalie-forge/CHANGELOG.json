@@ -1,0 +1,304 @@
+{
+  "at": "2026-10-24T19:44:19.352386+00:00",
+  "changes": {
+    "FPI-07": {
+      "fields": {
+        "verification": "Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments. Segment18 resolves older Goalie NEW10 against retained MASTER-F2/R7: release inventory149 explicitly says the goalie reader is already null-safe from R7. Do not re-port the whole reader or reopen that fix. The broad 56-row completion is engineering scope, not a fresh empirical/live qualification. PRD direct-vs-translated horizon labels and research/tracking exclusions remain distinct; no new model tuning or operational action."
+      },
+      "before_fields": {
+        "verification": "Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/c7c9de60578a-tasks-goalie-forge.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+          "line": 94,
+          "sha256": "c7c9de60578a6f1b21fb0180602908220dac38a6ef3cb0ccc46ccdff00a656ac",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "All task-bearing prose1–200 read. Explicitly historical catalog201–940 bounded by full fenced/comment/job-label/endpoint/tail inspection; individual SQL semantics not reviewed. No full-file content credit or current schedule/operation authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/4983e152de3e-forge-model-release-inventory.md",
+          "original_path": "tasks/artifacts/forge-projection-audit-2026-10-21/forge-model-release-inventory.md",
+          "line": 41,
+          "sha256": "4983e152de3eea45fd8f764b4ec1304c860d40cf6b8cfc47042c5f6db0598be6",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "Only release inventory lines30–62 and140–150 fully read to reconcile null-win closure; keyword matches elsewhere are navigation, not full-content credit. Line149 explicitly records goalie reader null-safe from R7. No app/Git/release execution/current reader check; remaining inventory content unreviewed by this segment."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/4983e152de3e-forge-model-release-inventory.md",
+          "original_path": "tasks/artifacts/forge-projection-audit-2026-10-21/forge-model-release-inventory.md",
+          "line": 149,
+          "sha256": "4983e152de3eea45fd8f764b4ec1304c860d40cf6b8cfc47042c5f6db0598be6",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "Only release inventory lines30–62 and140–150 fully read to reconcile null-win closure; keyword matches elsewhere are navigation, not full-content credit. Line149 explicitly records goalie reader null-safe from R7. No app/Git/release execution/current reader check; remaining inventory content unreviewed by this segment."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/e1e58da5e8f1-goalie-forge.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+          "line": 110,
+          "sha256": "e1e58da5e8f11456750070be9db1628d1e95155d0362e429a4d3191e6c3103cd",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/c33a3a7e8e1d-goalie-forge-implementation-plan.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md",
+          "line": 37,
+          "sha256": "c33a3a7e8e1dddc98906822885f3e9678050ce4f4f49c6e4c6145c9c1e4070a6",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/6dc10247757f-goalie-forge-operator-runbook.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md",
+          "line": 147,
+          "sha256": "6dc10247757feedf2e1022b7b8f31a3cbb7231705b8935476ab9c01113e06075",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+        }
+      ]
+    },
+    "SITE-FORGE-RANGE-PRESENTATION": {
+      "fields": {
+        "verification": "Full V1 task list, shared PRD requirements/embedded presentation rows and skater checklist read. Later NEW8 source explicitly supersedes older completed presentation boxes. No application/browser/pixel or current API check performed. Goalie NEW11 independently confirms the removed floor/typical/ceiling blocks; this aliases the existing range disposition, not another quantile implementation. Non-range goalie limitations/ticker requirements are tracked under SITE-GOALIE-DISCLOSURE; stale test paths under REPO-DOCUMENTATION. Current rendering remains unverified."
+      },
+      "before_fields": {
+        "verification": "Full V1 task list, shared PRD requirements/embedded presentation rows and skater checklist read. Later NEW8 source explicitly supersedes older completed presentation boxes. No application/browser/pixel or current API check performed."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/c7c9de60578a-tasks-goalie-forge.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+          "line": 95,
+          "sha256": "c7c9de60578a6f1b21fb0180602908220dac38a6ef3cb0ccc46ccdff00a656ac",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "All task-bearing prose1–200 read. Explicitly historical catalog201–940 bounded by full fenced/comment/job-label/endpoint/tail inspection; individual SQL semantics not reviewed. No full-file content credit or current schedule/operation authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/e1e58da5e8f1-goalie-forge.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+          "line": 307,
+          "sha256": "e1e58da5e8f11456750070be9db1628d1e95155d0362e429a4d3191e6c3103cd",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+        }
+      ]
+    },
+    "REPO-DOCUMENTATION": {
+      "fields": {
+        "verification": "Current source and retained receipts inspected; no application tests rerun. Segment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority. Segment15 distinguishes completed 36/36 modularization and approved scalar epsilon 0.005 from still-tracked PP-ACC-001–005 accuracy proposals. Meta A–K checkmarks do not close granular Sustainability or OCT14 requirements. Latest V1 tail supersedes earlier missing-identity, unresolved 73-slot and exact-cap-blocker statements; do not repeat those resolved decisions. Current canonical admission/reconciliation test packets remain authoritative over old NEW6/NEW7 issue wording. Segment16 full Sustainability sources retain later Option A, score-v2, canonical windows, applied provenance migration, local route/health acceptance and named-player UI closure over old draft/step4 instructions. The broad checked stat/probability rows need a documented scope disposition against the runbook; no current API defect was reproduced. NEW17/18 supersede old all-complete orchestration/drift language, not accepted unrelated fixes. Segment17 finishes Sustainability documentary sources at captured hashes. July/August inline pre-repair and unapplied-migration sections yield to later exact NEW15, provenance and ownership receipts; source recommendation does not revive consolidation/deletion authority. The volatility/elasticity plan is completed 19/19, so its older incomplete progress/suggested-next-steps paragraphs are not new work. Research citations remain opaque/unverified and age/goalie/context ideas do not dispatch parked modeling. Generated inventory/map summaries are structurally coherent historical snapshots, not current app existence, ownership or all-row semantic acceptance. Segment18 retains completed Goalie implementation/error containment and R7 null-win closure over older unchecked/handoff text. Historical cron catalog and manual bypass/refresh prompts are documentary records, not current schedules or authority. NEW11 reports stale test paths; the retired process rule is not restored. Existing version-specific rollout/rollback clauses do not override current model, source, no-backfill, production or owner gates.",
+        "children": [
+          {
+            "child_id": "REPO-DOCUMENTATION/forge-refresh-itinerary",
+            "title": "Reconcile the old full-refresh itinerary against approved bounded operating contracts",
+            "status": "Open documentary follow-up; no endpoint execution",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Correct or clearly mark the obsolete all-date/fullRefresh RPC-truncate itinerary, old page/schema authority and unqualified fallback guidance. Link current bounded README/runner/admission contracts without weakening existing full-refresh protections.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md",
+              "line": 210
+            },
+            "approval_gate": "Documentation-only under current exact file custody; no cron, SQL, refresh, truncate, provider call, or new remote verification.",
+            "existing_work_credit": "Existing full-refresh safety and writer fixes remain completed; stored instructions are not new authority."
+          },
+          {
+            "child_id": "REPO-DOCUMENTATION/sustainability-contract-disposition",
+            "title": "Reconcile stale Sustainability projection and operating claims",
+            "status": "Proposed documentary disposition; current runtime not inspected",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile the checked broad stat-projection/model rows with the runbook seven-stat menu and pending-calibration state. Find a later accepted implementation or intentional scope decision for PIM, plus/minus and FOW/FO%; otherwise correct the completion language. Mark old draft schema/window/integer-score, three-offset completeness and pre-migration instructions as superseded where later receipts govern.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+              "line": 135
+            },
+            "approval_gate": "Documentation/owner-disposition only. No inferred feature dispatch, schema repair, restored Python writes, migration, scheduling, model fitting or endpoint execution.",
+            "existing_work_credit": "Option A TypeScript ownership, canonical l3/l5/l10/l20, two-decimal score-v2 logit contract, applied provenance migration and July30 named-player render closure are retained."
+          },
+          {
+            "child_id": "REPO-DOCUMENTATION/goalie-source-paths",
+            "title": "Reconcile stale Goalie FORGE source/test and process references",
+            "status": "Proposed documentary follow-up; application paths not checked",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile NEW11 reported test-path moves and retired process-task-list references against current owner-approved repository documentation. Link the canonical runbook and identify historical handoff/cron material clearly; do not execute its old bypass/backfill/commit instructions.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+              "line": 95
+            },
+            "approval_gate": "Documentation-only within current file custody. Validate current paths narrowly if later authorized; no Git/app/test/endpoint or rule reinstatement by audit.",
+            "existing_work_credit": "NEW9 error containment and prior implementation/runbook completion remain; existing broader Forge refresh-itinerary child owns operational-contract reconciliation."
+          }
+        ]
+      },
+      "before_fields": {
+        "verification": "Current source and retained receipts inspected; no application tests rerun. Segment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority. Segment15 distinguishes completed 36/36 modularization and approved scalar epsilon 0.005 from still-tracked PP-ACC-001–005 accuracy proposals. Meta A–K checkmarks do not close granular Sustainability or OCT14 requirements. Latest V1 tail supersedes earlier missing-identity, unresolved 73-slot and exact-cap-blocker statements; do not repeat those resolved decisions. Current canonical admission/reconciliation test packets remain authoritative over old NEW6/NEW7 issue wording. Segment16 full Sustainability sources retain later Option A, score-v2, canonical windows, applied provenance migration, local route/health acceptance and named-player UI closure over old draft/step4 instructions. The broad checked stat/probability rows need a documented scope disposition against the runbook; no current API defect was reproduced. NEW17/18 supersede old all-complete orchestration/drift language, not accepted unrelated fixes. Segment17 finishes Sustainability documentary sources at captured hashes. July/August inline pre-repair and unapplied-migration sections yield to later exact NEW15, provenance and ownership receipts; source recommendation does not revive consolidation/deletion authority. The volatility/elasticity plan is completed 19/19, so its older incomplete progress/suggested-next-steps paragraphs are not new work. Research citations remain opaque/unverified and age/goalie/context ideas do not dispatch parked modeling. Generated inventory/map summaries are structurally coherent historical snapshots, not current app existence, ownership or all-row semantic acceptance.",
+        "children": [
+          {
+            "child_id": "REPO-DOCUMENTATION/forge-refresh-itinerary",
+            "title": "Reconcile the old full-refresh itinerary against approved bounded operating contracts",
+            "status": "Open documentary follow-up; no endpoint execution",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Correct or clearly mark the obsolete all-date/fullRefresh RPC-truncate itinerary, old page/schema authority and unqualified fallback guidance. Link current bounded README/runner/admission contracts without weakening existing full-refresh protections.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md",
+              "line": 210
+            },
+            "approval_gate": "Documentation-only under current exact file custody; no cron, SQL, refresh, truncate, provider call, or new remote verification.",
+            "existing_work_credit": "Existing full-refresh safety and writer fixes remain completed; stored instructions are not new authority."
+          },
+          {
+            "child_id": "REPO-DOCUMENTATION/sustainability-contract-disposition",
+            "title": "Reconcile stale Sustainability projection and operating claims",
+            "status": "Proposed documentary disposition; current runtime not inspected",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile the checked broad stat-projection/model rows with the runbook seven-stat menu and pending-calibration state. Find a later accepted implementation or intentional scope decision for PIM, plus/minus and FOW/FO%; otherwise correct the completion language. Mark old draft schema/window/integer-score, three-offset completeness and pre-migration instructions as superseded where later receipts govern.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+              "line": 135
+            },
+            "approval_gate": "Documentation/owner-disposition only. No inferred feature dispatch, schema repair, restored Python writes, migration, scheduling, model fitting or endpoint execution.",
+            "existing_work_credit": "Option A TypeScript ownership, canonical l3/l5/l10/l20, two-decimal score-v2 logit contract, applied provenance migration and July30 named-player render closure are retained."
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/c7c9de60578a-tasks-goalie-forge.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+          "line": 3,
+          "sha256": "c7c9de60578a6f1b21fb0180602908220dac38a6ef3cb0ccc46ccdff00a656ac",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "All task-bearing prose1–200 read. Explicitly historical catalog201–940 bounded by full fenced/comment/job-label/endpoint/tail inspection; individual SQL semantics not reviewed. No full-file content credit or current schedule/operation authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/c7c9de60578a-tasks-goalie-forge.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+          "line": 95,
+          "sha256": "c7c9de60578a6f1b21fb0180602908220dac38a6ef3cb0ccc46ccdff00a656ac",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "All task-bearing prose1–200 read. Explicitly historical catalog201–940 bounded by full fenced/comment/job-label/endpoint/tail inspection; individual SQL semantics not reviewed. No full-file content credit or current schedule/operation authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/c7c9de60578a-tasks-goalie-forge.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+          "line": 111,
+          "sha256": "c7c9de60578a6f1b21fb0180602908220dac38a6ef3cb0ccc46ccdff00a656ac",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "All task-bearing prose1–200 read. Explicitly historical catalog201–940 bounded by full fenced/comment/job-label/endpoint/tail inspection; individual SQL semantics not reviewed. No full-file content credit or current schedule/operation authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/e1e58da5e8f1-goalie-forge.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+          "line": 399,
+          "sha256": "e1e58da5e8f11456750070be9db1628d1e95155d0362e429a4d3191e6c3103cd",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/6dc10247757f-goalie-forge-operator-runbook.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md",
+          "line": 25,
+          "sha256": "6dc10247757feedf2e1022b7b8f31a3cbb7231705b8935476ab9c01113e06075",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/6dc10247757f-goalie-forge-operator-runbook.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md",
+          "line": 140,
+          "sha256": "6dc10247757feedf2e1022b7b8f31a3cbb7231705b8935476ab9c01113e06075",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+        }
+      ]
+    },
+    "SITE-GOALIE-DISCLOSURE": {
+      "fields": {
+        "children": [
+          {
+            "child_id": "SITE-GOALIE-DISCLOSURE/limitations-disposition",
+            "title": "Reconcile the canonical goalie limitations disclosure",
+            "status": "Proposed P3/current rendering unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Find later exact restoration or intentional supersession of the non-optional goalie limitations panel. If still requested, scope clear model-source/version, flurry/venue availability, public-tracking limits and direct-versus-translated-inference language on the canonical surface; keep quality and reliability distinct.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+              "line": 307
+            },
+            "approval_gate": "No UI implementation, model promotion, new data source/rights, public tracking claim or empirical acceptance by audit. Product/current-surface disposition and exact owner scope come first.",
+            "existing_work_credit": "Existing goalie model/API/cards, unavailable-error containment, null-win reader and historical implementation acceptance stay closed; no retired dashboard restoration."
+          },
+          {
+            "child_id": "SITE-GOALIE-DISCLOSURE/slate-ticker-disposition",
+            "title": "Reconcile the removed goalie slate-context ticker",
+            "status": "Proposed P3/product disposition before restoration",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "SITE-FORGE-RANGE-PRESENTATION"
+            ],
+            "next_action": "Locate later owner disposition of the ticker formerly above goalieDisclosure. Preserve the canonical route/shared slate context; record intentional supersession if applicable or propose a bounded UI acceptance contract. Do not reintroduce a second projection consumer or dashboard stack.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+              "line": 95
+            },
+            "approval_gate": "Planning/disposition only; no application/browser check, legacy component restoration, shared-source edit or release by audit.",
+            "existing_work_credit": "Existing shared games/slate and Start Chart presentation ownership retain credit; floor/typical/ceiling range work stays under SITE-FORGE-RANGE-PRESENTATION."
+          }
+        ]
+      },
+      "is_new": true,
+      "before_fields": {
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/c7c9de60578a-tasks-goalie-forge.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+          "line": 95,
+          "sha256": "c7c9de60578a6f1b21fb0180602908220dac38a6ef3cb0ccc46ccdff00a656ac",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "All task-bearing prose1–200 read. Explicitly historical catalog201–940 bounded by full fenced/comment/job-label/endpoint/tail inspection; individual SQL semantics not reviewed. No full-file content credit or current schedule/operation authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/e1e58da5e8f1-goalie-forge.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+          "line": 307,
+          "sha256": "e1e58da5e8f11456750070be9db1628d1e95155d0362e429a4d3191e6c3103cd",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/e1e58da5e8f1-goalie-forge.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+          "line": 381,
+          "sha256": "e1e58da5e8f11456750070be9db1628d1e95155d0362e429a4d3191e6c3103cd",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/source-snapshots/c33a3a7e8e1d-goalie-forge-implementation-plan.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md",
+          "line": 37,
+          "sha256": "c33a3a7e8e1dddc98906822885f3e9678050ce4f4f49c6e4c6145c9c1e4070a6",
+          "observed_at": "2026-10-24T19:44:19.352386+00:00",
+          "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+        }
+      ]
+    }
+  },
+  "added_ids": [
+    "SITE-GOALIE-DISCLOSURE"
+  ],
+  "deduplication": {
+    "null_win": "Historical NEW10 aliases already released MASTER-F2/R7; no new defect, implementation or legacy-block edit.",
+    "range": "Removed goalie range blocks stay in SITE-FORGE-RANGE-PRESENTATION. New parent is confined to distinct caveat/slate-context disposition.",
+    "documentation": "One new readable source-path child; broad operator-itinerary child retained. Stored process/handoff/cron commands do not dispatch work.",
+    "model": "Existing FPI07, MASTER-F11 and comparison-program gates cover model/empirical/research scope. No new tuning, data acquisition, betting endpoint or rollout task from broad PRD/stretch headings."
+  }
+}

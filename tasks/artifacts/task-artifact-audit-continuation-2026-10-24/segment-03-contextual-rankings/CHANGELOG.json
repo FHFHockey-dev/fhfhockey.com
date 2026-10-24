@@ -1,0 +1,136 @@
+{
+  "at": "2026-10-24T15:51:04.684507+00:00",
+  "before_ids": 206,
+  "after_ids": 206,
+  "before_evidence": 892,
+  "after_evidence": 902,
+  "changes": {
+    "BILLING-CANCEL-RELOAD": {
+      "before_fields": {
+        "implementation": "C3 handed back an isolated two-file reload-persistence candidate, patch c500b580b79f2bd1ce3bc00e50630ea3ac1d47bd1985843c53121cb8a9b420ff. Canonical accepted panel trio remains unchanged; candidate is excluded from frozen release r1. Per-tab owner-bound request IDs expire at24h. Shared-auth sign-out clearing remains a separate unapplied/untested one-key proposal.",
+        "acceptance": "Owner and orchestrator report 52/52 focused checks; fixture browser reproduction/fix, mutations and lint are receipt evidence. Whole-tree TS exit2 has only the two Luna errors. Independent candidate acceptance/integration remain open; no real billing/provider operation occurred.",
+        "verification": "Full C3 receipt and CLAUDE006 read. Candidate panel9987664256fd615d6b47cb41d019edd7c9515456e8c02808d42d741e239776ea and test646b3379e105e0ae3777c196db148fcd9af1366faa757102ccb3ebeae4b3e535 are owner/orchestrator pins; audit did not apply patches or run tests/browser.",
+        "next_action": "Independently review the exact isolated candidate. Parent decides only the excluded browser-auth.ts boundary proposal c0deaddc7e9421a13c3b944c37c54e1a4fb421d93452d1275eacac2538e40002: app sign-out can unmount the panel before its clearing callback, retaining the same owner ID within24h; foreign owners are rejected per receipts. Refund-consumer/private-safe-error serial scope remains unstarted. Preserve mounted fix and canonical billing protections.",
+        "dispatch_class": "C3 isolated candidate handed back; independent review pending, shared-auth boundary proposal held separately"
+      },
+      "fields": {
+        "implementation": "C3 isolated reload-continuity candidate is independently ACCEPT WITH LIMITS at patch c500b580b79f2bd1ce3bc00e50630ea3ac1d47bd1985843c53121cb8a9b420ff. Restore rejects request IDs aged 24h; it does not automatically delete storage bytes. Canonical panel trio remains unchanged and candidate is excluded from frozen release r1. The exact shared-auth proposal is tested only in reviewer-owned copies, remains unapplied canonically and held for exact parent source/test lease.",
+        "acceptance": "Independent reviewer passed 9/9 focused offline controls for reload/storage/reset boundaries; owner52-case receipt was inspected, not rerun. Reload continuity alone is accepted with limits. Sign-out/privacy cleanup is not complete: app unmount can leave private billing metadata, and an independent48h control proves 24h is reuse eligibility rather than a physical retention guarantee. No real financial/provider or full-product acceptance.",
+        "verification": "Full independent REVIEW.md and REVIEW-EVIDENCE.json read. Reviewer reports30/30 packet hashes,4/4 canonical baselines and exact isolated patch reconstruction;9/9 independent controls. Auth proposal key matches both localStorage/sessionStorage and existing reset paths, with error/timeout checks; audit performed no source repair, test, browser or provider execution.",
+        "next_action": "Preserve limited reload acceptance and original mounted fix. Parent must grant/reconfirm the exact browser-auth.ts plus existing AuthProviderContext.test.tsx lease before a canonical sign-out correction; reviewer recommendation grants no ownership. Correct C3 receipt wording through its artifact owner: no hard24h byte deletion, global cross-tab cleanup, cross-device idempotency or exactly-once financial claim. Refund-consumer/private-safe-error scope remains unstarted; release integration is separate.",
+        "dispatch_class": "C3 reload continuity independently accepted with limits; exact shared-auth/test correction lease and sign-out completion held separately"
+      },
+      "new_evidence": [
+        {
+          "path": "tasks/artifacts/c3-independent-review-2026-10-24/REVIEW.md",
+          "line": 1,
+          "sha256": "aad7be2b2c9496366fed6e3785fc78474f60acbcf89bf0562210eb3522ee3943",
+          "observed_at": "2026-10-24T15:51:04.684507+00:00",
+          "review_scope": "Full documentary source read; audit did not run underlying tests, inspect all referenced raw evidence, or observe hosted state."
+        },
+        {
+          "path": "tasks/artifacts/c3-independent-review-2026-10-24/REVIEW-EVIDENCE.json",
+          "line": 1,
+          "sha256": "89c885179a42b757b4f6cfb7d06e9a30a7c548891ff15e579195a9cdceebc65e",
+          "observed_at": "2026-10-24T15:51:04.684507+00:00",
+          "review_scope": "Full documentary source read; audit did not run underlying tests, inspect all referenced raw evidence, or observe hosted state."
+        }
+      ],
+      "retained_clauses": []
+    },
+    "SITE-FORGE-TESTING-GROUNDS": {
+      "before_fields": {
+        "acceptance": "Slice01 original independent18/20 controls exposed2 precision failures. R1 reviewer ACCEPT WITH LIMITS resolves only that finding on new pins:2 original plus6 new controls pass,18 intentionally skipped. Slice02 reviewer ACCEPT WITH LIMITS covers local policy seam:12 distinct controls across initial11passes/1 reviewer-fixture failure and corrected single pass; not one22/22 invocation. Slice03 owner16/16 and scoped TS/lint pass, frozen for independent review; no runner acceptance inferred. Scout integration authority and full-product gates remain.",
+        "verification": "Full original/revised review receipts, slice02 decisions and slice03 handoff/operating plan/EVIDENCE read. R1 pair60fdf02b\u2026/886d7489\u2026; ownerPolicy pairb0de88d2\u2026/9d715c45\u2026; exact complete pins in linked evidence. The auditor imported documentary results only and ran no application checks.",
+        "next_action": "Independently review the exact five-file slice03 pin. Reconcile full original requirements plus accepted steers without treating local helper/policy acceptance as auth/storage/remote workflow completion. Memory fixture limits and tiny timings establish no production budgets/capacity/cost. Abort is cooperative and cannot preempt synchronous CPU; real-history reveal is always denied in this reference. Pure fixture-backed UI/contracts can proceed only within assigned boundaries; hosted/model/pilot actions retain separate gates.",
+        "evidence_level": "Reviewer-limited helper/policy verdicts; slice03 owner-tested and independent review pending",
+        "dispatch_class": "Single Astra implementation; slice03 frozen for independent Sol review. Slice04 declares a separate four-file synthetic preview shell, with page integration and reviewed server owner gate excluded; no completion receipt inspected for that new slice."
+      },
+      "fields": {
+        "acceptance": "Slice01 original independent18/20 controls exposed2 precision failures. R1 reviewer ACCEPT WITH LIMITS resolves only that finding on new pins:2 original plus6 new controls pass,18 intentionally skipped. Slice02 reviewer ACCEPT WITH LIMITS covers local policy seam:12 distinct controls across initial11passes/1 reviewer-fixture failure and corrected single pass; not one22/22 invocation. Slice03 original pins received CHANGES REQUIRED: owner16/16 and independent9/10 controls produce25pass/1fail in one invocation. P2 S03-R1 relabels still-pending outcomes as failed when execution checks exhaust the budget. Scoped TS/lint pass does not close it. Owner correction/new pins and focused re-review remain pending; no slice03 acceptance. Scout integration authority and full-product gates remain.",
+        "verification": "Full original/revised review receipts, slice02 decisions and slice03 handoff/operating plan/EVIDENCE read. R1 pair60fdf02b\u2026/886d7489\u2026; ownerPolicy pairb0de88d2\u2026/9d715c45\u2026; exact complete pins in linked evidence. The auditor imported documentary results only and ran no application checks. Full slice03 independent REVIEW and REVIEW-EVIDENCE read. At maxExecutionsPerUnit=2, two pending_outcomes responses followed by a third claim yield failed1/pending0 instead of failed0/pending1. The run is failed, not falsely successful; no invented metric value was demonstrated. Parent reports correction underway; no accepted corrected pin was inspected here.",
+        "next_action": "Owner corrects S03-R1 without removing finite execution/poll limits or fabricating outcome failures; preserve original failed controls and obtain a separately frozen focused re-review. Keep prior timestamp/policy verdicts within their scopes. Dedicated runner A is settled; durability, actual trusted auth, sealing, metrics/model/real-pilot and hosted runtime/storage/retention/cost remain unqualified. Slice04 declaration is independent preview work, not runner acceptance.",
+        "evidence_level": "Limited timestamp/policy reviewer verdicts preserved; slice03 CHANGES REQUIRED on P2 pending-outcome coverage, correction pending",
+        "dispatch_class": "Single Astra owner correcting slice03 P2; independent re-review/new exact pin acceptance required. Slice04 preview declaration remains separate."
+      },
+      "new_evidence": [
+        {
+          "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW.md",
+          "line": 1,
+          "sha256": "41f48c946e65bc2cac404d356aa03b748a3836910bb4154225206d2be6421f80",
+          "observed_at": "2026-10-24T15:51:04.684507+00:00",
+          "review_scope": "Full documentary source read; audit did not run underlying tests, inspect all referenced raw evidence, or observe hosted state."
+        },
+        {
+          "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW-EVIDENCE.json",
+          "line": 1,
+          "sha256": "aa95765164d69065409cb889068137c036f66117611cfc4b4ad2509982936497",
+          "observed_at": "2026-10-24T15:51:04.684507+00:00",
+          "review_scope": "Full documentary source read; audit did not run underlying tests, inspect all referenced raw evidence, or observe hosted state."
+        }
+      ],
+      "retained_clauses": []
+    },
+    "REPO-DOCUMENTATION": {
+      "before_fields": {
+        "next_action": "Claude C6 remains held/unallocated for its two proposed task-list paths. Preserve completed Underlying mockup/layout and corrected radar source; reconcile only stale current pointers and exact owner decisions below. No diary/document retirement from this audit. Full auth-document review confirms current manual checklist contradictions versus dated localhost/email receipts, while full current Google PKCE remains open. Auth PRD credential-free/no-Patreon-feature wording is superseded by Oct19 approved linked-lifetime storage and existing paid-feature mapping. Reconcile current summaries/cross-references only, preserving history and accepted decisions; no repeated provider tests, new retention/tier policy or document deletion."
+      },
+      "fields": {
+        "next_action": "Claude C6 remains held/unallocated for its two proposed task-list paths. Preserve completed Underlying mockup/layout and corrected radar source; reconcile only stale current pointers and exact owner decisions below. No diary/document retirement from this audit. Full auth-document review confirms current manual checklist contradictions versus dated localhost/email receipts, while full current Google PKCE remains open. Auth PRD credential-free/no-Patreon-feature wording is superseded by Oct19 approved linked-lifetime storage and existing paid-feature mapping. Reconcile current summaries/cross-references only, preserving history and accepted decisions; no repeated provider tests, new retention/tier policy or document deletion. Rankings full-read segment adds a documentary supersession map: June7 skater-only matrix limits and original/V2 cume-dist/inclusive percentile suggestions are historical; later alignment chooses tested strictly-worse-peer semantics with explicit tie/singleton behavior and a dated snapshot rebuild. Post-alignment task receipts supersede older URL/type/PP-points/xS-denominator/Results-Luck/comparison/Relative-SV gaps. Preserve exact source-pending archetypes, relative skater impact, Under Pressure, adjusted style and history-dependent opportunity signals as intentionally parked; no new feature/model/data dispatch. Do not transfer Rankings percentile choices to WiGO or revive historical rebuild runbooks."
+      },
+      "new_evidence": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/2026-06-07-goal.md",
+          "line": 5,
+          "sha256": "50608b1714fb5bf872280d3aee81ce68d4e95f01a0d6bb98c02b938085bd4b8e",
+          "observed_at": "2026-10-24T15:51:04.684507+00:00",
+          "review_scope": "Full documentary source read; audit did not run underlying tests, inspect all referenced raw evidence, or observe hosted state."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/prd-contextual-hockey-rankings.md",
+          "line": 167,
+          "sha256": "7fa5db7fcaf94cf076e0963418739e1482d6cc01b80e21ee4187ef0b2638bec6",
+          "observed_at": "2026-10-24T15:51:04.684507+00:00",
+          "review_scope": "Full documentary source read; audit did not run underlying tests, inspect all referenced raw evidence, or observe hosted state."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/prd-v2-pass-CHR.md",
+          "line": 391,
+          "sha256": "3de3ef08ec39e82097db682e843dbb8de6a1ac6743c2b9ed192bbeaa311cf20c",
+          "observed_at": "2026-10-24T15:51:04.684507+00:00",
+          "review_scope": "Full documentary source read; audit did not run underlying tests, inspect all referenced raw evidence, or observe hosted state."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md",
+          "line": 80,
+          "sha256": "2c32a40f688304dd2c7cba9b2460575d25bf6d86038bd7e0e9c579dd6cc95c42",
+          "observed_at": "2026-10-24T15:51:04.684507+00:00",
+          "review_scope": "Full documentary source read; audit did not run underlying tests, inspect all referenced raw evidence, or observe hosted state."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md",
+          "line": 103,
+          "sha256": "2c32a40f688304dd2c7cba9b2460575d25bf6d86038bd7e0e9c579dd6cc95c42",
+          "observed_at": "2026-10-24T15:51:04.684507+00:00",
+          "review_scope": "Full documentary source read; audit did not run underlying tests, inspect all referenced raw evidence, or observe hosted state."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+          "line": 165,
+          "sha256": "f7455649134bfb415ccb6ce5d3eb06d1ec88e7d9931ffbc5e6ed1edc8fd467a2",
+          "observed_at": "2026-10-24T15:51:04.684507+00:00",
+          "review_scope": "Full documentary source read; audit did not run underlying tests, inspect all referenced raw evidence, or observe hosted state."
+        }
+      ],
+      "retained_clauses": [
+        "SEG03-RANK-DOC: later closed task groups include conditional \u201cimplement or explicitly source-pend\u201d branches; checked parent boxes do not certify exact original-formula parity. Main rankings task list is structural-only in this segment. Broad Rankings work stays parked; NEW21/C0124 already maps to SPRINT-OPTIMIZATION and is not a new optimization task."
+      ]
+    }
+  },
+  "hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "ac006c547ed467ff29951bc56e4921a25c5c3ae5922362bcf1dbbbdfd622d488",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "538e4bd8230eff1b9cfb0d8613f5471216175f8b5d4f8d8b25ae1f1978a9582a",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "9dfd1bb0bb019ad140d42f0c811c5e6544ffc54e46d970f8fc9e2189c92f4c71"
+  },
+  "written": true
+}

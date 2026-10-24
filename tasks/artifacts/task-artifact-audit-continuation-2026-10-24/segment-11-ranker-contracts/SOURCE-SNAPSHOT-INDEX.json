@@ -1,0 +1,83 @@
+{
+  "cutoff": "2026-10-24T17:59:01.031091+00:00",
+  "sources": {
+    "tasks/TASKS/draft-ranker/technical-contract.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/58c47def2c12-technical-contract.md",
+      "sha256": "58c47def2c12a73b9bc1dd85dd01fab50b27cc62584007b6173cd1da068d3aab",
+      "original_path": "tasks/TASKS/draft-ranker/technical-contract.md",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    },
+    "tasks/TASKS/draft-ranker/implementation-plan.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/5214b4749c30-implementation-plan.md",
+      "sha256": "5214b4749c30091e9f05197a68b9372717dc037e6e962f6ed8963a093c2ec442",
+      "original_path": "tasks/TASKS/draft-ranker/implementation-plan.md",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    },
+    "tasks/TASKS/draft-ranker/repository-record.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/e240b9dbcb30-repository-record.md",
+      "sha256": "e240b9dbcb30e0052b9d7f32f73e839b7301bb992a88da02164421382125c5ff",
+      "original_path": "tasks/TASKS/draft-ranker/repository-record.md",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    },
+    "tasks/TASKS/draft-ranker/progress.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/91aab0f26c18-progress.md",
+      "sha256": "91aab0f26c18e546d0f7dcfc6d23c1bcc8d29feadd29657a65397b78f50ba758",
+      "original_path": "tasks/TASKS/draft-ranker/progress.md",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    },
+    "tasks/TASKS/draft-ranker/prd-draft-ranker.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/36eadc05568d-prd-draft-ranker.md",
+      "sha256": "36eadc05568d4f917b2ce84b1e2c11848ba8970c12fd0fc8120cb5f2ed2fd995",
+      "original_path": "tasks/TASKS/draft-ranker/prd-draft-ranker.md",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    },
+    "tasks/TASKS/draft-ranker/dr-012-migration-review.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/74950c630fe4-dr-012-migration-review.md",
+      "sha256": "74950c630fe43cf4bf713b0271f3ef1c3a72cce1aca45e7735217de08dd34583",
+      "original_path": "tasks/TASKS/draft-ranker/dr-012-migration-review.md",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    },
+    "tasks/TASKS/draft-ranker/dr-010-migration-review.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/bf7d08642ca4-dr-010-migration-review.md",
+      "sha256": "bf7d08642ca4f3a81b3741400b0737659b3e19a3a5c4ae87ac27fab8b42341aa",
+      "original_path": "tasks/TASKS/draft-ranker/dr-010-migration-review.md",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    },
+    "tasks/TASKS/draft-ranker/dr-011-yahoo-mapping-review.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/a5fa835a2672-dr-011-yahoo-mapping-review.md",
+      "sha256": "a5fa835a26723d0b4b2ce5cbfc611a8249fb219e970e5833cedafa3f3ba470f2",
+      "original_path": "tasks/TASKS/draft-ranker/dr-011-yahoo-mapping-review.md",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    },
+    "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/ccd494110fe8-tasks-prd-yahoo-ingestion-mapping-audit.md",
+      "sha256": "ccd494110fe8374e47cc41710feaa8633f5e33b9ac81b7353ee1b5443184202b",
+      "original_path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    },
+    "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/c063cab68f39-DraftDashboard_Audit.md",
+      "sha256": "c063cab68f39ace4cd651dc74bc774cffc003fb33fd462ba1f1bbc929ecb8db3",
+      "original_path": "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    },
+    "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md",
+      "sha256": "574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece",
+      "original_path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    },
+    "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/SOURCE-NARROW.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/5f743a1bea52-SOURCE-NARROW.md",
+      "sha256": "5f743a1bea52d809f935b67de011cbad4fd2959f7fc37a989894ebdf893145b5",
+      "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-10-draft-debug/SOURCE-NARROW.md",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    },
+    "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/COUNTS-EXPLANATION.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/c6328b21e950-COUNTS-EXPLANATION.json",
+      "sha256": "c6328b21e950719e7d35d0c0bcd5214adeb2708200df83f3081cc569c346b011",
+      "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/COUNTS-EXPLANATION.json",
+      "observed_at": "2026-10-24T17:59:01.031091+00:00"
+    }
+  }
+}

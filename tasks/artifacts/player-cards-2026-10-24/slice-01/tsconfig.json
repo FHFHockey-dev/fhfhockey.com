@@ -1,0 +1,6 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "compilerOptions": { "incremental": false },
+  "include": ["../../../../web/next-bootstrap.d.ts", "../../../../web/lib/player-cards/**/*.ts", "../../../../web/components/player-cards/**/*.tsx"],
+  "exclude": ["../../../../web/node_modules"]
+}

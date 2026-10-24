@@ -1,0 +1,32 @@
+{
+  "packet": "P05 r1",
+  "branch": "octoberBranch",
+  "handoffHead": "a565238f670edc4cf65da79ad52ba82ec41f3b71",
+  "beforeSnapshot": "/tmp/fhfh-queue-check-krtch0yz/isolation/snapshot",
+  "testedSnapshot": "/tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot",
+  "testedHead": "87ab20cbd6059d2e2116843f303ed00b4902c2ac",
+  "applicationFiles": {
+    "web/pages/api/v1/transactions/ownership-snapshots.ts": {
+      "before": "fbfca9bc1ae384fb3a37cba3bf987b7f0fc5b2c5d5cc50451a4348c46b8a0133",
+      "fixed": "543b02e64075715fd619faddf3223f38828cbae214f35cf7ca44ae7159cdb5c7"
+    },
+    "web/lib/dashboard/playerOwnership.ts": {
+      "before": "cb2b54d221ae72061187015fa726ccf0f357e22939094fe88bd362857526f539",
+      "fixed": "d0070eabdfd00edf91dfc7bb810747a7c30855acf9cf4b3b935b443ae79238de"
+    },
+    "web/lib/dashboard/playerOwnership.test.ts": {
+      "before": "0e2a6603427b8d9125dc88ab3c26c4b4f48ec5613098057e9656e4ead7140e52",
+      "fixed": "407d0b90451d67200c6c112d7f4a5ed493da6a807439b82832dcf90e276a501c"
+    },
+    "web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts": {
+      "before": "ce180cd7aff11f578532b020d4c6bbca65c248bd8584dbde5829410eac71c2e6",
+      "fixed": "99b2541690ca89c7fed2b9718ac04aa2b745a6c8121b436983ff98d313cc9c70"
+    }
+  },
+  "retainedDependencies": {
+    "web/lib/integrations/yahoo/rosterPlanning.ts": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+    "web/lib/integrations/yahoo/rosterPlanning.test.ts": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+    "web/pages/api/v1/transactions/ownership-trends.ts": "48c6d6ec40975bc96323debfa01053f61bbfc93521a4b7760616e294a400efc6"
+  },
+  "billingProtectedSections": null
+}

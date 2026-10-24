@@ -1,0 +1,286 @@
+{
+  "at": "2026-10-24T16:22:26.921930+00:00",
+  "before_ids": 206,
+  "after_ids": 206,
+  "before_evidence": 902,
+  "after_evidence": 925,
+  "changes": {
+    "PIPE-JOB79": {
+      "fields": {
+        "implementation": "The former keep-active proposal is superseded by the coupled nine-file retirement/advisory overlay already recorded under FPI-11.4. Canonical schedule documentation marks job79 inactive/unscheduled October22; the overlay preserves full-job pacing and job399 records together.",
+        "acceptance": "Qualified independent local acceptance of patch 4e0b4db7da44e883dd278f611c787db646b83874af8b9e7d624d4fd5c75389ec; reviewer reports36 focused checks and the expected retirement-only negative control. This closes the old conditional-retirement proposal only, not pipeline/backfill or cross-host pacing qualification.",
+        "release": "Historical FPI-11.4 task receipt records R25 master27751818b and READY deployment dpl_961psWL4xHd751Pf6QU4V1TxSm3a. Documentary release credit only; no new hosted verification by this audit.",
+        "verification": "Full owner HANDOFF and independent REVIEW read; FPI task11.4 lines140–142 and schedule dated retirement cross-checked. Same-user filesystem coordination is not a distributed job lock; progress-read index remains held without SQLSTATE/timing/plan evidence.",
+        "acceptance_release_gate": "Retirement/advisory coupling retained under FPI-11.4. PIPE-BACKFILL, PIPE-NATURAL, cross-host coordination and progress-read evidence gates remain separate; no reactivation or schedule operation from this row.",
+        "next_action": "Reconcile aliases PIPE-JOB79 and FPI-11.4 as the same retired-job obligation; do not dispatch another retirement or keep job79 active from the stale proposal. Preserve broader unfinished ingestion/backfill/natural-run work and the progress-read index hold.",
+        "dispatch_class": "Historical retirement closed through FPI-11.4; no new implementation or hosted authority",
+        "evidence_level": "Exact local reviewer verdict plus dated release receipt; current hosted state unobserved"
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/HANDOFF.md",
+          "line": 3,
+          "sha256": "e04c2a66a4c5cd161fc119689189660065eadf0a82d3372fdf1490c8d3187012",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/artifacts/fpi-11-4-job79-independent-review-2026-10-22/REVIEW.md",
+          "line": 3,
+          "sha256": "32e1e67b9f8f5feab536224cefc494ce72ebb80a8e6cf7f7905714e1273a02cb",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
+          "line": 140,
+          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Only lines132–147 inspected; dated task11.4 release receipt, not independent hosted verification."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+          "line": 47,
+          "sha256": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Dated header and all73 JSON records inspected; remaining historical SQL templates not fully reviewed."
+        }
+      ],
+      "before_fields": {
+        "implementation": "Proposal only",
+        "acceptance": "held",
+        "release": "not changed by this audit",
+        "verification": "5.5 unchecked; older scheduled failures retained",
+        "acceptance_release_gate": "Backfill proof and preserved coverage + explicit schedule authorization",
+        "next_action": "Keep active until requirements met; propose exact operational plan only",
+        "dispatch_class": "proposed staged packet; parent dispatch pending",
+        "evidence_level": "inventoried only"
+      }
+    },
+    "SUSTAINABILITY-NATURAL": {
+      "fields": {
+        "implementation": "Preserve accepted narrower local repairs and historical releases. Exact C0019 / failed-jobs NEW6 requires committed-batch receipts after partial baseline writes; NST NEW73/C0065 separately requires job374/baseline order and full score-page population. August1 NEW61 handoff success predates the October17 recurrence and does not close it.",
+        "acceptance": "Exact later natural committed-batch, non-overlap and full-population closure remains unverified in inspected receipts. Historical all-200 chain and local counter repair are narrower evidence.",
+        "release": "Historical fixes retain release credit; exact shipped baseline receipt and later natural chain closure remain open, not inferred from local source or document schedule slots.",
+        "verification": "Failed-jobs task line99 records C0019 timeout/partial-write failure and closure requirement. NST tasks189/202 distinguish earlier NEW61 success from later NEW73. Prior segment04 narrow source read found rowsUpserted/partialWrite counters survive the catch; it did not execute or prove release. Schedule JSON has job374 at10:38 and baseline326 at10:40, which is configured intent rather than observed non-overlap. Historical82/171 marker backlog and4 fresh markers do not certify all batches.",
+        "acceptance_release_gate": "Exact shipped candidate plus one natural run reporting committed batches for C0019; correlated non-overlapping upstream→baseline→priors→all window-z/score/trend pages, full population and durable markers. No cron/API/database/natural invocation or blanket shutdown authorized.",
+        "next_action": "Existing owner reconciles retained exact release and natural receipts for C0019/NEW6 and C0065/NEW73 against Sustainability NEW17. Record source/job/run identity, committed counts and all-page coverage; keep missing evidence open rather than rerunning or duplicating accepted local fixes."
+      },
+      "evidence": [
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md",
+          "line": 99,
+          "sha256": "6cf6c453c7fdd9bde677bbb916b70fbf51a567555da2f89f9684563a58325bf0",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full source read in segment04; exact C0019 child and natural committed-batch requirement."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+          "line": 189,
+          "sha256": "844403dc2edf97cbf36db6684d4488955e681ebfa67cc82d69231c4c1abcbefe",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+          "line": 202,
+          "sha256": "844403dc2edf97cbf36db6684d4488955e681ebfa67cc82d69231c4c1abcbefe",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+          "line": 62,
+          "sha256": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "All73 first-fence records parsed and reviewed; scheduler configuration only, no hosted run proof."
+        }
+      ],
+      "before_fields": {
+        "implementation": "Local repair credit; wider marker backlog retained",
+        "acceptance": "natural execution unverified",
+        "release": "historical fixes released; exact closure open",
+        "verification": "Historical82/171 backlog and4 fresh markers; counts do not prove current full run",
+        "acceptance_release_gate": "Natural non-overlap/full-population receipt; no arbitrary cron disable",
+        "next_action": "Reconcile newest retained job evidence and closure rows"
+      }
+    },
+    "CRON-SCHEDULE-DISPOSITION": {
+      "fields": {
+        "implementation": "October19 policy is3AMlocal America/New_York for the daily batch, recurring freshness jobs excluded. The original13 fixed-entry proposal included job79, later retired under FPI-11.4. Preserve that closure; only the other12 original identities remain unresolved as a documentary disposition set, not a claim that12 are currently hosted/active. Report NEW12 and inventory parity remain separate.",
+        "verification": "Full floor proposal read, including its exact13 identities and job79 row32; schedule header and all73 JSON rows inspected. JSON contains57active/16inactive while August3 prose still says69total/59active/10inactive and some timeline rows preserve old79/393/392 states. These are static document discrepancies across dates, not current hosted totals. Vercel daily pipeline and pg_cron job399 queue worker have distinct ownership.",
+        "next_action": "Reconcile remaining original fixed identities and report NEW12 against later accepted retirement/schedule receipts before any owner decision. Exclude retired79 from a new reschedule proposal. Reconcile dated inventory header/timeline/SQL references without reviving old schedules. Preserve recurring freshness,3AMlocal seasonal semantics and separate provider owners."
+      },
+      "evidence": [
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CRON-FLOOR-PROPOSAL.md",
+          "line": 5,
+          "sha256": "9bceec2d49b83ce96de30a28991504a1d3ee3e9d5695f1327e4aff8501ad4279",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-CRON-FLOOR-PROPOSAL.md",
+          "line": 32,
+          "sha256": "9bceec2d49b83ce96de30a28991504a1d3ee3e9d5695f1327e4aff8501ad4279",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+          "line": 17,
+          "sha256": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Partial inventory read: dated header, all73 JSON records, selected timeline/provider notes; historical SQL remainder unreviewed."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+          "line": 208,
+          "sha256": "97e857115518a7c92dde1922f398cf2b3cee1838c1fbc3234c1a975959489572",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        }
+      ],
+      "before_fields": {
+        "implementation": "October19 owner policy chose3AMlocal America/New_York for the daily batch, excluding recurring freshness jobs. Exact13fixed-entry dispositions remain pending; source NEW7/8 and report NEW12 retain hosted inventory/schedule parity gates. Local Vercel/source-wrapper acceptance is narrower.",
+        "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+        "next_action": "Reconcile the current owner disposition for only the13enumerated fixed daily schedules and retained report/inventory receipts. Prepare the smallest outstanding decision without moving or disabling any job."
+      }
+    },
+    "PIPE-NATURAL": {
+      "fields": {
+        "verification": "Full paired NST PRD/task/email lists read this segment. A-CRON-EMAIL7.5/C0047 has an August3 non-preview clean natural report closure, followed by the distinct August4 B-CRON-NST NEW72/C0076 recurrence on jobs43/99/275/328. Runtime failures establish deployed entry, not a terminal persisted audit. Missing-key fail-fast and standings14-day cap are local-only at those dated receipts; no current credential or runtime failure is inferred. Existing later pipeline/forecast gates retain their own exact receipts.",
+        "next_action": "Reconcile existing retained terminal route/audit evidence for the NEW72/C0076 quartet separately from the closed August3 C0047 report receipt and newer PIPELINE work. Do not add a duplicate wrapper repair from an old gap or infer natural success from200/submission alone. Current Oct23/24 report UUID/lease/completion evidence stays separately open; no endpoint invocation, historical backfill or model/pilot restart."
+      },
+      "evidence": [
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+          "line": 200,
+          "sha256": "844403dc2edf97cbf36db6684d4488955e681ebfa67cc82d69231c4c1abcbefe",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-prd-cron-nst-audit-remediation.md",
+          "line": 222,
+          "sha256": "844403dc2edf97cbf36db6684d4488955e681ebfa67cc82d69231c4c1abcbefe",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/tasks-cron-audit-email-failures.md",
+          "line": 184,
+          "sha256": "97e857115518a7c92dde1922f398cf2b3cee1838c1fbc3234c1a975959489572",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        }
+      ],
+      "before_fields": {
+        "verification": "Read monitoring report: expired private dispatcher closedOct17, do not re-arm; configured Oct24cycle10:05–10:55Z, settle11:00Z/snapshot12:30Z/report13:00Z. Config is not live outcome; process read sandbox-blocked.",
+        "next_action": "Existing PIPELINE owner may inspect one retained Oct23report when available or one afterOct24 13:00Z within existing authorization; missing receipt remains blocked. Do not invoke endpoints, rerun calculations, restart closed pilot or infer production idle. Retain the separate historical NEW72 audit-correlation quartet from the source list; reconcile only existing natural/deployed receipts, never invoke routes for audit. Separate game-prediction no-model forecast and partial-write/natural chain clauses retain completed S03 local fixes; reconcile serving/scheduler/natural receipts rather than duplicate implementation."
+      }
+    },
+    "BILLING-CANCEL-RELOAD": {
+      "fields": {
+        "implementation": "C3 reload continuity remains independently ACCEPT WITH LIMITS at patch c500b580b79f2bd1ce3bc00e50630ea3ac1d47bd1985843c53121cb8a9b420ff. Parent now grants the exact browser-auth.ts/AuthProviderContext.test.tsx cleanup transfer for an isolated candidate only under CODEX-012; CLAUDE013 acknowledges it. Canonical/release files remain read-only, sign-out completion and integration are pending.",
+        "next_action": "C3 proceeds only in the granted isolated snapshot with exact anchored cancellation-key cleanup and focused absent-panel/case/unrelated-storage/sign-out-error/timeout controls. Final independent handback and canonical integration remain separate. Preserve24h reuse-eligibility wording and original mounted/reload acceptance; no physical global erasure or exactly-once financial claim. Refund-consumer/private-safe-error scope remains unstarted.",
+        "dispatch_class": "Exact parent isolated shared-auth/test lease granted and acknowledged; sign-out completion/final review/integration pending"
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+          "line": 12,
+          "sha256": "93fe7535d9e986b09fff5cf2a3c2c3a4d9d9ff790f8ea711f5a5b55792d8661b",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Only current lines1–26 read fully; exact isolated C3 transfer, not canonical integration."
+        },
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+          "line": 191,
+          "sha256": "d81300c7dff672fb6390d0d02e8bf898db1d39a964997b79c1760ece465520de",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Only current CLAUDE013 lines191–208 fully read; allocation/acknowledgement, no completion."
+        }
+      ],
+      "before_fields": {
+        "implementation": "C3 isolated reload-continuity candidate is independently ACCEPT WITH LIMITS at patch c500b580b79f2bd1ce3bc00e50630ea3ac1d47bd1985843c53121cb8a9b420ff. Restore rejects request IDs aged 24h; it does not automatically delete storage bytes. Canonical panel trio remains unchanged and candidate is excluded from frozen release r1. The exact shared-auth proposal is tested only in reviewer-owned copies, remains unapplied canonically and held for exact parent source/test lease.",
+        "next_action": "Preserve limited reload acceptance and original mounted fix. Parent must grant/reconfirm the exact browser-auth.ts plus existing AuthProviderContext.test.tsx lease before a canonical sign-out correction; reviewer recommendation grants no ownership. Correct C3 receipt wording through its artifact owner: no hard24h byte deletion, global cross-tab cleanup, cross-device idempotency or exactly-once financial claim. Refund-consumer/private-safe-error scope remains unstarted; release integration is separate.",
+        "dispatch_class": "C3 reload continuity independently accepted with limits; exact shared-auth/test correction lease and sign-out completion held separately"
+      }
+    },
+    "SITE-FORGE-TESTING-GROUNDS": {
+      "fields": {
+        "acceptance": "Earlier timestamp and owner-policy limited verdicts retained. Slice03 original P2 S03-R1 is resolved only on the frozen three-file R1 pins: independent ACCEPT WITH LIMITS reports one11-pass/24-intentionally-skipped invocation plus scoped TS/lint. Original failed evidence is preserved. Scout retains integration authority; no full-product, hosted or scientific acceptance.",
+        "verification": "Full slice03-r1 HANDOFF, independent REVIEW and REVIEW-EVIDENCE read; owner EVIDENCE non-pin fields reviewed structurally. Independent11 controls comprise original2, new owner regression groups3 and new independent6; original16 owner cases were not rerun by reviewer. Reviewer88/88 pins are reported, not reproduced by auditor. Unresolved evaluation stays successful0/failed0/pending1/percent0 at waiting cap. Optional outcome-check limit preserves omitted manifest hash but increases conservative total claims from E to E+W, up to2E for legacy omission; no hosted resource allowance inferred.",
+        "dependencies": "Dedicated bounded/checkpointed runner A remains selected. Memory-only durability, actual trusted request/session/worker authorization, sealing/reveal, executor finality, statistical/model/pilot contracts and approved runtime/storage/retention/cost plan remain incomplete. CODEX016 grants ten-path local owner/page/API implementation and a narrow requested localhost view, not shared-auth edits, hosted calls, owner environment configuration or activation.",
+        "next_action": "Retain S03-R1 limited correction credit on exact new pins and original failure history. Budget computation and outcome checks independently before any hosted activation; incomplete computation must checkpoint rather than claim availability waiting. Follow the exact local slice05 lease and preserve locked SSR/API owner gates. Preview/page delivery or localhost request is not evidence of durable workflow/auth/scientific acceptance.",
+        "evidence_level": "S03-R1 independently ACCEPT WITH LIMITS on revised pins; full workflow and hosted/scientific qualification open",
+        "dispatch_class": "Single Astra local implementation; limited reviewer correction verdict and exact slice05 grant recorded, no external execution authority"
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1/HANDOFF.md",
+          "line": 1,
+          "sha256": "944706d9da7f935a6f67fe4753790bf7eef25013d696673716c95dcbc0a75124",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1-review/REVIEW.md",
+          "line": 1,
+          "sha256": "aa73c5ead0c74710a7f8e45987b6a1df2abbba1656bd267b4db7ec077ccaf79a",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-r1-review/REVIEW-EVIDENCE.json",
+          "line": 1,
+          "sha256": "e5049b8760569274e95b24c44d270ba6be9a6196055006e7f1b459ba3fed8ac5",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Full documentary read; owner/reviewer tests and hosted receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+          "line": 5,
+          "sha256": "93fe7535d9e986b09fff5cf2a3c2c3a4d9d9ff790f8ea711f5a5b55792d8661b",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Only lines1–26 fully read; exact local ten-path grant and inherited safe viewing limits, no audit execution."
+        }
+      ],
+      "before_fields": {
+        "acceptance": "Slice01 original independent18/20 controls exposed2 precision failures. R1 reviewer ACCEPT WITH LIMITS resolves only that finding on new pins:2 original plus6 new controls pass,18 intentionally skipped. Slice02 reviewer ACCEPT WITH LIMITS covers local policy seam:12 distinct controls across initial11passes/1 reviewer-fixture failure and corrected single pass; not one22/22 invocation. Slice03 original pins received CHANGES REQUIRED: owner16/16 and independent9/10 controls produce25pass/1fail in one invocation. P2 S03-R1 relabels still-pending outcomes as failed when execution checks exhaust the budget. Scoped TS/lint pass does not close it. Owner correction/new pins and focused re-review remain pending; no slice03 acceptance. Scout integration authority and full-product gates remain.",
+        "verification": "Full original/revised review receipts, slice02 decisions and slice03 handoff/operating plan/EVIDENCE read. R1 pair60fdf02b…/886d7489…; ownerPolicy pairb0de88d2…/9d715c45…; exact complete pins in linked evidence. The auditor imported documentary results only and ran no application checks. Full slice03 independent REVIEW and REVIEW-EVIDENCE read. At maxExecutionsPerUnit=2, two pending_outcomes responses followed by a third claim yield failed1/pending0 instead of failed0/pending1. The run is failed, not falsely successful; no invented metric value was demonstrated. Parent reports correction underway; no accepted corrected pin was inspected here.",
+        "dependencies": "TJ selected dedicated bounded/checkpointed runner A. Slice03 is an in-memory store, loses all records on process exit, and has no distributed transaction/scheduler/hosted durability. Trusted request resolver/config/owner-scoped retrieval, durable access/sealing/reveal, exact adapter leases/bounds, evaluation/population/source contracts and measured runtime/storage/retention/cost plan remain integration gates.",
+        "next_action": "Owner corrects S03-R1 without removing finite execution/poll limits or fabricating outcome failures; preserve original failed controls and obtain a separately frozen focused re-review. Keep prior timestamp/policy verdicts within their scopes. Dedicated runner A is settled; durability, actual trusted auth, sealing, metrics/model/real-pilot and hosted runtime/storage/retention/cost remain unqualified. Slice04 declaration is independent preview work, not runner acceptance.",
+        "evidence_level": "Limited timestamp/policy reviewer verdicts preserved; slice03 CHANGES REQUIRED on P2 pending-outcome coverage, correction pending",
+        "dispatch_class": "Single Astra owner correcting slice03 P2; independent re-review/new exact pin acceptance required. Slice04 preview declaration remains separate."
+      }
+    },
+    "REPO-DOCUMENTATION": {
+      "fields": {
+        "next_action": "Claude013 now records C6 allocated for docs pointer correction, superseding the earlier C6-unallocated hold only. Preserve all retained auth/Rankings/Underlyings/parked scopes. Reconcile current summaries against accepted contracts and exact source receipts. Cron source prose mixes August totals and later JSON retirement/provider updates; reconcile documentary pointers without changing schedules or inferring hosted state. Broad cleanup/retirement decisions stay held; no document deletion.",
+        "dispatch_class": "C6 pointer-correction allocation reported in CLAUDE013; audit alone owns canonical register reconciliation, no completion inferred"
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+          "line": 191,
+          "sha256": "d81300c7dff672fb6390d0d02e8bf898db1d39a964997b79c1760ece465520de",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Only lines191–208 fully read; current allocation receipt."
+        },
+        {
+          "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+          "line": 17,
+          "sha256": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+          "observed_at": "2026-10-24T16:22:26.921930+00:00",
+          "review_scope": "Dated inventory header and full first JSON fence reviewed, historical SQL remainder unreviewed."
+        }
+      ],
+      "before_fields": {
+        "next_action": "Claude C6 remains held/unallocated for its two proposed task-list paths. Preserve completed Underlying mockup/layout and corrected radar source; reconcile only stale current pointers and exact owner decisions below. No diary/document retirement from this audit. Full auth-document review confirms current manual checklist contradictions versus dated localhost/email receipts, while full current Google PKCE remains open. Auth PRD credential-free/no-Patreon-feature wording is superseded by Oct19 approved linked-lifetime storage and existing paid-feature mapping. Reconcile current summaries/cross-references only, preserving history and accepted decisions; no repeated provider tests, new retention/tier policy or document deletion. Rankings full-read segment adds a documentary supersession map: June7 skater-only matrix limits and original/V2 cume-dist/inclusive percentile suggestions are historical; later alignment chooses tested strictly-worse-peer semantics with explicit tie/singleton behavior and a dated snapshot rebuild. Post-alignment task receipts supersede older URL/type/PP-points/xS-denominator/Results-Luck/comparison/Relative-SV gaps. Preserve exact source-pending archetypes, relative skater impact, Under Pressure, adjusted style and history-dependent opportunity signals as intentionally parked; no new feature/model/data dispatch. Do not transfer Rankings percentile choices to WiGO or revive historical rebuild runbooks.",
+        "dispatch_class": "Claude C6 held; audit only reconciles canonical registers"
+      }
+    }
+  }
+}

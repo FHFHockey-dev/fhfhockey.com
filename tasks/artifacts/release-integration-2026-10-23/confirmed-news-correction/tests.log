@@ -1,0 +1,7 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleData/forgeDailyBridge.test.ts lib/projections/dailyBoardEvidence.test.ts --reporter=json --outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/confirmed-news-correction/tests.json
+
+(node:42802) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/confirmed-news-correction/tests.json

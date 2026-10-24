@@ -10,6 +10,7 @@ import { REFUND_WINDOW_MS } from "./refunds";
 type AccountClient = Pick<typeof serviceRoleClient, "from">;
 
 export type DraftProCheckoutAvailabilityReason =
+  | "sales_closed"
   | "available"
   | "checkout_disabled"
   | "stripe_not_configured"
@@ -23,11 +24,7 @@ export type DraftProCheckoutAvailability = {
 };
 
 export function getDraftProCheckoutAvailability({
-  now,
   eligible,
-  checkoutEnabled,
-  stripeConfigured,
-  siteUrlConfigured,
 }: {
   now: Date;
   eligible: boolean;
@@ -36,11 +33,7 @@ export function getDraftProCheckoutAvailability({
   siteUrlConfigured: boolean;
 }): DraftProCheckoutAvailability {
   if (eligible) return { available: false, reason: "already_eligible" };
-  if (now.getTime() >= Date.parse(DRAFT_PRO_EXPIRATION)) return { available: false, reason: "pass_expired" };
-  if (!checkoutEnabled) return { available: false, reason: "checkout_disabled" };
-  if (!stripeConfigured) return { available: false, reason: "stripe_not_configured" };
-  if (!siteUrlConfigured) return { available: false, reason: "site_url_not_configured" };
-  return { available: true, reason: "available" };
+  return { available: false, reason: "sales_closed" };
 }
 
 function validReceiptUrl(value: unknown) {

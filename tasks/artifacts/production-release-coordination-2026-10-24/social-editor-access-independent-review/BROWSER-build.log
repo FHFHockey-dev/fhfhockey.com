@@ -1,0 +1,13 @@
+✘ [ERROR] Cannot read directory "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser/server-auth.ts": not a directory
+
+✘ [ERROR] Could not resolve "/Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser/server-auth.ts/browser-auth" (originally "lib/supabase/browser-auth")
+
+    tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/contexts/AuthProviderContext/index.tsx:15:46:
+      15 │ ... resetSupabaseBrowserAuthState } from "lib/supabase/browser-auth";
+         ╵                                          ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  The path "lib/supabase/browser-auth" was remapped to "/Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser/server-auth.ts/browser-auth" using the alias feature, which then couldn't be resolved. Keep in mind that import path aliases are resolved in the current working directory.
+
+Build failed with 2 errors:
+error: Cannot read directory "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser/server-auth.ts": not a directory
+tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/contexts/AuthProviderContext/index.tsx:15:46: ERROR: Could not resolve "/Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser/server-auth.ts/browser-auth" (originally "lib/supabase/browser-auth")

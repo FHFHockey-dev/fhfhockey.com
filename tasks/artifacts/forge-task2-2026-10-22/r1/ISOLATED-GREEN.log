@@ -1,0 +1,32 @@
+
+> web@0.1.0 test
+> vitest --run --config review-vitest.config.mts lib/projections/queries/skater-queries.test.ts lib/projections/nativeGoalAccounting.test.ts scripts/qualify-native-players-offline.test.ts lib/projections/runProjectionV2.test.ts adversarial.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-r1-jvgf3u1_/web
+
+ ✓ scripts/qualify-native-players-offline.test.ts (56 tests) 7478ms
+   ✓ offline current native player qualification > reproduces current native calculations with genuine admission and zero live client/transport/writes  560ms
+   ✓ offline current native player qualification > blocks equivalent client paths and SDK entry points before inert config/sentinel access in a fresh process  482ms
+   ✓ offline current native player qualification > writes a new reproducible receipt without changing or overwriting original inputs  514ms
+(node:62278) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ adversarial.test.ts (11 tests) 7ms
+(node:62303) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/projections/nativeGoalAccounting.test.ts (37 tests) 247ms
+(node:62364) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | lib/projections/queries/skater-queries.test.ts > counted rolling skater history (legacy window scan) > completes the exact bounded scope at 0 rows
+forge_latest_rolling_rows is not deployed (PGRST202); FORGE reads rolling rows by the legacy window scan.
+
+ ✓ lib/projections/queries/skater-queries.test.ts (110 tests) 77ms
+(node:62367) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/projections/runProjectionV2.test.ts (112 tests) 28ms
+
+ Test Files  5 passed (5)
+      Tests  326 passed (326)
+   Start at  12:30:55
+   Duration  10.34s (transform 616ms, setup 9ms, collect 719ms, tests 7.84s, environment 1.01s, prepare 226ms)
+

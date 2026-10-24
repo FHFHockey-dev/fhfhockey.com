@@ -1,0 +1,31 @@
+test_actual_date_exclusion_and_hb_date_missingness (test_gate_kit.CohortTests.test_actual_date_exclusion_and_hb_date_missingness) ... ok
+test_arbitrary_names_composite_identity_and_dressed_denominator (test_gate_kit.CohortTests.test_arbitrary_names_composite_identity_and_dressed_denominator) ... ok
+test_conflicting_positions_fail_unknowns_stay_unknown (test_gate_kit.CohortTests.test_conflicting_positions_fail_unknowns_stay_unknown) ... ok
+test_duplicate_actual_hb_capture_and_cross_file_fail (test_gate_kit.CohortTests.test_duplicate_actual_hb_capture_and_cross_file_fail) ... ok
+test_empty_pair_is_reportable_not_a_pass (test_gate_kit.CohortTests.test_empty_pair_is_reportable_not_a_pass) ... ok
+test_horizon_filter_and_numeric_string_identity (test_gate_kit.CohortTests.test_horizon_filter_and_numeric_string_identity) ... ok
+test_missing_capture_file_and_unmatched_replay_are_visible (test_gate_kit.CohortTests.test_missing_capture_file_and_unmatched_replay_are_visible) ... ok
+test_missing_category_paired_for_every_variant_and_fp (test_gate_kit.CohortTests.test_missing_category_paired_for_every_variant_and_fp) ... ok
+test_missing_date_invalid_identity_and_capture_date_fail (test_gate_kit.CohortTests.test_missing_date_invalid_identity_and_capture_date_fail) ... ok
+test_position_is_structural_not_regex_or_global_player_state (test_gate_kit.CohortTests.test_position_is_structural_not_regex_or_global_player_state) ... ok
+test_union_reports_both_unpaired_directions_and_undressed (test_gate_kit.CohortTests.test_union_reports_both_unpaired_directions_and_undressed) ... ok
+test_bias_rmse_relative_bias_are_distinct (test_gate_kit.MetricTests.test_bias_rmse_relative_bias_are_distinct) ... ok
+test_bootstrap_default_seed_reps_and_independent_delta_oracle (test_gate_kit.MetricTests.test_bootstrap_default_seed_reps_and_independent_delta_oracle) ... ok
+test_bootstrap_uses_only_common_head_eligible_game_clusters (test_gate_kit.MetricTests.test_bootstrap_uses_only_common_head_eligible_game_clusters) ... ok
+test_bootstrap_variant_names_cannot_overwrite_bookkeeping (test_gate_kit.MetricTests.test_bootstrap_variant_names_cannot_overwrite_bookkeeping) ... ok
+test_d_representation_preserves_floor_and_unknown_denominator (test_gate_kit.MetricTests.test_d_representation_preserves_floor_and_unknown_denominator) ... ok
+test_deciles_own_forecast_floor_boundaries_and_ties (test_gate_kit.MetricTests.test_deciles_own_forecast_floor_boundaries_and_ties) ... ok
+test_game_cluster_sampling_keeps_all_players_and_multiplicity (test_gate_kit.MetricTests.test_game_cluster_sampling_keeps_all_players_and_multiplicity) ... ok
+test_legacy_thresholds_unchanged_and_unavailable_fails (test_gate_kit.MetricTests.test_legacy_thresholds_unchanged_and_unavailable_fails) ... ok
+test_mz_actual_on_predicted_slope_intercept_and_degeneracy (test_gate_kit.MetricTests.test_mz_actual_on_predicted_slope_intercept_and_degeneracy) ... ok
+test_numeric_nulls_booleans_nonfinite_and_zero (test_gate_kit.MetricTests.test_numeric_nulls_booleans_nonfinite_and_zero) ... ok
+test_zero_missing_and_empty_bootstrap_are_explicit (test_gate_kit.MetricTests.test_zero_missing_and_empty_bootstrap_are_explicit) ... ok
+test_adversarial_variant_names_run_all_bootstrap_reports (test_gate_kit.PortabilityTests.test_adversarial_variant_names_run_all_bootstrap_reports) ... ok
+test_imports_have_no_scoring_side_effect (test_gate_kit.PortabilityTests.test_imports_have_no_scoring_side_effect) ... ok
+test_legacy_pair_reference_on_complete_synthetic_cohort (test_gate_kit.PortabilityTests.test_legacy_pair_reference_on_complete_synthetic_cohort) ... ok
+test_scripts_run_from_isolated_copy_without_siblings (test_gate_kit.PortabilityTests.test_scripts_run_from_isolated_copy_without_siblings) ... ok
+
+----------------------------------------------------------------------
+Ran 26 tests in 18.936s
+
+OK

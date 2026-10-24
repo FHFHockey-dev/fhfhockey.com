@@ -1,0 +1,48 @@
+{
+  "status": "C5 route-only production composition is not accepted",
+  "prerequisites": [
+    {
+      "path": "web/lib/cron/withCronJobAudit.ts",
+      "production_sha256": "ea190c016e12239228596a72d79d563f48eeccd3cbf61d59ce14a6707e82a459",
+      "current_HEAD_sha256": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+      "differs": true
+    },
+    {
+      "path": "web/lib/cron/nhlOffSeason.ts",
+      "production_sha256": "a804c6522a3def8cea6c9e82a361ee8db9f7ffaf715b4f7bc4971804814f1e1d",
+      "current_HEAD_sha256": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+      "differs": true
+    },
+    {
+      "path": "web/lib/cron/cronAuditCoverage.ts",
+      "production_sha256": "3815fca922e2de9a33fb828da57bb1633eb95f7ac887079da0664adcabba2ae0",
+      "current_HEAD_sha256": "754a0df900b7cabd573838b4d229857ae63d83361e6ad94ad6a7f7ea084706b3",
+      "differs": true
+    }
+  ],
+  "observed_tests": "Initial isolated combined run: Yahoo safe thrown-error audit and prospects safe preview/outcome fields fail with old production wrapper. No live invocation. Logs preserved in focused-tests.log.",
+  "specific_requirements": [
+    "Select and independently qualify the newer bounded audit preview/outcome and private-safe error wrapper across its consumers",
+    "Include or isolate NHL response classification type/stamp prerequisite without changing off-season gates",
+    "Reconcile static cron inventory/classifier version and preserve Yahoo unqualified status until separately reviewed classification change"
+  ],
+  "limits": "Existing C7 C5 review remains credited for its canonical dependency context. No shared wrapper/classifier or route source edits by coordinator; no schedules/report consumers changed.",
+  "followup_probe": {
+    "candidate": "C5-PREREQUISITE-CANDIDATE.json",
+    "checks": "C5-PREREQUISITE-CHECKS.json",
+    "test_files": 5,
+    "passed": 91,
+    "failed": 19,
+    "failed_suite": "cron-audit-wrappers.test.ts",
+    "meaning": "New wrapper safety behavior passes its direct route/unit cases, but global inventory and predecessor route auth/audit changes are absent from production; C5 cannot ship as a route-only overlay.",
+    "required_prior_route_scope": [
+      "web/pages/api/internal/espn-sync.ts",
+      "web/pages/api/internal/fantrax-sync.ts",
+      "web/pages/api/internal/patreon-reconcile.ts",
+      "web/pages/api/v1/db/refresh-draft-ranker-discovery.ts",
+      "web/pages/api/v1/db/update-seasons.ts"
+    ],
+    "inventory": "Scheduled HTTP-job/auth/caller inventory still differs. No classifier or test relaxation.",
+    "status": "Excluded from qualified bundle; exact predecessor packet selection/review remains."
+  }
+}

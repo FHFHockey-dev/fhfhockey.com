@@ -1,0 +1,223 @@
+{
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "scope": [
+    "web/components/account/InSeasonPanel.tsx",
+    "web/components/account/InSeasonPanel.test.tsx",
+    "web/components/account/InSeasonPanel.rollout.test.tsx"
+  ],
+  "coordination": "Existing parent-directed billing lease; release owner read_thread still leaves billing/checkout/promotions to BILLING; current trusted-Yahoo lease excludes billing. No conflicting path changes: all34 prior packet hashes match.",
+  "before": {
+    "web/components/account/InSeasonPanel.tsx": "1e53f506cae3e06fd8b3604c4119e92dc3fe14ae7f18e152c16211097f0eb24a",
+    "web/components/account/InSeasonPanel.test.tsx": "49196d2addbdbad7291e7361e8964fa070d0f9cbd633340eb5e724e56594827f"
+  },
+  "prior_packet": {
+    "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+    "files": [
+      {
+        "path": "web/components/account/DraftProPanel.tsx",
+        "category": "application",
+        "before_sha256": "750b244315753b8f04159d50d6eb1945fd492ad8a2dc9236e194fd7653bc9982",
+        "sha256": "09f2e94b2d0ab90d15604b5d6b67dd46f8418ac5c1f55a4b7c5717fc4d586d77"
+      },
+      {
+        "path": "web/components/account/DraftProPanel.test.tsx",
+        "category": "test",
+        "before_sha256": "e3d4484c5bddea96dba1c46da6005238e74ba7ac219a184864fb6ea435a0d0bf",
+        "sha256": "257b5053bd7612cc2994b3f5e0d4edd816fd6908841abcb19a4642bbce5c09cc"
+      },
+      {
+        "path": "web/lib/draft-pro/features.ts",
+        "category": "application",
+        "before_sha256": "18a3113a1d0f22a3042836df82746143aae56099175049e7511a3cb217d0a03b",
+        "sha256": "a0951ca68c1429e1cdf114aab19eb00eabc197d2750a40f1639a8bb7c4a97e74"
+      },
+      {
+        "path": "web/lib/draft-pro/features.test.ts",
+        "category": "test",
+        "before_sha256": "b9aeeafd002007b5e334eb0d0678c8879834f551c7f39bc1880af73924b6d022",
+        "sha256": "f2b8d1fe0b8e05a79a8592adaa02689c708b82c9521163a42523d9f39024652f"
+      },
+      {
+        "path": "web/lib/draft-pro/account/index.ts",
+        "category": "application",
+        "before_sha256": "33bad366b4af6acf944a2237cc92d9bb7ea7da75adc496386ef08f09c001a584",
+        "sha256": "944e26a21e234d0fd2716a6091be0159dd6328bbe34abe17a3c3cac455e8752c"
+      },
+      {
+        "path": "web/lib/draft-pro/account/index.test.ts",
+        "category": "test",
+        "before_sha256": "72f91330c01b23ca6dc6b287091a15c9377c8ba1345a02985f49766728e3047b",
+        "sha256": "5d9631a1e4451560f921b74d3253ea950a41a875f92a5540c8ff74a1fcdd3c84"
+      },
+      {
+        "path": "web/pages/api/v1/account/draft-pro/checkout.ts",
+        "category": "application",
+        "before_sha256": "b984304817424ddbe6b8fd28969683e5ae80daaacd2941e734091e12b90ecd74",
+        "sha256": "f3ac50527c46caaf0ae94a4bc5c263dba23131e2f0303b0d70fc08174f9c03d8"
+      },
+      {
+        "path": "web/lib/draft-pro/api-tests/checkout.test.ts",
+        "category": "test",
+        "before_sha256": "f7d235d8a0506255047df718d1ab29d56957457114330ffaa582d12ff24308bc",
+        "sha256": "c66d8306ae2ff1fa61831b468048facb0a95d8339f174900e6cbdfd67cc0d480"
+      },
+      {
+        "path": "web/lib/integrations/providerSyncAccess.ts",
+        "category": "application",
+        "before_sha256": "5e34f581be828b4f0b45cbfbb0e0851b65567f81fc35795000af4e79f7483ae5",
+        "sha256": "92c93886b75e94f9c57c6447c0b1ce8661e46af5b8de62c7a55e867617801a8f"
+      },
+      {
+        "path": "web/lib/integrations/providerSyncAccessServer.ts",
+        "category": "application",
+        "before_sha256": "6feba64d25aad65ae6322fcc812be8ad202c18545ba38eaaf4566f3379dd0bf1",
+        "sha256": "5bad05d9da49a333cf1a0a5ba51a2ac1ca625fc80715c3953247267f688f48b4"
+      },
+      {
+        "path": "web/lib/integrations/providerSyncAccess.test.ts",
+        "category": "test",
+        "before_sha256": "e02a9e1efedefae017aa5259cdaadf6f9cbc5bca247201f0c1adcf1ef52b2103",
+        "sha256": "a8e8c6ce0a02bd46ebf762bb0b4e7cb76b80803aac3a06011d80dea3d0d6764b"
+      },
+      {
+        "path": "web/pages/api/v1/account/provider-sync.ts",
+        "category": "application",
+        "before_sha256": "cd25296a5adb9a9cca8374355f2e0ff6e9706fd6ad2fba4a009db878db7662c3",
+        "sha256": "7b357a1cba7cc4b02534d024f02255bf9ea7ff72065b6bafd9c0d9f0e67c0b95"
+      },
+      {
+        "path": "web/hooks/useProviderSyncAccess.ts",
+        "category": "application",
+        "before_sha256": "dec528a76adc17c7add38011e38f07a2a850ea590aeb9ce91122f149ddeafafb",
+        "sha256": "1c9a77da00a62e59c885381aa5006cfc07a8406ff6e0627b25d30965ccbc125e"
+      },
+      {
+        "path": "web/hooks/useDraftProAccess.test.tsx",
+        "category": "test",
+        "before_sha256": "5a87f0fc984002561a17d00b9e34872794a2fefde1d3d87657a956618b81fbc1",
+        "sha256": "96abe7f85becc3154e2d9ae58cc91bf4f3f89a487b0ed3d8e273faf0fea3d835"
+      },
+      {
+        "path": "web/components/account/InSeasonPanel.tsx",
+        "category": "application",
+        "before_sha256": "aa8b536ee039599c6d41167841b5c1a177f0350c895d03ae0b6ed0acfd76a167",
+        "sha256": "1e53f506cae3e06fd8b3604c4119e92dc3fe14ae7f18e152c16211097f0eb24a"
+      },
+      {
+        "path": "web/components/account/InSeasonPanel.test.tsx",
+        "category": "test",
+        "before_sha256": "9111c5524568150797b0cc232e3b4f2584758102206531d9b26d408ba8abdd10",
+        "sha256": "49196d2addbdbad7291e7361e8964fa070d0f9cbd633340eb5e724e56594827f"
+      },
+      {
+        "path": "web/pages/api/v1/account/in-season/checkout.ts",
+        "category": "application",
+        "before_sha256": "53508ada83a494e9ecfb9f9ddc1416eafe9c62f270b01d5081a826914c144c3f",
+        "sha256": "2cb94905ebf46862deb9d2c080af394c46c70ab6d8aa441f4f0534a139ba68b1"
+      },
+      {
+        "path": "web/lib/in-season/billingRoutes.test.ts",
+        "category": "test",
+        "before_sha256": "ed71429ee5e16193c280f33d570390107ac970a55dff6aa001501be078cab9aa",
+        "sha256": "6bf7b21a44583f1ede48cfbb7a2e5edcc7dde4a9b62f8eea6b675d29e078ff61"
+      },
+      {
+        "path": "web/lib/integrations/yahoo/liveDraftAccess.ts",
+        "category": "application",
+        "before_sha256": "776cf89f0af055a3f48d160435d06225b0818a70ae37d375aaf8b9f2f597c810",
+        "sha256": "0f10b91da37fb63c98c0da17934e9ef03cbb38ef3e6e31803c02ef733a07760c"
+      },
+      {
+        "path": "web/lib/integrations/yahoo/pickupApi.test.ts",
+        "category": "test",
+        "before_sha256": "eda835c3ee8ca2e10ce3765234cc71339afe00740b2ebfba05d4398d612ad8b5",
+        "sha256": "4aa0503a697752dba180ef653bffb2595e6184238ad2497d68c694c6239cce9d"
+      },
+      {
+        "path": "web/components/DraftDashboard/DraftWorkspaceHeader.tsx",
+        "category": "application",
+        "before_sha256": "ef2b9830791a53dde782071924a9551d644f3038a8fa32dd46d13e73ee2a4638",
+        "sha256": "c5559032dae2bcc7d73923d477f6ca6396984a135cd3c9d1234c7e86ed986cd7"
+      },
+      {
+        "path": "web/components/DraftDashboard/DraftSettingsShell.tsx",
+        "category": "application",
+        "before_sha256": "639b9410015753f31c745318c2cbf57c2dba148e34469d078fe870a738cf7ffe",
+        "sha256": "612585dd80d76b525faee9fdec9a06f39bfe2caf616f509787226bdb01d22027"
+      },
+      {
+        "path": "web/components/DraftDashboard/GodView.tsx",
+        "category": "application",
+        "before_sha256": "6b6cb3056ba678afe2aca8accdc5873fd8ce00fc55df85ab3ccf3d13ad3e4764",
+        "sha256": "661ce71c129b9b2c673c4b77d9e0d1421337cd371b4761b610693061d41dfaa5"
+      },
+      {
+        "path": "web/components/DraftDashboard/MockDraftWorkspace.tsx",
+        "category": "application",
+        "before_sha256": "69d65715ec31355dfbc8ea199c84d62ad9c7015b08b4831dde7cb9318857a886",
+        "sha256": "af56e5d346d181b009ab6bea1b557f01ce9527f6b99f432bcf0b3a8df1f9a5a5"
+      },
+      {
+        "path": "web/components/DraftDashboard/SuggestedPicks.tsx",
+        "category": "application",
+        "before_sha256": "ad7d5cdaba2b3eeec36063bf0a035c1d73e79cc2fb10bff7d2cd9fd90a8a2e2e",
+        "sha256": "fad10e0fe4fc5ab0671c0de06a42126122df67dfdd0d76545c66ea19f87218fe"
+      },
+      {
+        "path": "web/__tests__/components/DraftDashboard/SuggestedPicks.test.tsx",
+        "category": "test",
+        "before_sha256": "82fbfb90f524560bf11524a3a6e431394071a9efe1dea22e2a98c6ee5f6c4376",
+        "sha256": "3efefb0e77f6ef7b40225d0b07c55f2b430b10a705b272eefe644567f58a1065"
+      },
+      {
+        "path": "web/__tests__/components/DraftDashboard/DraftSettingsShell.test.tsx",
+        "category": "test",
+        "before_sha256": "11ce5dead1b5368ba92249df6e4135582674fa7e0166848eac9d4edf611306f0",
+        "sha256": "28622e64d176ff3df5c67eaf8dc16c31b189f840e882e215d8bdbaf0a7c3b587"
+      },
+      {
+        "path": "web/pages/index.tsx",
+        "category": "application",
+        "before_sha256": "db387e7d5b5a025b2585854fad930ad98eced970eaf0c3e1c34c65315ac760e1",
+        "sha256": "f82291a07954f7229c4e64971766c5c61a219c2ab8fba4cc07c117d2c08dfa0f"
+      },
+      {
+        "path": "web/pages/draft-pro/policies.tsx",
+        "category": "application",
+        "before_sha256": "9482b86d04482ae28c9cdb42f75253c44c824f6b7a95fdb1936472f7932bbafa",
+        "sha256": "18367f1f7637b4c46b6a7b59d5b69ccbf14a77cc4c4bec1ef0072f3a975e6470"
+      },
+      {
+        "path": "web/e2e/god-view.spec.ts",
+        "category": "test",
+        "before_sha256": "0482ac66a546ef6f6866995a0ab27fbab3e40c7d9d2e8bad108f0acc7b3d264d",
+        "sha256": "7c3e981956ed0d5b3a894eb11554c9826f03146ff5ff6f61575901f12ebedb62"
+      },
+      {
+        "path": "web/e2e/draft-layout.spec.ts",
+        "category": "test",
+        "before_sha256": "98702b0ae8cc5434a93daee6d37c5b9715300d855825a6b7c2c8cbc006a0f506",
+        "sha256": "fb9489c74d8e64718d63a7d6434f809d7e035badfe043e9ecc4ad25444d40ed8"
+      },
+      {
+        "path": "web/lib/integrations/providerSyncPaywall.test.ts",
+        "category": "test",
+        "before_sha256": "d1ed5ef030e2af624fbc9029f8958bae3915f2bc3e7ae8cd34b97d7aa562637b",
+        "sha256": "cc3db0a89109feb67593b25ace351d9215bfef4464219bcee715c44a60ef629d"
+      },
+      {
+        "path": "web/lib/integrations/yahoo/liveDraftApi.test.ts",
+        "category": "test",
+        "before_sha256": "9fbc433875095a6dcbd0318d8752ed066bd452ef1bcd9a086a73e469daa7397d",
+        "sha256": "cfd5df681033c5b6bf66421db71e1530c4b833539941caf35dd2b381c8d02458"
+      },
+      {
+        "path": "web/lib/integrations/providerSyncRolloutRoutes.test.ts",
+        "category": "test",
+        "before_sha256": null,
+        "sha256": "63919c286d1c88ab0ad7d5600a59251c2ff2999edba5dd8b51086056519db3f4"
+      }
+    ],
+    "packet_sha256": "88d70497b52641e31e83602cf8ea28977e0bc2de067c5562403acf3964153964"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "verdict": "ACCEPT WITH LIMITS",
+  "scope": "Frozen slice02 local owner identity/ownership policy interface only",
+  "baseHead": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "pinChecks": 26,
+  "pinMatches": 26,
+  "ownerTests": {
+    "passed": 10,
+    "failed": 0
+  },
+  "independentDistinctControls": {
+    "passedAcrossRuns": 12,
+    "unresolvedFailures": 0
+  },
+  "initialRun": {
+    "passed": 21,
+    "failed": 1,
+    "failureOwner": "reviewer test helper substituted default OWNER for undefined",
+    "failurePreserved": true
+  },
+  "correctedSingleControlRun": {
+    "passed": 1,
+    "skipped": 21,
+    "failed": 0
+  },
+  "scopedTypeScript": "passed",
+  "scopedESLint": "passed",
+  "ownerDefectsReproduced": [],
+  "integrationLimits": [
+    "injected principal resolver is the trust root; no token/session verification",
+    "trusted TJ configuration remains uninstalled",
+    "trusted stored metadata and owner-scoped retrieval not integrated",
+    "route/API/CSRF/worker/auth/sealing/storage/audit/retention gates pending"
+  ],
+  "blockedChecks": [],
+  "runningOperations": [],
+  "notRun": [
+    "slice01 moving correction",
+    "full application checks",
+    "browser/server",
+    "live session/owner configuration/provider/database/production",
+    "host/model pilot"
+  ],
+  "ownerSourceRepairs": 0,
+  "gitMutations": 0,
+  "subagentsSpawned": 0,
+  "originalOwnerCoordinationMessage": "unconfirmed; durable host unavailable; not retried"
+}

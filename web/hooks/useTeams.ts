@@ -9,8 +9,10 @@ export default function useTeams() {
   const [teams, setTeams] = useState<Team[]>([]);
 
   useEffect(() => {
-    getTeams()
+    const controller = new AbortController();
+    getTeams(undefined, { signal: controller.signal })
       .then((res) => {
+        if (controller.signal.aborted) return;
         if (Array.isArray(res)) {
           setTeams(res);
           return;
@@ -19,9 +21,11 @@ export default function useTeams() {
         setTeams([]);
       })
       .catch((error) => {
+        if (controller.signal.aborted) return;
         console.error("useTeams failed to load teams", error);
         setTeams([]);
       });
+    return () => controller.abort();
   }, []);
 
   return teams;

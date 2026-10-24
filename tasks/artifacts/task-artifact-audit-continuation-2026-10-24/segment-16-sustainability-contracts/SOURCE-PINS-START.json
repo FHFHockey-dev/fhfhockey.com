@@ -1,0 +1,30 @@
+[
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+    "sha256": "672025f32a41613265f97ff57683e49725fd00121b9de3ecf8ed07ccf633cc5e",
+    "bytes": 35737,
+    "lines": 185,
+    "mtime_ns": 1792454788451608281
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+    "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+    "bytes": 27233,
+    "lines": 201,
+    "mtime_ns": 1785977520216390767
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-barometer.md",
+    "sha256": "1718ff3d93f1206c8b4bc288a34ed70f30e94b0d12b78c644258b343e31e3afc",
+    "bytes": 34742,
+    "lines": 487,
+    "mtime_ns": 1785977520214905931
+  },
+  {
+    "path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-model.md",
+    "sha256": "5d2cf40da1c43791450d28cb0b0064a07b6452bd9b9fa8a3fb27a44647cb66c7",
+    "bytes": 13169,
+    "lines": 218,
+    "mtime_ns": 1785977520215226881
+  }
+]

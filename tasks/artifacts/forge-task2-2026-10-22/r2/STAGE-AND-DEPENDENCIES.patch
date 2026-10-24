@@ -1,0 +1,1277 @@
+diff --git a/web/lib/projections/dispersion.ts b/web/lib/projections/dispersion.ts
+new file mode 100644
+index 000000000..4e0c38937
+--- /dev/null
++++ b/web/lib/projections/dispersion.ts
+@@ -0,0 +1,171 @@
++/**
++ * Fitted count-dispersion constants for FORGE per-game stat distributions.
++ *
++ * Model: a per-game count X with predictive mean mu has
++ *   Var(X) = mu + b * mu + a * mu^2,
++ * served as a negative binomial moment-matched with alpha(mu) = a + b / mu
++ * (NB2 when b = 0; the b term adds NB1-style dispersion that matters most at
++ * low means). a = b = 0 is Poisson.
++ *
++ * Fit (web/scripts/fit-forge-dispersion.ts, run 2026-10-22):
++ * - Data: wgo_skater_stats (games_played = 1, TOI > 0) and wgo_goalie_stats
++ *   (games_started = 1), regular seasons 2023-24 and 2024-25 (Oct 1 - Apr 30),
++ *   player-seasons with >= 20 games. F = C/L/R. n = 60,734 F games,
++ *   30,861 D games, 4,783 goalie starts.
++ * - Method: method of moments inside each player-season (so between-player
++ *   rate differences are not counted as overdispersion), summed within six
++ *   bins of the player-season mean; Var - mu = a mu^2 + b mu fitted by
++ *   non-negative least squares through the origin across bins x seasons.
++ *   "toiConditional" uses mu_g = player-season rate per second x game TOI.
++ * - Goalies: the player-season means span only ~20-34, so a and b are not
++ *   separately identified; the pooled NB2 alpha (b = 0) is used instead.
++ * - Goals and assists: pooled alpha is negative (mildly underdispersed:
++ *   G F -0.023, G D -0.059, A F -0.025, A D -0.004), so they stay Poisson.
++ * - Check: unconditional ~= toiConditional (1 + c^2) + c^2 with the measured
++ *   TOI CV^2 (e.g. SOG F 0.0219 * 1.025 + 0.0247 = 0.047 vs 0.047 fitted).
++ * - Holdout 2025-26 (prior up-to-40-game mean as predictive mean): NB beats
++ *   Poisson on log score, RPS and PIT flatness for every SOG/hit/block/save
++ *   stratum; goals and assists show no gain. See the script output in the
++ *   Lane C report for the full tables.
++ */
++
++export type DispersionStat = "sog" | "hit" | "blk" | "g" | "a" | "sv" | "sa";
++export type DispersionPosition = "F" | "D" | "G";
++
++export type DispersionCoefficients = {
++  /** NB2 (quadratic) dispersion: Var gains a * mu^2. */
++  a: number;
++  /** NB1 (linear) dispersion: Var gains b * mu. */
++  b: number;
++};
++
++export type DispersionFit = {
++  /** Per game, game-to-game TOI variation included. Use when the mean carries no TOI spread. */
++  unconditional: DispersionCoefficients;
++  /** Per game, given the realized TOI. Use when TOI is simulated or carries its own spread. */
++  toiConditional: DispersionCoefficients;
++  /** Empirical game-to-game TOI CV^2 within player-season (diagnostic). */
++  toiCv2: number;
++};
++
++export type DispersionKey = `${DispersionStat}:${DispersionPosition}`;
++
++const POISSON: DispersionCoefficients = { a: 0, b: 0 };
++
++// Pooled unconditional NB2 alpha per stratum (2023-24 / 2024-25) for reference:
++// SOG F 0.047 (0.041/0.055), SOG D 0.044 (0.039/0.048), HIT F 0.108
++// (0.121/0.096), HIT D 0.116 (0.117/0.114), BLK F 0.113 (0.118/0.109),
++// BLK D 0.064 (0.062/0.066), SV G 0.040 (0.041/0.039), SA G 0.029 (0.030/0.028).
++export const FORGE_DISPERSION: Partial<Record<DispersionKey, DispersionFit>> = {
++  "sog:F": {
++    unconditional: { a: 0.0012, b: 0.0983 },
++    toiConditional: { a: 0, b: 0.0458 },
++    toiCv2: 0.0247
++  },
++  "sog:D": {
++    unconditional: { a: 0.0211, b: 0.0345 },
++    toiConditional: { a: 0.016, b: 0.0158 },
++    toiCv2: 0.0213
++  },
++  "hit:F": {
++    unconditional: { a: 0.0069, b: 0.1842 },
++    toiConditional: { a: 0, b: 0.1846 },
++    toiCv2: 0.0224
++  },
++  "hit:D": {
++    unconditional: { a: 0.0162, b: 0.1728 },
++    toiConditional: { a: 0, b: 0.1781 },
++    toiCv2: 0.0198
++  },
++  "blk:F": {
++    unconditional: { a: 0.0952, b: 0.0111 },
++    toiConditional: { a: 0.0587, b: 0.0182 },
++    toiCv2: 0.0223
++  },
++  "blk:D": {
++    unconditional: { a: 0.0306, b: 0.0547 },
++    toiConditional: { a: 0.0136, b: 0.0379 },
++    toiCv2: 0.0205
++  },
++  "g:F": { unconditional: POISSON, toiConditional: POISSON, toiCv2: 0.0247 },
++  "g:D": { unconditional: POISSON, toiConditional: POISSON, toiCv2: 0.0207 },
++  "a:F": { unconditional: POISSON, toiConditional: POISSON, toiCv2: 0.025 },
++  "a:D": { unconditional: POISSON, toiConditional: POISSON, toiCv2: 0.0214 },
++  "sv:G": {
++    unconditional: { a: 0.0401, b: 0 },
++    toiConditional: { a: 0.019, b: 0 },
++    toiCv2: 0.019
++  },
++  "sa:G": {
++    unconditional: { a: 0.0291, b: 0 },
++    toiConditional: { a: 0.0134, b: 0 },
++    toiCv2: 0.019
++  }
++};
++
++export function normalizeDispersionPosition(
++  position: string | null | undefined
++): DispersionPosition | null {
++  const p = (position ?? "").trim().toUpperCase();
++  if (p === "D") return "D";
++  if (p === "G") return "G";
++  if (p === "F" || p === "C" || p === "L" || p === "R" || p === "LW" || p === "RW")
++    return "F";
++  return null;
++}
++
++export function getDispersionFit(
++  stat: DispersionStat,
++  position: string | null | undefined
++): DispersionFit | null {
++  const pos = normalizeDispersionPosition(position);
++  if (!pos) return null;
++  return FORGE_DISPERSION[`${stat}:${pos}`] ?? null;
++}
++
++/**
++ * Compound TOI-conditional dispersion with independent per-game TOI noise of
++ * coefficient of variation `toiCv` (counts scale with TOI):
++ *   Var = E[Var(X|T)] + Var(E[X|T]) = mu(1+b) + a mu^2 (1+c^2) + c^2 mu^2.
++ */
++export function compoundToiDispersion(
++  coefficients: DispersionCoefficients,
++  toiCv: number
++): DispersionCoefficients {
++  const c2 = Number.isFinite(toiCv) ? Math.max(0, toiCv) ** 2 : 0;
++  return {
++    a: Math.max(0, coefficients.a) * (1 + c2) + c2,
++    b: Math.max(0, coefficients.b)
++  };
++}
++
++export type ResolveDispersionOptions = {
++  /** Per-game TOI CV carried by the projection; switches to the TOI-conditional fit compounded with it. */
++  toiCv?: number | null;
++  /** Number of iid games summed into `mean` (sum of NB with shared p stays NB). */
++  horizonGames?: number;
++};
++
++/**
++ * NB alpha for a projected total `mean` of `stat` for `position`, or null when
++ * no fit exists (callers fall back to Poisson). With horizonGames = H and a
++ * total mean M = H * m, the summed variance is M(1+b) + a M^2 / H, so
++ * alpha = a / H + b / M.
++ */
++export function resolveDispersionAlpha(
++  stat: DispersionStat,
++  position: string | null | undefined,
++  mean: number,
++  options: ResolveDispersionOptions = {}
++): number | null {
++  const fit = getDispersionFit(stat, position);
++  if (!fit) return null;
++  if (!Number.isFinite(mean) || mean <= 0) return 0;
++  const coefficients =
++    options.toiCv != null && Number.isFinite(options.toiCv)
++      ? compoundToiDispersion(fit.toiConditional, options.toiCv)
++      : fit.unconditional;
++  const horizon = Math.max(1, Math.floor(options.horizonGames ?? 1));
++  const alpha = Math.max(0, coefficients.a) / horizon + Math.max(0, coefficients.b) / mean;
++  return Number.isFinite(alpha) ? alpha : null;
++}
+diff --git a/web/lib/projections/stages/skater-stage.ts b/web/lib/projections/stages/skater-stage.ts
+index c76a20c8c..2c56edb8c 100644
+--- a/web/lib/projections/stages/skater-stage.ts
++++ b/web/lib/projections/stages/skater-stage.ts
+@@ -309,11 +309,13 @@ import {
+ import {
+   ANALYTICS_MODEL_NAME,
+   ANALYTICS_MODEL_VERSION,
+-  buildModelMarketFlagRow,
++  buildModelMarketProbabilityFlagRow,
++  compareModelWithMarket,
++  forgePropOverProbability,
+   GAME_MARKET_EDGE_THRESHOLDS,
+   getConsensusLineValue,
+   getProjectionValueForPropMarket,
+-  PLAYER_MARKET_EDGE_THRESHOLDS,
++  quotesFromMarketSummary,
+ } from "../utils/market-output-builders";
+ 
+ function assertSupabase() {
+@@ -1579,8 +1581,12 @@ export async function runPerGameSkaterStage(args: {
+       let totals: LeaguePhysicalTotals | null = null;
+       try {
+         totals = await fetchLeaguePhysicalTotals(currentSeasonId, asOfDate);
+-      } catch {
+-        metrics.data_quality.physical_league_totals_unavailable += 1;
++      } catch (error) {
++        metrics.data_quality.physical_league_totals_unavailable =
++          (metrics.data_quality.physical_league_totals_unavailable ?? 0) + 1;
++        if (error instanceof Error && "reason" in error && error.reason === "rpc_missing") {
++          metrics.warnings.push("physical_league_totals_rpc_missing:without_league_rescale");
++        }
+       }
+       leaguePhysicalTotalsCache.set(leaguePhysicalKey, totals);
+     }
+@@ -2897,6 +2903,10 @@ export async function runPerGameSkaterStage(args: {
+           })),
+         ),
+         p.trendAdjustment?.uncertaintyVolatilityMultiplier ?? 1,
++        {
++          negativeBinomial: true,
++          position: playerMetaById.get(playerId)?.position ?? null,
++        },
+       );
+       const scenarioMetadata = buildSkaterScenarioMetadata({
+         scenarios: p.roleScenarios,
+@@ -3411,35 +3421,27 @@ export async function runPerGameSkaterStage(args: {
+           },
+         });
+ 
+-        const consensusLineValue = getConsensusLineValue(marketSummary);
+-        const edgeThreshold = PLAYER_MARKET_EDGE_THRESHOLDS[marketType] ?? 0.25;
+-        if (consensusLineValue != null) {
+-          const edgeValue = expectedValue - consensusLineValue;
+-          if (Math.abs(edgeValue) >= edgeThreshold) {
+-            modelMarketFlagRows.push(
+-              buildModelMarketFlagRow({
+-                asOfDate,
+-                entityType: "player",
+-                entityId: playerId,
+-                gameId: game.id,
+-                marketType,
+-                flagType: edgeValue > 0 ? "model_over" : "model_under",
+-                edgeValue,
+-                reasons: [
+-                  {
+-                    expected_value: expectedValue,
+-                    line_value: consensusLineValue,
+-                    sportsbook_count: marketSummary.sportsbookKeys.length,
+-                  },
+-                ],
+-                provider: marketSummary.sourceNames[0] ?? null,
+-                metadata: {
+-                  horizon_games: horizonGames,
+-                  run_id: runId,
+-                },
+-              }),
+-            );
+-          }
++        const comparison = compareModelWithMarket({
++          marketType,
++          expectedValue,
++          quotes: quotesFromMarketSummary(marketSummary),
++          overProbability: forgePropOverProbability(
++            playerMetaById.get(playerId)?.position ?? null,
++          ),
++        });
++        if (comparison) {
++          const outputRow = playerPredictionOutputRows[playerPredictionOutputRows.length - 1];
++          outputRow.probability_over = Number(comparison.model.over.toFixed(4));
++          const flagRow = buildModelMarketProbabilityFlagRow({
++            asOfDate,
++            entityType: "player",
++            entityId: playerId,
++            gameId: game.id,
++            comparison,
++            provider: marketSummary.sourceNames[0] ?? null,
++            metadata: { horizon_games: horizonGames, run_id: runId },
++          });
++          if (flagRow) modelMarketFlagRows.push(flagRow);
+         }
+       }
+     }
+diff --git a/web/lib/projections/uncertainty.ts b/web/lib/projections/uncertainty.ts
+index 0a27a76f9..e11d4800a 100644
+--- a/web/lib/projections/uncertainty.ts
++++ b/web/lib/projections/uncertainty.ts
+@@ -1,3 +1,10 @@
++import {
++  getDispersionFit,
++  resolveDispersionAlpha,
++  type DispersionStat,
++  type ResolveDispersionOptions
++} from "./dispersion";
++
+ const Z_P10 = -1.2815515655446004;
+ const Z_P90 = 1.2815515655446004;
+ 
+@@ -156,7 +163,8 @@ export function buildPlayerUncertainty(
+     shotsEs?: number;
+     shotsPp?: number;
+   }>,
+-  trendVolatilityMultiplier = 1
++  trendVolatilityMultiplier = 1,
++  countModel?: CountModelOptions
+ ) {
+   const effectiveHorizon = Math.max(1, Math.floor(horizonGames));
+   const scalars =
+@@ -165,6 +173,8 @@ export function buildPlayerUncertainty(
+       : Array.from({ length: effectiveHorizon }, () => 1);
+   const samples = UNCERTAINTY_CONFIG.simulationSamples;
+   const totalScalar = scalars.reduce((acc, v) => acc + v, 0);
++  const useNb = countModel?.negativeBinomial === true;
++  const simToiCv = playerToiCv(u.toiEsSeconds, u.toiPpSeconds);
+   const volatilityMultiplier = Math.max(
+     0.75,
+     Math.min(1.8, trendVolatilityMultiplier)
+@@ -358,8 +368,15 @@ export function buildPlayerUncertainty(
+           ? scenarioAssistsPp * scalar * (goalsPpMean / (scenarioGoalsPp * scalar))
+           : 0;
+ 
+-      const shotsEs = samplePoisson(shotsEsMean, rand);
+-      const shotsPp = samplePoisson(shotsPpMean, rand);
++      // NB: one gamma multiplier shared by ES and PP shots keeps total SOG NB(mu, alpha).
++      const shotsAlpha = useNb
++        ? normalizeAlpha(
++            simulationAlpha("sog", countModel?.position, shotsEsMean + shotsPpMean, simToiCv)
++          )
++        : 0;
++      const shotsMultiplier = shotsAlpha > 0 ? sampleGammaMeanOne(1 / shotsAlpha, rand) : 1;
++      const shotsEs = samplePoisson(shotsEsMean * shotsMultiplier, rand);
++      const shotsPp = samplePoisson(shotsPpMean * shotsMultiplier, rand);
+       const goalsEs = samplePoisson(goalsEsMean, rand);
+       const goalsPp = samplePoisson(goalsPpMean, rand);
+       const assistsEs = samplePoisson(assistsEsMean, rand);
+@@ -367,8 +384,20 @@ export function buildPlayerUncertainty(
+ 
+       const hitsMean = Math.max(0, u.hits) * scalar * toiScale;
+       const blocksMean = Math.max(0, u.blocks) * scalar * toiScale;
+-      const hits = samplePoisson(hitsMean, rand);
+-      const blocks = samplePoisson(blocksMean, rand);
++      const hits = useNb
++        ? sampleNegativeBinomial(
++            hitsMean,
++            simulationAlpha("hit", countModel?.position, hitsMean, simToiCv),
++            rand
++          )
++        : samplePoisson(hitsMean, rand);
++      const blocks = useNb
++        ? sampleNegativeBinomial(
++            blocksMean,
++            simulationAlpha("blk", countModel?.position, blocksMean, simToiCv),
++            rand
++          )
++        : samplePoisson(blocksMean, rand);
+ 
+       totalToiEs += toiEs;
+       totalToiPp += toiPp;
+@@ -569,7 +598,8 @@ export function buildGoalieUncertainty(
+     shotsAgainst: number;
+     goalsAllowed: number;
+     saves: number;
+-  }>
++  }>,
++  countModel?: CountModelOptions
+ ) {
+   const effectiveHorizon = Math.max(1, Math.floor(horizonGames));
+   const scalars =
+@@ -645,7 +675,14 @@ export function buildGoalieUncertainty(
+     for (let g = 0; g < effectiveHorizon; g += 1) {
+       const scalar = scalars[g] ?? 1;
+       const shotsMean = scenarioShots * scalar;
+-      const shots = samplePoisson(shotsMean, rand);
++      const shots =
++        countModel?.negativeBinomial === true
++          ? sampleNegativeBinomial(
++              shotsMean,
++              resolveDispersionAlpha("sa", countModel.position ?? "G", shotsMean),
++              rand
++            )
++          : samplePoisson(shotsMean, rand);
+       const baseShotsScaled = scenarioShots * scalar;
+       const goalsMean =
+         baseShotsScaled > 0
+@@ -670,3 +707,263 @@ export function buildGoalieUncertainty(
+     saves: quantilesFromSamples(samplesSaves)
+   };
+ }
++
++// ---------------------------------------------------------------------------
++// Count distributions: negative binomial with Poisson fallback (tasks 8.1/8.2).
++// alpha is the NB2 dispersion (Var = mu + alpha * mu^2); alpha null/0 = Poisson.
++// Fitted alphas come from ./dispersion (resolveDispersionAlpha).
++// ---------------------------------------------------------------------------
++
++const NB_MIN_ALPHA = 1e-9;
++
++/**
++ * Opt-in count model for buildPlayerUncertainty / buildGoalieUncertainty.
++ * Default (omitted) keeps the legacy Poisson draws.
++ */
++export type CountModelOptions = {
++  /** Draw SOG/hits/blocks (skaters) or shots against (goalies) from the fitted NB. */
++  negativeBinomial?: boolean;
++  /** F/C/L/R/D/G; unknown positions fall back to Poisson. */
++  position?: string | null;
++};
++
++/**
++ * Per-game alpha inside the simulation, where TOI is already drawn with CV
++ * `simToiCv`: the TOI-conditional fit compounded with whatever empirical TOI
++ * variance (fit.toiCv2) the simulated TOI noise does not cover.
++ */
++function simulationAlpha(
++  stat: DispersionStat,
++  position: string | null | undefined,
++  perGameMean: number,
++  simToiCv: number
++): number | null {
++  const fit = getDispersionFit(stat, position);
++  if (!fit) return null;
++  const residualCv = Math.sqrt(Math.max(0, fit.toiCv2 - simToiCv * simToiCv));
++  return resolveDispersionAlpha(stat, position, perGameMean, { toiCv: residualCv });
++}
++const COUNT_TAIL_EPS = 1e-12;
++const COUNT_MAX_SUPPORT = 20000;
++
++function normalizeAlpha(alpha: number | null | undefined): number {
++  if (alpha == null || !Number.isFinite(alpha) || alpha < NB_MIN_ALPHA) return 0;
++  return alpha;
++}
++
++/** Probability mass over 0..K, truncated once the remaining tail is below 1e-12. */
++export function countPmf(mean: number, alpha?: number | null): number[] {
++  const mu = clampNonNegative(mean);
++  if (mu === 0) return [1];
++  const a = normalizeAlpha(alpha);
++  const r = a > 0 ? 1 / a : Infinity;
++  // log P(0) and the log ratio P(k+1)/P(k).
++  let logP = a > 0 ? -r * Math.log1p(mu / r) : -mu;
++  const logQ = a > 0 ? Math.log(mu / (r + mu)) : Math.log(mu);
++  const pmf: number[] = [];
++  let cumulative = 0;
++  for (let k = 0; k < COUNT_MAX_SUPPORT; k += 1) {
++    const p = Math.exp(logP);
++    pmf.push(p);
++    cumulative += p;
++    if (k >= mu && 1 - cumulative < COUNT_TAIL_EPS) break;
++    logP += a > 0 ? Math.log((k + r) / (k + 1)) + logQ : logQ - Math.log(k + 1);
++  }
++  return pmf;
++}
++
++export function countVariance(mean: number, alpha?: number | null): number {
++  const mu = clampNonNegative(mean);
++  return mu + normalizeAlpha(alpha) * mu * mu;
++}
++
++/** P(X <= k). */
++export function countCdf(k: number, mean: number, alpha?: number | null): number {
++  if (!Number.isFinite(k) || k < 0) return 0;
++  const pmf = countPmf(mean, alpha);
++  const upper = Math.min(Math.floor(k), pmf.length - 1);
++  let total = 0;
++  for (let i = 0; i <= upper; i += 1) total += pmf[i];
++  return Math.min(1, total);
++}
++
++/** P(X >= k). */
++export function countProbabilityAtLeast(
++  k: number,
++  mean: number,
++  alpha?: number | null
++): number {
++  if (!Number.isFinite(k) || k <= 0) return 1;
++  return Math.max(0, 1 - countCdf(Math.ceil(k) - 1, mean, alpha));
++}
++
++/** Smallest integer k with P(X <= k) >= p. */
++export function countQuantile(p: number, mean: number, alpha?: number | null): number {
++  const pmf = countPmf(mean, alpha);
++  const target = Math.max(0, Math.min(1, p));
++  let total = 0;
++  for (let k = 0; k < pmf.length; k += 1) {
++    total += pmf[k];
++    if (total >= target - 1e-12) return k;
++  }
++  return pmf.length - 1;
++}
++
++export type CountDistributionSummary = {
++  mean: number;
++  /** NB dispersion used; 0 means Poisson. */
++  alpha: number;
++  model: "negative_binomial" | "poisson";
++  variance: number;
++  /** P(X >= k) keyed by k. */
++  pAtLeast: Record<number, number>;
++  quantiles: { p10: number; p50: number; p90: number };
++};
++
++export function summarizeCountDistribution(
++  mean: number,
++  alpha?: number | null,
++  atLeast: number[] = [1, 2, 3, 4, 5]
++): CountDistributionSummary {
++  const mu = clampNonNegative(mean);
++  const a = normalizeAlpha(alpha);
++  const pmf = countPmf(mu, a);
++  const cdf: number[] = [];
++  pmf.reduce((acc, p, k) => (cdf[k] = acc + p), 0);
++  const cdfAt = (k: number) => (k < 0 ? 0 : Math.min(1, cdf[Math.min(k, cdf.length - 1)]));
++  const quantileAt = (p: number) => {
++    const k = cdf.findIndex((c) => c >= p - 1e-12);
++    return k < 0 ? cdf.length - 1 : k;
++  };
++  const pAtLeast: Record<number, number> = {};
++  for (const k of atLeast) {
++    if (!Number.isFinite(k)) continue;
++    const kk = Math.max(0, Math.ceil(k));
++    pAtLeast[kk] = round6(kk === 0 ? 1 : Math.max(0, 1 - cdfAt(kk - 1)));
++  }
++  return {
++    mean: round3(mu),
++    alpha: round6(a),
++    model: a > 0 ? "negative_binomial" : "poisson",
++    variance: round3(countVariance(mu, a)),
++    pAtLeast,
++    quantiles: { p10: quantileAt(0.1), p50: quantileAt(0.5), p90: quantileAt(0.9) }
++  };
++}
++
++function round6(n: number): number {
++  return Number(n.toFixed(6));
++}
++
++export type StatDistributionOptions = ResolveDispersionOptions & {
++  /** Overrides the fitted alpha (null forces Poisson). */
++  alphaOverride?: number | null;
++  atLeast?: number[];
++};
++
++function statAlpha(
++  stat: DispersionStat,
++  position: string | null | undefined,
++  mean: number,
++  options: StatDistributionOptions
++): number | null {
++  if (options.alphaOverride !== undefined) return options.alphaOverride;
++  return resolveDispersionAlpha(stat, position, mean, options);
++}
++
++/** Mean, P(X >= k) and quantiles for a projected stat total; Poisson when no alpha is fitted. */
++export function summarizeStatDistribution(
++  stat: DispersionStat,
++  position: string | null | undefined,
++  mean: number,
++  options: StatDistributionOptions = {}
++): CountDistributionSummary {
++  return summarizeCountDistribution(
++    mean,
++    statAlpha(stat, position, mean, options),
++    options.atLeast
++  );
++}
++
++export type OverUnderPush = { over: number; under: number; push: number };
++
++/** Over = X > line, under = X < line, push = X == line (integer lines only). */
++export function overUnderPushProbabilities(
++  mean: number,
++  alpha: number | null | undefined,
++  line: number
++): OverUnderPush {
++  if (!Number.isFinite(line)) return { over: 0, under: 0, push: 0 };
++  if (line < 0) return { over: 1, under: 0, push: 0 };
++  const pmf = countPmf(mean, alpha);
++  const pAt = (k: number) => (k >= 0 && k < pmf.length ? pmf[k] : 0);
++  let cdfFloor = 0;
++  for (let k = 0; k <= Math.min(Math.floor(line), pmf.length - 1); k += 1) cdfFloor += pmf[k];
++  cdfFloor = Math.min(1, cdfFloor);
++  const isInteger = Math.abs(line - Math.round(line)) < 1e-9;
++  const push = isInteger ? pAt(Math.round(line)) : 0;
++  return {
++    over: Math.max(0, 1 - cdfFloor),
++    under: Math.max(0, cdfFloor - push),
++    push
++  };
++}
++
++/**
++ * P(over `line`) for a projected stat total, e.g. P(SOG > 2.5). Integer lines
++ * exclude the push (X == line); divide by (over + under) for a no-push price.
++ * Falls back to Poisson when no dispersion is fitted for (stat, position).
++ */
++export function probabilityOverLine(
++  stat: DispersionStat,
++  position: string | null | undefined,
++  mean: number,
++  line: number,
++  options: StatDistributionOptions = {}
++): number {
++  return overUnderPushProbabilities(mean, statAlpha(stat, position, mean, options), line).over;
++}
++
++/** Per-game TOI CV implied by the ES/PP TOI noise used in buildPlayerUncertainty. */
++export function playerToiCv(
++  toiEsSeconds: number,
++  toiPpSeconds: number,
++  esSdPct: number = UNCERTAINTY_CONFIG.playerEsToiSdPct,
++  ppSdPct: number = UNCERTAINTY_CONFIG.playerPpToiSdPct
++): number {
++  const es = clampNonNegative(toiEsSeconds);
++  const pp = clampNonNegative(toiPpSeconds);
++  const total = es + pp;
++  if (total <= 0) return 0;
++  return Math.sqrt((es * esSdPct) ** 2 + (pp * ppSdPct) ** 2) / total;
++}
++
++/** Gamma(shape, scale = 1/shape) multiplier with mean 1 and variance 1/shape (Marsaglia-Tsang). */
++function sampleGammaMeanOne(shape: number, rand: () => number): number {
++  if (!Number.isFinite(shape) || shape <= 0) return 1;
++  if (shape < 1) {
++    const u = Math.max(rand(), 1e-12);
++    return sampleGammaMeanOne(shape + 1, rand) * ((shape + 1) / shape) * u ** (1 / shape);
++  }
++  const d = shape - 1 / 3;
++  const c = 1 / Math.sqrt(9 * d);
++  for (let i = 0; i < 100; i += 1) {
++    const x = sampleNormal(0, 1, rand);
++    const v = (1 + c * x) ** 3;
++    if (v <= 0) continue;
++    const u = Math.max(rand(), 1e-12);
++    if (Math.log(u) < 0.5 * x * x + d - d * v + d * Math.log(v)) return (d * v) / shape;
++  }
++  return 1;
++}
++
++/** Gamma-Poisson draw: X ~ NB(mean, alpha); alpha 0/null draws Poisson. */
++export function sampleNegativeBinomial(
++  mean: number,
++  alpha: number | null | undefined,
++  rand: () => number
++): number {
++  const a = normalizeAlpha(alpha);
++  if (a === 0) return samplePoisson(mean, rand);
++  return samplePoisson(clampNonNegative(mean) * sampleGammaMeanOne(1 / a, rand), rand);
++}
+diff --git a/web/lib/projections/utils/devig.ts b/web/lib/projections/utils/devig.ts
+new file mode 100644
+index 000000000..609391924
+--- /dev/null
++++ b/web/lib/projections/utils/devig.ts
+@@ -0,0 +1,224 @@
++/**
++ * Sportsbook price helpers: convert American odds to implied probabilities and
++ * remove the bookmaker margin ("de-vig") so model probabilities can be compared
++ * with market probabilities in probability space.
++ *
++ * Methods:
++ * - "shin" (default): Shin (1993) insider-trading model. Solves for the insider
++ *   share z so the fair probabilities sum to 1. For two-way markets Shin is
++ *   mathematically identical to the additive / equal-margin method; it differs
++ *   (and shades longshots harder than proportional) for three or more outcomes.
++ * - "proportional": divide each implied probability by the overround. Known to
++ *   overstate longshots.
++ * - "equal-margin": subtract an equal share of the overround from each outcome.
++ *
++ * "Yes"-only markets (e.g. anytime goal scorer) have no opposing price, so the
++ * overround cannot be observed. `devigYesOnly` assumes a total two-way
++ * overround (DEFAULT_YES_ONLY_OVERROUND, configurable) and applies the
++ * equal-margin rule: fair = implied - overround / 2.
++ */
++
++export type DevigMethod = "shin" | "proportional" | "equal-margin";
++
++/**
++ * Assumed total overround for "Yes"-only markets. Major props carry about
++ * 4-6% and secondary props 6-10% (Wizard of Odds, cited in the deep-research
++ * report); anytime goal scorer is a secondary market, so 8% is the midpoint
++ * assumption until it is calibrated against two-way goal markets.
++ */
++export const DEFAULT_YES_ONLY_OVERROUND = 0.08;
++
++/** Two-way books whose implied probabilities sum outside this band are rejected as bad data. */
++export const MIN_VALID_BOOK_SUM = 0.98;
++export const MAX_VALID_BOOK_SUM = 1.35;
++
++/**
++ * American odds are invalid in (-100, 100). Some stored rows hold decimal odds
++ * (e.g. 1, 2) in price_american; those return null rather than a bogus price.
++ */
++export function isValidAmericanPrice(price: number | null | undefined): price is number {
++  return (
++    typeof price === "number" &&
++    Number.isFinite(price) &&
++    (price >= 100 || price <= -100)
++  );
++}
++
++export function americanToDecimal(price: number | null | undefined): number | null {
++  if (!isValidAmericanPrice(price)) return null;
++  return price > 0 ? 1 + price / 100 : 1 + 100 / -price;
++}
++
++export function americanToImpliedProbability(
++  price: number | null | undefined,
++): number | null {
++  const decimal = americanToDecimal(price);
++  return decimal == null ? null : 1 / decimal;
++}
++
++function isProbability(value: number): boolean {
++  return Number.isFinite(value) && value > 0 && value < 1;
++}
++
++export type DevigResult = {
++  probabilities: number[];
++  /** Sum of the raw implied probabilities minus 1 (the book margin). */
++  overround: number;
++  method: DevigMethod;
++  /** Shin insider share; only set for method "shin". */
++  shinZ?: number;
++};
++
++function shinProbability(pi: number, total: number, z: number): number {
++  return (Math.sqrt(z * z + (4 * (1 - z) * pi * pi) / total) - z) / (2 * (1 - z));
++}
++
++export function devigShin(implied: number[]): DevigResult | null {
++  if (implied.length < 2 || !implied.every(isProbability)) return null;
++  const total = implied.reduce((sum, p) => sum + p, 0);
++  const overround = total - 1;
++  if (overround <= 0) {
++    // No margin (or an arbitrage): Shin has no positive insider share; normalise.
++    return {
++      probabilities: implied.map((p) => p / total),
++      overround,
++      method: "shin",
++      shinZ: 0,
++    };
++  }
++  // Sum of Shin probabilities decreases monotonically in z; bisection on [0, 1).
++  const sumAt = (z: number) =>
++    implied.reduce((sum, p) => sum + shinProbability(p, total, z), 0);
++  let lo = 0;
++  let hi = 0.999;
++  for (let i = 0; i < 100; i += 1) {
++    const mid = (lo + hi) / 2;
++    if (sumAt(mid) > 1) lo = mid;
++    else hi = mid;
++  }
++  const z = (lo + hi) / 2;
++  const raw = implied.map((p) => shinProbability(p, total, z));
++  const rawSum = raw.reduce((sum, p) => sum + p, 0);
++  return {
++    probabilities: raw.map((p) => p / rawSum),
++    overround,
++    method: "shin",
++    shinZ: z,
++  };
++}
++
++export function devigProportional(implied: number[]): DevigResult | null {
++  if (implied.length < 2 || !implied.every(isProbability)) return null;
++  const total = implied.reduce((sum, p) => sum + p, 0);
++  return {
++    probabilities: implied.map((p) => p / total),
++    overround: total - 1,
++    method: "proportional",
++  };
++}
++
++export function devigEqualMargin(implied: number[]): DevigResult | null {
++  if (implied.length < 2 || !implied.every(isProbability)) return null;
++  const total = implied.reduce((sum, p) => sum + p, 0);
++  const share = (total - 1) / implied.length;
++  const shifted = implied.map((p) => p - share);
++  // A heavy longshot can go non-positive under additive removal; fall back to proportional.
++  if (!shifted.every((p) => p > 0)) return devigProportional(implied);
++  return {
++    probabilities: shifted,
++    overround: total - 1,
++    method: "equal-margin",
++  };
++}
++
++export function devig(
++  implied: number[],
++  method: DevigMethod = "shin",
++): DevigResult | null {
++  switch (method) {
++    case "proportional":
++      return devigProportional(implied);
++    case "equal-margin":
++      return devigEqualMargin(implied);
++    case "shin":
++    default:
++      return devigShin(implied);
++  }
++}
++
++/**
++ * De-vig a two-way market from its two American prices. Returns null when a
++ * price is invalid or the book sum is outside [MIN_VALID_BOOK_SUM, MAX_VALID_BOOK_SUM].
++ */
++export function devigTwoWayAmerican(
++  priceA: number | null | undefined,
++  priceB: number | null | undefined,
++  method: DevigMethod = "shin",
++): (DevigResult & { fairA: number; fairB: number }) | null {
++  const a = americanToImpliedProbability(priceA);
++  const b = americanToImpliedProbability(priceB);
++  if (a == null || b == null) return null;
++  const total = a + b;
++  if (total < MIN_VALID_BOOK_SUM || total > MAX_VALID_BOOK_SUM) return null;
++  const result = devig([a, b], method);
++  if (!result) return null;
++  return {
++    ...result,
++    fairA: result.probabilities[0],
++    fairB: result.probabilities[1],
++  };
++}
++
++/**
++ * Fair probability for a "Yes"-only price under an assumed total overround.
++ * "equal-margin" (default): implied - overround / 2, i.e. the price an additive
++ * (= two-way Shin) de-vig would give if the hidden "No" side carried the other
++ * half of the margin. "proportional": implied / (1 + overround). Equal-margin
++ * results at or below zero (extreme longshots) fall back to proportional.
++ */
++export function devigYesOnly(
++  price: number | null | undefined,
++  options: {
++    overround?: number;
++    method?: "equal-margin" | "proportional";
++  } = {},
++): { probability: number; implied: number; overround: number; method: "equal-margin" | "proportional" } | null {
++  const implied = americanToImpliedProbability(price);
++  if (implied == null) return null;
++  const overround = options.overround ?? DEFAULT_YES_ONLY_OVERROUND;
++  if (!Number.isFinite(overround) || overround < 0) return null;
++  const proportional = implied / (1 + overround);
++  if (options.method === "proportional") {
++    return { probability: proportional, implied, overround, method: "proportional" };
++  }
++  const equalMargin = implied - overround / 2;
++  if (equalMargin <= 0) {
++    return { probability: proportional, implied, overround, method: "proportional" };
++  }
++  return { probability: equalMargin, implied, overround, method: "equal-margin" };
++}
++
++/** Expected profit per 1 unit staked at an American price, given a win probability. */
++export function expectedValueAtAmericanPrice(
++  probability: number,
++  price: number | null | undefined,
++): number | null {
++  const decimal = americanToDecimal(price);
++  if (decimal == null || !Number.isFinite(probability)) return null;
++  return probability * decimal - 1;
++}
++
++export function median(values: number[]): number | null {
++  const finite = values.filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
++  if (finite.length === 0) return null;
++  const mid = Math.floor(finite.length / 2);
++  return finite.length % 2 === 1 ? finite[mid] : (finite[mid - 1] + finite[mid]) / 2;
++}
++
++/** Inverse of americanToImpliedProbability, for prices rebuilt from averaged probabilities. */
++export function impliedProbabilityToAmerican(probability: number): number | null {
++  if (!isProbability(probability)) return null;
++  return probability >= 0.5
++    ? -(100 * probability) / (1 - probability)
++    : (100 * (1 - probability)) / probability;
++}
+diff --git a/web/lib/projections/utils/market-output-builders.ts b/web/lib/projections/utils/market-output-builders.ts
+index 60df195ab..30d49d813 100644
+--- a/web/lib/projections/utils/market-output-builders.ts
++++ b/web/lib/projections/utils/market-output-builders.ts
+@@ -1,4 +1,15 @@
++import type { DispersionStat } from "../dispersion";
+ import type { MarketTypeSummary } from "../queries/market-queries";
++import { probabilityOverLine } from "../uncertainty";
++import {
++  americanToDecimal,
++  americanToImpliedProbability,
++  devigTwoWayAmerican,
++  devigYesOnly,
++  impliedProbabilityToAmerican,
++  median,
++  type DevigMethod,
++} from "./devig";
+ 
+ export const ANALYTICS_MODEL_NAME = "forge";
+ export const ANALYTICS_MODEL_VERSION = "market-context-v1";
+@@ -119,3 +130,381 @@ export function buildModelMarketFlagRow(args: {
+     updated_at: now,
+   };
+ }
++
++// ---------------------------------------------------------------------------
++// Probability-space market comparison (tasks 6.1 / 6.2).
++//
++// The mean-versus-line helpers above stay unchanged for current callers. The
++// helpers below compare the model's P(over line) with the de-vigged market
++// probability and size the edge at the best offered price.
++// ---------------------------------------------------------------------------
++
++/** Default minimum |model - market| probability gap that raises a flag. */
++export const DEFAULT_PROBABILITY_EDGE_THRESHOLD = 0.05;
++
++/**
++ * Injection point for the model's count distribution: returns P(X > line) for
++ * the stat behind `marketType` given the projected mean, or null if unknown.
++ * Defaults to Poisson; negative-binomial (or any other) distributions plug in
++ * here without changing the comparison code.
++ */
++export type OverProbabilityFn = (args: {
++  marketType: string;
++  mean: number;
++  line: number;
++}) => number | null;
++
++/** Poisson P(X > line) = 1 - CDF(floor(line)). */
++export function poissonOverProbability(mean: number, line: number): number | null {
++  if (!Number.isFinite(mean) || mean < 0 || !Number.isFinite(line)) return null;
++  if (line < 0) return 1;
++  const k = Math.floor(line);
++  let term = Math.exp(-mean);
++  let cdf = term;
++  for (let i = 1; i <= k; i += 1) {
++    term *= mean / i;
++    cdf += term;
++  }
++  return Math.min(1, Math.max(0, 1 - cdf));
++}
++
++export const defaultOverProbability: OverProbabilityFn = ({ mean, line }) =>
++  poissonOverProbability(mean, line);
++
++// Prop markets whose stat has a fitted FORGE dispersion (dispersion.ts); points and
++// power-play points stay Poisson.
++const PROP_MARKET_STATS: Record<string, DispersionStat> = {
++  player_shots_on_goal: "sog",
++  player_goals: "g",
++  player_goal_scorer_anytime: "g",
++  player_assists: "a",
++  player_blocked_shots: "blk",
++  player_total_saves: "sv",
++};
++
++/** P(X > line) from FORGE's fitted count distribution for a player of this position. */
++export function forgePropOverProbability(position: string | null | undefined): OverProbabilityFn {
++  return ({ marketType, mean, line }) => {
++    const stat = PROP_MARKET_STATS[marketType];
++    return stat ? probabilityOverLine(stat, position, mean, line) : poissonOverProbability(mean, line);
++  };
++}
++
++export type ModelLineProbabilities = {
++  over: number;
++  under: number;
++  push: number;
++  /** P(over | no push): comparable with de-vigged two-way prices, which refund pushes. */
++  overGivenNoPush: number;
++};
++
++/**
++ * Over / under / push probabilities at a line from an injected distribution.
++ * Integer lines can push; push = P(X > line - 0.5) - P(X > line).
++ */
++export function getModelLineProbabilities(args: {
++  marketType: string;
++  mean: number;
++  line: number;
++  overProbability?: OverProbabilityFn;
++}): ModelLineProbabilities | null {
++  const fn = args.overProbability ?? defaultOverProbability;
++  const over = fn({ marketType: args.marketType, mean: args.mean, line: args.line });
++  if (over == null || !Number.isFinite(over)) return null;
++  let push = 0;
++  if (Number.isInteger(args.line)) {
++    const atLeast = fn({
++      marketType: args.marketType,
++      mean: args.mean,
++      line: args.line - 0.5,
++    });
++    if (atLeast == null || !Number.isFinite(atLeast)) return null;
++    push = Math.max(0, atLeast - over);
++  }
++  const under = Math.max(0, 1 - over - push);
++  const decided = over + under;
++  return {
++    over,
++    under,
++    push,
++    overGivenNoPush: decided > 0 ? over / decided : 0,
++  };
++}
++
++/** One sportsbook quote; the shape matches rows of (prop_)market_prices_daily. */
++export type MarketPriceQuote = {
++  sportsbook_key: string;
++  outcome_key: string;
++  line_value: number | null;
++  price_american: number | null;
++};
++
++const OVER_KEYS = new Set(["over"]);
++const UNDER_KEYS = new Set(["under"]);
++const YES_KEYS = new Set(["yes"]);
++
++function sideOf(outcomeKey: string): "over" | "under" | "yes" | null {
++  const key = outcomeKey.trim().toLowerCase();
++  if (OVER_KEYS.has(key)) return "over";
++  if (UNDER_KEYS.has(key)) return "under";
++  if (YES_KEYS.has(key)) return "yes";
++  return null;
++}
++
++/** "Yes"-only markets (anytime goal scorer) without a line resolve at 0.5. */
++const YES_ONLY_DEFAULT_LINE = 0.5;
++
++/**
++ * Rebuild one synthetic quote per outcome from a MarketTypeSummary, for callers
++ * that only hold the averaged summary. Prices come from the averaged implied
++ * probability (averaging American prices across the +/-100 boundary is
++ * meaningless). Lower quality than per-book quotes: lines and prices are
++ * already averaged across books.
++ */
++export function quotesFromMarketSummary(
++  summary: MarketTypeSummary | undefined,
++): MarketPriceQuote[] {
++  if (!summary) return [];
++  const quotes: MarketPriceQuote[] = [];
++  for (const outcome of summary.outcomes) {
++    const implied =
++      outcome.averageImpliedProbability != null &&
++      outcome.averageImpliedProbability > 0 &&
++      outcome.averageImpliedProbability < 1
++        ? outcome.averageImpliedProbability
++        : americanToImpliedProbability(outcome.averagePriceAmerican);
++    const price = implied == null ? null : impliedProbabilityToAmerican(implied);
++    if (price == null) continue;
++    quotes.push({
++      sportsbook_key: "summary-average",
++      outcome_key: outcome.outcomeKey,
++      line_value: outcome.averageLineValue,
++      price_american: price,
++    });
++  }
++  return quotes;
++}
++
++export type MarketProbabilityComparison = {
++  marketType: string;
++  line: number;
++  expectedValue: number;
++  model: ModelLineProbabilities;
++  /** Median of per-book de-vigged P(over | no push) at the consensus line. */
++  marketProbabilityOver: number;
++  /** model.overGivenNoPush - marketProbabilityOver; positive favours the over. */
++  probabilityEdge: number;
++  threshold: number;
++  flagType: "model_over" | "model_under" | null;
++  /** Best (highest-payout) price per side across books at the consensus line. */
++  bestOverPriceAmerican: number | null;
++  bestUnderPriceAmerican: number | null;
++  /** Expected profit per unit staked at the best price, from the model's unconditional probabilities. */
++  expectedValueOver: number | null;
++  expectedValueUnder: number | null;
++  bookCount: number;
++  twoWayBookCount: number;
++  yesOnlyBookCount: number;
++  devigMethod: DevigMethod;
++  combine: "median-devig-probability/best-price";
++};
++
++function bestPrice(prices: number[]): number | null {
++  let best: number | null = null;
++  let bestDecimal = -Infinity;
++  for (const price of prices) {
++    const decimal = americanToDecimal(price);
++    if (decimal != null && decimal > bestDecimal) {
++      bestDecimal = decimal;
++      best = price;
++    }
++  }
++  return best;
++}
++
++function expectedValueWithPush(
++  win: number,
++  lose: number,
++  price: number | null,
++): number | null {
++  const decimal = americanToDecimal(price);
++  if (decimal == null) return null;
++  return win * (decimal - 1) - lose;
++}
++
++/**
++ * Compare the model with the market in probability space.
++ *
++ * Combining books: quotes are grouped by line; the consensus line is the one
++ * quoted by the most books (ties go to the lower line). Each book is de-vigged
++ * on its own over/under pair (Shin by default; a book with only "yes"/"over"
++ * uses devigYesOnly's equal-margin assumption), the market probability is the
++ * median of those per-book fair probabilities, and the expected value uses the
++ * best price on each side. Lines are never averaged across books.
++ */
++export function compareModelWithMarket(args: {
++  marketType: string;
++  expectedValue: number;
++  quotes: MarketPriceQuote[];
++  overProbability?: OverProbabilityFn;
++  devigMethod?: DevigMethod;
++  threshold?: number;
++  yesOnlyOverround?: number;
++}): MarketProbabilityComparison | null {
++  if (!Number.isFinite(args.expectedValue)) return null;
++  const method = args.devigMethod ?? "shin";
++  const threshold = args.threshold ?? DEFAULT_PROBABILITY_EDGE_THRESHOLD;
++
++  type BookSides = { over?: number; under?: number; yes?: number };
++  const byLine = new Map<number, Map<string, BookSides>>();
++  for (const quote of args.quotes) {
++    const side = sideOf(quote.outcome_key);
++    if (!side || americanToDecimal(quote.price_american) == null) continue;
++    const line =
++      quote.line_value ?? (side === "yes" ? YES_ONLY_DEFAULT_LINE : null);
++    if (line == null || !Number.isFinite(line)) continue;
++    if (!byLine.has(line)) byLine.set(line, new Map());
++    const books = byLine.get(line)!;
++    const sides = books.get(quote.sportsbook_key) ?? {};
++    sides[side] = quote.price_american as number;
++    books.set(quote.sportsbook_key, sides);
++  }
++  if (byLine.size === 0) return null;
++
++  const [line, books] = Array.from(byLine.entries()).sort(
++    (a, b) => b[1].size - a[1].size || a[0] - b[0],
++  )[0];
++
++  const fairOver: number[] = [];
++  const overPrices: number[] = [];
++  const underPrices: number[] = [];
++  let twoWayBookCount = 0;
++  let yesOnlyBookCount = 0;
++  for (const sides of books.values()) {
++    const overPrice = sides.over ?? sides.yes;
++    if (overPrice != null) overPrices.push(overPrice);
++    if (sides.under != null) underPrices.push(sides.under);
++    if (overPrice != null && sides.under != null) {
++      const pair = devigTwoWayAmerican(overPrice, sides.under, method);
++      if (pair) {
++        fairOver.push(pair.fairA);
++        twoWayBookCount += 1;
++      }
++    } else if (overPrice != null) {
++      const yes = devigYesOnly(overPrice, { overround: args.yesOnlyOverround });
++      if (yes) {
++        fairOver.push(yes.probability);
++        yesOnlyBookCount += 1;
++      }
++    }
++  }
++  const marketProbabilityOver = median(fairOver);
++  if (marketProbabilityOver == null) return null;
++
++  const model = getModelLineProbabilities({
++    marketType: args.marketType,
++    mean: args.expectedValue,
++    line,
++    overProbability: args.overProbability,
++  });
++  if (!model) return null;
++
++  const probabilityEdge = model.overGivenNoPush - marketProbabilityOver;
++  const bestOverPriceAmerican = bestPrice(overPrices);
++  const bestUnderPriceAmerican = bestPrice(underPrices);
++  return {
++    marketType: args.marketType,
++    line,
++    expectedValue: args.expectedValue,
++    model,
++    marketProbabilityOver,
++    probabilityEdge,
++    threshold,
++    flagType:
++      probabilityEdge >= threshold
++        ? "model_over"
++        : probabilityEdge <= -threshold
++          ? "model_under"
++          : null,
++    bestOverPriceAmerican,
++    bestUnderPriceAmerican,
++    expectedValueOver: expectedValueWithPush(
++      model.over,
++      model.under,
++      bestOverPriceAmerican,
++    ),
++    expectedValueUnder: expectedValueWithPush(
++      model.under,
++      model.over,
++      bestUnderPriceAmerican,
++    ),
++    bookCount: books.size,
++    twoWayBookCount,
++    yesOnlyBookCount,
++    devigMethod: method,
++    combine: "median-devig-probability/best-price",
++  };
++}
++
++function round(value: number | null, digits = 4): number | null {
++  return value == null || !Number.isFinite(value)
++    ? null
++    : Number(value.toFixed(digits));
++}
++
++/**
++ * Flag row for a probability-space comparison, or null when no flag fires.
++ * Same columns as buildModelMarketFlagRow; edge_value is the signed
++ * probability edge and metadata.comparison_basis is "probability". The
++ * legacy reason fields (expected_value, line_value, sportsbook_count) are kept.
++ */
++export function buildModelMarketProbabilityFlagRow(args: {
++  asOfDate: string;
++  entityType: "game" | "player" | "team";
++  entityId: number;
++  gameId: number;
++  comparison: MarketProbabilityComparison;
++  provider: string | null;
++  metadata?: Record<string, unknown>;
++}): Record<string, unknown> | null {
++  const c = args.comparison;
++  if (!c.flagType) return null;
++  const row = buildModelMarketFlagRow({
++    asOfDate: args.asOfDate,
++    entityType: args.entityType,
++    entityId: args.entityId,
++    gameId: args.gameId,
++    marketType: c.marketType,
++    flagType: c.flagType,
++    edgeValue: c.probabilityEdge,
++    reasons: [
++      {
++        expected_value: c.expectedValue,
++        line_value: c.line,
++        sportsbook_count: c.bookCount,
++        mean_minus_line: round(c.expectedValue - c.line),
++        model_probability_over: round(c.model.over),
++        model_probability_under: round(c.model.under),
++        model_probability_push: round(c.model.push),
++        model_probability_over_given_no_push: round(c.model.overGivenNoPush),
++        market_probability_over: round(c.marketProbabilityOver),
++        probability_edge: round(c.probabilityEdge),
++        best_over_price_american: round(c.bestOverPriceAmerican, 2),
++        best_under_price_american: round(c.bestUnderPriceAmerican, 2),
++        expected_value_over: round(c.expectedValueOver),
++        expected_value_under: round(c.expectedValueUnder),
++        two_way_book_count: c.twoWayBookCount,
++        yes_only_book_count: c.yesOnlyBookCount,
++      },
++    ],
++    provider: args.provider,
++    metadata: {
++      ...(args.metadata ?? {}),
++      comparison_basis: "probability",
++      devig_method: c.devigMethod,
++      book_combine: c.combine,
++    },
++  });
++  row.confidence_0_to_100 = buildFlagConfidence(c.probabilityEdge, c.threshold);
++  return row;
++}

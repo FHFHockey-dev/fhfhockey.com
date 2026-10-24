@@ -1,0 +1,37 @@
+{
+  "status": "CSS regression passed; original application Refresh/Save reachable; later independent notice overlay collision still blocks full account case",
+  "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss",
+  "beforeSha256": "2146ff48eb395978d485b692b91f87949b8efaf7c530e82f9b6ef3b20edd9f61",
+  "afterSha256": "ee4dcb45b83366ad35ed2a34a5165ae059790ff232d02af6f9482297c3f7d75d",
+  "patchSha256": "26764c956ff9ef84cf386be52e478774a188f39b2bb1c9142e49cc65909a1694",
+  "regressionScriptSha256": "c6bf700d05cbdb468113ea9e88c4600b9085454124938625956e3c4a6d079300",
+  "owner": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+  "scope": "wrap outer command bar and its action group on intrinsic overflow; leave runtime logic and existing test-worker files unchanged",
+  "checks": {
+    "diffCheck": "pass",
+    "testScriptSyntax": "pass",
+    "browser": "PASS: original overflow reproduced, corrected containment at six widths, twelve normal action clicks and six keyboard exercises; no requests",
+    "browserResultSha256": "30474b31b77f169cf27f6cbd3905aa73631dd12b5889774f505eb4cce522286b",
+    "executionSession": {
+      "sessionId": 46495,
+      "exitCode": 0,
+      "state": "completed"
+    },
+    "screenshotsViewed": [
+      "after-1180.png",
+      "after-320.png"
+    ],
+    "evidencePins": {
+      "RESULT.json": "30474b31b77f169cf27f6cbd3905aa73631dd12b5889774f505eb4cce522286b",
+      "after-1180.png": "27a5334819b86c7d6a55149066fec43e48a89a9cdef35e9b0cb80b0b2df3bdad",
+      "after-320.png": "4f0e0c5760c5b315548e465e41a858f2a2078bd9f78ab114166ca4c1a6b62e59"
+    }
+  },
+  "fullApplicationRegression": {
+    "state": "partial positive, not whole-case acceptance",
+    "owner": "01a168af-30c9-71b7-af0a-f25a9d90a02a",
+    "receipt": "commandbar-and-oracles-01",
+    "observed": "Owner reports original1180x757 Refresh/Save normal clicks, permissions/exclusions, account-switch cancellation/stale-publication pass; later Continue manually blocked by another notice overlay. No forced clicks."
+  },
+  "at": "2026-10-23T16:24:57.040014+00:00"
+}

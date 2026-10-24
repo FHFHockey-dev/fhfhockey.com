@@ -1,0 +1,17 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/p07Task10Serialization.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-task10-review-fosogs3g/web
+
+(node:68326) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/p07Task10Serialization.test.ts (2 tests) 35ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  12:38:04
+   Duration  1.01s (transform 253ms, setup 24ms, collect 276ms, tests 35ms, environment 351ms, prepare 128ms)
+
+

@@ -1,0 +1,8 @@
+{
+  "baseline": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "files": {
+    "web/lib/projections/calculators/releaseC.skater-adjustments.ts": "f682f8599da79c7fc3073763bf975ac040be457f7df30fd326cea013ab71da00",
+    "web/lib/projections/constants/releaseC.projection-weights.ts": "0deec3a7a0413425e5b9f9ecc32affe650e620ab80283df9197088394e3514dc",
+    "web/lib/projections/releaseModelParity.test.ts": "af468b5d676b78479925811e098a594501c24c49b84843b7f27b9085cadaed5a"
+  }
+}

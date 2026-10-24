@@ -1,0 +1,171 @@
+{
+  "status": "Author R1 correction frozen; independent re-review pending",
+  "lease": "CODEX-PLAYER-CARDS-S02-R1-20261024",
+  "source_files": [
+    {
+      "path": "web/lib/player-cards/aggregation.ts",
+      "size_bytes": 5918,
+      "sha256": "4ffe0ed5cbdea97ecb15b153543aace6b2d349cac10b0ff3e6de7484768b410a"
+    },
+    {
+      "path": "web/lib/player-cards/domain.test.ts",
+      "size_bytes": 15008,
+      "sha256": "da0e7e3bcc4b923acc7e4229e63236efe4e7210877092f063e4bb3c96bac46b1"
+    },
+    {
+      "path": "web/lib/player-cards/aggregation.r1.test.ts",
+      "size_bytes": 4385,
+      "sha256": "54df67e6ff24264a685db97bfbba2a54803ef9214d2132941ffa580f522cf348"
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/HANDOFF.md",
+      "size_bytes": 5670,
+      "sha256": "264416db794c0b509c556e906522aa901a1cf6735d6d750ed41104579d26d8b0"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/OWNERSHIP.json",
+      "size_bytes": 1010,
+      "sha256": "2906169f15fce59c9e9b0234d426f0b46aeed1c71653a785dbe12f81e81869aa"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/baseline/aggregation.ts",
+      "size_bytes": 5311,
+      "sha256": "36ca33b11876cc21630a8f22461e72fb45dc4447577f3a4da162c726bd8928de"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/baseline/domain.test.ts",
+      "size_bytes": 14958,
+      "sha256": "d24196f3844d151ed6de16427bd34ba5f41a61b2164a49a710a54b0e1a0d9978"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/capture-reconciliation-results.json",
+      "size_bytes": 1657,
+      "sha256": "cce40b164a742484954bd956ed92db107468b39a297cfe0797887c7a3a879de1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/capture-reconciliation.log",
+      "size_bytes": 1657,
+      "sha256": "cce40b164a742484954bd956ed92db107468b39a297cfe0797887c7a3a879de1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/capture-reconciliation.original.cjs",
+      "size_bytes": 5491,
+      "sha256": "a76ab4f0f8e280af9650c29863795e5b4f521b4f6ad60ccf11eea2ee5a26969c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/counterexamples-results.json",
+      "size_bytes": 8477,
+      "sha256": "da3dba8ec87e0aebaad82d5fde859b21264b11c7f842977d1b90ded1638ff198"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/counterexamples.log",
+      "size_bytes": 2293,
+      "sha256": "b4b3cdde87c52cbb50df6ff736fff7e35c7a11329bfeb9294adb4f2af98ba587"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/counterexamples.original.cjs",
+      "size_bytes": 16462,
+      "sha256": "654038435e7c47190dd64bbde9ea735babb5298a4ad71f0d8a3cab55f2d05f10"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/lint.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/nearby-flow.log",
+      "size_bytes": 583,
+      "sha256": "9f5ed9f5ee04abc4088f1d9a411c5554e11f1ce3cec9e9adb701dd690300f84a"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/protected-before.json",
+      "size_bytes": 10914,
+      "sha256": "6f6e7731efb9aeabc4b6c1b5f217fea097e5d6a0142f65c72b44a7d8112f640c"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/source.patch",
+      "size_bytes": 7227,
+      "sha256": "38e492252308283f615f599bc0320d42600454a391a1ab966c952cfde3465894"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/tests.log",
+      "size_bytes": 847,
+      "sha256": "9e7f06c90665100e8cb9c602f514802a28e55b31e68e19e262076a7ea58306f6"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/tsconfig.json",
+      "size_bytes": 529,
+      "sha256": "bbec82475af370340a646afae36a519a65be7c768b07c3aaa002773b2768d84d"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/types.log",
+      "size_bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "protected_integrity": {
+    "original_artifact_files": 63,
+    "changed": [],
+    "S01_source_files_unchanged": 9,
+    "untransferred_S02_source_files_unchanged": [
+      "web/lib/player-cards/windows.ts",
+      "web/lib/player-cards/adapter.ts"
+    ],
+    "review_scripts_byte_identical": true
+  },
+  "checks": {
+    "domain_and_regression_tests": {
+      "original": 19,
+      "new": 7,
+      "passed": 26
+    },
+    "nearby_flow_tests": 7,
+    "scoped_types": "passed",
+    "scoped_lint": "passed",
+    "unchanged_independent_probes": {
+      "passed": 29,
+      "failed": 0,
+      "total": 29,
+      "network_attempts": 0,
+      "original_six": [
+        {
+          "id": "F01a",
+          "passed": true
+        },
+        {
+          "id": "F01b",
+          "passed": true
+        },
+        {
+          "id": "F01c",
+          "passed": true
+        },
+        {
+          "id": "F02a",
+          "passed": true
+        },
+        {
+          "id": "F02b",
+          "passed": true
+        },
+        {
+          "id": "F01d",
+          "passed": true
+        }
+      ]
+    },
+    "capture_reconciliation": "4 values +2 unavailable controls +1 knownL10gap passed"
+  },
+  "boundaries": {
+    "browser_requests": 0,
+    "server_actions": 0,
+    "library_actions": 0,
+    "external_requests": 0,
+    "workers": 0,
+    "production": 0,
+    "git_mutations": 0
+  },
+  "S03": "Candidate remains unactivated; rebuild and affected offline browser QA needed after R1 review; original S01 server untouched"
+}

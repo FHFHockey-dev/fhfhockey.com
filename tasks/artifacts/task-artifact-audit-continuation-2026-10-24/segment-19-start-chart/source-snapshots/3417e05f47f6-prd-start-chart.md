@@ -1,0 +1,142 @@
+You are GPT-5 Codex. Implement the Start Chart DAILY MVP exactly as specified.
+
+> **Reconciled implementation task list:** `tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md`
+>
+> **Current reconciliation status (2026-08-28): Reopened.** The earlier 55/55 checklist proved the canonical-wrapper architecture but did not prove source-accurate historical selection, degraded-state disclosure, row-identity ranking, the completed responsive board, or the current model/data rollout gates. The 2026-08-26 tranche is tracked in the reconciled task list. Local reader, contract, board, performance, and requested Chrome work is complete; Production data repair, controlled provider proof, the 14-date rollout gate, approved Recent Team Form publication, and deployment remain open. This status authorizes no persistence, migration, backfill, model promotion, deployment, or other external mutation.
+>
+> **Historical 2026-07-30 checkpoint:** The owner-approved architecture closed legacy formula/input/history requirements through canonical FORGE ownership rather than a second Start Chart engine. Start Chart reads run-keyed `forge_player_projections` plus shared goalie priors, applies only versioned `fhfh-default-skater-v1` presentation scoring, and exposes unsupported second-model controls as unavailable. Canonical FORGE/accuracy retains projection/result history and its separately owned repair/application gates. Guarded recovery commit `96ccea804b90b5a6f482de45f6b7931253725311` was READY/Production as `dpl_HCFwiK4yAPeXUG3QzC3R28NtYvsc`; that receipt remains historical evidence, not proof of the reopened tranche.
+
+Title
+Start Chart — Daily Fantasy Hockey Start/Sit Rankings
+
+Objective
+Compute and rank short-horizon (single-date) player projections driven by decay-weighted trends, opponent/goalie context, and user scoring. No off-night or bench-capacity adjustments; rankings are for a chosen date only.
+
+Inputs and Inventory
+- Supabase schemas are described in 'supabase-table-structure.md' and include: games, wgo_skater_stats(_totals), wgo_goalie_stats(_totals), nst_gamelog_as_rates/_counts (+ _oi and per-state variants), nst_team_5v5, nst_team_pp, nst_team_pk, nst_team_all, lineCombinations, powerPlayCombinations, players, yahoo_*.
+- Assume nst.player_id equals NHL id and is consistent with wgo_* for joins.
+
+Deliverables
+1) Supabase migrations (db/migrations)
+   - Table 'starts' with columns: game_id bigint fk games.id; team_abbrev text; goalie_id bigint; status text default 'projected' (enum-like: projected, probable, confirmed); p_start numeric default 0.50; source text; confirmed_at timestamptz; updated_at timestamptz default now(); unique (game_id, team_abbrev).
+   - Table 'scoring_profiles' with profile_id uuid pk, user_id, mode ('points'|'categories'), weights_json (points weights), categories_json (optional), params_json (tau, clips, risk), created_at/updated_at.
+   - Table 'model_params' with model_version text pk, params_json jsonb, created_at timestamptz.
+   - Useful indexes on games(date), wgo_skater_stats(player_id,date), wgo_goalie_stats(goalie_id,date).
+   - Optional 'dim_player_ids' future-proof crosswalk (skip if not needed now).
+
+2) Derived views (create as SQL views or materialized views; place SQL in db/sql)
+   - vw_schedule_day(date_param): expand 'games' into team-rows for the target date with columns [team_abbrev, opp_abbrev, game_id, game_date, home_away, rest_days, b2b_flag]. Compute rest/b2b via previous game for each team.
+   - vw_team_strength_state_daily: union of nst_team_5v5, nst_team_pp, nst_team_pk standardized to per-60; columns [team_abbrev, date, state in {5v5, PP, PK}, xgf60, xga60, cf60, ca60, scf60, sca60, hdcf60, hdca60, sf60, sa60]. If missing on a date, backfill from nearest prior date; fallback to season in nst_team_stats.
+   - vw_pp_unit_share_recent: from powerPlayCombinations unnest to per-player rows; 10–15 game window to compute p_pp1 (fraction PP1), pp_share_recent, pp_toi60_recent.
+   - vw_skater_rates_state_recent(tau_days): decay-blended per-60: ixg60_5v5, isf60_5v5, a1_60_5v5, a2_60_5v5; ixg60_pp, isf60_pp, a1_60_pp, a2_60_pp; hits60, blocks60, pim60, fow60, fol60; xgf_on60_5v5, xga_on60_5v5 from _oi tables. Weights w_i = exp(-Δdays/τ).
+   - vw_player_usage_recent(tau_days): decay-blended TOI by state (toi5_recent, toipp_recent, toipk_recent), d_atoi10, modal line_role from lineCombinations over recent games, p_pp1 from vw_pp_unit_share_recent.
+   - vw_goalie_recent(tau_days): sv_proj from 7/14/40 using inverse-variance or exp blend; sa60_proj; starts_share_30d.
+   - vw_opponent_multipliers(date): join vw_team_strength_state_daily for each team vs opponent on date; compute M_def_5v5 = clip(xga60_opp_5v5/L_xGA60_5v5, 0.75, 1.25), M_pk = clip(xga60_opp_pk/L_xGA60_pk, 0.75, 1.30). League baselines come from model_params.params_json (xga60_5v5, xga60_pk, sv_league).
+   - vw_skater_game_lambda(date, tau_days): for each (player_id, game_id) on the date, compute λ means:
+       toi5 = toi5_recent adjusted by d_atoi10 and line_role
+       toipp = toipp_recent scaled by p_pp1 share
+       M5, MPK from vw_opponent_multipliers; Mgoalie = clip(1 - (sv_proj_opp - L_SV)/0.070, 0.80, 1.20)
+       λ_G = (ixg60_5v5/60)*toi5*M5*Mgoalie + (ixg60_pp/60)*toipp*MPK*Mgoalie
+       λ_A = (xgf_on60_5v5/60)*toi5*M5*AssistShare5 + (xgf_on60_pp/60)*toipp*MPK*AssistSharePP
+       λ_S = (isf60_total/60)*(toi5+toipp)*avg(M5,MPK)
+       λ_peripherals = (rate60/60)*relevant_TOI
+     Use Poisson by default; if recent Fano > 1.25 for a stat, use NegBin with fitted r.
+
+3) Ingestion jobs (jobs/)
+   - Nightly: refresh nst_team_* by state; compute and store league baselines in model_params (xga60_5v5, xga60_pk, sv_league, on_ice_sh_pct_5v5, per-pos means/stds).
+   - Nightly: refresh skater gamelogs and goalie stats; update pp and lines from powerPlayCombinations and lineCombinations.
+   - Hourly (game days): refresh starts with heuristic P_start if no confirmation:
+       P_start = 0.75*recent_start_share_14d - 0.15*b2b_penalty + 0.05*home_bonus - 0.10*poor_form_penalty; clip to [0.05,0.95]; status='projected'. Start Chart reads canonical FORGE output and owns no manual write path.
+
+4) Math utilities (src/lib/)
+   - decayBlend(samples, tauDays), ewsd(samples, tauDays), slope(lastN), shrinkage(s_recent, s_career, k), clip(x, lo, hi), goalieFinishMult(sv_proj, league_SV).
+   - NegBin fitter for overdispersed stats; Fano detector.
+
+5) Next.js API (src/pages/api/)
+   - GET /api/v1/projections?date=YYYY-MM-DD&profile={id}&mode=points
+       Returns per-player λ and projected counts for that date; also fPts (points mode).
+   - GET /api/v1/rankings?date=YYYY-MM-DD&mode=points&position=C
+       Returns ranked players for the date with fPts; include M5, MPK, p_pp1, line_role, opponent goalie sv_proj.
+   - GET /api/v1/players/rates?since=YYYY-MM-DD&tau=30
+       Returns decay-blended rates and usage.
+   - GET /api/v1/metrics/rolling?days=30
+       Returns rolling MAE/MAPE by stat.
+   All accept league parameters and scoring profile id. Validate inputs.
+
+6) Minimal UI (src/app/)
+   - Daily Start Chart: date picker default today; tabs by position; columns: Rank, Name, Team, Opp, Goalie, Games(=1), fPts or VORP (categories later), PP1, Line, tags for 'hot/cold' and 'tough goalie'.
+   - Controls: date, τ (15/30/60), mode toggle (points now; categories later), scoring profile selector, risk toggle (mean vs P75 when implemented).
+   - Explainability tooltip: show key drivers (usage change, PP1 prob, opponent PK rank, opposing SV proj).
+
+7) Metrics & Logging
+   - predictions table: game_id, player_id, stat, mean, variance, p_any, model_version, context_json, created_at.
+   - outcomes table: game_id, player_id, stat, actual, created_at.
+   - metrics endpoint computes rolling MAE/MAPE; later CRPS/Brier optional.
+
+Computation Details
+- No off-night or bench-capacity factors; everyone is ranked on the same date’s slate.
+- Recency smoothing uses exponential weights w_i = exp(-Δdays/τ), default τ=30 days (configurable via scoring profile params_json or model_params).
+- Opponent multipliers and goalie suppression as specified above with clips.
+- Forwards vs Defensemen: use position-specific priors and elasticities (β_pp higher for D quarterbacking, β_finish lower for D). Store elasticities in model_params.
+- Small-sample shrinkage to career/archetype priors: s_hat = (n_eff/(n_eff+k))*s_recent + (k/(n_eff+k))*s_career where n_eff = Σw_i.
+
+Constraints
+- Exclude altitude effects.
+- Deterministic outputs given same inputs and model_version.
+- P95 latency under 4 seconds for 100 players on the chosen date.
+- Graceful handling of missing data via league priors and clipping.
+
+Tests (src/tests/)
+- Unit tests for math utilities (decayBlend, ewsd, slope, shrinkage, goalieFinishMult).
+- Contract tests for /projections and /rankings responses (schema, determinism).
+- Snapshot test for a seeded date slate.
+
+Acceptance
+- Rankings endpoint returns deterministic order and values for a seeded date using a fixed model_version.
+- Predictions and outcomes logged; metrics endpoint returns rolling MAE/MAPE.
+- UI renders a daily position view with ranks, values, PP1 and line chips, and opponent/goalie context.
+- Lints and tests pass; TypeScript clean.
+
+Execution Order (priority)
+1. Migrations: starts, scoring_profiles, model_params; indexes.
+2. Views: vw_schedule_day, vw_team_strength_state_daily.
+3. Views: vw_pp_unit_share_recent, vw_player_usage_recent, vw_skater_rates_state_recent.
+4. Views: vw_goalie_recent, vw_opponent_multipliers, vw_skater_game_lambda.
+5. Math utils; endpoints /projections and /rankings for a given date.
+6. Minimal UI (daily chart); metrics logging; rolling metrics endpoint.
+7. Canonical FORGE starter refresh and read-only Start Chart presentation; polish.
+
+Environment and Constants
+- Store clip bounds, τ defaults, elasticities, league baselines in model_params.params_json and expose as constants.
+- Provide SCORING_PROFILE_DEFAULT with common points weights; allow user override via scoring_profiles.
+
+Begin now by generating:
+- SQL migrations for starts, scoring_profiles, model_params and initial indexes.
+- SQL for vw_schedule_day and vw_team_strength_state_daily.
+- TypeScript modules for math utilities and API route scaffolds for /projections and /rankings with input validation.
+
+## Reconciled schema ownership (2026-07-27)
+
+The deliverables above describe the original greenfield proposal. The supported implementation reuses canonical FORGE rather than creating parallel `starts`, `predictions`, `outcomes`, `scoring_profiles`, or `model_params` ownership for Start Chart. `goalie_start_projections` owns the game/player start prior; `forge_runs` owns run identity; player, team, and goalie projections use run/game/entity/horizon keys; and `fhfh-default-skater-v1` owns read-time scoring. Result exact-replacement/history remains under the existing accuracy migration gate, while tau, elasticity, and other formula parameters remain under the explicit model-contract decision. No additional Start Chart schema is missing for the current wrapper.
+
+## Canonical reader/control and operations checkpoint (2026-07-23)
+
+Start Chart remains a presentation adapter over the latest succeeded FORGE run. Its reader now rejects invalid dates, positions, and pagination with structured `400` responses; accepts only points mode, `fhfh-default-skater-v1`, and latest-run ownership; and returns structured `422` responses for tau, risk, alternate profile/mode, or pinned-model overrides that would create a second model contract.
+
+The page exposes the supported points/profile contract and selected date, synchronizes date state to the URL, and renders unavailable model controls explicitly. Keyboard-native game filters, metric disclosure, chart labeling, and direct FORGE navigation are implemented and unit-covered. A populated 351-player browser pass proves labeled/native controls, keyboard disclosure, color-independent text context, exact matchup filtering, 1440×900 and 390-class responsive behavior, zero body overflow, and empty final runtime logs. Composite player/team/opponent keys and direct chart-dot key ownership repair both runtime findings discovered during that pass. Guarded recovery `96ccea804` is READY/Production with successful populated API and exact 1440×900/390×844 proof; deployment-scoped runtime-error/5xx evidence is empty.
+
+The focused API/UI group passes 2 files/12 tests, TypeScript, zero-error targeted lint, formatting, and bundled-Node-24 Sass. Value-free Production reads cover three seeded dates; the largest returns 351 players, and ten samples measure 257 ms P95. `web/README.md` owns the environment-name, active-schedule, bounded repair, smoke, expected-receipt, failure, and rollback runbook.
+
+## 2026-08-26 completion contract
+
+`GET /api/v1/start-chart?date=YYYY-MM-DD` remains the only Start Chart reader and remains backward compatible. The shared runtime contract in `web/lib/projections/startChartContract.ts` now standardizes requested/resolved dates, `exact | fallback | partial | no_games` serving, source state, coverage, row identity, nullable projections, and compact explainability. The page, API, and Dashboard normalizer use that contract; `/api/v1/forge/players` and Start Chart also share the FORGE uncertainty/explainability readers.
+
+Ranking is the canonical one-game FORGE stat line scored with `fhfh-default-skater-v1`. Ownership and weekly games are informational only. Projection rows are identified by run, game, player, and horizon; deterministic ties use score, player, game, team, then row key. Historical schedule, run, ratings, goalie, and ownership reads are bounded to the resolved slate date; Recent Team Form uses only versioned one-game inputs completed strictly before that date. Missing values remain unavailable rather than becoming zero. `matchup_grade` is explicitly presentation-only **DEF ease** (higher opponent 5v5 xGA/60 is easier); FORGE's model-owned opponent-defense edge remains separately exposed in row context.
+
+The Starter Board now exposes requested/resolved date, scoring/model/input/run provenance, source/coverage status, explicit degraded states, the five-position desktop board and responsive ARIA tabs, 25-row incremental disclosure, dated ownership behavior, normalized goalie mixtures, contextual cards, accessible Recent Team Form context, and router-backed workflow links. **Recent Team Form** is the user-facing name for the internal CTPI series: it answers “How strongly has this team been playing lately, relative to the rest of the league?” A score of 50 is presented as league average; higher is stronger and lower is weaker. It is descriptive context—not a game prediction, win probability, power ranking, or Starter Board ranking input. `mode=week` is link context only and does not alter Daily ranking semantics.
+
+The current local exact read for `2026-02-05` resolved run `44501906-53bd-48fc-9900-cf50c9845840`, 7 games, 14 teams, and 138 rows in 148,572 bytes. All 138 skater rows reconciled to the scoring contract within `0.001` (maximum rounding delta `0.0005`) and had zero rank mismatches. The same read honestly reports legacy/missing projection provenance, 0/14 goalie-team coverage, 136 Yahoo-mapped/2 unmapped players, and 420 excluded unversioned team-form rows; it is therefore degraded evidence, not a trusted rollout receipt. A `2026-08-28` no-game request deterministically falls back to `2026-05-10`, labels the 110-day age, and returns 92,510 bytes. Exact run metadata and one-game projections now arrive through one embedded read while independent slate dependencies run in parallel; ten uncached samples measure `630.9 ms` P95 for the exact slate and `770.4 ms` P95 for fallback, and ten warmed samples measure `0.3 ms` P95. The 900 ms API budget is closed without depending on the staged optional Yahoo overlay RPC.
+
+The read-only formula audit in `tasks/TASKS/three-pillars-analytics/trends/ctpi-formula-audit-report.md` rejects the persisted CTPI series for the Recent Team Form claim. A controlled follow-up covers 6,912 possible strict-pregame observations across `20222023`–`20242025`; the inactive v2 candidate serves 6,910, withholds two invalid sparse-league comparisons, shows strong descriptive validity, monotonic score bands, and stable ranks on the untouched holdout, and remains weaker than recent xG differential as a forward xG signal. It now owns explicit missingness/confidence, separate PDO context, bounded display math, and an inactive strict-pregame fingerprint/watermark replay planner, but no writer or reader uses it. Both public readers require explicit formula publication approval and hide legacy scores; the broader Trends reader no longer recomputes the rejected formula on the fly. Restoring the chart requires PDO-context approval, version promotion, raw→persisted→API proof, bounded dry-run/backfill proof, and explicit database authorization; quarantined legacy rows remain immutable.
+
+Release remains gated by the unchecked 2026-08-26 tranche: authorized historical repair/application and provenance proof, controlled Yahoo provider/league equivalence where required, at least 14 distinct eligible holdout dates through the model rollout gate, the approved Recent Team Form replacement, and an explicitly authorized publication/deployment. The 900 ms API budget is closed, and the user-authorized Chrome workflow has replaced the locally blocked Playwright runtime gate.

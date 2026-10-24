@@ -1,0 +1,109 @@
+{
+  "cap": 5,
+  "apiRequests": [
+    {
+      "n": 2,
+      "status": 200,
+      "cacheControl": "public, max-age=0, s-maxage=299",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19",
+      "ms": 1339,
+      "format": "game-grid",
+      "weekStart": "2026-10-19",
+      "state": "ready",
+      "sourceState": "ready",
+      "reasons": [],
+      "generatedAt": "2026-10-24T19:33:24.458Z",
+      "expiresAt": "2026-10-24T19:48:24.458Z",
+      "games": 48,
+      "teams": 32,
+      "opponents": {
+        "state": "ready",
+        "teams": 32,
+        "reasons": [],
+        "updatedAt": "2026-10-24T09:15:04.383Z"
+      },
+      "players": {
+        "state": "ready",
+        "shown": 25,
+        "reasons": [],
+        "ownershipAsOf": "2026-10-24",
+        "statsUpdatedAt": "2026-10-24T08:20:02.704Z",
+        "selectedDates": 7
+      }
+    },
+    {
+      "n": 2,
+      "status": 200,
+      "cacheControl": "public, max-age=0, s-maxage=299",
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-19",
+      "ms": 1356,
+      "format": "game-grid",
+      "weekStart": "2026-10-19",
+      "state": "ready",
+      "sourceState": "ready",
+      "reasons": [],
+      "generatedAt": "2026-10-24T19:33:24.452Z",
+      "expiresAt": "2026-10-24T19:48:24.451Z",
+      "games": 48,
+      "teams": 32,
+      "opponents": {
+        "state": "ready",
+        "teams": 32,
+        "reasons": [],
+        "updatedAt": "2026-10-24T09:15:04.383Z"
+      },
+      "players": {
+        "state": "ready",
+        "shown": 25,
+        "reasons": [],
+        "ownershipAsOf": "2026-10-24",
+        "statsUpdatedAt": "2026-10-24T08:20:02.704Z",
+        "selectedDates": 7
+      }
+    }
+  ],
+  "renders": [
+    {
+      "edition": "current week (page default)",
+      "cards": [
+        {
+          "card": "pickups-50",
+          "enabled": true,
+          "tiles": 4,
+          "unreadyReason": null,
+          "png": "live-current-week-pickups-50.png"
+        },
+        {
+          "card": "pickups-30",
+          "enabled": true,
+          "tiles": 6,
+          "unreadyReason": null,
+          "png": "live-current-week-pickups-30.png"
+        },
+        {
+          "card": "pickups-20",
+          "enabled": true,
+          "tiles": 9,
+          "unreadyReason": null,
+          "png": "live-current-week-pickups-20.png"
+        },
+        {
+          "card": "specialists",
+          "enabled": true,
+          "tiles": 9,
+          "unreadyReason": null,
+          "png": "live-current-week-specialists.png"
+        },
+        {
+          "card": "grid",
+          "enabled": true,
+          "tiles": 32,
+          "unreadyReason": null,
+          "png": "live-current-week-grid.png"
+        }
+      ]
+    }
+  ],
+  "stoppedBecause": "first render correct (current week)",
+  "apiRequestCount": 2
+}

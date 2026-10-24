@@ -1,0 +1,17 @@
+
+> web@0.1.0 test
+> vitest --run lib/projections/research/skater-candidates/accounting.test.ts lib/projections/research/skater-candidates/priors.test.ts lib/projections/research/skater-candidates/context.test.ts scripts/forge-skater-candidate-ablation.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/projections/research/skater-candidates/context.test.ts (4 tests) 2ms
+ ✓ lib/projections/research/skater-candidates/priors.test.ts (5 tests) 3ms
+ ✓ lib/projections/research/skater-candidates/accounting.test.ts (8 tests) 3ms
+ ✓ scripts/forge-skater-candidate-ablation.test.ts (7 tests) 42ms
+
+ Test Files  4 passed (4)
+      Tests  24 passed (24)
+   Start at  12:23:41
+   Duration  348ms (transform 107ms, setup 6ms, collect 170ms, tests 51ms, environment 0ms, prepare 147ms)
+

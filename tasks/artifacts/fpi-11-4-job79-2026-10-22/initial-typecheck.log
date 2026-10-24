@@ -1,0 +1,1 @@
+lib/cron/nstCoordination.test.ts(19,56): error TS2367: This comparison appears to be unintentional because the types '"update-nst-goalies" | "update-nst-current-season" | "update-nst-team-daily-incremental" | "update-nst-team-stats-all"' and '"update-nst-gamelog"' have no overlap.

@@ -1,0 +1,69 @@
+{
+  "cutoff": "2026-10-24T16:53:11.550597+00:00",
+  "sources": {
+    "tasks/tasks-prd-shareable-player-cards.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/6f2bc7e8f1b0-tasks-prd-shareable-player-cards.md",
+      "sha256": "6f2bc7e8f1b0ec976fbfcf6ee04194f1b3c3fd859af7672998021056b9047e38",
+      "original_path": "tasks/tasks-prd-shareable-player-cards.md",
+      "observed_at": "2026-10-24T16:53:11.550597+00:00",
+      "scope": "Complete original Library task-list body plus every changed local hunk reviewed, or complete ownership reread. Local task checkboxes/owner test claims are not independent acceptance. Original Library installation match remains historical; current local task list is a derivative."
+    },
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/OWNERSHIP.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/7a8b03d3ba14-OWNERSHIP.json",
+      "sha256": "7a8b03d3ba143d99a55dbdd99e6a3c1ce37ed703253190fec07b29889f8b2840",
+      "original_path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/OWNERSHIP.json",
+      "observed_at": "2026-10-24T16:53:11.550597+00:00",
+      "scope": "Full documentary/structured read; SQL never executed, source ownership not adopted, owner tests/hosted observations not rerun. Parent latest authorization supersedes earlier pending local-fix wording only for the WiGO owner."
+    },
+    "tasks/artifacts/player-cards-2026-10-24/INPUTS.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/cd884f134b29-INPUTS.json",
+      "sha256": "cd884f134b29b7e951b364cb02ed7e78dd131ed055822b1dc750d8a4b5c83884",
+      "original_path": "tasks/artifacts/player-cards-2026-10-24/INPUTS.json",
+      "observed_at": "2026-10-24T16:53:11.550597+00:00",
+      "scope": "Full documentary/structured read; SQL never executed, source ownership not adopted, owner tests/hosted observations not rerun. Parent latest authorization supersedes earlier pending local-fix wording only for the WiGO owner."
+    },
+    "tasks/artifacts/player-cards-2026-10-24/REQUIREMENTS-AND-STEERS.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/2412dbabed66-REQUIREMENTS-AND-STEERS.md",
+      "sha256": "2412dbabed661fede7b867f4aad407f43a775ab01227eec4a1b31d8fd5cde291",
+      "original_path": "tasks/artifacts/player-cards-2026-10-24/REQUIREMENTS-AND-STEERS.md",
+      "observed_at": "2026-10-24T16:53:11.550597+00:00",
+      "scope": "Entire revised requirements ledger reread after guard caught appended frozen-slice and slice02 planning. Owner10-case/browser claims not independent acceptance."
+    },
+    "tasks/artifacts/player-cards-2026-10-24/slice-01/OWNERSHIP.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/3b2bbc5fa66c-OWNERSHIP.json",
+      "sha256": "3b2bbc5fa66cbb99bb7a6a4ebea3c777b165e13775e94013a8c365629cd1d88d",
+      "original_path": "tasks/artifacts/player-cards-2026-10-24/slice-01/OWNERSHIP.json",
+      "observed_at": "2026-10-24T16:53:11.550597+00:00",
+      "scope": "Complete original Library task-list body plus every changed local hunk reviewed, or complete ownership reread. Local task checkboxes/owner test claims are not independent acceptance. Original Library installation match remains historical; current local task list is a derivative."
+    },
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/0721edd6d3b4-HANDOFF.json",
+      "sha256": "0721edd6d3b4cb333c4d49ceff36e4759e0dd17470ba381b2dfac7e468376fa1",
+      "original_path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.json",
+      "observed_at": "2026-10-24T16:53:11.550597+00:00",
+      "scope": "Full owner handback/structured receipt read;58-case/lint/TypeScript and candidate pins are owner evidence, no independent audit acceptance or application operation."
+    },
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/3013dc8decf8-HANDOFF.md",
+      "sha256": "3013dc8decf878efd428af3b6ee7662a8c1aa946cba4bbe489292bd8a68ae924",
+      "original_path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.md",
+      "observed_at": "2026-10-24T16:53:11.550597+00:00",
+      "scope": "Full owner handback/structured receipt read;58-case/lint/TypeScript and candidate pins are owner evidence, no independent audit acceptance or application operation."
+    },
+    "tasks/artifacts/player-cards-2026-10-24/slice-01/HANDOFF.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/bb9f859362d9-HANDOFF.md",
+      "sha256": "bb9f859362d971ffd012b5ecc05f207769d18d25f24210bf55773859a36f8cf7",
+      "original_path": "tasks/artifacts/player-cards-2026-10-24/slice-01/HANDOFF.md",
+      "observed_at": "2026-10-24T16:53:11.550597+00:00",
+      "scope": "Full frozen owner handoff and structured pins/checks read. No auditor source/test/browser execution, pixel inspection or independent acceptance. Earlier absent-reference read is historical, resolved after new frozen-slice receipt."
+    },
+    "tasks/artifacts/player-cards-2026-10-24/slice-01/EVIDENCE.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/3e5cce84ec6d-EVIDENCE.json",
+      "sha256": "3e5cce84ec6d9a2df02e7b16d0e01b5677f5b06c48acc3da14436683203b9feb",
+      "original_path": "tasks/artifacts/player-cards-2026-10-24/slice-01/EVIDENCE.json",
+      "observed_at": "2026-10-24T16:53:11.550597+00:00",
+      "scope": "Full frozen owner handoff and structured pins/checks read. No auditor source/test/browser execution, pixel inspection or independent acceptance. Earlier absent-reference read is historical, resolved after new frozen-slice receipt."
+    }
+  },
+  "note": "Exact reviewed bytes from live owned documents frozen in audit namespace. Future changes are queued separately; snapshots are evidence, not new authority. No app/source/runtime/lease edit."
+}

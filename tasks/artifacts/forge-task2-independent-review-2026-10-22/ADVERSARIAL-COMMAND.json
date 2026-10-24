@@ -1,0 +1,13 @@
+{
+  "argv": [
+    "/usr/local/bin/npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "review-vitest.config.mts",
+    "adversarial.test.ts"
+  ],
+  "exitCode": 1,
+  "cwd": "/tmp/fhfh-task2-review-et29jk5z/web"
+}

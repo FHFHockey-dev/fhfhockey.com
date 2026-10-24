@@ -1,0 +1,12 @@
+{
+  "ownerThread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "status": "requested; no source created until recorded",
+  "sourcePaths": [
+    "web/components/player-cards/EditorialPlayerCard.tsx",
+    "web/components/player-cards/EditorialPlayerCard.test.tsx"
+  ],
+  "absentVerified": true,
+  "scope": "One representative landscape synthetic presentational SVG and focused semantic/parity test; consumed accepted snapshot/math/format contracts read-only. Artifact-only preview entry/export canvas adapter. No accepted source changes or full-flow style propagation.",
+  "artifactRoot": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01",
+  "resourceRequest": "Conditional only-owned 3125 handoff after offline QA, retain accepted functional flow at /player-cards/functional; first checkpoint /player-cards. No new port/cache."
+}

@@ -1,0 +1,671 @@
+{
+  "captured_at": "2026-10-22T13:32:52.774054+00:00",
+  "head": "fd58ba2452c0175b201e50285df156cb7f91b4f4",
+  "branch": "octoberBranch",
+  "scope": "Source/config assets in web matching frozen snapshot extensions. Other directories, diaries and artifacts are outside this candidate. Differences are not findings or rejection; acceptance for other work remains with its owner.",
+  "accepted_files": {
+    "web/lib/projections/queries/skater-queries.ts": {
+      "accepted_sha256": "9dfcff408d4cd5f9bdb266a3380a8beacc557a584002e44d5b75e0639d74606a",
+      "current_sha256": "9dfcff408d4cd5f9bdb266a3380a8beacc557a584002e44d5b75e0639d74606a",
+      "matches_accepted": true,
+      "packet": "A1-A4/A6"
+    },
+    "web/lib/projections/queries/skater-queries.test.ts": {
+      "accepted_sha256": "a417087529e6ed4319769699bb4f443c1873263fbdb738624c817c1861c732e2",
+      "current_sha256": "a417087529e6ed4319769699bb4f443c1873263fbdb738624c817c1861c732e2",
+      "matches_accepted": true,
+      "packet": "A1-A4/A6"
+    },
+    "web/lib/rosterScheduleData/forgeDailyBridge.ts": {
+      "accepted_sha256": "57f21bc5214a37d3ef5aff985ba62f0c5d30ae5f3925693f7d61f55a240abc6a",
+      "current_sha256": "57f21bc5214a37d3ef5aff985ba62f0c5d30ae5f3925693f7d61f55a240abc6a",
+      "matches_accepted": true,
+      "packet": "A1-A4/A6"
+    },
+    "web/lib/rosterScheduleData/forgeDailyBridge.test.ts": {
+      "accepted_sha256": "d3f65f3b3c63b631799cd6ccd41b6e1031ea1d1a7dbd6bc3f7506028702cea24",
+      "current_sha256": "d3f65f3b3c63b631799cd6ccd41b6e1031ea1d1a7dbd6bc3f7506028702cea24",
+      "matches_accepted": true,
+      "packet": "A1-A4/A6"
+    },
+    "web/lib/player-forecasts/servedForecastLedger.ts": {
+      "accepted_sha256": "b9f5629e291bbcbee64f40378a762b2ee85e06fffe74cd1c564d6e62989098f1",
+      "current_sha256": "b9f5629e291bbcbee64f40378a762b2ee85e06fffe74cd1c564d6e62989098f1",
+      "matches_accepted": true,
+      "packet": "A1-A4/A6"
+    },
+    "web/lib/player-forecasts/servedForecastLedger.test.ts": {
+      "accepted_sha256": "3052c97e64b16cbe03d0c8146a71f83f7516c83e3563c981a410eb56b8fd3577",
+      "current_sha256": "3052c97e64b16cbe03d0c8146a71f83f7516c83e3563c981a410eb56b8fd3577",
+      "matches_accepted": true,
+      "packet": "A1-A4/A6"
+    },
+    "web/pages/api/v1/db/forge-served-forecast-settle.ts": {
+      "accepted_sha256": "699cb851dc0bd7b8635ce8f61c156fbf30f5451241e24720f3c9623a0e76db22",
+      "current_sha256": "699cb851dc0bd7b8635ce8f61c156fbf30f5451241e24720f3c9623a0e76db22",
+      "matches_accepted": true,
+      "packet": "A1-A4/A6"
+    },
+    "web/pages/api/v1/db/forge-served-forecast-snapshot.ts": {
+      "accepted_sha256": "f77f22aabf9cfe3d5246354e5d0dd068a3286fb15e1d55c570a3b58e1f76a275",
+      "current_sha256": "f77f22aabf9cfe3d5246354e5d0dd068a3286fb15e1d55c570a3b58e1f76a275",
+      "matches_accepted": true,
+      "packet": "A1-A4/A6"
+    },
+    "web/pages/api/v1/forge/scoreboard.ts": {
+      "accepted_sha256": "260b504bdbe499e0779d6833dca4145893a7b5188f6d7174f1af4d348db21abb",
+      "current_sha256": "260b504bdbe499e0779d6833dca4145893a7b5188f6d7174f1af4d348db21abb",
+      "matches_accepted": true,
+      "packet": "A1-A4/A6"
+    },
+    "web/__tests__/pages/api/v1/db/forge-served-forecast-settle.test.ts": {
+      "accepted_sha256": "6885092c259430091efa2e07ce8aa3afc0cf03b747f137a69e2940c7b80f0d81",
+      "current_sha256": "6885092c259430091efa2e07ce8aa3afc0cf03b747f137a69e2940c7b80f0d81",
+      "matches_accepted": true,
+      "packet": "A1-A4/A6"
+    },
+    "web/tests/api/forge-scoreboard.test.ts": {
+      "accepted_sha256": "aa58a4d16e5b2354cfaf129796ca3fde72314a52890717bc1e30b9820dec4ac5",
+      "current_sha256": "aa58a4d16e5b2354cfaf129796ca3fde72314a52890717bc1e30b9820dec4ac5",
+      "matches_accepted": true,
+      "packet": "A1-A4/A6"
+    },
+    "web/lib/rollingForgePipelineRunState.ts": {
+      "accepted_sha256": "6ce1bab745bb6fa870b7aeb717c61b2470072db3645047e48006ea53304d2d38",
+      "current_sha256": "6ce1bab745bb6fa870b7aeb717c61b2470072db3645047e48006ea53304d2d38",
+      "matches_accepted": true,
+      "packet": "NST R1"
+    },
+    "web/pages/api/v1/db/run-rolling-forge-pipeline.ts": {
+      "accepted_sha256": "ffe7e16c782987fdfec19f8b1e787a89a76aed0a2739994ec5f80eb9488f97b1",
+      "current_sha256": "ffe7e16c782987fdfec19f8b1e787a89a76aed0a2739994ec5f80eb9488f97b1",
+      "matches_accepted": true,
+      "packet": "NST R1"
+    },
+    "web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts": {
+      "accepted_sha256": "1137a449405ec993cb8440395311cc199251fd6da87508469390ffc0ff8f8227",
+      "current_sha256": "1137a449405ec993cb8440395311cc199251fd6da87508469390ffc0ff8f8227",
+      "matches_accepted": true,
+      "packet": "NST R1"
+    },
+    "web/lib/integrations/yahoo/rosterPlanning.ts": {
+      "accepted_sha256": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+      "current_sha256": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+      "matches_accepted": true,
+      "packet": "A5/A10"
+    },
+    "web/lib/integrations/yahoo/rosterPlanning.test.ts": {
+      "accepted_sha256": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+      "current_sha256": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+      "matches_accepted": true,
+      "packet": "A5/A10"
+    },
+    "web/lib/stats/percentUnits.ts": {
+      "accepted_sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+      "current_sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/lib/stats/percentUnits.test.ts": {
+      "accepted_sha256": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+      "current_sha256": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/components/GoalieShareChart/index.tsx": {
+      "accepted_sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+      "current_sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx": {
+      "accepted_sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+      "current_sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/hooks/useShotData.ts": {
+      "accepted_sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+      "current_sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/hooks/useShotData.test.tsx": {
+      "accepted_sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+      "current_sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/components/GameStateAnalysis/GameStateAnalysis.tsx": {
+      "accepted_sha256": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+      "current_sha256": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/components/GameStateAnalysis/GameStateAnalysis.test.tsx": {
+      "accepted_sha256": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+      "current_sha256": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/components/TeamDashboard/AdvancedL10Metrics.tsx": {
+      "accepted_sha256": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+      "current_sha256": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/components/TeamDashboard/AdvancedL10Metrics.test.tsx": {
+      "accepted_sha256": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+      "current_sha256": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/components/TeamDashboard/TeamDashboard.tsx": {
+      "accepted_sha256": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+      "current_sha256": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/components/TeamDashboard/TeamDashboard.test.tsx": {
+      "accepted_sha256": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+      "current_sha256": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/lib/stats/teamCountConsumers.test.tsx": {
+      "accepted_sha256": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa",
+      "current_sha256": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa",
+      "matches_accepted": true,
+      "packet": "A7-A9 R1"
+    },
+    "web/lib/projections/projectionPipelineState.ts": {
+      "accepted_sha256": "288eaf8e8add181cf23290fda001409d001980aec53f49d96d4164b49e716b8f",
+      "current_sha256": "288eaf8e8add181cf23290fda001409d001980aec53f49d96d4164b49e716b8f",
+      "matches_accepted": true,
+      "packet": "NST R1"
+    },
+    "web/lib/projections/projectionPipelineState.test.ts": {
+      "accepted_sha256": "bcfe0ea75668c7cca0d40346d8f901d123d5e7f190c2392bd4b2a5ed79e9b124",
+      "current_sha256": "bcfe0ea75668c7cca0d40346d8f901d123d5e7f190c2392bd4b2a5ed79e9b124",
+      "matches_accepted": true,
+      "packet": "NST R1"
+    }
+  },
+  "dependency_fences": {
+    "web/lib/integrations/providerSyncAccessServer.ts": {
+      "accepted_sha256": "6feba64d25aad65ae6322fcc812be8ad202c18545ba38eaaf4566f3379dd0bf1",
+      "current_sha256": "6feba64d25aad65ae6322fcc812be8ad202c18545ba38eaaf4566f3379dd0bf1",
+      "matches_accepted": true
+    },
+    "web/lib/integrations/providerSyncAccess.ts": {
+      "accepted_sha256": "5e34f581be828b4f0b45cbfbb0e0851b65567f81fc35795000af4e79f7483ae5",
+      "current_sha256": "5e34f581be828b4f0b45cbfbb0e0851b65567f81fc35795000af4e79f7483ae5",
+      "matches_accepted": true
+    },
+    "web/lib/integrations/providerSyncAccess.test.ts": {
+      "accepted_sha256": "e02a9e1efedefae017aa5259cdaadf6f9cbc5bca247201f0c1adcf1ef52b2103",
+      "current_sha256": "e02a9e1efedefae017aa5259cdaadf6f9cbc5bca247201f0c1adcf1ef52b2103",
+      "matches_accepted": true
+    },
+    "web/lib/integrations/providerSyncPaywall.test.ts": {
+      "accepted_sha256": "d1ed5ef030e2af624fbc9029f8958bae3915f2bc3e7ae8cd34b97d7aa562637b",
+      "current_sha256": "d1ed5ef030e2af624fbc9029f8958bae3915f2bc3e7ae8cd34b97d7aa562637b",
+      "matches_accepted": true
+    },
+    "web/pages/api/v1/roster-schedule-optimizer/provider.ts": {
+      "accepted_sha256": "7d2eaddedbf4ad6993cd41f451aaaa05a4a6fae45e80d844387ee84222bb571d",
+      "current_sha256": "7d2eaddedbf4ad6993cd41f451aaaa05a4a6fae45e80d844387ee84222bb571d",
+      "matches_accepted": true
+    },
+    "web/pages/api/v1/db/update-nst-gamelog.ts": {
+      "accepted_sha256": "9f6b8f628f2d4be77e3bf15a3d94ee8bceef6b420618034eab5c23162d8db1d4",
+      "current_sha256": "9f6b8f628f2d4be77e3bf15a3d94ee8bceef6b420618034eab5c23162d8db1d4",
+      "matches_accepted": true
+    },
+    "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts": {
+      "accepted_sha256": "098de11dd4282c779c1fc3ee404b2931b5202af5309045d4409f596cf6e75e84",
+      "current_sha256": "098de11dd4282c779c1fc3ee404b2931b5202af5309045d4409f596cf6e75e84",
+      "matches_accepted": true
+    },
+    "web/lib/nst/requestBudget.ts": {
+      "accepted_sha256": "d19258f72183580919d26c16480287faa3f9b2fa30c9a9aa7d2982bba79b487e",
+      "current_sha256": "d19258f72183580919d26c16480287faa3f9b2fa30c9a9aa7d2982bba79b487e",
+      "matches_accepted": true
+    },
+    "web/lib/nst/client.ts": {
+      "accepted_sha256": "712eefa3c63b3340770a4d45fb2c97428ffe7ede49a5581f36f75a9c9a3783e9",
+      "current_sha256": "712eefa3c63b3340770a4d45fb2c97428ffe7ede49a5581f36f75a9c9a3783e9",
+      "matches_accepted": true
+    },
+    "web/lib/nst/gamelogProgress.ts": {
+      "accepted_sha256": "b0c657c0e28193384939c58fdab6321460347f149b698e8051c4211cacab9942",
+      "current_sha256": "b0c657c0e28193384939c58fdab6321460347f149b698e8051c4211cacab9942",
+      "matches_accepted": true
+    },
+    "web/lib/cron/withCronJobAudit.ts": {
+      "accepted_sha256": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+      "current_sha256": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+      "matches_accepted": true
+    },
+    "web/lib/cron/nhlOffSeason.ts": {
+      "accepted_sha256": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+      "current_sha256": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+      "matches_accepted": true
+    }
+  },
+  "outside_packet_difference_count": 58,
+  "outside_packet_differences": [
+    {
+      "path": "web/__tests__/pages/api/v1/db/route-runner.test.ts",
+      "combined_sha256": null,
+      "current_sha256": "0c3638488fb389ec9a67320f8967912ecc702e4973e398449b4df8df4aeb64d1",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts",
+      "combined_sha256": "c80e7a616da5e4704efeddba9285645d9f2d865b211afb0cfc697a0b12a81465",
+      "current_sha256": "7150b3470fdd1d44848aa859206d542879c37428fe2fbf9946ea3988dd3efb59",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts",
+      "combined_sha256": "5352cb4af0a0e927e5f8f1adee9cfcee985057c93527c98563ea717a7826bbf8",
+      "current_sha256": "ce180cd7aff11f578532b020d4c6bbca65c248bd8584dbde5829410eac71c2e6",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/__tests__/pages/db/admin-gate.test.tsx",
+      "combined_sha256": null,
+      "current_sha256": "643d04a90b87f42a8290beda44bcb59b2f4e97b223ddb5a89f082e660c3ffd58",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/__tests__/pages/db/player-aliases.test.tsx",
+      "combined_sha256": "dccec22f820fef46732197c6da8dbc61fea31fa3e241683712e8f0a3dd83a5a1",
+      "current_sha256": "0edfd45c0b2abd27c1c7f98646c665ee1d5aab7a46274d346bff3aabaa354d1d",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/__tests__/pages/db/runner.test.tsx",
+      "combined_sha256": null,
+      "current_sha256": "7920f3cef011de6f477103b8827fd89f3daabf194aefadb2171c38128be1b0ac",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/Admin/AdminPageGate.test.tsx",
+      "combined_sha256": null,
+      "current_sha256": "d4279fbb07f84d17b1d4fb513eaa14defe0d667b998bd8dcd23826de940beb7e",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/Admin/AdminPageGate.tsx",
+      "combined_sha256": null,
+      "current_sha256": "eba9494e2df0e8e47f56b38250a6a572e1051efe109018d37f143da714bc17eb",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/Admin/CronRouteRunner.tsx",
+      "combined_sha256": "e92d7563c51f2a013eb6a678a3453c77232e2aa63dc78e7d50e46f2d97d31c6e",
+      "current_sha256": "78085cda3a36f5344cf8030f00cdb13318da9b4277f8aa5dd92a952f9bf98f2b",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/Admin/adminRoutePath.ts",
+      "combined_sha256": null,
+      "current_sha256": "405d7c41a5ee9d180ec390897fb7456acb4bc92cb4b7b023ab32325cb4d72724",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/MetricsTimeline/MetricsTimeline.test.tsx",
+      "combined_sha256": null,
+      "current_sha256": "83766270718f896c4d810509d1c4a6b67036c8dac65534aadc26be23720465b4",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/MetricsTimeline/MetricsTimeline.tsx",
+      "combined_sha256": "987e32c5e7a92de1efc062d1d5002834e7656fc4de5666e44cbd0c31ae6adbc3",
+      "current_sha256": "07bb3c3919ae684504551ab05afddada6dfe9fb71b8af282ccd11ea562779ebe",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/MetricsTimeline/metricsTimelineData.test.ts",
+      "combined_sha256": "ac0ebc952022011dc55fe9db239f1657406e1b9d00703d84b00789f7d1d98089",
+      "current_sha256": "fabc0c29b1e1e772fb6e8f9461f881584ebff7cb58ecab2b2588608ce5c13622",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/MetricsTimeline/metricsTimelineData.ts",
+      "combined_sha256": "4cf82af3ff7f1dbabb0c207b45fac988f568415c2e057fe0ba71cbc0ce137b93",
+      "current_sha256": "59ad16886a71aa2c8d0e0d555f1b426439b6b6242dcc887d187dee85eb9bd441",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/PlayerStats/PlayerContextualStats.test.tsx",
+      "combined_sha256": null,
+      "current_sha256": "515901a926ed5c21d59cb692e6786ddbf8778b9cfdd96196ae02324d5afc3318",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/PlayerStats/playerStatsContract.test.ts",
+      "combined_sha256": "e0b7a2587d4ffae3c8752baa5c511b0aadb344491a3e2fd3ff243abde534fcf1",
+      "current_sha256": "bf22582beb95ada6aa25daaa32c5e98a2f4a5160f99ed02e358dce8de34663d4",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/StatsPage/LeaderboardCategoryGoalie.test.tsx",
+      "combined_sha256": null,
+      "current_sha256": "f2d614977a1e8a3fce96b1b29be7196f8bf106066b3c1669bcc92064d4e471cf",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/StatsPage/PlayerSearchBar.test.tsx",
+      "combined_sha256": null,
+      "current_sha256": "dbe37d2a8d53c657c8e6cd130a951120642f875c4c10ccc9006e6e6802e2157c",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/StatsPage/PlayerSearchBar.tsx",
+      "combined_sha256": "dc702cd14c1a27890d9f692030df09c3d6ec6cc4aecd3765584b11a65d1b71e0",
+      "current_sha256": "078fc18af0c5a50c5b1aa859f7bc99b13227c46025ed0138fd321bfe2f0a2826",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx",
+      "combined_sha256": null,
+      "current_sha256": "f16767f9da1ea35bcbd4b25351715da1c24ca9c6f3c86aae516bffc5dcf3468d",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx",
+      "combined_sha256": "ee3bdbf2283c8110a1b6ca912e0e755e71cc8e3f774136cc492f1706fb9bb2cf",
+      "current_sha256": "53121a1d2666c664e326159a982ef5efe36f9f8da3c082af81eab78211debbd7",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/account/InSeasonPanel.test.tsx",
+      "combined_sha256": "1625383b4b086b051126ad590e4703e0612d3a94df2727743b9d8611734f3a84",
+      "current_sha256": "9111c5524568150797b0cc232e3b4f2584758102206531d9b26d408ba8abdd10",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/components/account/InSeasonPanel.tsx",
+      "combined_sha256": "68ad90554e03268a2a66c38658dcfaaec07ea7a563a6353b51efd34c9ad3657b",
+      "current_sha256": "aa8b536ee039599c6d41167841b5c1a177f0350c895d03ae0b6ed0acfd76a167",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/contexts/AuthProviderContext/index.tsx",
+      "combined_sha256": "fbf8bd3ee951d10806def220b8f168ee9177953c03c2031582e578e94f7b62e7",
+      "current_sha256": "ba911142eb7c7e52c880df27a4b7236e95dd2345012a32078df9671073ff4be8",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/NHL/statsPageFetch.test.ts",
+      "combined_sha256": "a4c11fd00ffa628f19fbf5ce8978156107d576d2f66dc65c067430c6a09c6c19",
+      "current_sha256": "24433be6b0211c8d4bc923ee552964ec56f3cfa4108e2115561e6ed11ae1b4c4",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/dashboard/playerOwnership.test.ts",
+      "combined_sha256": "3d8681651c1ceb66a85bea1995345ef376278bd119e4ba95cb9ac4a76024b0fb",
+      "current_sha256": "0e2a6603427b8d9125dc88ab3c26c4b4f48ec5613098057e9656e4ead7140e52",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/dashboard/playerOwnership.ts",
+      "combined_sha256": "d3ce40e40f03990c19e4f89b8bdb32f6138982998f3afd722bbfa35aa5a49d67",
+      "current_sha256": "cb2b54d221ae72061187015fa726ccf0f357e22939094fe88bd362857526f539",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/in-season/billingEntryConfig.ts",
+      "combined_sha256": null,
+      "current_sha256": "5e48b8357aea28decc729404aaaa9b73f2bffeb98eb6efda0765f3af83ff1e79",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/in-season/billingEntryPoints.test.ts",
+      "combined_sha256": null,
+      "current_sha256": "7d4bbf93db2d96552145c3ad2d244b6efcc034bd42a9bc163646339009cc2af8",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/in-season/billingRoutes.test.ts",
+      "combined_sha256": "ff4048b000a0430def609320c9385379ac8f9022643bfeec22a5bd6f27d8cb78",
+      "current_sha256": "ed71429ee5e16193c280f33d570390107ac970a55dff6aa001501be078cab9aa",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/routeRunner/core.test.ts",
+      "combined_sha256": null,
+      "current_sha256": "2f00552ce51d60571fc98b839ab5c1782a34f23be5d672a9bbb114f897a19fd1",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/routeRunner/core.ts",
+      "combined_sha256": null,
+      "current_sha256": "c994cb8287d6411f7df6cffb06be845ee81e3d3188c5d9b8ef111122f98cb855",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/routeRunner/memoryStore.testHelper.ts",
+      "combined_sha256": null,
+      "current_sha256": "166e617febb87cbda568c9689d277ec590e16789d2367136782e555991ca0f55",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/routeRunner/registry.ts",
+      "combined_sha256": null,
+      "current_sha256": "8ec15096a183fc89e8258332487e08192e04864f59871fc6d6b87c7d01e09633",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/routeRunner/store.test.ts",
+      "combined_sha256": null,
+      "current_sha256": "48ca930ea735be118043ccf4dbbacd433b71b3058ad28437087179294e7ec8a3",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/routeRunner/store.ts",
+      "combined_sha256": null,
+      "current_sha256": "14e5b8b704a84929dafff67ac00e2c23fd5480b1ccbbc91f8130a4a12f27ef18",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/routeRunner/tick.test.ts",
+      "combined_sha256": null,
+      "current_sha256": "9adbd5721fb68ecbcfc721cf298787e61b3293352cbdbc961c381ab427bd34d0",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/routeRunner/tick.ts",
+      "combined_sha256": null,
+      "current_sha256": "79ff5a5f4743cf6d1fc0fae9535791b8bcb6f2c8b88b77f6c1caaafd26cd75e9",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/sources/fixtures/tweetIdentitySavedEvidence.json",
+      "combined_sha256": null,
+      "current_sha256": "a6ed14b24e05ffdadd0d0de9593c12e5c8aad92bd8a8168d0cf91532598f0a2d",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/sources/playerIdentitySnapshotEvidence.test.ts",
+      "combined_sha256": null,
+      "current_sha256": "77b834b8c011222d60360c5b8ab111bed4b1dfe8e44eb3cbd238f6c322bbaaaf",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/sources/playerIdentitySnapshotEvidence.ts",
+      "combined_sha256": null,
+      "current_sha256": "390ed603af2cf2ca742ac36ec81c4973d2543684dfb42efbc9c9afeed84c7d4b",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.test.ts",
+      "combined_sha256": null,
+      "current_sha256": "620479333f55017fcc7749535cd09fa893e2772ac8ff4f2371716df8a3640ee2",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/lib/sources/tweetIdentityReplacementReview.ts",
+      "combined_sha256": null,
+      "current_sha256": "23131921ff0d8caea93c4302f01bb3377bb823611c9410108973e0cab09b1124",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/api/v1/account/in-season/checkout.ts",
+      "combined_sha256": "c276aa8976b0eb79ae7961c911c6c8569ccb766ba2f6527da1b1dbae64856267",
+      "current_sha256": "53508ada83a494e9ecfb9f9ddc1416eafe9c62f270b01d5081a826914c144c3f",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/api/v1/account/in-season/subscriptions.ts",
+      "combined_sha256": null,
+      "current_sha256": "aacaafc36a1d3a67da65858f5c70ae0da12ed1c4c8b794256bdca9c71e04e2bc",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/api/v1/db/route-runner-tick.ts",
+      "combined_sha256": null,
+      "current_sha256": "bb903d8accc749b155dde17a0eaf2f88b6d42bc87a7b1f128f30764195204e52",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/api/v1/db/route-runner/jobs.ts",
+      "combined_sha256": null,
+      "current_sha256": "3b270c6906e3477a447199ace547388f0c9021d15023d1f7ce076c66499bba36",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/api/v1/db/route-runner/jobs/[id].ts",
+      "combined_sha256": null,
+      "current_sha256": "7b8026ece4635acd502848b3dcba1ecfee089c2c474706dcb1516eab7b8d763a",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-ctpi-daily.ts",
+      "combined_sha256": "03a310525d41b5933dab7cedf9a1005b4cd9feec39fdabfd39c0471d0372ab98",
+      "current_sha256": "7ba8680eb056ffe7ed220d3c0955dc61569fca17050bfd516493a21377b3e7d7",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/api/v1/internal/in-season-billing.ts",
+      "combined_sha256": null,
+      "current_sha256": "0728008fab6c0a736856a80e08432ede5b6d522474bd7ea74cb4b05c5ae8ca14",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/api/v1/transactions/ownership-snapshots.ts",
+      "combined_sha256": "6fb83483e3b034978477705206c0e8d9a7fc132a807e2034527c133ca8e62d0e",
+      "current_sha256": "fbfca9bc1ae384fb3a37cba3bf987b7f0fc5b2c5d5cc50451a4348c46b8a0133",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/db/index.tsx",
+      "combined_sha256": "99bbcf89461eeb45a232fc4cca894d107b2672240e9ea16279266dcd6edfe3fa",
+      "current_sha256": "546e5dd79584ef1ba10e20ada2e7d27c4a2348be996602228413249f4eebae13",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/db/player-aliases.tsx",
+      "combined_sha256": "63f5369f4bc80491528b4eeaf797eedc445b7a0d72effb5674b9626836be9f64",
+      "current_sha256": "322c7cb66ad3c1ec4e66da08e652343d8dfe97cbcf2868152b72e4af58f3c758",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/db/player-forecast-review.tsx",
+      "combined_sha256": "1c754364c6c025c37407e0c5bcc7260079325f9d7e3ba05dce9571bd9e45b8fc",
+      "current_sha256": "8b5db4ad70d8f11d28df6f4cf1f3be9ce896bd002e0ac2deb6c8ea198abf8325",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/db/player-forecast-season-editor.tsx",
+      "combined_sha256": "5a14ef9701a0dd6762f5ad65145b985df48edc2c6a613967238aa94ed8a5bfea",
+      "current_sha256": "763f1ba5676277f33ca03fbb2b43c606ed5255e94f24607d2b1947fac3ef3a1f",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/db/runner.tsx",
+      "combined_sha256": null,
+      "current_sha256": "38f741dbed08a25394edb1e7726c4692f492843f9b168adfd3c169adf00ff398",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/db/tweet-pattern-review.tsx",
+      "combined_sha256": "f5633bd1b4f10bb10fa092687d0ee0836b865b339a24f46646bb8ecc5af88cf9",
+      "current_sha256": "68c6cebd05c9139a4c25b01234eafa96da2c78dbb34543c4e4748c3da926e562",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    },
+    {
+      "path": "web/pages/db/upsert-projections.tsx",
+      "combined_sha256": "2f274d2eed1ede03b8b9007ba5c9caa49752665428dc29fc91ff32b0d03f2619",
+      "current_sha256": "5de410ac2d8cbe075e05fcef904c1cd69a76fe86524d0646ddeaeabd97f6bda4",
+      "status": "outside_accepted_scope_pending_or_unreviewed",
+      "included_current_version": false
+    }
+  ],
+  "separate_live_packets_from_parent": [
+    "P01-P05",
+    "CTPI",
+    "Luna"
+  ],
+  "owner_assignment": "Parent coordinates those lanes; no ownership inferred from path or historical custodian."
+}

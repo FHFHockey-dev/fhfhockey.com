@@ -1,0 +1,51 @@
+{
+  "R1-U 36 dashes": {
+    "stored": "------------------------------------",
+    "sent": "------------------------------------",
+    "reused": true
+  },
+  "R1-U v1 UUID": {
+    "stored": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+    "sent": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+    "reused": true
+  },
+  "R1-U uppercase v4": {
+    "stored": "EBC77444-13EC-482C-917E-B2633D3AE555",
+    "sent": "b3079b19-74a8-45d6-a5d9-56ab471dcbbc",
+    "reused": false
+  },
+  "R1-U v4 bad variant": {
+    "stored": "11111111-2222-4333-c444-555555555555",
+    "sent": "11111111-2222-4333-c444-555555555555",
+    "reused": true
+  },
+  "R1-U 35 chars": {
+    "stored": "ebc77444-13ec-482c-917e-b2633d3ae55",
+    "sent": "5bac2f24-76cc-473a-99ff-3f154b3d0c8d",
+    "reused": false
+  },
+  "R1-U trailing space": {
+    "stored": "ebc77444-13ec-482c-917e-b2633d3ae555 ",
+    "sent": "fed794ca-da57-4f22-b78e-8b7c03e5ada0",
+    "reused": false
+  },
+  "R1-U hex without dashes (36)": {
+    "stored": "0123456789abcdef0123456789abcdef0123",
+    "sent": "0123456789abcdef0123456789abcdef0123",
+    "reused": true
+  },
+  "R1-U v4-shaped nil-ish": {
+    "stored": "00000000-0000-4000-8000-000000000000",
+    "sent": "00000000-0000-4000-8000-000000000000",
+    "reused": true
+  },
+  "R1-U real randomUUID": {
+    "stored": "ebc77444-13ec-482c-917e-b2633d3ae555",
+    "sent": "ebc77444-13ec-482c-917e-b2633d3ae555",
+    "reused": true
+  },
+  "R1-U fresh": [
+    "71b497ca-c1c5-4ded-b50b-3a74ede7a315",
+    "71b497ca-c1c5-4ded-b50b-3a74ede7a315"
+  ]
+}

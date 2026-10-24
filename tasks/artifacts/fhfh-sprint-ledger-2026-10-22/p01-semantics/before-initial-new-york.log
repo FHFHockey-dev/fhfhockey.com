@@ -1,0 +1,1185 @@
+
+> web@0.1.0 test
+> vitest --run components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx -t date identity
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:17536) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx (14 tests | 4 failed | 8 skipped) 82ms
+   ↓ TeamScheduleCalendar season standings > shows 7 NHL points for a 2–6–3 record across eleven completed games
+   ↓ TeamScheduleCalendar season standings > keeps the season summary authoritative when calendar coverage is sparse and mixed
+   ↓ TeamScheduleCalendar season standings > does not reconstruct an authoritative record when its snapshot is unavailable or invalid
+   ↓ TeamScheduleCalendar season standings > does not reconstruct an authoritative record when its snapshot is unavailable or invalid
+   ↓ TeamScheduleCalendar season standings > does not reconstruct an authoritative record when its snapshot is unavailable or invalid
+   ↓ TeamScheduleCalendar season standings > does not reconstruct an authoritative record when its snapshot is unavailable or invalid
+   ↓ TeamScheduleCalendar season standings > does not reconstruct an authoritative record when its snapshot is unavailable or invalid
+   ↓ TeamScheduleCalendar season standings > retains genuine zero points and leaves zero-game percentages unavailable
+   × TeamScheduleCalendar date identity > keeps a date-only game on the 19th in both the grid and tooltip 27ms
+     → Unable to find an element with the text: 19. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_dayCell_c2a2cc _gameWin_c2a2cc"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_dayNumber_c2a2cc"[39m
+  [36m>[39m
+    [0m18[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_gameInfo_c2a2cc"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_opponent_c2a2cc"[39m
+    [36m>[39m
+      [0mvs[0m
+      [0m [0m
+      [0mBOS[0m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_score_c2a2cc"[39m
+    [36m>[39m
+      [0m3-2[0m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</div>[39m
+   ✓ TeamScheduleCalendar date identity > uses the supplied game date for the WGO join without shifting to yesterday 12ms
+   ✓ TeamScheduleCalendar date identity > keeps tomorrow's date-only game scheduled near the UTC date boundary 10ms
+   × TeamScheduleCalendar date identity > shows the schedule date and actual start timestamp with an explicit time zone 12ms
+     → Unable to find an element with the text: Monday, October 19, 2026. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_container_c2a2cc"[39m
+      [33mstyle[39m=[32m"--team-primary-color: #041E42; --team-secondary-color: #FC4C02; --team-accent-color: #A2AAAD;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_calendarHeader_c2a2cc"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_titleWithInfo_c2a2cc"[39m
+        [36m>[39m
+          [36m<h3>[39m
+            [0mEDM[0m
+            [0m Schedule Calendar[0m
+          [36m</h3>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"_infoButton_c2a2cc"[39m
+          [36m>[39m
+            [0m?[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamSummary_c2a2cc"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _seasonRecord_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mSeason Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_recentForm_c2a2cc"[39m
+            [36m>[39m
+              [0mRegular season standings[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0mStandings unavailable[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _currentStreak_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mCurrent Streak[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_streak_c2a2cc _win_c2a2cc"[39m
+            [36m>[39m
+              [0m1[0m
+              [0mW[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_recentForm_c2a2cc hotStreak topTier"[39m
+            [36m>[39m
+              [0mLast 10: [0m
+              [0m1[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mHome Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m1[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGF[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mAway Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGF[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _goalDifferential_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mGoal Differential[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m0[0m
+              [0m [0m
+              [0m-[0m
+              [0m [0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mstyle[39m=[32m"display: flex; gap: 4px; margin-top: 4px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+                [33mstyle[39m=[32m"font-size: 10px; padding: 2px 4px;"[39m
+              [36m>[39m
+                [0mH:[0m
+                [0m [0m
+                [0mN/A[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+                [33mstyle[39m=[32m"font-size: 10px; padding: 2px 4px;"[39m
+              [36m>[39m
+                [0mA:[0m
+                [0m [0m
+                [0mN/A[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_calendarLegend_c2a2cc"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_legendLabel_c2a2cc"[39m
+          [36m>[39m
+            [0mGame Results:[0m
+          [36m</span>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_legendItems_c2a2cc"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _win_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mWin[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _loss_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mLoss[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _otLoss_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mOT Loss[0m
+              [36m...
+   × TeamScheduleCalendar date identity > does not invent a midnight start time from the date when start time is "" 12ms
+     → Unable to find an element with the text: Start time unavailable. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_container_c2a2cc"[39m
+      [33mstyle[39m=[32m"--team-primary-color: #041E42; --team-secondary-color: #FC4C02; --team-accent-color: #A2AAAD;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_calendarHeader_c2a2cc"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_titleWithInfo_c2a2cc"[39m
+        [36m>[39m
+          [36m<h3>[39m
+            [0mEDM[0m
+            [0m Schedule Calendar[0m
+          [36m</h3>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"_infoButton_c2a2cc"[39m
+          [36m>[39m
+            [0m?[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamSummary_c2a2cc"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _seasonRecord_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mSeason Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_recentForm_c2a2cc"[39m
+            [36m>[39m
+              [0mRegular season standings[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0mStandings unavailable[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _currentStreak_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mCurrent Streak[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_streak_c2a2cc _win_c2a2cc"[39m
+            [36m>[39m
+              [0m1[0m
+              [0mW[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_recentForm_c2a2cc hotStreak topTier"[39m
+            [36m>[39m
+              [0mLast 10: [0m
+              [0m1[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mHome Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m1[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGF[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mAway Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGF[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _goalDifferential_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mGoal Differential[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m0[0m
+              [0m [0m
+              [0m-[0m
+              [0m [0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mstyle[39m=[32m"display: flex; gap: 4px; margin-top: 4px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+                [33mstyle[39m=[32m"font-size: 10px; padding: 2px 4px;"[39m
+              [36m>[39m
+                [0mH:[0m
+                [0m [0m
+                [0mN/A[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+                [33mstyle[39m=[32m"font-size: 10px; padding: 2px 4px;"[39m
+              [36m>[39m
+                [0mA:[0m
+                [0m [0m
+                [0mN/A[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_calendarLegend_c2a2cc"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_legendLabel_c2a2cc"[39m
+          [36m>[39m
+            [0mGame Results:[0m
+          [36m</span>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_legendItems_c2a2cc"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _win_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mWin[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _loss_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mLoss[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _otLoss_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mOT Loss[0m
+              [36m...
+   × TeamScheduleCalendar date identity > does not invent a midnight start time from the date when start time is "not-a-timestamp" 8ms
+     → Unable to find an element with the text: Start time unavailable. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_container_c2a2cc"[39m
+      [33mstyle[39m=[32m"--team-primary-color: #041E42; --team-secondary-color: #FC4C02; --team-accent-color: #A2AAAD;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_calendarHeader_c2a2cc"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_titleWithInfo_c2a2cc"[39m
+        [36m>[39m
+          [36m<h3>[39m
+            [0mEDM[0m
+            [0m Schedule Calendar[0m
+          [36m</h3>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"_infoButton_c2a2cc"[39m
+          [36m>[39m
+            [0m?[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamSummary_c2a2cc"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _seasonRecord_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mSeason Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_recentForm_c2a2cc"[39m
+            [36m>[39m
+              [0mRegular season standings[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0mStandings unavailable[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _currentStreak_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mCurrent Streak[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_streak_c2a2cc _win_c2a2cc"[39m
+            [36m>[39m
+              [0m1[0m
+              [0mW[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_recentForm_c2a2cc hotStreak topTier"[39m
+            [36m>[39m
+              [0mLast 10: [0m
+              [0m1[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mHome Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m1[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGF[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mAway Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGF[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _goalDifferential_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mGoal Differential[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m0[0m
+              [0m [0m
+              [0m-[0m
+              [0m [0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mstyle[39m=[32m"display: flex; gap: 4px; margin-top: 4px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+                [33mstyle[39m=[32m"font-size: 10px; padding: 2px 4px;"[39m
+              [36m>[39m
+                [0mH:[0m
+                [0m [0m
+                [0mN/A[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+                [33mstyle[39m=[32m"font-size: 10px; padding: 2px 4px;"[39m
+              [36m>[39m
+                [0mA:[0m
+                [0m [0m
+                [0mN/A[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_calendarLegend_c2a2cc"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_legendLabel_c2a2cc"[39m
+          [36m>[39m
+            [0mGame Results:[0m
+          [36m</span>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_legendItems_c2a2cc"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _win_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mWin[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _loss_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mLoss[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _otLoss_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mOT Loss[0m
+              [36m...
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx > TeamScheduleCalendar date identity > keeps a date-only game on the 19th in both the grid and tooltip
+TestingLibraryElementError: Unable to find an element with the text: 19. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_dayCell_c2a2cc _gameWin_c2a2cc"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_dayNumber_c2a2cc"[39m
+  [36m>[39m
+    [0m18[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_gameInfo_c2a2cc"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_opponent_c2a2cc"[39m
+    [36m>[39m
+      [0mvs[0m
+      [0m [0m
+      [0mBOS[0m
+    [36m</div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_score_c2a2cc"[39m
+    [36m>[39m
+      [0m3-2[0m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx:196:24
+    194|   it("keeps a date-only game on the 19th in both the grid and tooltip"…
+    195|     const day = renderDatedGame();
+    196|     expect(within(day).getByText("19")).toBeTruthy();
+       |                        ^
+    197|     fireEvent.mouseEnter(day);
+    198|     expect(screen.getByText("Oct 19, 2026")).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx > TeamScheduleCalendar date identity > shows the schedule date and actual start timestamp with an explicit time zone
+TestingLibraryElementError: Unable to find an element with the text: Monday, October 19, 2026. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_container_c2a2cc"[39m
+      [33mstyle[39m=[32m"--team-primary-color: #041E42; --team-secondary-color: #FC4C02; --team-accent-color: #A2AAAD;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_calendarHeader_c2a2cc"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_titleWithInfo_c2a2cc"[39m
+        [36m>[39m
+          [36m<h3>[39m
+            [0mEDM[0m
+            [0m Schedule Calendar[0m
+          [36m</h3>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"_infoButton_c2a2cc"[39m
+          [36m>[39m
+            [0m?[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamSummary_c2a2cc"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _seasonRecord_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mSeason Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_recentForm_c2a2cc"[39m
+            [36m>[39m
+              [0mRegular season standings[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0mStandings unavailable[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _currentStreak_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mCurrent Streak[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_streak_c2a2cc _win_c2a2cc"[39m
+            [36m>[39m
+              [0m1[0m
+              [0mW[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_recentForm_c2a2cc hotStreak topTier"[39m
+            [36m>[39m
+              [0mLast 10: [0m
+              [0m1[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mHome Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m1[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGF[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mAway Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGF[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _goalDifferential_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mGoal Differential[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m0[0m
+              [0m [0m
+              [0m-[0m
+              [0m [0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mstyle[39m=[32m"display: flex; gap: 4px; margin-top: 4px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+                [33mstyle[39m=[32m"font-size: 10px; padding: 2px 4px;"[39m
+              [36m>[39m
+                [0mH:[0m
+                [0m [0m
+                [0mN/A[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+                [33mstyle[39m=[32m"font-size: 10px; padding: 2px 4px;"[39m
+              [36m>[39m
+                [0mA:[0m
+                [0m [0m
+                [0mN/A[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_calendarLegend_c2a2cc"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_legendLabel_c2a2cc"[39m
+          [36m>[39m
+            [0mGame Results:[0m
+          [36m</span>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_legendItems_c2a2cc"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _win_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mWin[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _loss_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mLoss[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _otLoss_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mOT Loss[0m
+              [36m...
+ ❯ Object.getElementError node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx:225:19
+    223|     const day = renderDatedGame();
+    224|     fireEvent.click(day);
+    225|     expect(screen.getByText("Monday, October 19, 2026")).toBeTruthy();
+       |                   ^
+    226|     expect(screen.getByText("7:00 PM EDT")).toBeTruthy();
+    227|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx > TeamScheduleCalendar date identity > does not invent a midnight start time from the date when start time is ""
+ FAIL  components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx > TeamScheduleCalendar date identity > does not invent a midnight start time from the date when start time is "not-a-timestamp"
+TestingLibraryElementError: Unable to find an element with the text: Start time unavailable. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_container_c2a2cc"[39m
+      [33mstyle[39m=[32m"--team-primary-color: #041E42; --team-secondary-color: #FC4C02; --team-accent-color: #A2AAAD;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_calendarHeader_c2a2cc"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_titleWithInfo_c2a2cc"[39m
+        [36m>[39m
+          [36m<h3>[39m
+            [0mEDM[0m
+            [0m Schedule Calendar[0m
+          [36m</h3>[39m
+          [36m<button[39m
+            [33mclass[39m=[32m"_infoButton_c2a2cc"[39m
+          [36m>[39m
+            [0m?[0m
+          [36m</button>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamSummary_c2a2cc"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _seasonRecord_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mSeason Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_recentForm_c2a2cc"[39m
+            [36m>[39m
+              [0mRegular season standings[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0mStandings unavailable[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _currentStreak_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mCurrent Streak[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_streak_c2a2cc _win_c2a2cc"[39m
+            [36m>[39m
+              [0m1[0m
+              [0mW[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_recentForm_c2a2cc hotStreak topTier"[39m
+            [36m>[39m
+              [0mLast 10: [0m
+              [0m1[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mHome Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m1[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGF[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mAway Record[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+              [0m-[0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGF[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+              [0m [0m
+              [0mGA[0m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_summaryCard_c2a2cc _goalDifferential_c2a2cc"[39m
+          [36m>[39m
+            [36m<h4>[39m
+              [0mGoal Differential[0m
+            [36m</h4>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_record_c2a2cc"[39m
+            [36m>[39m
+              [0m0[0m
+              [0m [0m
+              [0m-[0m
+              [0m [0m
+              [0m0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+            [36m>[39m
+              [0m0.0[0m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mstyle[39m=[32m"display: flex; gap: 4px; margin-top: 4px;"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+                [33mstyle[39m=[32m"font-size: 10px; padding: 2px 4px;"[39m
+              [36m>[39m
+                [0mH:[0m
+                [0m [0m
+                [0mN/A[0m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_points_c2a2cc neutral"[39m
+                [33mstyle[39m=[32m"font-size: 10px; padding: 2px 4px;"[39m
+              [36m>[39m
+                [0mA:[0m
+                [0m [0m
+                [0mN/A[0m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_calendarLegend_c2a2cc"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_legendLabel_c2a2cc"[39m
+          [36m>[39m
+            [0mGame Results:[0m
+          [36m</span>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_legendItems_c2a2cc"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _win_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mWin[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _loss_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mLoss[0m
+              [36m</span>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_legendItem_c2a2cc"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_legendColor_c2a2cc _otLoss_c2a2cc"[39m
+              [36m/>[39m
+              [36m<span>[39m
+                [0mOT Loss[0m
+              [36m...
+ ❯ Object.getElementError node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx:232:19
+    230|     const day = renderDatedGame({ startTimeUTC });
+    231|     fireEvent.click(day);
+    232|     expect(screen.getByText("Start time unavailable")).toBeTruthy();
+       |                   ^
+    233|   });
+    234| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 2 passed | 8 skipped (14)
+   Start at  10:46:40
+   Duration  994ms (transform 191ms, setup 3ms, collect 373ms, tests 82ms, environment 264ms, prepare 44ms)
+

@@ -1,0 +1,139 @@
+{
+    "utc": "2026-10-24T15:42:05.5763700Z",
+    "v13SHA256": "077bd43b9bcaccd51a68e5d353b23cb2c701c7003c8eb21ea3c46c5ddd89aa80",
+    "v14SHA256": "450e21bf020bb2f579cfb468b1589909ea7ca43430be64e1dd31deb5333ec80a",
+    "v15SHA256": "c5389bcadfe4e0b98003a82be080b547969a8d79b92b2842e03feef086973841",
+    "failure": "",
+    "passed": true,
+    "checks": [
+        {
+            "name": "v13 scene hash matches the v13 handoff",
+            "passed": true,
+            "detail": "077bd43b9bcaccd51a68e5d353b23cb2c701c7003c8eb21ea3c46c5ddd89aa80"
+        },
+        {
+            "name": "v14 scene hash matches the v14 receipt",
+            "passed": true,
+            "detail": "450e21bf020bb2f579cfb468b1589909ea7ca43430be64e1dd31deb5333ec80a"
+        },
+        {
+            "name": "v15 is a separate saved scene",
+            "passed": true,
+            "detail": "c5389bcadfe4e0b98003a82be080b547969a8d79b92b2842e03feef086973841"
+        },
+        {
+            "name": "every object outside the new roof-feature root exists in both scenes",
+            "passed": true,
+            "detail": "missing=0 extra=0 "
+        },
+        {
+            "name": "transforms, active states and component lists outside the new root are identical",
+            "passed": true,
+            "detail": "differences=0"
+        },
+        {
+            "name": "all serialized component fields outside the new root are identical except the four blocks' hull/accent slots",
+            "passed": true,
+            "detail": "other differences=0, compound material slots changed=12"
+        },
+        {
+            "name": "gameplay components (pilot, weapon, targets, capture zones, recovery, cockpit readout) retained",
+            "passed": true,
+            "detail": "QuestPilotControls=1,QuestPracticeWeapon=1,PracticeTarget=3,CaptureZone=1"
+        },
+        {
+            "name": "debug labels and HUD objects are unchanged (TextMesh count and fields)",
+            "passed": true,
+            "detail": "TextMesh=20"
+        },
+        {
+            "name": "new root holds 13 roof features, each with one renderer and one collider",
+            "passed": true,
+            "detail": "renderers=13 colliders=13"
+        },
+        {
+            "name": "new meshes/materials live only in SprintAssets/v15",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "v15 materials are used only on the four blocks and the new root",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "every roof feature (renderer and collider bounds) lies inside its roof octagon and above its roof top",
+            "passed": true,
+            "detail": "13/13"
+        },
+        {
+            "name": "route corridor samples hit saved collision in both scenes",
+            "passed": true,
+            "detail": ""
+        },
+        {
+            "name": "route corridor collision surface identical (same collider path and height within 1 cm)",
+            "passed": true,
+            "detail": "samples=612"
+        },
+        {
+            "name": "route margin (5.4-12 m) collision surface identical",
+            "passed": true,
+            "detail": "samples=816"
+        },
+        {
+            "name": "ground and paths around every compound are identical (outside roof footprints)",
+            "passed": true,
+            "detail": "samples=3803"
+        },
+        {
+            "name": "all lateral cover rays along the route are identical",
+            "passed": true,
+            "detail": "changedRays=0/80"
+        },
+        {
+            "name": "saved scenes unchanged by validation",
+            "passed": true,
+            "detail": ""
+        }
+    ],
+    "v14": {
+        "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+        "renderers": 627,
+        "enabledRenderers": 526,
+        "colliders": 235,
+        "enabledColliders": 197,
+        "meshColliders": 94,
+        "uniqueMaterials": 57,
+        "textures": 3,
+        "enabledTriangles": 129386
+    },
+    "v15": {
+        "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+        "renderers": 640,
+        "enabledRenderers": 539,
+        "colliders": 248,
+        "enabledColliders": 210,
+        "meshColliders": 94,
+        "uniqueMaterials": 76,
+        "textures": 3,
+        "enabledTriangles": 134002
+    },
+    "corridorSamples": 612,
+    "corridorDifferences": 0,
+    "marginSamples": 816,
+    "marginTerrainDifferences": 0,
+    "marginOtherDifferences": 0,
+    "coverSamples": 80,
+    "coverChanged": 0,
+    "groundSamples": 3803,
+    "groundDifferences": 0,
+    "features": 13,
+    "featuresInside": 13,
+    "maxMarginTerrainDelta": 0.0,
+    "maxEmergentRise": 0.0,
+    "marginTerrainEmergent": 0,
+    "coverChanges": [],
+    "differences": [],
+    "method": "Opens saved v14 then v15 in the Editor (no Play Mode, no saves). Objects are matched by name path plus occurrence ordinal so added roots cannot mask changes. Serialized fields are compared through SerializedProperty values, object references by scene path or asset path. Collision uses edit-mode Physics raycasts against saved colliders; route corridor = v13 route profile at +/-5.4 m (8.8 m deck plus margin), margin band = 5.4-12 m; cover = horizontal rays at 1.0 m and 2.5 m above the route surface out to 25 m; compound ground = downward rays every 1 m within 8 m around each roof footprint, outside it."
+}

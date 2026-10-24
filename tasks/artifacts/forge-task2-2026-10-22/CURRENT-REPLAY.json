@@ -1,0 +1,13 @@
+{
+  "status": "blocked",
+  "error": "Rolling skater history read incomplete: read_failed",
+  "cause": "Unrecorded projection input: from rolling_player_game_metrics",
+  "capture": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020090.json",
+  "retainedCaptures": 62,
+  "capturedAt": "2026-10-21T22:40:48.940Z",
+  "networkOrProcessAttempts": [],
+  "limitations": [
+    "This is a current-code replay attempt against retained R18 inputs, not a post-R19 c reconstruction.",
+    "No live data was fetched; snapshots were not modified."
+  ]
+}

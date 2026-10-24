@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "historicalManifest": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-HASHES-BEFORE.json",
+  "historicalManifestSha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659",
+  "relocationReceipt": "tasks/artifacts/billing-migration-authority-2026-10-22/CHANGED-FILES.json",
+  "relocationReceiptSha256": "df600ab1c920958a8c869978cd3ed1cd1aedf1744aae399b39e400ddd23b7ef1",
+  "entries": [
+    {
+      "from": "web/lib/in-season/monthlyIntegration.test.ts",
+      "to": "web/lib/in-season/monthlyIntegration.test.ts",
+      "beforeSha256": "cb87e47d4d2b1050577a62cba6bebccb12101df57709dbcb6773d95abb3594b5",
+      "afterSha256": "778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025"
+    },
+    {
+      "from": "supabase/migrations/20261021210000_in_season_sandbox_billing.sql",
+      "to": "tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql",
+      "beforeSha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12",
+      "afterSha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12"
+    }
+  ]
+}

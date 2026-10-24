@@ -1,0 +1,221 @@
+ D supabase/migrations/20261021210000_in_season_sandbox_billing.sql
+ M web/__tests__/components/DraftDashboard/DraftSettingsShell.test.tsx
+ M web/__tests__/components/DraftDashboard/SuggestedPicks.test.tsx
+ M web/__tests__/contexts/AuthProviderContext.test.tsx
+ M web/__tests__/pages/api/internal/yahoo-live-draft.test.ts
+ M web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts
+ M web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts
+ M web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts
+ M web/__tests__/pages/api/v1/forge/goalies.test.ts
+ M web/__tests__/pages/api/v1/forge/players.test.ts
+ M web/__tests__/pages/api/v1/start-chart.test.ts
+ M web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts
+ M web/components/DraftDashboard/DraftSettingsShell.tsx
+ M web/components/DraftDashboard/DraftWorkspaceHeader.tsx
+ M web/components/DraftDashboard/GodView.tsx
+ M web/components/DraftDashboard/MockDraftWorkspace.tsx
+ M web/components/DraftDashboard/SuggestedPicks.tsx
+ M web/components/GameGrid/DesktopMasterTable.tsx
+ M web/components/GameGrid/GameGrid.module.scss
+ M web/components/GameGrid/GameGrid.tsx
+ M web/components/GameGrid/GameGridPage.test.tsx
+ M web/components/GameGrid/OpponentMetricsTable.module.scss
+ M web/components/GameGrid/OpponentMetricsTable.tsx
+ M web/components/GameGrid/OpportunitySparkline.module.scss
+ M web/components/GameGrid/OpportunitySparkline.test.tsx
+ M web/components/GameGrid/OpportunitySparkline.tsx
+ M web/components/GameGrid/SortableHeaders.test.tsx
+ M web/components/GameGrid/TransposedGrid.tsx
+ M web/components/GameGrid/utils/FourWeekGrid.module.scss
+ M web/components/GameGrid/utils/FourWeekGrid.test.tsx
+ M web/components/GameGrid/utils/FourWeekGrid.tsx
+ M web/components/GameGrid/utils/scheduleOpportunity.ts
+ M web/components/GameGrid/utils/useFourWeekSchedule.test.ts
+ M web/components/GameGrid/utils/useFourWeekSchedule.ts
+ M web/components/GameGrid/utils/useOpponentMetricsData.test.ts
+ M web/components/GameGrid/utils/useOpponentMetricsData.ts
+ M web/components/GameGrid/utils/useSchedule.ts
+ M web/components/GoalieShareChart/GoalieShareChart.module.scss
+ M web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx
+ M web/components/GoalieShareChart/index.tsx
+ M web/components/HomePage/HomepageStandingsInjuriesSection.test.tsx
+ M web/components/HomePage/HomepageStandingsInjuriesSection.tsx
+ M web/components/LineCombinations/LineCombinationsGrid.tsx
+ M web/components/PlayerPickupTable/PlayerPickupTable.test.ts
+ M web/components/PlayerPickupTable/PlayerPickupTable.tsx
+ M web/components/PlayerStats/PlayerContextualStats.test.tsx
+ M web/components/PlayerStats/PlayerContextualStats.tsx
+ M web/components/PlayerStats/PlayerStatsSummary.tsx
+ M web/components/PlayerStats/PlayerSummaryStrip.tsx
+ M web/components/PlayerStats/playerStatsContract.ts
+ M web/components/RosterScheduleOptimizer/CompactSchedule.tsx
+ M web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+ M web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx
+ M web/components/ShotVisualization/ShotVisualization.tsx
+ M web/components/SocialShare/SocialShare.module.scss
+ M web/components/SocialShare/SocialShare.tsx
+ M web/components/StatsPage/LeaderboardCategoryGoalie.tsx
+ M web/components/StatsPage/PlayerSearchBar.test.tsx
+ M web/components/StatsPage/PlayerSearchBar.tsx
+ M web/components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx
+ M web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx
+ M web/components/TeamTabNavigation/TeamTabNavigation.test.tsx
+ M web/components/TeamTabNavigation/TeamTabNavigation.tsx
+ M web/components/account/DraftProPanel.test.tsx
+ M web/components/account/DraftProPanel.tsx
+ M web/components/account/InSeasonPanel.test.tsx
+ M web/components/account/InSeasonPanel.tsx
+ M web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx
+ M web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx
+ M web/contexts/AuthProviderContext/index.tsx
+ M web/e2e/draft-layout.spec.ts
+ M web/e2e/fixtures/game-grid-previews/App.tsx
+ M web/e2e/fixtures/game-grid-previews/data.ts
+ M web/e2e/fixtures/game-grid-previews/server.mjs
+ M web/e2e/game-grid-previews.spec.ts
+ M web/e2e/god-view.spec.ts
+ M web/e2e/roster-schedule-optimizer.spec.ts
+ M web/e2e/social-share.spec.ts
+ M web/hooks/rosterPlanning.worker.ts
+ M web/hooks/rosterPlanningExecution.ts
+ M web/hooks/useDraftProAccess.test.tsx
+ M web/hooks/useProviderSyncAccess.ts
+ M web/hooks/useRosterPlanning.ts
+ M web/hooks/useShotData.test.tsx
+ M web/hooks/useShotData.ts
+ M web/hooks/useTeams.ts
+ M web/lib/NHL/client/index.ts
+ M web/lib/NHL/statsPageFetch.ts
+ M web/lib/NHL/statsPageTypes.ts
+ M web/lib/dashboard/clientFetchCache.ts
+ M web/lib/dashboard/playerOwnership.test.ts
+ M web/lib/dashboard/playerOwnership.ts
+ M web/lib/draft-pro/account/index.test.ts
+ M web/lib/draft-pro/account/index.ts
+ M web/lib/draft-pro/api-tests/checkout.test.ts
+ M web/lib/draft-pro/features.test.ts
+ M web/lib/draft-pro/features.ts
+ M web/lib/in-season/billingRoutes.test.ts
+ M web/lib/in-season/monthlyIntegration.test.ts
+ M web/lib/integrations/providerSyncAccess.test.ts
+ M web/lib/integrations/providerSyncAccess.ts
+ M web/lib/integrations/providerSyncAccessServer.ts
+ M web/lib/integrations/providerSyncPaywall.test.ts
+ M web/lib/integrations/yahoo/liveDraftAccess.ts
+ M web/lib/integrations/yahoo/liveDraftApi.test.ts
+ M web/lib/integrations/yahoo/pickupApi.test.ts
+ M web/lib/newsFeed.ts
+ M web/lib/player-forecasts/resolvedPlanningForecast.ts
+ M web/lib/player-forecasts/rsoUsePolicy.ts
+ M web/lib/projections/apiHelpers.runAdmission.test.ts
+ M web/lib/projections/apiHelpers.ts
+ M web/lib/projections/constants/projection-weights.ts
+ M web/lib/projections/nativeInputEligibility.test.ts
+ M web/lib/projections/run-forge-projections.ts
+ M web/lib/projections/runProjectionV2.test.ts
+ M web/lib/projections/stages/skater-stage.ts
+ M web/lib/rosterScheduleData/forgeDailyBridge.test.ts
+ M web/lib/rosterScheduleOptimizer/currentPlanningRead.ts
+ M web/lib/rosterScheduleOptimizer/executionAdapter.test.ts
+ M web/lib/rosterScheduleOptimizer/executionAdapter.ts
+ M web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts
+ M web/lib/socialShare/export.ts
+ M web/lib/socialShare/schedule.test.ts
+ M web/lib/socialShare/schedule.ts
+ M web/lib/socialShare/server.ts
+ M web/lib/socialShare/types.ts
+ M web/lib/sources/tweetIdentityReplacementReview.test.ts
+ M web/lib/sources/tweetIdentityReplacementReview.ts
+ M web/pages/api/internal/yahoo-live-draft.ts
+ M web/pages/api/v1/account/draft-pro/checkout.ts
+ M web/pages/api/v1/account/in-season/checkout.ts
+ M web/pages/api/v1/account/provider-sync.ts
+ M web/pages/api/v1/db/calculate-wigo-stats.ts
+ M web/pages/api/v1/db/tweet-pattern-review.ts
+ M web/pages/api/v1/db/update-drafted-prospects.ts
+ M web/pages/api/v1/forge/goalies.ts
+ M web/pages/api/v1/forge/players.ts
+ M web/pages/api/v1/projections/goalies.ts
+ M web/pages/api/v1/projections/players.ts
+ M web/pages/api/v1/projections/teams.ts
+ M web/pages/api/v1/social-share/[format].ts
+ M web/pages/api/v1/transactions/ownership-snapshots.ts
+ M web/pages/draft-pro/policies.tsx
+ M web/pages/game-grid/[mode].tsx
+ M web/pages/index.tsx
+ M web/pages/social-share/[format].tsx
+ M web/pages/stats/game/[gameId].tsx
+ M web/pages/stats/team/[teamAbbreviation].tsx
+ M web/pages/wigoCharts.tsx
+ M web/scripts/qualify-native-players-offline.test.ts
+ M web/styles/Stats.module.scss
+ M web/utils/fetchWigoPlayerStats.test.ts
+ M web/utils/fetchWigoPlayerStats.ts
+?? web/__tests__/pages/statsGame.test.tsx
+?? web/__tests__/pages/wigoCharts.test.tsx
+?? web/components/GameGrid/LoadingCells.module.scss
+?? web/components/GameGrid/LoadingCells.tsx
+?? web/components/PlayerStats/PlayerGoalieSummaries.test.tsx
+?? web/components/SocialShare/SocialShare.test.tsx
+?? web/components/SocialShare/SocialShareAccessGate.test.tsx
+?? web/components/SocialShare/SocialShareAccessGate.tsx
+?? web/components/SocialShare/TeamBanner.tsx
+?? web/components/account/InSeasonPanel.rollout.test.tsx
+?? web/components/buyLowSellHigh/BlshPlayerDetail.module.scss
+?? web/components/buyLowSellHigh/BlshPlayerDetail.tsx
+?? web/e2e/roster-schedule-optimizer-fixtures.ts
+?? web/hooks/yahooPlanningReadBroker.test.ts
+?? web/hooks/yahooPlanningReadBroker.ts
+?? web/lib/NHL/client/index.test.tsx
+?? web/lib/NHL/client/sharedRead.test.ts
+?? web/lib/NHL/client/sharedRead.ts
+?? web/lib/dashboard/clientFetchCache.test.ts
+?? web/lib/homepageNewsCompatibility.test.tsx
+?? web/lib/integrations/providerSyncRolloutRoutes.test.ts
+?? web/lib/integrations/yahoo/planningConfirmationRoute.test.ts
+?? web/lib/integrations/yahoo/planningConfirmations.test.ts
+?? web/lib/integrations/yahoo/planningConfirmations.ts
+?? web/lib/projections/reconcile.test.ts
+?? web/lib/projections/research/skater-candidates/accounting.test.ts
+?? web/lib/projections/research/skater-candidates/accounting.ts
+?? web/lib/projections/research/skater-candidates/context.test.ts
+?? web/lib/projections/research/skater-candidates/context.ts
+?? web/lib/projections/research/skater-candidates/priors.test.ts
+?? web/lib/projections/research/skater-candidates/priors.ts
+?? web/lib/rosterScheduleOptimizer/privatePlanningRead.ts
+?? web/lib/socialShare/access.test.ts
+?? web/lib/socialShare/access.ts
+?? web/lib/socialShare/edition.ts
+?? web/lib/socialShare/editionFetch.test.ts
+?? web/lib/socialShare/editionFetch.ts
+?? web/lib/socialShare/fixtures.ts
+?? web/lib/socialShare/matchups.test.ts
+?? web/lib/socialShare/matchups.ts
+?? web/lib/socialShare/mondayGrid.test.ts
+?? web/lib/socialShare/mondayGrid.ts
+?? web/lib/socialShare/pickupsFixture.ts
+?? web/lib/socialShare/playerSources.test.ts
+?? web/lib/socialShare/playerSources.ts
+?? web/lib/socialShare/players.test.ts
+?? web/lib/socialShare/players.ts
+?? web/lib/socialShare/score.test.ts
+?? web/lib/socialShare/score.ts
+?? web/lib/socialShare/teamRates.test.ts
+?? web/lib/socialShare/teamRates.ts
+?? web/lib/socialShare/tiers.test.ts
+?? web/lib/socialShare/tiers.ts
+?? web/lib/socialShare/trends.test.ts
+?? web/lib/socialShare/trends.ts
+?? web/lib/socialShare/trendsFixture.ts
+?? web/lib/sources/fixtures/homepageNewsReceipt.json
+?? web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json
+?? web/lib/sources/tweetLunaLocalStore.ts
+?? web/lib/sources/tweetLunaReview.test.ts
+?? web/lib/sources/tweetLunaReview.ts
+?? web/lib/sources/tweetLunaTransport.ts
+?? web/pages/api/v1/roster-schedule-optimizer/yahoo-current-data.ts
+?? web/scripts/forge-assist-export.test.ts
+?? web/scripts/forge-assist-export.ts
+?? web/scripts/forge-skater-candidate-ablation.test.ts
+?? web/scripts/forge-skater-candidate-ablation.ts
+?? web/scripts/review-ifttt-luna.ts

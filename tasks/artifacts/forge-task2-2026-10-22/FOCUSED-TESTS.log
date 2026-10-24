@@ -1,0 +1,27 @@
+
+> web@0.1.0 test
+> vitest --run lib/projections/queries/skater-queries.test.ts lib/projections/nativeGoalAccounting.test.ts scripts/qualify-native-players-offline.test.ts lib/projections/runProjectionV2.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:47462) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:47461) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:47460) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | lib/projections/queries/skater-queries.test.ts > counted rolling skater history (legacy window scan) > completes the exact bounded scope at 0 rows
+forge_latest_rolling_rows is not deployed (PGRST202); FORGE reads rolling rows by the legacy window scan.
+
+ ✓ lib/projections/queries/skater-queries.test.ts (110 tests) 82ms
+ ✓ lib/projections/runProjectionV2.test.ts (108 tests) 27ms
+ ✓ lib/projections/nativeGoalAccounting.test.ts (37 tests) 232ms
+ ✓ scripts/qualify-native-players-offline.test.ts (56 tests) 5600ms
+   ✓ offline current native player qualification > reproduces current native calculations with genuine admission and zero live client/transport/writes  635ms
+
+ Test Files  4 passed (4)
+      Tests  311 passed (311)
+   Start at  12:09:06
+   Duration  5.87s (transform 659ms, setup 6ms, collect 745ms, tests 5.94s, environment 542ms, prepare 135ms)
+

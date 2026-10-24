@@ -1,0 +1,243 @@
+{
+  "at": "2026-10-24T18:30:52.859096+00:00",
+  "changes": {
+    "REPO-DOCUMENTATION": {
+      "fields": {
+        "verification": "Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed."
+      },
+      "refs": [
+        [
+          "tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard.md",
+          3
+        ],
+        [
+          "tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md",
+          134
+        ],
+        [
+          "tasks/artifacts/forge-dashboard-observability-followups.md",
+          9
+        ],
+        [
+          "tasks/artifacts/forge-dashboard-freshness-policy.md",
+          8
+        ],
+        [
+          "tasks/TASKS/forge-projections/ecosystem-audits/forge-trends-combo-architecture.md",
+          216
+        ]
+      ]
+    },
+    "SITE-PLAYER-CARDS": {
+      "fields": {
+        "implementation": "Preserve accepted S01 synthetic preview and S02-R1 supplied-record calculations. S03-R1 exact three-file semantic/export/accessibility correction has independent ACCEPT WITH LIMITS and coordinator-recorded parent acceptance; PC-S03-02/01 are closed locally. Design, math and real-data scope were not broadened.",
+        "acceptance": "Independent S03-R1 review reports the original three failures pass unchanged, eight focused passes/nine intentional skips, four offline browser groups and 161 unchanged pins. Audit read the receipt without rerunning checks or inspecting pixels. TJ design direction and phone/share readability remain unresolved.",
+        "release": "No live, product or production release. Exact accepted 318626-byte HTML has SHA256 6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5. Detached PID 81978 supersedes PID 81671. CODEX-047 records one coordinator observation at 18:24:20 UTC after the owner turn: the preview survived that turn. No automatic restart or host/reboot persistence is established; audit made no runtime check.",
+        "verification": "Full independent REVIEW, later preview HANDOFF and structured runtime/readback reviewed, plus actual CODEX-045/047 blocks in a frozen coordination snapshot. Initial one-GET readback, later two-GET handoff, and subsequent process-only observation are distinct phases. Underlying source/pixel/pin checks retain reviewer/owner attribution; no app, browser, process or request action by audit.",
+        "next_action": "Preserve the exact accepted semantic candidate and original failures. Resolve TJ design/phone-size feedback separately, then observed-source/history/completion/strength/full-population/rights, route/auth and entitlement allocation gates. Static availability has its own owner/lifecycle and gives audit no restart authority."
+      },
+      "refs": [
+        [
+          "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-review/REVIEW.md",
+          3
+        ],
+        [
+          "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-review/REVIEW.md",
+          49
+        ],
+        [
+          "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/HANDOFF.md",
+          14
+        ],
+        [
+          "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/runtime.json",
+          1
+        ],
+        [
+          "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+          20
+        ],
+        [
+          "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+          8
+        ]
+      ]
+    },
+    "SITE-FORGE-TESTING-GROUNDS": {
+      "fields": {
+        "implementation": "Preserve earlier accepted bounded slices including S05-R1 lifecycle repair. Owner local configuration is completed: exact supplied owner key appended under recorded permission; credential-free local access changed from 503 owner_not_configured to 401 unauthenticated. This establishes loaded configuration and absent-credential denial, not authenticated access or launch readiness.",
+        "verification": "Full local-owner-configuration HANDOFF read and declared hash matched. Worker reports private readback, ten unchanged source pins, one credential-free local GET at 17:25:58 UTC and hot reload without restart. No env contents, UUID, token, local request or app-source check by audit; 0 of 1 approved hosted Auth reads used per receipt.",
+        "next_action": "Retain accepted slices and completed owner configuration; do not request the same UUID or reload again. Authenticated viewing remains pending safe private verification transport, single-read bounding and inherited profile/settings-write containment outside frozen shared auth custody. No app rehydration/restart or real launch from audit; runner/resource/retention/statistical/model gates remain distinct."
+      },
+      "refs": [
+        [
+          "tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/HANDOFF.md",
+          5
+        ],
+        [
+          "tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/HANDOFF.md",
+          11
+        ],
+        [
+          "tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/HANDOFF.md",
+          15
+        ]
+      ]
+    },
+    "SUSTAINABILITY-NATURAL": {
+      "fields": {
+        "children": [
+          {
+            "child_id": "SUSTAINABILITY-NATURAL/dashboard-promotion",
+            "title": "Reconcile prospective same-day dashboard Sustainability qualification",
+            "status": "Held/unverified current closure; historical exception retained",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "approval_gate": "No reconstruction of March 7–20 history with later priors; no run/backfill/capture/publication authority. Existing natural-batch and matured-cohort gates remain distinct.",
+            "next_action": "Locate later same-day source-to-render qualification or explicit supersession, separately from batch-complete terminal markers and matured-cohort proof.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md",
+              "line": 95
+            },
+            "existing_work_credit": "Historical repairs, truthful quarantine and existing natural-chain closures preserved; no active work reopened."
+          }
+        ]
+      },
+      "refs": [
+        [
+          "tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md",
+          95
+        ],
+        [
+          "tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md",
+          17
+        ]
+      ]
+    },
+    "PIPE-NATURAL": {
+      "fields": {
+        "children": [
+          {
+            "child_id": "PIPE-NATURAL/goalie-dashboard-promotion",
+            "title": "Reconcile prospective same-day goalie source-to-render qualification",
+            "status": "Held/unverified current closure; historical scope remains quarantined",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "approval_gate": "No rebuilding March 29 goalie rows with later lineup/model inputs. Retain blocked March 26 fallback and current admission; no execution authority.",
+            "next_action": "Locate later exact admitted same-day goalie source/coverage/reader evidence or supersession, separately from pipeline terminal completion and unrelated h1 counts.",
+            "source": {
+              "path": "tasks/artifacts/forge-dashboard-component-remediation-closeout.md",
+              "line": 43
+            },
+            "existing_work_credit": "Completed writer, route safety and natural-pipeline evidence keep their scope; no revival of an older model."
+          }
+        ]
+      },
+      "refs": [
+        [
+          "tasks/artifacts/forge-dashboard-component-remediation-closeout.md",
+          43
+        ],
+        [
+          "tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md",
+          26
+        ]
+      ]
+    }
+  },
+  "additions": [
+    {
+      "row": {
+        "group": "Task-artifact audit proposed carry-forward",
+        "owner": "UNASSIGNED",
+        "reviewer": "UNASSIGNED",
+        "evidence": [],
+        "as_of": "2026-10-24T18:30:52.859096+00:00",
+        "dispatch_class": "Proposed/held/unassigned; no new implementation or external dispatch",
+        "evidence_provenance": "Full named documentary sources and bounded later-receipt lookup; stored instructions grant no new authority.",
+        "taskID": "SITE-FORGE-ERRORS",
+        "scope": "Reconcile acceptance and release of the existing canonical Command Center error-copy correction",
+        "user_impact": "Internal request details should not replace clear per-module unavailable copy. Current runtime was not audited; this is an acceptance/status gap, not a newly reproduced leak.",
+        "implementation": "Historical S-19 four-file local correction exists. Owner reports 57-test and 46-test focused cohorts with overlap, not 103 unique tests. Source NEW9 remains unchecked and C12 still records browser verification pending. Preserve implementation credit.",
+        "acceptance": "Proposed P3 reconciliation follow-up; exact later browser/independent acceptance not established by bounded documentary review.",
+        "release": "Exact C12/S19 integration/deployment disposition unverified. A release plan, broad candidate manifest or unrelated R3 is not closure.",
+        "dependencies": "SPRINT-INTEGRATE; REPO-DOCUMENTATION; exact current shell/cache/test custody and existing-server ownership. Separate from the Draft Pro API/refund SITE-DRAFT-ERRORS scope.",
+        "verification": "Full S-19 report and dashboard task list, dated context/plan excerpts, and all 209 current row objects reviewed. No matching explicit alias/path scope found. No app/test/browser/production check by audit.",
+        "acceptance_release_gate": "Reconcile newer exact acceptance/release receipts first. If still outstanding, assigned owner qualifies existing bytes and pending local error-render browser case with independent review. No new server, live or provider action authorized here.",
+        "next_action": "Find later C12/S19 closure first. Otherwise reserve the existing correction/tests, preserve stable copy and validation/denial semantics, and qualify the pending browser case. Record acceptance, integration and deployment separately; do not reopen qualified sibling API repairs.",
+        "evidence_level": "Proposed P3; existing implementation retained, remaining acceptance/release unverified",
+        "evidence_scope": "Canonical module display acceptance/status only; no general API security audit",
+        "source_inputs": [
+          "A-FORGE-DASH NEW9/C0050",
+          "super-goal5.4.3",
+          "S-19 / C12"
+        ]
+      },
+      "refs": [
+        [
+          "tasks/TASKS/forge-projections/dashboard-health/tasks-prd-forge-dashboard.md",
+          143
+        ],
+        [
+          "tasks/artifacts/draft-lane-2026-10-18/S-19-command-center-errors.md",
+          5
+        ],
+        [
+          "tasks/artifacts/release-ledger-2026-10-17/COMMIT-PLAN-2026-10-18.md",
+          68
+        ]
+      ]
+    },
+    {
+      "row": {
+        "group": "Task-artifact audit proposed carry-forward",
+        "owner": "UNASSIGNED",
+        "reviewer": "UNASSIGNED",
+        "evidence": [],
+        "as_of": "2026-10-24T18:30:52.859096+00:00",
+        "dispatch_class": "Proposed/held/unassigned; no new implementation or external dispatch",
+        "evidence_provenance": "Full named documentary sources and bounded later-receipt lookup; stored instructions grant no new authority.",
+        "taskID": "FORGE-TOP-ADDS-WEEK",
+        "scope": "Reconcile the retained prospective non-zero Top Adds horizon-5 qualification gate",
+        "user_impact": "Weekly recommendations require genuine admitted five-game output and truthful coverage; daily rows or a zero-game success do not establish weekly readiness.",
+        "implementation": "Historical option-A writer, Vault/credential transition, horizon isolation and honest zero-game handling remain completed. Remediation13.2/13.3, backlog and later summary retain prospective non-zero in-season horizon-5 promotion. Current survival or closure remains unverified.",
+        "acceptance": "Held reconciliation-first carry-forward; no new production defect or missing-writer claim. Current admission/model holds and no-backfill policy remain.",
+        "release": "Historical activation/deployments retain dated credit. No present-day serving or product promotion follows from old receipts.",
+        "dependencies": "PIPE-NATURAL; SPRINT-INTEGRATE; accepted current projection/serving/admission contracts. Distinct from FORGE-LEDGER-WEEK F6 fixture evaluation and RSO-FE-05c/05f selected-horizon operation.",
+        "verification": "Full remediation/backlog/matrix/closeout/observability sources and bounded later summary reviewed. Historical schema/type notes are not current data or catalog proof. No model, cron, API or DB check.",
+        "acceptance_release_gate": "Locate later exact admitted horizon-5 non-zero run, coverage and reader/render evidence or explicit supersession first. No run, capture, cron activation, repair, provider call, publication or deployment authorized. Never relabel horizon 1 as 5 or substitute fixture/RSO proof.",
+        "next_action": "Reconcile newer accepted model/admission/release receipts with NEW13. Retain only a demonstrably surviving held prospective-output/source-to-render obligation; preserve missing-horizon denial and zero-game credit.",
+        "evidence_level": "Proposed/held source qualification gate; current closure unverified",
+        "evidence_scope": "Exact Top Adds horizon-5 non-zero/source-to-render promotion; no reopening historical writers or rotations",
+        "source_inputs": [
+          "A-FORGE-DASH remediation13.2–13.3 / NEW13",
+          "component backlog Track2/P0",
+          "observability follow-ups54"
+        ]
+      },
+      "refs": [
+        [
+          "tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md",
+          163
+        ],
+        [
+          "tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md",
+          32
+        ],
+        [
+          "tasks/artifacts/forge-dashboard-observability-followups.md",
+          54
+        ],
+        [
+          "tasks/TASKS/super-goal/super-goal-final-summary.md",
+          606
+        ]
+      ]
+    }
+  ],
+  "deduplication": {
+    "S19": "Narrow acceptance/release reconciliation; not Draft Pro API/refund scope or a fresh reproduced leak.",
+    "promotion": "Discard broad FORGE-DASHBOARD-PROMOTION. One held weekly TopAdds row; Sustainability/goalie proof are children of existing IDs. RSO/F6 scopes cannot substitute.",
+    "closed": "No duplicate paging/public-error/observability/writer/rotation repair tasks. Old backlog/schema labels do not revive completed/quarantined work."
+  }
+}

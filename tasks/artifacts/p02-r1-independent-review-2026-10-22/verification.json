@@ -1,0 +1,57 @@
+{
+  "status": "qualified_local_acceptance_P02_R1_closed",
+  "head": "a565238f670edc4cf65da79ad52ba82ec41f3b71",
+  "acceptedFiles": [
+    {
+      "path": "web/components/PlayerStats/PlayerSummaryStrip.tsx",
+      "before_sha256": "9581b77429c45d8ab1fd0fc3c08365f380f2b3607e32878c76d32d9564e9c92a",
+      "operation": "modify",
+      "after_sha256": "3956e59250acfa65c7d855b512268da1416825319953fda71778e0a773385b84"
+    },
+    {
+      "path": "web/components/PlayerStats/PlayerStatsSummary.tsx",
+      "before_sha256": "cc53653a7458131313e1b20931c090b1444877eef4c6cfb65e08f2c478f8ec1e",
+      "operation": "modify",
+      "after_sha256": "7dbddd62b5d1b8469b96daa2652b96d8649362d517db77ec0aec1dd65a8687d3"
+    },
+    {
+      "path": "web/components/PlayerStats/PlayerGoalieSummaries.test.tsx",
+      "before_sha256": null,
+      "operation": "add",
+      "after_sha256": "97422008b0835ac6aa8e33e9223aa42a594df8e1d461fad0ec74152aa0f97e10"
+    }
+  ],
+  "checks": {
+    "focusedPassed": 26,
+    "originalReviewerOracles": 2,
+    "originalReviewerControls": 6,
+    "newRegressionsAndControls": 18,
+    "scopedTscExit": 0,
+    "threeFileLintExit": 0,
+    "originalNineUnchanged": 9,
+    "a7A9Unchanged": 13,
+    "extensionClosureUnchangedDuringReview": 52,
+    "oldOwner50FileClosure": {
+      "unchanged": 49,
+      "intentionallyChanged": [
+        "web/components/PlayerStats/PlayerSummaryStrip.tsx"
+      ]
+    },
+    "oldIndependent51FileClosure": {
+      "unchanged": 49,
+      "intentionallyChanged": [
+        "web/components/PlayerStats/PlayerSummaryStrip.tsx",
+        "web/components/PlayerStats/PlayerStatsSummary.tsx"
+      ]
+    }
+  },
+  "newTestPath": "web/components/PlayerStats/PlayerGoalieSummaries.test.tsx",
+  "externalActionsAttempted": 0,
+  "applicationEdits": 0,
+  "executionBlockers": [],
+  "remainingGates": [
+    "profile QS/time hydration and TOI type reconciliation",
+    "live source validity, grains and season joins",
+    "broader P02 and release qualification"
+  ]
+}

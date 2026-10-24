@@ -1,0 +1,176 @@
+{
+  "base_head": "d77602cf7fbdd4549588127603ebf0b535138b99",
+  "files": [
+    {
+      "path": "web/lib/in-season/billing.ts",
+      "base_sha256": "8cccbde2913c3c8ae05916f04fa1ccdf37546440ceff7a17f9aafa15a69598a2",
+      "current_sha256": "8cccbde2913c3c8ae05916f04fa1ccdf37546440ceff7a17f9aafa15a69598a2",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/billingConfig.ts",
+      "base_sha256": "5b1550ae9cdd6781b33483f2c2d3b0340534ac4da5e423014a5edaa89286127e",
+      "current_sha256": "5b1550ae9cdd6781b33483f2c2d3b0340534ac4da5e423014a5edaa89286127e",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/billingStore.ts",
+      "base_sha256": "42a2c05daeeca9e542876072e29f443d5e4f8f6fe2bf22f372062c1fe65d1a3e",
+      "current_sha256": "42a2c05daeeca9e542876072e29f443d5e4f8f6fe2bf22f372062c1fe65d1a3e",
+      "match": true
+    },
+    {
+      "path": "web/pages/api/v1/account/in-season/checkout.ts",
+      "base_sha256": "53508ada83a494e9ecfb9f9ddc1416eafe9c62f270b01d5081a826914c144c3f",
+      "current_sha256": "53508ada83a494e9ecfb9f9ddc1416eafe9c62f270b01d5081a826914c144c3f",
+      "match": true
+    },
+    {
+      "path": "web/pages/api/v1/webhooks/in-season-stripe.ts",
+      "base_sha256": "340a9d0f007921a07ed02cea098955fe18aa7eeb04c1bb033fa48e55005ca718",
+      "current_sha256": "340a9d0f007921a07ed02cea098955fe18aa7eeb04c1bb033fa48e55005ca718",
+      "match": true
+    },
+    {
+      "path": "web/components/account/InSeasonPanel.tsx",
+      "base_sha256": "aa8b536ee039599c6d41167841b5c1a177f0350c895d03ae0b6ed0acfd76a167",
+      "current_sha256": "aa8b536ee039599c6d41167841b5c1a177f0350c895d03ae0b6ed0acfd76a167",
+      "match": true
+    },
+    {
+      "path": "web/components/account/AccountSettingsPage.tsx",
+      "base_sha256": "d83a6006f77aa0b8324d400992e5ae4be78bc48a438027cfb765397e7abd8252",
+      "current_sha256": "d83a6006f77aa0b8324d400992e5ae4be78bc48a438027cfb765397e7abd8252",
+      "match": true
+    },
+    {
+      "path": "web/components/account/ProviderSyncNotice.tsx",
+      "base_sha256": "2cd73b22ab635a09fb75b4fca95e0113a2a14ae42b396a4ac29f46ddd592917f",
+      "current_sha256": "2cd73b22ab635a09fb75b4fca95e0113a2a14ae42b396a4ac29f46ddd592917f",
+      "match": true
+    },
+    {
+      "path": "web/components/DraftDashboard/YahooLiveDraftPanel.tsx",
+      "base_sha256": "ec51d1c2252bcc8dbadbee0679197daa76fd9c0c9d7055cd5e13c1add6de11d0",
+      "current_sha256": "ec51d1c2252bcc8dbadbee0679197daa76fd9c0c9d7055cd5e13c1add6de11d0",
+      "match": true
+    },
+    {
+      "path": "web/lib/integrations/providerSyncAccess.ts",
+      "base_sha256": "5e34f581be828b4f0b45cbfbb0e0851b65567f81fc35795000af4e79f7483ae5",
+      "current_sha256": "5e34f581be828b4f0b45cbfbb0e0851b65567f81fc35795000af4e79f7483ae5",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/commerce.ts",
+      "base_sha256": "842f71b96159cd9c905edafdc89641c69fb5eacf455cd355b4a9293e5067bd18",
+      "current_sha256": "842f71b96159cd9c905edafdc89641c69fb5eacf455cd355b4a9293e5067bd18",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/monthlyLifecycle.ts",
+      "base_sha256": "27d93048119a08f88272bf000375026aa948cb476fd95561d53ffce2782c7489",
+      "current_sha256": "27d93048119a08f88272bf000375026aa948cb476fd95561d53ffce2782c7489",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/monthlyStripe.ts",
+      "base_sha256": "b5feef17b907fb4f267761ad2e3cae3362a569df04c46c5dd1488792b5331f21",
+      "current_sha256": "b5feef17b907fb4f267761ad2e3cae3362a569df04c46c5dd1488792b5331f21",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/paymentAdjustments.ts",
+      "base_sha256": "f01a4839a291e3094b2180fa878517b92846d7e4c365313fe767fc5c04da9af2",
+      "current_sha256": "f01a4839a291e3094b2180fa878517b92846d7e4c365313fe767fc5c04da9af2",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/monthlySchedule.ts",
+      "base_sha256": "da2d8a6c7f38be8d842555b36cdb19c85d75c727d4f396ca16d43a53fb315db0",
+      "current_sha256": "da2d8a6c7f38be8d842555b36cdb19c85d75c727d4f396ca16d43a53fb315db0",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/monthlyBilling.ts",
+      "base_sha256": "981d1cc479722db6feb075735cb6bfd305735200f2a863474969ec78d3d0f106",
+      "current_sha256": "981d1cc479722db6feb075735cb6bfd305735200f2a863474969ec78d3d0f106",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/monthlyStore.ts",
+      "base_sha256": "bdae4bac8a1cfc1acc6de67c5b7875ca3a16a41adbf74c103bd0ab900d4d4179",
+      "current_sha256": "bdae4bac8a1cfc1acc6de67c5b7875ca3a16a41adbf74c103bd0ab900d4d4179",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/monthlyWebhook.ts",
+      "base_sha256": "a0ade4afbca6a0ba9996f465de9ba2a87099373b31dbceee0a65cfb9f05c7cad",
+      "current_sha256": "a0ade4afbca6a0ba9996f465de9ba2a87099373b31dbceee0a65cfb9f05c7cad",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/monthlyExecutor.ts",
+      "base_sha256": "6e4b2f2288bb668d45e3952bbf6ac7446ebf878cd630cbcc5dce732b657cbc94",
+      "current_sha256": "6e4b2f2288bb668d45e3952bbf6ac7446ebf878cd630cbcc5dce732b657cbc94",
+      "match": true
+    },
+    {
+      "path": "web/pages/api/v1/account/in-season/cancel.ts",
+      "base_sha256": "8da458c521e3a89c112b002eb3b3f664db14832e0a16c7a44575c6610c1b94e5",
+      "current_sha256": "8da458c521e3a89c112b002eb3b3f664db14832e0a16c7a44575c6610c1b94e5",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/billing.test.ts",
+      "base_sha256": "6389c7fc60972021fb75444ddbf70ec4b0ae9218d5d982de207c0d79eb40b702",
+      "current_sha256": "6389c7fc60972021fb75444ddbf70ec4b0ae9218d5d982de207c0d79eb40b702",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/billingRoutes.test.ts",
+      "base_sha256": "ed71429ee5e16193c280f33d570390107ac970a55dff6aa001501be078cab9aa",
+      "current_sha256": "ed71429ee5e16193c280f33d570390107ac970a55dff6aa001501be078cab9aa",
+      "match": true
+    },
+    {
+      "path": "web/components/account/InSeasonPanel.test.tsx",
+      "base_sha256": "9111c5524568150797b0cc232e3b4f2584758102206531d9b26d408ba8abdd10",
+      "current_sha256": "9111c5524568150797b0cc232e3b4f2584758102206531d9b26d408ba8abdd10",
+      "match": true
+    },
+    {
+      "path": "web/__tests__/components/DraftDashboard/YahooLiveDraftPanel.test.tsx",
+      "base_sha256": "9090f5047f55a728497078731518a44c02711c2a0a9094d53196d8f7f7c75bd2",
+      "current_sha256": "9090f5047f55a728497078731518a44c02711c2a0a9094d53196d8f7f7c75bd2",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/commerce.test.ts",
+      "base_sha256": "9d53a44741d00c78bfb607b8c2de80da49c406689b644a4484d34841e5f4a55b",
+      "current_sha256": "9d53a44741d00c78bfb607b8c2de80da49c406689b644a4484d34841e5f4a55b",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/monthlyLifecycle.test.ts",
+      "base_sha256": "2b37bf450bbe5ac6cd44d73bcc4bf5bf3ce8d1107ef3bd81c3f83ca1f3f99b09",
+      "current_sha256": "2b37bf450bbe5ac6cd44d73bcc4bf5bf3ce8d1107ef3bd81c3f83ca1f3f99b09",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/monthlyStripe.test.ts",
+      "base_sha256": "45ea46d44fbc619b09e1b6af0737000574d5e5663bc7c2881964b40ff87a294b",
+      "current_sha256": "45ea46d44fbc619b09e1b6af0737000574d5e5663bc7c2881964b40ff87a294b",
+      "match": true
+    },
+    {
+      "path": "web/lib/in-season/monthlyIntegration.test.ts",
+      "base_sha256": "cb87e47d4d2b1050577a62cba6bebccb12101df57709dbcb6773d95abb3594b5",
+      "current_sha256": "778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025",
+      "match": false,
+      "earlier_relocation_review_sha256": "778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025",
+      "matches_relocation_review": true
+    }
+  ],
+  "p07_candidate_overlap": []
+}

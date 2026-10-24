@@ -1,0 +1,1933 @@
+{
+  "port": 3140,
+  "origin": "http://127.0.0.1:3140",
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf/web",
+  "cache": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf/web/.next-playwright",
+  "readiness_route": "/social-share/game-grid",
+  "readiness_connection_attempts": 2,
+  "readiness_successful_responses": 1,
+  "server_started": true,
+  "server_stopped": true,
+  "external_service_permission": false,
+  "before_pins": {
+    "web/utils/fetchWigoPlayerStats.ts": {
+      "expected": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f",
+      "actual": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/utils/fetchWigoPlayerStats.test.ts": {
+      "expected": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1",
+      "actual": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.module.scss": {
+      "expected": "1352a81560e50128c75709d29ad65eed1295562834746e7cf2d18948e65d138b",
+      "actual": "1352a81560e50128c75709d29ad65eed1295562834746e7cf2d18948e65d138b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx": {
+      "expected": "fef6ef9c2b4b4fd754333d322b1ac31d5193c27a17b098c2c3d7a0b01a686536",
+      "actual": "fef6ef9c2b4b4fd754333d322b1ac31d5193c27a17b098c2c3d7a0b01a686536",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/GoalieShareChart/index.tsx": {
+      "expected": "b632a0cae6a50174012264950b7a0ca1b22402811a7162024216c40ecf09949c",
+      "actual": "b632a0cae6a50174012264950b7a0ca1b22402811a7162024216c40ecf09949c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/LineCombinations/LineCombinationsGrid.tsx": {
+      "expected": "fb5c6a3c0d50f1c9f1abca1de82527420cc240b3ba3c4b125c466485b18c6de7",
+      "actual": "fb5c6a3c0d50f1c9f1abca1de82527420cc240b3ba3c4b125c466485b18c6de7",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/ShotVisualization/ShotVisualization.tsx": {
+      "expected": "a563dadeed8e41915c11258019a0a97cbb0872622391307fa069a39daec2b921",
+      "actual": "a563dadeed8e41915c11258019a0a97cbb0872622391307fa069a39daec2b921",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/TeamTabNavigation/TeamTabNavigation.test.tsx": {
+      "expected": "6312ca9177389c01db342826b4833f99facc9729ddbacd4f737b21ae245dbae0",
+      "actual": "6312ca9177389c01db342826b4833f99facc9729ddbacd4f737b21ae245dbae0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/TeamTabNavigation/TeamTabNavigation.tsx": {
+      "expected": "3e9fd15559b22ec0949e176086531be5348a92ac1efc0dcd4beebc2d92730fb6",
+      "actual": "3e9fd15559b22ec0949e176086531be5348a92ac1efc0dcd4beebc2d92730fb6",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/hooks/useShotData.test.tsx": {
+      "expected": "7c78ae8c32883b6c035c2ba3d12ee6f50e04b3c3b3293770f33f7d0529aee0f2",
+      "actual": "7c78ae8c32883b6c035c2ba3d12ee6f50e04b3c3b3293770f33f7d0529aee0f2",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/hooks/useShotData.ts": {
+      "expected": "a5a77ced8be87b36e34ffe71003e4df48942f34c7af1de43608736f7074af4c1",
+      "actual": "a5a77ced8be87b36e34ffe71003e4df48942f34c7af1de43608736f7074af4c1",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/stats/team/[teamAbbreviation].tsx": {
+      "expected": "561a048fe68f4f49fb4a7bc54eb3c87be39fcb90c87eca4002dd81f7b205957c",
+      "actual": "561a048fe68f4f49fb4a7bc54eb3c87be39fcb90c87eca4002dd81f7b205957c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/styles/Stats.module.scss": {
+      "expected": "e0dbf85fab25a006ce4b5f7be97ef7c355c519e34edba385c5226a157f15d8d8",
+      "actual": "e0dbf85fab25a006ce4b5f7be97ef7c355c519e34edba385c5226a157f15d8d8",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/__tests__/pages/wigoCharts.test.tsx": {
+      "expected": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b",
+      "actual": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/wigoCharts.tsx": {
+      "expected": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151",
+      "actual": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/__tests__/pages/stats/team/teamAbbreviation.test.tsx": {
+      "expected": "71dd3fb4234009950c6bad3cb7f5b0b047aa6ff198fb8648888d08987c9de16b",
+      "actual": "71dd3fb4234009950c6bad3cb7f5b0b047aa6ff198fb8648888d08987c9de16b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.test.ts": {
+      "expected": "250bfc553ce0caa0cb1901c7592e1d3f0dde93180e0e97255a0948b8435baeec",
+      "actual": "250bfc553ce0caa0cb1901c7592e1d3f0dde93180e0e97255a0948b8435baeec",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/NewsFeed/NewsCard.tsx": {
+      "expected": "ab46854d98aa3ee4f2ae1e433dfb4f38b55af2c875d5c88fa58e47f72a3a928a",
+      "actual": "ab46854d98aa3ee4f2ae1e433dfb4f38b55af2c875d5c88fa58e47f72a3a928a",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/NewsFeed/NewsCard.test.tsx": {
+      "expected": "a9e031dac51da085f7d9ec14ce08ec62049e6fde50d4259e4243eb63a9aa52af",
+      "actual": "a9e031dac51da085f7d9ec14ce08ec62049e6fde50d4259e4243eb63a9aa52af",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/sources/fixtures/homepageNewsReceipt.json": {
+      "expected": "ac3e9711a02275749990f9020611e560ae8c07b6f06daa476f587bb14467a0a1",
+      "actual": "ac3e9711a02275749990f9020611e560ae8c07b6f06daa476f587bb14467a0a1",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/supabase/browser-auth.ts": {
+      "expected": "6c4f86fefb3219fb310513efc85aaafe3dc5b698a2fab24b78731628255ef2b0",
+      "actual": "6c4f86fefb3219fb310513efc85aaafe3dc5b698a2fab24b78731628255ef2b0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/__tests__/contexts/AuthProviderContext.test.tsx": {
+      "expected": "c3cf3f66b7b51d992a11df5207a429ed22350bd88c03ba43993033e82ff1941b",
+      "actual": "c3cf3f66b7b51d992a11df5207a429ed22350bd88c03ba43993033e82ff1941b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShare.module.scss": {
+      "expected": "2c5190a761330c728b4447cad259078f241843d03d69e9795bcf69b4c190ae93",
+      "actual": "2c5190a761330c728b4447cad259078f241843d03d69e9795bcf69b4c190ae93",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShare.test.tsx": {
+      "expected": "1fbcc0a3d8c5f5a65cb3a9fdfa984205fd5298b1e96abfc91ac426d2ee5c6bea",
+      "actual": "1fbcc0a3d8c5f5a65cb3a9fdfa984205fd5298b1e96abfc91ac426d2ee5c6bea",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShare.tsx": {
+      "expected": "b0ac1fe9c30a6ceb89accb13b721885d57f141929a4d95ee29decbbb754273db",
+      "actual": "b0ac1fe9c30a6ceb89accb13b721885d57f141929a4d95ee29decbbb754273db",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShareAccessGate.test.tsx": {
+      "expected": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+      "actual": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShareAccessGate.tsx": {
+      "expected": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "actual": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/TeamBanner.tsx": {
+      "expected": "f0aff1ab3d0139742c834d65893445ae18fb477600dc13dcfecb54901730867f",
+      "actual": "f0aff1ab3d0139742c834d65893445ae18fb477600dc13dcfecb54901730867f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/contexts/AuthProviderContext/index.tsx": {
+      "expected": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "actual": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/e2e/social-share.spec.ts": {
+      "expected": "29e60bf08982c43d0fd4090f640abb8a7641c0a54d4a42dad39be1f98641c4ff",
+      "actual": "29e60bf08982c43d0fd4090f640abb8a7641c0a54d4a42dad39be1f98641c4ff",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/access.test.ts": {
+      "expected": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+      "actual": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/access.ts": {
+      "expected": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "actual": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/edition.ts": {
+      "expected": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0",
+      "actual": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/editionFetch.test.ts": {
+      "expected": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236",
+      "actual": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/editionFetch.ts": {
+      "expected": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "actual": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/export.ts": {
+      "expected": "8dc961de8b11c6c79dc34b78c991fc51ce38eaf2cc2bbdd1a073a72bc034cabd",
+      "actual": "8dc961de8b11c6c79dc34b78c991fc51ce38eaf2cc2bbdd1a073a72bc034cabd",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/fixtures.ts": {
+      "expected": "865e699e39f7d0895b3f1059327221111d7d2bc14a43e96c749ccffeb29944df",
+      "actual": "865e699e39f7d0895b3f1059327221111d7d2bc14a43e96c749ccffeb29944df",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/matchups.test.ts": {
+      "expected": "3f01ea8f7acb5fe6fe276503809b154cbe6786c03c8acd1f271b4f118061246f",
+      "actual": "3f01ea8f7acb5fe6fe276503809b154cbe6786c03c8acd1f271b4f118061246f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/matchups.ts": {
+      "expected": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba",
+      "actual": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/mondayGrid.test.ts": {
+      "expected": "95fbb3ec80b05ebd2162c6b1d4c86a7f7da4b0585bc0507d0b6b642e8ea576eb",
+      "actual": "95fbb3ec80b05ebd2162c6b1d4c86a7f7da4b0585bc0507d0b6b642e8ea576eb",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/mondayGrid.ts": {
+      "expected": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960",
+      "actual": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/pickupsFixture.ts": {
+      "expected": "7aca611c24aca68bb936cc54217b7e9e5b174cdd687a303ae47bdc24597c80e9",
+      "actual": "7aca611c24aca68bb936cc54217b7e9e5b174cdd687a303ae47bdc24597c80e9",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/playerSources.test.ts": {
+      "expected": "5c2d61db9c4dc5932ddb0433b980c824dabd284a0125879c30badcf6f18345b5",
+      "actual": "5c2d61db9c4dc5932ddb0433b980c824dabd284a0125879c30badcf6f18345b5",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/playerSources.ts": {
+      "expected": "19c57397078fa9a51e04edacad7e85c86e701702e4a12c573aa8aa637157f264",
+      "actual": "19c57397078fa9a51e04edacad7e85c86e701702e4a12c573aa8aa637157f264",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/players.test.ts": {
+      "expected": "e9447b5cc007dbd4b9af549af380a84599612c6a8a495d73d609502369728fea",
+      "actual": "e9447b5cc007dbd4b9af549af380a84599612c6a8a495d73d609502369728fea",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/players.ts": {
+      "expected": "a27accd1f3a9ddad8bc25bac0454e7c37d71c2be4174740007a880616ef0117d",
+      "actual": "a27accd1f3a9ddad8bc25bac0454e7c37d71c2be4174740007a880616ef0117d",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/schedule.test.ts": {
+      "expected": "1871a473280115576de43396e448f5a84ccfb3fa078c1d43a99420e4eafffaf0",
+      "actual": "1871a473280115576de43396e448f5a84ccfb3fa078c1d43a99420e4eafffaf0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/schedule.ts": {
+      "expected": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73",
+      "actual": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/server.ts": {
+      "expected": "8bdd7975839c01e9cd33ccdb880cddee6cb8595049c3425d4daea780ca4afaf5",
+      "actual": "8bdd7975839c01e9cd33ccdb880cddee6cb8595049c3425d4daea780ca4afaf5",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/teamRates.test.ts": {
+      "expected": "dcfdefa521aa64e9424da65ad9619dcc62ef41b53a048f684a2c3966b81b2913",
+      "actual": "dcfdefa521aa64e9424da65ad9619dcc62ef41b53a048f684a2c3966b81b2913",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/teamRates.ts": {
+      "expected": "b30ffcb491fc60213fc476b2cc67f41a3330a5be9e4a89d8599d446fb0f96a32",
+      "actual": "b30ffcb491fc60213fc476b2cc67f41a3330a5be9e4a89d8599d446fb0f96a32",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/tiers.test.ts": {
+      "expected": "f850e2657ec3dde749ccf7e2b4dcf18516ca1b1f4c001beb9c8ff6db08f10f8d",
+      "actual": "f850e2657ec3dde749ccf7e2b4dcf18516ca1b1f4c001beb9c8ff6db08f10f8d",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/tiers.ts": {
+      "expected": "9bbb92a2c70b8e0efa2daa7c2a79b45b0a3343b3980e05da3160de8a1ad52d84",
+      "actual": "9bbb92a2c70b8e0efa2daa7c2a79b45b0a3343b3980e05da3160de8a1ad52d84",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/trends.test.ts": {
+      "expected": "2c8f535b243a7af5fba4c28480c505242399249b163853c5106722636ddb7028",
+      "actual": "2c8f535b243a7af5fba4c28480c505242399249b163853c5106722636ddb7028",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/trends.ts": {
+      "expected": "03ffc190244f6657069dcaa402b5fddfe462d80029fba5e9fe0285bc6b71f943",
+      "actual": "03ffc190244f6657069dcaa402b5fddfe462d80029fba5e9fe0285bc6b71f943",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/trendsFixture.ts": {
+      "expected": "c431b1c687e3dfc844510a1f74b848b9bedf62638d2344cf323dcd4702839101",
+      "actual": "c431b1c687e3dfc844510a1f74b848b9bedf62638d2344cf323dcd4702839101",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/types.ts": {
+      "expected": "1f73d4957e8f0cd5df46882d452adfacd25c65538fd770630fe1d5550fe6d754",
+      "actual": "1f73d4957e8f0cd5df46882d452adfacd25c65538fd770630fe1d5550fe6d754",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/social-share/[format].ts": {
+      "expected": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+      "actual": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/social-share/[format].tsx": {
+      "expected": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "actual": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/MartianMono-Variable.ttf": {
+      "expected": "c3467843ec1c2574b05fbcfd7147c7bfbcf63ddca8fc2bcb9d117f1bfb1b22e7",
+      "actual": "c3467843ec1c2574b05fbcfd7147c7bfbcf63ddca8fc2bcb9d117f1bfb1b22e7",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/RobotoCondensed-Variable.ttf": {
+      "expected": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0",
+      "actual": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/TrainOne-Regular.ttf": {
+      "expected": "07d67ad14231a4a41f0ee501b14bd6f9c7a9beada5ee6af2924114863a034623",
+      "actual": "07d67ad14231a4a41f0ee501b14bd6f9c7a9beada5ee6af2924114863a034623",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/martianmono-OFL.txt": {
+      "expected": "00eef3688bb7b4fe6e76055ff925b6adf0ea9cb6e0b7600ddb9e0748716c1ea8",
+      "actual": "00eef3688bb7b4fe6e76055ff925b6adf0ea9cb6e0b7600ddb9e0748716c1ea8",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/robotocondensed-OFL.txt": {
+      "expected": "0b3098464626138c0e2b29b95239e9f27ffbe322c6256305852018d8a9587ede",
+      "actual": "0b3098464626138c0e2b29b95239e9f27ffbe322c6256305852018d8a9587ede",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/trainone-OFL.txt": {
+      "expected": "6818e49c39faebedf24e43b3601f1afa3a1fc9e960f8d3d667f8ddad432695a8",
+      "actual": "6818e49c39faebedf24e43b3601f1afa3a1fc9e960f8d3d667f8ddad432695a8",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/GameGrid/utils/scheduleOpportunity.ts": {
+      "expected": "02198b9a732bc7b25e14e0ef285bae73b348ce5f645a26efe177ae52e773380c",
+      "actual": "02198b9a732bc7b25e14e0ef285bae73b348ce5f645a26efe177ae52e773380c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/e2e/fixtures/socialEditorSession.ts": {
+      "expected": "ad3992ece8525016566a9e6ab3b889993a316b541305efc457abe814c96e91fa",
+      "actual": "ad3992ece8525016566a9e6ab3b889993a316b541305efc457abe814c96e91fa",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/score.ts": {
+      "expected": "c5ebea322dc770e71ae31630711f076754a4e3bca2d5bf5973e9ea29c3f6820f",
+      "actual": "c5ebea322dc770e71ae31630711f076754a4e3bca2d5bf5973e9ea29c3f6820f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/score.test.ts": {
+      "expected": "261810a0165cfc5022d95f63f54d7f6b3190044fa1e6f70135f3ad1fa994ddea",
+      "actual": "261810a0165cfc5022d95f63f54d7f6b3190044fa1e6f70135f3ad1fa994ddea",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts": {
+      "expected": "f1d3238b68c45d43eb15c77825bed0a6e718779c8bccf34efccadafdefc6c8c6",
+      "actual": "f1d3238b68c45d43eb15c77825bed0a6e718779c8bccf34efccadafdefc6c8c6",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts": {
+      "expected": "c2de0f7e2d86d5e26e87592428e0f112004ac1c30d5407ec0d01356513cc977e",
+      "actual": "c2de0f7e2d86d5e26e87592428e0f112004ac1c30d5407ec0d01356513cc977e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts": {
+      "expected": "f16fad19188630ced0a9d32c53a91b5a969cee0b4e45b6cee5c2e2ca98899b27",
+      "actual": "f16fad19188630ced0a9d32c53a91b5a969cee0b4e45b6cee5c2e2ca98899b27",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/internal/yahoo-live-draft.ts": {
+      "expected": "20c99628240be857c349a3a2b97c36fc48a58519f7a30c06cb33a71fd1f8abbe",
+      "actual": "20c99628240be857c349a3a2b97c36fc48a58519f7a30c06cb33a71fd1f8abbe",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-drafted-prospects.ts": {
+      "expected": "e4c5e476c50e57be341498a615ad0517ccd9f918937f42d85410f8a7c1df9881",
+      "actual": "e4c5e476c50e57be341498a615ad0517ccd9f918937f42d85410f8a7c1df9881",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/cron/withCronJobAudit.ts": {
+      "expected": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+      "actual": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/cron/nhlOffSeason.ts": {
+      "expected": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+      "actual": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/cron/cronAuditCoverage.ts": {
+      "expected": "754a0df900b7cabd573838b4d229857ae63d83361e6ad94ad6a7f7ea084706b3",
+      "actual": "754a0df900b7cabd573838b4d229857ae63d83361e6ad94ad6a7f7ea084706b3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/cron/withCronJobAudit.test.ts": {
+      "expected": "87db115af6c190a14020e1502eafcebd9174db5f9cfd9ed94a4592b14f755bb5",
+      "actual": "87db115af6c190a14020e1502eafcebd9174db5f9cfd9ed94a4592b14f755bb5",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/cron/nhlOffSeason.test.ts": {
+      "expected": "ca7dd5725c8529cd3b8e85e62ce130d3aa7c3d774065d2a47daa3c1d8935d5d6",
+      "actual": "ca7dd5725c8529cd3b8e85e62ce130d3aa7c3d774065d2a47daa3c1d8935d5d6",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/internal/espn-sync.ts": {
+      "expected": "f57c6a825fc70895da1b3ca799a63656c0c7615614a5326cb48fb67537a0fa14",
+      "actual": "f57c6a825fc70895da1b3ca799a63656c0c7615614a5326cb48fb67537a0fa14",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/internal/fantrax-sync.ts": {
+      "expected": "6e1685d0564616c5d83e60c65d677a105b5e9d2c5c4ea5c3df866f9a5fa90b9a",
+      "actual": "6e1685d0564616c5d83e60c65d677a105b5e9d2c5c4ea5c3df866f9a5fa90b9a",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/internal/patreon-reconcile.ts": {
+      "expected": "8cb1373b5b994e1acadf7e26cd5f906142c36ab2d287a51f8bed64aa34a892e2",
+      "actual": "8cb1373b5b994e1acadf7e26cd5f906142c36ab2d287a51f8bed64aa34a892e2",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "tasks/TASKS/cron-operations/cron-schedule.md": {
+      "expected": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+      "actual": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/Teams/nst-team-stats.ts": {
+      "expected": "01edee13cdfe2bdfb7f372947fe9750a14ce4c65fb6cf3990da9c035ec0d873e",
+      "actual": "01edee13cdfe2bdfb7f372947fe9750a14ce4c65fb6cf3990da9c035ec0d873e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/backfill-goalie-underlying-season.ts": {
+      "expected": "2d50d246e77da6174b74a8835e5d027d2bc1c12ed44c9c78a35ea72f383847ee",
+      "actual": "2d50d246e77da6174b74a8835e5d027d2bc1c12ed44c9c78a35ea72f383847ee",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/backfill-player-underlying-season.ts": {
+      "expected": "60941ff55e77cef60dbe9f6bdae9ecf547f5c8b9632e9a9ed5dce6a568734e45",
+      "actual": "60941ff55e77cef60dbe9f6bdae9ecf547f5c8b9632e9a9ed5dce6a568734e45",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/backfill-team-underlying-season.ts": {
+      "expected": "e230fabbf2a340b1474b2f96cd08324f5feac566f1c2273506c84f7c8b2adf7a",
+      "actual": "e230fabbf2a340b1474b2f96cd08324f5feac566f1c2273506c84f7c8b2adf7a",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/calculate-wigo-stats.ts": {
+      "expected": "69014f862d3a3013827cc1fff2e5335d0609da2e4cb02621bc4a964580d7e0ec",
+      "actual": "69014f862d3a3013827cc1fff2e5335d0609da2e4cb02621bc4a964580d7e0ec",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/catch-up-goalie-underlying.ts": {
+      "expected": "03203f91f6af2faee0631f329111e2477eb3c9bdeaed35d3ad50cfde3dec0f69",
+      "actual": "03203f91f6af2faee0631f329111e2477eb3c9bdeaed35d3ad50cfde3dec0f69",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/catch-up-player-underlying.ts": {
+      "expected": "bb8a3df5102c4c5461fca04409296f16a1fcebfd351f90490f427fb1c5040414",
+      "actual": "bb8a3df5102c4c5461fca04409296f16a1fcebfd351f90490f427fb1c5040414",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/catch-up-team-underlying.ts": {
+      "expected": "f3ad1f80591c5fc5fd2091b741bfc9d6773b2df09d6fd96f82d3bd6a677e03ad",
+      "actual": "f3ad1f80591c5fc5fd2091b741bfc9d6773b2df09d6fd96f82d3bd6a677e03ad",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/cron/update-stats-cron.ts": {
+      "expected": "6632a3a231e6d99bf5e429335788234b6820cfd6d35a1155a385244b12fbf901",
+      "actual": "6632a3a231e6d99bf5e429335788234b6820cfd6d35a1155a385244b12fbf901",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/draft-ranker-health.ts": {
+      "expected": "2ca0be1a8e50591c24d0ef766bc13e3789dd154f758131167241ef14e7c2dee5",
+      "actual": "2ca0be1a8e50591c24d0ef766bc13e3789dd154f758131167241ef14e7c2dee5",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/powerPlayTimeFrame.ts": {
+      "expected": "83a4331ced9dcd69e3f2e7446b94b99ceaa4e52968219956e919ba074c54cdaa",
+      "actual": "83a4331ced9dcd69e3f2e7446b94b99ceaa4e52968219956e919ba074c54cdaa",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/refresh-draft-ranker-community.ts": {
+      "expected": "933d6d13d06e283e80c1a6b70c93b7c744beda0b4b8925a3515806871ff25231",
+      "actual": "933d6d13d06e283e80c1a6b70c93b7c744beda0b4b8925a3515806871ff25231",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/refresh-draft-ranker-discovery.ts": {
+      "expected": "3e6c8a34bea915f914c03c7ec8327d9702aed9acb493f49da6297a9af3901719",
+      "actual": "3e6c8a34bea915f914c03c7ec8327d9702aed9acb493f49da6297a9af3901719",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/register-nhl-xg-model.ts": {
+      "expected": "76b7dc863bcecbdb76a656df60d01cd6bc0a94012fdfc89fbfb2a51507731a3b",
+      "actual": "76b7dc863bcecbdb76a656df60d01cd6bc0a94012fdfc89fbfb2a51507731a3b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/run-fetch-wgo-data.ts": {
+      "expected": "657b1a98b85b483a75b411822724501359d74f819d3b68dc88932fb8dd5f9718",
+      "actual": "657b1a98b85b483a75b411822724501359d74f819d3b68dc88932fb8dd5f9718",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/sustainability/rebuild-baselines.ts": {
+      "expected": "68c02f34529aac043e665b1f073211f82d4409d76d0faedbdd81f8941844229c",
+      "actual": "68c02f34529aac043e665b1f073211f82d4409d76d0faedbdd81f8941844229c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-PbP.ts": {
+      "expected": "5cd4bdbc588d396ab91f4a05ef394260cb3d2c5b7e5f20212696d3f10c48d5d4",
+      "actual": "5cd4bdbc588d396ab91f4a05ef394260cb3d2c5b7e5f20212696d3f10c48d5d4",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-entity-metric-rankings.ts": {
+      "expected": "f2a186ea2fb1d49f6d5a8d131f4ee18d7d22a7ca76e94be19f80886f1890816c",
+      "actual": "f2a186ea2fb1d49f6d5a8d131f4ee18d7d22a7ca76e94be19f80886f1890816c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-games.ts": {
+      "expected": "671c2e12456ce5390380272007ef148d2bd8c42beec4bde16a1c044b67c63901",
+      "actual": "671c2e12456ce5390380272007ef148d2bd8c42beec4bde16a1c044b67c63901",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-goalie-underlying-stats.ts": {
+      "expected": "ec242cf14c83a8ec8e9939819cc2d037ca90a4b283f0fff91eb74a78cb3d60b0",
+      "actual": "ec242cf14c83a8ec8e9939819cc2d037ca90a4b283f0fff91eb74a78cb3d60b0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-goalie-underlying-summaries.ts": {
+      "expected": "f2951808e7617c16191a2a37e50f4bed57669c1709bc944371ffd47c3dd8d993",
+      "actual": "f2951808e7617c16191a2a37e50f4bed57669c1709bc944371ffd47c3dd8d993",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-line-combinations/[id].ts": {
+      "expected": "0efc3fe33f77d327af9ccb097625ece7821fbc938a2e1748629da8e418cac115",
+      "actual": "0efc3fe33f77d327af9ccb097625ece7821fbc938a2e1748629da8e418cac115",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-line-combinations/index.ts": {
+      "expected": "997896eb74b05f054402048e0bf1fb190f0b6375a8e0b0dfa5f2e784765c412e",
+      "actual": "997896eb74b05f054402048e0bf1fb190f0b6375a8e0b0dfa5f2e784765c412e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-lineup-deployment-tallies.ts": {
+      "expected": "b24167dc68a6e91e5b0a4218aa0dca119dffb27e194a7213b1b6459765d1343e",
+      "actual": "b24167dc68a6e91e5b0a4218aa0dca119dffb27e194a7213b1b6459765d1343e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-market-prices.ts": {
+      "expected": "1072c1eba8fb19772fc80ff4786a9ac16ee65427fad2e92216fba506a52752da",
+      "actual": "1072c1eba8fb19772fc80ff4786a9ac16ee65427fad2e92216fba506a52752da",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nhl-edge-stats.ts": {
+      "expected": "f23721a71a166883fa4ba280ce2ec3a9e20e0fa6622aa0abd065030f6366c5d3",
+      "actual": "f23721a71a166883fa4ba280ce2ec3a9e20e0fa6622aa0abd065030f6366c5d3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nhl-play-by-play.ts": {
+      "expected": "78be7a8c17e75e77bb3e5e9f6566b8762da1986689de418cb04447fb84d391f4",
+      "actual": "78be7a8c17e75e77bb3e5e9f6566b8762da1986689de418cb04447fb84d391f4",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nhl-shift-charts.ts": {
+      "expected": "156da5b2b99868d4d039b796aa5190b2ec64ddfcd104cd0de2904642b67da80f",
+      "actual": "156da5b2b99868d4d039b796aa5190b2ec64ddfcd104cd0de2904642b67da80f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nhl-xg-aggregates.ts": {
+      "expected": "b876769ee8d1f94bb51b06bccbb6076837092298b2548c756bbc120ee66bab06",
+      "actual": "b876769ee8d1f94bb51b06bccbb6076837092298b2548c756bbc120ee66bab06",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nhl-xg-shot-predictions.ts": {
+      "expected": "555bc676b180d3b1a5d5bd799db0dbba0a47b0f8c5bfbd77040802bdf6f3dc93",
+      "actual": "555bc676b180d3b1a5d5bd799db0dbba0a47b0f8c5bfbd77040802bdf6f3dc93",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nhlscraper-contracts.ts": {
+      "expected": "b1e3404bed8846d113718e648a3b012396e487934de7846086d58c9bf12a37a4",
+      "actual": "b1e3404bed8846d113718e648a3b012396e487934de7846086d58c9bf12a37a4",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nst-current-season.ts": {
+      "expected": "01cb818ffa53d4e30fcd594c7cc3ba84d95cfef021dd7873f8f5d037cf67db12",
+      "actual": "01cb818ffa53d4e30fcd594c7cc3ba84d95cfef021dd7873f8f5d037cf67db12",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nst-goalies.ts": {
+      "expected": "aeaddea4bd81b246e08ac176468915c1378a4be20dc907ffffd0207df019520e",
+      "actual": "aeaddea4bd81b246e08ac176468915c1378a4be20dc907ffffd0207df019520e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nst-team-daily.ts": {
+      "expected": "d710f6e73e89cfdc250238b890d6f4a48d7fe682a54656d333973010d56ca5c5",
+      "actual": "d710f6e73e89cfdc250238b890d6f4a48d7fe682a54656d333973010d56ca5c5",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-player-impact-ratings.ts": {
+      "expected": "d76a4ae518e9048dfa8171d4077feaa63c06516852a744512dd5f4d0f436d4f2",
+      "actual": "d76a4ae518e9048dfa8171d4077feaa63c06516852a744512dd5f4d0f436d4f2",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-player-trend-metrics.ts": {
+      "expected": "0bc2e85776bcfd9b603259333517bec3bf662a7ace706b2fa70359476a0d8594",
+      "actual": "0bc2e85776bcfd9b603259333517bec3bf662a7ace706b2fa70359476a0d8594",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-player-underlying-stats.ts": {
+      "expected": "30dbcc33651f612f18c51feafa6ad8d0f46c61b059fda73893c365a2af5de36b",
+      "actual": "30dbcc33651f612f18c51feafa6ad8d0f46c61b059fda73893c365a2af5de36b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-player-underlying-summaries.ts": {
+      "expected": "e87a8eb5cceb305bf9115754ccd386c75921cc6ff5e37067f1ef204531433249",
+      "actual": "e87a8eb5cceb305bf9115754ccd386c75921cc6ff5e37067f1ef204531433249",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-player/[playerId].ts": {
+      "expected": "296204b91d978d9d074ed57083c1a3b0bdbd075728bbea27c5c04fec2a472d30",
+      "actual": "296204b91d978d9d074ed57083c1a3b0bdbd075728bbea27c5c04fec2a472d30",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-players.ts": {
+      "expected": "a7b23ab40a1b183684a2c15cb5c0d84a97d684c223b764e21c8b4ae8f96b95b5",
+      "actual": "a7b23ab40a1b183684a2c15cb5c0d84a97d684c223b764e21c8b4ae8f96b95b5",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-power-play-combinations/[gameId].ts": {
+      "expected": "8c702065650099873efdb74967cb7ea648a310092b50c1f11d895cf192469ee3",
+      "actual": "8c702065650099873efdb74967cb7ea648a310092b50c1f11d895cf192469ee3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-power-play-combinations/index.ts": {
+      "expected": "14a459c34cf47867012de4eefe86eb7e9eb8758d85ae7fc831dbbe90ae58d8be",
+      "actual": "14a459c34cf47867012de4eefe86eb7e9eb8758d85ae7fc831dbbe90ae58d8be",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-rolling-games.ts": {
+      "expected": "9b52f3e0053bb562729e5ddd2b6211920c8b6233e4ee11a7682334fdb5ff03b3",
+      "actual": "9b52f3e0053bb562729e5ddd2b6211920c8b6233e4ee11a7682334fdb5ff03b3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-season-stats.ts": {
+      "expected": "0f1f32281bf7be17c16770ec2eb33345e2a742a347e9a442d93157dd9c666354",
+      "actual": "0f1f32281bf7be17c16770ec2eb33345e2a742a347e9a442d93157dd9c666354",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-seasons.ts": {
+      "expected": "56cc24eea821952f2155ea2972209e5f80d46d3e11b880141e7dbe5df4ccde38",
+      "actual": "56cc24eea821952f2155ea2972209e5f80d46d3e11b880141e7dbe5df4ccde38",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-shifts.ts": {
+      "expected": "865077cb645a8366edb4352d07531c264c8e406d7331e800d64742d078c93e0d",
+      "actual": "865077cb645a8366edb4352d07531c264c8e406d7331e800d64742d078c93e0d",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-skater-composite-ratings.ts": {
+      "expected": "6c79c199a648fe101992e37c3de71d52fedab8773f8c424e0ab6a7cb1cd53245",
+      "actual": "6c79c199a648fe101992e37c3de71d52fedab8773f8c424e0ab6a7cb1cd53245",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-sko-stats.ts": {
+      "expected": "a24656c35b3ad5c646c24ee2139cc4aceb66e3c30dd3e7fe35dfd28942eca718",
+      "actual": "a24656c35b3ad5c646c24ee2139cc4aceb66e3c30dd3e7fe35dfd28942eca718",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-standings-details/index.ts": {
+      "expected": "7392a00af4f8c9abb44ddee40deb35f168dd76945fb3f56de500d6e0d28273c4",
+      "actual": "7392a00af4f8c9abb44ddee40deb35f168dd76945fb3f56de500d6e0d28273c4",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-stats/[gameId].ts": {
+      "expected": "bef48906227b6bc417c0009af8dac7d9439d9a517341c33c42e48591cf8d1b8c",
+      "actual": "bef48906227b6bc417c0009af8dac7d9439d9a517341c33c42e48591cf8d1b8c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-team-ctpi-daily.ts": {
+      "expected": "03a310525d41b5933dab7cedf9a1005b4cd9feec39fdabfd39c0471d0372ab98",
+      "actual": "03a310525d41b5933dab7cedf9a1005b4cd9feec39fdabfd39c0471d0372ab98",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-team-power-ratings.ts": {
+      "expected": "59e73eaaf30ee5c5affbca1b4275dc99aa62fa6a0b7c2df1ae7227f7d69a396a",
+      "actual": "59e73eaaf30ee5c5affbca1b4275dc99aa62fa6a0b7c2df1ae7227f7d69a396a",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-team-sos.ts": {
+      "expected": "8e48f8e2cdae155f509558fa2cfdd1abb56320a5761d175f37d77eb0f0668d1e",
+      "actual": "8e48f8e2cdae155f509558fa2cfdd1abb56320a5761d175f37d77eb0f0668d1e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-team-unit-toi.ts": {
+      "expected": "9d1b9d2a04306bc94b2ed9211d17534e50650d58a9b0dc41ef2b727fc07fae4c",
+      "actual": "9d1b9d2a04306bc94b2ed9211d17534e50650d58a9b0dc41ef2b727fc07fae4c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-team-yearly-summary.ts": {
+      "expected": "d781c99c9c166f6ef276f583ff2c618d89bb5562310673f0fffdad865975c25e",
+      "actual": "d781c99c9c166f6ef276f583ff2c618d89bb5562310673f0fffdad865975c25e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-wgo-averages.ts": {
+      "expected": "d5898943c8a34d603b7fc3576b6497495fecefaeec036ec60367c74ddc7c3241",
+      "actual": "d5898943c8a34d603b7fc3576b6497495fecefaeec036ec60367c74ddc7c3241",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-wgo-goalie-totals.ts": {
+      "expected": "85f457d25a453a9acd8475b0c9a1284101bd0000239c4abe40755ca05743b190",
+      "actual": "85f457d25a453a9acd8475b0c9a1284101bd0000239c4abe40755ca05743b190",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/upsert-csv.ts": {
+      "expected": "59bf75c7cd582c12ad20d890770de2552a84abbecd055d0c09b5146d2c7b9a49",
+      "actual": "59bf75c7cd582c12ad20d890770de2552a84abbecd055d0c09b5146d2c7b9a49",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/accuracy-loop.ts": {
+      "expected": "0d03ab046bce5c8239f3bb8af1111eb0bf4db2a6994814028c7ea55fb20545ea",
+      "actual": "0d03ab046bce5c8239f3bb8af1111eb0bf4db2a6994814028c7ea55fb20545ea",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/backfill-feature-snapshots.ts": {
+      "expected": "01d540273f6c5632754b060fadbd5d01fddd2e725a915a1fc6cac3f7fe1c5783",
+      "actual": "01d540273f6c5632754b060fadbd5d01fddd2e725a915a1fc6cac3f7fe1c5783",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/backtest-ablation.ts": {
+      "expected": "27e790b39f6b0d73e8b23ac41ab265c61ac88561cbb0eb33d46e09073e48b092",
+      "actual": "27e790b39f6b0d73e8b23ac41ab265c61ac88561cbb0eb33d46e09073e48b092",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/backtest.ts": {
+      "expected": "869ffb6f81a290c43644d317ff1c25fcdb606a9e1df020d5bfcdf248c957bbc4",
+      "actual": "869ffb6f81a290c43644d317ff1c25fcdb606a9e1df020d5bfcdf248c957bbc4",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/feature-signal-analysis.ts": {
+      "expected": "a75310407b574487f80713397e98f3db1ef6f080f68ada9725309290e4515cdd",
+      "actual": "a75310407b574487f80713397e98f3db1ef6f080f68ada9725309290e4515cdd",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/forecast.ts": {
+      "expected": "76b0f4c5ef06af5251f8ccdf2b253c24709ad87485140394bd60b1773613ca3c",
+      "actual": "76b0f4c5ef06af5251f8ccdf2b253c24709ad87485140394bd60b1773613ca3c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/generate.ts": {
+      "expected": "a63d55bb72803a536b57a781586355cfc4707896ea23c83451d6e24290237c0b",
+      "actual": "a63d55bb72803a536b57a781586355cfc4707896ea23c83451d6e24290237c0b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/import-market-odds.ts": {
+      "expected": "02aeecd2854e9d57d76873e99faf57b4910e798d0b30f8e90d984291f82bdc75",
+      "actual": "02aeecd2854e9d57d76873e99faf57b4910e798d0b30f8e90d984291f82bdc75",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/ingest-espn-odds.ts": {
+      "expected": "d74eeae404a9e4a3964b6f1fe92b0871e9bcb7eac0bcb8352f9df94d8eda617b",
+      "actual": "d74eeae404a9e4a3964b6f1fe92b0871e9bcb7eac0bcb8352f9df94d8eda617b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/promote-model-version.ts": {
+      "expected": "2fea72c2149b23ed9b8b44b4b66ade05ec154e868ee15642b330f267eeb50210",
+      "actual": "2fea72c2149b23ed9b8b44b4b66ade05ec154e868ee15642b330f267eeb50210",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/score.ts": {
+      "expected": "048e5ee5965c1c6e6c5a17da0b744bea090b497a6e6ce0d0afb34cbc8d30a714",
+      "actual": "048e5ee5965c1c6e6c5a17da0b744bea090b497a6e6ce0d0afb34cbc8d30a714",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/sustainability/process-recompute-queue.ts": {
+      "expected": "020e436cf5267e2ff60fbb2863ba86b2289a24e6d8782dd3ad41e7c714774ed3",
+      "actual": "020e436cf5267e2ff60fbb2863ba86b2289a24e6d8782dd3ad41e7c714774ed3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/sustainability/rebuild-priors.ts": {
+      "expected": "598a684cc388a9156bb8bc90a4ed030fafd1f4d97b983b102c707f0c04ae89b7",
+      "actual": "598a684cc388a9156bb8bc90a4ed030fafd1f4d97b983b102c707f0c04ae89b7",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/sustainability/rebuild-score.ts": {
+      "expected": "6fddaeed41db6e5bf632d302606ffe57e76f5c8dcaef4a5259ec4d657e97859e",
+      "actual": "6fddaeed41db6e5bf632d302606ffe57e76f5c8dcaef4a5259ec4d657e97859e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/sustainability/rebuild-trend-bands.ts": {
+      "expected": "aa0680d2459e0f30c6edc4987f8a40443293f55eb7dc503c25cee1564b64c256",
+      "actual": "aa0680d2459e0f30c6edc4987f8a40443293f55eb7dc503c25cee1564b64c256",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/sustainability/rebuild-window-z.ts": {
+      "expected": "0dffa59bc819f47f07603732a66ef841d91a36d24639226518496c43995dd401",
+      "actual": "0dffa59bc819f47f07603732a66ef841d91a36d24639226518496c43995dd401",
+      "matches": true,
+      "test_only_adaptation": false
+    }
+  },
+  "port_rechecked_free_immediately_before_start": true,
+  "server_command": [
+    "/usr/local/bin/node",
+    "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf/web/node_modules/next/dist/bin/next",
+    "dev",
+    "--hostname",
+    "127.0.0.1",
+    "--port",
+    "3140"
+  ],
+  "config_before": {
+    "next.config.js": "720ea61865b3a13734c7b3a38f334c219f6dc8ab0caa55223f5499046ff60e8c",
+    "tsconfig.json": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b"
+  },
+  "owned_server_pid": 51633,
+  "owned_process_group": 51633,
+  "readiness_status": 200,
+  "readiness_cache_control": "no-store, must-revalidate",
+  "playwright_command": [
+    "/usr/local/bin/node",
+    "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf/web/node_modules/@playwright/test/cli.js",
+    "test",
+    "--config",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/coordinated-release/browser/playwright.local.config.ts"
+  ],
+  "playwright_exit_code": 1,
+  "status": "test_failure",
+  "after_pins": {
+    "web/utils/fetchWigoPlayerStats.ts": {
+      "expected": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f",
+      "actual": "7a253deedaa1c30593e944afbd84679087df235dd7fa16204810f2379b60414f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/utils/fetchWigoPlayerStats.test.ts": {
+      "expected": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1",
+      "actual": "ed73a729821cac9579c5bcb877988c048496d7b3e39b6bec6ee6c63fc06d24e1",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.module.scss": {
+      "expected": "1352a81560e50128c75709d29ad65eed1295562834746e7cf2d18948e65d138b",
+      "actual": "1352a81560e50128c75709d29ad65eed1295562834746e7cf2d18948e65d138b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx": {
+      "expected": "fef6ef9c2b4b4fd754333d322b1ac31d5193c27a17b098c2c3d7a0b01a686536",
+      "actual": "fef6ef9c2b4b4fd754333d322b1ac31d5193c27a17b098c2c3d7a0b01a686536",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/GoalieShareChart/index.tsx": {
+      "expected": "b632a0cae6a50174012264950b7a0ca1b22402811a7162024216c40ecf09949c",
+      "actual": "b632a0cae6a50174012264950b7a0ca1b22402811a7162024216c40ecf09949c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/LineCombinations/LineCombinationsGrid.tsx": {
+      "expected": "fb5c6a3c0d50f1c9f1abca1de82527420cc240b3ba3c4b125c466485b18c6de7",
+      "actual": "fb5c6a3c0d50f1c9f1abca1de82527420cc240b3ba3c4b125c466485b18c6de7",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/ShotVisualization/ShotVisualization.tsx": {
+      "expected": "a563dadeed8e41915c11258019a0a97cbb0872622391307fa069a39daec2b921",
+      "actual": "a563dadeed8e41915c11258019a0a97cbb0872622391307fa069a39daec2b921",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/TeamTabNavigation/TeamTabNavigation.test.tsx": {
+      "expected": "6312ca9177389c01db342826b4833f99facc9729ddbacd4f737b21ae245dbae0",
+      "actual": "6312ca9177389c01db342826b4833f99facc9729ddbacd4f737b21ae245dbae0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/TeamTabNavigation/TeamTabNavigation.tsx": {
+      "expected": "3e9fd15559b22ec0949e176086531be5348a92ac1efc0dcd4beebc2d92730fb6",
+      "actual": "3e9fd15559b22ec0949e176086531be5348a92ac1efc0dcd4beebc2d92730fb6",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/hooks/useShotData.test.tsx": {
+      "expected": "7c78ae8c32883b6c035c2ba3d12ee6f50e04b3c3b3293770f33f7d0529aee0f2",
+      "actual": "7c78ae8c32883b6c035c2ba3d12ee6f50e04b3c3b3293770f33f7d0529aee0f2",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/hooks/useShotData.ts": {
+      "expected": "a5a77ced8be87b36e34ffe71003e4df48942f34c7af1de43608736f7074af4c1",
+      "actual": "a5a77ced8be87b36e34ffe71003e4df48942f34c7af1de43608736f7074af4c1",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/stats/team/[teamAbbreviation].tsx": {
+      "expected": "561a048fe68f4f49fb4a7bc54eb3c87be39fcb90c87eca4002dd81f7b205957c",
+      "actual": "561a048fe68f4f49fb4a7bc54eb3c87be39fcb90c87eca4002dd81f7b205957c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/styles/Stats.module.scss": {
+      "expected": "e0dbf85fab25a006ce4b5f7be97ef7c355c519e34edba385c5226a157f15d8d8",
+      "actual": "e0dbf85fab25a006ce4b5f7be97ef7c355c519e34edba385c5226a157f15d8d8",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/__tests__/pages/wigoCharts.test.tsx": {
+      "expected": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b",
+      "actual": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/wigoCharts.tsx": {
+      "expected": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151",
+      "actual": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/__tests__/pages/stats/team/teamAbbreviation.test.tsx": {
+      "expected": "71dd3fb4234009950c6bad3cb7f5b0b047aa6ff198fb8648888d08987c9de16b",
+      "actual": "71dd3fb4234009950c6bad3cb7f5b0b047aa6ff198fb8648888d08987c9de16b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.test.ts": {
+      "expected": "250bfc553ce0caa0cb1901c7592e1d3f0dde93180e0e97255a0948b8435baeec",
+      "actual": "250bfc553ce0caa0cb1901c7592e1d3f0dde93180e0e97255a0948b8435baeec",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/NewsFeed/NewsCard.tsx": {
+      "expected": "ab46854d98aa3ee4f2ae1e433dfb4f38b55af2c875d5c88fa58e47f72a3a928a",
+      "actual": "ab46854d98aa3ee4f2ae1e433dfb4f38b55af2c875d5c88fa58e47f72a3a928a",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/NewsFeed/NewsCard.test.tsx": {
+      "expected": "a9e031dac51da085f7d9ec14ce08ec62049e6fde50d4259e4243eb63a9aa52af",
+      "actual": "a9e031dac51da085f7d9ec14ce08ec62049e6fde50d4259e4243eb63a9aa52af",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/sources/fixtures/homepageNewsReceipt.json": {
+      "expected": "ac3e9711a02275749990f9020611e560ae8c07b6f06daa476f587bb14467a0a1",
+      "actual": "ac3e9711a02275749990f9020611e560ae8c07b6f06daa476f587bb14467a0a1",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/supabase/browser-auth.ts": {
+      "expected": "6c4f86fefb3219fb310513efc85aaafe3dc5b698a2fab24b78731628255ef2b0",
+      "actual": "6c4f86fefb3219fb310513efc85aaafe3dc5b698a2fab24b78731628255ef2b0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/__tests__/contexts/AuthProviderContext.test.tsx": {
+      "expected": "c3cf3f66b7b51d992a11df5207a429ed22350bd88c03ba43993033e82ff1941b",
+      "actual": "c3cf3f66b7b51d992a11df5207a429ed22350bd88c03ba43993033e82ff1941b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShare.module.scss": {
+      "expected": "2c5190a761330c728b4447cad259078f241843d03d69e9795bcf69b4c190ae93",
+      "actual": "2c5190a761330c728b4447cad259078f241843d03d69e9795bcf69b4c190ae93",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShare.test.tsx": {
+      "expected": "1fbcc0a3d8c5f5a65cb3a9fdfa984205fd5298b1e96abfc91ac426d2ee5c6bea",
+      "actual": "1fbcc0a3d8c5f5a65cb3a9fdfa984205fd5298b1e96abfc91ac426d2ee5c6bea",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShare.tsx": {
+      "expected": "b0ac1fe9c30a6ceb89accb13b721885d57f141929a4d95ee29decbbb754273db",
+      "actual": "b0ac1fe9c30a6ceb89accb13b721885d57f141929a4d95ee29decbbb754273db",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShareAccessGate.test.tsx": {
+      "expected": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+      "actual": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShareAccessGate.tsx": {
+      "expected": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "actual": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/TeamBanner.tsx": {
+      "expected": "f0aff1ab3d0139742c834d65893445ae18fb477600dc13dcfecb54901730867f",
+      "actual": "f0aff1ab3d0139742c834d65893445ae18fb477600dc13dcfecb54901730867f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/contexts/AuthProviderContext/index.tsx": {
+      "expected": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "actual": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/e2e/social-share.spec.ts": {
+      "expected": "29e60bf08982c43d0fd4090f640abb8a7641c0a54d4a42dad39be1f98641c4ff",
+      "actual": "29e60bf08982c43d0fd4090f640abb8a7641c0a54d4a42dad39be1f98641c4ff",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/access.test.ts": {
+      "expected": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+      "actual": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/access.ts": {
+      "expected": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "actual": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/edition.ts": {
+      "expected": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0",
+      "actual": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/editionFetch.test.ts": {
+      "expected": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236",
+      "actual": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/editionFetch.ts": {
+      "expected": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "actual": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/export.ts": {
+      "expected": "8dc961de8b11c6c79dc34b78c991fc51ce38eaf2cc2bbdd1a073a72bc034cabd",
+      "actual": "8dc961de8b11c6c79dc34b78c991fc51ce38eaf2cc2bbdd1a073a72bc034cabd",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/fixtures.ts": {
+      "expected": "865e699e39f7d0895b3f1059327221111d7d2bc14a43e96c749ccffeb29944df",
+      "actual": "865e699e39f7d0895b3f1059327221111d7d2bc14a43e96c749ccffeb29944df",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/matchups.test.ts": {
+      "expected": "3f01ea8f7acb5fe6fe276503809b154cbe6786c03c8acd1f271b4f118061246f",
+      "actual": "3f01ea8f7acb5fe6fe276503809b154cbe6786c03c8acd1f271b4f118061246f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/matchups.ts": {
+      "expected": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba",
+      "actual": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/mondayGrid.test.ts": {
+      "expected": "95fbb3ec80b05ebd2162c6b1d4c86a7f7da4b0585bc0507d0b6b642e8ea576eb",
+      "actual": "95fbb3ec80b05ebd2162c6b1d4c86a7f7da4b0585bc0507d0b6b642e8ea576eb",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/mondayGrid.ts": {
+      "expected": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960",
+      "actual": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/pickupsFixture.ts": {
+      "expected": "7aca611c24aca68bb936cc54217b7e9e5b174cdd687a303ae47bdc24597c80e9",
+      "actual": "7aca611c24aca68bb936cc54217b7e9e5b174cdd687a303ae47bdc24597c80e9",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/playerSources.test.ts": {
+      "expected": "5c2d61db9c4dc5932ddb0433b980c824dabd284a0125879c30badcf6f18345b5",
+      "actual": "5c2d61db9c4dc5932ddb0433b980c824dabd284a0125879c30badcf6f18345b5",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/playerSources.ts": {
+      "expected": "19c57397078fa9a51e04edacad7e85c86e701702e4a12c573aa8aa637157f264",
+      "actual": "19c57397078fa9a51e04edacad7e85c86e701702e4a12c573aa8aa637157f264",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/players.test.ts": {
+      "expected": "e9447b5cc007dbd4b9af549af380a84599612c6a8a495d73d609502369728fea",
+      "actual": "e9447b5cc007dbd4b9af549af380a84599612c6a8a495d73d609502369728fea",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/players.ts": {
+      "expected": "a27accd1f3a9ddad8bc25bac0454e7c37d71c2be4174740007a880616ef0117d",
+      "actual": "a27accd1f3a9ddad8bc25bac0454e7c37d71c2be4174740007a880616ef0117d",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/schedule.test.ts": {
+      "expected": "1871a473280115576de43396e448f5a84ccfb3fa078c1d43a99420e4eafffaf0",
+      "actual": "1871a473280115576de43396e448f5a84ccfb3fa078c1d43a99420e4eafffaf0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/schedule.ts": {
+      "expected": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73",
+      "actual": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/server.ts": {
+      "expected": "8bdd7975839c01e9cd33ccdb880cddee6cb8595049c3425d4daea780ca4afaf5",
+      "actual": "8bdd7975839c01e9cd33ccdb880cddee6cb8595049c3425d4daea780ca4afaf5",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/teamRates.test.ts": {
+      "expected": "dcfdefa521aa64e9424da65ad9619dcc62ef41b53a048f684a2c3966b81b2913",
+      "actual": "dcfdefa521aa64e9424da65ad9619dcc62ef41b53a048f684a2c3966b81b2913",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/teamRates.ts": {
+      "expected": "b30ffcb491fc60213fc476b2cc67f41a3330a5be9e4a89d8599d446fb0f96a32",
+      "actual": "b30ffcb491fc60213fc476b2cc67f41a3330a5be9e4a89d8599d446fb0f96a32",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/tiers.test.ts": {
+      "expected": "f850e2657ec3dde749ccf7e2b4dcf18516ca1b1f4c001beb9c8ff6db08f10f8d",
+      "actual": "f850e2657ec3dde749ccf7e2b4dcf18516ca1b1f4c001beb9c8ff6db08f10f8d",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/tiers.ts": {
+      "expected": "9bbb92a2c70b8e0efa2daa7c2a79b45b0a3343b3980e05da3160de8a1ad52d84",
+      "actual": "9bbb92a2c70b8e0efa2daa7c2a79b45b0a3343b3980e05da3160de8a1ad52d84",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/trends.test.ts": {
+      "expected": "2c8f535b243a7af5fba4c28480c505242399249b163853c5106722636ddb7028",
+      "actual": "2c8f535b243a7af5fba4c28480c505242399249b163853c5106722636ddb7028",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/trends.ts": {
+      "expected": "03ffc190244f6657069dcaa402b5fddfe462d80029fba5e9fe0285bc6b71f943",
+      "actual": "03ffc190244f6657069dcaa402b5fddfe462d80029fba5e9fe0285bc6b71f943",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/trendsFixture.ts": {
+      "expected": "c431b1c687e3dfc844510a1f74b848b9bedf62638d2344cf323dcd4702839101",
+      "actual": "c431b1c687e3dfc844510a1f74b848b9bedf62638d2344cf323dcd4702839101",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/types.ts": {
+      "expected": "1f73d4957e8f0cd5df46882d452adfacd25c65538fd770630fe1d5550fe6d754",
+      "actual": "1f73d4957e8f0cd5df46882d452adfacd25c65538fd770630fe1d5550fe6d754",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/social-share/[format].ts": {
+      "expected": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+      "actual": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/social-share/[format].tsx": {
+      "expected": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "actual": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/MartianMono-Variable.ttf": {
+      "expected": "c3467843ec1c2574b05fbcfd7147c7bfbcf63ddca8fc2bcb9d117f1bfb1b22e7",
+      "actual": "c3467843ec1c2574b05fbcfd7147c7bfbcf63ddca8fc2bcb9d117f1bfb1b22e7",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/RobotoCondensed-Variable.ttf": {
+      "expected": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0",
+      "actual": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/TrainOne-Regular.ttf": {
+      "expected": "07d67ad14231a4a41f0ee501b14bd6f9c7a9beada5ee6af2924114863a034623",
+      "actual": "07d67ad14231a4a41f0ee501b14bd6f9c7a9beada5ee6af2924114863a034623",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/martianmono-OFL.txt": {
+      "expected": "00eef3688bb7b4fe6e76055ff925b6adf0ea9cb6e0b7600ddb9e0748716c1ea8",
+      "actual": "00eef3688bb7b4fe6e76055ff925b6adf0ea9cb6e0b7600ddb9e0748716c1ea8",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/robotocondensed-OFL.txt": {
+      "expected": "0b3098464626138c0e2b29b95239e9f27ffbe322c6256305852018d8a9587ede",
+      "actual": "0b3098464626138c0e2b29b95239e9f27ffbe322c6256305852018d8a9587ede",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/trainone-OFL.txt": {
+      "expected": "6818e49c39faebedf24e43b3601f1afa3a1fc9e960f8d3d667f8ddad432695a8",
+      "actual": "6818e49c39faebedf24e43b3601f1afa3a1fc9e960f8d3d667f8ddad432695a8",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/GameGrid/utils/scheduleOpportunity.ts": {
+      "expected": "02198b9a732bc7b25e14e0ef285bae73b348ce5f645a26efe177ae52e773380c",
+      "actual": "02198b9a732bc7b25e14e0ef285bae73b348ce5f645a26efe177ae52e773380c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/e2e/fixtures/socialEditorSession.ts": {
+      "expected": "ad3992ece8525016566a9e6ab3b889993a316b541305efc457abe814c96e91fa",
+      "actual": "ad3992ece8525016566a9e6ab3b889993a316b541305efc457abe814c96e91fa",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/score.ts": {
+      "expected": "c5ebea322dc770e71ae31630711f076754a4e3bca2d5bf5973e9ea29c3f6820f",
+      "actual": "c5ebea322dc770e71ae31630711f076754a4e3bca2d5bf5973e9ea29c3f6820f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/score.test.ts": {
+      "expected": "261810a0165cfc5022d95f63f54d7f6b3190044fa1e6f70135f3ad1fa994ddea",
+      "actual": "261810a0165cfc5022d95f63f54d7f6b3190044fa1e6f70135f3ad1fa994ddea",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts": {
+      "expected": "f1d3238b68c45d43eb15c77825bed0a6e718779c8bccf34efccadafdefc6c8c6",
+      "actual": "f1d3238b68c45d43eb15c77825bed0a6e718779c8bccf34efccadafdefc6c8c6",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts": {
+      "expected": "c2de0f7e2d86d5e26e87592428e0f112004ac1c30d5407ec0d01356513cc977e",
+      "actual": "c2de0f7e2d86d5e26e87592428e0f112004ac1c30d5407ec0d01356513cc977e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts": {
+      "expected": "f16fad19188630ced0a9d32c53a91b5a969cee0b4e45b6cee5c2e2ca98899b27",
+      "actual": "f16fad19188630ced0a9d32c53a91b5a969cee0b4e45b6cee5c2e2ca98899b27",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/internal/yahoo-live-draft.ts": {
+      "expected": "20c99628240be857c349a3a2b97c36fc48a58519f7a30c06cb33a71fd1f8abbe",
+      "actual": "20c99628240be857c349a3a2b97c36fc48a58519f7a30c06cb33a71fd1f8abbe",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-drafted-prospects.ts": {
+      "expected": "e4c5e476c50e57be341498a615ad0517ccd9f918937f42d85410f8a7c1df9881",
+      "actual": "e4c5e476c50e57be341498a615ad0517ccd9f918937f42d85410f8a7c1df9881",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/cron/withCronJobAudit.ts": {
+      "expected": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+      "actual": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/cron/nhlOffSeason.ts": {
+      "expected": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+      "actual": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/cron/cronAuditCoverage.ts": {
+      "expected": "754a0df900b7cabd573838b4d229857ae63d83361e6ad94ad6a7f7ea084706b3",
+      "actual": "754a0df900b7cabd573838b4d229857ae63d83361e6ad94ad6a7f7ea084706b3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/cron/withCronJobAudit.test.ts": {
+      "expected": "87db115af6c190a14020e1502eafcebd9174db5f9cfd9ed94a4592b14f755bb5",
+      "actual": "87db115af6c190a14020e1502eafcebd9174db5f9cfd9ed94a4592b14f755bb5",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/cron/nhlOffSeason.test.ts": {
+      "expected": "ca7dd5725c8529cd3b8e85e62ce130d3aa7c3d774065d2a47daa3c1d8935d5d6",
+      "actual": "ca7dd5725c8529cd3b8e85e62ce130d3aa7c3d774065d2a47daa3c1d8935d5d6",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/internal/espn-sync.ts": {
+      "expected": "f57c6a825fc70895da1b3ca799a63656c0c7615614a5326cb48fb67537a0fa14",
+      "actual": "f57c6a825fc70895da1b3ca799a63656c0c7615614a5326cb48fb67537a0fa14",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/internal/fantrax-sync.ts": {
+      "expected": "6e1685d0564616c5d83e60c65d677a105b5e9d2c5c4ea5c3df866f9a5fa90b9a",
+      "actual": "6e1685d0564616c5d83e60c65d677a105b5e9d2c5c4ea5c3df866f9a5fa90b9a",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/internal/patreon-reconcile.ts": {
+      "expected": "8cb1373b5b994e1acadf7e26cd5f906142c36ab2d287a51f8bed64aa34a892e2",
+      "actual": "8cb1373b5b994e1acadf7e26cd5f906142c36ab2d287a51f8bed64aa34a892e2",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "tasks/TASKS/cron-operations/cron-schedule.md": {
+      "expected": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+      "actual": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/Teams/nst-team-stats.ts": {
+      "expected": "01edee13cdfe2bdfb7f372947fe9750a14ce4c65fb6cf3990da9c035ec0d873e",
+      "actual": "01edee13cdfe2bdfb7f372947fe9750a14ce4c65fb6cf3990da9c035ec0d873e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/backfill-goalie-underlying-season.ts": {
+      "expected": "2d50d246e77da6174b74a8835e5d027d2bc1c12ed44c9c78a35ea72f383847ee",
+      "actual": "2d50d246e77da6174b74a8835e5d027d2bc1c12ed44c9c78a35ea72f383847ee",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/backfill-player-underlying-season.ts": {
+      "expected": "60941ff55e77cef60dbe9f6bdae9ecf547f5c8b9632e9a9ed5dce6a568734e45",
+      "actual": "60941ff55e77cef60dbe9f6bdae9ecf547f5c8b9632e9a9ed5dce6a568734e45",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/backfill-team-underlying-season.ts": {
+      "expected": "e230fabbf2a340b1474b2f96cd08324f5feac566f1c2273506c84f7c8b2adf7a",
+      "actual": "e230fabbf2a340b1474b2f96cd08324f5feac566f1c2273506c84f7c8b2adf7a",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/calculate-wigo-stats.ts": {
+      "expected": "69014f862d3a3013827cc1fff2e5335d0609da2e4cb02621bc4a964580d7e0ec",
+      "actual": "69014f862d3a3013827cc1fff2e5335d0609da2e4cb02621bc4a964580d7e0ec",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/catch-up-goalie-underlying.ts": {
+      "expected": "03203f91f6af2faee0631f329111e2477eb3c9bdeaed35d3ad50cfde3dec0f69",
+      "actual": "03203f91f6af2faee0631f329111e2477eb3c9bdeaed35d3ad50cfde3dec0f69",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/catch-up-player-underlying.ts": {
+      "expected": "bb8a3df5102c4c5461fca04409296f16a1fcebfd351f90490f427fb1c5040414",
+      "actual": "bb8a3df5102c4c5461fca04409296f16a1fcebfd351f90490f427fb1c5040414",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/catch-up-team-underlying.ts": {
+      "expected": "f3ad1f80591c5fc5fd2091b741bfc9d6773b2df09d6fd96f82d3bd6a677e03ad",
+      "actual": "f3ad1f80591c5fc5fd2091b741bfc9d6773b2df09d6fd96f82d3bd6a677e03ad",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/cron/update-stats-cron.ts": {
+      "expected": "6632a3a231e6d99bf5e429335788234b6820cfd6d35a1155a385244b12fbf901",
+      "actual": "6632a3a231e6d99bf5e429335788234b6820cfd6d35a1155a385244b12fbf901",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/draft-ranker-health.ts": {
+      "expected": "2ca0be1a8e50591c24d0ef766bc13e3789dd154f758131167241ef14e7c2dee5",
+      "actual": "2ca0be1a8e50591c24d0ef766bc13e3789dd154f758131167241ef14e7c2dee5",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/powerPlayTimeFrame.ts": {
+      "expected": "83a4331ced9dcd69e3f2e7446b94b99ceaa4e52968219956e919ba074c54cdaa",
+      "actual": "83a4331ced9dcd69e3f2e7446b94b99ceaa4e52968219956e919ba074c54cdaa",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/refresh-draft-ranker-community.ts": {
+      "expected": "933d6d13d06e283e80c1a6b70c93b7c744beda0b4b8925a3515806871ff25231",
+      "actual": "933d6d13d06e283e80c1a6b70c93b7c744beda0b4b8925a3515806871ff25231",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/refresh-draft-ranker-discovery.ts": {
+      "expected": "3e6c8a34bea915f914c03c7ec8327d9702aed9acb493f49da6297a9af3901719",
+      "actual": "3e6c8a34bea915f914c03c7ec8327d9702aed9acb493f49da6297a9af3901719",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/register-nhl-xg-model.ts": {
+      "expected": "76b7dc863bcecbdb76a656df60d01cd6bc0a94012fdfc89fbfb2a51507731a3b",
+      "actual": "76b7dc863bcecbdb76a656df60d01cd6bc0a94012fdfc89fbfb2a51507731a3b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/run-fetch-wgo-data.ts": {
+      "expected": "657b1a98b85b483a75b411822724501359d74f819d3b68dc88932fb8dd5f9718",
+      "actual": "657b1a98b85b483a75b411822724501359d74f819d3b68dc88932fb8dd5f9718",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/sustainability/rebuild-baselines.ts": {
+      "expected": "68c02f34529aac043e665b1f073211f82d4409d76d0faedbdd81f8941844229c",
+      "actual": "68c02f34529aac043e665b1f073211f82d4409d76d0faedbdd81f8941844229c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-PbP.ts": {
+      "expected": "5cd4bdbc588d396ab91f4a05ef394260cb3d2c5b7e5f20212696d3f10c48d5d4",
+      "actual": "5cd4bdbc588d396ab91f4a05ef394260cb3d2c5b7e5f20212696d3f10c48d5d4",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-entity-metric-rankings.ts": {
+      "expected": "f2a186ea2fb1d49f6d5a8d131f4ee18d7d22a7ca76e94be19f80886f1890816c",
+      "actual": "f2a186ea2fb1d49f6d5a8d131f4ee18d7d22a7ca76e94be19f80886f1890816c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-games.ts": {
+      "expected": "671c2e12456ce5390380272007ef148d2bd8c42beec4bde16a1c044b67c63901",
+      "actual": "671c2e12456ce5390380272007ef148d2bd8c42beec4bde16a1c044b67c63901",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-goalie-underlying-stats.ts": {
+      "expected": "ec242cf14c83a8ec8e9939819cc2d037ca90a4b283f0fff91eb74a78cb3d60b0",
+      "actual": "ec242cf14c83a8ec8e9939819cc2d037ca90a4b283f0fff91eb74a78cb3d60b0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-goalie-underlying-summaries.ts": {
+      "expected": "f2951808e7617c16191a2a37e50f4bed57669c1709bc944371ffd47c3dd8d993",
+      "actual": "f2951808e7617c16191a2a37e50f4bed57669c1709bc944371ffd47c3dd8d993",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-line-combinations/[id].ts": {
+      "expected": "0efc3fe33f77d327af9ccb097625ece7821fbc938a2e1748629da8e418cac115",
+      "actual": "0efc3fe33f77d327af9ccb097625ece7821fbc938a2e1748629da8e418cac115",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-line-combinations/index.ts": {
+      "expected": "997896eb74b05f054402048e0bf1fb190f0b6375a8e0b0dfa5f2e784765c412e",
+      "actual": "997896eb74b05f054402048e0bf1fb190f0b6375a8e0b0dfa5f2e784765c412e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-lineup-deployment-tallies.ts": {
+      "expected": "b24167dc68a6e91e5b0a4218aa0dca119dffb27e194a7213b1b6459765d1343e",
+      "actual": "b24167dc68a6e91e5b0a4218aa0dca119dffb27e194a7213b1b6459765d1343e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-market-prices.ts": {
+      "expected": "1072c1eba8fb19772fc80ff4786a9ac16ee65427fad2e92216fba506a52752da",
+      "actual": "1072c1eba8fb19772fc80ff4786a9ac16ee65427fad2e92216fba506a52752da",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nhl-edge-stats.ts": {
+      "expected": "f23721a71a166883fa4ba280ce2ec3a9e20e0fa6622aa0abd065030f6366c5d3",
+      "actual": "f23721a71a166883fa4ba280ce2ec3a9e20e0fa6622aa0abd065030f6366c5d3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nhl-play-by-play.ts": {
+      "expected": "78be7a8c17e75e77bb3e5e9f6566b8762da1986689de418cb04447fb84d391f4",
+      "actual": "78be7a8c17e75e77bb3e5e9f6566b8762da1986689de418cb04447fb84d391f4",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nhl-shift-charts.ts": {
+      "expected": "156da5b2b99868d4d039b796aa5190b2ec64ddfcd104cd0de2904642b67da80f",
+      "actual": "156da5b2b99868d4d039b796aa5190b2ec64ddfcd104cd0de2904642b67da80f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nhl-xg-aggregates.ts": {
+      "expected": "b876769ee8d1f94bb51b06bccbb6076837092298b2548c756bbc120ee66bab06",
+      "actual": "b876769ee8d1f94bb51b06bccbb6076837092298b2548c756bbc120ee66bab06",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nhl-xg-shot-predictions.ts": {
+      "expected": "555bc676b180d3b1a5d5bd799db0dbba0a47b0f8c5bfbd77040802bdf6f3dc93",
+      "actual": "555bc676b180d3b1a5d5bd799db0dbba0a47b0f8c5bfbd77040802bdf6f3dc93",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nhlscraper-contracts.ts": {
+      "expected": "b1e3404bed8846d113718e648a3b012396e487934de7846086d58c9bf12a37a4",
+      "actual": "b1e3404bed8846d113718e648a3b012396e487934de7846086d58c9bf12a37a4",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nst-current-season.ts": {
+      "expected": "01cb818ffa53d4e30fcd594c7cc3ba84d95cfef021dd7873f8f5d037cf67db12",
+      "actual": "01cb818ffa53d4e30fcd594c7cc3ba84d95cfef021dd7873f8f5d037cf67db12",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nst-goalies.ts": {
+      "expected": "aeaddea4bd81b246e08ac176468915c1378a4be20dc907ffffd0207df019520e",
+      "actual": "aeaddea4bd81b246e08ac176468915c1378a4be20dc907ffffd0207df019520e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-nst-team-daily.ts": {
+      "expected": "d710f6e73e89cfdc250238b890d6f4a48d7fe682a54656d333973010d56ca5c5",
+      "actual": "d710f6e73e89cfdc250238b890d6f4a48d7fe682a54656d333973010d56ca5c5",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-player-impact-ratings.ts": {
+      "expected": "d76a4ae518e9048dfa8171d4077feaa63c06516852a744512dd5f4d0f436d4f2",
+      "actual": "d76a4ae518e9048dfa8171d4077feaa63c06516852a744512dd5f4d0f436d4f2",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-player-trend-metrics.ts": {
+      "expected": "0bc2e85776bcfd9b603259333517bec3bf662a7ace706b2fa70359476a0d8594",
+      "actual": "0bc2e85776bcfd9b603259333517bec3bf662a7ace706b2fa70359476a0d8594",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-player-underlying-stats.ts": {
+      "expected": "30dbcc33651f612f18c51feafa6ad8d0f46c61b059fda73893c365a2af5de36b",
+      "actual": "30dbcc33651f612f18c51feafa6ad8d0f46c61b059fda73893c365a2af5de36b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-player-underlying-summaries.ts": {
+      "expected": "e87a8eb5cceb305bf9115754ccd386c75921cc6ff5e37067f1ef204531433249",
+      "actual": "e87a8eb5cceb305bf9115754ccd386c75921cc6ff5e37067f1ef204531433249",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-player/[playerId].ts": {
+      "expected": "296204b91d978d9d074ed57083c1a3b0bdbd075728bbea27c5c04fec2a472d30",
+      "actual": "296204b91d978d9d074ed57083c1a3b0bdbd075728bbea27c5c04fec2a472d30",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-players.ts": {
+      "expected": "a7b23ab40a1b183684a2c15cb5c0d84a97d684c223b764e21c8b4ae8f96b95b5",
+      "actual": "a7b23ab40a1b183684a2c15cb5c0d84a97d684c223b764e21c8b4ae8f96b95b5",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-power-play-combinations/[gameId].ts": {
+      "expected": "8c702065650099873efdb74967cb7ea648a310092b50c1f11d895cf192469ee3",
+      "actual": "8c702065650099873efdb74967cb7ea648a310092b50c1f11d895cf192469ee3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-power-play-combinations/index.ts": {
+      "expected": "14a459c34cf47867012de4eefe86eb7e9eb8758d85ae7fc831dbbe90ae58d8be",
+      "actual": "14a459c34cf47867012de4eefe86eb7e9eb8758d85ae7fc831dbbe90ae58d8be",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-rolling-games.ts": {
+      "expected": "9b52f3e0053bb562729e5ddd2b6211920c8b6233e4ee11a7682334fdb5ff03b3",
+      "actual": "9b52f3e0053bb562729e5ddd2b6211920c8b6233e4ee11a7682334fdb5ff03b3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-season-stats.ts": {
+      "expected": "0f1f32281bf7be17c16770ec2eb33345e2a742a347e9a442d93157dd9c666354",
+      "actual": "0f1f32281bf7be17c16770ec2eb33345e2a742a347e9a442d93157dd9c666354",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-seasons.ts": {
+      "expected": "56cc24eea821952f2155ea2972209e5f80d46d3e11b880141e7dbe5df4ccde38",
+      "actual": "56cc24eea821952f2155ea2972209e5f80d46d3e11b880141e7dbe5df4ccde38",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-shifts.ts": {
+      "expected": "865077cb645a8366edb4352d07531c264c8e406d7331e800d64742d078c93e0d",
+      "actual": "865077cb645a8366edb4352d07531c264c8e406d7331e800d64742d078c93e0d",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-skater-composite-ratings.ts": {
+      "expected": "6c79c199a648fe101992e37c3de71d52fedab8773f8c424e0ab6a7cb1cd53245",
+      "actual": "6c79c199a648fe101992e37c3de71d52fedab8773f8c424e0ab6a7cb1cd53245",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-sko-stats.ts": {
+      "expected": "a24656c35b3ad5c646c24ee2139cc4aceb66e3c30dd3e7fe35dfd28942eca718",
+      "actual": "a24656c35b3ad5c646c24ee2139cc4aceb66e3c30dd3e7fe35dfd28942eca718",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-standings-details/index.ts": {
+      "expected": "7392a00af4f8c9abb44ddee40deb35f168dd76945fb3f56de500d6e0d28273c4",
+      "actual": "7392a00af4f8c9abb44ddee40deb35f168dd76945fb3f56de500d6e0d28273c4",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-stats/[gameId].ts": {
+      "expected": "bef48906227b6bc417c0009af8dac7d9439d9a517341c33c42e48591cf8d1b8c",
+      "actual": "bef48906227b6bc417c0009af8dac7d9439d9a517341c33c42e48591cf8d1b8c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-team-ctpi-daily.ts": {
+      "expected": "03a310525d41b5933dab7cedf9a1005b4cd9feec39fdabfd39c0471d0372ab98",
+      "actual": "03a310525d41b5933dab7cedf9a1005b4cd9feec39fdabfd39c0471d0372ab98",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-team-power-ratings.ts": {
+      "expected": "59e73eaaf30ee5c5affbca1b4275dc99aa62fa6a0b7c2df1ae7227f7d69a396a",
+      "actual": "59e73eaaf30ee5c5affbca1b4275dc99aa62fa6a0b7c2df1ae7227f7d69a396a",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-team-sos.ts": {
+      "expected": "8e48f8e2cdae155f509558fa2cfdd1abb56320a5761d175f37d77eb0f0668d1e",
+      "actual": "8e48f8e2cdae155f509558fa2cfdd1abb56320a5761d175f37d77eb0f0668d1e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-team-unit-toi.ts": {
+      "expected": "9d1b9d2a04306bc94b2ed9211d17534e50650d58a9b0dc41ef2b727fc07fae4c",
+      "actual": "9d1b9d2a04306bc94b2ed9211d17534e50650d58a9b0dc41ef2b727fc07fae4c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-team-yearly-summary.ts": {
+      "expected": "d781c99c9c166f6ef276f583ff2c618d89bb5562310673f0fffdad865975c25e",
+      "actual": "d781c99c9c166f6ef276f583ff2c618d89bb5562310673f0fffdad865975c25e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-wgo-averages.ts": {
+      "expected": "d5898943c8a34d603b7fc3576b6497495fecefaeec036ec60367c74ddc7c3241",
+      "actual": "d5898943c8a34d603b7fc3576b6497495fecefaeec036ec60367c74ddc7c3241",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/update-wgo-goalie-totals.ts": {
+      "expected": "85f457d25a453a9acd8475b0c9a1284101bd0000239c4abe40755ca05743b190",
+      "actual": "85f457d25a453a9acd8475b0c9a1284101bd0000239c4abe40755ca05743b190",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/db/upsert-csv.ts": {
+      "expected": "59bf75c7cd582c12ad20d890770de2552a84abbecd055d0c09b5146d2c7b9a49",
+      "actual": "59bf75c7cd582c12ad20d890770de2552a84abbecd055d0c09b5146d2c7b9a49",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/accuracy-loop.ts": {
+      "expected": "0d03ab046bce5c8239f3bb8af1111eb0bf4db2a6994814028c7ea55fb20545ea",
+      "actual": "0d03ab046bce5c8239f3bb8af1111eb0bf4db2a6994814028c7ea55fb20545ea",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/backfill-feature-snapshots.ts": {
+      "expected": "01d540273f6c5632754b060fadbd5d01fddd2e725a915a1fc6cac3f7fe1c5783",
+      "actual": "01d540273f6c5632754b060fadbd5d01fddd2e725a915a1fc6cac3f7fe1c5783",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/backtest-ablation.ts": {
+      "expected": "27e790b39f6b0d73e8b23ac41ab265c61ac88561cbb0eb33d46e09073e48b092",
+      "actual": "27e790b39f6b0d73e8b23ac41ab265c61ac88561cbb0eb33d46e09073e48b092",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/backtest.ts": {
+      "expected": "869ffb6f81a290c43644d317ff1c25fcdb606a9e1df020d5bfcdf248c957bbc4",
+      "actual": "869ffb6f81a290c43644d317ff1c25fcdb606a9e1df020d5bfcdf248c957bbc4",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/feature-signal-analysis.ts": {
+      "expected": "a75310407b574487f80713397e98f3db1ef6f080f68ada9725309290e4515cdd",
+      "actual": "a75310407b574487f80713397e98f3db1ef6f080f68ada9725309290e4515cdd",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/forecast.ts": {
+      "expected": "76b0f4c5ef06af5251f8ccdf2b253c24709ad87485140394bd60b1773613ca3c",
+      "actual": "76b0f4c5ef06af5251f8ccdf2b253c24709ad87485140394bd60b1773613ca3c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/generate.ts": {
+      "expected": "a63d55bb72803a536b57a781586355cfc4707896ea23c83451d6e24290237c0b",
+      "actual": "a63d55bb72803a536b57a781586355cfc4707896ea23c83451d6e24290237c0b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/import-market-odds.ts": {
+      "expected": "02aeecd2854e9d57d76873e99faf57b4910e798d0b30f8e90d984291f82bdc75",
+      "actual": "02aeecd2854e9d57d76873e99faf57b4910e798d0b30f8e90d984291f82bdc75",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/ingest-espn-odds.ts": {
+      "expected": "d74eeae404a9e4a3964b6f1fe92b0871e9bcb7eac0bcb8352f9df94d8eda617b",
+      "actual": "d74eeae404a9e4a3964b6f1fe92b0871e9bcb7eac0bcb8352f9df94d8eda617b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/promote-model-version.ts": {
+      "expected": "2fea72c2149b23ed9b8b44b4b66ade05ec154e868ee15642b330f267eeb50210",
+      "actual": "2fea72c2149b23ed9b8b44b4b66ade05ec154e868ee15642b330f267eeb50210",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/game-predictions/score.ts": {
+      "expected": "048e5ee5965c1c6e6c5a17da0b744bea090b497a6e6ce0d0afb34cbc8d30a714",
+      "actual": "048e5ee5965c1c6e6c5a17da0b744bea090b497a6e6ce0d0afb34cbc8d30a714",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/sustainability/process-recompute-queue.ts": {
+      "expected": "020e436cf5267e2ff60fbb2863ba86b2289a24e6d8782dd3ad41e7c714774ed3",
+      "actual": "020e436cf5267e2ff60fbb2863ba86b2289a24e6d8782dd3ad41e7c714774ed3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/sustainability/rebuild-priors.ts": {
+      "expected": "598a684cc388a9156bb8bc90a4ed030fafd1f4d97b983b102c707f0c04ae89b7",
+      "actual": "598a684cc388a9156bb8bc90a4ed030fafd1f4d97b983b102c707f0c04ae89b7",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/sustainability/rebuild-score.ts": {
+      "expected": "6fddaeed41db6e5bf632d302606ffe57e76f5c8dcaef4a5259ec4d657e97859e",
+      "actual": "6fddaeed41db6e5bf632d302606ffe57e76f5c8dcaef4a5259ec4d657e97859e",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/sustainability/rebuild-trend-bands.ts": {
+      "expected": "aa0680d2459e0f30c6edc4987f8a40443293f55eb7dc503c25cee1564b64c256",
+      "actual": "aa0680d2459e0f30c6edc4987f8a40443293f55eb7dc503c25cee1564b64c256",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/sustainability/rebuild-window-z.ts": {
+      "expected": "0dffa59bc819f47f07603732a66ef841d91a36d24639226518496c43995dd401",
+      "actual": "0dffa59bc819f47f07603732a66ef841d91a36d24639226518496c43995dd401",
+      "matches": true,
+      "test_only_adaptation": false
+    }
+  },
+  "all_selected_and_test_pins_unchanged": true,
+  "config_after": {
+    "next.config.js": "720ea61865b3a13734c7b3a38f334c219f6dc8ab0caa55223f5499046ff60e8c",
+    "tsconfig.json": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b"
+  },
+  "port_free_after_owned_shutdown": true
+}

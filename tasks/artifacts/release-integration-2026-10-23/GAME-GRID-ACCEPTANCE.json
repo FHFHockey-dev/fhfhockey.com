@@ -1,0 +1,11 @@
+{
+  "review": "/Users/tim/Documents/Codex/2026-10-23/task-2/review-r1/REPORT.md",
+  "review_sha256": "a09799aaf28196c0224015fc2a1099d405adb0b423c72e4ac93a07fa6581d569",
+  "status": "ACCEPT scoped integration",
+  "scope_paths": 35,
+  "canonical_drift": {},
+  "packet_paths": 13,
+  "patch_sha256": "e7b43c8894d7a30af1faa1fa487caccc4d684e9dae8ba09cc23fe2baef160b66",
+  "independent_unit": 15,
+  "independent_chromium": 7
+}

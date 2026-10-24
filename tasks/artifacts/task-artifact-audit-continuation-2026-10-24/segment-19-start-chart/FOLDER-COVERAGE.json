@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-24T19:54:56.564069+00:00",
+  "named_group_paths": [
+    "tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md",
+    "tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md",
+    "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+    "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md",
+    "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-ctpi-formula-audit.md",
+    "tasks/TASKS/three-pillars-analytics/trends/ctpi-formula-audit-report.md"
+  ],
+  "full_texts": 6,
+  "full_text_bytes": 132298,
+  "remaining_named_group_paths": [],
+  "scope": "Only named StartChart and directly related CTPI task/decision texts plus full October finding. Other ThreePillars/Trends documents remain unreviewed. No underlying app/runtime/source or historical corpus verification."
+}

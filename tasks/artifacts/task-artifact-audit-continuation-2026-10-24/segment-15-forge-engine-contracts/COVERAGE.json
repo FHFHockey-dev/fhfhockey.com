@@ -1,0 +1,108 @@
+{
+  "at": "2026-10-24T19:10:55.687792+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md",
+      "sha256": "b4dcc57990546a990aef1cad73fa962caf5dea744fdf833c177f7d364d5e0a6c",
+      "bytes": 37398,
+      "lines": 324,
+      "mtime_ns": 1792043698052590217,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          324
+        ]
+      ],
+      "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md",
+      "sha256": "b177dc88ceaf19310c46246aff5c8cdbc70023d93b6b81914660c64b21a25c37",
+      "bytes": 11598,
+      "lines": 194,
+      "mtime_ns": 1785605126561093475,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          194
+        ]
+      ],
+      "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md",
+      "sha256": "9f445b650d174be733e048c722a86b2fd864cbce16cd583985f15f7bee1f18b9",
+      "bytes": 18568,
+      "lines": 146,
+      "mtime_ns": 1785605126561843606,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          146
+        ]
+      ],
+      "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
+      "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
+      "bytes": 59363,
+      "lines": 287,
+      "mtime_ns": 1792348998389112160,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          287
+        ]
+      ],
+      "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md",
+      "sha256": "42b41559b1561854dc410fe7222433a3c2135498a6eb7ef583cb694839f5b5e6",
+      "bytes": 71353,
+      "lines": 1258,
+      "mtime_ns": 1792348998389282827,
+      "coverage": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          1,
+          620
+        ],
+        [
+          1234,
+          1258
+        ]
+      ],
+      "review_scope": "All substantive prose 1–610 read. Commented SQL appendix 614–1257 bounded by complete comment/fence/job-label/path/placeholder checks; individual statement semantics unreviewed. No full-file content credit.",
+      "disposition": "Requirements reviewed; historical commented cron appendix bounded and role-disposed",
+      "deep_read_required": false,
+      "bounded_appendix": "PRD-CRON-APPENDIX-DISPOSITION.json"
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/tasks-skater-forge.md",
+      "sha256": "1f799bd7fded25035dfb0c55226c60c8d3e3161903292621d9d5bbdf70cbbcd4",
+      "bytes": 19001,
+      "lines": 185,
+      "mtime_ns": 1785605126562241128,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          185
+        ]
+      ],
+      "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 5,
+    "partially-inspected": 1
+  },
+  "full_text_bytes": 145928,
+  "method": "Five complete unique task documents and one prose-reviewed/appendix-bounded PRD; saved inventory only. No broad source/legacy revalidation. No application code/tests, private evidence bodies, provider/production/Git actions or workers. Original duplicate maps retained."
+}

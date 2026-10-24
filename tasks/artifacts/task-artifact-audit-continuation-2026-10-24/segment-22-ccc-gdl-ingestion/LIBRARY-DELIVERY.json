@@ -1,0 +1,55 @@
+{
+  "receipt": {
+    "operation": "replace_library_file",
+    "status": "succeeded",
+    "path": "/MASTER-TASKLIST-2026-10-20(1).md",
+    "file_id": "file_000000005e1c8230a081db6aaa89ee4d",
+    "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "file_name": "MASTER-TASKLIST-2026-10-20(1).md",
+    "current_version_number": 20,
+    "restored_from_version_number": null,
+    "xattrs": [
+      {
+        "name": "user.library-file-version",
+        "value": "20"
+      }
+    ],
+    "directory_id": "libdir_12e102d729fc8191a3c2398e5b03ee6f",
+    "mime_type": "text/markdown",
+    "library_artifact_type": "report",
+    "file_size_bytes": 735568,
+    "external_connectors_accessed": false
+  },
+  "raw_result": {
+    "content": [
+      {
+        "type": "text",
+        "text": "Action completed."
+      }
+    ],
+    "structuredContent": {
+      "operation": "replace_library_file",
+      "status": "succeeded",
+      "path": "/MASTER-TASKLIST-2026-10-20(1).md",
+      "file_id": "file_000000005e1c8230a081db6aaa89ee4d",
+      "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+      "file_name": "MASTER-TASKLIST-2026-10-20(1).md",
+      "current_version_number": 20,
+      "restored_from_version_number": null,
+      "xattrs": [
+        {
+          "name": "user.library-file-version",
+          "value": "20"
+        }
+      ],
+      "directory_id": "libdir_12e102d729fc8191a3c2398e5b03ee6f",
+      "mime_type": "text/markdown",
+      "library_artifact_type": "report",
+      "file_size_bytes": 735568,
+      "external_connectors_accessed": false
+    },
+    "isError": false
+  },
+  "local_master_sha256": "8b0a93d5e74ce9f32144e487ec7059ef33871505d7910e1c4bd47b0e7873b28e",
+  "independent_cloud_checksum_verified": false
+}

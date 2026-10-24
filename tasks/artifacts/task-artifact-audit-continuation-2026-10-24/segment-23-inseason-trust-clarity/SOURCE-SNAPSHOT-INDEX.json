@@ -1,0 +1,53 @@
+{
+  "cutoff": "2026-10-24T20:48:23.669796+00:00",
+  "sources": {
+    "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
+      "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
+      "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
+      "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
+      "observed_at": "2026-10-24T20:48:23.669796+00:00",
+      "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
+      "reviewed_ranges": [
+        [
+          1,
+          216
+        ]
+      ],
+      "transformed_clause_snapshot": false,
+      "original_line_numbers_preserved": true
+    },
+    "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md",
+      "sha256": "e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32",
+      "original_path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
+      "original_sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
+      "observed_at": "2026-10-24T20:48:23.669796+00:00",
+      "review_scope": "Selected owner decisions, News contract/late lineage, Rankings source/history and final completion gates read at exact ranges; UUID/email identifiers redacted in readout. Other historical UI/QA receipts remain unread. No private values, pixels, execution or current runtime acceptance.",
+      "reviewed_ranges": [
+        [
+          1,
+          80
+        ],
+        [
+          126,
+          135
+        ],
+        [
+          235,
+          266
+        ],
+        [
+          373,
+          402
+        ],
+        [
+          452,
+          542
+        ]
+      ],
+      "transformed_clause_snapshot": true,
+      "original_line_numbers_preserved": true
+    }
+  }
+}

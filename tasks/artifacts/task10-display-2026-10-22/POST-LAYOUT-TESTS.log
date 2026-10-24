@@ -1,0 +1,22 @@
+
+> web@0.1.0 test
+> vitest --run components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx components/RosterScheduleOptimizer/ForecastPoints.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:58339) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:58340) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:58341) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/ForecastPoints.test.tsx (3 tests) 16ms
+ ✓ components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx (6 tests) 164ms
+ ✓ components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx (6 tests) 1112ms
+
+ Test Files  3 passed (3)
+      Tests  15 passed (15)
+   Start at  12:27:19
+   Duration  2.16s (transform 562ms, setup 7ms, collect 1.28s, tests 1.29s, environment 538ms, prepare 103ms)
+

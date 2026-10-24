@@ -1,0 +1,14 @@
+{
+  "web/supabase/migrations/20260711214500_add_line_combinations_source_provenance.sql": {
+    "sha256": "1b94c3058c59846708a9bdf0a27d321cf96b612c158201e09ca29a55add44c83",
+    "role": "retained fixture dependency; no application acceptance"
+  },
+  "supabase/config.toml": {
+    "sha256": "dcb10077d5f3fbf54fef3bda99ea1d0d069d0f27d643cc43ed39ad34743371b3",
+    "role": "retained fixture dependency; no application acceptance"
+  },
+  "tasks/TASKS/super-goal/super-goal-final-summary.md": {
+    "sha256": "8ac0643823ed6e7ad334bc1e772ac0b5a80173e773b5ac7961713c06ba650925",
+    "role": "retained fixture dependency; no application acceptance"
+  }
+}

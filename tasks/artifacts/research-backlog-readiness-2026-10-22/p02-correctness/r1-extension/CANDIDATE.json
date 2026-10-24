@@ -1,0 +1,74 @@
+{
+  "packet": "P02-R1 summary caller extension",
+  "status": "implemented locally; separate extension review pending",
+  "head": "a565238f670edc4cf65da79ad52ba82ec41f3b71",
+  "branch": "octoberBranch",
+  "files": [
+    {
+      "path": "web/components/PlayerStats/PlayerSummaryStrip.tsx",
+      "before_sha256": "9581b77429c45d8ab1fd0fc3c08365f380f2b3607e32878c76d32d9564e9c92a",
+      "operation": "modify",
+      "after_sha256": "3956e59250acfa65c7d855b512268da1416825319953fda71778e0a773385b84"
+    },
+    {
+      "path": "web/components/PlayerStats/PlayerStatsSummary.tsx",
+      "before_sha256": "cc53653a7458131313e1b20931c090b1444877eef4c6cfb65e08f2c478f8ec1e",
+      "operation": "modify",
+      "after_sha256": "7dbddd62b5d1b8469b96daa2652b96d8649362d517db77ec0aec1dd65a8687d3"
+    },
+    {
+      "path": "web/components/PlayerStats/PlayerGoalieSummaries.test.tsx",
+      "before_sha256": null,
+      "operation": "add",
+      "after_sha256": "97422008b0835ac6aa8e33e9223aa42a594df8e1d461fad0ec74152aa0f97e10"
+    }
+  ],
+  "original_packet_manifest": "tasks/artifacts/research-backlog-readiness-2026-10-22/p02-correctness/CANDIDATE.json",
+  "original_packet_manifest_sha256": "ed8550bfaf63983d71bd8f203de16f3fd5ac1013409db1bae1b169d6d266a275",
+  "preserved_original_files": 9,
+  "preserved_a7_a9_files": 13,
+  "tested_source_files": 52,
+  "final_snapshot": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p02-check-wsmNvb/isolation/snapshot/web",
+  "patch_sha256": "712a58a6ee28d936672f62979e092d1e94f158b4fdc3912c57cc18bb08b270f7",
+  "reviewer_oracle": {
+    "path": "tasks/artifacts/p02-goalie-independent-review-2026-10-22/p02-independent.test.tsx",
+    "sha256": "5d59b1e227962677b784f271518d5914ca13d9a45ad2800a6957d366eb6b099c"
+  },
+  "checks": {
+    "red": {
+      "exit_code": 1,
+      "failed": 13,
+      "passed": 13,
+      "receipt": "RED.log"
+    },
+    "green": {
+      "exit_code": 0,
+      "passed": 26,
+      "reviewer_oracles": 2,
+      "reviewer_controls": 6,
+      "new_component_tests": 18,
+      "receipt": "GREEN.log"
+    },
+    "scoped_typecheck": {
+      "exit_code": 0,
+      "receipt": "TYPECHECK.log"
+    },
+    "three_file_lint": {
+      "exit_code": 0,
+      "receipt": "LINT.log"
+    },
+    "diff_check": {
+      "exit_code": 0
+    }
+  },
+  "limits": {
+    "full_96_test_owner_suite": "not repeated; independent prior review passed it; original nine files unchanged",
+    "network_calls": 0,
+    "credential_reads": 0,
+    "private_data_reads": 0,
+    "builds": 0,
+    "commits": 0,
+    "deployments": 0,
+    "ratio_formula_changes": 0
+  }
+}

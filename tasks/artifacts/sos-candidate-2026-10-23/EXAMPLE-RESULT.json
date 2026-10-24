@@ -1,0 +1,539 @@
+{
+  "input_sha256": "6d0ec79052f85ec37e71b578f27198db248986355afafe00442a2f5789c90349",
+  "result": {
+    "as_of": "2026-10-20T00:00:00Z",
+    "cohort": [
+      "A",
+      "B",
+      "H",
+      "L"
+    ],
+    "config": {
+      "kappa": "2",
+      "mode": "final_win",
+      "prior_known_at": "2026-08-01T00:00:00Z",
+      "prior_mean": ".5"
+    },
+    "context": "neutral venue; no home/away/rest/goalie/volume adjustment",
+    "history_games": 31,
+    "history_ids": [
+      "AB",
+      "AH0",
+      "AH1",
+      "AH2",
+      "AH3",
+      "AH4",
+      "AH5",
+      "AH6",
+      "AH7",
+      "AH8",
+      "AH9",
+      "BL0",
+      "BL1",
+      "BL2",
+      "BL3",
+      "BL4",
+      "BL5",
+      "BL6",
+      "BL7",
+      "BL8",
+      "BL9",
+      "HL0",
+      "HL1",
+      "HL2",
+      "HL3",
+      "HL4",
+      "HL5",
+      "HL6",
+      "HL7",
+      "HL8",
+      "HL9"
+    ],
+    "horizon": {
+      "end": "2026-11-17T00:00:00Z",
+      "kind": "future_as_of",
+      "start": "2026-10-20T00:00:00Z"
+    },
+    "ignored_results": {},
+    "missing_history_teams": [],
+    "quality_colley": {
+      "components": [
+        [
+          "A",
+          "B",
+          "H",
+          "L"
+        ]
+      ],
+      "games": {
+        "A": 11,
+        "B": 11,
+        "H": 20,
+        "L": 20
+      },
+      "interpretation": "regularized outcome index centered at .5; may exceed [0,1]; not a probability",
+      "ratings": {
+        "A": 0.5977011494252875,
+        "B": 0.40229885057471293,
+        "H": 0.6867816091954025,
+        "L": 0.313218390804598
+      },
+      "residual_max": 1.7763568394002505e-15
+    },
+    "ranking_policy": "Competition ranks within non-null supplied cohort; higher=harder; ties at 10 decimals. Computable is not qualified.",
+    "schedule_age_seconds": 3600.0,
+    "season": {
+      "end": "2027-07-01T00:00:00Z",
+      "id": "20262027",
+      "start": "2026-09-01T00:00:00Z"
+    },
+    "teams": {
+      "A": {
+        "colley_excluding_focal": {
+          "components": [
+            [
+              "B",
+              "H",
+              "L"
+            ]
+          ],
+          "games": {
+            "B": 10,
+            "H": 10,
+            "L": 20
+          },
+          "interpretation": "regularized outcome index centered at .5; may exceed [0,1]; not a probability",
+          "ratings": {
+            "B": 0.45312500000000056,
+            "H": 0.7031250000000006,
+            "L": 0.3437500000000006
+          },
+          "residual_max": 2.6645352591003757e-15
+        },
+        "colley_prior_only_fixture_share": 0.0,
+        "colley_sos": 0.45312500000000056,
+        "colley_sos_rank": 3,
+        "direct_sos": 0.5833333333333334,
+        "direct_sos_rank": 1,
+        "fixture_count": 1,
+        "fixture_ids": [
+          "fAB"
+        ],
+        "issues": [],
+        "opponents": [
+          "B"
+        ],
+        "own_record": {
+          "credit_total": 5.0,
+          "eligible_games": 11,
+          "prior_weight": 0.15384615384615385,
+          "state": "observed",
+          "value": 0.46153846153846156
+        },
+        "record_components": {
+          "direct_prior_only_fixture_weight": 0.0,
+          "focal": "A",
+          "historical_focal_games": 11,
+          "kappa": 2.0,
+          "mode": "final_win",
+          "mu": 0.5,
+          "oowp": 0.16666666666666666,
+          "opponents": [
+            {
+              "direct_rate_excluding_focal": {
+                "credit_total": 6.0,
+                "eligible_games": 10,
+                "prior_weight": 0.16666666666666666,
+                "state": "observed",
+                "value": 0.5833333333333334
+              },
+              "fixtures": 1,
+              "second_hop": [
+                {
+                  "rate": {
+                    "credit_total": 1.0,
+                    "eligible_games": 10,
+                    "prior_weight": 0.16666666666666666,
+                    "state": "observed",
+                    "value": 0.16666666666666666
+                  },
+                  "team": "L",
+                  "weight": 1.0
+                }
+              ],
+              "second_hop_fixture_count": 10,
+              "second_hop_mean": 0.16666666666666666,
+              "second_hop_structural_prior_only": false,
+              "team": "B",
+              "weight": 1.0
+            }
+          ],
+          "outer_fixture_count": 1,
+          "own_rate": {
+            "credit_total": 5.0,
+            "eligible_games": 11,
+            "prior_weight": 0.15384615384615385,
+            "state": "observed",
+            "value": 0.46153846153846156
+          },
+          "owp": 0.5833333333333334,
+          "rpi_style": null,
+          "schedule_components": [
+            [
+              "A",
+              "B",
+              "H",
+              "L"
+            ]
+          ],
+          "second_hop_prior_only_weight": 0.0,
+          "sos": 0.4444444444444444,
+          "state": "available",
+          "unique_outer_opponents": 1,
+          "window": "future_fixture_list"
+        },
+        "rpi_sos": 0.4444444444444444,
+        "rpi_sos_rank": 3,
+        "rpi_sos_state": "available",
+        "state": "computable",
+        "unique_opponents": 1,
+        "unresolved_fixture_ids": []
+      },
+      "B": {
+        "colley_excluding_focal": {
+          "components": [
+            [
+              "A",
+              "H",
+              "L"
+            ]
+          ],
+          "games": {
+            "A": 10,
+            "H": 20,
+            "L": 10
+          },
+          "interpretation": "regularized outcome index centered at .5; may exceed [0,1]; not a probability",
+          "ratings": {
+            "A": 0.5468750000000002,
+            "H": 0.6562500000000002,
+            "L": 0.2968750000000001
+          },
+          "residual_max": 2.6645352591003757e-15
+        },
+        "colley_prior_only_fixture_share": 0.0,
+        "colley_sos": 0.5468750000000002,
+        "colley_sos_rank": 2,
+        "direct_sos": 0.4166666666666667,
+        "direct_sos_rank": 3,
+        "fixture_count": 1,
+        "fixture_ids": [
+          "fAB"
+        ],
+        "issues": [],
+        "opponents": [
+          "A"
+        ],
+        "own_record": {
+          "credit_total": 6.0,
+          "eligible_games": 11,
+          "prior_weight": 0.15384615384615385,
+          "state": "observed",
+          "value": 0.5384615384615384
+        },
+        "record_components": {
+          "direct_prior_only_fixture_weight": 0.0,
+          "focal": "B",
+          "historical_focal_games": 11,
+          "kappa": 2.0,
+          "mode": "final_win",
+          "mu": 0.5,
+          "oowp": 0.8333333333333334,
+          "opponents": [
+            {
+              "direct_rate_excluding_focal": {
+                "credit_total": 4.0,
+                "eligible_games": 10,
+                "prior_weight": 0.16666666666666666,
+                "state": "observed",
+                "value": 0.4166666666666667
+              },
+              "fixtures": 1,
+              "second_hop": [
+                {
+                  "rate": {
+                    "credit_total": 9.0,
+                    "eligible_games": 10,
+                    "prior_weight": 0.16666666666666666,
+                    "state": "observed",
+                    "value": 0.8333333333333334
+                  },
+                  "team": "H",
+                  "weight": 1.0
+                }
+              ],
+              "second_hop_fixture_count": 10,
+              "second_hop_mean": 0.8333333333333334,
+              "second_hop_structural_prior_only": false,
+              "team": "A",
+              "weight": 1.0
+            }
+          ],
+          "outer_fixture_count": 1,
+          "own_rate": {
+            "credit_total": 6.0,
+            "eligible_games": 11,
+            "prior_weight": 0.15384615384615385,
+            "state": "observed",
+            "value": 0.5384615384615384
+          },
+          "owp": 0.4166666666666667,
+          "rpi_style": null,
+          "schedule_components": [
+            [
+              "A",
+              "B",
+              "H",
+              "L"
+            ]
+          ],
+          "second_hop_prior_only_weight": 0.0,
+          "sos": 0.5555555555555556,
+          "state": "available",
+          "unique_outer_opponents": 1,
+          "window": "future_fixture_list"
+        },
+        "rpi_sos": 0.5555555555555556,
+        "rpi_sos_rank": 2,
+        "rpi_sos_state": "available",
+        "state": "computable",
+        "unique_opponents": 1,
+        "unresolved_fixture_ids": []
+      },
+      "H": {
+        "colley_excluding_focal": {
+          "components": [
+            [
+              "A",
+              "B",
+              "L"
+            ]
+          ],
+          "games": {
+            "A": 1,
+            "B": 11,
+            "L": 10
+          },
+          "interpretation": "regularized outcome index centered at .5; may exceed [0,1]; not a probability",
+          "ratings": {
+            "A": 0.653846153846154,
+            "B": 0.4615384615384617,
+            "L": 0.3846153846153847
+          },
+          "residual_max": 1.1102230246251565e-15
+        },
+        "colley_prior_only_fixture_share": 0.0,
+        "colley_sos": 0.3846153846153847,
+        "colley_sos_rank": 4,
+        "direct_sos": 0.4166666666666667,
+        "direct_sos_rank": 3,
+        "fixture_count": 1,
+        "fixture_ids": [
+          "fHL"
+        ],
+        "issues": [],
+        "opponents": [
+          "L"
+        ],
+        "own_record": {
+          "credit_total": 15.0,
+          "eligible_games": 20,
+          "prior_weight": 0.09090909090909091,
+          "state": "observed",
+          "value": 0.7272727272727273
+        },
+        "record_components": {
+          "direct_prior_only_fixture_weight": 0.0,
+          "focal": "H",
+          "historical_focal_games": 20,
+          "kappa": 2.0,
+          "mode": "final_win",
+          "mu": 0.5,
+          "oowp": 0.3333333333333333,
+          "opponents": [
+            {
+              "direct_rate_excluding_focal": {
+                "credit_total": 4.0,
+                "eligible_games": 10,
+                "prior_weight": 0.16666666666666666,
+                "state": "observed",
+                "value": 0.4166666666666667
+              },
+              "fixtures": 1,
+              "second_hop": [
+                {
+                  "rate": {
+                    "credit_total": 0.0,
+                    "eligible_games": 1,
+                    "prior_weight": 0.6666666666666666,
+                    "state": "observed",
+                    "value": 0.3333333333333333
+                  },
+                  "team": "B",
+                  "weight": 1.0
+                }
+              ],
+              "second_hop_fixture_count": 10,
+              "second_hop_mean": 0.3333333333333333,
+              "second_hop_structural_prior_only": false,
+              "team": "L",
+              "weight": 1.0
+            }
+          ],
+          "outer_fixture_count": 1,
+          "own_rate": {
+            "credit_total": 15.0,
+            "eligible_games": 20,
+            "prior_weight": 0.09090909090909091,
+            "state": "observed",
+            "value": 0.7272727272727273
+          },
+          "owp": 0.4166666666666667,
+          "rpi_style": null,
+          "schedule_components": [
+            [
+              "A",
+              "B",
+              "H",
+              "L"
+            ]
+          ],
+          "second_hop_prior_only_weight": 0.0,
+          "sos": 0.3888888888888889,
+          "state": "available",
+          "unique_outer_opponents": 1,
+          "window": "future_fixture_list"
+        },
+        "rpi_sos": 0.3888888888888889,
+        "rpi_sos_rank": 4,
+        "rpi_sos_state": "available",
+        "state": "computable",
+        "unique_opponents": 1,
+        "unresolved_fixture_ids": []
+      },
+      "L": {
+        "colley_excluding_focal": {
+          "components": [
+            [
+              "A",
+              "B",
+              "H"
+            ]
+          ],
+          "games": {
+            "A": 11,
+            "B": 1,
+            "H": 10
+          },
+          "interpretation": "regularized outcome index centered at .5; may exceed [0,1]; not a probability",
+          "ratings": {
+            "A": 0.5384615384615388,
+            "B": 0.3461538461538463,
+            "H": 0.6153846153846156
+          },
+          "residual_max": 4.440892098500626e-16
+        },
+        "colley_prior_only_fixture_share": 0.0,
+        "colley_sos": 0.6153846153846156,
+        "colley_sos_rank": 1,
+        "direct_sos": 0.5833333333333334,
+        "direct_sos_rank": 1,
+        "fixture_count": 1,
+        "fixture_ids": [
+          "fHL"
+        ],
+        "issues": [],
+        "opponents": [
+          "H"
+        ],
+        "own_record": {
+          "credit_total": 5.0,
+          "eligible_games": 20,
+          "prior_weight": 0.09090909090909091,
+          "state": "observed",
+          "value": 0.2727272727272727
+        },
+        "record_components": {
+          "direct_prior_only_fixture_weight": 0.0,
+          "focal": "L",
+          "historical_focal_games": 20,
+          "kappa": 2.0,
+          "mode": "final_win",
+          "mu": 0.5,
+          "oowp": 0.6666666666666666,
+          "opponents": [
+            {
+              "direct_rate_excluding_focal": {
+                "credit_total": 6.0,
+                "eligible_games": 10,
+                "prior_weight": 0.16666666666666666,
+                "state": "observed",
+                "value": 0.5833333333333334
+              },
+              "fixtures": 1,
+              "second_hop": [
+                {
+                  "rate": {
+                    "credit_total": 1.0,
+                    "eligible_games": 1,
+                    "prior_weight": 0.6666666666666666,
+                    "state": "observed",
+                    "value": 0.6666666666666666
+                  },
+                  "team": "A",
+                  "weight": 1.0
+                }
+              ],
+              "second_hop_fixture_count": 10,
+              "second_hop_mean": 0.6666666666666666,
+              "second_hop_structural_prior_only": false,
+              "team": "H",
+              "weight": 1.0
+            }
+          ],
+          "outer_fixture_count": 1,
+          "own_rate": {
+            "credit_total": 5.0,
+            "eligible_games": 20,
+            "prior_weight": 0.09090909090909091,
+            "state": "observed",
+            "value": 0.2727272727272727
+          },
+          "owp": 0.5833333333333334,
+          "rpi_style": null,
+          "schedule_components": [
+            [
+              "A",
+              "B",
+              "H",
+              "L"
+            ]
+          ],
+          "second_hop_prior_only_weight": 0.0,
+          "sos": 0.6111111111111112,
+          "state": "available",
+          "unique_outer_opponents": 1,
+          "window": "future_fixture_list"
+        },
+        "rpi_sos": 0.6111111111111112,
+        "rpi_sos_rank": 1,
+        "rpi_sos_state": "available",
+        "state": "computable",
+        "unique_opponents": 1,
+        "unresolved_fixture_ids": []
+      }
+    },
+    "uncertainty": "No calibrated intervals; prior share, coverage, connectivity and stability diagnostics only",
+    "version": "fhfh-sos-candidate-v1"
+  }
+}

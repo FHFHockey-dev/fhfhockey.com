@@ -1,0 +1,22 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts components/StatsPage/PlayerSearchBar.test.tsx components/StatsPage/reviewSearchNavigation.test.tsx
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-tuhnc30g/isolation/snapshot/web
+
+(node:94123) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/StatsPage/PlayerSearchBar.test.tsx (20 tests) 127ms
+(node:94123) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | components/StatsPage/reviewSearchNavigation.test.tsx > keeps hover and touch from prefetching player pages
+ROUTER_PREFETCH_OBSERVED []
+
+ ✓ components/StatsPage/reviewSearchNavigation.test.tsx (14 tests) 90ms
+
+ Test Files  2 passed (2)
+      Tests  34 passed (34)
+   Start at  09:43:17
+   Duration  993ms (transform 51ms, setup 13ms, collect 221ms, tests 217ms, environment 375ms, prepare 58ms)
+

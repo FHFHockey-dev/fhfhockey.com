@@ -1,0 +1,525 @@
+--- a/web/components/PlayerStats/playerStatsContract.ts
++++ b/web/components/PlayerStats/playerStatsContract.ts
+@@ -182,20 +182,78 @@
+   return Number.isFinite(n) ? n : null;
+ };
+ 
++// Goalie primitives come from numeric WGO fields. Do not infer missing counts
++// or parse a formatted clock as elapsed seconds.
++const goalieNumber = (value: unknown): number | null =>
++  typeof value === "number" && Number.isFinite(value) && value >= 0
++    ? value
++    : null;
++
++export function summarizeQualityStarts(log: DatedRow[]): {
++  starts: number;
++  classifiedStarts: number;
++  unknownStarts: number;
++  rate: number | null;
++} {
++  let starts = 0;
++  let classifiedStarts = 0;
++  let qualityStarts = 0;
++  let unknownStarts = 0;
++  for (const row of log) {
++    const played = goalieNumber(row.games_played);
++    if (played === 0) continue;
++    const started = goalieNumber(row.games_started);
++    if (played === null || (started !== 0 && started !== 1)) {
++      unknownStarts += 1;
++      continue;
++    }
++    if (started === 0) continue;
++    starts += 1;
++    const classification = goalieNumber(row.quality_start);
++    if (classification === 0 || classification === 1) {
++      classifiedStarts += 1;
++      qualityStarts += classification;
++    }
++  }
++  return {
++    starts,
++    classifiedStarts,
++    unknownStarts,
++    rate: unknownStarts === 0 && starts > 0 && classifiedStarts === starts
++      ? qualityStarts / starts
++      : null
++  };
++}
++
+ // Ratios rebuilt from summed components rather than averaged per game.
+ const RATIO_COMPONENTS: Record<string, [string, string]> = {
+-  shooting_percentage: ["goals", "shots"],
+-  save_pct: ["saves", "shots_against"]
++  shooting_percentage: ["goals", "shots"]
+ };
+ 
+ /**
+  * Aggregate one stat over a log. Missing values are skipped, never counted as
+  * zero; a stat with no usable values (or a zero denominator) is null.
++ * Goalie ratios require complete paired primitives across the supplied log.
+  */
+ export function aggregateSummaryStat(
+   log: DatedRow[],
+   stat: string
+ ): number | null {
++  if (stat === "save_pct" || stat === "goals_against_avg") {
++    let numerator = 0;
++    let denominator = 0;
++    for (const row of log) {
++      const top = goalieNumber(row[stat === "save_pct" ? "saves" : "goals_against"]);
++      const bottom = goalieNumber(row[stat === "save_pct" ? "shots_against" : "time_on_ice"]);
++      if (top === null || bottom === null || !Number.isInteger(top)) return null;
++      if (stat === "save_pct" && (!Number.isInteger(bottom) || top > bottom)) return null;
++      if (bottom === 0 && top > 0) return null;
++      numerator += top;
++      denominator += bottom;
++    }
++    // WGO time_on_ice is numeric seconds; never infer 60 minutes per appearance.
++    return denominator > 0 ? numerator * (stat === "save_pct" ? 1 : 3600) / denominator : null;
++  }
+   const ratio = RATIO_COMPONENTS[stat];
+   if (ratio) {
+     let numerator = 0;
+--- a/web/components/PlayerStats/playerStatsContract.test.ts
++++ b/web/components/PlayerStats/playerStatsContract.test.ts
+@@ -214,6 +214,48 @@
+     expect(aggregateSummaryStat(log, "save_pct")).toBeCloseTo(37 / 40);
+   });
+ 
++  it("P02: GAA pools goals against over numeric seconds, including relief exposure", () => {
++    const log = [
++      { date: "1", games_played: 1, goals_against: 3, time_on_ice: 3600, goals_against_avg: 3 },
++      { date: "2", games_played: 1, goals_against: 1, time_on_ice: 600, goals_against_avg: 6 }
++    ];
++    expect(aggregateSummaryStat(log, "goals_against_avg")).toBeCloseTo(4 * 3600 / 4200);
++  });
++
++  it.each([null, undefined, "", " ", "60:00", -1, NaN, Infinity, false])(
++    "P02: GAA is unavailable with unsupported exposure %s",
++    (time_on_ice) => {
++      expect(aggregateSummaryStat([
++        { date: "1", games_played: 1, goals_against: 3, time_on_ice: 3600, goals_against_avg: 3 },
++        { date: "2", games_played: 1, goals_against: 1, time_on_ice, goals_against_avg: 6 }
++      ], "goals_against_avg")).toBeNull();
++    }
++  );
++
++  it("P02: GAA preserves observed zero and withholds zero exposure", () => {
++    expect(aggregateSummaryStat([{ date: "1", goals_against: 0, time_on_ice: 3600 }], "goals_against_avg")).toBe(0);
++    expect(aggregateSummaryStat([{ date: "1", goals_against: 0, time_on_ice: 0 }], "goals_against_avg")).toBeNull();
++    expect(aggregateSummaryStat([{ date: "1", goals_against: null, time_on_ice: 3600 }], "goals_against_avg")).toBeNull();
++  });
++
++  it.each([
++    { saves: null, shots_against: 10 },
++    { saves: 9, shots_against: null },
++    { saves: " ", shots_against: 10 },
++    { saves: false, shots_against: 10 },
++    { saves: 11, shots_against: 10 },
++    { saves: -1, shots_against: 10 }
++  ])("P02: SV% withholds incomplete or invalid paired support %j", (partial) => {
++    expect(aggregateSummaryStat([
++      { date: "1", games_played: 1, saves: 27, shots_against: 30 },
++      { date: "2", games_played: 1, ...partial }
++    ], "save_pct")).toBeNull();
++  });
++
++  it("P02: zero saves on observed shots is a valid zero SV%", () => {
++    expect(aggregateSummaryStat([{ date: "1", saves: 0, shots_against: 10 }], "save_pct")).toBe(0);
++  });
++
+   it("partial data: null rows are skipped, never treated as zero", () => {
+     const log = [
+       { date: "1", games_played: 1, cf_pct: 60, goals_per_60: 0, hits: null },
+--- a/web/components/PlayerStats/PlayerContextualStats.tsx
++++ b/web/components/PlayerStats/PlayerContextualStats.tsx
+@@ -6,7 +6,9 @@
+   aggregateSummaryStat,
+   computeAvailability,
+   countAppearances,
+-  leagueDateKey
++  isAppearance,
++  leagueDateKey,
++  summarizeQualityStarts
+ } from "./playerStatsContract";
+ 
+ interface GameLogEntry {
+@@ -111,42 +113,28 @@
+         (sum, game) => sum + (Number(game.wins) || 0),
+         0
+       );
+-      const saves = allGames.reduce(
+-        (sum, game) => sum + (Number(game.saves) || 0),
+-        0
+-      );
+-      const shotsAgainst = allGames.reduce(
+-        (sum, game) => sum + (Number(game.shots_against) || 0),
+-        0
+-      );
+       const shutouts = allGames.reduce(
+         (sum, game) => sum + (Number(game.shutouts) || 0),
+         0
+       );
+-      const qualityStarts = allGames.reduce(
+-        (sum, game) => sum + (Number(game.quality_start) || 0),
+-        0
+-      );
++      const qualityStarts = summarizeQualityStarts(allGames);
+ 
+       // Separate playoff performance
+       const playoffWins = playoffGameLog.reduce(
+         (sum, game) => sum + (Number(game.wins) || 0),
+         0
+       );
+-      const playoffSaves = playoffGameLog.reduce(
+-        (sum, game) => sum + (Number(game.saves) || 0),
+-        0
+-      );
+-      const playoffShotsAgainst = playoffGameLog.reduce(
+-        (sum, game) => sum + (Number(game.shots_against) || 0),
+-        0
+-      );
+-
+-      const savePct = shotsAgainst > 0 ? saves / shotsAgainst : 0;
++      const hasKnownParticipation = (games: GameLogEntry[]) => games.every((game) =>
++        typeof game.games_played === "number" && Number.isFinite(game.games_played) && game.games_played >= 0
++      );
++      const savePct = hasKnownParticipation(allGames)
++        ? aggregateSummaryStat(allGames.filter(isAppearance), "save_pct")
++        : null;
+       const winRate = gamesPlayed > 0 ? wins / gamesPlayed : 0;
+-      const qsRate = gamesPlayed > 0 ? qualityStarts / gamesPlayed : 0;
+-      const playoffSavePct =
+-        playoffShotsAgainst > 0 ? playoffSaves / playoffShotsAgainst : 0;
++      const qsRate = qualityStarts.rate;
++      const playoffSavePct = hasKnownParticipation(playoffGameLog)
++        ? aggregateSummaryStat(playoffGameLog.filter(isAppearance), "save_pct")
++        : null;
+ 
+       insights.push({
+         label: "Overall Win Rate",
+@@ -163,19 +151,23 @@
+ 
+       insights.push({
+         label: "Save Percentage",
+-        value: savePct.toFixed(3),
++        value: savePct === null ? "-" : savePct.toFixed(3),
+         trend:
+-          savePct >= 0.92
+-            ? "positive"
+-            : savePct >= 0.9
+-              ? "neutral"
+-              : "negative",
++          savePct === null
++            ? "neutral"
++            : savePct >= 0.92
++              ? "positive"
++              : savePct >= 0.9
++                ? "neutral"
++                : "negative",
+         description:
+-          savePct >= 0.92
+-            ? "Elite level"
+-            : savePct >= 0.9
+-              ? "Solid performance"
+-              : "Needs improvement"
++          savePct === null
++            ? "Complete saves and shots against are unavailable"
++            : savePct >= 0.92
++              ? "Elite level"
++              : savePct >= 0.9
++                ? "Solid performance"
++                : "Needs improvement"
+       });
+ 
+       if (playoffGames > 0) {
+@@ -183,26 +175,27 @@
+           label: "Playoff Performance",
+           value: `${playoffWins}W in ${playoffGames}GP`,
+           trend:
+-            playoffSavePct >= 0.92
+-              ? "positive"
+-              : playoffSavePct >= 0.9
+-                ? "neutral"
+-                : "negative",
+-          description: `${playoffSavePct.toFixed(3)} SV% in playoffs`
++            playoffSavePct === null
++              ? "neutral"
++              : playoffSavePct >= 0.92
++                ? "positive"
++                : playoffSavePct >= 0.9
++                  ? "neutral"
++                  : "negative",
++          description: playoffSavePct === null
++            ? "Playoff save percentage unavailable"
++            : `${playoffSavePct.toFixed(3)} SV% in playoffs`
+         });
+       }
+ 
+       insights.push({
+         label: "Quality Start Rate",
+-        value: `${(qsRate * 100).toFixed(1)}%`,
++        value: qsRate === null ? "-" : `${(qsRate * 100).toFixed(1)}%`,
+         trend:
+-          qsRate >= 0.6 ? "positive" : qsRate >= 0.4 ? "neutral" : "negative",
+-        description:
+-          qsRate >= 0.6
+-            ? "Very consistent"
+-            : qsRate >= 0.4
+-              ? "Reasonably consistent"
+-              : "Inconsistent starts"
++          qsRate === null ? "neutral" : qsRate >= 0.6 ? "positive" : qsRate >= 0.4 ? "neutral" : "negative",
++        description: qualityStarts.unknownStarts > 0
++          ? "Start participation unavailable"
++          : `${qualityStarts.classifiedStarts} of ${qualityStarts.starts} starts classified`
+       });
+ 
+       if (shutouts > 0) {
+--- /dev/null
++++ b/web/components/PlayerStats/PlayerContextualStats.test.tsx
+@@ -0,0 +1,79 @@
++import React from "react";
++import { cleanup, render, screen, within } from "@testing-library/react";
++import { afterEach, describe, expect, it, vi } from "vitest";
++import { PlayerContextualStats } from "./PlayerContextualStats";
++import { PlayerSummaryStrip } from "./PlayerSummaryStrip";
++import type { GoalieGameLogEntry } from "./types";
++
++vi.mock("hooks/useMissedGames", () => ({ useMissedGames: () => ({ missedGames: null }) }));
++afterEach(cleanup);
++
++const row = (overrides: Record<string, unknown> = {}) => ({
++  date: "2026-10-20", games_played: 1, games_started: 1,
++  wins: 0, saves: 27, shots_against: 30, quality_start: 0, ...overrides
++});
++const renderGoalie = (gameLog: ReturnType<typeof row>[]) => render(
++  <PlayerContextualStats player={{ id: 999001, fullName: "Synthetic Goalie", position: "G" }}
++    gameLog={gameLog} playoffGameLog={[]} seasonTotals={[]} isGoalie
++    missedGames={null} asOfDate="2026-10-22" />
++);
++const card = (label: string) => within(screen.getByText(label).parentElement!);
++
++describe("P02 goalie contextual support", () => {
++  it("uses classified starts, retaining relief as participation but outside QS", () => {
++    renderGoalie([row({ quality_start: 1 }), row(), row({ games_started: 0, quality_start: null })]);
++    expect(card("Quality Start Rate").getByText("50.0%")).toBeTruthy();
++    expect(card("Quality Start Rate").getByText(/2 of 2 starts classified/)).toBeTruthy();
++    expect(screen.getByText("3 games")).toBeTruthy();
++  });
++
++  it.each([
++    { games_started: null, quality_start: 1 },
++    { games_started: undefined, quality_start: 1 },
++    { games_started: 1, quality_start: null },
++    { games_started: 1, quality_start: undefined },
++    { games_started: 1, quality_start: " " },
++    { games_started: 1, quality_start: 2 }
++  ])("withholds QS when starts or classification is unknown/invalid: %j", (missing) => {
++    renderGoalie([row({ quality_start: 1 }), row(missing)]);
++    expect(card("Quality Start Rate").getByText("-")).toBeTruthy();
++    expect(screen.queryByText("Inconsistent starts")).toBeNull();
++  });
++
++  it("preserves a classified zero QS rate and withholds a relief-only rate", () => {
++    const view = renderGoalie([row()]);
++    expect(card("Quality Start Rate").getByText("0.0%")).toBeTruthy();
++    view.unmount();
++    renderGoalie([row({ games_started: 0, quality_start: null })]);
++    expect(card("Quality Start Rate").getByText("-")).toBeTruthy();
++  });
++
++  it("withholds SV when an appearance is missing one paired count", () => {
++    renderGoalie([row(), row({ saves: null, shots_against: 10 })]);
++    expect(card("Save Percentage").getByText("-")).toBeTruthy();
++    expect(screen.queryByText("Needs improvement")).toBeNull();
++  });
++
++  it("pools valid SV counts and ignores a known nonappearance", () => {
++    renderGoalie([row(), row({ saves: 10, shots_against: 10, games_started: 0 }),
++      row({ games_played: 0, games_started: 0, saves: null, shots_against: null })]);
++    expect(card("Save Percentage").getByText("0.925")).toBeTruthy();
++  });
++
++  it.each([null, undefined, -1, NaN])("withholds ratios when participation is unknown: %s", (games_played) => {
++    renderGoalie([row(), row({ games_played })]);
++    expect(card("Save Percentage").getByText("-")).toBeTruthy();
++    expect(card("Quality Start Rate").getByText("-")).toBeTruthy();
++  });
++
++  it("renders unavailable headline GAA when the current page omitted time exposure", () => {
++    const game: GoalieGameLogEntry = {
++      ...row(), losses: null, ot_losses: null, save_pct: 0.9, goals_against: 3,
++      goals_against_avg: 3, shutouts: 0, time_on_ice: null,
++      goals_saved_above_average: null, high_danger_save_pct: null, medium_danger_save_pct: null
++    };
++    render(<PlayerSummaryStrip gameLog={[game]}
++      isGoalie windowLabel="Selected games" />);
++    expect(within(screen.getByText("GAA").closest("article")!).getByText("-")).toBeTruthy();
++  });
++});
+--- a/web/lib/NHL/statsPageFetch.ts
++++ b/web/lib/NHL/statsPageFetch.ts
+@@ -47,6 +47,12 @@
+   const season = String(seasonId ?? "");
+   if (!/^\d{8}$/.test(season)) return "Season";
+   return `${season.slice(0, 4)}-${season.slice(6, 8)}`;
++}
++
++function goalieRatio(value: unknown, maximum = Infinity): number | null {
++  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= maximum
++    ? value
++    : null;
+ }
+ 
+ function buildSkaterLeaderboards(skaters: SkaterStat[]): SkaterLeaderboards {
+@@ -313,9 +319,9 @@
+       current_team_abbreviation:
+         row.team_abbrevs || row.current_team_abbreviation || "",
+       wins: row.wins || 0,
+-      save_pct: row.save_pct || 0,
+-      goals_against_avg: row.goals_against_avg || 0,
+-      quality_starts_pct: row.quality_starts_pct || 0,
++      save_pct: goalieRatio(row.save_pct, 1),
++      goals_against_avg: goalieRatio(row.goals_against_avg),
++      quality_starts_pct: goalieRatio(row.quality_starts_pct, 1),
+       games_played: row.games_played || 0,
+       image_url: goaliePlayersMap.get(row.goalie_id)?.image_url || "",
+       sweater_number:
+@@ -330,13 +336,16 @@
+     .sort((a, b) => b.wins - a.wins)
+     .slice(0, 5);
+   const goalieLeadersSavePct = [...goalieStats]
+-    .sort((a, b) => b.save_pct - a.save_pct)
++    .filter((goalie) => goalie.games_played > 0 && goalie.save_pct !== null)
++    .sort((a, b) => b.save_pct! - a.save_pct!)
+     .slice(0, 5);
+   const goalieLeadersGAA = [...goalieStats]
+-    .sort((a, b) => a.goals_against_avg - b.goals_against_avg)
++    .filter((goalie) => goalie.games_played > 0 && goalie.goals_against_avg !== null)
++    .sort((a, b) => a.goals_against_avg! - b.goals_against_avg!)
+     .slice(0, 5);
+   const goalieLeadersQS = [...goalieStats]
+-    .sort((a, b) => b.quality_starts_pct - a.quality_starts_pct)
++    .filter((goalie) => goalie.games_played > 0 && goalie.quality_starts_pct !== null)
++    .sort((a, b) => b.quality_starts_pct! - a.quality_starts_pct!)
+     .slice(0, 5);
+ 
+   return {
+--- a/web/lib/NHL/statsPageFetch.test.ts
++++ b/web/lib/NHL/statsPageFetch.test.ts
+@@ -197,6 +197,51 @@
+ });
+ 
+ describe("fetchStatsData", () => {
++  it("P02: missing goalie ratios never enter numerical rankings; observed zero remains", async () => {
++    database.tables.wgo_goalie_stats_totals = [
++      { goalie_id: 991, goalie_name: "Missing", season_id: 20252026, games_played: 10, wins: 3,
++        goals_against_avg: null, save_pct: null, quality_starts_pct: null },
++      { goalie_id: 992, goalie_name: "Observed", season_id: 20252026, games_played: 10, wins: 2,
++        goals_against_avg: 2, save_pct: 0.92, quality_starts_pct: 0.5 },
++      { goalie_id: 993, goalie_name: "Zero", season_id: 20252026, games_played: 1, wins: 0,
++        goals_against_avg: 0, save_pct: 0, quality_starts_pct: 0 }
++    ];
++    const result = await fetchStatsData();
++    expect(result.goalieLeadersGAA.map((goalie) => goalie.goalie_id)).toEqual([993, 992]);
++    expect(result.goalieLeadersSavePct.map((goalie) => goalie.goalie_id)).toEqual([992, 993]);
++    expect(result.goalieLeadersQS.map((goalie) => goalie.goalie_id)).toEqual([992, 993]);
++    expect(result.goalieLeadersWins.find((goalie) => goalie.goalie_id === 991)).toMatchObject({
++      goals_against_avg: null, save_pct: null, quality_starts_pct: null
++    });
++  });
++
++  it.each([undefined, "", " ", false, NaN, Infinity, -1])(
++    "P02: invalid goalie ratio %s is unavailable rather than zero",
++    async (invalid) => {
++      database.tables.wgo_goalie_stats_totals = [{
++        goalie_id: 991, goalie_name: "Invalid", season_id: 20252026, games_played: 10,
++        wins: 1, goals_against_avg: invalid, save_pct: invalid, quality_starts_pct: invalid
++      }];
++      const result = await fetchStatsData();
++      expect(result.goalieLeadersGAA).toEqual([]);
++      expect(result.goalieLeadersSavePct).toEqual([]);
++      expect(result.goalieLeadersQS).toEqual([]);
++    }
++  );
++
++  it("P02: ratio rankings require played games and fractions no larger than one", async () => {
++    database.tables.wgo_goalie_stats_totals = [
++      { goalie_id: 991, goalie_name: "No exposure", season_id: 20252026, games_played: 0,
++        goals_against_avg: 0, save_pct: 0, quality_starts_pct: 0 },
++      { goalie_id: 992, goalie_name: "Invalid fraction", season_id: 20252026, games_played: 10,
++        goals_against_avg: 2, save_pct: 1.1, quality_starts_pct: 1.1 }
++    ];
++    const result = await fetchStatsData();
++    expect(result.goalieLeadersGAA.map((goalie) => goalie.goalie_id)).toEqual([992]);
++    expect(result.goalieLeadersSavePct).toEqual([]);
++    expect(result.goalieLeadersQS).toEqual([]);
++  });
++
+   it("ranks the full season within each position before taking five, including NHL wing codes", async () => {
+     database.tables.wgo_skater_stats_totals = database.tables.wgo_skater_stats_totals.map((row) => ({
+       ...row,
+--- a/web/lib/NHL/statsPageTypes.ts
++++ b/web/lib/NHL/statsPageTypes.ts
+@@ -40,9 +40,9 @@
+   fullName: string;
+   current_team_abbreviation: string;
+   wins: number;
+-  save_pct: number;
+-  goals_against_avg: number;
+-  quality_starts_pct: number;
++  save_pct: number | null;
++  goals_against_avg: number | null;
++  quality_starts_pct: number | null;
+   games_played: number;
+   image_url: string;
+   sweater_number?: number | null;
+--- a/web/components/StatsPage/LeaderboardCategoryGoalie.tsx
++++ b/web/components/StatsPage/LeaderboardCategoryGoalie.tsx
+@@ -32,15 +32,15 @@
+             : styles.leaderRow;
+         let statValue = goalie[statKey];
+         if (statKey === "save_pct") {
+-          statValue = goalie.save_pct
++          statValue = goalie.save_pct != null
+             ? goalie.save_pct.toFixed(3).replace(/^0/, "")
+             : "-";
+         } else if (statKey === "goals_against_avg") {
+-          statValue = goalie.goals_against_avg
++          statValue = goalie.goals_against_avg != null
+             ? goalie.goals_against_avg.toFixed(2)
+             : "-";
+         } else if (statKey === "quality_starts_pct") {
+-          statValue = goalie.quality_starts_pct
++          statValue = goalie.quality_starts_pct != null
+             ? (goalie.quality_starts_pct * 100).toFixed(1)
+             : "-";
+         }
+--- /dev/null
++++ b/web/components/StatsPage/LeaderboardCategoryGoalie.test.tsx
+@@ -0,0 +1,24 @@
++import React from "react";
++import { cleanup, render, screen } from "@testing-library/react";
++import { afterEach, expect, it, vi } from "vitest";
++import LeaderboardCategoryGoalie from "./LeaderboardCategoryGoalie";
++import type { GoalieStat } from "lib/NHL/statsPageTypes";
++
++vi.mock("./LeaderboardHeadshot", () => ({ default: () => null }));
++vi.mock("next/link", () => ({ default: ({ children, href }: any) => <a href={href}>{children}</a> }));
++afterEach(cleanup);
++
++const goalie: GoalieStat = { goalie_id: 999001, fullName: "Synthetic Goalie", current_team_abbreviation: "SYN",
++  wins: 0, save_pct: 0, goals_against_avg: 0, quality_starts_pct: 0, games_played: 1, image_url: "" };
++
++it.each([
++  ["save_pct", ".000"], ["goals_against_avg", "0.00"], ["quality_starts_pct", "0.0"]
++] as const)("P02: renders observed zero %s instead of unavailable", (statKey, displayed) => {
++  render(<LeaderboardCategoryGoalie title="Goalies" leaders={[goalie]} statKey={statKey} />);
++  expect(screen.getByText(displayed)).toBeTruthy();
++});
++
++it("P02: empty qualified ranking has an unavailable state", () => {
++  render(<LeaderboardCategoryGoalie title="GAA" leaders={[]} statKey="goals_against_avg" />);
++  expect(screen.getByText("No goalie data available.")).toBeTruthy();
++});

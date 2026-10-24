@@ -1,0 +1,85 @@
+{
+  "at": "2026-10-24T18:12:38.786768+00:00",
+  "verdict": "ACCEPT WITH LIMITS",
+  "scope": "Exact frozen three-file S03-R1 functional/export/accessibility correction; no design acceptance",
+  "resolved_findings": [
+    {
+      "id": "PC-S03-02",
+      "prior_severity": "P2",
+      "status": "resolved",
+      "proof": "Missing source reason retained inside actual partial PNG; undefined ratios and pre-export banner separate from missing source; original three failure controls unchanged and passing"
+    },
+    {
+      "id": "PC-S03-01",
+      "prior_severity": "P3",
+      "status": "resolved",
+      "proof": "Unverified GP accessible name uses GP unverified; verified zero GP remains 0 actual appearances"
+    }
+  ],
+  "candidate_files": [
+    {
+      "path": "web/components/player-cards/InteractiveCard.tsx",
+      "size_bytes": 5984,
+      "sha256": "70b6edce10ffe219817c64f2c4763a8e58091b9c59f9b77fb2a68aa2b7d33271",
+      "group": "source_files",
+      "actual_sha256": "70b6edce10ffe219817c64f2c4763a8e58091b9c59f9b77fb2a68aa2b7d33271",
+      "match": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.tsx",
+      "size_bytes": 11747,
+      "sha256": "036c44fb865ac729e2ddfba06bf0d6205d983bf9f89133c88f20918869302e30",
+      "group": "source_files",
+      "actual_sha256": "036c44fb865ac729e2ddfba06bf0d6205d983bf9f89133c88f20918869302e30",
+      "match": true
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.test.tsx",
+      "size_bytes": 9114,
+      "sha256": "0ce3fb52c6f19fcea4d5f0755924faab1472cda1b4e1fa704396e1b4176c8579",
+      "group": "source_files",
+      "actual_sha256": "0ce3fb52c6f19fcea4d5f0755924faab1472cda1b4e1fa704396e1b4176c8579",
+      "match": true
+    }
+  ],
+  "patch_exact_against_baselines": true,
+  "patch_sha256": "fe8f1016d2c87f5eca1e50357b27396758daf51e42453065d8a1d67511a1a7ee",
+  "pins_unchanged": 161,
+  "distinct_paths": 161,
+  "preserved_original_artifacts": 92,
+  "preserved_original_probe_sha256": "091811cf04c4c99784e184c01594c10a4bdd59f2b7bbd142c9e87821cacc06a1",
+  "checks": {
+    "focused_UI_passed": 8,
+    "intentional_UI_skips": 9,
+    "original_failing_controls_passed_unchanged": 3,
+    "owner_exact_reason_regressions_passed": 3,
+    "independent_adjacent_controls_passed": 2,
+    "scoped_types": "passed",
+    "scoped_lint": "passed",
+    "focused_browser_groups_passed": 4,
+    "PNGexports": 2,
+    "manifest_bytes_equal_original": true,
+    "PNGbytes_equal_corrected_owner": true,
+    "pre_export_banner_checked_before_export": true,
+    "page_HTTP_attempts": 0,
+    "page_errors": 0,
+    "failed_review_checks": 0,
+    "blocked_review_checks": []
+  },
+  "commands": "ALL-COMMANDS.json",
+  "limits": [
+    "Synthetic functional correction only",
+    "No design approval, native screen-reader or broad feature acceptance",
+    "Accepted calculation dependency unchanged; not re-reviewed",
+    "Observed-source/population/rights/auth/entitlement gates unchanged",
+    "Corrected artifact not served or activated by reviewer"
+  ],
+  "application_edits": 0,
+  "server_actions": 0,
+  "port3125_requests": 0,
+  "live_or_authenticated_requests": 0,
+  "Library_actions": 0,
+  "git_operations": 0,
+  "new_workers": 0,
+  "acceptance_owner": "Scout"
+}

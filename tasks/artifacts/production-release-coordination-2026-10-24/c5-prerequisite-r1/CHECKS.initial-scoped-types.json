@@ -1,0 +1,38 @@
+{
+  "at": "2026-10-24T21:41:26.323919+00:00",
+  "checks": [
+    {
+      "log": "focused-tests.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-c5-auth-order-r1-gf0v1n3n/web/node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "/tmp/fhfh-c5-auth-order-r1-gf0v1n3n/composition.vitest.config.mts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 2.218
+    },
+    {
+      "log": "scoped-types.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-c5-auth-order-r1-gf0v1n3n/web/node_modules/typescript/bin/tsc",
+        "-p",
+        "/tmp/fhfh-c5-auth-order-r1-gf0v1n3n/composition.tsconfig.json",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exit_code": 2,
+      "elapsed_seconds": 8.022
+    }
+  ],
+  "selected_paths": 88,
+  "source_integrity_matches": true,
+  "canonical_edits": 0,
+  "hosted_requests": 0,
+  "environment_files_in_snapshot": 0
+}

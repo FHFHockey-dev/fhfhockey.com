@@ -1,0 +1,31 @@
+{
+  "recordedAt": "2026-10-24T17:03:53.412793+00:00",
+  "environmentOverrides": {
+    "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-01-review/.npm-cache",
+    "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-01-review/.npm-logs",
+    "NO_UPDATE_NOTIFIER": "1",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "checks": [
+    {
+      "label": "zero-state-control",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-24/slice-01-review/review.vitest.config.mts",
+        "tasks/artifacts/player-cards-2026-10-24/slice-01-review/independent-controls.test.tsx",
+        "-t",
+        "keeps missing, valid unranked and observed-zero presentations distinct",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "cwd": "web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.833,
+      "log": "zero-state-control.log"
+    }
+  ]
+}

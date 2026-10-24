@@ -1,0 +1,71 @@
+{
+  "status": "draft-held-do-not-integrate",
+  "reason": "C08 saved bridge allowlist is not authenticated source-selection evidence; failing oracle preserved. No production target reviews invented.",
+  "created_at": "2026-10-22T14:36:14.272870+00:00",
+  "baseline_head": "a565238f670edc4cf65da79ad52ba82ec41f3b71",
+  "observed_head": "67b9efda5901a5f8c25a25889572e85527056f7a",
+  "branch": "octoberBranch",
+  "node": "22.11.0",
+  "npm": "10.9.0",
+  "files": {
+    "web/lib/player-forecasts/rsoUsePolicy.ts": "0220aad16417e0073898f8b805ad3e139b88f70a4a4064f73173d1db3bbfc8ab",
+    "web/lib/player-forecasts/rsoUsePolicy.test.ts": "234ae88abcae41182a9673aa31e99aeea0db50bd39de4c4b1002de596e643e07",
+    "web/lib/rosterScheduleData/planning.ts": "e945135114e21ff631a1f23b486490323e569db0c30d67b6c565deb2a87f5306",
+    "web/lib/rosterScheduleData/planning.test.ts": "579f1c5e44824ce3453518d61f2286f42ccffd578f6037b48f10f292d6d47aa3",
+    "web/lib/rosterScheduleOptimizer/planningTypes.ts": "0e45829a1aa0eaad17140668f01e63e0c0dfe63cc47b89e903a6be1847872e0c",
+    "web/lib/player-forecasts/planningContributions.ts": "b0837ce323c1815687c76426e98234296f5fc74568404e69a8de935d537453d1",
+    "web/lib/player-forecasts/planningContributions.test.ts": "e69a921f9503504da870bc0a3f61d65043c4604042dd42fe95cb841850d69f01",
+    "web/lib/rosterScheduleOptimizer/planning.ts": "f3ba1b151776a6fb1060a0b20d24eb2d28c2998cbab14682489c913c4f7791c9",
+    "web/lib/rosterScheduleOptimizer/planning.test.ts": "a2f4767c5e9b764b0d422cb86d042d33353d8bf16092e50793942fd16192a666",
+    "web/lib/rosterScheduleData/planningDataTransport.ts": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+    "web/lib/in-season/workspaceSchema.ts": "e1f4718cb7f529495acc591fe0e4886e3854282cd156560a57b293f375045cd5",
+    "web/lib/in-season/workspaceSchema.test.ts": "8d4f2908b418bbcf889f02ba0480ef1c977518027b911b6cc3db1607e9f8ff20",
+    "web/pages/api/v1/roster-schedule-optimizer/data.ts": "dc7f5814046448fa23a201401b1ab0d1f744908b5330cee21177459594cb16ce",
+    "web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts": "a1ce00fc369634c8642115113b213daa416f312ddc4ca17e449426a1c502872e",
+    "web/lib/integrations/yahoo/rosterPlanning.ts": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+    "web/lib/integrations/yahoo/rosterPlanning.test.ts": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+    "web/lib/player-forecasts/gameExpectationReader.ts": "440843c4f17bd18c91ddd2e3674827cbef8dce0e31b20053af318dd6db94b922"
+  },
+  "unchanged_reserved_files": [
+    "web/lib/player-forecasts/resolvedPlanningForecast.ts",
+    "web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts"
+  ],
+  "base_archive": "../claude-audit-fixes-2026-10-22/combined-audit-nst/fixed-source.tar.gz",
+  "base_archive_sha256": "1744faa8139dde75c8affd8457771b4eef7706725cddfa23019ae54996e6bf04",
+  "source_overlay": "source-overlay.tar.gz",
+  "source_overlay_sha256": "6250ca16784006528199fef8b83597fa980095537f71815b94aacab738c6f581",
+  "patch_sha256": "cf4ecf582a6faca42b12d88652e6baa2729b2515a05c2f1242ea799b39205b59",
+  "oracle_sha256": "375b5bd032d200bccffe1fd5ed2e1052d7ab68ddf446bc2666c68a8aa7889963",
+  "checks": {
+    "focused_final": {
+      "exit_code": 0,
+      "files": 8,
+      "passed": 541,
+      "log": "evidence/focused-final.log"
+    },
+    "before_regressions": {
+      "exit_code": 1,
+      "failed": 2,
+      "log": "evidence/adapter-before.log"
+    },
+    "bridge_claim_oracle": {
+      "exit_code": 1,
+      "failed": 1,
+      "log": "evidence/schema-and-bridge-oracle.log"
+    },
+    "application_types": {
+      "exit_code": 0,
+      "log": "evidence/typecheck-final.log",
+      "excluded": "Four preserved external reviewer fixtures; application types included."
+    },
+    "scoped_lint": {
+      "exit_code": 0,
+      "log": "evidence/lint.log"
+    },
+    "scoped_diff_check": {
+      "exit_code": 0
+    }
+  },
+  "independent_review": "pending; architecture correction needed before acceptance",
+  "live_actions": 0
+}

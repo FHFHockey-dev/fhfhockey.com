@@ -1,0 +1,22 @@
+[
+  {
+    "local_path": "tasks/TASKS/prd-shareable-player-cards.md",
+    "reviewed_representation": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/LIBRARY-1-prd-shareable-player-cards.md",
+    "library_file_id": "libfile_c30125d0825481919d792fe441de993c",
+    "version": 1,
+    "bytes": 26797,
+    "sha256": "eba54a6abf91c29bcec0eedccb9a677b44f6e25ffb03c9bf33b26303fae0e438",
+    "text_equal": true,
+    "raw_transfer_hash_claim": false
+  },
+  {
+    "local_path": "tasks/tasks-prd-shareable-player-cards.md",
+    "reviewed_representation": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/LIBRARY-0-tasks-prd-shareable-player-cards.md",
+    "library_file_id": "libfile_9cedfb0ae3a081918e150b8b18613043",
+    "version": 0,
+    "bytes": 16503,
+    "sha256": "cb53ab650927530e84aadf398de38068b659183ef643d72dee132c93a75453c4",
+    "text_equal": true,
+    "raw_transfer_hash_claim": false
+  }
+]

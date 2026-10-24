@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-24T14:46:07.741461+00:00",
+  "archiveRoundTrip": {
+    "snapshot": "/private/tmp/fhfh-release-r1-restore-kkrulilp/snapshot",
+    "verifiedFiles": 3637,
+    "contentTreeSha256": "6471be57ff593d58e846204898f1b5413a2c3f86063f8d902e3911d3ae38faa0",
+    "dependencies": "Use the existing matching Node22.11.0/npm10.9.0 installation; node_modules, environment and credentials are not archived."
+  },
+  "canonicalLeasedHash": "eebd86016d6cc3809ab15b2e936b884464d41666519d689ce26112a967d203c7",
+  "oldArchivePreserved": true,
+  "onlyCandidateDifference": [
+    "web/__tests__/pages/api/v1/start-chart.test.ts"
+  ],
+  "sourceHead": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "indexEmpty": true,
+  "activeOwnedOperations": [],
+  "canonicalDiffSha256": "b9680e9c9e976c1d9f3b9ea3bb38914cacb55546bf0bbbebf1b7ee373cf7a5ff"
+}

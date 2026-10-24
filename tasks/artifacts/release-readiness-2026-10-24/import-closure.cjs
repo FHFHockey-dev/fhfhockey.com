@@ -1,0 +1,13 @@
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+const O=__dirname,m=JSON.parse(fs.readFileSync(path.join(O,'CANDIDATE.json'),'utf8')),S=m.snapshot,W=path.join(S,'web');
+const ts=require(path.join(W,'node_modules/typescript'));
+const config=ts.readConfigFile(path.join(W,'tsconfig.json'),ts.sys.readFile),parsed=ts.parseJsonConfigFileContent(config.config,ts.sys,W);
+const roots=['pages/roster-schedule-optimizer.tsx','pages/api/v1/roster-schedule-optimizer/data.ts','pages/api/v1/roster-schedule-optimizer/yahoo-current-data.ts','pages/start-chart.tsx','pages/api/v1/start-chart.ts','pages/api/v1/forge/players.ts','pages/api/v1/forge/goalies.ts','lib/projections/run-forge-projections.ts','hooks/rosterPlanning.worker.ts'];
+const queue=roots.map(n=>path.join(W,n)),seen=new Set(),edges=[],missing=[];
+while(queue.length){const file=queue.pop();if(seen.has(file))continue;seen.add(file);if(!fs.existsSync(file)){missing.push({file,reason:'root missing'});continue;}
+const source=fs.readFileSync(file,'utf8');for(const entry of ts.preProcessFile(source,true,true).importedFiles){const name=entry.fileName;const result=ts.resolveModuleName(name,file,parsed.options,ts.sys).resolvedModule;
+if(result){const dest=result.resolvedFileName;const internal=dest.startsWith(W+path.sep)&&!dest.includes(path.sep+'node_modules'+path.sep);edges.push({from:path.relative(S,file),specifier:name,to:internal?path.relative(S,dest):name,internal});if(internal&&!dest.endsWith('.d.ts'))queue.push(dest);}
+else if(require('node:module').isBuiltin(name)){}else if(name.endsWith('.scss')||name.endsWith('.css')||name.endsWith('.svg')||name.endsWith('.png')){const dest=name.startsWith('.')?path.resolve(path.dirname(file),name):path.resolve(W,name);if(!fs.existsSync(dest))missing.push({file:path.relative(S,file),specifier:name,reason:'asset absent'});edges.push({from:path.relative(S,file),specifier:name,to:path.relative(S,dest),resource:true});}
+else missing.push({file:path.relative(S,file),specifier:name,reason:'module unresolved'});}}
+const files={};for(const f of [...seen].sort())if(fs.existsSync(f))files[path.relative(S,f)]=crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex');
+const result={at:new Date().toISOString(),roots:roots.map(n=>'web/'+n),sourceFiles:seen.size,edges:edges.length,files,imports:edges,missing,limits:'Static TypeScript/string-import closure plus local stylesheet/image existence; runtime computed paths and hosted state are not proven.'};fs.writeFileSync(path.join(O,'IMPORT-CLOSURE.json'),JSON.stringify(result,null,2)+'\n');console.log(JSON.stringify({roots:roots.length,sourceFiles:seen.size,edges:edges.length,missing},null,2));if(missing.length)process.exitCode=1;

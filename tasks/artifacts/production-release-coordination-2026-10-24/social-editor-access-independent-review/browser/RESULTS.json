@@ -1,0 +1,131 @@
+{
+  "status": "failed",
+  "scope": "Actual AuthProvider + gate + SocialShare + editionFetch, synthetic auth/storage-write stub, style-neutral renderer. No Next server, no live API or Supabase.",
+  "checks": [
+    {
+      "name": "signed-out shell denies workspace and edition read",
+      "passed": true
+    },
+    {
+      "name": "signed-in non-editor denies workspace and edition read",
+      "passed": true
+    },
+    {
+      "name": "editor mounts actual renderer and sends synthetic bearer",
+      "passed": true
+    },
+    {
+      "name": "account switch resets actual workspace and rejects pending old edition",
+      "passed": true
+    }
+  ],
+  "apiRequests": [
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26",
+      "authorization": "Bearer synthetic-A",
+      "number": 1,
+      "held": false
+    },
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26&selectedDates=2026-10-26%2C2026-10-27%2C2026-10-28%2C2026-10-29%2C2026-10-30%2C2026-10-31%2C2026-11-01",
+      "authorization": "Bearer synthetic-A",
+      "number": 2,
+      "held": true
+    },
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26",
+      "authorization": "Bearer synthetic-B",
+      "number": 3,
+      "held": false
+    },
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26&selectedDates=2026-10-26%2C2026-10-27%2C2026-10-28%2C2026-10-29%2C2026-10-30%2C2026-10-31%2C2026-11-01",
+      "authorization": "Bearer synthetic-B",
+      "number": 4,
+      "held": true
+    }
+  ],
+  "fulfilled": [
+    "/studio",
+    "/bundle.js",
+    "/api/v1/social-share/game-grid?weekStart=2026-10-26",
+    "/teamLogos/NJD.png",
+    "/teamLogos/NYI.png",
+    "/teamLogos/NYR.png",
+    "/teamLogos/PHI.png",
+    "/teamLogos/PIT.png",
+    "/teamLogos/BOS.png",
+    "/teamLogos/BUF.png",
+    "/teamLogos/MTL.png",
+    "/teamLogos/OTT.png",
+    "/teamLogos/TOR.png",
+    "/teamLogos/CAR.png",
+    "/teamLogos/FLA.png",
+    "/teamLogos/TBL.png",
+    "/teamLogos/WSH.png",
+    "/teamLogos/CHI.png",
+    "/teamLogos/DET.png",
+    "/teamLogos/NSH.png",
+    "/teamLogos/STL.png",
+    "/teamLogos/CGY.png",
+    "/teamLogos/COL.png",
+    "/teamLogos/EDM.png",
+    "/teamLogos/VAN.png",
+    "/teamLogos/ANA.png",
+    "/teamLogos/DAL.png",
+    "/teamLogos/LAK.png",
+    "/teamLogos/SJS.png",
+    "/teamLogos/CBJ.png",
+    "/teamLogos/MIN.png",
+    "/teamLogos/WPG.png",
+    "/teamLogos/VGK.png",
+    "/teamLogos/SEA.png",
+    "/teamLogos/UTA.png",
+    "/api/v1/social-share/game-grid?weekStart=2026-10-26",
+    "/teamLogos/NJD.png",
+    "/teamLogos/NYI.png",
+    "/teamLogos/NYR.png",
+    "/teamLogos/PHI.png",
+    "/teamLogos/PIT.png",
+    "/teamLogos/BOS.png",
+    "/teamLogos/BUF.png",
+    "/teamLogos/MTL.png",
+    "/teamLogos/OTT.png",
+    "/teamLogos/TOR.png",
+    "/teamLogos/CAR.png",
+    "/teamLogos/FLA.png",
+    "/teamLogos/TBL.png",
+    "/teamLogos/WSH.png",
+    "/teamLogos/CHI.png",
+    "/teamLogos/DET.png",
+    "/teamLogos/NSH.png",
+    "/teamLogos/STL.png",
+    "/teamLogos/CGY.png",
+    "/teamLogos/COL.png",
+    "/teamLogos/EDM.png",
+    "/teamLogos/VAN.png",
+    "/teamLogos/ANA.png",
+    "/teamLogos/DAL.png",
+    "/teamLogos/LAK.png",
+    "/teamLogos/SJS.png",
+    "/teamLogos/CBJ.png",
+    "/teamLogos/MIN.png",
+    "/teamLogos/WPG.png",
+    "/teamLogos/VGK.png",
+    "/teamLogos/SEA.png",
+    "/teamLogos/UTA.png",
+    "/api/v1/social-share/game-grid?weekStart=2026-10-26&selectedDates=2026-10-26%2C2026-10-27%2C2026-10-28%2C2026-10-29%2C2026-10-30%2C2026-10-31%2C2026-11-01"
+  ],
+  "aborted": [],
+  "pageErrors": [],
+  "launches": 1,
+  "error": {
+    "name": "Error",
+    "message": "expect(locator).toBeVisible() failed\n\nLocator: getByText(/Schedule partial: EDITION_B2_5/)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for getByText(/Schedule partial: EDITION_B2_5/)\n",
+    "stack": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText(/Schedule partial: EDITION_B2_5/)\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for getByText(/Schedule partial: EDITION_B2_5/)\n\n    at captureRawStack (/Users/tim/Code/fhfhockey.com/web/node_modules/playwright-core/lib/coreBundle.js:3130:17)\n    at callMatcherAsStep (/Users/tim/Code/fhfhockey.com/web/node_modules/playwright/lib/matchers/expect.js:12873:57)\n    at Object.toBeVisible (/Users/tim/Code/fhfhockey.com/web/node_modules/playwright/lib/matchers/expect.js:12863:23)\n    at /Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser/run.cjs:52:66"
+  },
+  "screenshots": {
+    "01-editor.png": "eff460a67f10f3df63ca15d5ff9af485d51147400cf574361473bd8901feb209",
+    "02-account-B.png": "57292b8f1e19844d0b9561694170eeda0fc810c5fccec6d6a21305ac9631ce8d"
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "L1 12F/6D": {
+    "forwardsInDefenseSection": [],
+    "defensemenInForwardSection": [],
+    "dropped": []
+  },
+  "L1 11F/7D": {
+    "forwardsInDefenseSection": [],
+    "defensemenInForwardSection": [
+      "507"
+    ],
+    "dropped": []
+  },
+  "L1 13F/5D": {
+    "forwardsInDefenseSection": [
+      "113"
+    ],
+    "defensemenInForwardSection": [],
+    "dropped": []
+  },
+  "L1 14F/4D": {
+    "forwardsInDefenseSection": [
+      "113",
+      "114"
+    ],
+    "defensemenInForwardSection": [],
+    "dropped": []
+  },
+  "L1 10F/8D": {
+    "forwardsInDefenseSection": [],
+    "defensemenInForwardSection": [
+      "507",
+      "508"
+    ],
+    "dropped": []
+  },
+  "L1 13F/6D (19 skaters)": {
+    "forwardsInDefenseSection": [],
+    "defensemenInForwardSection": [],
+    "dropped": [
+      "113"
+    ]
+  },
+  "L1 12F/7D (19 skaters)": {
+    "forwardsInDefenseSection": [],
+    "defensemenInForwardSection": [],
+    "dropped": [
+      "507"
+    ]
+  },
+  "L2": {
+    "cardText": "113",
+    "href": "/stats/player/113",
+    "sectionLabel": "Defense"
+  },
+  "G1": {
+    "calls": []
+  },
+  "G2": {
+    "calls": [
+      "lineCombinations",
+      "yahoo_nhl_player_map"
+    ]
+  },
+  "G3": {
+    "calls": [],
+    "lastGridForwardsHead": [
+      "2201",
+      "2202"
+    ]
+  },
+  "G4a": {
+    "gridRendersAfterStale": 0,
+    "staleNameVisible": false
+  },
+  "G5": {
+    "calls": [
+      "lineCombinations",
+      "lineCombinations",
+      "yahoo_nhl_player_map"
+    ],
+    "mapReadsWhileInactive": 0
+  },
+  "G6": {
+    "errorShown": true,
+    "lineReads": 2
+  },
+  "G7": {
+    "hrefs": [
+      "/stats/player/101",
+      "/stats/player/102",
+      "/stats/player/501",
+      "/stats/player/901"
+    ],
+    "mapReadArg": [
+      "101",
+      "102",
+      "501",
+      "901"
+    ]
+  }
+}

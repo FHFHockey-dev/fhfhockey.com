@@ -1,0 +1,99 @@
+{
+  "comparison": "independently reviewed packet -> R1 corrected packet",
+  "test_result": "26 tests passed, 18.936s; exact tested source bytes installed",
+  "review_status": "pending independent recheck by 01a168ee-3844-74ba-ad3c-dcbb8a958010",
+  "core_function_changes": [
+    "bootstrap"
+  ],
+  "before_after": {
+    "README.md": {
+      "before": "bf75608b9dbaafb5d9f0b938021355bbe9755cc79704676bc2251fb4dfe10659",
+      "after": "bf75608b9dbaafb5d9f0b938021355bbe9755cc79704676bc2251fb4dfe10659",
+      "changed": false
+    },
+    "REPORT.md": {
+      "before": "1b1ef9e91e11e0e2a4ab5bf25828b5911c0de6c30950e6ba4a6af14de98d983b",
+      "after": "fc68db2fe2c0d90c0a3c3c8bbcc16b3d18731dc2e1ca295d034aeb59d16ae27b",
+      "changed": true
+    },
+    "SHA256SUMS": {
+      "before": "792e06cd6933b36d0f18f0d40ec9cf69769ad5db69589c051b503b54e5b08fae",
+      "after": "3af550271e6ae2a20cc496ff324243ef12e88846e0c0d649331b0820e2d2816f",
+      "changed": true
+    },
+    "WORK-DIARY.md": {
+      "before": "ab9a6b19cb599b58b548200d4e587590758edbf9f30198cd87779483eec6bacb",
+      "after": "8b04cf5bbc2d7b8e7b75d756b8a28c1cab320b1a3294c718786195817156673f",
+      "changed": true
+    },
+    "cohort/s3_actuals.json": {
+      "before": "6b945b5ada044c934e1cb5e05587d424e5c172ec03933de0cf5d3fa61c53ceab",
+      "after": "6b945b5ada044c934e1cb5e05587d424e5c172ec03933de0cf5d3fa61c53ceab",
+      "changed": false
+    },
+    "cohort/s5_pp_actuals.json": {
+      "before": "ca17a5533c9c5d97a2482d6da939e663bcb36a58a4a6f4e4fc82659e99f8cda9",
+      "after": "ca17a5533c9c5d97a2482d6da939e663bcb36a58a4a6f4e4fc82659e99f8cda9",
+      "changed": false
+    },
+    "cohort/s9_hits_blocks.json": {
+      "before": "aab787fa586a7e87fc426030f75bc6f91fa55f32214be624ccb0f66fc8b9aea8",
+      "after": "aab787fa586a7e87fc426030f75bc6f91fa55f32214be624ccb0f66fc8b9aea8",
+      "changed": false
+    },
+    "games-all.txt": {
+      "before": "d56bacefe8ad6669863038f79888f7f2be481605f1eb9fd4842c5a569aa51122",
+      "after": "d56bacefe8ad6669863038f79888f7f2be481605f1eb9fd4842c5a569aa51122",
+      "changed": false
+    },
+    "gate_ci.py": {
+      "before": "933081ea849c25dfe7376862e4bade88f1f5a8549c3add2bde4fa920f861599b",
+      "after": "e5d1491d705b166cbd884592fce542ef1bd8b6b5688f994045384581e2dfd56d",
+      "changed": true
+    },
+    "mz.py": {
+      "before": "1d92f3a27e26c5db25547fd17d78db7bf71cf45a9b9088117feae044d9c518d0",
+      "after": "1d92f3a27e26c5db25547fd17d78db7bf71cf45a9b9088117feae044d9c518d0",
+      "changed": false
+    },
+    "score_gate.py": {
+      "before": "7bc6c262c3e149b2b67b557552e69b7ad4e4fff593072b5ee5f1bb987955c8cb",
+      "after": "bb58a55821e5fb6c0ac00215ee332ef8dd1aec6dd47f57885ee856128d2fdf78",
+      "changed": true
+    },
+    "score_pair.py": {
+      "before": "b353fc69b0526eedbdf2e9872afca37574aeba0d589127158fde2e887d4d5c60",
+      "after": "14a1f4e64337583a396396ce319a55aa125505a95de592190f6c50f410d37d65",
+      "changed": true
+    },
+    "tests/RESULTS.log": {
+      "before": "019f4188077f4056fbe91b2e476e7506bc7a2200ccf6305e9c7d33cefc6303e6",
+      "after": "b51904ec850612b999eb5c5eb0fe7c38b15903b9bacd7445497f5d12091e4645",
+      "changed": true
+    },
+    "tests/fixtures.py": {
+      "before": "896eba1524d3bcf836e7a82600dd61bc9499fa223a87928fa31d90dd3b2fc19a",
+      "after": "896eba1524d3bcf836e7a82600dd61bc9499fa223a87928fa31d90dd3b2fc19a",
+      "changed": false
+    },
+    "tests/legacy_reference.json": {
+      "before": "9f62b7d8a6dfe6c699b47b727ed11ed6d2f20aa66b43be79543f9de9b1ae1a7d",
+      "after": "9f62b7d8a6dfe6c699b47b727ed11ed6d2f20aa66b43be79543f9de9b1ae1a7d",
+      "changed": false
+    },
+    "tests/make_legacy_reference.py": {
+      "before": "66c8362391d6bcf538aac93767ca858b1a20a67880d63e4440439c429a524492",
+      "after": "66c8362391d6bcf538aac93767ca858b1a20a67880d63e4440439c429a524492",
+      "changed": false
+    },
+    "tests/test_gate_kit.py": {
+      "before": "533e7c8840d1849b3e480699145e5d462f6d011222f5999af25a9fcafcdc334e",
+      "after": "082988dbe300b49bb51d39aeb37289b9de772a343ee532224c747855d7a8363a",
+      "changed": true
+    }
+  },
+  "added": {
+    "review-r1.patch": "12dad747ec1be1f6e8134d82a04f06bec56bb0900819ad765e93e99c71e94897"
+  },
+  "patch_reconstruction_verified": true
+}

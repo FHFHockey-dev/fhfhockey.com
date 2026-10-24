@@ -1,0 +1,56 @@
+{
+  "at": "2026-10-24T17:47:50.209543+00:00",
+  "checkpoint": "Segment10 complete; overall audit unfinished",
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "f0580083b1af1708509104dcf103adc1623f52a31124ee5f68a33601693eaffa",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "a5177d320cae2004589baf53e061018151da8ce11098a785f4a11f6f95bd9c8b",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "e32feecb77d79b89c8c6e1e6e01bd681c84a4315a151a8ee7276deed795819df"
+  },
+  "ids_before": 208,
+  "ids_after": 209,
+  "evidence_before": 1013,
+  "evidence_after": 1030,
+  "added_ids": [
+    "SITE-DRAFT-CSV-RESOLVER"
+  ],
+  "changed_existing_ids": [
+    "REPO-DOCUMENTATION",
+    "SITE-PRIVACY-POLICY",
+    "SITE-DRAFTRANKER-HOMEPAGE",
+    "SITE-PLAYER-CARDS"
+  ],
+  "all_208_prior_ids_scopes_evidence_prefixes_preserved": true,
+  "legacy_blocks_each_markdown_byte_identical": 32,
+  "unchanged_existing_rows_identical": 204,
+  "new_evidence_references_verified": 17,
+  "frozen_source_pins_verified": 10,
+  "coverage_counts": {
+    "content-reviewed": 7
+  },
+  "full_content_bytes": 196822,
+  "prior_full_reviews_reused_without_new_unique_credit": 2,
+  "application_source_coverage": "One partial ImportCsvModal source inspection, exact ranges in NARROW-SOURCE-COVERAGE.json; no runtime/source-wide acceptance",
+  "current_selected_source_drift": [],
+  "historical_unique_text_candidates_remaining": 1706,
+  "historical_raw_queue_records_remaining_not_deep_document_obligations": 12136,
+  "known_support_metadata_dispositions_carried": 39,
+  "selected_unique_report_candidates_remaining": 8,
+  "library": {
+    "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "current_version": 10,
+    "status": "succeeded",
+    "native_download": "https://chatgpt.com/api/library/files/libfile_9987e7d9d1b8819181b366a318cc9a9c/download",
+    "native_xattr_readback": [
+      {
+        "name": "user.library-file-version",
+        "matches_returned_value": true,
+        "exit_code": 0
+      }
+    ],
+    "local_bytes_unchanged_after_xattrs": true
+  },
+  "next_cursor": "tasks/TASKS/draft-ranker/progress.md",
+  "whole_tree_full_content_review_complete": false,
+  "application_edits_tests_git_or_production_operations": 0,
+  "pending_mutation": false
+}

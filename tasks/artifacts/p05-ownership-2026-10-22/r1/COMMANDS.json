@@ -1,0 +1,30 @@
+[
+  {
+    "cwd": "/tmp/fhfh-queue-check-qsconr58/isolation/snapshot/web",
+    "command": "env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp/fhfh-queue-check-qsconr58/isolation/snapshot/web/.audit-home TMPDIR=/tmp/fhfh-queue-check-qsconr58/isolation/snapshot/web/.audit-tmp NEXT_PUBLIC_SUPABASE_URL=https://unit-tests.supabase.invalid NEXT_PUBLIC_SUPABASE_PUBLIC_KEY=synthetic-public-key SUPABASE_SERVICE_ROLE_KEY=synthetic-service-role-key 'NODE_OPTIONS=--require /tmp/fhfh-queue-check-qsconr58/isolation/snapshot/web/audit-network-deny.cjs' npm test -- --run --config audit.vitest.config.mts __tests__/pages/api/v1/transactions/ownership-trends.test.ts lib/dashboard/playerOwnership.test.ts -t 'identity authority|trend fallback'",
+    "log": "red.log",
+    "exitCode": 1,
+    "result": "1 failed / 2 passed / 41 skipped"
+  },
+  {
+    "cwd": "/tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot/web",
+    "command": "env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot/web/.audit-home TMPDIR=/tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot/web/.audit-tmp NEXT_PUBLIC_SUPABASE_URL=https://unit-tests.supabase.invalid NEXT_PUBLIC_SUPABASE_PUBLIC_KEY=synthetic-public-key SUPABASE_SERVICE_ROLE_KEY=synthetic-service-role-key 'NODE_OPTIONS=--require /tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot/web/audit-network-deny.cjs' npm test -- --run --config audit.vitest.config.mts __tests__/pages/api/v1/transactions/ownership-trends.test.ts lib/dashboard/playerOwnership.test.ts",
+    "log": "green.log",
+    "exitCode": 0,
+    "result": "44 passed"
+  },
+  {
+    "cwd": "/tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot/web",
+    "command": "env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot/web/.audit-home TMPDIR=/tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot/web/.audit-tmp NEXT_PUBLIC_SUPABASE_URL=https://unit-tests.supabase.invalid NEXT_PUBLIC_SUPABASE_PUBLIC_KEY=synthetic-public-key SUPABASE_SERVICE_ROLE_KEY=synthetic-service-role-key 'NODE_OPTIONS=--require /tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot/web/audit-network-deny.cjs' npm exec --offline -- eslint --report-unused-disable-directives-severity warn pages/api/v1/transactions/ownership-snapshots.ts lib/dashboard/playerOwnership.ts lib/dashboard/playerOwnership.test.ts __tests__/pages/api/v1/transactions/ownership-trends.test.ts",
+    "log": "lint.log",
+    "exitCode": 0,
+    "result": "no diagnostics"
+  },
+  {
+    "cwd": "/tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot/web",
+    "command": "env -i PATH=/usr/local/bin:/usr/bin:/bin HOME=/tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot/web/.audit-home TMPDIR=/tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot/web/.audit-tmp NEXT_PUBLIC_SUPABASE_URL=https://unit-tests.supabase.invalid NEXT_PUBLIC_SUPABASE_PUBLIC_KEY=synthetic-public-key SUPABASE_SERVICE_ROLE_KEY=synthetic-service-role-key 'NODE_OPTIONS=--require /tmp/fhfh-queue-check-vp_3b0dq/isolation/snapshot/web/audit-network-deny.cjs' npm exec --offline -- tsc --noEmit -p audit-p05.tsconfig.json",
+    "log": "types.log",
+    "exitCode": 0,
+    "result": "no diagnostics"
+  }
+]

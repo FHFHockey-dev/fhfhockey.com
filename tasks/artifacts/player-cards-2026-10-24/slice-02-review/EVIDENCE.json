@@ -1,0 +1,209 @@
+{
+  "scope": "Frozen slice02 independent offline domain review only",
+  "verdict": "changes-requested",
+  "findings": [
+    {
+      "id": "F01",
+      "severity": "P2",
+      "summary": "Positive events with zero per-game exposure are pooled as valid rates",
+      "source": "web/lib/player-cards/aggregation.ts",
+      "lines": [
+        27,
+        35,
+        44,
+        49
+      ],
+      "probes": [
+        "F01a",
+        "F01d"
+      ]
+    },
+    {
+      "id": "F02",
+      "severity": "P2",
+      "summary": "Inconsistent ratio rows can be hidden by pooling or classified known undefined before validity checking",
+      "source": "web/lib/player-cards/aggregation.ts",
+      "lines": [
+        44,
+        48
+      ],
+      "coverageConsequence": "web/lib/player-cards/adapter.ts:64-67",
+      "probes": [
+        "F01b",
+        "F01c",
+        "F02a",
+        "F02b"
+      ]
+    }
+  ],
+  "checks": {
+    "initialPins": {
+      "passed": true,
+      "total": 22
+    },
+    "finalPins": {
+      "passed": true,
+      "total": 22
+    },
+    "authorTests": {
+      "passed": 19,
+      "failed": 0,
+      "config": "review-owned native ESM; original source and tests; Node environment; no setup; no cache"
+    },
+    "scopedTypes": "passed",
+    "scopedLint": "passed",
+    "independentProbes": {
+      "passed": 23,
+      "failed": 6,
+      "exitCode": 1
+    },
+    "capture": {
+      "pooledValues": 4,
+      "unavailableControls": 2,
+      "passed": true
+    }
+  },
+  "commands": [
+    {
+      "name": "author-tests",
+      "command": "npm test -- --run --config ../tasks/artifacts/player-cards-2026-10-24/slice-02-review/vitest.review.config.mjs --configLoader native --no-cache lib/player-cards/domain.test.ts",
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "start": "2026-10-24T17:08:53.427Z",
+      "end": "2026-10-24T17:08:54.101Z",
+      "exitCode": 0,
+      "signal": null,
+      "error": null,
+      "note": "Existing local dependencies only. Author tests run unedited with artifact-owned native ESM configuration, node environment, no setup files and cache disabled. No broad suite."
+    },
+    {
+      "name": "types",
+      "command": "npm exec --offline -- tsc --noEmit --project ../tasks/artifacts/player-cards-2026-10-24/slice-02/tsconfig.json",
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "start": "2026-10-24T17:08:53.426Z",
+      "end": "2026-10-24T17:08:54.482Z",
+      "exitCode": 0,
+      "signal": null,
+      "error": null,
+      "note": "Existing local dependencies only. Author tests run unedited with artifact-owned native ESM configuration, node environment, no setup files and cache disabled. No broad suite."
+    },
+    {
+      "name": "lint",
+      "command": "npm exec --offline -- eslint lib/player-cards/windows.ts lib/player-cards/aggregation.ts lib/player-cards/adapter.ts lib/player-cards/domain.test.ts",
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "start": "2026-10-24T17:08:53.426Z",
+      "end": "2026-10-24T17:08:54.432Z",
+      "exitCode": 0,
+      "signal": null,
+      "error": null,
+      "note": "Existing local dependencies only. Author tests run unedited with artifact-owned native ESM configuration, node environment, no setup files and cache disabled. No broad suite."
+    }
+  ],
+  "networkAttempts": 0,
+  "appSourceWrites": 0,
+  "frozenPacketWrites": 0,
+  "externalActions": 0,
+  "gitActions": 0,
+  "newAgents": 0,
+  "notRun": [
+    "whole app suite/types/lint/build",
+    "browser/server/E2E",
+    "provider/DB calls",
+    "production",
+    "migrations",
+    "installs",
+    "Git",
+    "deployments"
+  ],
+  "limits": [
+    "Synthetic counterexamples and past capture arithmetic do not prove live data or league coverage",
+    "Parent Scout retains acceptance and integration",
+    "No branch/SHA queried by Git"
+  ],
+  "files": [
+    {
+      "path": "HANDOFF.md",
+      "sizeBytes": 7472,
+      "sha256": "ef7d4c4738f2f3a46a684b391ea06ba122c05c653027f83c90be08d4a6a0d0eb"
+    },
+    {
+      "path": "author-tests.json",
+      "sizeBytes": 583,
+      "sha256": "c52cc65960589bbfde5a8f2b812e2837e289b6799cb79f328960b666e47b51d6"
+    },
+    {
+      "path": "author-tests.log",
+      "sizeBytes": 476,
+      "sha256": "599b09470209ff5116dd0cb0c09feace01ef2f7f244d2e527f68d562e9ee5ded"
+    },
+    {
+      "path": "capture-reconciliation-results.json",
+      "sizeBytes": 1657,
+      "sha256": "ca5a93f2540b48dacb55c46a4b011c9927b3d218c47200c8789851575610ff9b"
+    },
+    {
+      "path": "capture-reconciliation.cjs",
+      "sizeBytes": 5491,
+      "sha256": "a76ab4f0f8e280af9650c29863795e5b4f521b4f6ad60ccf11eea2ee5a26969c"
+    },
+    {
+      "path": "counterexamples-results.json",
+      "sizeBytes": 9909,
+      "sha256": "cd108c78942ac8e3d0481c10a1f37413a77ff578e882b96208f254c19f1e43d9"
+    },
+    {
+      "path": "counterexamples.cjs",
+      "sizeBytes": 16462,
+      "sha256": "654038435e7c47190dd64bbde9ea735babb5298a4ad71f0d8a3cab55f2d05f10"
+    },
+    {
+      "path": "counterexamples.log",
+      "sizeBytes": 2282,
+      "sha256": "5008e8c836d2d4234a5d8fa3988fba04340fa0b20688006e9024bc7c65ef34bb"
+    },
+    {
+      "path": "lint.json",
+      "sizeBytes": 548,
+      "sha256": "00f34d05f4b36f43c649f6999433d0e504ad20a234f11f867dfe6fd5eaa979fb"
+    },
+    {
+      "path": "lint.log",
+      "sizeBytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "pins-final.json",
+      "sizeBytes": 7899,
+      "sha256": "266e4c28ce4ed5e579cefe3af3c459edd86c34d91708c0fdad1bd4c9faeb71d4"
+    },
+    {
+      "path": "pins-initial.json",
+      "sizeBytes": 7899,
+      "sha256": "01a556dfd4c9f5c2236f2b2e49b8cf152ba9f04bb6fe22436fe84668178ad8ee"
+    },
+    {
+      "path": "run-check.cjs",
+      "sizeBytes": 1887,
+      "sha256": "902801c37d379f00ecceebf962db2516eae86ac57777eb9fba4ce2994dc4f823"
+    },
+    {
+      "path": "types.json",
+      "sizeBytes": 511,
+      "sha256": "907ec6c08c50dc73611e886ba0d6145e23d54bb0effa87e2af52b085f44e46d7"
+    },
+    {
+      "path": "types.log",
+      "sizeBytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "verify-pins.cjs",
+      "sizeBytes": 1625,
+      "sha256": "cb1eccc30803967e20fd669a0037d21d63774e14a49dc2364e5b33b22430dd35"
+    },
+    {
+      "path": "vitest.review.config.mjs",
+      "sizeBytes": 343,
+      "sha256": "5403d56fdac5ea1ee2b7c74450e9df00c8380cbc3bf7dd8eefc3f1041248f0c3"
+    }
+  ]
+}

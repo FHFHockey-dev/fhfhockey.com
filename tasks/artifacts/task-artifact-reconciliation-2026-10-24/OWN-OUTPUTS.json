@@ -1,0 +1,211 @@
+{
+  "at": "2026-10-24T15:11:46.731093+00:00",
+  "self_index_note": "This file is indexed from its prior version if present; self-referential content hash is intentionally not claimed.",
+  "files": [
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/AUDIT-ONLY.patch",
+      "bytes": 351499,
+      "sha256": "c014f9137aae32df104b2f02853810a94b3f68f7e165465f782f4e863e9f56df"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/BASELINE-LEDGER.json",
+      "bytes": 920543,
+      "sha256": "36ac4334594670bc37ac3c40f6ad536d81177d9b1781f00804313ad614d1b9ee"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/BASELINE-LEDGER.md",
+      "bytes": 403066,
+      "sha256": "97275afb37276de47fbe50c068ae466b5081b70ed77d7e82b1752ae1fad3f657"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 366661,
+      "sha256": "d7b07541d0e868fde79da88af84b6588b9507236044ff6148fd8d37f4e3f6032"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/BASELINE-ROWS.tsv",
+      "bytes": 76247,
+      "sha256": "33a0e3b5e9cd76a6b3dea18353f471aadb53a0853bcab93f35f3a4039ef686c0"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/CANDIDATE-LEDGER.json",
+      "bytes": 1013348,
+      "sha256": "7fa7064bfc903b6d4885417e94b7b57ab0e29c9b39a939b8eeb1681ccc46809e"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/CANDIDATE-LEDGER.md",
+      "bytes": 463477,
+      "sha256": "3c4df2c90b05c43c48169d86087cdbb9de14db1c4325a124f7798183c32c9a46"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 427105,
+      "sha256": "9d9ac2a4f1e0d25873c01c2a929715b8e82d9d8ff79af668c0ab8bab89d9ba8c"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/CHANGELOG.json",
+      "bytes": 34870,
+      "sha256": "6bdeb38db315013a9018fb38aab55989217e7d2f3f105b3fddf59356b9c1bf8d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/CONTINUATION.json",
+      "bytes": 7247283,
+      "sha256": "aabea26b175b27e35b4808bc0812624ad3dd7da3cc82d4d00394300e1910bd94"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/COVERAGE-SUMMARY.json",
+      "bytes": 535,
+      "sha256": "b64d6b8cd472b24ea437f85b3a7e0d3dba58f84a4decee5978d1a1bba89395ac"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/COVERAGE.json",
+      "bytes": 14542303,
+      "sha256": "47913571bee640d025d0fa46002b7cc4679b7912930647fc1d5392043ee3e9cf"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/DOCUMENT-QUEUE.json",
+      "bytes": 2446310,
+      "sha256": "9627a58771543862523d0ca699b7e159b2c9758ca4d7e7b30be2fc832aada6d0"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/DUPLICATION-REVIEW.json",
+      "bytes": 23942,
+      "sha256": "334efa91cc21bdf0f4c2541ad99ca809a18c3db6e5b04787ad9faf13ca4d9cc2"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/DUPLICATION-REVIEW.md",
+      "bytes": 4985,
+      "sha256": "7b2f791590ab5c8799d34dbb6c7274231f8e287c516a35791c98936fb37f0076"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/FAMILY-INDEX.json",
+      "bytes": 657747,
+      "sha256": "cac9781234bfd5330325394206e2a6c2e465b4a7086f2b1c9d8983d8ee3cdd6d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/FINAL-CHECKPOINT.json",
+      "bytes": 3738,
+      "sha256": "e1a79816b6eae1006a65313e7b51f827138c55ee1b765e15f0f021092e9ec60a"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/FOLDERS.json",
+      "bytes": 2799609,
+      "sha256": "52e5dc34e1c52cfd3270a4aeef9086aeb99d187bd6d30c01531170b8e4399d57"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/INVENTORY.json",
+      "bytes": 5735473,
+      "sha256": "877fbd56de094b952c670441e1eaaad64a558ddaf1b28996dca9a4a1ac3003ae"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/LATE-RECEIPT-CHANGELOG.json",
+      "bytes": 10301,
+      "sha256": "5019586295fcb579b61a4c068f7a30a7aab182d9ec2b393e251bf3cbef583dcd"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/LIBRARY-DELIVERY-v2.json",
+      "bytes": 917,
+      "sha256": "2a5e9e2ae680308dd14fd8257b34870bf5dfe21d57a2538c7c62c681a4319cc4"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/LIBRARY-DELIVERY.json",
+      "bytes": 917,
+      "sha256": "851fd660a1e195180bd09bc09c68ec42a2c8227658c9dee79dda78b68311e10f"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/LIVE-DELTA.json",
+      "bytes": 23840,
+      "sha256": "f975a1b0a77e2b8b8800bc29684e2569f23f2bddad26fc90106adcbe08fcd245"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/OWN-OUTPUTS.json",
+      "bytes": 8038,
+      "sha256": "aa9ad95fd87e38fd5df9a8cffd02dac5f83a41e31e556ae00b20b5538ed1eaa4"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/PROPOSED-ADDITIONS.json",
+      "bytes": 48688,
+      "sha256": "107d1c7dccc4156d8a0447b3dc53937139e193f3cd61483428f0d2cfbff087fd"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/REPORT.md",
+      "bytes": 11520,
+      "sha256": "c1107cf279526912481ba9f1b1390d0f09b46fb9aa196f8bccf11ffe9372c03b"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/REVIEWED.json",
+      "bytes": 6124,
+      "sha256": "4ee1044bd38098b04a6e935037ea04eec22cd2c97cb24a99892d886d74ba63c2"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/SCAN-SUMMARY.json",
+      "bytes": 7462,
+      "sha256": "628ccaf4af1fe4a1c2d3d1fef195915d423c236977ae185b505673708e74b711"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/SCOPED-DIFF-CHECK.json",
+      "bytes": 317,
+      "sha256": "a8527ddcaa4b01e7fed5e266cb77a94e4fa27b0e2ecda16142f1b746857a72af"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/SOURCE-OPEN-CHECKLISTS.json",
+      "bytes": 100627,
+      "sha256": "b36d6c9afcfad22f36fec8292210f230f457994fda3d4e4c9516418d1495aa1d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/VALIDATION-candidate.json",
+      "bytes": 848,
+      "sha256": "36b0bc4cb212a8f5d252fb1e68b4269863a50376980b33e68175a3a7aebf784b"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/VALIDATION-canonical.json",
+      "bytes": 3475,
+      "sha256": "5e139a4aca34d24fa5a78cd78ea7954d6e24a39ca832b8044eb6905d77adeedf"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/build_report.py",
+      "bytes": 17015,
+      "sha256": "2c12b56fd7bd136aa61f7bb2df8af8316a3d633b226292c7fb9ed7badf90c17d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/inspect_inventory.py",
+      "bytes": 8495,
+      "sha256": "930891ed90ba8d35a76e0e5e4a6bac668086a64c7a7834de2fe8dc13dbe63cfe"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/prepare_changes.py",
+      "bytes": 19323,
+      "sha256": "c58184f92bb81bbf226e763f2c67761d219039cf1a570527131baf0e15c2b1c9"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/reconcile_late_receipts.py",
+      "bytes": 10460,
+      "sha256": "171617d889375de5548e5a795a860013cc14dd5dfa44070ed0ff1bc5a6884e70"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/reconcile_registers.py",
+      "bytes": 24627,
+      "sha256": "349a32cf36c8afe4310207f2a04d0869d6d980e8fdb82738e7adc73408d1a7cf"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/refresh_coverage.py",
+      "bytes": 8380,
+      "sha256": "4d0b40a70f426e82879250ebd2c3bfcf5fcc78768ad96ee1ad69de0ca746230b"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/validate_registers.py",
+      "bytes": 4016,
+      "sha256": "99562261c303b7a04d234a57f3a641da8279ceb417d2bf444d3445fecad84f41"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/__pycache__/prepare_changes.cpython-313.pyc",
+      "bytes": 22797,
+      "sha256": "d8d4ea9fc07d23d36a6bf17da7052bc0a8cbe24464a54e5b965977b3b8f8c579"
+    },
+    {
+      "path": "tasks/diaries/2026-10-24-codex-task-artifact-audit.md",
+      "bytes": 6813,
+      "sha256": "5819e6cdf6c499f69473eee8dc8452616c1110413e4348b831e352f287345209"
+    }
+  ]
+}

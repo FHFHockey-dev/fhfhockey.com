@@ -1,0 +1,17 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx -t participation catalog|requires input review|eligible full-team
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web
+
+(node:34729) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (209 tests | 205 skipped) 764ms
+   ✓ RosterScheduleOptimizer workspace > requires input review and renews it after rule changes without certifying unknown scoring  548ms
+
+ Test Files  1 passed (1)
+      Tests  4 passed | 205 skipped (209)
+   Start at  11:31:51
+   Duration  1.76s (transform 539ms, setup 9ms, collect 748ms, tests 764ms, environment 134ms, prepare 31ms)
+

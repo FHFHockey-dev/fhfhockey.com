@@ -1,0 +1,802 @@
+[
+  {
+    "path": ".result.boundary.inMemoryReads",
+    "first": 100,
+    "second": 99
+  },
+  {
+    "path": ".result.calculationQueryHash",
+    "first": "d7d503e5fb792261fe75f324b7ca899d61adf264177f4c4353edc948a4817e96",
+    "second": "2520ce5f6c46e2224d58c60b58642b274ff901e2fecf1ce0f8e895beff650041"
+  },
+  {
+    "path": ".resultHash",
+    "first": "af79349485a6e2e6ef26fa3db59a1eca352b2a1d5c08db818058902c1b22ce4a",
+    "second": "566790293cb9b577555fdf4206e13d50861b1ee22b9bd03cc027cfea5dc15e30"
+  },
+  {
+    "path": ".runtimeRequests.length",
+    "first": 100,
+    "second": 99
+  },
+  {
+    "path": ".runtimeRequests[82].length",
+    "first": 9,
+    "second": 7
+  },
+  {
+    "path": ".runtimeRequests[82][1].args[0]",
+    "first": "game_date,shots_against,goals_allowed",
+    "second": "game_id,game_date,shots_against"
+  },
+  {
+    "path": ".runtimeRequests[82][2].args[0]",
+    "first": "game_date",
+    "second": "team_id"
+  },
+  {
+    "path": ".runtimeRequests[82][2].args[1]",
+    "first": "2025-07-01",
+    "second": 6
+  },
+  {
+    "path": ".runtimeRequests[82][2].method",
+    "first": "gte",
+    "second": "eq"
+  },
+  {
+    "path": ".runtimeRequests[82][4].args[1].ascending",
+    "first": true,
+    "second": false
+  },
+  {
+    "path": ".runtimeRequests[82][5].args.length",
+    "first": 2,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[82][5].args[0]",
+    "first": "game_id",
+    "second": 30
+  },
+  {
+    "path": ".runtimeRequests[82][5].method",
+    "first": "order",
+    "second": "limit"
+  },
+  {
+    "path": ".runtimeRequests[82][6].args.length",
+    "first": 2,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[82][6].args[0]",
+    "first": "goalie_id",
+    "second": {}
+  },
+  {
+    "path": ".runtimeRequests[82][6].method",
+    "first": "order",
+    "second": "abortSignal"
+  },
+  {
+    "path": ".runtimeRequests[83][0].args[0]",
+    "first": "forge_goalie_game",
+    "second": "forge_team_game_strength"
+  },
+  {
+    "path": ".runtimeRequests[83][1].args[0]",
+    "first": "game_id,game_date,shots_against",
+    "second": "game_date,shots_es,shots_pp,goals_es,goals_pp"
+  },
+  {
+    "path": ".runtimeRequests[83][2].args[1]",
+    "first": 6,
+    "second": 9
+  },
+  {
+    "path": ".runtimeRequests[83][5].args[0]",
+    "first": 30,
+    "second": 10
+  },
+  {
+    "path": ".runtimeRequests[84][0].args[0]",
+    "first": "forge_team_game_strength",
+    "second": "forge_goalie_game"
+  },
+  {
+    "path": ".runtimeRequests[84][1].args[0]",
+    "first": "game_date,shots_es,shots_pp,goals_es,goals_pp",
+    "second": "shots_against,goals_allowed,saves"
+  },
+  {
+    "path": ".runtimeRequests[84][2].args[0]",
+    "first": "team_id",
+    "second": "goalie_id"
+  },
+  {
+    "path": ".runtimeRequests[84][2].args[1]",
+    "first": 9,
+    "second": 619
+  },
+  {
+    "path": ".runtimeRequests[84][5].args[0]",
+    "first": 10,
+    "second": 20
+  },
+  {
+    "path": ".runtimeRequests[85].length",
+    "first": 7,
+    "second": 8
+  },
+  {
+    "path": ".runtimeRequests[85][3].args[1]",
+    "first": "2026-10-12",
+    "second": "2026-07-01"
+  },
+  {
+    "path": ".runtimeRequests[85][3].method",
+    "first": "lt",
+    "second": "gte"
+  },
+  {
+    "path": ".runtimeRequests[85][4].args[1]",
+    "first": {
+      "ascending": false
+    },
+    "second": "2026-10-12"
+  },
+  {
+    "path": ".runtimeRequests[85][4].method",
+    "first": "order",
+    "second": "lt"
+  },
+  {
+    "path": ".runtimeRequests[85][5].args.length",
+    "first": 1,
+    "second": 2
+  },
+  {
+    "path": ".runtimeRequests[85][5].args[0]",
+    "first": 20,
+    "second": "game_date"
+  },
+  {
+    "path": ".runtimeRequests[85][5].method",
+    "first": "limit",
+    "second": "order"
+  },
+  {
+    "path": ".runtimeRequests[85][6].args[0]",
+    "first": {},
+    "second": 120
+  },
+  {
+    "path": ".runtimeRequests[85][6].method",
+    "first": "abortSignal",
+    "second": "limit"
+  },
+  {
+    "path": ".runtimeRequests[86].length",
+    "first": 8,
+    "second": 7
+  },
+  {
+    "path": ".runtimeRequests[86][3].args[1]",
+    "first": "2026-07-01",
+    "second": "2026-10-12"
+  },
+  {
+    "path": ".runtimeRequests[86][3].method",
+    "first": "gte",
+    "second": "lt"
+  },
+  {
+    "path": ".runtimeRequests[86][4].args[1]",
+    "first": "2026-10-12",
+    "second": {
+      "ascending": false
+    }
+  },
+  {
+    "path": ".runtimeRequests[86][4].method",
+    "first": "lt",
+    "second": "order"
+  },
+  {
+    "path": ".runtimeRequests[86][5].args.length",
+    "first": 2,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[86][5].args[0]",
+    "first": "game_date",
+    "second": 200
+  },
+  {
+    "path": ".runtimeRequests[86][5].method",
+    "first": "order",
+    "second": "limit"
+  },
+  {
+    "path": ".runtimeRequests[86][6].args[0]",
+    "first": 120,
+    "second": {}
+  },
+  {
+    "path": ".runtimeRequests[86][6].method",
+    "first": "limit",
+    "second": "abortSignal"
+  },
+  {
+    "path": ".runtimeRequests[87].length",
+    "first": 7,
+    "second": 8
+  },
+  {
+    "path": ".runtimeRequests[87][0].args[0]",
+    "first": "forge_goalie_game",
+    "second": "wgo_goalie_stats"
+  },
+  {
+    "path": ".runtimeRequests[87][1].args[0]",
+    "first": "shots_against,goals_allowed,saves",
+    "second": "date,quality_start,quality_starts_pct"
+  },
+  {
+    "path": ".runtimeRequests[87][3].args[0]",
+    "first": "game_date",
+    "second": "date"
+  },
+  {
+    "path": ".runtimeRequests[87][3].method",
+    "first": "lt",
+    "second": "lte"
+  },
+  {
+    "path": ".runtimeRequests[87][4].args[0]",
+    "first": "game_date",
+    "second": "date"
+  },
+  {
+    "path": ".runtimeRequests[87][5].args[0]",
+    "first": 200,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[87][6].args.length",
+    "first": 1,
+    "second": 0
+  },
+  {
+    "path": ".runtimeRequests[87][6].method",
+    "first": "abortSignal",
+    "second": "maybeSingle"
+  },
+  {
+    "path": ".runtimeRequests[88].length",
+    "first": 8,
+    "second": 7
+  },
+  {
+    "path": ".runtimeRequests[88][0].args[0]",
+    "first": "wgo_goalie_stats",
+    "second": "forge_goalie_game"
+  },
+  {
+    "path": ".runtimeRequests[88][1].args[0]",
+    "first": "date,quality_start,quality_starts_pct",
+    "second": "game_date"
+  },
+  {
+    "path": ".runtimeRequests[88][3].args[0]",
+    "first": "date",
+    "second": "game_date"
+  },
+  {
+    "path": ".runtimeRequests[88][3].method",
+    "first": "lte",
+    "second": "lt"
+  },
+  {
+    "path": ".runtimeRequests[88][4].args[0]",
+    "first": "date",
+    "second": "game_date"
+  },
+  {
+    "path": ".runtimeRequests[88][5].args[0]",
+    "first": 1,
+    "second": 30
+  },
+  {
+    "path": ".runtimeRequests[88][6].args.length",
+    "first": 0,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[88][6].method",
+    "first": "maybeSingle",
+    "second": "abortSignal"
+  },
+  {
+    "path": ".runtimeRequests[89].length",
+    "first": 7,
+    "second": 8
+  },
+  {
+    "path": ".runtimeRequests[89][0].args[0]",
+    "first": "forge_goalie_game",
+    "second": "wgo_goalie_stats"
+  },
+  {
+    "path": ".runtimeRequests[89][1].args[0]",
+    "first": "game_date",
+    "second": "date,save_pct_days_rest_0,save_pct_days_rest_1,save_pct_days_rest_2,save_pct_days_rest_3,save_pct_days_rest_4_plus,games_played_days_rest_0,games_played_days_rest_1,games_played_days_rest_2,games_played_days_rest_3,games_played_days_rest_4_plus"
+  },
+  {
+    "path": ".runtimeRequests[89][3].args[0]",
+    "first": "game_date",
+    "second": "date"
+  },
+  {
+    "path": ".runtimeRequests[89][3].method",
+    "first": "lt",
+    "second": "lte"
+  },
+  {
+    "path": ".runtimeRequests[89][4].args[0]",
+    "first": "game_date",
+    "second": "date"
+  },
+  {
+    "path": ".runtimeRequests[89][5].args[0]",
+    "first": 30,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[89][6].args.length",
+    "first": 1,
+    "second": 0
+  },
+  {
+    "path": ".runtimeRequests[89][6].method",
+    "first": "abortSignal",
+    "second": "maybeSingle"
+  },
+  {
+    "path": ".runtimeRequests[90].length",
+    "first": 8,
+    "second": 7
+  },
+  {
+    "path": ".runtimeRequests[90][0].args[0]",
+    "first": "wgo_goalie_stats",
+    "second": "forge_goalie_game"
+  },
+  {
+    "path": ".runtimeRequests[90][1].args[0]",
+    "first": "date,save_pct_days_rest_0,save_pct_days_rest_1,save_pct_days_rest_2,save_pct_days_rest_3,save_pct_days_rest_4_plus,games_played_days_rest_0,games_played_days_rest_1,games_played_days_rest_2,games_played_days_rest_3,games_played_days_rest_4_plus",
+    "second": "game_id,game_date,shots_against"
+  },
+  {
+    "path": ".runtimeRequests[90][2].args[0]",
+    "first": "goalie_id",
+    "second": "team_id"
+  },
+  {
+    "path": ".runtimeRequests[90][2].args[1]",
+    "first": 619,
+    "second": 9
+  },
+  {
+    "path": ".runtimeRequests[90][3].args[0]",
+    "first": "date",
+    "second": "game_date"
+  },
+  {
+    "path": ".runtimeRequests[90][3].method",
+    "first": "lte",
+    "second": "lt"
+  },
+  {
+    "path": ".runtimeRequests[90][4].args[0]",
+    "first": "date",
+    "second": "game_date"
+  },
+  {
+    "path": ".runtimeRequests[90][5].args[0]",
+    "first": 1,
+    "second": 30
+  },
+  {
+    "path": ".runtimeRequests[90][6].args.length",
+    "first": 0,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[90][6].method",
+    "first": "maybeSingle",
+    "second": "abortSignal"
+  },
+  {
+    "path": ".runtimeRequests[91][0].args[0]",
+    "first": "forge_goalie_game",
+    "second": "forge_team_game_strength"
+  },
+  {
+    "path": ".runtimeRequests[91][1].args[0]",
+    "first": "game_id,game_date,shots_against",
+    "second": "game_date,shots_es,shots_pp,goals_es,goals_pp"
+  },
+  {
+    "path": ".runtimeRequests[91][2].args[1]",
+    "first": 9,
+    "second": 6
+  },
+  {
+    "path": ".runtimeRequests[91][5].args[0]",
+    "first": 30,
+    "second": 10
+  },
+  {
+    "path": ".runtimeRequests[92][0].args[0]",
+    "first": "forge_team_game_strength",
+    "second": "forge_goalie_game"
+  },
+  {
+    "path": ".runtimeRequests[92][1].args[0]",
+    "first": "game_date,shots_es,shots_pp,goals_es,goals_pp",
+    "second": "shots_against,goals_allowed,saves"
+  },
+  {
+    "path": ".runtimeRequests[92][2].args[0]",
+    "first": "team_id",
+    "second": "goalie_id"
+  },
+  {
+    "path": ".runtimeRequests[92][2].args[1]",
+    "first": 6,
+    "second": 919
+  },
+  {
+    "path": ".runtimeRequests[92][5].args[0]",
+    "first": 10,
+    "second": 20
+  },
+  {
+    "path": ".runtimeRequests[93].length",
+    "first": 7,
+    "second": 8
+  },
+  {
+    "path": ".runtimeRequests[93][3].args[1]",
+    "first": "2026-10-12",
+    "second": "2026-07-01"
+  },
+  {
+    "path": ".runtimeRequests[93][3].method",
+    "first": "lt",
+    "second": "gte"
+  },
+  {
+    "path": ".runtimeRequests[93][4].args[1]",
+    "first": {
+      "ascending": false
+    },
+    "second": "2026-10-12"
+  },
+  {
+    "path": ".runtimeRequests[93][4].method",
+    "first": "order",
+    "second": "lt"
+  },
+  {
+    "path": ".runtimeRequests[93][5].args.length",
+    "first": 1,
+    "second": 2
+  },
+  {
+    "path": ".runtimeRequests[93][5].args[0]",
+    "first": 20,
+    "second": "game_date"
+  },
+  {
+    "path": ".runtimeRequests[93][5].method",
+    "first": "limit",
+    "second": "order"
+  },
+  {
+    "path": ".runtimeRequests[93][6].args[0]",
+    "first": {},
+    "second": 120
+  },
+  {
+    "path": ".runtimeRequests[93][6].method",
+    "first": "abortSignal",
+    "second": "limit"
+  },
+  {
+    "path": ".runtimeRequests[94].length",
+    "first": 8,
+    "second": 7
+  },
+  {
+    "path": ".runtimeRequests[94][3].args[1]",
+    "first": "2026-07-01",
+    "second": "2026-10-12"
+  },
+  {
+    "path": ".runtimeRequests[94][3].method",
+    "first": "gte",
+    "second": "lt"
+  },
+  {
+    "path": ".runtimeRequests[94][4].args[1]",
+    "first": "2026-10-12",
+    "second": {
+      "ascending": false
+    }
+  },
+  {
+    "path": ".runtimeRequests[94][4].method",
+    "first": "lt",
+    "second": "order"
+  },
+  {
+    "path": ".runtimeRequests[94][5].args.length",
+    "first": 2,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[94][5].args[0]",
+    "first": "game_date",
+    "second": 200
+  },
+  {
+    "path": ".runtimeRequests[94][5].method",
+    "first": "order",
+    "second": "limit"
+  },
+  {
+    "path": ".runtimeRequests[94][6].args[0]",
+    "first": 120,
+    "second": {}
+  },
+  {
+    "path": ".runtimeRequests[94][6].method",
+    "first": "limit",
+    "second": "abortSignal"
+  },
+  {
+    "path": ".runtimeRequests[95].length",
+    "first": 7,
+    "second": 8
+  },
+  {
+    "path": ".runtimeRequests[95][0].args[0]",
+    "first": "forge_goalie_game",
+    "second": "wgo_goalie_stats"
+  },
+  {
+    "path": ".runtimeRequests[95][1].args[0]",
+    "first": "shots_against,goals_allowed,saves",
+    "second": "date,quality_start,quality_starts_pct"
+  },
+  {
+    "path": ".runtimeRequests[95][3].args[0]",
+    "first": "game_date",
+    "second": "date"
+  },
+  {
+    "path": ".runtimeRequests[95][3].method",
+    "first": "lt",
+    "second": "lte"
+  },
+  {
+    "path": ".runtimeRequests[95][4].args[0]",
+    "first": "game_date",
+    "second": "date"
+  },
+  {
+    "path": ".runtimeRequests[95][5].args[0]",
+    "first": 200,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[95][6].args.length",
+    "first": 1,
+    "second": 0
+  },
+  {
+    "path": ".runtimeRequests[95][6].method",
+    "first": "abortSignal",
+    "second": "maybeSingle"
+  },
+  {
+    "path": ".runtimeRequests[96].length",
+    "first": 8,
+    "second": 7
+  },
+  {
+    "path": ".runtimeRequests[96][0].args[0]",
+    "first": "wgo_goalie_stats",
+    "second": "forge_goalie_game"
+  },
+  {
+    "path": ".runtimeRequests[96][1].args[0]",
+    "first": "date,quality_start,quality_starts_pct",
+    "second": "game_date"
+  },
+  {
+    "path": ".runtimeRequests[96][3].args[0]",
+    "first": "date",
+    "second": "game_date"
+  },
+  {
+    "path": ".runtimeRequests[96][3].method",
+    "first": "lte",
+    "second": "lt"
+  },
+  {
+    "path": ".runtimeRequests[96][4].args[0]",
+    "first": "date",
+    "second": "game_date"
+  },
+  {
+    "path": ".runtimeRequests[96][5].args[0]",
+    "first": 1,
+    "second": 30
+  },
+  {
+    "path": ".runtimeRequests[96][6].args.length",
+    "first": 0,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[96][6].method",
+    "first": "maybeSingle",
+    "second": "abortSignal"
+  },
+  {
+    "path": ".runtimeRequests[97].length",
+    "first": 7,
+    "second": 8
+  },
+  {
+    "path": ".runtimeRequests[97][0].args[0]",
+    "first": "forge_goalie_game",
+    "second": "wgo_goalie_stats"
+  },
+  {
+    "path": ".runtimeRequests[97][1].args[0]",
+    "first": "game_date",
+    "second": "date,save_pct_days_rest_0,save_pct_days_rest_1,save_pct_days_rest_2,save_pct_days_rest_3,save_pct_days_rest_4_plus,games_played_days_rest_0,games_played_days_rest_1,games_played_days_rest_2,games_played_days_rest_3,games_played_days_rest_4_plus"
+  },
+  {
+    "path": ".runtimeRequests[97][3].args[0]",
+    "first": "game_date",
+    "second": "date"
+  },
+  {
+    "path": ".runtimeRequests[97][3].method",
+    "first": "lt",
+    "second": "lte"
+  },
+  {
+    "path": ".runtimeRequests[97][4].args[0]",
+    "first": "game_date",
+    "second": "date"
+  },
+  {
+    "path": ".runtimeRequests[97][5].args[0]",
+    "first": 30,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[97][6].args.length",
+    "first": 1,
+    "second": 0
+  },
+  {
+    "path": ".runtimeRequests[97][6].method",
+    "first": "abortSignal",
+    "second": "maybeSingle"
+  },
+  {
+    "path": ".runtimeRequests[98].length",
+    "first": 8,
+    "second": 9
+  },
+  {
+    "path": ".runtimeRequests[98][0].args[0]",
+    "first": "wgo_goalie_stats",
+    "second": "forge_board_news_events"
+  },
+  {
+    "path": ".runtimeRequests[98][1].args.length",
+    "first": 1,
+    "second": 2
+  },
+  {
+    "path": ".runtimeRequests[98][1].args[0]",
+    "first": "date,save_pct_days_rest_0,save_pct_days_rest_1,save_pct_days_rest_2,save_pct_days_rest_3,save_pct_days_rest_4_plus,games_played_days_rest_0,games_played_days_rest_1,games_played_days_rest_2,games_played_days_rest_3,games_played_days_rest_4_plus",
+    "second": "id,game_id,queue_version,accepted_at"
+  },
+  {
+    "path": ".runtimeRequests[98][2].args[0]",
+    "first": "goalie_id",
+    "second": "game_id"
+  },
+  {
+    "path": ".runtimeRequests[98][2].args[1]",
+    "first": 919,
+    "second": [
+      2026020998
+    ]
+  },
+  {
+    "path": ".runtimeRequests[98][2].method",
+    "first": "eq",
+    "second": "in"
+  },
+  {
+    "path": ".runtimeRequests[98][3].args[0]",
+    "first": "date",
+    "second": "accepted_at"
+  },
+  {
+    "path": ".runtimeRequests[98][3].args[1]",
+    "first": "2026-10-12",
+    "second": "2026-10-10T00:00:00.000Z"
+  },
+  {
+    "path": ".runtimeRequests[98][4].args.length",
+    "first": 2,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[98][4].args[0]",
+    "first": "date",
+    "second": "game_id"
+  },
+  {
+    "path": ".runtimeRequests[98][5].args[0]",
+    "first": 1,
+    "second": "accepted_at"
+  },
+  {
+    "path": ".runtimeRequests[98][5].method",
+    "first": "limit",
+    "second": "order"
+  },
+  {
+    "path": ".runtimeRequests[98][6].args.length",
+    "first": 0,
+    "second": 1
+  },
+  {
+    "path": ".runtimeRequests[98][6].method",
+    "first": "maybeSingle",
+    "second": "order"
+  },
+  {
+    "path": ".runtimeRequests[98][7].args.length",
+    "first": 1,
+    "second": 2
+  },
+  {
+    "path": ".runtimeRequests[98][7].args[0]",
+    "first": {},
+    "second": 0
+  },
+  {
+    "path": ".runtimeRequests[98][7].method",
+    "first": "abortSignal",
+    "second": "range"
+  },
+  {
+    "path": ".runtimeRequestsHash",
+    "first": "04bfffa9fb4a43b9d3d7b9833fdc7d12c14bf92c3bc4c0926e67c53fe6a6178b",
+    "second": "1251ff5c94b4dbc749256cf0b58586528e46819bf3e0c34bd2ee26c9cf761136"
+  }
+]

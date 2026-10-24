@@ -1,0 +1,876 @@
+--- before/tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md
++++ after/tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md
+@@ -1,6 +1,6 @@
+ # FHFH master task list — reconciled 2026-10-24
+ 
+-As of `2026-10-24T18:33:56.621280+00:00`. Canonical checkout `octoberBranch`; observed HEAD `2a5092d37cb863ec92a2a4e609999cf226bfa4a5`. This replaces the old master view using the existing sprint ledger IDs. Implementation, independent acceptance and release are separate. FA Portal is excluded.
++As of `2026-10-24T18:49:59.291059+00:00`. Canonical checkout `octoberBranch`; observed HEAD `2a5092d37cb863ec92a2a4e609999cf226bfa4a5`. This replaces the old master view using the existing sprint ledger IDs. Implementation, independent acceptance and release are separate. FA Portal is excluded.
+ 
+ All **32 original master IDs** and **211 current ledger rows** are preserved. The exact prior master is retained in [the archival snapshot](../../tasks/artifacts/fhfh-sprint-ledger-2026-10-22/archive/MASTER-TASKLIST-2026-10-20.before-2026-10-23.md) (SHA256 `5d0126088c72f2216b6c6a89381798156a387a26cb85891cbfc2d4c750924b2a`). Older source findings and scopes remain available there; absence of a fresh review is not completion. Rows marked inventoried only have not received a file-health audit.
+ 
+@@ -12,6 +12,15 @@
+ 
+ 
+ 
++
++
++## Living-audit and current Forge obligations — 2026-10-24T18:49:59.291059+00:00
++
++211 stable parent IDs preserve all prior scopes and evidence. No parent ID was added: existing FPI task ranges already cover the surviving commitments. Eight readable children expose retained historical-position/TOI reporting, settled-cohort evaluation, market closing-line evaluation, the separate team-total decision, three parked context proposals and the old Forge refresh-itinerary documentation follow-up. Parked proposals remain parked; no new implementation or execution is assigned.
++
++The later Task2 gate clears the dated S-G column-drop parity scope while retaining separate early-season data repair. FORGE-HYDRATION-HB's supporting slice is recorded released in B, superseding its stale unreleased description; the literal predictive-gate exception and surviving physical/admission gates remain distinct. Living-audit gradient-boosted wiring retains completed credit without selecting a current champion or authorizing daily operation. Completed cache, paging, error, FUT/schedule and observability fixes are not reopened.
++
++Nine unique documentary sources and one small structured receipt were fully read in this bounded segment. Generated logs, archives, stored commands and current application/runtime state were not re-audited. Original duplicate/exclusion maps remain intact; the overall content audit remains unfinished. See [segment14 report](/Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/REPORT.md). No application code/tests, Git, production or new workers.
+ 
+ ## Forge contract and retained-gate checkpoint — 2026-10-24T18:33:56.621280+00:00
+ 
+@@ -1634,15 +1643,18 @@
+ ### FORGE-HYDRATION-HB — Final combined hydration + hits/blocks qualification
+ 
+ - **Owner:** FORGE (`01a1637a-4222-70c0-8439-cb3cc46b20c4`); reviewer UNASSIGNED (`unassigned`).
+-- **Implementation:** Components exist; final-c result not located
+-- **Acceptance:** held
+-- **Release:** unreleased
+-- **Evidence level / limits:** inventoried only. Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted.
+-- **Verification:** Four-arm reconstruction is historical current-DB evidence, not prior availability
++- **Implementation:** Hydration, full S-F reader and paired-count/exposure F/D physical-head repair were shipped in Release B 40b17b572 with 721486d0f. The older components-only/unreleased description is superseded; existing cache correction/recheck credit remains. Literal predictive qualification was not fully met.
++- **Acceptance:** TJ explicitly selected variant-c release as an improvement despite the literal ±10% gate miss. That exception is not a universal calibration pass or native/pilot admission. Preserve surviving HIT/BLK and current accepted-contract qualifications.
++- **Release:** Supporting hydration/hits-blocks slice recorded released in B 40b17b572. Current predictive/admission qualification and separate history repair remain held where named; no fresh production observation.
++- **Evidence level / limits:** inventoried only. Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted.
++- **Verification:** Full task2 gate and later handover/primary task list reconcile the chronology: engineering/cache failure was corrected, real parity cleared the column drop for the dated supported scope, and explicit owner release preserved a calibration exception. Original historical failures remain evidence; no source/test/runtime work by audit.
+ - **Dependencies / gate:** AUDIT-A1; MASTER-F5; physical-event source semantics Do not qualify corrected final candidate with invalid inclusive capture signatures; migration88 separate
+-- **Next:** Record legitimate input availability and exact final bytes; executor UNASSIGNED
++- **Next:** Use FPI-02 for the implemented/released slice and its residual physical-head gates. Do not reimplement hydration, rerun the old cache correction or repeat variant-c because of stale boxes. Keep early-season history in PIPE-ROLLING-HISTORY-REPAIR and current model/admission decisions separate.
+ - **Status evidence date:** `2026-10-23T13:00:20+00:00`.
+ - **Pinned references:** [tasks/artifacts/forge-projection-audit-2026-10-21/hydration-recon-verdict.md:6](../../tasks/artifacts/forge-projection-audit-2026-10-21/hydration-recon-verdict.md) SHA256 `b930ccd4348031e76389622eee23d06c446470060507943365a7ca787445811d`; [web/lib/projections/calculators/skater-adjustments.ts:1](../../web/lib/projections/calculators/skater-adjustments.ts) SHA256 `258e9b4699d01ccdc89a30d746cc6332f3c708210c4598c69fe7c8f47f2ba9b6`; [tasks/artifacts/forge-task9-gate-2026-10-22/VERDICT.md:1](../../tasks/artifacts/forge-task9-gate-2026-10-22/VERDICT.md) SHA256 `09c7df2a3614f7858bf207100a90fb41c6eb41b080d05693920aec3e170f531c`.
++- **Current Dispatch class:** Supporting implementation/release recorded; remaining qualification held; no new dispatch
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:76](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md:76>) SHA256 `52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a`; [tasks/artifacts/cross-platform/2026-10-22-claude-forge-model-lane-handover.md:7](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/b27a0139d90a-2026-10-22-claude-forge-model-lane-handover.md:7>) SHA256 `b27a0139d90a18964583e3cc88c855276d2cf0ff711fee2b02e8bc9409b05413`; [tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md:3>) SHA256 `9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb`; [tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md:70](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md:70>) SHA256 `9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb`.
+ 
+ ### LEDGER-COMPLETENESS — Authoritative finality/DNP evidence producer and prior-zero audit
+ 
+@@ -2329,6 +2341,13 @@
+ - **Status evidence date:** `2026-10-23T13:00:20+00:00`.
+ - **Pinned references:** [web/lib/player-forecasts/servedForecastLedger.ts:1](../../web/lib/player-forecasts/servedForecastLedger.ts) SHA256 `71910c828a3792d8ae85d275e2e6f017d5818f65fbc44c2e2d044ca9998d7c36`; [web/pages/api/v1/forge/scoreboard.ts:1](../../web/pages/api/v1/forge/scoreboard.ts) SHA256 `5cd651886914058597ad856f777ef2c4227c7c03e92b7029bc250f74534b92d0`; [tasks/TASKS/repository-audit-remediation/migration-authority.json:1](../../tasks/TASKS/repository-audit-remediation/migration-authority.json) SHA256 `5fd219106624bc33906dd5d6c1308db632b08b8a839e90eacaef4fcac9f6c35a`.
+ 
++**Readable task child (held source obligation; no new parent ID):**
++
++- [ ] **FPI-01/retained-position-toi — Define retained historical position and TOI inputs for missing ledger report slices.** Held/unassigned; supported released reporting preserved. Next: Reconcile the retained-input contract for F/D slices and TOI/PP-TOI opportunity-versus-rate reporting. Keep unsupported history visibly unavailable; do not infer historical position from current metadata. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: No schema, historical population, provider read or production writer from audit. Exact owner/custody, provenance and independent review required.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:71>). Credit retained: Paired/dressed-only FP, per-head bias, expected-FP deciles and goalie Brier infrastructure already released.
++- [ ] **FPI-01/settled-week-audit — Qualify the existing settled-cohort Q3/Q4 evaluation gate.** Held/unassigned; adequate outcomes and exact read authority required. Next: Identify the actual settled dressed-only cohort and frozen baseline before the existing Q3/Q4 evaluation. Around Oct29/30 is an estimate, not an automatic schedule or permission. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: No new reads/capture/evaluation run or automation. Existing Q3/Q4 approval and exact cohort/admission limits remain.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:73>). Credit retained: Do not reimplement pairing, Brier bins or the deployed supported scoreboard.
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:71](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md:71>) SHA256 `52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a`; [tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:73](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md:73>) SHA256 `52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a`.
++
+ ### FPI-02 — Hydration and F/D physical heads, tasks2.1–2.6
+ 
+ - **Owner:** FPI-HYDRATION (`01a1645a-1237-713f-8590-9540223b40d2`); reviewer UNASSIGNED (`unassigned`).
+@@ -2336,11 +2355,13 @@
+ - **Acceptance:** R3 immutable recheck 394/394 plus31 cache/pipeline passes closes old cache blocker; literal ±10% predictive gate was not met
+ - **Release:** Release B 40b17b572 recorded READY; TJ explicitly chose improvement despite gate miss. Migration88 remains pending/off
+ - **Evidence level / limits:** inventoried only. Current status/receipt reconciliation; earlier scoped acceptance remains attached to its historical bytes.
+-- **Verification:** Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments.
++- **Verification:** Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments. Later task2 gate explicitly clears the S-G column drop: 20 cohort regulars/all five strengths were compared, with a detailed 3-player date/field rerun; rows since Oct7 were identical within 1e-6. Early Sep29/Sep30/Oct3/Oct6 stale/missing rows are a separate history issue. This is a dated documentary receipt, not new production reads or every-row independent audit. R2 cache failure is historical and was superseded by the existing per-run correction/recheck.
+ - **Dependencies / gate:** R3cache correction closed; released variant-c explicit exception does not satisfy literal calibration gate. Migration88 pending/off; no reapply or rerun without scope. Retain original query pins; fixture/checksum, row-identity20players×5strengths and scoped tests. Tasklist frozen62-game postR19 gate demands FP/HIT/SOG bias/top-decile within ±10%; not claimed passed. ProductionQ5/Q6 and migration88 separately gated. New scoped implementation and independent review before integration; model changes require frozen-cohort bias, RMSE and forecast-binned decile calibration per head, not MAE alone. Production reads, migrations and release need separate authority.
+ - **Next:** Do not repeat cache fix or variant-c reconstruction. Keep HIT +10.9%, BLK +11.6%, dressed-only follow-up and approved Q5/Q6 separate; no migration88 apply.
+ - **Status evidence date:** `2026-10-23T13:00:20+00:00`.
+ - **Pinned references:** [tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:1](../../tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md) SHA256 `1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be`; [web/lib/projections/calculators/skater-adjustments.ts:1](../../web/lib/projections/calculators/skater-adjustments.ts) SHA256 `258e9b4699d01ccdc89a30d746cc6332f3c708210c4598c69fe7c8f47f2ba9b6`; [tasks/artifacts/forge-task9-gate-2026-10-22/VERDICT.md:1](../../tasks/artifacts/forge-task9-gate-2026-10-22/VERDICT.md) SHA256 `09c7df2a3614f7858bf207100a90fb41c6eb41b080d05693920aec3e170f531c`.
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md:57](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md:57>) SHA256 `9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb`; [tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md:67](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md:67>) SHA256 `9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb`; [tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md:74](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md:74>) SHA256 `9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb`.
+ 
+ ### FPI-03 — Assists and PPP on on-ice goals × point share, tasks3.1–3.5
+ 
+@@ -2394,6 +2415,13 @@
+ - **Status evidence date:** `2026-10-23T16:12:55.853897+00:00`.
+ - **Pinned references:** [tasks/TASKS/repository-audit-remediation/migration-authority.json:1](../../tasks/TASKS/repository-audit-remediation/migration-authority.json) SHA256 `5fd219106624bc33906dd5d6c1308db632b08b8a839e90eacaef4fcac9f6c35a`; [web/lib/player-forecasts/servedForecastLedger.ts:1](../../web/lib/player-forecasts/servedForecastLedger.ts) SHA256 `71910c828a3792d8ae85d275e2e6f017d5818f65fbc44c2e2d044ca9998d7c36`; [web/pages/api/v1/forge/scoreboard.ts:1](../../web/pages/api/v1/forge/scoreboard.ts) SHA256 `5cd651886914058597ad856f777ef2c4227c7c03e92b7029bc250f74534b92d0`.
+ 
++**Readable task child (held source obligation; no new parent ID):**
++
++- [ ] **FPI-06/closing-market-evaluation — Reconcile closing-line provenance and model-versus-market Brier evidence.** Partial code/schema credit retained; outcome qualification held. Next: Reconcile exact market writer/flag/reader release compatibility and actual closing-price/outcome provenance before claiming model-versus-market Brier quality. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: No migration99 reapply, fresh odds/provider/production reads, market-source rollout or fitted de-vig change. Preserve assumption labels and current rights gates.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:107>). Credit retained: 6.1/6.2 outputs shipped; later6.3 code/flag and migration99 already recorded implemented/applied.
++- [ ] **FPI-06/team-total-blend-decision — Retain the separate owner decision on blending implied team totals.** Parked owner decision; no implementation dispatch. Next: Present the surviving need and evidence for or against a team-goal blend with de-vigged implied totals. Any selected method needs its own scoped contract and evaluation; do not fold it into the completed probability flags. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: Exact owner model/publication decision before a new blend; no fitting, provider calls or production activation.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:108>). Credit retained: Completed probability/de-vig outputs are retained; neither deployment nor this child validates a blended team-goal model.
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:107](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md:107>) SHA256 `52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a`; [tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:108](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md:108>) SHA256 `52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a`.
++
+ ### FPI-07 — Goalie model and single win source, tasks7.1–7.4
+ 
+ - **Owner:** FORGE (`01a1637a-4222-70c0-8439-cb3cc46b20c4`); reviewer UNASSIGNED (`unassigned`).
+@@ -2432,6 +2460,14 @@
+ - **Next:** After release lease clears, parent may assign one isolated retained-capture effect test for physical-only role-stability uncertainty or PP finishing ownership; preserve full bias/RMSE/decile gate. No new production capture.
+ - **Status evidence date:** `2026-10-23T13:00:20+00:00`.
+ - **Pinned references:** [tasks/artifacts/forge-task3-gate-2026-10-22/run-captures-v.sh:1](../../tasks/artifacts/forge-task3-gate-2026-10-22/run-captures-v.sh) SHA256 `156c633f234f24857635d223dfd6fe1b2ae42313cc8e0b89106d33a7a7f96cd3`; [web/lib/projections/calculators/skater-adjustments.ts:1](../../web/lib/projections/calculators/skater-adjustments.ts) SHA256 `258e9b4699d01ccdc89a30d746cc6332f3c708210c4598c69fe7c8f47f2ba9b6`; [tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md:1](../../tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md) SHA256 `e5e12382bd3bd8d70884a4606c83ab21f2346cc17604b53f188dd6c74d76ec8b`.
++
++**Readable task child (held source obligation; no new parent ID):**
++
++- [ ] **FPI-09/rink-physical-context — Retain the later rink-adjusted hits/blocks research decision.** Parked/unassigned; no active experiment. Next: Reconcile later accepted source and attribution evidence before proposing rink-specific physical effects; avoid duplicate mean/uncertainty adjustments. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: Parked research/owner decision only. No new formula, fit, capture, provider query or publication; any future scope needs separate attribution and frozen-cohort qualification.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:128>). Credit retained: Variant-g was not cleared or shipped. Preserve the current single-effect retained-capture scope and all earlier model/admission holds.
++- [ ] **FPI-09/aging-rookie-priors — Retain the later aging-curve and rookie-prior decision.** Parked/unassigned; no implementation. Next: Reconcile the needed population/history and ownership of aging/rookie priors before any future proposal. Preserve accepted F/D priors and do not treat variant-g evidence as this evaluation. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: Parked research/owner decision only. No new formula, fit, capture, provider query or publication; any future scope needs separate attribution and frozen-cohort qualification.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:128>). Credit retained: Variant-g was not cleared or shipped. Preserve the current single-effect retained-capture scope and all earlier model/admission holds.
++- [ ] **FPI-09/news-start-mapping — Retain the later news-tier to starter-probability research decision.** Parked/unassigned; source presentation is not predictive qualification. Next: Require historical label timing, identity, outcome and rights provenance before any proposal to fit label-to-P(start) mapping; distinguish existing news presentation from a predictive model. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: Parked research/owner decision only. No new formula, fit, capture, provider query or publication; any future scope needs separate attribution and frozen-cohort qualification.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:128>). Credit retained: Variant-g was not cleared or shipped. Preserve the current single-effect retained-capture scope and all earlier model/admission holds.
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:128](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md:128>) SHA256 `52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a`.
+ 
+ ### FPI-10 — RSO missing-weighted-stat and goalie if-starts display, tasks10.1–10.2
+ 
+@@ -2551,7 +2587,7 @@
+ - **Acceptance:** Not yet accepted
+ - **Release:** Not released by this task
+ - **Evidence level / limits:** source inspected. Only the named functions/files in the source-input reconciliation below; no whole-area health claim
+-- **Verification:** Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed.
++- **Verification:** Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority.
+ - **Dependencies / gate:** Parent dispatch and exact file lease; preserve release and Game Grid work Exact scoped tests and independent review before integration; no production calls, schema, credentials or deployment authority
+ - **Next:** Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The now fully read debug checklist closes SHA under July13 NEW7 and performance NEW8/9, with September4 official-provider SHA precedence including zero; only actual/custom-unmapped SHA retains nonnegative null-safe derivation. Preserve the owner-approved missing-relative-baseline exception and optional/evaluated virtualization, hashing, chunking and worker proposals; no false30%gain or mandatory performance rewrite. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules. Four historical requested resolver follow-ups and the name-keyed assignment/provenance risk are retained once under proposed SITE-DRAFT-CSV-RESOLVER; the existing summary is not wholly absent. Draft Ranker July17 personal authenticated rollout and July30 Phase8 retirement retain closure, while older July15 staff-only manifest paragraphs are historical. No secondary/public rollout, model change, old migration/security replay or new worktree from source runbooks. The remaining Ranker package is now content-covered. Correct only documentary precedence: early technical-contract authenticated RPC/write language yields to later service-only mutation/API and owner-read-only receipts; per-ranking/player placement language yields to20260715034601 single-active-per-ranking hardening. Preserve pre-baseline archive references. Keep repository-record.md as a noncanonical historical variant, not an exact-hash duplicate or current usable-ADP/source-path authority. Product blueprint direct-edit community-weight, mature confidence/XLSX/segmentation and broad-source ideas are narrowed by approved pinned launch decisions and explicit Phase8 retirement; do not revive them. No old CLI/review/traffic/audit blocker, deprecated source count or early roadmap heading is a fresh open task.
+ - **Status evidence date:** `2026-10-24T15:51:04.684507+00:00`.
+@@ -2583,6 +2619,12 @@
+ - **Segment13 reconciliation date:** `2026-10-24T18:33:56.621280+00:00`.
+ - **Segment13 evidence:** [tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/743f09fe929c-prd-forge-dashboard.md:3>) SHA256 `743f09fe929cff0f26f5a30ab7ab9fa10802a5759e379d7bcf610cf3068ecc64`; [tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md:134](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/644fe30a5cd1-forge-dashboard-component-health-remediation-backlog.md:134>) SHA256 `644fe30a5cd1e7b0d5479afa04d62a7079341f5b0e4d026f5f439c4ff8834a65`; [tasks/artifacts/forge-dashboard-observability-followups.md:9](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5941db83cadb-forge-dashboard-observability-followups.md:9>) SHA256 `5941db83cadb439b7ea265f1fc12cc2a7c1cd1142bb219e2c3b77a6f31323875`; [tasks/artifacts/forge-dashboard-freshness-policy.md:8](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/035acc6b8851-forge-dashboard-freshness-policy.md:8>) SHA256 `035acc6b8851cc2fdf769070c643c36eae8a6c4099e7f71fa4ce2da9b0f53bda`; [tasks/TASKS/forge-projections/ecosystem-audits/forge-trends-combo-architecture.md:216](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/4b387ed6ffe2-forge-trends-combo-architecture.md:216>) SHA256 `4b387ed6ffe2d5ffd2da8ef879c1647ad84019f2894958673dd8e347ca0fb97b`.
+ 
++**Readable task child (held source obligation; no new parent ID):**
++
++- [ ] **REPO-DOCUMENTATION/forge-refresh-itinerary — Reconcile the old full-refresh itinerary against approved bounded operating contracts.** Open documentary follow-up; no endpoint execution. Next: Correct or clearly mark the obsolete all-date/fullRefresh RPC-truncate itinerary, old page/schema authority and unqualified fallback guidance. Link current bounded README/runner/admission contracts without weakening existing full-refresh protections. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: Documentation-only under current exact file custody; no cron, SQL, refresh, truncate, provider call, or new remote verification.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md:210>). Credit retained: Existing full-refresh safety and writer fixes remain completed; stored instructions are not new authority.
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md:210](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/4f015e185732-FORGE_EXPLAINED.md:210>) SHA256 `4f015e18573239112cfe2e7ef3be6539adeb6aff8915d0a1d2d231121f55031c`; [tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md:106](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md:106>) SHA256 `cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4`; [tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:56](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md:56>) SHA256 `1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be`; [tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:196](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md:196>) SHA256 `1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be`; [tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md:92](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1c5b086e4ade-FORGE_ECOSYSTEM_ELI5_AUDIT.md:92>) SHA256 `1c5b086e4ade172656c0aa9eb301f319188fec725193d168f2ad7855e8cf979d`.
++
+ ### REPO-GENERATED-TRACKING — Remove generated audit cache/output/temp files from tracking without deleting local work or rewriting history
+ 
+ - **Owner:** FORGE (`01a1637a-4222-70c0-8439-cb3cc46b20c4`); reviewer UNASSIGNED (`unassigned`).
+@@ -3161,7 +3203,7 @@
+ - **Acceptance:** Held serving/operations decision; no model or schedule dispatch
+ - **Release:** No new release, production observation or execution authorized by this audit.
+ - **User impact:** Rescoring and model-serving availability must follow a clean artifact and an explicit operational decision.
+-- **Verification:** Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.
++- **Verification:** Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test. Full living-audit 6.0/14.0 retains historical gradient-boosted training, approved-artifact scoring/calibration and downstream wiring credit. It does not establish a current leakage-clean champion, registry choice or daily scheduling decision; those later serving gates remain distinct.
+ - **Dependencies:** Source29/30; S18 release options; clean artifact audit and exact model/version/feature identity; separate paid/research rights.
+ - **Acceptance/release gate:** Separate registry read, artifact promotion, model execution, schedule/deployment and historical publication authority. Parked model work stays parked.
+ - **Next action:** Reconcile the retained serving/champion and daily-operation disposition against newer release receipts; retain a hold or approved manual cadence unless the owner selects an exact new scope. Do not reimplement the completed local gate or promote/fit a model.
+@@ -3170,6 +3212,8 @@
+ - **Source aliases:** xG NEW29, xG NEW30, C0172, MS41-088.
+ - **Status evidence date:** `2026-10-24T15:01:49.630478+00:00`.
+ - **Pinned references:** [S-18-report.md:32](/Users/tim/Code/fhfhockey.com/tasks/artifacts/xg-gate-lane-2026-10-18/S-18-report.md:32) SHA256 `db655d602c960af782c8595ce1f0a64f63bf3fa1d2b3c631d3bfd4c71fa5f2fc`; [R-OPEN-LOCAL-PARTS.md:61](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/continuation-review/R-OPEN-LOCAL-PARTS.md:61) SHA256 `192ef4e0e5e29ddf62eed98fd90ee7fbc03d836c33932b8a4600e27160c23f51`; [tasks-xg-trending-model-completion.md:535](/Users/tim/Code/fhfhockey.com/tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md:535) SHA256 `e2a75a530dbe575ad12590a415aa5901a67848316f975c730caa228b9282d406`; [tasks-xg-trending-model-completion.md:536](/Users/tim/Code/fhfhockey.com/tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md:536) SHA256 `e2a75a530dbe575ad12590a415aa5901a67848316f975c730caa228b9282d406`.
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md:79](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md:79>) SHA256 `cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4`; [tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md:104](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md:104>) SHA256 `cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4`.
+ 
+ ### AUTH-PATREON-TRANSACTION — Reconcile the retained durable, browser-bound Patreon OAuth transaction gate
+ 
+--- before/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md
++++ after/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md
+@@ -10,6 +10,15 @@
+ 
+ 
+ 
++
++
++## Living-audit and current Forge obligations — 2026-10-24T18:49:59.291059+00:00
++
++211 stable parent IDs preserve all prior scopes and evidence. No parent ID was added: existing FPI task ranges already cover the surviving commitments. Eight readable children expose retained historical-position/TOI reporting, settled-cohort evaluation, market closing-line evaluation, the separate team-total decision, three parked context proposals and the old Forge refresh-itinerary documentation follow-up. Parked proposals remain parked; no new implementation or execution is assigned.
++
++The later Task2 gate clears the dated S-G column-drop parity scope while retaining separate early-season data repair. FORGE-HYDRATION-HB's supporting slice is recorded released in B, superseding its stale unreleased description; the literal predictive-gate exception and surviving physical/admission gates remain distinct. Living-audit gradient-boosted wiring retains completed credit without selecting a current champion or authorizing daily operation. Completed cache, paging, error, FUT/schedule and observability fixes are not reopened.
++
++Nine unique documentary sources and one small structured receipt were fully read in this bounded segment. Generated logs, archives, stored commands and current application/runtime state were not re-audited. Original duplicate/exclusion maps remain intact; the overall content audit remains unfinished. See [segment14 report](/Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/REPORT.md). No application code/tests, Git, production or new workers.
+ 
+ ## Forge contract and retained-gate checkpoint — 2026-10-24T18:33:56.621280+00:00
+ 
+@@ -201,7 +210,7 @@
+ 
+ ## Latest scoped acceptance checkpoint
+ 
+-As of `2026-10-24T18:33:56.621280+00:00`, **gate-kit R1 is independently ACCEPTED and the prior variant-name collision BLOCK is cleared**. Reviewer receipt:26suite tests plus8independent naming probes, exact8-file reverse reconstruction and preserved arithmetic/inputs. Ledger verified19/19current kit pins. This accepts offline tooling only; actual model qualification remains **UNRUN**. Earlier pending/BLOCK observations below are historical.
++As of `2026-10-24T18:49:59.291059+00:00`, **gate-kit R1 is independently ACCEPTED and the prior variant-name collision BLOCK is cleared**. Reviewer receipt:26suite tests plus8independent naming probes, exact8-file reverse reconstruction and preserved arithmetic/inputs. Ledger verified19/19current kit pins. This accepts offline tooling only; actual model qualification remains **UNRUN**. Earlier pending/BLOCK observations below are historical.
+ 
+ **Billing:** parent reports local packet acceptance except one account-panel purchase-pitch defect; existing BILLING owner has the minimal correction. **Game Grid:** visual-v2 is locally complete and independent review is active with `01a168ae-fd25-7463-86cc-9bf261dbb031`. Neither status establishes deployment; production refresh latency remains unmeasured. No register commit in this update.
+ 
+@@ -1661,14 +1670,17 @@
+ 
+ ### FORGE-HYDRATION-HB — Final combined hydration + hits/blocks qualification
+ 
+-- **Implementation:** Components exist; final-c result not located. **Acceptance:** held. **Release:** unreleased.
++- **Implementation:** Hydration, full S-F reader and paired-count/exposure F/D physical-head repair were shipped in Release B 40b17b572 with 721486d0f. The older components-only/unreleased description is superseded; existing cache correction/recheck credit remains. Literal predictive qualification was not fully met. **Acceptance:** TJ explicitly selected variant-c release as an improvement despite the literal ±10% gate miss. That exception is not a universal calibration pass or native/pilot admission. Preserve surviving HIT/BLK and current accepted-contract qualifications. **Release:** Supporting hydration/hits-blocks slice recorded released in B 40b17b572. Current predictive/admission qualification and separate history repair remain held where named; no fresh production observation.
+ - **Owner:** FORGE; **reviewer:** UNASSIGNED. **Dependencies:** AUDIT-A1; MASTER-F5; physical-event source semantics.
+ - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
+-- **Verification:** Four-arm reconstruction is historical current-DB evidence, not prior availability
++- **Verification:** Full task2 gate and later handover/primary task list reconcile the chronology: engineering/cache failure was corrected, real parity cleared the column drop for the dated supported scope, and explicit owner release preserved a calibration exception. Original historical failures remain evidence; no source/test/runtime work by audit.
+ - **Acceptance/release gate:** Do not qualify corrected final candidate with invalid inclusive capture signatures; migration88 separate
+-- **Next:** Record legitimate input availability and exact final bytes; executor UNASSIGNED
++- **Next:** Use FPI-02 for the implemented/released slice and its residual physical-head gates. Do not reimplement hydration, rerun the old cache correction or repeat variant-c because of stale boxes. Keep early-season history in PIPE-ROLLING-HISTORY-REPAIR and current model/admission decisions separate.
+ - **Queued proposal:** P08; Existing FORGE lead queued producer contract scope after combined candidate pinning. Separate parent reservation required.
+ - **Evidence:** [REPORT.md:34](</Users/tim/Code/fhfhockey.com/tasks/artifacts/claude-audit-fixes-2026-10-22/REPORT.md:34>); [hydration-recon-verdict.md:6](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-projection-audit-2026-10-21/hydration-recon-verdict.md:6>); [skater-adjustments.ts:1](</Users/tim/Code/fhfhockey.com/web/lib/projections/calculators/skater-adjustments.ts:1>); [VERDICT.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task9-gate-2026-10-22/VERDICT.md:1>)
++- **Current Dispatch class:** Supporting implementation/release recorded; remaining qualification held; no new dispatch
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:76](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md:76>) SHA256 `52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a`; [tasks/artifacts/cross-platform/2026-10-22-claude-forge-model-lane-handover.md:7](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/b27a0139d90a-2026-10-22-claude-forge-model-lane-handover.md:7>) SHA256 `b27a0139d90a18964583e3cc88c855276d2cf0ff711fee2b02e8bc9409b05413`; [tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md:3>) SHA256 `9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb`; [tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md:70](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md:70>) SHA256 `9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb`.
+ 
+ ### LEDGER-COMPLETENESS — Authoritative finality/DNP evidence producer and prior-zero audit
+ 
+@@ -2315,16 +2327,25 @@
+ - **Assigned slice:** Prior editing lease is historical. No new exclusive source lease inferred from October22 assignment; parent coordinates current owner before writes.
+ - **Evidence:** [TASKLIST-20261022-SNAPSHOT.md:53](</Users/tim/Code/fhfhockey.com/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/TASKLIST-20261022-SNAPSHOT.md:53>); [CURRENT-OWNERSHIP.md:5](</Users/tim/Code/fhfhockey.com/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/CURRENT-OWNERSHIP.md:5>); [HANDOFF.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task1-scoreboard-2026-10-22/HANDOFF.md:1>); [SOURCE-PINS.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task1-scoreboard-2026-10-22/SOURCE-PINS.json:1>); [REVIEW.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task1-independent-review-2026-10-22/REVIEW.md:1>); [tasks-forge-projection-improvements-2026-10-22.md:70](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:70>); [2026-10-22-claude-forge-model-lane-handover.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-22-claude-forge-model-lane-handover.md:1>); [forgeDailyBridge.ts:1](</Users/tim/Code/fhfhockey.com/web/lib/rosterScheduleData/forgeDailyBridge.ts:1>); [forge-served-forecast-snapshot.ts:1](</Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/forge-served-forecast-snapshot.ts:1>); [REPORT.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/fantasy-point-audit-2026-10-22/REPORT.md:1>); [servedForecastLedger.ts:1](</Users/tim/Code/fhfhockey.com/web/lib/player-forecasts/servedForecastLedger.ts:1>); [scoreboard.ts:1](</Users/tim/Code/fhfhockey.com/web/pages/api/v1/forge/scoreboard.ts:1>); [migration-authority.json:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/repository-audit-remediation/migration-authority.json:1>)
+ 
++**Readable task child (held source obligation; no new parent ID):**
++
++- [ ] **FPI-01/retained-position-toi — Define retained historical position and TOI inputs for missing ledger report slices.** Held/unassigned; supported released reporting preserved. Next: Reconcile the retained-input contract for F/D slices and TOI/PP-TOI opportunity-versus-rate reporting. Keep unsupported history visibly unavailable; do not infer historical position from current metadata. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: No schema, historical population, provider read or production writer from audit. Exact owner/custody, provenance and independent review required.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:71>). Credit retained: Paired/dressed-only FP, per-head bias, expected-FP deciles and goalie Brier infrastructure already released.
++- [ ] **FPI-01/settled-week-audit — Qualify the existing settled-cohort Q3/Q4 evaluation gate.** Held/unassigned; adequate outcomes and exact read authority required. Next: Identify the actual settled dressed-only cohort and frozen baseline before the existing Q3/Q4 evaluation. Around Oct29/30 is an estimate, not an automatic schedule or permission. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: No new reads/capture/evaluation run or automation. Existing Q3/Q4 approval and exact cohort/admission limits remain.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:73>). Credit retained: Do not reimplement pairing, Brier bins or the deployed supported scoreboard.
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:71](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md:71>) SHA256 `52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a`; [tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:73](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md:73>) SHA256 `52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a`.
++
+ ### FPI-02 — Hydration and F/D physical heads, tasks2.1–2.6
+ 
+ - **Implementation:** Per-run cache corrected 59daabf00; hydration/full S-F/count-exposure repair shipped with B. **Acceptance:** R3 immutable recheck 394/394 plus31 cache/pipeline passes closes old cache blocker; literal ±10% predictive gate was not met. **Release:** Release B 40b17b572 recorded READY; TJ explicitly chose improvement despite gate miss. Migration88 remains pending/off.
+ - **Owner:** FPI-HYDRATION; **reviewer:** UNASSIGNED. **Dependencies:** R3cache correction closed; released variant-c explicit exception does not satisfy literal calibration gate. Migration88 pending/off; no reapply or rerun without scope..
+ - **Evidence level:** inventoried only. **Scope:** Current status/receipt reconciliation; earlier scoped acceptance remains attached to its historical bytes. **Provenance:** Current task list, Git objects and cited local receipts; no fresh production observation..
+-- **Verification:** Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments.
++- **Verification:** Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments. Later task2 gate explicitly clears the S-G column drop: 20 cohort regulars/all five strengths were compared, with a detailed 3-player date/field rerun; rows since Oct7 were identical within 1e-6. Early Sep29/Sep30/Oct3/Oct6 stale/missing rows are a separate history issue. This is a dated documentary receipt, not new production reads or every-row independent audit. R2 cache failure is historical and was superseded by the existing per-run correction/recheck.
+ - **Acceptance/release gate:** Retain original query pins; fixture/checksum, row-identity20players×5strengths and scoped tests. Tasklist frozen62-game postR19 gate demands FP/HIT/SOG bias/top-decile within ±10%; not claimed passed. ProductionQ5/Q6 and migration88 separately gated. New scoped implementation and independent review before integration; model changes require frozen-cohort bias, RMSE and forecast-binned decile calibration per head, not MAE alone. Production reads, migrations and release need separate authority.
+ - **Next:** Do not repeat cache fix or variant-c reconstruction. Keep HIT +10.9%, BLK +11.6%, dressed-only follow-up and approved Q5/Q6 separate; no migration88 apply.
+ - **Assigned slice:** Prior editing lease is historical. No new exclusive source lease inferred from October22 assignment; parent coordinates current owner before writes.
+ - **Evidence:** [TASKLIST-20261022-SNAPSHOT.md:59](</Users/tim/Code/fhfhockey.com/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/TASKLIST-20261022-SNAPSHOT.md:59>); [CURRENT-OWNERSHIP.md:5](</Users/tim/Code/fhfhockey.com/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/CURRENT-OWNERSHIP.md:5>); [REVIEW.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task2-independent-review-2026-10-22/REVIEW.md:1>); [REVIEW.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task2-independent-review-2026-10-22/r1/REVIEW.md:1>); [HANDOFF.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task2-2026-10-22/r2/HANDOFF.md:1>); [tasks-forge-projection-improvements-2026-10-22.md:75](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:75>); [2026-10-22-claude-forge-model-lane-handover.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-22-claude-forge-model-lane-handover.md:1>); [2026-10-22-codex-to-claude-league-save-pct-cache-recheck.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-22-codex-to-claude-league-save-pct-cache-recheck.md:1>); [CURRENT-RESULT.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/CURRENT-RESULT.json:1>); [tasks-forge-projection-audit-streamlining-2026-10-21.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:1>); [skater-adjustments.ts:1](</Users/tim/Code/fhfhockey.com/web/lib/projections/calculators/skater-adjustments.ts:1>); [VERDICT.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task9-gate-2026-10-22/VERDICT.md:1>)
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md:57](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md:57>) SHA256 `9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb`; [tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md:67](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md:67>) SHA256 `9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb`; [tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md:74](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md:74>) SHA256 `9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb`.
+ 
+ ### FPI-03 — Assists and PPP on on-ice goals × point share, tasks3.1–3.5
+ 
+@@ -2403,6 +2424,12 @@
+   - `web/lib/player-forecasts/servedForecastLedger.ts:1`; SHA256 `71910c828a3792d8ae85d275e2e6f017d5818f65fbc44c2e2d044ca9998d7c36`.
+   - `web/pages/api/v1/forge/scoreboard.ts:1`; SHA256 `5cd651886914058597ad856f777ef2c4227c7c03e92b7029bc250f74534b92d0`.
+ 
++**Readable task child (held source obligation; no new parent ID):**
++
++- [ ] **FPI-06/closing-market-evaluation — Reconcile closing-line provenance and model-versus-market Brier evidence.** Partial code/schema credit retained; outcome qualification held. Next: Reconcile exact market writer/flag/reader release compatibility and actual closing-price/outcome provenance before claiming model-versus-market Brier quality. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: No migration99 reapply, fresh odds/provider/production reads, market-source rollout or fitted de-vig change. Preserve assumption labels and current rights gates.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:107>). Credit retained: 6.1/6.2 outputs shipped; later6.3 code/flag and migration99 already recorded implemented/applied.
++- [ ] **FPI-06/team-total-blend-decision — Retain the separate owner decision on blending implied team totals.** Parked owner decision; no implementation dispatch. Next: Present the surviving need and evidence for or against a team-goal blend with de-vigged implied totals. Any selected method needs its own scoped contract and evaluation; do not fold it into the completed probability flags. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: Exact owner model/publication decision before a new blend; no fitting, provider calls or production activation.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:108>). Credit retained: Completed probability/de-vig outputs are retained; neither deployment nor this child validates a blended team-goal model.
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:107](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md:107>) SHA256 `52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a`; [tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:108](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md:108>) SHA256 `52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a`.
+ 
+ ### FPI-07 — Goalie model and single win source, tasks7.1–7.4
+ 
+@@ -2461,6 +2488,14 @@
+ - **Next:** After release lease clears, parent may assign one isolated retained-capture effect test for physical-only role-stability uncertainty or PP finishing ownership; preserve full bias/RMSE/decile gate. No new production capture.
+ - **Assigned slice:** Prior editing lease is historical. No new exclusive source lease inferred from October22 assignment; parent coordinates current owner before writes.
+ - **Evidence:** [TASKLIST-20261022-SNAPSHOT.md:99](</Users/tim/Code/fhfhockey.com/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/TASKLIST-20261022-SNAPSHOT.md:99>); [CURRENT-OWNERSHIP.md:5](</Users/tim/Code/fhfhockey.com/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/CURRENT-OWNERSHIP.md:5>); [HANDOFF.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-skater-candidates-2026-10-22/HANDOFF.md:1>); [TASK3-DATA-ASK.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-skater-candidates-2026-10-22/TASK3-DATA-ASK.md:1>); [tasks-forge-projection-improvements-2026-10-22.md:124](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:124>); [2026-10-22-claude-forge-model-lane-handover.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-22-claude-forge-model-lane-handover.md:1>); [run-captures.sh:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task2-gate-2026-10-22/run-captures.sh:1>); [VERDICT.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task9-gate-2026-10-22/VERDICT.md:1>); [VERDICT.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-k-refit-gate-2026-10-22/VERDICT.md:1>); [reconcile.ts:1](</Users/tim/Code/fhfhockey.com/web/lib/projections/reconcile.ts:1>); [run-captures-v.sh:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task3-gate-2026-10-22/run-captures-v.sh:1>); [skater-adjustments.ts:1](</Users/tim/Code/fhfhockey.com/web/lib/projections/calculators/skater-adjustments.ts:1>); [2026-10-23-claude-to-codex-unfinished-work-review.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md:1>)
++
++**Readable task child (held source obligation; no new parent ID):**
++
++- [ ] **FPI-09/rink-physical-context — Retain the later rink-adjusted hits/blocks research decision.** Parked/unassigned; no active experiment. Next: Reconcile later accepted source and attribution evidence before proposing rink-specific physical effects; avoid duplicate mean/uncertainty adjustments. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: Parked research/owner decision only. No new formula, fit, capture, provider query or publication; any future scope needs separate attribution and frozen-cohort qualification.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:128>). Credit retained: Variant-g was not cleared or shipped. Preserve the current single-effect retained-capture scope and all earlier model/admission holds.
++- [ ] **FPI-09/aging-rookie-priors — Retain the later aging-curve and rookie-prior decision.** Parked/unassigned; no implementation. Next: Reconcile the needed population/history and ownership of aging/rookie priors before any future proposal. Preserve accepted F/D priors and do not treat variant-g evidence as this evaluation. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: Parked research/owner decision only. No new formula, fit, capture, provider query or publication; any future scope needs separate attribution and frozen-cohort qualification.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:128>). Credit retained: Variant-g was not cleared or shipped. Preserve the current single-effect retained-capture scope and all earlier model/admission holds.
++- [ ] **FPI-09/news-start-mapping — Retain the later news-tier to starter-probability research decision.** Parked/unassigned; source presentation is not predictive qualification. Next: Require historical label timing, identity, outcome and rights provenance before any proposal to fit label-to-P(start) mapping; distinguish existing news presentation from a predictive model. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: Parked research/owner decision only. No new formula, fit, capture, provider query or publication; any future scope needs separate attribution and frozen-cohort qualification.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:128>). Credit retained: Variant-g was not cleared or shipped. Preserve the current single-effect retained-capture scope and all earlier model/admission holds.
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:128](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md:128>) SHA256 `52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a`.
+ 
+ ### FPI-10 — RSO missing-weighted-stat and goalie if-starts display, tasks10.1–10.2
+ 
+@@ -2611,7 +2646,7 @@
+ - **Implementation:** Open narrow follow-up; no new implementation by ledger owner. **Acceptance:** Not yet accepted. **Release:** Not released by this task.
+ - **Owner:** LEDGER; **reviewer:** UNASSIGNED. **Dependencies:** Parent dispatch and exact file lease; preserve release and Game Grid work.
+ - **Evidence level:** source inspected. **Scope:** Only the named functions/files in the source-input reconciliation below; no whole-area health claim **Provenance:** Current local files and dated review receipts.
+-- **Verification:** Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed.
++- **Verification:** Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority.
+ - **Acceptance/release gate:** Exact scoped tests and independent review before integration; no production calls, schema, credentials or deployment authority
+ - **Next:** Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The now fully read debug checklist closes SHA under July13 NEW7 and performance NEW8/9, with September4 official-provider SHA precedence including zero; only actual/custom-unmapped SHA retains nonnegative null-safe derivation. Preserve the owner-approved missing-relative-baseline exception and optional/evaluated virtualization, hashing, chunking and worker proposals; no false30%gain or mandatory performance rewrite. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules. Four historical requested resolver follow-ups and the name-keyed assignment/provenance risk are retained once under proposed SITE-DRAFT-CSV-RESOLVER; the existing summary is not wholly absent. Draft Ranker July17 personal authenticated rollout and July30 Phase8 retirement retain closure, while older July15 staff-only manifest paragraphs are historical. No secondary/public rollout, model change, old migration/security replay or new worktree from source runbooks. The remaining Ranker package is now content-covered. Correct only documentary precedence: early technical-contract authenticated RPC/write language yields to later service-only mutation/API and owner-read-only receipts; per-ranking/player placement language yields to20260715034601 single-active-per-ranking hardening. Preserve pre-baseline archive references. Keep repository-record.md as a noncanonical historical variant, not an exact-hash duplicate or current usable-ADP/source-path authority. Product blueprint direct-edit community-weight, mature confidence/XLSX/segmentation and broad-source ideas are narrowed by approved pinned launch decisions and explicit Phase8 retirement; do not revive them. No old CLI/review/traffic/audit blocker, deprecated source count or early roadmap heading is a fresh open task.
+ - **Evidence:** [2026-10-23-claude-to-codex-unfinished-work-review.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md:1>); [AGENTS.md:1](</Users/tim/Code/fhfhockey.com/AGENTS.md:1>); [tasks-forge-projection-audit-streamlining-2026-10-21.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:1>); [tasks-forge-projection-improvements-2026-10-22.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:1>); [tasks-prd-rso.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-rso.md:1>); [tasks-prd-roster-schedule-optimizer.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-roster-schedule-optimizer.md:1>); [tasks-prd-game-grid-refactor.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-game-grid-refactor.md:1>); [tasks-prd-fhfh-comprehensive-completion-audit-optimization.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md:1>); [cron-report.ts:1](</Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/cron-report.ts:1>); [tasks-README.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-README.md:1>); [tasks-prd-in-season-trust-clarity-decision-workflow.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:1>)
+@@ -2642,6 +2677,12 @@
+ - **Segment13 reconciliation date:** `2026-10-24T18:33:56.621280+00:00`.
+ - **Segment13 evidence:** [tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/743f09fe929c-prd-forge-dashboard.md:3>) SHA256 `743f09fe929cff0f26f5a30ab7ab9fa10802a5759e379d7bcf610cf3068ecc64`; [tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md:134](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/644fe30a5cd1-forge-dashboard-component-health-remediation-backlog.md:134>) SHA256 `644fe30a5cd1e7b0d5479afa04d62a7079341f5b0e4d026f5f439c4ff8834a65`; [tasks/artifacts/forge-dashboard-observability-followups.md:9](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5941db83cadb-forge-dashboard-observability-followups.md:9>) SHA256 `5941db83cadb439b7ea265f1fc12cc2a7c1cd1142bb219e2c3b77a6f31323875`; [tasks/artifacts/forge-dashboard-freshness-policy.md:8](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/035acc6b8851-forge-dashboard-freshness-policy.md:8>) SHA256 `035acc6b8851cc2fdf769070c643c36eae8a6c4099e7f71fa4ce2da9b0f53bda`; [tasks/TASKS/forge-projections/ecosystem-audits/forge-trends-combo-architecture.md:216](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/4b387ed6ffe2-forge-trends-combo-architecture.md:216>) SHA256 `4b387ed6ffe2d5ffd2da8ef879c1647ad84019f2894958673dd8e347ca0fb97b`.
+ 
++**Readable task child (held source obligation; no new parent ID):**
++
++- [ ] **REPO-DOCUMENTATION/forge-refresh-itinerary — Reconcile the old full-refresh itinerary against approved bounded operating contracts.** Open documentary follow-up; no endpoint execution. Next: Correct or clearly mark the obsolete all-date/fullRefresh RPC-truncate itinerary, old page/schema authority and unqualified fallback guidance. Link current bounded README/runner/admission contracts without weakening existing full-refresh protections. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: Documentation-only under current exact file custody; no cron, SQL, refresh, truncate, provider call, or new remote verification.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md:210>). Credit retained: Existing full-refresh safety and writer fixes remain completed; stored instructions are not new authority.
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md:210](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/4f015e185732-FORGE_EXPLAINED.md:210>) SHA256 `4f015e18573239112cfe2e7ef3be6539adeb6aff8915d0a1d2d231121f55031c`; [tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md:106](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md:106>) SHA256 `cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4`; [tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:56](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md:56>) SHA256 `1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be`; [tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:196](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md:196>) SHA256 `1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be`; [tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md:92](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1c5b086e4ade-FORGE_ECOSYSTEM_ELI5_AUDIT.md:92>) SHA256 `1c5b086e4ade172656c0aa9eb301f319188fec725193d168f2ad7855e8cf979d`.
++
+ ### REPO-GENERATED-TRACKING — Remove generated audit cache/output/temp files from tracking without deleting local work or rewriting history
+ 
+ - **Implementation:** CR-REL-03 and B-CLEAN NEW127/C0032/C0039/C0042 are the same generated-tracking follow-up. Earlier cleanups and158/158 July closure retain credit; the October17 recurrence is later evidence. No current index/tracking inspection or cleanup was performed by this audit. **Acceptance:** Not yet accepted. **Release:** Not released by this task.
+@@ -3263,7 +3304,7 @@
+ - **Acceptance:** Held serving/operations decision; no model or schedule dispatch
+ - **Release:** No new release, production observation or execution authorized by this audit.
+ - **User impact:** Rescoring and model-serving availability must follow a clean artifact and an explicit operational decision.
+-- **Verification:** Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.
++- **Verification:** Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test. Full living-audit 6.0/14.0 retains historical gradient-boosted training, approved-artifact scoring/calibration and downstream wiring credit. It does not establish a current leakage-clean champion, registry choice or daily scheduling decision; those later serving gates remain distinct.
+ - **Dependencies:** Source29/30; S18 release options; clean artifact audit and exact model/version/feature identity; separate paid/research rights.
+ - **Acceptance/release gate:** Separate registry read, artifact promotion, model execution, schedule/deployment and historical publication authority. Parked model work stays parked.
+ - **Next action:** Reconcile the retained serving/champion and daily-operation disposition against newer release receipts; retain a hold or approved manual cadence unless the owner selects an exact new scope. Do not reimplement the completed local gate or promote/fit a model.
+@@ -3272,6 +3313,8 @@
+ - **Source aliases:** xG NEW29, xG NEW30, C0172, MS41-088.
+ - **Status evidence date:** `2026-10-24T15:01:49.630478+00:00`.
+ - **Pinned references:** [S-18-report.md:32](/Users/tim/Code/fhfhockey.com/tasks/artifacts/xg-gate-lane-2026-10-18/S-18-report.md:32) SHA256 `db655d602c960af782c8595ce1f0a64f63bf3fa1d2b3c631d3bfd4c71fa5f2fc`; [R-OPEN-LOCAL-PARTS.md:61](/Users/tim/Code/fhfhockey.com/tasks/codex-sprint-2026-10-19/continuation-review/R-OPEN-LOCAL-PARTS.md:61) SHA256 `192ef4e0e5e29ddf62eed98fd90ee7fbc03d836c33932b8a4600e27160c23f51`; [tasks-xg-trending-model-completion.md:535](/Users/tim/Code/fhfhockey.com/tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md:535) SHA256 `e2a75a530dbe575ad12590a415aa5901a67848316f975c730caa228b9282d406`; [tasks-xg-trending-model-completion.md:536](/Users/tim/Code/fhfhockey.com/tasks/TASKS/xg-model/trending-model/tasks-xg-trending-model-completion.md:536) SHA256 `e2a75a530dbe575ad12590a415aa5901a67848316f975c730caa228b9282d406`.
++- **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
++- **Segment14 evidence:** [tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md:79](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md:79>) SHA256 `cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4`; [tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md:104](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md:104>) SHA256 `cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4`.
+ 
+ ### AUTH-PATREON-TRANSACTION — Reconcile the retained durable, browser-bound Patreon OAuth transaction gate
+ 
+--- before/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json
++++ after/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json
+@@ -1,5 +1,5 @@
+ {
+-  "as_of": "2026-10-24T18:33:56.621280+00:00",
++  "as_of": "2026-10-24T18:49:59.291059+00:00",
+   "scope": "Evidence/status audit and durable sprint ledger; FA Portal excluded. No current-model/author inference. All implementation acceptance and release are separate.",
+   "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+   "branch": "octoberBranch",
+@@ -4391,15 +4391,15 @@
+       "taskID": "FORGE-HYDRATION-HB",
+       "group": "FORGE native",
+       "scope": "Final combined hydration + hits/blocks qualification",
+-      "implementation": "Components exist; final-c result not located",
+-      "acceptance": "held",
+-      "release": "unreleased",
++      "implementation": "Hydration, full S-F reader and paired-count/exposure F/D physical-head repair were shipped in Release B 40b17b572 with 721486d0f. The older components-only/unreleased description is superseded; existing cache correction/recheck credit remains. Literal predictive qualification was not fully met.",
++      "acceptance": "TJ explicitly selected variant-c release as an improvement despite the literal ±10% gate miss. That exception is not a universal calibration pass or native/pilot admission. Preserve surviving HIT/BLK and current accepted-contract qualifications.",
++      "release": "Supporting hydration/hits-blocks slice recorded released in B 40b17b572. Current predictive/admission qualification and separate history repair remain held where named; no fresh production observation.",
+       "owner": "FORGE",
+       "reviewer": "UNASSIGNED",
+       "dependencies": "AUDIT-A1; MASTER-F5; physical-event source semantics",
+-      "verification": "Four-arm reconstruction is historical current-DB evidence, not prior availability",
++      "verification": "Full task2 gate and later handover/primary task list reconcile the chronology: engineering/cache failure was corrected, real parity cleared the column drop for the dated supported scope, and explicit owner release preserved a calibration exception. Original historical failures remain evidence; no source/test/runtime work by audit.",
+       "acceptance_release_gate": "Do not qualify corrected final candidate with invalid inclusive capture signatures; migration88 separate",
+-      "next_action": "Record legitimate input availability and exact final bytes; executor UNASSIGNED",
++      "next_action": "Use FPI-02 for the implemented/released slice and its residual physical-head gates. Do not reimplement hydration, rerun the old cache correction or repeat variant-c because of stale boxes. Keep early-season history in PIPE-ROLLING-HISTORY-REPAIR and current model/admission decisions separate.",
+       "evidence": [
+         {
+           "path": "tasks/artifacts/claude-audit-fixes-2026-10-22/REPORT.md",
+@@ -4422,17 +4422,63 @@
+           "line": 1,
+           "sha256": "09c7df2a3614f7858bf207100a90fb41c6eb41b080d05693920aec3e170f531c",
+           "observed_at": "2026-10-23T13:00:20+00:00"
+-        }
+-      ],
+-      "as_of": "2026-10-23T13:00:20+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
++          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++          "line": 76,
++          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/b27a0139d90a-2026-10-22-claude-forge-model-lane-handover.md",
++          "original_path": "tasks/artifacts/cross-platform/2026-10-22-claude-forge-model-lane-handover.md",
++          "line": 7,
++          "sha256": "b27a0139d90a18964583e3cc88c855276d2cf0ff711fee2b02e8bc9409b05413",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md",
++          "original_path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
++          "line": 3,
++          "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md",
++          "original_path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
++          "line": 70,
++          "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        }
++      ],
++      "as_of": "2026-10-24T18:49:59.291059+00:00",
+       "evidence_level": "inventoried only",
+       "evidence_scope": "Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted.",
+       "evidence_provenance": "retained task lists and receipts",
+-      "dispatch_class": "proposed staged packet; parent dispatch pending",
++      "dispatch_class": "Supporting implementation/release recorded; remaining qualification held; no new dispatch",
+       "proposed_packet": "P08",
+       "proposed_owner": "Existing FORGE lead queued producer contract scope after combined candidate pinning",
+       "source_inputs": [
+         "RSO/FORGE handover F3"
++      ],
++      "artifact_audit_segment14": [
++        {
++          "at": "2026-10-24T18:49:59.291059+00:00",
++          "before_fields": {
++            "implementation": "Components exist; final-c result not located",
++            "acceptance": "held",
++            "release": "unreleased",
++            "next_action": "Record legitimate input availability and exact final bytes; executor UNASSIGNED",
++            "verification": "Four-arm reconstruction is historical current-DB evidence, not prior availability",
++            "dispatch_class": "proposed staged packet; parent dispatch pending"
++          },
++          "note": "Documentary reconciliation; prior scopes/evidence and narrower closures retained. No dispatch/external authority."
++        }
+       ]
+     },
+     {
+@@ -7546,9 +7592,25 @@
+           "line": 1,
+           "sha256": "5fd219106624bc33906dd5d6c1308db632b08b8a839e90eacaef4fcac9f6c35a",
+           "observed_at": "2026-10-23T13:00:20+00:00"
+-        }
+-      ],
+-      "as_of": "2026-10-23T13:00:20+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
++          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++          "line": 71,
++          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
++          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++          "line": 73,
++          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        }
++      ],
++      "as_of": "2026-10-24T18:49:59.291059+00:00",
+       "evidence_level": "inventoried only",
+       "evidence_scope": "Current status/receipt reconciliation; earlier scoped acceptance remains attached to its historical bytes.",
+       "evidence_provenance": "Current task list, Git objects and cited local receipts; no fresh production observation.",
+@@ -7559,6 +7621,45 @@
+         "CR-FORGE-13",
+         "RSO/FORGE handover F6",
+         "RSO/FORGE handover F9"
++      ],
++      "artifact_audit_segment14": [
++        {
++          "at": "2026-10-24T18:49:59.291059+00:00",
++          "before_fields": {
++            "children": null
++          },
++          "note": "Documentary reconciliation; prior scopes/evidence and narrower closures retained. No dispatch/external authority."
++        }
++      ],
++      "children": [
++        {
++          "child_id": "FPI-01/retained-position-toi",
++          "title": "Define retained historical position and TOI inputs for missing ledger report slices",
++          "status": "Held/unassigned; supported released reporting preserved",
++          "owner": "UNASSIGNED",
++          "depends_on": [],
++          "next_action": "Reconcile the retained-input contract for F/D slices and TOI/PP-TOI opportunity-versus-rate reporting. Keep unsupported history visibly unavailable; do not infer historical position from current metadata.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++            "line": 71
++          },
++          "approval_gate": "No schema, historical population, provider read or production writer from audit. Exact owner/custody, provenance and independent review required.",
++          "existing_work_credit": "Paired/dressed-only FP, per-head bias, expected-FP deciles and goalie Brier infrastructure already released."
++        },
++        {
++          "child_id": "FPI-01/settled-week-audit",
++          "title": "Qualify the existing settled-cohort Q3/Q4 evaluation gate",
++          "status": "Held/unassigned; adequate outcomes and exact read authority required",
++          "owner": "UNASSIGNED",
++          "depends_on": [],
++          "next_action": "Identify the actual settled dressed-only cohort and frozen baseline before the existing Q3/Q4 evaluation. Around Oct29/30 is an estimate, not an automatic schedule or permission.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++            "line": 73
++          },
++          "approval_gate": "No new reads/capture/evaluation run or automation. Existing Q3/Q4 approval and exact cohort/admission limits remain.",
++          "existing_work_credit": "Do not reimplement pairing, Brier bins or the deployed supported scoreboard."
++        }
+       ]
+     },
+     {
+@@ -7571,7 +7672,7 @@
+       "owner": "FPI-HYDRATION",
+       "reviewer": "UNASSIGNED",
+       "dependencies": "R3cache correction closed; released variant-c explicit exception does not satisfy literal calibration gate. Migration88 pending/off; no reapply or rerun without scope.",
+-      "verification": "Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments.",
++      "verification": "Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments. Later task2 gate explicitly clears the S-G column drop: 20 cohort regulars/all five strengths were compared, with a detailed 3-player date/field rerun; rows since Oct7 were identical within 1e-6. Early Sep29/Sep30/Oct3/Oct6 stale/missing rows are a separate history issue. This is a dated documentary receipt, not new production reads or every-row independent audit. R2 cache failure is historical and was superseded by the existing per-run correction/recheck.",
+       "acceptance_release_gate": "Retain original query pins; fixture/checksum, row-identity20players×5strengths and scoped tests. Tasklist frozen62-game postR19 gate demands FP/HIT/SOG bias/top-decile within ±10%; not claimed passed. ProductionQ5/Q6 and migration88 separately gated. New scoped implementation and independent review before integration; model changes require frozen-cohort bias, RMSE and forecast-binned decile calibration per head, not MAE alone. Production reads, migrations and release need separate authority.",
+       "next_action": "Do not repeat cache fix or variant-c reconstruction. Keep HIT +10.9%, BLK +11.6%, dressed-only follow-up and approved Q5/Q6 separate; no migration88 apply.",
+       "evidence": [
+@@ -7646,9 +7747,33 @@
+           "line": 1,
+           "sha256": "09c7df2a3614f7858bf207100a90fb41c6eb41b080d05693920aec3e170f531c",
+           "observed_at": "2026-10-23T13:00:20+00:00"
+-        }
+-      ],
+-      "as_of": "2026-10-23T13:00:20+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md",
++          "original_path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
++          "line": 57,
++          "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md",
++          "original_path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
++          "line": 67,
++          "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md",
++          "original_path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
++          "line": 74,
++          "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        }
++      ],
++      "as_of": "2026-10-24T18:49:59.291059+00:00",
+       "evidence_level": "inventoried only",
+       "evidence_scope": "Current status/receipt reconciliation; earlier scoped acceptance remains attached to its historical bytes.",
+       "evidence_provenance": "Current task list, Git objects and cited local receipts; no fresh production observation.",
+@@ -7660,6 +7785,15 @@
+         "CR-DOC-04",
+         "RSO/FORGE handover F3",
+         "RSO/FORGE handover F10"
++      ],
++      "artifact_audit_segment14": [
++        {
++          "at": "2026-10-24T18:49:59.291059+00:00",
++          "before_fields": {
++            "verification": "Reconciled current source task list and committed handoffs; imported verification receipts only. This auditor did not rerun application tests or inspect live deployments."
++          },
++          "note": "Documentary reconciliation; prior scopes/evidence and narrower closures retained. No dispatch/external authority."
++        }
+       ]
+     },
+     {
+@@ -8011,9 +8145,25 @@
+           "line": 1,
+           "sha256": "5cd651886914058597ad856f777ef2c4227c7c03e92b7029bc250f74534b92d0",
+           "observed_at": "2026-10-23T13:00:20+00:00"
+-        }
+-      ],
+-      "as_of": "2026-10-23T16:12:55.853897+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
++          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++          "line": 107,
++          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
++          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++          "line": 108,
++          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        }
++      ],
++      "as_of": "2026-10-24T18:49:59.291059+00:00",
+       "evidence_level": "inventoried only",
+       "evidence_scope": "Current status/receipt reconciliation; earlier scoped acceptance remains attached to its historical bytes.",
+       "evidence_provenance": "Current task list, Git objects and cited local receipts; no fresh production observation.",
+@@ -8023,7 +8173,48 @@
+         "CR-DOC-01",
+         "RSO/FORGE handover F9"
+       ],
+-      "custody_note": "TJ transferred listed model/ledger/RSO custody to Codex; prior Claude implementation attribution remains historical. Release owner coordinates any future exact lease; no new editing permission from this status update."
++      "custody_note": "TJ transferred listed model/ledger/RSO custody to Codex; prior Claude implementation attribution remains historical. Release owner coordinates any future exact lease; no new editing permission from this status update.",
++      "artifact_audit_segment14": [
++        {
++          "at": "2026-10-24T18:49:59.291059+00:00",
++          "before_fields": {
++            "children": null
++          },
++          "note": "Documentary reconciliation; prior scopes/evidence and narrower closures retained. No dispatch/external authority."
++        }
++      ],
++      "children": [
++        {
++          "child_id": "FPI-06/closing-market-evaluation",
++          "title": "Reconcile closing-line provenance and model-versus-market Brier evidence",
++          "status": "Partial code/schema credit retained; outcome qualification held",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "FPI-01"
++          ],
++          "next_action": "Reconcile exact market writer/flag/reader release compatibility and actual closing-price/outcome provenance before claiming model-versus-market Brier quality.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++            "line": 107
++          },
++          "approval_gate": "No migration99 reapply, fresh odds/provider/production reads, market-source rollout or fitted de-vig change. Preserve assumption labels and current rights gates.",
++          "existing_work_credit": "6.1/6.2 outputs shipped; later6.3 code/flag and migration99 already recorded implemented/applied."
++        },
++        {
++          "child_id": "FPI-06/team-total-blend-decision",
++          "title": "Retain the separate owner decision on blending implied team totals",
++          "status": "Parked owner decision; no implementation dispatch",
++          "owner": "UNASSIGNED",
++          "depends_on": [],
++          "next_action": "Present the surviving need and evidence for or against a team-goal blend with de-vigged implied totals. Any selected method needs its own scoped contract and evaluation; do not fold it into the completed probability flags.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++            "line": 108
++          },
++          "approval_gate": "Exact owner model/publication decision before a new blend; no fitting, provider calls or production activation.",
++          "existing_work_credit": "Completed probability/de-vig outputs are retained; neither deployment nor this child validates a blended team-goal model."
++        }
++      ]
+     },
+     {
+       "taskID": "FPI-07",
+@@ -8250,9 +8441,17 @@
+           "line": 1,
+           "sha256": "e5e12382bd3bd8d70884a4606c83ab21f2346cc17604b53f188dd6c74d76ec8b",
+           "observed_at": "2026-10-23T13:00:20+00:00"
+-        }
+-      ],
+-      "as_of": "2026-10-23T13:00:20+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
++          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++          "line": 128,
++          "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        }
++      ],
++      "as_of": "2026-10-24T18:49:59.291059+00:00",
+       "evidence_level": "inventoried only",
+       "evidence_scope": "Current status/receipt reconciliation; earlier scoped acceptance remains attached to its historical bytes.",
+       "evidence_provenance": "Current task list, Git objects and cited local receipts; no fresh production observation.",
+@@ -8265,6 +8464,61 @@
+         "RSO/FORGE handover F3",
+         "RSO/FORGE handover F4",
+         "RSO/FORGE handover F7"
++      ],
++      "artifact_audit_segment14": [
++        {
++          "at": "2026-10-24T18:49:59.291059+00:00",
++          "before_fields": {
++            "children": null
++          },
++          "note": "Documentary reconciliation; prior scopes/evidence and narrower closures retained. No dispatch/external authority."
++        }
++      ],
++      "children": [
++        {
++          "child_id": "FPI-09/rink-physical-context",
++          "title": "Retain the later rink-adjusted hits/blocks research decision",
++          "status": "Parked/unassigned; no active experiment",
++          "owner": "UNASSIGNED",
++          "depends_on": [],
++          "next_action": "Reconcile later accepted source and attribution evidence before proposing rink-specific physical effects; avoid duplicate mean/uncertainty adjustments.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++            "line": 128
++          },
++          "approval_gate": "Parked research/owner decision only. No new formula, fit, capture, provider query or publication; any future scope needs separate attribution and frozen-cohort qualification.",
++          "existing_work_credit": "Variant-g was not cleared or shipped. Preserve the current single-effect retained-capture scope and all earlier model/admission holds."
++        },
++        {
++          "child_id": "FPI-09/aging-rookie-priors",
++          "title": "Retain the later aging-curve and rookie-prior decision",
++          "status": "Parked/unassigned; no implementation",
++          "owner": "UNASSIGNED",
++          "depends_on": [],
++          "next_action": "Reconcile the needed population/history and ownership of aging/rookie priors before any future proposal. Preserve accepted F/D priors and do not treat variant-g evidence as this evaluation.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++            "line": 128
++          },
++          "approval_gate": "Parked research/owner decision only. No new formula, fit, capture, provider query or publication; any future scope needs separate attribution and frozen-cohort qualification.",
++          "existing_work_credit": "Variant-g was not cleared or shipped. Preserve the current single-effect retained-capture scope and all earlier model/admission holds."
++        },
++        {
++          "child_id": "FPI-09/news-start-mapping",
++          "title": "Retain the later news-tier to starter-probability research decision",
++          "status": "Parked/unassigned; source presentation is not predictive qualification",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "NEWS-SOURCE-PRESENTATION"
++          ],
++          "next_action": "Require historical label timing, identity, outcome and rights provenance before any proposal to fit label-to-P(start) mapping; distinguish existing news presentation from a predictive model.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md",
++            "line": 128
++          },
++          "approval_gate": "Parked research/owner decision only. No new formula, fit, capture, provider query or publication; any future scope needs separate attribution and frozen-cohort qualification.",
++          "existing_work_credit": "Variant-g was not cleared or shipped. Preserve the current single-effect retained-capture scope and all earlier model/admission holds."
++        }
+       ]
+     },
+     {
+@@ -8818,7 +9072,7 @@
+       "owner": "LEDGER",
+       "reviewer": "UNASSIGNED",
+       "dependencies": "Parent dispatch and exact file lease; preserve release and Game Grid work",
+-      "verification": "Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed.",
++      "verification": "Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority.",
+       "acceptance_release_gate": "Exact scoped tests and independent review before integration; no production calls, schema, credentials or deployment authority",
+       "next_action": "Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The now fully read debug checklist closes SHA under July13 NEW7 and performance NEW8/9, with September4 official-provider SHA precedence including zero; only actual/custom-unmapped SHA retains nonnegative null-safe derivation. Preserve the owner-approved missing-relative-baseline exception and optional/evaluated virtualization, hashing, chunking and worker proposals; no false30%gain or mandatory performance rewrite. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules. Four historical requested resolver follow-ups and the name-keyed assignment/provenance risk are retained once under proposed SITE-DRAFT-CSV-RESOLVER; the existing summary is not wholly absent. Draft Ranker July17 personal authenticated rollout and July30 Phase8 retirement retain closure, while older July15 staff-only manifest paragraphs are historical. No secondary/public rollout, model change, old migration/security replay or new worktree from source runbooks. The remaining Ranker package is now content-covered. Correct only documentary precedence: early technical-contract authenticated RPC/write language yields to later service-only mutation/API and owner-read-only receipts; per-ranking/player placement language yields to20260715034601 single-active-per-ranking hardening. Preserve pre-baseline archive references. Keep repository-record.md as a noncanonical historical variant, not an exact-hash duplicate or current usable-ADP/source-path authority. Product blueprint direct-edit community-weight, mature confidence/XLSX/segmentation and broad-source ideas are narrowed by approved pinned launch decisions and explicit Phase8 retirement; do not revive them. No old CLI/review/traffic/audit blocker, deprecated source count or early roadmap heading is a fresh open task.",
+       "evidence": [
+@@ -9369,9 +9623,49 @@
+           "sha256": "4b387ed6ffe2d5ffd2da8ef879c1647ad84019f2894958673dd8e347ca0fb97b",
+           "observed_at": "2026-10-24T18:33:56.621280+00:00",
+           "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+-        }
+-      ],
+-      "as_of": "2026-10-24T18:33:56.621280+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/4f015e185732-FORGE_EXPLAINED.md",
++          "original_path": "tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md",
++          "line": 210,
++          "sha256": "4f015e18573239112cfe2e7ef3be6539adeb6aff8915d0a1d2d231121f55031c",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md",
++          "original_path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md",
++          "line": 106,
++          "sha256": "cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md",
++          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
++          "line": 56,
++          "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md",
++          "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
++          "line": 196,
++          "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1c5b086e4ade-FORGE_ECOSYSTEM_ELI5_AUDIT.md",
++          "original_path": "tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md",
++          "line": 92,
++          "sha256": "1c5b086e4ade172656c0aa9eb301f319188fec725193d168f2ad7855e8cf979d",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        }
++      ],
++      "as_of": "2026-10-24T18:49:59.291059+00:00",
+       "evidence_level": "source inspected",
+       "evidence_scope": "Only the named functions/files in the source-input reconciliation below; no whole-area health claim",
+       "evidence_provenance": "Current local files and dated review receipts",
+@@ -9484,6 +9778,32 @@
+             "verification": "Current source and retained receipts inspected; no application tests rerun"
+           },
+           "note": "Documentary reconciliation; prior scopes/evidence and narrower closures retained. No dispatch/external authority."
++        }
++      ],
++      "artifact_audit_segment14": [
++        {
++          "at": "2026-10-24T18:49:59.291059+00:00",
++          "before_fields": {
++            "children": null,
++            "verification": "Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed."
++          },
++          "note": "Documentary reconciliation; prior scopes/evidence and narrower closures retained. No dispatch/external authority."
++        }
++      ],
++      "children": [
++        {
++          "child_id": "REPO-DOCUMENTATION/forge-refresh-itinerary",
++          "title": "Reconcile the old full-refresh itinerary against approved bounded operating contracts",
++          "status": "Open documentary follow-up; no endpoint execution",
++          "owner": "UNASSIGNED",
++          "depends_on": [],
++          "next_action": "Correct or clearly mark the obsolete all-date/fullRefresh RPC-truncate itinerary, old page/schema authority and unqualified fallback guidance. Link current bounded README/runner/admission contracts without weakening existing full-refresh protections.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md",
++            "line": 210
++          },
++          "approval_gate": "Documentation-only under current exact file custody; no cron, SQL, refresh, truncate, provider call, or new remote verification.",
++          "existing_work_credit": "Existing full-refresh safety and writer fixes remain completed; stored instructions are not new authority."
+         }
+       ]
+     },
+@@ -13049,7 +13369,7 @@
+       "owner": "UNASSIGNED",
+       "reviewer": "UNASSIGNED",
+       "dependencies": "Source29/30; S18 release options; clean artifact audit and exact model/version/feature identity; separate paid/research rights.",
+-      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
++      "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test. Full living-audit 6.0/14.0 retains historical gradient-boosted training, approved-artifact scoring/calibration and downstream wiring credit. It does not establish a current leakage-clean champion, registry choice or daily scheduling decision; those later serving gates remain distinct.",
+       "acceptance_release_gate": "Separate registry read, artifact promotion, model execution, schedule/deployment and historical publication authority. Parked model work stays parked.",
+       "next_action": "Reconcile the retained serving/champion and daily-operation disposition against newer release receipts; retain a hold or approved manual cadence unless the owner selects an exact new scope. Do not reimplement the completed local gate or promote/fit a model.",
+       "evidence": [
+@@ -13076,9 +13396,25 @@
+           "line": 536,
+           "sha256": "e2a75a530dbe575ad12590a415aa5901a67848316f975c730caa228b9282d406",
+           "observed_at": "2026-10-24T15:01:49.630478+00:00"
+-        }
+-      ],
+-      "as_of": "2026-10-24T15:01:49.630478+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md",
++          "original_path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md",
++          "line": 79,
++          "sha256": "cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md",
++          "original_path": "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md",
++          "line": 104,
++          "sha256": "cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4",
++          "observed_at": "2026-10-24T18:49:59.291059+00:00",
++          "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
++        }
++      ],
++      "as_of": "2026-10-24T18:49:59.291059+00:00",
+       "evidence_level": "source gate inventoried; current outcome unverified",
+       "evidence_scope": "Only the cited unresolved scope is carried forward. Preserve completed children, parked decisions and later narrower acceptance. No current defect or exposure is inferred from an old unchecked box.",
+       "evidence_provenance": "Current source lists, dated audit/release receipts and exact local hashes.",
+@@ -13088,6 +13424,15 @@
+         "xG NEW30",
+         "C0172",
+         "MS41-088"
++      ],
++      "artifact_audit_segment14": [
++        {
++          "at": "2026-10-24T18:49:59.291059+00:00",
++          "before_fields": {
++            "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test."
++          },
++          "note": "Documentary reconciliation; prior scopes/evidence and narrower closures retained. No dispatch/external authority."
++        }
+       ]
+     },
+     {
+@@ -18829,12 +19174,12 @@
+     ],
+     "all_legacy_ids_mapped": true,
+     "task_rows_before": 188,
+-    "status": "Segment13:211 IDs; retained Forge gates and later limited status receipts reconciled. Whole content audit unfinished.",
++    "status": "Segment14:211 IDs;20 readable children; current Forge residuals and narrower closures reconciled. Whole content audit unfinished.",
+     "archive": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/archive/MASTER-TASKLIST-2026-10-20.before-2026-10-23.md",
+     "index_owner": "Parent retains Git/index/release; no Git mutation authorized by this update",
+     "roster": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/CHECKPOINT-INVENTORY.json",
+-    "after_sha256": "415d918354a7f40ceb6410aa732e8feebd6bc8c188631e282f49f128bb2f0b81",
+-    "completed_at": "2026-10-24T18:33:56.621280+00:00",
++    "after_sha256": "d6b5da4dc78ba3cf83c088603cfb796cb565bcdf44e1e187c1ba30de8410bac1",
++    "completed_at": "2026-10-24T18:49:59.291059+00:00",
+     "git_status": "Local documentation only; release owner holds index, no ledger commit/push",
+     "reconciliation_history": {
+       "as_of": "2026-10-24T13:54:28.119238+00:00",
+@@ -19319,5 +19664,21 @@
+     "visible_children_added": 2,
+     "coverage": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/COVERAGE.json",
+     "whole_tree_content_complete": false
++  },
++  "artifact_audit_segment14_20261024": {
++    "at": "2026-10-24T18:49:59.291059+00:00",
++    "added_ids": [],
++    "changed_existing_ids": [
++      "FPI-01",
++      "FPI-06",
++      "FPI-09",
++      "REPO-DOCUMENTATION",
++      "FPI-02",
++      "FORGE-HYDRATION-HB",
++      "XG-SERVING-DISPOSITION"
++    ],
++    "visible_children_added": 8,
++    "coverage": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/COVERAGE.json",
++    "whole_tree_content_complete": false
+   }
+ }

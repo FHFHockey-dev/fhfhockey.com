@@ -1,0 +1,39 @@
+{
+  "source_head": "431ffcd673b42ad4a149dc3f9dfb03005dbec75a",
+  "files": {
+    "web/lib/projections/stages/skater-stage.ts": {
+      "canonical": "f0f60f99700bffe048391039275652431bfd6399d8cfa29b8ae66ea3b351d9c6",
+      "proposed": "6adc2f970899251775587c08c906a8121eb8f38ed3394549abf2bc9774086b56"
+    },
+    "web/lib/projections/run-forge-projections.ts": {
+      "canonical": "d6960701668237b5da503bc3b16953f8106644d5d03f90c6907531f88c17f866",
+      "proposed": "cb4cdbc68045dba3521405c9a3f832f894420af94ddf7e60c4ae0548eb81416e"
+    },
+    "web/lib/projections/apiHelpers.ts": {
+      "canonical": "9e2edec0a42369f0198bf2d1f91d195288e198660879cbb0c4a7ec1ed14c1972",
+      "proposed": "b5ce713fac1e74cc64b8483ef9a9e21ba39cfa9e29dc50636c5a769b62ebcb41"
+    },
+    "web/pages/api/v1/forge/players.ts": {
+      "canonical": "e1b977ec3b31ae5c11ac909ba33cf2bb85dc6eea867694e65f0c2eacb5beb8f9",
+      "proposed": "9cef7a65971bbc998c51f81f40646720c3a062004a9c25f709d080ca0adea26e"
+    },
+    "web/pages/api/v1/forge/goalies.ts": {
+      "canonical": "68e6308b775a18d4619cce2d14be42e428d23d5f272fb8b9558445b8db69c20e",
+      "proposed": "b76b011e1308b6445280e42bde087e90cac6496bcbd61ab9b32605dbd47ca3e7"
+    },
+    "web/pages/api/v1/projections/players.ts": {
+      "canonical": "4a4118e984d3c8179ccd34d2b873bdbff89f2d7ee4e08cfb87a8f4b9fcfb31dd",
+      "proposed": "e7fbac9f0984741b5452c88e801fdf2bf69876e3cb0cfdf95c3025831bda2725"
+    },
+    "web/pages/api/v1/projections/goalies.ts": {
+      "canonical": "062dbe50f7f77bb7849d4f9b59c83e392ace53888a10acabc8cc02b3f475df83",
+      "proposed": "efd285f1d0f41b3b66e63ac2a1d78bb7067d9a0e9efa0e8811c3ef4f49ded00c"
+    },
+    "web/pages/api/v1/projections/teams.ts": {
+      "canonical": "1c9f118fcbed0732dea41a8bebbe6b8411184b1051ab65af64379903d9351dcc",
+      "proposed": "9bdc6e1d928a53be5bd42a50f1cf7003e52099ab5282c68af851fa3c41594a99"
+    }
+  },
+  "patch_sha256": "21ec95351084069548f15413d3224fdf44af3d99a30aebd771e02734a08b20cd",
+  "canonical_edits": 0
+}

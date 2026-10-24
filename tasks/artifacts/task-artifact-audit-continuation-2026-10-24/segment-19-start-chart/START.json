@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-24T19:47:34.806918+00:00",
+  "scope": "Single-worker StartChart documentary contracts/tasklists/decisions; no app/tests/Git/production/newworkers.",
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "95388d86ad5a39a8aeb0ca290c3c4c2375d6fb79553d64ee0ac00adf32aa1e0d",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "a6694debc718574d9d3457601b66172972b4a85f1b9ad64d43bd03361ed17b51",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "536cc05b16b7683b5195b7ad3d7e85616a733fbe3d8414e4cfb128887c7c7036"
+  },
+  "baseline_ids": 214,
+  "baseline_evidence": 1201,
+  "baseline_children": 48,
+  "library_version": 17,
+  "previous_continuation": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-18-goalie-forge/CONTINUATION.json"
+}

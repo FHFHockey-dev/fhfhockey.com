@@ -1,0 +1,82 @@
+{
+  "at": "2026-10-24T23:31:36.671262+00:00",
+  "projects": [
+    {
+      "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "name": "fhfhockey",
+      "rootDirectory": "web",
+      "framework": "nextjs",
+      "commandForIgnoringBuildStep": "",
+      "buildCommand": "npm run build",
+      "installCommand": "npm install",
+      "nodeVersion": "22.x",
+      "previewDeploymentsDisabled": true,
+      "updatedAt": 1792708232142,
+      "link": {
+        "type": "github",
+        "org": "FHFHockey-dev",
+        "repo": "fhfhockey.com",
+        "productionBranch": "master"
+      }
+    },
+    {
+      "id": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+      "name": "functions-fhfhockey",
+      "rootDirectory": "functions",
+      "framework": null,
+      "commandForIgnoringBuildStep": null,
+      "buildCommand": null,
+      "installCommand": null,
+      "nodeVersion": "20.x",
+      "previewDeploymentsDisabled": true,
+      "updatedAt": 1792707872475,
+      "link": {
+        "type": "github",
+        "org": "FHFHockey-dev",
+        "repo": "fhfhockey.com",
+        "productionBranch": "master"
+      }
+    },
+    {
+      "id": "prj_gG8SHX7C5GbCDJoind7trh9bj6dK",
+      "name": "cms-fhfhockey",
+      "rootDirectory": "cms",
+      "framework": "sanity",
+      "commandForIgnoringBuildStep": "",
+      "buildCommand": "npm run build",
+      "installCommand": "npm install",
+      "nodeVersion": "20.x",
+      "previewDeploymentsDisabled": true,
+      "updatedAt": 1792707872316,
+      "link": {
+        "type": "github",
+        "org": "FHFHockey-dev",
+        "repo": "fhfhockey.com",
+        "productionBranch": "master"
+      }
+    },
+    {
+      "id": "prj_3X6goi9DxqUnD0sHChwEwaRakquG",
+      "name": "fhfhockey.com",
+      "rootDirectory": null,
+      "framework": null,
+      "commandForIgnoringBuildStep": null,
+      "buildCommand": null,
+      "installCommand": null,
+      "nodeVersion": "22.x",
+      "previewDeploymentsDisabled": true,
+      "updatedAt": 1792707872197,
+      "link": {
+        "type": "github",
+        "org": "FHFHockey-dev",
+        "repo": "fhfhockey.com",
+        "productionBranch": "master"
+      }
+    }
+  ],
+  "remote_refs": [
+    "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd\trefs/heads/master",
+    "2a5092d37cb863ec92a2a4e609999cf226bfa4a5\trefs/heads/octoberBranch"
+  ],
+  "operation": "Four sequential project metadata GETs and one read-only Git remote-tip lookup; no env values printed, no settings/ref changes"
+}

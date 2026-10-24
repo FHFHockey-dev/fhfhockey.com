@@ -1,0 +1,106 @@
+{
+  "observed_at": "2026-10-24T20:54:46.812877+00:00",
+  "operation": "At most four sequential GET project metadata reads; non-secret whitelist only; no settings changed",
+  "projects": [
+    {
+      "id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+      "name": "fhfhockey",
+      "accountId": "team_KVFicHhQJARTbO6wRD2x6jpq",
+      "rootDirectory": "web",
+      "framework": "nextjs",
+      "commandForIgnoringBuildStep": "",
+      "buildCommand": "npm run build",
+      "installCommand": "npm install",
+      "nodeVersion": "22.x",
+      "previewDeploymentsDisabled": true,
+      "updatedAt": 1792708232142,
+      "link": {
+        "type": "github",
+        "repo": "fhfhockey.com",
+        "org": "FHFHockey-dev",
+        "productionBranch": "master",
+        "sourceless": true,
+        "createdAt": 1657082170931,
+        "updatedAt": 1657082170931
+      },
+      "deployHookCount": 0,
+      "deployHookRefs": []
+    },
+    {
+      "id": "prj_q9tnoe1pF6WAe9zPcBzBLBPZx5mQ",
+      "name": "functions-fhfhockey",
+      "accountId": "team_KVFicHhQJARTbO6wRD2x6jpq",
+      "rootDirectory": "functions",
+      "framework": null,
+      "commandForIgnoringBuildStep": null,
+      "buildCommand": null,
+      "installCommand": null,
+      "nodeVersion": "20.x",
+      "previewDeploymentsDisabled": true,
+      "updatedAt": 1792707872475,
+      "link": {
+        "type": "github",
+        "repo": "fhfhockey.com",
+        "org": "FHFHockey-dev",
+        "productionBranch": "master",
+        "createdAt": 1664352646757,
+        "updatedAt": 1664352646757
+      },
+      "deployHookCount": 2,
+      "deployHookRefs": [
+        "master",
+        "master"
+      ]
+    },
+    {
+      "id": "prj_gG8SHX7C5GbCDJoind7trh9bj6dK",
+      "name": "cms-fhfhockey",
+      "accountId": "team_KVFicHhQJARTbO6wRD2x6jpq",
+      "rootDirectory": "cms",
+      "framework": "sanity",
+      "commandForIgnoringBuildStep": "",
+      "buildCommand": "npm run build",
+      "installCommand": "npm install",
+      "nodeVersion": "20.x",
+      "previewDeploymentsDisabled": true,
+      "updatedAt": 1792707872316,
+      "link": {
+        "type": "github",
+        "repo": "fhfhockey.com",
+        "org": "FHFHockey-dev",
+        "productionBranch": "master",
+        "sourceless": true,
+        "createdAt": 1657084709971,
+        "updatedAt": 1657084709971
+      },
+      "deployHookCount": 0,
+      "deployHookRefs": []
+    },
+    {
+      "id": "prj_3X6goi9DxqUnD0sHChwEwaRakquG",
+      "name": "fhfhockey.com",
+      "accountId": "team_KVFicHhQJARTbO6wRD2x6jpq",
+      "rootDirectory": null,
+      "framework": null,
+      "commandForIgnoringBuildStep": null,
+      "buildCommand": null,
+      "installCommand": null,
+      "nodeVersion": "22.x",
+      "previewDeploymentsDisabled": true,
+      "gitProviderOptions": {
+        "createDeployments": "enabled"
+      },
+      "updatedAt": 1792707872197,
+      "link": {
+        "type": "github",
+        "repo": "fhfhockey.com",
+        "org": "FHFHockey-dev",
+        "productionBranch": "master",
+        "createdAt": 1758837688881,
+        "updatedAt": 1758837688881
+      },
+      "deployHookCount": 0,
+      "deployHookRefs": []
+    }
+  ]
+}

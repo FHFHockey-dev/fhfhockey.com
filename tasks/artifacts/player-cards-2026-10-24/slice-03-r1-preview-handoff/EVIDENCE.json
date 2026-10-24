@@ -1,0 +1,156 @@
+{
+  "status": "ExactacceptedR1 localpreviewhandedoff; backgroundlauncher independenceverified; post-turncheckpending",
+  "acceptedReview": {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-review/REVIEW.md",
+    "size_bytes": 6840,
+    "sha256": "dbc948491401f7ab9c1f5e89201e39d6d05040f7f38a3f567c9ba29bf7fa2fb8"
+  },
+  "reviewedArtifact": {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+    "size_bytes": 318626,
+    "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+  },
+  "servedArtifact": {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/preview.html",
+    "size_bytes": 318626,
+    "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+  },
+  "artifacts": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/HANDOFF.md",
+      "size_bytes": 4681,
+      "sha256": "5d7a33e87c3acc8ea973f9a895f5201d54d7737e6d46b367fb38dd1397a8a715"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/OWNERSHIP.json",
+      "size_bytes": 1902,
+      "sha256": "5477e3ea3979fc7679c0e8ebeba46c8870d8d1df4a6ddd854cae47f607d3507a"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/initial-readback.json",
+      "size_bytes": 281,
+      "sha256": "77b4a6728c7a5fd37ec8d7debd496e722c9325a6080a92d5d2d90a51d1c89e12"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/initial-runtime.json",
+      "size_bytes": 585,
+      "sha256": "e8e2ccc2017557c2640d39aa4f59c7722171ba18b6591cce7b8b3d3b08783bed"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/initial-startup.json",
+      "size_bytes": 235,
+      "sha256": "85bcbb28b4b7148fcf928356031e91a7bc46d5728181672cf9ef30c56916ebc9"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/persistent-process.json",
+      "size_bytes": 594,
+      "sha256": "ce244bcfaa0e4d41bdce05dd3f2ae5ead9eeed5de77ca2d5de5f2a3607f5cb8b"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/persistent-readback.json",
+      "size_bytes": 370,
+      "sha256": "f84b93e0b76c253971d4c17173c7fe6d3651fac098b4de99b4a048f5e6d285ad"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/persistent-startup.json",
+      "size_bytes": 571,
+      "sha256": "658da534fb4862fe816b4baaab8b8ff5e6cd31053c22245c7811c147a6bccad1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/preview.html",
+      "size_bytes": 318626,
+      "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/readback.json",
+      "size_bytes": 281,
+      "sha256": "77b4a6728c7a5fd37ec8d7debd496e722c9325a6080a92d5d2d90a51d1c89e12"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/runtime.json",
+      "size_bytes": 1295,
+      "sha256": "db3d4c067039770828743e1eb4ec611fa6ac1c9f9889d88ff34df4c47fe1fbaa"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/serve-preview.mjs",
+      "size_bytes": 770,
+      "sha256": "cb6d1810a291af5a8f6a5a206bd28ba6d274b36bebea421f6310fc596c21df92"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/start-persistent-preview.py",
+      "size_bytes": 2462,
+      "sha256": "8332b6ffa77d8b9db320a289af147ef7da0f173a3fc36a7d31f5212bdaee18f1"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/start-reviewed-preview.py",
+      "size_bytes": 2127,
+      "sha256": "233dadab618d285c26399e1771cebe495393fbb5b9653031ce410f58c48f6c27"
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/startup.json",
+      "size_bytes": 235,
+      "sha256": "85bcbb28b4b7148fcf928356031e91a7bc46d5728181672cf9ef30c56916ebc9"
+    }
+  ],
+  "reviewedPins": {
+    "total": 161,
+    "unchanged": 161,
+    "changed": []
+  },
+  "runtime": {
+    "pid": 81978,
+    "execSession": null,
+    "url": "http://127.0.0.1:3125/player-cards",
+    "bind": "127.0.0.1:3125",
+    "script": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-r1-preview-handoff/serve-preview.mjs",
+    "sourceArtifact": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/preview.html",
+    "bytes": 318626,
+    "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5",
+    "previousListenerAbsent": true,
+    "processesStopped": 0,
+    "exactReviewedR1Served": true,
+    "syntheticOnly": true,
+    "reviewedPinsUnchanged": 161,
+    "processWorkflow": "subprocess.Popen(start_new_session=True), stdinDEVNULL, stdout/stderrserver.log",
+    "launcherExited": true,
+    "parentPid": 1,
+    "processGroup": 81978,
+    "tty": "??",
+    "handoffHistory": [
+      {
+        "event": "Portabsent; exactR1foregroundstarted",
+        "pid": 81671,
+        "execSession": 93754
+      },
+      {
+        "event": "Parentpersistentlifecycleinstruction; onlyverifiedown81671replaced",
+        "pid": 81978,
+        "execSession": null
+      }
+    ],
+    "automaticRestart": false,
+    "systemStartupChanges": false,
+    "lifecycleLimit": "Separatepost-launchchecks passed. Post-turn survival notyetobserved; coordinator requested onecheckafterfinal. Host/environmenttermination stopsprocess."
+  },
+  "postLauncherReadback": {
+    "pid": 81978,
+    "route": "http://127.0.0.1:3125/player-cards",
+    "status": 200,
+    "bytes": 318626,
+    "sha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5",
+    "equalsReviewedR1": true,
+    "syntheticLabelsPresent": true,
+    "afterLauncherExit": true,
+    "workerLocalGETsThisCheck": 1,
+    "workerLocalGETsThisHandoff": 2,
+    "productionRequests": 0
+  },
+  "sourceEdits": 0,
+  "newRenderOrBuild": 0,
+  "visualChanges": 0,
+  "browserRuns": 0,
+  "productionRequests": 0,
+  "LibraryActions": 0,
+  "newWorkers": 0,
+  "lifecycleLimit": "Post-launcherexit checks passed; survival after turncompletion not yetobserved. No automatic restart or system startup configuration."
+}

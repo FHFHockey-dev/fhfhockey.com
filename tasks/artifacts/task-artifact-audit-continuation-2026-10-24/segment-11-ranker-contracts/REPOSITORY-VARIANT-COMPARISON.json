@@ -1,0 +1,435 @@
+{
+  "representative": {
+    "path": "tasks/TASKS/draft-ranker/repository-audit.md",
+    "sha256": "d25fd2a655dbf2c5763ed408b2d9faa3ae97a0f8fd8c9be55747ee2c639f3da3",
+    "direct_full_read": true
+  },
+  "variant": {
+    "path": "tasks/TASKS/draft-ranker/repository-record.md",
+    "sha256": "e240b9dbcb30e0052b9d7f32f73e839b7301bb992a88da02164421382125c5ff"
+  },
+  "opcodes": [
+    {
+      "operation": "replace",
+      "representative_range": [
+        1,
+        26
+      ],
+      "variant_range": [
+        1,
+        16
+      ]
+    },
+    {
+      "operation": "equal",
+      "representative_range": [
+        27,
+        27
+      ],
+      "variant_range": [
+        17,
+        17
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        28,
+        33
+      ],
+      "variant_range": [
+        18,
+        21
+      ]
+    },
+    {
+      "operation": "equal",
+      "representative_range": [
+        34,
+        34
+      ],
+      "variant_range": [
+        22,
+        22
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        35,
+        54
+      ],
+      "variant_range": [
+        23,
+        38
+      ]
+    },
+    {
+      "operation": "equal",
+      "representative_range": [
+        55,
+        55
+      ],
+      "variant_range": [
+        39,
+        39
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        56,
+        70
+      ],
+      "variant_range": [
+        40,
+        49
+      ]
+    },
+    {
+      "operation": "equal",
+      "representative_range": [
+        71,
+        71
+      ],
+      "variant_range": [
+        50,
+        50
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        72,
+        80
+      ],
+      "variant_range": [
+        51,
+        57
+      ]
+    },
+    {
+      "operation": "equal",
+      "representative_range": [
+        81,
+        81
+      ],
+      "variant_range": [
+        58,
+        58
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        82,
+        102
+      ],
+      "variant_range": [
+        59,
+        73
+      ]
+    },
+    {
+      "operation": "equal",
+      "representative_range": [
+        103,
+        103
+      ],
+      "variant_range": [
+        74,
+        74
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        104,
+        116
+      ],
+      "variant_range": [
+        75,
+        83
+      ]
+    },
+    {
+      "operation": "equal",
+      "representative_range": [
+        117,
+        117
+      ],
+      "variant_range": [
+        84,
+        84
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        118,
+        123
+      ],
+      "variant_range": [
+        85,
+        87
+      ]
+    },
+    {
+      "operation": "equal",
+      "representative_range": [
+        124,
+        124
+      ],
+      "variant_range": [
+        88,
+        88
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        125,
+        127
+      ],
+      "variant_range": [
+        89,
+        89
+      ]
+    },
+    {
+      "operation": "equal",
+      "representative_range": [
+        128,
+        128
+      ],
+      "variant_range": [
+        90,
+        90
+      ]
+    },
+    {
+      "operation": "delete",
+      "representative_range": [
+        129,
+        129
+      ],
+      "variant_range": [
+        91,
+        90
+      ]
+    },
+    {
+      "operation": "equal",
+      "representative_range": [
+        130,
+        130
+      ],
+      "variant_range": [
+        91,
+        91
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        131,
+        155
+      ],
+      "variant_range": [
+        92,
+        109
+      ]
+    },
+    {
+      "operation": "equal",
+      "representative_range": [
+        156,
+        156
+      ],
+      "variant_range": [
+        110,
+        110
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        157,
+        162
+      ],
+      "variant_range": [
+        111,
+        114
+      ]
+    },
+    {
+      "operation": "equal",
+      "representative_range": [
+        163,
+        163
+      ],
+      "variant_range": [
+        115,
+        115
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        164,
+        216
+      ],
+      "variant_range": [
+        116,
+        160
+      ]
+    }
+  ],
+  "different_regions": [
+    {
+      "operation": "replace",
+      "representative_range": [
+        1,
+        26
+      ],
+      "variant_range": [
+        1,
+        16
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        28,
+        33
+      ],
+      "variant_range": [
+        18,
+        21
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        35,
+        54
+      ],
+      "variant_range": [
+        23,
+        38
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        56,
+        70
+      ],
+      "variant_range": [
+        40,
+        49
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        72,
+        80
+      ],
+      "variant_range": [
+        51,
+        57
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        82,
+        102
+      ],
+      "variant_range": [
+        59,
+        73
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        104,
+        116
+      ],
+      "variant_range": [
+        75,
+        83
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        118,
+        123
+      ],
+      "variant_range": [
+        85,
+        87
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        125,
+        127
+      ],
+      "variant_range": [
+        89,
+        89
+      ]
+    },
+    {
+      "operation": "delete",
+      "representative_range": [
+        129,
+        129
+      ],
+      "variant_range": [
+        91,
+        90
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        131,
+        155
+      ],
+      "variant_range": [
+        92,
+        109
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        157,
+        162
+      ],
+      "variant_range": [
+        111,
+        114
+      ]
+    },
+    {
+      "operation": "replace",
+      "representative_range": [
+        164,
+        216
+      ],
+      "variant_range": [
+        116,
+        160
+      ]
+    }
+  ],
+  "coverage_method": "Read representative fully, verify every common line exact, then display/read every variant insert/replace region. Deletions remove already-read text. No exact-hash duplicate claim; inherits documentary scope only.",
+  "scope": "Noncanonical historical semantic variant retained; no current code/hosted/authority inference."
+}

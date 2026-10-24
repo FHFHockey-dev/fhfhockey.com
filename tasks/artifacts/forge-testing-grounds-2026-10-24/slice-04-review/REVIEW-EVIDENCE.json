@@ -1,0 +1,61 @@
+{
+  "verdict": "CHANGES REQUIRED",
+  "scope": "Frozen slice04 source/DOM preview; no visual acceptance",
+  "findings": [
+    {
+      "id": "S04-R1",
+      "priority": "P2",
+      "file": "web/lib/forge-testing-grounds/preview/TestingGroundsPreview.tsx",
+      "line": 43,
+      "summary": "One-decimal rounding displays100.0%complete with pending work",
+      "reproducer": {
+        "eligible": 10000,
+        "successful": 9999,
+        "skipped": 0,
+        "failed": 0,
+        "pending": 1,
+        "actualLabel": "100.0% complete",
+        "expected": "Do not display100%completion while completed<eligible",
+        "observedBarValue": 9999,
+        "observedBarMax": 10000
+      }
+    }
+  ],
+  "pinChecks": {
+    "recorded": 82,
+    "directMatches": 79,
+    "acceptedHistoricalRunnerSupersessions": 3,
+    "unexplainedMismatches": 0,
+    "startEndDrift": 0
+  },
+  "tests": {
+    "ownerPassed": 8,
+    "independentPassed": 5,
+    "independentFailed": 1,
+    "totalPassed": 13,
+    "totalFailed": 1,
+    "runs": 1
+  },
+  "scopedTypeScript": "passed",
+  "scopedESLint": "passed",
+  "artifactCheck": "Static HTML/CSP/resources only; no script execution or visual/browser check",
+  "originalFailuresPreserved": true,
+  "sourceRepairs": 0,
+  "blockedChecks": [],
+  "runningOperations": [],
+  "boundaries": {
+    "canonicalSourceWrites": 0,
+    "sharedWrites": 0,
+    "gitMutations": 0,
+    "externalRequests": 0,
+    "servers": 0,
+    "browserSlots": 0,
+    "subagents": 0
+  },
+  "notAccepted": [
+    "visual/screenshots/layout/contrast/keyboard/touch/mobile/browser behavior",
+    "actual health fetch/preflight lifecycle",
+    "owner/auth/server/runner/persistence/reveal integration",
+    "full dashboard or live pilot"
+  ]
+}

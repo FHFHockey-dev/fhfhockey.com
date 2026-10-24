@@ -1,0 +1,31 @@
+{
+  "at": "2026-10-24T14:43:15.621247+00:00",
+  "results": [
+    {
+      "name": "tests",
+      "exitCode": 0,
+      "started": "2026-10-24T14:43:06.409319+00:00",
+      "finished": "2026-10-24T14:43:10.044505+00:00"
+    },
+    {
+      "name": "scoped-types",
+      "exitCode": 0,
+      "started": "2026-10-24T14:43:10.044541+00:00",
+      "finished": "2026-10-24T14:43:13.529734+00:00"
+    },
+    {
+      "name": "scoped-lint",
+      "exitCode": 0,
+      "started": "2026-10-24T14:43:13.529803+00:00",
+      "finished": "2026-10-24T14:43:15.164152+00:00"
+    }
+  ],
+  "snapshotDrift": [],
+  "sourceFiles": 3637,
+  "contentTreeSha256": "6471be57ff593d58e846204898f1b5413a2c3f86063f8d902e3911d3ae38faa0",
+  "archiveSha256": "dc0bed3594b39bb51b3825e033f527794cbb66231486f88d1e834f7ffad6e555",
+  "canonicalLeasedFileSha256": "eebd86016d6cc3809ab15b2e936b884464d41666519d689ce26112a967d203c7",
+  "oldArchiveUnchanged": true,
+  "oldFailureReceiptSha256": "7ce563890c23c5a51baba9180a66c0d85580a48b15a16643745f0d14deb713a4",
+  "oldDiagnosticsReceiptSha256": "0dc3abb4b34a7c2d871e2b4e7b45b153bd8b3e46b7602ce5e992b9a6eedbffb0"
+}

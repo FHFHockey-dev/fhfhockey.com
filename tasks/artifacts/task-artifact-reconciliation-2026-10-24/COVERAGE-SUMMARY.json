@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-24T15:11:46.731093+00:00",
+  "original_cutoff": "2026-10-24T14:29:07.341370+00:00",
+  "current_in_scope_files": 12238,
+  "current_folders": 3543,
+  "coverage": {
+    "metadata-only": 960,
+    "partially-inspected": 7169,
+    "duplicate-by-hash": 4089,
+    "content-reviewed": 18,
+    "sensitive-not-read": 2
+  },
+  "late_delta_count": 134,
+  "full_read_receipts": 22,
+  "remaining_full_semantic_or_visual_items": 12220,
+  "next_cursor": "tasks/TASKS/auth-user-settings-platform/docs/auth-provider-manual-config.md"
+}

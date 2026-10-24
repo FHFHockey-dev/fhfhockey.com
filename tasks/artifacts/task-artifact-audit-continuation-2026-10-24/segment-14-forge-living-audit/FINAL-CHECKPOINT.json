@@ -1,0 +1,60 @@
+{
+  "at": "2026-10-24T18:55:53.136463+00:00",
+  "before_ids": 211,
+  "after_ids": 211,
+  "before_evidence": 1083,
+  "after_evidence": 1102,
+  "added_ids": [],
+  "changed_existing_ids": [
+    "FPI-01",
+    "FPI-06",
+    "FPI-09",
+    "REPO-DOCUMENTATION",
+    "FPI-02",
+    "FORGE-HYDRATION-HB",
+    "XG-SERVING-DISPOSITION"
+  ],
+  "all_prior_ids_scopes_evidence_prefixes_preserved": true,
+  "prior_211_ids_scopes_preserved": true,
+  "legacy_blocks_outside_edit_set": 32,
+  "unchanged_existing_rows_identical": 204,
+  "readable_children_before": 12,
+  "readable_children_after": 20,
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "415d918354a7f40ceb6410aa732e8feebd6bc8c188631e282f49f128bb2f0b81",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "51c7962014116573f65538c640ab977dcbfe09d4ef58360bf6a70baabc7e2abf",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "894cb6a63fcf63244b10a08e610c93276c8e713b223ff7f53616f074c6c4190d"
+  },
+  "candidate_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "d6b5da4dc78ba3cf83c088603cfb796cb565bcdf44e1e187c1ba30de8410bac1",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "1c6ab83284a1448b22d48034210318482a2db3e23816f2c6b844e2aaf1b654e3",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "b7e8654b37f05d682fa29c9a2dbfeda03eedec215146afd25c4b75741472d9d4"
+  },
+  "no_added_trailing_whitespace": true,
+  "application_tests_git_or_external_operations": 0,
+  "whole_tree_content_audit_complete": false,
+  "canonical_written": true,
+  "rendered_scalar_field_labels_verified": 18,
+  "render_repair": "Corrected short status replacement in both Markdown layouts; authoritative JSON field values unchanged; initial draft retained.",
+  "library": {
+    "identity": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "version": 13,
+    "status": "succeeded",
+    "helper_exit_code": 0,
+    "returned_xattrs_readback_match": true,
+    "local_master_bytes_unchanged": true,
+    "complete_tool_receipt_saved": true
+  },
+  "full_text_documents": 9,
+  "full_text_bytes": 120500,
+  "full_structured_receipts": 1,
+  "new_queue_records_completed": 10,
+  "remaining_unique_text_candidates": 1660,
+  "remaining_raw_queue": 12088,
+  "source_drift": [],
+  "new_source_refs_verified": 19,
+  "scalar_field_labels_verified_before_delivery": 18,
+  "legacy_verification_scope": "32legacy blocks outside the focused edit set; unchanged211scope/evidence guards reused, no broad fresh source review.",
+  "blocked_pending_uncertain_operations": [],
+  "no_pending_audit_mutation": true
+}

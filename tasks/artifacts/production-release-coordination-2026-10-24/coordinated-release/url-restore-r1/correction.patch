@@ -1,0 +1,43 @@
+--- a/web/components/SocialShare/SocialShare.tsx
++++ b/web/components/SocialShare/SocialShare.tsx
+@@ -557,10 +557,10 @@
+   useEffect(() => {
+     if (!router.isReady || !supported) return;
+     const query = { ...router.query, week: weekStart, card: graphic, ...(selectedKey === null ? {} : { dates: selectedKey }) };
+-    if (selectedKey === null) delete (query as Record<string, unknown>).dates;
++    if (selectedKey === null && weekStart !== initial.week) delete (query as Record<string, unknown>).dates;
+     if (["week", "card", "dates"].every(key => queryText(router.query[key]) === queryText((query as Record<string, string | undefined>)[key]))) return;
+     void router.replace({ pathname: router.pathname, query }, undefined, { shallow: true, scroll: false });
+-  }, [router, supported, weekStart, graphic, selectedKey]);
++  }, [router, supported, weekStart, graphic, selectedKey, initial.week]);
+   useEffect(() => {
+     if (!snapshot?.expiresAt) { setExpired(true); return; }
+     const remaining = Date.parse(snapshot.expiresAt) - Date.now();
+--- a/web/components/SocialShare/SocialShare.test.tsx
++++ b/web/components/SocialShare/SocialShare.test.tsx
+@@ -59,6 +59,25 @@
+     expect(fetchMock.mock.calls.filter(([url]) => String(url).startsWith("/api/v1/social-share/"))).toHaveLength(1);
+   });
+ 
++  it("preserves requested URL dates while the first edition read is pending", async () => {
++    const week = calendarWeekStart(new Date(Date.now() + 28 * 86400000).toISOString());
++    const dates = weekDates(week).slice(1, 4);
++    let finish!: (response: Response) => void;
++    fetchMock.mockImplementation(() => new Promise<Response>(resolve => { finish = resolve; }));
++    router.query = { format: "game-grid", week, dates: dates.join(","), card: "tiers" };
++    render(<SocialShare format="game-grid" asOf={new Date().toISOString()} />);
++    await waitFor(() => expect(fetchMock).toHaveBeenCalled());
++    try {
++      expect(router.replace).not.toHaveBeenCalled();
++    } finally {
++      const generatedAt = new Date().toISOString();
++      const edition = buildScheduleSnapshot({ format: "game-grid", weekStart: week, generatedAt,
++        schedule: fictionalLeagueWeek(week, generatedAt) });
++      finish({ ok: true, status: 200, json: async () => selectScheduleDates(edition, dates) } as Response);
++    }
++    await waitFor(() => expect((screen.getByRole("button", { name: "Refresh schedule" }) as HTMLButtonElement).disabled).toBe(false));
++  });
++
+   it("writes the selection into the URL with a shallow replace", async () => {
+     render(<SocialShare format="tuesday-trends" asOf="2026-10-24T19:00:00Z" />);
+     await waitFor(() => expect(router.replace).toHaveBeenCalled());

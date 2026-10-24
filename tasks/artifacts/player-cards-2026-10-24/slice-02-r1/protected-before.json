@@ -1,0 +1,254 @@
+[
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/EVIDENCE.json",
+    "sha256": "3e5cce84ec6d9a2df02e7b16d0e01b5677f5b06c48acc3da14436683203b9feb"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/HANDOFF.md",
+    "sha256": "bb9f859362d971ffd012b5ecc05f207769d18d25f24210bf55773859a36f8cf7"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/OWNERSHIP.json",
+    "sha256": "3b2bbc5fa66cbb99bb7a6a4ebea3c777b165e13775e94013a8c365629cd1d88d"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-failure.json",
+    "sha256": "de95bebd7d3bd771c7a682f86f86077a8c22ee99a54d63d57abd4d052a58243c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-final.log",
+    "sha256": "cc31c6e1ac5aa04761813d9724c46e3742acb7d18726321f8281f585e21c3ecf"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-results.json",
+    "sha256": "7b684a738f3a375b3a535eb224ddd7233d0f612f31dcb633a2859b39374ac813"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser.log",
+    "sha256": "ea7378d4eefc04bad81ba3aa7d4a81315562262b55d5fbf3c609a10ce6118a29"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/checks-final.log",
+    "sha256": "ca982d9c780a41748d56e708892ef8491c4e3eea9af834b345193d3ab7c4c382"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/checks.log",
+    "sha256": "e16f2568a292297cd04b7b267e72c149fe2a099790fe67e003649875848e5546"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/lint-final.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/lint.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/local-http.json",
+    "sha256": "fb65ea1167cfa3115fe3e7d4997d37c3708d038acc3a5ce41d27926be65c1e4c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/manifest.json",
+    "sha256": "bfa316174940dcfe6970aac7f1937f989ce60946ec406d6f517bc1ad85630807"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/preview-entry.tsx",
+    "sha256": "3cc4b5219e554afba784f70567686f0c9ae8638eacb0e8850f374ab8db8ff679"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/preview.html",
+    "sha256": "12ea13e78fb64cfc136292f1d9c1babb8189ad034da2151b4473a6b030d7c2bf"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/preview.png",
+    "sha256": "582677f8ae867b46a6cbb83f242e6e92388d2ab3b782421cde7180e3dfd710e8"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-desktop.png",
+    "sha256": "e7944b7e8282b1bc6c055cd912ca4f0224bd25884f56e12d92fe4e21982fd7f8"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-extra.png",
+    "sha256": "96c324f06d26f423c9c0da47ff2a7a0bf5a08d255988b6f308c5cc520e970a3d"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-long-name.png",
+    "sha256": "e74b2189318d15dadf50c273893b1fd2e7dcd4f2b14e40a04b54eff70939c48e"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-missing.png",
+    "sha256": "a036cc6c1bcb672c404049d6d5879524a3efe847f311d110a569d99ff56a0579"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-mobile.png",
+    "sha256": "ceccb748599091f0ca4d0fc0e60c3e5f3c7f9657264225687c4894e40b6b81d1"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-partial.png",
+    "sha256": "c27781129b30f59f412f2221ce5384a498f124fe50bc1a9c874ae0f17800c6b3"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-preview.mjs",
+    "sha256": "581229089809b668669e396d2bff7e52b2463348f43cd64d0d344f4ba351f8d6"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/render-preview.mjs",
+    "sha256": "b8f7ae4b0613daf3735f198334df9aa1e60232089380af72168630b15128eb4d"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/serve-preview.mjs",
+    "sha256": "1cc849c592fff0008f69824571f82c66eb07eea5da0cd2301ccbc3c54d3c0610"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/source.patch",
+    "sha256": "5f88e8e7220b7bf14ce7ea2b16f821c0b2387277f0e9b1f2accb7da3d316987e"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/tsconfig.json",
+    "sha256": "1068e4333c98159ed7bf264052ddec861936703fa4b5a29806435daccf456c8a"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/types-final.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/types.log",
+    "sha256": "ccd0c0c7ea58e9b69f678c94e0a2e98b4ac8bbcd46ba245dba8f3d75051d1cb0"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/EVIDENCE.json",
+    "sha256": "a061e2df9cb9f04d34684397d7b466945586a54da4ddf5e651c2f7368cb866b7"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/HANDOFF.md",
+    "sha256": "cdef1a58e96d2f3b7b5f8f8777f6386acfcdd7007cd4ed5e3822201e828e352f"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/OWNERSHIP.json",
+    "sha256": "5859bee36d3934fdf35ad95898beccde19ecf8a36c71a3221f35ea8ccf77ad66"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/lint-final.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/lint-initial.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/local-evidence-inspection.json",
+    "sha256": "ed91c2644b684a2b00d2638a766cb95ced5a29f49954b4cd552b9380cdec7b8a"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/local-evidence-results.json",
+    "sha256": "18adde7d14dabcd3557e6f264878094b3fe4ada8514b04c197ed2cc21d5ad8c5"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/local-evidence.log",
+    "sha256": "39b0d575fe067bfe3ad1a80431cade4a99139029978a9a8a33c409eb34fc8611"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/source.patch",
+    "sha256": "d389d9b51e2ee79d564bebb5513a43de9d16349df160245fdab1f9ef6925e709"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/tests-final.log",
+    "sha256": "bdccb1f0eb6f0322894e32a9876ff67e949670661f67a013ac5169cb16050b9a"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/tests-initial.log",
+    "sha256": "3e7d787e3f660aa00a97c5777c3bc78dd1f0c4a3211402273dc3b7067ff3ec36"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/tsconfig.json",
+    "sha256": "726802a698a54fcb736572ef68d7beb76d27e904703b3a55d6da4f9995f60f97"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/types-final.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/types-initial.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/verify-local-evidence.cjs",
+    "sha256": "d8d505e95b2535943ddf094a844d3c51e94ea4e3f86d5176b13b77ba9b13529f"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/EVIDENCE.json",
+    "sha256": "39e555df09fdd49fde9b39ad3598c31535ddd97d45760660363ed71639e2ec85"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/HANDOFF.md",
+    "sha256": "ef7d4c4738f2f3a46a684b391ea06ba122c05c653027f83c90be08d4a6a0d0eb"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/author-tests.json",
+    "sha256": "c52cc65960589bbfde5a8f2b812e2837e289b6799cb79f328960b666e47b51d6"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/author-tests.log",
+    "sha256": "599b09470209ff5116dd0cb0c09feace01ef2f7f244d2e527f68d562e9ee5ded"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/capture-reconciliation-results.json",
+    "sha256": "ca5a93f2540b48dacb55c46a4b011c9927b3d218c47200c8789851575610ff9b"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/capture-reconciliation.cjs",
+    "sha256": "a76ab4f0f8e280af9650c29863795e5b4f521b4f6ad60ccf11eea2ee5a26969c"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/counterexamples-results.json",
+    "sha256": "cd108c78942ac8e3d0481c10a1f37413a77ff578e882b96208f254c19f1e43d9"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/counterexamples.cjs",
+    "sha256": "654038435e7c47190dd64bbde9ea735babb5298a4ad71f0d8a3cab55f2d05f10"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/counterexamples.log",
+    "sha256": "5008e8c836d2d4234a5d8fa3988fba04340fa0b20688006e9024bc7c65ef34bb"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/lint.json",
+    "sha256": "00f34d05f4b36f43c649f6999433d0e504ad20a234f11f867dfe6fd5eaa979fb"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/lint.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/npm-cache/_logs/2026-10-24T17_08_53_488Z-debug-0.log",
+    "sha256": "3707bbd045c440f5ac5212cbbe988a26e0246de388c9a6cb103ef258e4cfb3c2"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/pins-final.json",
+    "sha256": "266e4c28ce4ed5e579cefe3af3c459edd86c34d91708c0fdad1bd4c9faeb71d4"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/pins-initial.json",
+    "sha256": "01a556dfd4c9f5c2236f2b2e49b8cf152ba9f04bb6fe22436fe84668178ad8ee"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/run-check.cjs",
+    "sha256": "902801c37d379f00ecceebf962db2516eae86ac57777eb9fba4ce2994dc4f823"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/types.json",
+    "sha256": "907ec6c08c50dc73611e886ba0d6145e23d54bb0effa87e2af52b085f44e46d7"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/types.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/verify-pins.cjs",
+    "sha256": "cb1eccc30803967e20fd669a0037d21d63774e14a49dc2364e5b33b22430dd35"
+  },
+  {
+    "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/vitest.review.config.mjs",
+    "sha256": "5403d56fdac5ea1ee2b7c74450e9df00c8380cbc3bf7dd8eefc3f1041248f0c3"
+  }
+]

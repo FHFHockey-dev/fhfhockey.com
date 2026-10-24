@@ -1,0 +1,117 @@
+{
+  "status": "S03 implemented/frozen for independent review under CODEX-PLAYER-CARDS-S03-20261024; acceptedR1 dependency; current runtime67888/exsession57709",
+  "source_paths": [
+    {
+      "path": "web/lib/player-cards/interactionFixtures.ts",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/lib/player-cards/interactionSnapshot.ts",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.tsx",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/components/player-cards/InteractiveCard.tsx",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.module.scss",
+      "baseline": "absent"
+    },
+    {
+      "path": "web/components/player-cards/PlayerCardFlow.test.tsx",
+      "baseline": "absent"
+    }
+  ],
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-24/slice-03",
+  "scope": "Fixture-only selection/period/state/export flow through frozen pure domain contracts",
+  "frozen_read_only": [
+    "slice01 sources/artifacts",
+    "slice02 sources/artifacts"
+  ],
+  "resource_request": "Transfer only owned127.0.0.1:3125 from PID54140/execsession58351 after offline QA; preserve frozen artifacts",
+  "excluded": [
+    "candidate app route",
+    "shared auth/navigation/styles/export/entitlement",
+    "live/production/services",
+    "WiGO fixes",
+    "dependencies/migrations",
+    "Git/index",
+    "workers"
+  ],
+  "runtime": {
+    "pid": 67888,
+    "execSession": 57709,
+    "bind": "127.0.0.1:3125",
+    "url": "http://127.0.0.1:3125/player-cards",
+    "script": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03/serve-preview.mjs",
+    "htmlSha256": "c50ecfbe2fc56955c085c5ff1adfadef9d5a393c39f2a2ad1fb4b6aebe854357",
+    "htmlBytes": 317312,
+    "handoffs": [
+      {
+        "from": 54140,
+        "to": 67382,
+        "reason": "S03 interactive candidate after acceptedR1/offlineQA"
+      },
+      {
+        "from": 67382,
+        "to": 67734,
+        "reason": "Calendar-mode explanation made explicit"
+      },
+      {
+        "from": 67734,
+        "to": 67888,
+        "reason": "Touch-sized retry and invalid-date recovery verified"
+      }
+    ],
+    "guards": "Every handoff verified sole listener PID/exact owned command, stopped only that process, rechecked free port, then loopback static start; no other server touched",
+    "status": "Running frozen S03 artifact; final static GET byte equality verified"
+  },
+  "artifact_files": [
+    "HANDOFF.md",
+    "OWNERSHIP.json",
+    "browser-current.log",
+    "browser-final.log",
+    "browser-initial.log",
+    "browser-results.json",
+    "calendar-manifest.json",
+    "calendar.png",
+    "handoff-initial.py",
+    "handoff-preview.py",
+    "handoff-second.py",
+    "lint-current.log",
+    "lint-final.log",
+    "lint-initial.log",
+    "local-http-before-final.json",
+    "local-http.json",
+    "own-l5-manifest.json",
+    "own-l5.png",
+    "partial-manifest.json",
+    "partial.png",
+    "preview-entry.tsx",
+    "preview.html",
+    "qa-desktop.png",
+    "qa-extra-pp.png",
+    "qa-mobile.png",
+    "qa-preview.mjs",
+    "render-current.log",
+    "render-final.log",
+    "render-preview.mjs",
+    "runtime-before-54140.json",
+    "runtime-before-67382.json",
+    "runtime-before.json",
+    "runtime-initial.json",
+    "runtime.json",
+    "serve-preview.mjs",
+    "tests-current.log",
+    "tests-final.log",
+    "tests-initial.log",
+    "tsconfig.json",
+    "types-current.log",
+    "types-final.log",
+    "types-initial.log"
+  ]
+}

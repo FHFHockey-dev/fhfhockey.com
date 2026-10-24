@@ -1,0 +1,93 @@
+{
+  "at": "2026-10-24T19:43:31.063011+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+      "sha256": "c7c9de60578a6f1b21fb0180602908220dac38a6ef3cb0ccc46ccdff00a656ac",
+      "bytes": 48913,
+      "lines": 940,
+      "mtime_ns": 1792348998389935950,
+      "coverage": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          1,
+          200
+        ]
+      ],
+      "review_scope": "All task-bearing prose1\u2013200 read. Explicitly historical catalog201\u2013940 bounded by full fenced/comment/job-label/endpoint/tail inspection; individual SQL semantics not reviewed. No full-file content credit or current schedule/operation authority.",
+      "deep_read_required": false,
+      "disposition": "Task prose reviewed; historical appended cron catalog structurally role-disposed",
+      "bounded_receipt": "HISTORICAL-CATALOG-DISPOSITION.json"
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+      "sha256": "e1e58da5e8f11456750070be9db1628d1e95155d0362e429a4d3191e6c3103cd",
+      "bytes": 22296,
+      "lines": 401,
+      "mtime_ns": 1787194474818353251,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          401
+        ]
+      ],
+      "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md",
+      "sha256": "c33a3a7e8e1dddc98906822885f3e9678050ce4f4f49c6e4c6145c9c1e4070a6",
+      "bytes": 2289,
+      "lines": 37,
+      "mtime_ns": 1785605126560472421,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          37
+        ]
+      ],
+      "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md",
+      "sha256": "6dc10247757feedf2e1022b7b8f31a3cbb7231705b8935476ab9c01113e06075",
+      "bytes": 9340,
+      "lines": 166,
+      "mtime_ns": 1785605126559468677,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          166
+        ]
+      ],
+      "review_scope": "Full documentary source read; dated implementation, empirical and operational claims remain attributed, not current app/runtime/test/production verification. Research/stretch sections and stored commands grant no authority."
+    },
+    {
+      "path": "tasks/artifacts/forge-projection-audit-2026-10-21/forge-model-release-inventory.md",
+      "bytes": 57635,
+      "lines": 626,
+      "sha256": "4983e152de3eea45fd8f764b4ec1304c860d40cf6b8cfc47042c5f6db0598be6",
+      "mtime_ns": 1792621960684179932,
+      "coverage": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          30,
+          62
+        ],
+        [
+          140,
+          150
+        ]
+      ],
+      "review_scope": "Only release inventory lines30\u201362 and140\u2013150 fully read to reconcile null-win closure; keyword matches elsewhere are navigation, not full-content credit. Line149 explicitly records goalie reader null-safe from R7. No app/Git/release execution/current reader check; remaining inventory content unreviewed by this segment."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 3,
+    "partially-inspected": 2
+  },
+  "full_text_bytes": 33925,
+  "method": "Three full unique primary texts; all task-bearing prose of one long checklist with historical cron catalog bounded; two narrow release-receipt ranges. No application source/tests/Git/production/newworkers or disposed Sustainability reread."
+}

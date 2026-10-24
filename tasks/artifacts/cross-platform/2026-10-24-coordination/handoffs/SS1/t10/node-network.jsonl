@@ -1,0 +1,2 @@
+{"t":"2026-10-24T20:05:56.827Z","pid":5055,"proc":"/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/server/lib/start-server.js","kind":"deny-fetch","target":"https://registry.npmjs.org/-/package/next/dist-tags"}
+{"t":"2026-10-24T20:14:31.916Z","pid":9200,"proc":"/Users/tim/Code/fhfhockey.com/web/node_modules/next/dist/server/lib/start-server.js","kind":"deny-fetch","target":"https://registry.npmjs.org/-/package/next/dist-tags"}

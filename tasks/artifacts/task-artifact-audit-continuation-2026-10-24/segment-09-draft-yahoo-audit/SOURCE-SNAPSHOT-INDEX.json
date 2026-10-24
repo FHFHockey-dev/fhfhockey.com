@@ -1,0 +1,101 @@
+{
+  "cutoff": "2026-10-24T17:32:59.691223+00:00",
+  "sources": {
+    "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/437e37b3cc3f-tasks-prd-draft-dashboard.md",
+      "sha256": "437e37b3cc3f24b2c3b06dd25ede06bf035e2ee6fe4bdbd8b2a0aefaa29c7e17",
+      "original_path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-draft-dashboard.md",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/8f721cf25bc9-tasks-prd-gamegrid-draft-dashboard-style-overhaul.md",
+      "sha256": "8f721cf25bc915c0c2499cc840689b25bad7a875d41f0ba03b93f0efdb421242",
+      "original_path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/TASKS/draft-dashboard-yahoo/prd/prd-gamegrid-draft-dashboard-style-overhaul.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/c04c8ce76855-prd-gamegrid-draft-dashboard-style-overhaul.md",
+      "sha256": "c04c8ce768554f857da892ea986e117a2aaf78f85364af89d3d7471a9f90b9b8",
+      "original_path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-gamegrid-draft-dashboard-style-overhaul.md",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dashboard.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/1ffb08389dc0-prd-draft-dashboard.md",
+      "sha256": "1ffb08389dc03942356d0fa8b69c13e7fca1db1527d1dd0da6e8f7acd62b875e",
+      "original_path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dashboard.md",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/58fb090d46eb-prd-yahoo-audit.md",
+      "sha256": "58fb090d46ebdd5743a67f7583f29be8f358de891fe1e84c42bd3965ea26d287",
+      "original_path": "tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/ccd494110fe8-tasks-prd-yahoo-ingestion-mapping-audit.md",
+      "sha256": "ccd494110fe8374e47cc41710feaa8633f5e33b9ac81b7353ee1b5443184202b",
+      "original_path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/55a86abc97bb-REVIEW.md",
+      "sha256": "55a86abc97bbd42f2ee736efbd6b4aafe77b6a4a0b4ddc64b09a19a638b8abb7",
+      "original_path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW.md",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW-EVIDENCE.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/2a74da8b7492-REVIEW-EVIDENCE.json",
+      "sha256": "2a74da8b7492a506504202db7b1fab71a1f080d657f34405ff3d034be251a8df",
+      "original_path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW-EVIDENCE.json",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/STATUS-SOURCE-EXTRACT.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/f6700b4da87e-STATUS-SOURCE-EXTRACT.json",
+      "sha256": "f6700b4da87eb74693d7e3359b891e29c990e9b167ed5c103fd1365c82902fd6",
+      "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/STATUS-SOURCE-EXTRACT.json",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/18c518f8c4b9-REVIEW.md",
+      "sha256": "18c518f8c4b97fa9c1f4b840738b63a61b49c5919c7e249bd33757a7b4a096a4",
+      "original_path": "tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW.md",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW-EVIDENCE.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/b395d67969e5-REVIEW-EVIDENCE.json",
+      "sha256": "b395d67969e564570c7dc2e0ae5e742ae6c258ff9e70cd29e5655c3a0fb049a7",
+      "original_path": "tasks/artifacts/player-cards-2026-10-24/slice-01-review/REVIEW-EVIDENCE.json",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/artifacts/player-cards-2026-10-24/slice-02-review/HANDOFF.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/ef7d4c4738f2-HANDOFF.md",
+      "sha256": "ef7d4c4738f2f3a46a684b391ea06ba122c05c653027f83c90be08d4a6a0d0eb",
+      "original_path": "tasks/artifacts/player-cards-2026-10-24/slice-02-review/HANDOFF.md",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review/HANDOFF.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/f2c74098ba49-HANDOFF.md",
+      "sha256": "f2c74098ba496bf50137260beea3ad169cd51dc2e53a63557130a55ae6829e43",
+      "original_path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review/HANDOFF.md",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/84b413e016a2-G4-underlying-site-ux.md",
+      "sha256": "84b413e016a2d35039c524f534dd8fa7869b43d831c15503cf2e8ecd5ccc3487",
+      "original_path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/SOURCE-NARROW.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/0f34dd409360-SOURCE-NARROW.md",
+      "sha256": "0f34dd409360a3d445d8178693ca57ef76575a231f8ac52505a552c9d35cbf2c",
+      "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/SOURCE-NARROW.md",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    },
+    "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/SUPER-ALIAS-EXTRACT.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/64670fba782d-SUPER-ALIAS-EXTRACT.json",
+      "sha256": "64670fba782d99a16aa366c4312dfb7d46a43e3fe036887a7148366e6b05009c",
+      "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/SUPER-ALIAS-EXTRACT.json",
+      "observed_at": "2026-10-24T17:32:59.691223+00:00"
+    }
+  }
+}

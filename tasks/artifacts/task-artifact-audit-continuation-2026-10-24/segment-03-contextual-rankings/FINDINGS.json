@@ -1,0 +1,243 @@
+{
+  "at": "2026-10-24T15:52:20.622966+00:00",
+  "findings": [
+    {
+      "finding_id": "SEG03-RANK-01",
+      "classification": "historical_scope_superseded_no_new_task",
+      "existing_ids": [
+        "REPO-DOCUMENTATION"
+      ],
+      "title": "June7 limited milestone and V2 missing-feature descriptions are historical",
+      "conclusion": "June7 forbids production composites/secondary tabs within its then-matrix milestone. Later alignment/post-alignment receipts document those features, goalie/team modes, durable source choices and accepted narrower contracts. Do not interpret the stored goal as a new instruction or current prohibition overriding later evidence.",
+      "bounded_next_action": "Cross-reference the correct dated milestone rather than restarting the matrix or treating every original brainstorm suggestion as an approved current feature.",
+      "owner": "Existing register owner or UNASSIGNED; audit dispatches nobody",
+      "required_authority": "Documentary reconciliation only. Any source/shared-file/data/provider/release action requires the existing exact ownership and separate authority. Parked policy stays parked.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/2026-06-07-goal.md",
+          "line": 5,
+          "sha256": "50608b1714fb5bf872280d3aee81ce68d4e95f01a0d6bb98c02b938085bd4b8e",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/prd-v2-pass-CHR.md",
+          "line": 35,
+          "sha256": "3de3ef08ec39e82097db682e843dbb8de6a1ac6743c2b9ed192bbeaa311cf20c",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+          "line": 153,
+          "sha256": "f7455649134bfb415ccb6ce5d3eb06d1ec88e7d9931ffbc5e6ed1edc8fd467a2",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG03-RANK-02",
+      "classification": "confirmed_documentary_contract_conflict",
+      "existing_ids": [
+        "REPO-DOCUMENTATION"
+      ],
+      "title": "Original and V2 percentile suggestions conflict with later completed semantics",
+      "conclusion": "Original PRD specifies cume-dist style; V2 suggests inclusive better-or-equal math. Alignment notes/task7 select strictly-worse-peer behavior with defined best/worst/ties/singleton results and task17 records dated snapshot regeneration. This is documentary drift, not a new runtime-math defect or permission to rebuild historic rows.",
+      "bounded_next_action": "Retain later tested semantics and mark old drafts historical/current-contract cross-referenced. Keep WiGO midrank/peer semantics distinct; no formula unification, source execution or data backfill.",
+      "owner": "Existing register owner or UNASSIGNED; audit dispatches nobody",
+      "required_authority": "Documentary reconciliation only. Any source/shared-file/data/provider/release action requires the existing exact ownership and separate authority. Parked policy stays parked.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/prd-contextual-hockey-rankings.md",
+          "line": 167,
+          "sha256": "7fa5db7fcaf94cf076e0963418739e1482d6cc01b80e21ee4187ef0b2638bec6",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/prd-v2-pass-CHR.md",
+          "line": 391,
+          "sha256": "3de3ef08ec39e82097db682e843dbb8de6a1ac6743c2b9ed192bbeaa311cf20c",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md",
+          "line": 80,
+          "sha256": "2c32a40f688304dd2c7cba9b2460575d25bf6d86038bd7e0e9c579dd6cc95c42",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md",
+          "line": 103,
+          "sha256": "2c32a40f688304dd2c7cba9b2460575d25bf6d86038bd7e0e9c579dd6cc95c42",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG03-RANK-03",
+      "classification": "superseded_gap_claims_preserve_completed_credit",
+      "existing_ids": [
+        "REPO-DOCUMENTATION"
+      ],
+      "title": "Post-alignment PRD outstanding list is superseded by its task receipts",
+      "conclusion": "The task list records June24 closure/qualification of team-unit metric URL restoration, generated types, coverage metadata, PP-points in MCM, verified Fenwick xS/SAX denominators, Results Luck null explanations, Relative SV%, typed basic opportunity signals and the comparison rail. October19 NEW10 paging repair has22 owning-file tests and missing-key adversaries. These are dated receipt claims, not fresh current-hosted acceptance.",
+      "bounded_next_action": "Do not create duplicate repairs from the older PRD or undo later fixes. Reconcile new current defects only on new concrete evidence.",
+      "owner": "Existing register owner or UNASSIGNED; audit dispatches nobody",
+      "required_authority": "Documentary reconciliation only. Any source/shared-file/data/provider/release action requires the existing exact ownership and separate authority. Parked policy stays parked.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/prd-rankings-post-alignment-gap-audit.md",
+          "line": 103,
+          "sha256": "9183311619adcf6b7b4a555b83f88e463df3c5cbd8b8af850c45c06864879f62",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+          "line": 65,
+          "sha256": "f7455649134bfb415ccb6ce5d3eb06d1ec88e7d9931ffbc5e6ed1edc8fd467a2",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+          "line": 67,
+          "sha256": "f7455649134bfb415ccb6ce5d3eb06d1ec88e7d9931ffbc5e6ed1edc8fd467a2",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+          "line": 74,
+          "sha256": "f7455649134bfb415ccb6ce5d3eb06d1ec88e7d9931ffbc5e6ed1edc8fd467a2",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+          "line": 167,
+          "sha256": "f7455649134bfb415ccb6ce5d3eb06d1ec88e7d9931ffbc5e6ed1edc8fd467a2",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG03-RANK-04",
+      "classification": "intentionally_parked_contract_remainder_not_reopened",
+      "existing_ids": [
+        "REPO-DOCUMENTATION"
+      ],
+      "title": "Checked task groups preserve explicit source-pending original-vision obligations",
+      "conclusion": "Checked \u201cimplement or source-pend\u201d task groups do not establish exact original parity. Deferred remainder includes exact Shoot/Pass/Play Driver, team-without-player relative skater metrics, Under Pressure pressure/screen labels, adjusted-impact controls, adjusted team style, goalie/team secondary tabs, WAR and history-dependent PP/line/pair/goalie/unit opportunity signals. Current live opportunity subset is TOI Up/Usage Drop/Shot Volume Spike.",
+      "bounded_next_action": "Keep the exact deferred-source map discoverable while broader Rankings stays parked. No new active ID, model/research/metric work or original-formula rewrite is proposed. A future owner selection must first reconcile newer closure and source/contracts.",
+      "owner": "Existing register owner or UNASSIGNED; audit dispatches nobody",
+      "required_authority": "Documentary reconciliation only. Any source/shared-file/data/provider/release action requires the existing exact ownership and separate authority. Parked policy stays parked.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+          "line": 165,
+          "sha256": "f7455649134bfb415ccb6ce5d3eb06d1ec88e7d9931ffbc5e6ed1edc8fd467a2",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md",
+          "line": 75,
+          "sha256": "f7455649134bfb415ccb6ce5d3eb06d1ec88e7d9931ffbc5e6ed1edc8fd467a2",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/prd-contextual-hockey-rankings.md",
+          "line": 872,
+          "sha256": "7fa5db7fcaf94cf076e0963418739e1482d6cc01b80e21ee4187ef0b2638bec6",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/prd-contextual-hockey-rankings.md",
+          "line": 1156,
+          "sha256": "7fa5db7fcaf94cf076e0963418739e1482d6cc01b80e21ee4187ef0b2638bec6",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG03-RANK-05",
+      "classification": "already_registered_residual_no_duplicate",
+      "existing_ids": [
+        "SPRINT-OPTIMIZATION"
+      ],
+      "title": "NEW21/C0124 owner cost acceptance remains open after hydration reuse",
+      "conclusion": "Full R-COST handoff supersedes its own proposal-only opening with an implemented rank-preserving hydration optimization.24 tests,16 complete response comparisons and36 paired workloads are retained. Full cohort reads and81 stress ranking pages remain; cache warmth and local medians are not accepted hosted p95, DB cost, capacity or monetary savings. Existing206-ID row already explicitly retains this exact residual.",
+      "bounded_next_action": "Keep operational budget acceptance under SPRINT-OPTIMIZATION, preserve full-cohort correctness and accepted local reuse. Do not restore naive entity/limit pushdown, rerun benchmarks or reactivate paused research from this audit.",
+      "owner": "Existing register owner or UNASSIGNED; audit dispatches nobody",
+      "required_authority": "Documentary reconciliation only. Any source/shared-file/data/provider/release action requires the existing exact ownership and separate authority. Parked policy stays parked.",
+      "evidence": [
+        {
+          "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md",
+          "line": 146,
+          "sha256": "2c32a40f688304dd2c7cba9b2460575d25bf6d86038bd7e0e9c579dd6cc95c42",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-cost/R-COST-HANDOFF.md",
+          "line": 67,
+          "sha256": "d6bd43715339f94700df626d1ff2c3e968280f59f579d3a7f96ed21f7e9c0f19",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/continuation-cost/R-COST-HANDOFF.md",
+          "line": 99,
+          "sha256": "d6bd43715339f94700df626d1ff2c3e968280f59f579d3a7f96ed21f7e9c0f19",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG03-C3-06",
+      "classification": "later_independent_acceptance_with_material_limits",
+      "existing_ids": [
+        "BILLING-CANCEL-RELOAD"
+      ],
+      "title": "Reload continuity accepted; hard24h retention claim corrected; sign-out held",
+      "conclusion": "Independent9/9 controls accept reload continuity only. Retained52 owner cases were inspected, not rerun. Storage bytes persist past48h while unmounted;24h controls restore/reuse eligibility only. Exact proposed reset-key patch passed isolated reviewer controls but remains canonical-unapplied and needs parent auth/test lease. No cross-account cancellation or unauthorized financial action was established.",
+      "bounded_next_action": "Canonical row updated to limited reload acceptance and accurate privacy/retention limits. Parent owns exact shared-auth/test lease, artifact-owner wording correction and any integration; no action by audit.",
+      "owner": "Existing register owner or UNASSIGNED; audit dispatches nobody",
+      "required_authority": "Documentary reconciliation only. Any source/shared-file/data/provider/release action requires the existing exact ownership and separate authority. Parked policy stays parked.",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/c3-independent-review-2026-10-24/REVIEW.md",
+          "line": 5,
+          "sha256": "aad7be2b2c9496366fed6e3785fc78474f60acbcf89bf0562210eb3522ee3943",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/artifacts/c3-independent-review-2026-10-24/REVIEW-EVIDENCE.json",
+          "line": 2,
+          "sha256": "89c885179a42b757b4f6cfb7d06e9a30a7c548891ff15e579195a9cdceebc65e",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        }
+      ]
+    },
+    {
+      "finding_id": "SEG03-TG-07",
+      "classification": "later_independent_changes_required",
+      "existing_ids": [
+        "SITE-FORGE-TESTING-GROUNDS"
+      ],
+      "title": "Pending outcomes become failed coverage at execution-budget stop",
+      "conclusion": "Frozen slice03 reviewer reproduced P2 S03-R1 with two pending_outcomes checks and a third budget-stop claim: successful0/failed1/pending0 instead of0/0/1. Owner16/16 plus independent9/10 produced25pass/1fail in one invocation. No false-successful-run or invented metric value was demonstrated. Parent reports correction underway; no corrected accepted pins inspected here.",
+      "bounded_next_action": "Canonical row records CHANGES REQUIRED; retain failure and finite bounds, require separately frozen correction and focused re-review. Prior precision/policy verdicts remain narrow; no durable runner or full-dashboard acceptance.",
+      "owner": "Existing register owner or UNASSIGNED; audit dispatches nobody",
+      "required_authority": "Documentary reconciliation only. Any source/shared-file/data/provider/release action requires the existing exact ownership and separate authority. Parked policy stays parked.",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW.md",
+          "line": 3,
+          "sha256": "41f48c946e65bc2cac404d356aa03b748a3836910bb4154225206d2be6421f80",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        },
+        {
+          "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW-EVIDENCE.json",
+          "line": 2,
+          "sha256": "aa95765164d69065409cb889068137c036f66117611cfc4b4ad2509982936497",
+          "review_scope": "Full exact document read; supporting clause identified. Underlying source/tests/hosted state not independently tested by audit."
+        }
+      ]
+    }
+  ],
+  "new_active_ids": 0,
+  "current_hosted_state": "Not inspected; no network/source execution."
+}

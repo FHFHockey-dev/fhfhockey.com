@@ -1,0 +1,26 @@
+{
+  "status": "offline packet complete; independent review and empirical validation not performed",
+  "owner_thread": "01a168fb-3199-7407-9b20-160ccb41003d",
+  "head_observed": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "branch_observed": "octoberBranch",
+  "scope": "tasks/artifacts/sos-candidate-2026-10-23/** and own diary only",
+  "files": {
+    "record_core.py": "eb886d1aa79ec8b49d23ed9f0c3e82a16c0b3ad693cea461bc45c3c3f0350258",
+    "sos_candidate.py": "722d6db9fa982f8384713c1c8976e1093b89f903f43f7ba32430ab56a9588126",
+    "test_sos_candidate.py": "95bc15b997947d320d900db05197939380bfcc11c4090a553e3740ceb932d701",
+    "run_candidate.py": "4d4eebf2deb1135ef39d1ab8e4ec9191c3718cef5c8a945111fc2f441ccc49e2",
+    "CONTRACT.md": "a2d8fb66ecebf3dfc052697355718c3baded95ed7fbeff873318f127dd8cba77",
+    "EVIDENCE-AND-PLAN.md": "01ac35ee4774b3392f34c7f703fc56a5f1021aaa900109c940744fddbf27045b",
+    "REPORT.md": "2959b4c8d5ad500a0dd7f6a9e165aed350cc3e70ec988b220402f4ed468b84ad",
+    "CORE-PROVENANCE.json": "8e28e6b7086f48567f8a1d1dc33c9f25a7e854d100cdc6f74a529c69f53d862c",
+    "LEASE.json": "2637083c42591546392befba53ea6cc1c3751ea66ff55371a18850fb322613c4",
+    "example-input.json": "6d0ec79052f85ec37e71b578f27198db248986355afafe00442a2f5789c90349",
+    "EXAMPLE-RESULT.json": "95ef704f00ebfeb73974599e201f96c111e4e26c746a67a72c9fe07f68b15e77",
+    "SYNTHETIC-REPORT.json": "fc08f579836ec9f3ec4a6411d23a9e28b88ceb9768630b9f3a60509b4e8bf67a",
+    "tests-final.log": "4b52de81e76176e75aaa60960c1c08fcae9722666d351473cece55220b9ded03",
+    "READ-SOURCE-PINS.json": "165edfae3ca568ef93ff74fe3249306c1b948201e1cd31764afebe6bb7cbe827",
+    "VERIFICATION.json": "d3ad94261de22c4816cfdb78f68307030fc4799fd19ea007ae9c204b82c9a75f"
+  },
+  "production_formula_selected": false,
+  "remaining_execution_blockers": []
+}

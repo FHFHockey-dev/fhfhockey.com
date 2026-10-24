@@ -1,0 +1,216 @@
+{
+  "at": "2026-10-24T17:21:41.259851+00:00",
+  "exclusion": "Own audit outputs/snapshots excluded from recursive source re-audit.",
+  "files": [
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/BASELINE-LEDGER.json",
+      "bytes": 1128246,
+      "sha256": "20ff17124d74b2c107d10e4106fc0f34f39190a22bd9a7c3c1524a5dd54b6ac4"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/BASELINE-LEDGER.md",
+      "bytes": 523040,
+      "sha256": "71ee25872ab27ca866b904e8da6779a44a942421f0da942ec8417ba2c88286e2"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 486672,
+      "sha256": "97fc641537a2ddc53f74abb58140cb441a8c924204eb412e211271d139e36cc4"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/CANDIDATE-LEDGER.json",
+      "bytes": 1157272,
+      "sha256": "815aba7fcbcb46e4ba91f9ffe2943c29a8668c6396d2802290bd4511a1df80bc"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/CANDIDATE-LEDGER.md",
+      "bytes": 535538,
+      "sha256": "094fad3156fb56803f64d7d80d47ab607abd046b4f8d6382f5c40f700429511a"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 499170,
+      "sha256": "2e1c65b3370ad5db1d4b7d792f5998aa6d6662966f9738981356565c66702d29"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/CANONICAL-CHECKPOINT.patch",
+      "bytes": 176737,
+      "sha256": "3991e34aa1a627e7c8b76a3d62fb2eaf64d97379b90983b98978b9a6853f2cf8"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/CHANGELOG.json",
+      "bytes": 33973,
+      "sha256": "c0390ddadc0a18d7df5e02d49f38fb823a3eb81af9ec63935df813a14fd48244"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/CHECKPOINT-TIME.txt",
+      "bytes": 33,
+      "sha256": "b63909e13a684c8b2a24476fc9349ddc7edd85a93a778b3ac7f23e4372eda56f"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/CONTINUATION.json",
+      "bytes": 42583,
+      "sha256": "9bc318c732aa7eede32783189e0748c5fcddccd0aa825ea79babd479819c5047"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/COVERAGE.json",
+      "bytes": 9620,
+      "sha256": "73a4285b56fb891cf41af02935b335077837d4719f4cded640daaebc4ba96793"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/DISPOSITION-INDEX.json",
+      "bytes": 27940,
+      "sha256": "df88fe3e7495218a92fe49fd68c6b8998ea64e1c4daa9a37c4be772c049649cf"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/FINAL-CHECKPOINT.json",
+      "bytes": 2435,
+      "sha256": "b386ee0df4d6c5f6c0ba40decb392f1e1464c6d03969f77ba29505f80a37f424"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/FINDINGS.json",
+      "bytes": 25659,
+      "sha256": "8e0ca068a69fdd9eb39b38cc980b8b2bd5fa8624861cc5c38b847cd49d1efdd2"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/FOLDERS.json",
+      "bytes": 4111,
+      "sha256": "23ccc942c0f8c5c04ebfc56ae873ceacba95457ed8549d17929f0ec89083eec1"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/HISTORICAL-INVENTORY-STRUCTURE.json",
+      "bytes": 592,
+      "sha256": "0fca6e4f3ceeae0dc38a44634817b8d9eb9c46ef8b81d6234a395c7f5738d7a6"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/LIBRARY-DELIVERY.json",
+      "bytes": 1110,
+      "sha256": "3fd1b3ca94eead60beb8498ceb911a3ab83a7e54ab296af606a7fed28e933505"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/LIVE-CHANGES.json",
+      "bytes": 138,
+      "sha256": "24b2b6d488e143a2e5afc77b9196bf168b82e98709d2a8b562663ad772481c85"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json",
+      "bytes": 985,
+      "sha256": "9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PROPOSED-CHANGES.json",
+      "bytes": 12444,
+      "sha256": "10ee218032f47ef0c6be0f1da89c4e17ad1e1b0f7e82808f8889660c9fbd50ae"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/REPORT.md",
+      "bytes": 6202,
+      "sha256": "16a4067f138e23162dd1e110190280c39f4be7b7e16c8c9d1c09874389959f9f"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/SOURCE-PINS.json",
+      "bytes": 3006,
+      "sha256": "c0966426e03d462e0b3b092c126d95df3f2eb45a3a1cef67a5c22507e7bea993"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/SOURCE-SNAPSHOT-INDEX.json",
+      "bytes": 6819,
+      "sha256": "fe79743ab37023996acd2632fbf9fd6f0b5d99db0c7f0ed5f218fdd9d498d36b"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/START.json",
+      "bytes": 2283,
+      "sha256": "9fe2289bd0fb2536e7cee70d01afdc0efd12cbdec271ef43595481cfb0aa03e4"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/VALIDATION-CANONICAL.json",
+      "bytes": 1522,
+      "sha256": "d3f9b0ae0ceab024e2a3abc2a9a16127b2a3c4ce788774ac6722682cf6789132"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/VALIDATION-PREPARED.json",
+      "bytes": 1479,
+      "sha256": "e2fbde8ff0e0364a0e44b1c11682bf69013581ca494f78d7fdca32e48401b10e"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/reconcile.py",
+      "bytes": 8683,
+      "sha256": "ade271a803eff830a0e0eb6a1fcc070ed935c87aa43d397928bd850f1d1f70f4"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/3b8988c67e1a-yahoo-tables.md",
+      "bytes": 9428,
+      "sha256": "3b8988c67e1ac72c5d9674e978cea2f7febc71ae41aefa7da538864b8accbb06"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/43a8edca387f-REVIEW.md",
+      "bytes": 8202,
+      "sha256": "43a8edca387fa4d4b3742c03c98bdb2b097a7f27c262494aba7cdc6f4486e8e1"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/5cbacd13d0b3-HANDOFF.md",
+      "bytes": 3956,
+      "sha256": "5cbacd13d0b30702533370bd6d4e5cb3b16123344ac40670816bd7d4d575d9f7"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/65f143fa43c8-live-draft-runbook.md",
+      "bytes": 9593,
+      "sha256": "65f143fa43c8b3eaadde4c2c5f273448ef3206307bb5546b1df3191fdff5c497"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/726b59e90abb-REVIEW-EVIDENCE.json",
+      "bytes": 3888,
+      "sha256": "726b59e90abb89a410a98d78507f82859a38b2123825557e8da4d18cf158d4d8"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/7a5ac23ec40b-REVIEW-EVIDENCE.json",
+      "bytes": 2077,
+      "sha256": "7a5ac23ec40bb5bd4c6d832023b3245ac14e2b18952b1ddfb08330b54e7d8e05"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/7d0cebf7d3c3-tasks-prd-drm-refactor.md",
+      "bytes": 74419,
+      "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/89b939a9a2d0-tasks-prd-cleanup-tasks.md",
+      "bytes": 88067,
+      "sha256": "89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/8a1e4cb7e816-tasks-draft-dashboard-interface-polish.md",
+      "bytes": 6901,
+      "sha256": "8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md",
+      "bytes": 15977,
+      "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9b3c682e7952-PARENT-STEERS.json",
+      "bytes": 985,
+      "sha256": "9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/ca0670df6439-REVIEW.md",
+      "bytes": 10177,
+      "sha256": "ca0670df6439d44cbbdcdc75c1c873ad09f88b6cc445ef4a8d3364e05f57a47b"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/e584a8a3c87d-live-draft-production-readiness.md",
+      "bytes": 5957,
+      "sha256": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/fc43f5343286-yahoo-live-draft-backlog.md",
+      "bytes": 2272,
+      "sha256": "fc43f5343286440c25bd31490d2f8b325a2214c1467172a63c1513e616f33225"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/verify-final.py",
+      "bytes": 6944,
+      "sha256": "663e1831a744b0c078d0db0a50160489dfce66567b57237c33adf6eaa05aaad5"
+    }
+  ]
+}

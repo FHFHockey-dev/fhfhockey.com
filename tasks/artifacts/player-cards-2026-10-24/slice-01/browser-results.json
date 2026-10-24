@@ -1,0 +1,51 @@
+{
+  "checks": [
+    {
+      "name": "desktop export and manifest",
+      "passed": true,
+      "cardText": "FHFH player card — synthetic exampleAlex Morgan. Synthetic example only. 10 of 10 own appearances, All Strengths. ATOI: 21:21; tied rank 161 of 812; 79.7 percentile. SOG/60: 11.80; tied rank 161 of 809; 79.7 percentile. iSCF/60: 9.40; tied rank 160 of 803; 79.6 percentile. ixG/60: 1.24; tied rank 160 of 800; 79.6 percentile. On-ice xGF/60: 3.62; tied rank 157 of 791; 79.7 percentile. On-ice xG%: 58.7%; tied rank 157 of 788; 79.6 percentile. IPP: 76.9%; tied rank 157 of 785; 79.6 percentile. SH%: 14.6%; tied rank 155 of 782; 79.8 percentile. Numeric percentile is magnitude, not quality or a forecast. Proposed competition ranks and empirical midrank percentiles.FHFH / PLAYER CARDSYNTHETIC EXAMPLEAlex MorganExample Hockey Club · RW · Portrait-free exampleOPPORTUNITYTime on ice per NHL appearance. min/GPATOI21:21min:sec per appearanceT-161 of 812  · 79.7 pctINDIVIDUAL GENERATIONIndividual shots on goal per 60 minutes. shots/60SOG/6011.80shots/60T-161 of 809  · 79.7 pctIndividual scoring chances per 60 minutes. chances/60iSCF/609.40chances/60T-160 of 803  · 79.6 pctIndividual expected goals per 60 minutes. xG/60ixG/601.24xG/60T-160 of 800  · 79.6 pctON-ICE CONTEXTTeam expected goals for while on ice. xG/60On-ice xGF/603.62xG/60T-157 of 791  · 79.7 pctShare of expected goals for while on ice. %On-ice xG%58.7%%T-157 of 788  · 79.6 pctFINISHING & INVOLVEMENTShare of on-ice goals involving a player point. %IPP76.9%%T-157 of 785  · 79.6 pctIndividual goals divided by shots on goal. %SH%14.6%%T-155 of 782  · 79.8 pctOwn L10 appearances · All Strengths10 of 10 GP · 213.5 min TOI · 2026-10-03 → 2026-10-23Each player's own appearance dates can differ. Regular season example.Game cutoff: 23 Oct 2026, 23:59:59 UTC · Snapshot: 24 Oct, 12:00 UTCExample pool: all valid same-definition values; no GP, TOI or position filter.Fabricated values and cohort · Numeric magnitude, not quality or a forecast.Proposed layout, L10/defaults, competition ties and midrank percentiles · fhfhockey.com"
+    },
+    {
+      "name": "scenario long-name",
+      "passed": true,
+      "cardText": "FHFH player card — synthetic exampleAlexandria Montgomery-Sutherland. Synthetic example only. 10 of 10 own appearances, All Strengths. ATOI: 21:21; tied rank 161 of 812; 79.7 percentile. SOG/60: 11.80; tied rank 161 of 809; 79.7 percentile. iSCF/60: 9.40; tied rank 160 of 803; 79.6 percentile. ixG/60: 1.24; tied rank 160 of 800; 79.6 percentile. On-ice xGF/60: 3.62; tied rank 157 of 791; 79.7 percentile. On-ice xG%: 58.7%; tied rank 157 of 788; 79.6 percentile. IPP: 76.9%; tied rank 157 of 785; 79.6 percentile. SH%: 14.6%; tied rank 155 of 782; 79.8 percentile. Numeric percentile is magnitude, not quality or a forecast. Proposed competition ranks and empirical midrank percentiles.FHFH / PLAYER CARDSYNTHETIC EXAMPLEAlexandriaMontgomery-SutherlandExample Hockey Club · RW · Portrait-free exampleOPPORTUNITYTime on ice per NHL appearance. min/GPATOI21:21min:sec per appearanceT-161 of 812  · 79.7 pctINDIVIDUAL GENERATIONIndividual shots on goal per 60 minutes. shots/60SOG/6011.80shots/60T-161 of 809  · 79.7 pctIndividual scoring chances per 60 minutes. chances/60iSCF/609.40chances/60T-160 of 803  · 79.6 pctIndividual expected goals per 60 minutes. xG/60ixG/601.24xG/60T-160 of 800  · 79.6 pctON-ICE CONTEXTTeam expected goals for while on ice. xG/60On-ice xGF/603.62xG/60T-157 of 791  · 79.7 pctShare of expected goals for while on ice. %On-ice xG%58.7%%T-157 of 788  · 79.6 pctFINISHING & INVOLVEMENTShare of on-ice goals involving a player point. %IPP76.9%%T-157 of 785  · 79.6 pctIndividual goals divided by shots on goal. %SH%14.6%%T-155 of 782  · 79.8 pctOwn L10 appearances · All Strengths10 of 10 GP · 213.5 min TOI · 2026-10-03 → 2026-10-23Each player's own appearance dates can differ. Regular season example.Game cutoff: 23 Oct 2026, 23:59:59 UTC · Snapshot: 24 Oct, 12:00 UTCExample pool: all valid same-definition values; no GP, TOI or position filter.Fabricated values and cohort · Numeric magnitude, not quality or a forecast.Proposed layout, L10/defaults, competition ties and midrank percentiles · fhfhockey.com"
+    },
+    {
+      "name": "scenario partial",
+      "passed": true,
+      "cardText": "FHFH player card — synthetic exampleAlex Morgan. Synthetic example only. 3 of 10 own appearances, All Strengths. ATOI: 21:21; tied rank 161 of 812; 79.7 percentile. SOG/60: 11.80; tied rank 161 of 809; 79.7 percentile. iSCF/60: 9.40; tied rank 160 of 803; 79.6 percentile. ixG/60: 1.24; tied rank 160 of 800; 79.6 percentile. On-ice xGF/60: 3.62; tied rank 157 of 791; 79.7 percentile. On-ice xG%: 58.7%; tied rank 157 of 788; 79.6 percentile. IPP: 76.9%; tied rank 157 of 785; 79.6 percentile. SH%: 14.6%; tied rank 155 of 782; 79.8 percentile. Numeric percentile is magnitude, not quality or a forecast. Proposed competition ranks and empirical midrank percentiles.FHFH / PLAYER CARDSYNTHETIC EXAMPLEAlex MorganExample Hockey Club · RW · Portrait-free exampleOPPORTUNITYTime on ice per NHL appearance. min/GPATOI21:21min:sec per appearanceT-161 of 812  · 79.7 pctINDIVIDUAL GENERATIONIndividual shots on goal per 60 minutes. shots/60SOG/6011.80shots/60T-161 of 809  · 79.7 pctIndividual scoring chances per 60 minutes. chances/60iSCF/609.40chances/60T-160 of 803  · 79.6 pctIndividual expected goals per 60 minutes. xG/60ixG/601.24xG/60T-160 of 800  · 79.6 pctON-ICE CONTEXTTeam expected goals for while on ice. xG/60On-ice xGF/603.62xG/60T-157 of 791  · 79.7 pctShare of expected goals for while on ice. %On-ice xG%58.7%%T-157 of 788  · 79.6 pctFINISHING & INVOLVEMENTShare of on-ice goals involving a player point. %IPP76.9%%T-157 of 785  · 79.6 pctIndividual goals divided by shots on goal. %SH%14.6%%T-155 of 782  · 79.8 pctOwn L10 appearances · All Strengths3 of 10 GP · 64.0 min TOI · 2026-10-18 → 2026-10-233 of 10 appearances · known short season exampleGame cutoff: 23 Oct 2026, 23:59:59 UTC · Snapshot: 24 Oct, 12:00 UTCExample pool: all valid same-definition values; no GP, TOI or position filter.Fabricated values and cohort · Numeric magnitude, not quality or a forecast.Proposed layout, L10/defaults, competition ties and midrank percentiles · fhfhockey.com"
+    },
+    {
+      "name": "scenario missing",
+      "passed": true,
+      "cardText": "FHFH player card — synthetic exampleAlex Morgan. Synthetic example only. 10 of 10 own appearances, All Strengths. ATOI: 21:21; tied rank 161 of 812; 79.7 percentile. SOG/60: 11.80; tied rank 161 of 809; 79.7 percentile. iSCF/60: 9.40; tied rank 160 of 803; 79.6 percentile. ixG/60: —; Example: 1 source game missing. On-ice xGF/60: 3.62; tied rank 157 of 791; 79.7 percentile. On-ice xG%: 58.7%; Example: comparison coverage incomplete. IPP: 76.9%; tied rank 157 of 785; 79.6 percentile. SH%: 14.6%; tied rank 155 of 782; 79.8 percentile. Numeric percentile is magnitude, not quality or a forecast. Proposed competition ranks and empirical midrank percentiles.FHFH / PLAYER CARDSYNTHETIC EXAMPLEAlex MorganExample Hockey Club · RW · Portrait-free exampleOPPORTUNITYTime on ice per NHL appearance. min/GPATOI21:21min:sec per appearanceT-161 of 812  · 79.7 pctINDIVIDUAL GENERATIONIndividual shots on goal per 60 minutes. shots/60SOG/6011.80shots/60T-161 of 809  · 79.7 pctIndividual scoring chances per 60 minutes. chances/60iSCF/609.40chances/60T-160 of 803  · 79.6 pctIndividual expected goals per 60 minutes. xG/60ixG/60—Example: 1 source game missingValue and rank unavailableON-ICE CONTEXTTeam expected goals for while on ice. xG/60On-ice xGF/603.62xG/60T-157 of 791  · 79.7 pctShare of expected goals for while on ice. %On-ice xG%58.7%%Rank unavailable · coverage incompleteFINISHING & INVOLVEMENTShare of on-ice goals involving a player point. %IPP76.9%%T-157 of 785  · 79.6 pctIndividual goals divided by shots on goal. %SH%14.6%%T-155 of 782  · 79.8 pctOwn L10 appearances · All Strengths10 of 10 GP · 213.5 min TOI · 2026-10-03 → 2026-10-23Each player's own appearance dates can differ. Regular season example.Game cutoff: 23 Oct 2026, 23:59:59 UTC · Snapshot: 24 Oct, 12:00 UTCExample pool: all valid same-definition values; no GP, TOI or position filter.Fabricated values and cohort · Numeric magnitude, not quality or a forecast.Proposed layout, L10/defaults, competition ties and midrank percentiles · fhfhockey.com"
+    },
+    {
+      "name": "mobile overflow",
+      "passed": true
+    },
+    {
+      "name": "mobile reading size",
+      "passed": true
+    },
+    {
+      "name": "fixture search empty / select",
+      "passed": true
+    },
+    {
+      "name": "keyboard focus",
+      "passed": true
+    },
+    {
+      "name": "no external requests",
+      "passed": true
+    },
+    {
+      "name": "no browser errors",
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "network": [],
+  "syntheticOnly": true
+}

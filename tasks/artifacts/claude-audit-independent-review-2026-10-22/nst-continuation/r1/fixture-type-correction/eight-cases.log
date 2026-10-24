@@ -1,0 +1,58 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts __tests__/pages/api/v1/db/auditNstR1Additional.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-nst-fixture-types-6uz7joro/isolation/snapshot/web
+
+(node:96824) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > does not mutate or reacquire an existing active NST lease
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > does not mutate or reacquire an existing expired NST lease
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > does not mutate or reacquire an existing missing NST lease
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > fences a newer durable hold written after the fresh acquisition read
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > fences a newer durable hold written after the fresh acquisition read
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > does not invoke NST after a committed acquisition returns a mismatched receipt
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > does not invoke NST after a committed acquisition returns a mismatched receipt
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > requires a durable handoff row when its acknowledgement was lost (committed=true)
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > requires a durable handoff row when its acknowledgement was lost (committed=true)
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > requires a durable handoff row when its acknowledgement was lost (committed=false)
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > requires a durable handoff row when its acknowledgement was lost (committed=false)
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > retains the normal bounded retry for an acknowledged non-ambiguous NST failure
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > retains the normal bounded retry for an acknowledged non-ambiguous NST failure
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+stderr | __tests__/pages/api/v1/db/auditNstR1Additional.test.ts > independent R1 fencing and recovery review > retains the normal bounded retry for an acknowledged non-ambiguous NST failure
+[nhl-off-season] season window unavailable; running job { reason: [32m'client.from(...).select(...).order is not a function'[39m }
+
+ ✓ __tests__/pages/api/v1/db/auditNstR1Additional.test.ts (8 tests) 22ms
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  09:49:45
+   Duration  337ms (transform 78ms, setup 10ms, collect 78ms, tests 22ms, environment 128ms, prepare 27ms)
+

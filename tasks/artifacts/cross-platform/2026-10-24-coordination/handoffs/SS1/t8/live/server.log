@@ -1,0 +1,23 @@
+
+> web@0.1.0 dev:stable
+> node scripts/dev-stable.mjs -p 3110
+
+   ▲ Next.js 15.5.22
+   - Local:        http://localhost:3110
+   - Network:      http://0.0.0.0:3110
+   - Environments: .env.development.local, .env.local, .env.development
+   - Experiments (use with caution):
+     ✓ externalDir
+
+ ✓ Starting...
+ ✓ Ready in 827ms
+ ○ Compiling /social-share/[format] ...
+ ✓ Compiled /social-share/[format] in 531ms (977 modules)
+ GET /social-share/game-grid 200 in 997ms
+ GET /social-share/game-grid 200 in 218ms
+ ⚠ Cross origin request detected from 127.0.0.1 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ ✓ Compiled /api/v1/social-share/[format] in 352ms (312 modules)
+ GET /api/v1/social-share/game-grid?weekStart=2026-10-19 200 in 1329ms
+ GET /api/v1/social-share/game-grid?weekStart=2026-10-19 200 in 1348ms
+[?25h

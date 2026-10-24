@@ -1,0 +1,22 @@
+{
+  "web/lib/player-cards/fixtures.ts": "00ac0c5bc1194427c2aecb7981c0f228b22b51fef16b343a72ec0f47a4405f65",
+  "web/lib/player-cards/windows.ts": "b7e989c211b8a9f5a1a91af157c69fc28cd29a409442f89365e57c662d10adb2",
+  "web/lib/player-cards/contracts.ts": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d",
+  "web/lib/player-cards/ranking.ts": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338",
+  "web/lib/player-cards/domain.test.ts": "da0e7e3bcc4b923acc7e4229e63236efe4e7210877092f063e4bb3c96bac46b1",
+  "web/lib/player-cards/interactionFixtures.ts": "803cf3b41962b3125a0cd78c886700c58d2a37fd61206562545919767d04774e",
+  "web/lib/player-cards/interactionSnapshot.ts": "53ce89f2495a7b832a20302d070c9f6b87d1dc099f1e460600e7471eb4aa3759",
+  "web/lib/player-cards/adapter.ts": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f",
+  "web/lib/player-cards/aggregation.r1.test.ts": "54df67e6ff24264a685db97bfbba2a54803ef9214d2132941ffa580f522cf348",
+  "web/lib/player-cards/registry.ts": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29",
+  "web/lib/player-cards/aggregation.ts": "4ffe0ed5cbdea97ecb15b153543aace6b2d349cac10b0ff3e6de7484768b410a",
+  "web/lib/player-cards/ranking.test.ts": "b6177f53c26acde7f03e9afcdc5a3bbe4cdf2be071aea5a6e8be455e7375c027",
+  "web/components/player-cards/PlayerCard.tsx": "917edf84256f3153459bc02302ff9a804a3847838eaaf8192bd000fb21f9cdfc",
+  "web/components/player-cards/PlayerCardPreview.test.tsx": "5309f794268f88a670c19efe98939ca008b2439fd07c700c223bc832799b7e8f",
+  "web/components/player-cards/PlayerCard.module.scss": "cec892e73d5642253435108e81c91ab0f6fb6b9bedacee849ffd10808e792b77",
+  "web/components/player-cards/PlayerCardFlow.test.tsx": "0ce3fb52c6f19fcea4d5f0755924faab1472cda1b4e1fa704396e1b4176c8579",
+  "web/components/player-cards/PlayerCardPreview.tsx": "f58bdd545fa121be6ca79ffab03f52aeff8ca9d18a74e3e608b4addf7ae1a4b6",
+  "web/components/player-cards/PlayerCardFlow.module.scss": "4e49342c3f99b62201e8bc2dcf76c60faee6a565ff924894c00e40c374512c43",
+  "web/components/player-cards/PlayerCardFlow.tsx": "036c44fb865ac729e2ddfba06bf0d6205d983bf9f89133c88f20918869302e30",
+  "web/components/player-cards/InteractiveCard.tsx": "70b6edce10ffe219817c64f2c4763a8e58091b9c59f9b77fb2a68aa2b7d33271"
+}

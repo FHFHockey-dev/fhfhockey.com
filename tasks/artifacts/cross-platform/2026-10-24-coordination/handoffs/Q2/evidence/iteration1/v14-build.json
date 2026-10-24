@@ -1,0 +1,381 @@
+{
+    "scene": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+    "source": "Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity",
+    "utc": "2026-10-24T15:02:39.2131050Z",
+    "shader": "VesperBasin/V14 Strata Rock",
+    "shaderHasErrors": false,
+    "swappedRenderers": 41,
+    "swappedSlots": 61,
+    "strataMaterials": 14,
+    "terrainRenderers": 4,
+    "terrainColliders": 3,
+    "swaps": [
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Rock crown[214]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Rock crown[216]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Rock crown[218]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Rock crown[220]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Stepped rock cover island[213]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Stepped rock cover island[215]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Stepped rock cover island[217]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Stepped rock cover island[219]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Horizontal canyon stratum[1]",
+            "from": "Sandstone ground",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Horizontal canyon stratum[15]",
+            "from": "Sandstone ground",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Horizontal canyon stratum[22]",
+            "from": "Sandstone ground",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Horizontal canyon stratum[29]",
+            "from": "Sandstone ground",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Horizontal canyon stratum[31]",
+            "from": "Sandstone ground",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Horizontal canyon stratum[33]",
+            "from": "Sandstone ground",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Horizontal canyon stratum[35]",
+            "from": "Sandstone ground",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Horizontal canyon stratum[37]",
+            "from": "Sandstone ground",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Horizontal canyon stratum[39]",
+            "from": "Sandstone ground",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Horizontal canyon stratum[8]",
+            "from": "Sandstone ground",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terraced sandstone mass[0]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terraced sandstone mass[14]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terraced sandstone mass[21]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terraced sandstone mass[28]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terraced sandstone mass[30]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terraced sandstone mass[32]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terraced sandstone mass[34]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terraced sandstone mass[36]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terraced sandstone mass[38]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terraced sandstone mass[7]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V04 / Continuous sandstone canyon[4]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Deep basin floor[2]",
+            "from": "01 Oxide shadow beds",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 01 Oxide shadow beds.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Deep basin floor[2]",
+            "from": "02 Red sandstone",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 02 Red sandstone.mat",
+            "slot": 1
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Deep basin floor[2]",
+            "from": "03 Pale sediment seams",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 03 Pale sediment seams.mat",
+            "slot": 2
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Deep basin floor[2]",
+            "from": "04 Sunworn sandstone caps",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 04 Sunworn sandstone caps.mat",
+            "slot": 3
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Deep basin floor[2]",
+            "from": "05 Deep basin silt",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 05 Deep basin silt.mat",
+            "slot": 4
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Distant broken mesa skyline[1]",
+            "from": "01 Oxide shadow beds",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 01 Oxide shadow beds.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Distant broken mesa skyline[1]",
+            "from": "02 Red sandstone",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 02 Red sandstone.mat",
+            "slot": 1
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Distant broken mesa skyline[1]",
+            "from": "03 Pale sediment seams",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 03 Pale sediment seams.mat",
+            "slot": 2
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Distant broken mesa skyline[1]",
+            "from": "04 Sunworn sandstone caps",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 04 Sunworn sandstone caps.mat",
+            "slot": 3
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Distant broken mesa skyline[1]",
+            "from": "05 Deep basin silt",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 05 Deep basin silt.mat",
+            "slot": 4
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Near eroded canyon shoulders[0]",
+            "from": "01 Oxide shadow beds",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 01 Oxide shadow beds.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Near eroded canyon shoulders[0]",
+            "from": "02 Red sandstone",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 02 Red sandstone.mat",
+            "slot": 1
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Near eroded canyon shoulders[0]",
+            "from": "03 Pale sediment seams",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 03 Pale sediment seams.mat",
+            "slot": 2
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Near eroded canyon shoulders[0]",
+            "from": "04 Sunworn sandstone caps",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 04 Sunworn sandstone caps.mat",
+            "slot": 3
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Canyon Backdrop[1]/Near eroded canyon shoulders[0]",
+            "from": "05 Deep basin silt",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 05 Deep basin silt.mat",
+            "slot": 4
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Playable Islands[0]/Grounded outpost islands[0]",
+            "from": "01 Oxide shadow beds",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 01 Oxide shadow beds.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Playable Islands[0]/Grounded outpost islands[0]",
+            "from": "02 Red sandstone",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 02 Red sandstone.mat",
+            "slot": 1
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Playable Islands[0]/Grounded outpost islands[0]",
+            "from": "03 Pale sediment seams",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 03 Pale sediment seams.mat",
+            "slot": 2
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Playable Islands[0]/Grounded outpost islands[0]",
+            "from": "04 Sunworn sandstone caps",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 04 Sunworn sandstone caps.mat",
+            "slot": 3
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Playable Islands[0]/Grounded outpost islands[0]",
+            "from": "05 Deep basin silt",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 05 Deep basin silt.mat",
+            "slot": 4
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Water[2]/Deep teal basin and current ribbons[0]",
+            "from": "01 Oxide shadow beds",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 01 Oxide shadow beds.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Water[2]/Deep teal basin and current ribbons[0]",
+            "from": "02 Red sandstone",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 02 Red sandstone.mat",
+            "slot": 1
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Water[2]/Deep teal basin and current ribbons[0]",
+            "from": "03 Pale sediment seams",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 03 Pale sediment seams.mat",
+            "slot": 2
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Water[2]/Deep teal basin and current ribbons[0]",
+            "from": "04 Sunworn sandstone caps",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 04 Sunworn sandstone caps.mat",
+            "slot": 3
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/Terrain[0]/Water[2]/Deep teal basin and current ribbons[0]",
+            "from": "05 Deep basin silt",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata 05 Deep basin silt.mat",
+            "slot": 4
+        },
+        {
+            "renderer": "Vesper Basin / First Slice[0]/BLUE BASE / protected spawn[13]/Rear protection wall[1]",
+            "from": "Canyon boundary",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Canyon boundary.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "Vesper Basin / First Slice[0]/Bounded arena floor[0]",
+            "from": "Sandstone ground",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "Vesper Basin / First Slice[0]/East canyon rim[4]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "Vesper Basin / First Slice[0]/North canyon rim[1]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "Vesper Basin / First Slice[0]/RED BASE / protected spawn[12]/Rear protection wall[1]",
+            "from": "Canyon boundary",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Canyon boundary.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "Vesper Basin / First Slice[0]/South canyon rim[2]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "Vesper Basin / First Slice[0]/West canyon rim[3]",
+            "from": "Faceted canyon",
+            "to": "Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat",
+            "slot": 0
+        }
+    ],
+    "note": "v13 preserved and read-only; v14 regenerates only 'V13 North Ascent/Terrain' (same placements/crops; stepped flat-topped buttresses, planar broken caps) and re-materials canyon rock renderers in the v14 scene. Colliders on inherited rock are not changed. Debug HUD/targets untouched. No Scout import, package, project-settings or main-project change."
+}

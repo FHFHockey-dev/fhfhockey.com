@@ -2,6 +2,8 @@
 
 **Result: FE-02c's documented gap is reproduced at the local admission/permission boundary.** Seven offline checks pass as reproductions and controls. No application change, approval receipt, native activation, production query or NST operation was made. This does not demonstrate an unauthorized deployed recommendation or model inaccuracy.
 
+**Later policy update:** TJ selected option2; FORGE lead owns implementation. [Decision receipt](P07-SELECTED-POLICY.md) and [acceptance matrix](P07-CONSUMER-ACCEPTANCE.md) supersede pending-selection notes in this historical audit. The seven executed reproductions remain unchanged.
+
 ## Concrete counterexamples
 
 1. The repository's existing fictional issued-goalie fixture has valid schedule/roster identity, captured-read fingerprint, expiry, external-fantasy-input exclusion and a 0.5 starter probability with 30 conditional saves. It contains **no target/use approval receipt**. `publicPlanningForecasts` emits expected saves **15** and permits assignment, totals and comparison. The actual `forecastAllows` helper accepts totals/comparison. The actual pure `resolveContribution` also retains mean15 with all three permissions and no exclusion.
@@ -47,3 +49,7 @@ The current [FE-02c decision matrix](/Users/tim/Code/fhfhockey.com/tasks/tasks-p
 4. **Review the exact local bytes before integration.** Keep Starter Board untouched under this RSO-only slice unless parent separately authorizes a shared board policy. No claim that permission work supplies missing PK, goalie minutes, participation, historical qualification or default mixed-roster usefulness.
 
 P07 audit owner is this ledger task; **application implementation remains unassigned and policy-dependent**. No new worker was launched. P02 stays coordinated with the existing sKO/VuDu investigator; no duplicate formula audit was performed.
+
+## Policy provenance follow-up
+
+[P07-DECISION.md](P07-DECISION.md) distinguishes explicit retained TJ legacy/source/bridge/native decisions from the still-unselected detailed target/use matrix. Additional call-site inspection confirms Start Chart shares admission and its native loader shares loadPlanningData; RSO empty admission can trigger the interim bridge. Therefore “preserve Starter Board” above is a required acceptance constraint, not a claim that editing shared admission is mechanically RSO-only. No new behavior tests or policy choice were made.

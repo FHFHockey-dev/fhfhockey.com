@@ -1,0 +1,139 @@
+[
+  {
+    "label": "no-ANA-390",
+    "chromeAtLoad": [
+      {
+        "el": "header.Header_mobileHeader",
+        "position": "sticky",
+        "top": 0,
+        "height": 56,
+        "inChart": false
+      },
+      {
+        "el": "nav.Header_bottomNav",
+        "position": "fixed",
+        "top": 779,
+        "height": 65,
+        "inChart": false
+      },
+      {
+        "el": "div.MobileTeamList_teamSelectHeader.MobileTeamList_expanded",
+        "position": "sticky",
+        "top": 64,
+        "height": 492,
+        "inChart": false
+      },
+      {
+        "el": "div.Stats_searchSection.Stats_teamsExpanded",
+        "position": "sticky",
+        "top": 556,
+        "height": 98,
+        "inChart": false
+      }
+    ],
+    "stuckChromeBottomAfterScroll": 146,
+    "chartTop": 154,
+    "chartBottom": 533,
+    "coveredPoints": 0,
+    "coveredBy": [],
+    "coveredYRange": null,
+    "selectValue": "BOS",
+    "teamHeader": "BOS logo",
+    "alert": null,
+    "retry": false,
+    "charts": 1
+  },
+  {
+    "label": "withheld-390",
+    "chromeAtLoad": [
+      {
+        "el": "header.Header_mobileHeader",
+        "position": "sticky",
+        "top": 0,
+        "height": 56,
+        "inChart": false
+      },
+      {
+        "el": "nav.Header_bottomNav",
+        "position": "fixed",
+        "top": 779,
+        "height": 65,
+        "inChart": false
+      },
+      {
+        "el": "div.MobileTeamList_teamSelectHeader.MobileTeamList_expanded",
+        "position": "sticky",
+        "top": 64,
+        "height": 492,
+        "inChart": false
+      },
+      {
+        "el": "div.Stats_searchSection.Stats_teamsExpanded",
+        "position": "sticky",
+        "top": 556,
+        "height": 98,
+        "inChart": false
+      }
+    ],
+    "stuckChromeBottomAfterScroll": 146,
+    "chartTop": 154,
+    "chartBottom": 421,
+    "coveredPoints": 0,
+    "coveredBy": [],
+    "coveredYRange": null,
+    "selectValue": null,
+    "teamHeader": null,
+    "alert": "Goalie data is unavailable because the complete season could not be loaded.Try again",
+    "retry": true,
+    "charts": 0
+  },
+  {
+    "label": "after-retry-390",
+    "chromeAtLoad": [
+      {
+        "el": "header.Header_mobileHeader",
+        "position": "sticky",
+        "top": 0,
+        "height": 56,
+        "inChart": false
+      },
+      {
+        "el": "nav.Header_bottomNav",
+        "position": "fixed",
+        "top": 779,
+        "height": 65,
+        "inChart": false
+      },
+      {
+        "el": "div.MobileTeamList_teamSelectHeader.MobileTeamList_collapsed",
+        "position": "sticky",
+        "top": 0,
+        "height": 44,
+        "inChart": false
+      },
+      {
+        "el": "div.Stats_searchSection.Stats_teamsCollapsed",
+        "position": "sticky",
+        "top": 48,
+        "height": 98,
+        "inChart": false
+      }
+    ],
+    "stuckChromeBottomAfterScroll": 146,
+    "chartTop": 154,
+    "chartBottom": 533,
+    "coveredPoints": 0,
+    "coveredBy": [],
+    "coveredYRange": null,
+    "selectValue": "ANA",
+    "teamHeader": "ANA logo",
+    "alert": null,
+    "retry": false,
+    "charts": 1
+  },
+  {
+    "label": "old-method-scrollIntoViewIfNeeded",
+    "sectionTopInViewport": 204,
+    "hitAtSectionTop": "div.MobileTeamList_teamList"
+  }
+]

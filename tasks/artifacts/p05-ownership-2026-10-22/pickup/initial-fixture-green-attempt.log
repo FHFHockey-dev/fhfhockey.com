@@ -1,0 +1,3253 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts components/PlayerPickupTable/PlayerPickupTable.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-jz1epbkx/isolation/snapshot/web
+
+(node:94758) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | components/PlayerPickupTable/PlayerPickupTable.test.ts > Player pickup interactions > retries a failed player request
+Failed to load player data: { message: [32m'Unavailable'[39m }
+
+ ❯ components/PlayerPickupTable/PlayerPickupTable.test.ts (25 tests | 8 failed) 558ms
+   ✓ Player Pickup season identity > keeps the Yahoo start year stable after the NHL season ends 1ms
+   ✓ Player Pickup season identity > fails closed for missing or malformed season identities 0ms
+   ✓ pickup eligibility normalization > validates eligibility " c " 0ms
+   ✓ pickup eligibility normalization > validates eligibility ["C","LW","C"] 0ms
+   ✓ pickup eligibility normalization > validates eligibility [{"position":"C"},{"position":"LW"}] 0ms
+   ✓ pickup eligibility normalization > validates eligibility {"position":"G"} 0ms
+   ✓ pickup eligibility normalization > validates eligibility null 0ms
+   ✓ pickup eligibility normalization > validates eligibility [{},42,{"position":{}},"unknown","BN"] 0ms
+   ✓ Player pickup interactions > loads dated ownership from existing player rows and filters zero-owned players by team 84ms
+   ✓ Player pickup interactions > retries a failed player request 33ms
+   ✓ Player pickup interactions > uses Yahoo non-rostered status with sync timestamp 2026-09-17T12:00:00Z 89ms
+   ✓ Player pickup interactions > uses Yahoo non-rostered status with sync timestamp  75ms
+   ✓ Player pickup interactions > uses Yahoo non-rostered status with sync timestamp not-a-date 75ms
+   ✓ Player pickup interactions > discloses the general pool after Yahoo failure and allows refresh 44ms
+   × pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero (null) 13ms
+     → Found multiple elements with the text: 0%
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<tr[39m
+  [33mclass[39m=[32m"_primaryRow_f5fbb8 _evenPair_f5fbb8 _posC_f5fbb8"[39m
+[36m>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_nameCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_nameAndInjuryWrapper_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leftNamePart_f5fbb8"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_teamLogoSmall_f5fbb8"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"BOS"[39m
+            [33mdata-nimg[39m=[32m"1"[39m
+            [33mdecoding[39m=[32m"async"[39m
+            [33mheight[39m=[32m"20"[39m
+            [33mloading[39m=[32m"lazy"[39m
+            [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75"[39m
+            [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FBOS.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75 2x"[39m
+            [33mstyle[39m=[32m"color: transparent;"[39m
+            [33mwidth[39m=[32m"20"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_playerName_f5fbb8"[39m
+        [36m>[39m
+          [0mF. Agent[0m
+        [36m</span>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_teamAbbr_f5fbb8"[39m
+    [36m>[39m
+      [0mBOS[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<span>[39m
+      [0mUnknown[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_positionsCell_f5fbb8"[39m
+  [36m>[39m
+    [0mC, LW[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_metricsCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_percentileRow_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPTS[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mA[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSOG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPPP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mBLK[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mHIT[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mFOW[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPIM[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSHP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_scoreCell_f5fbb8"[39m
+  [36m>[39m
+    [0m0.0[0m
+  [36m</td>[39m
+[36m</tr>[39m
+   × pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero (undefined) 11ms
+     → Found multiple elements with the text: 0%
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<tr[39m
+  [33mclass[39m=[32m"_primaryRow_f5fbb8 _evenPair_f5fbb8 _posC_f5fbb8"[39m
+[36m>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_nameCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_nameAndInjuryWrapper_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leftNamePart_f5fbb8"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_teamLogoSmall_f5fbb8"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"BOS"[39m
+            [33mdata-nimg[39m=[32m"1"[39m
+            [33mdecoding[39m=[32m"async"[39m
+            [33mheight[39m=[32m"20"[39m
+            [33mloading[39m=[32m"lazy"[39m
+            [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75"[39m
+            [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FBOS.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75 2x"[39m
+            [33mstyle[39m=[32m"color: transparent;"[39m
+            [33mwidth[39m=[32m"20"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_playerName_f5fbb8"[39m
+        [36m>[39m
+          [0mF. Agent[0m
+        [36m</span>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_teamAbbr_f5fbb8"[39m
+    [36m>[39m
+      [0mBOS[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<span>[39m
+      [0mUnknown[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_positionsCell_f5fbb8"[39m
+  [36m>[39m
+    [0mC, LW[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_metricsCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_percentileRow_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPTS[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mA[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSOG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPPP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mBLK[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mHIT[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mFOW[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPIM[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSHP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_scoreCell_f5fbb8"[39m
+  [36m>[39m
+    [0m0.0[0m
+  [36m</td>[39m
+[36m</tr>[39m
+   × pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero ("") 10ms
+     → Found multiple elements with the text: 0%
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<tr[39m
+  [33mclass[39m=[32m"_primaryRow_f5fbb8 _evenPair_f5fbb8 _posC_f5fbb8"[39m
+[36m>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_nameCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_nameAndInjuryWrapper_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leftNamePart_f5fbb8"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_teamLogoSmall_f5fbb8"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"BOS"[39m
+            [33mdata-nimg[39m=[32m"1"[39m
+            [33mdecoding[39m=[32m"async"[39m
+            [33mheight[39m=[32m"20"[39m
+            [33mloading[39m=[32m"lazy"[39m
+            [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75"[39m
+            [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FBOS.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75 2x"[39m
+            [33mstyle[39m=[32m"color: transparent;"[39m
+            [33mwidth[39m=[32m"20"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_playerName_f5fbb8"[39m
+        [36m>[39m
+          [0mF. Agent[0m
+        [36m</span>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_teamAbbr_f5fbb8"[39m
+    [36m>[39m
+      [0mBOS[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<span>[39m
+      [0mUnknown[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_positionsCell_f5fbb8"[39m
+  [36m>[39m
+    [0mC, LW[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_metricsCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_percentileRow_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPTS[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mA[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSOG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPPP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mBLK[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mHIT[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mFOW[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPIM[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSHP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_scoreCell_f5fbb8"[39m
+  [36m>[39m
+    [0m0.0[0m
+  [36m</td>[39m
+[36m</tr>[39m
+   × pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero ("   ") 10ms
+     → Found multiple elements with the text: 0%
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<tr[39m
+  [33mclass[39m=[32m"_primaryRow_f5fbb8 _evenPair_f5fbb8 _posC_f5fbb8"[39m
+[36m>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_nameCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_nameAndInjuryWrapper_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leftNamePart_f5fbb8"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_teamLogoSmall_f5fbb8"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"BOS"[39m
+            [33mdata-nimg[39m=[32m"1"[39m
+            [33mdecoding[39m=[32m"async"[39m
+            [33mheight[39m=[32m"20"[39m
+            [33mloading[39m=[32m"lazy"[39m
+            [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75"[39m
+            [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FBOS.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75 2x"[39m
+            [33mstyle[39m=[32m"color: transparent;"[39m
+            [33mwidth[39m=[32m"20"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_playerName_f5fbb8"[39m
+        [36m>[39m
+          [0mF. Agent[0m
+        [36m</span>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_teamAbbr_f5fbb8"[39m
+    [36m>[39m
+      [0mBOS[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<span>[39m
+      [0mUnknown[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_positionsCell_f5fbb8"[39m
+  [36m>[39m
+    [0mC, LW[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_metricsCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_percentileRow_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPTS[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mA[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSOG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPPP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mBLK[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mHIT[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mFOW[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPIM[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSHP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_scoreCell_f5fbb8"[39m
+  [36m>[39m
+    [0m0.0[0m
+  [36m</td>[39m
+[36m</tr>[39m
+   × pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero (false) 9ms
+     → Found multiple elements with the text: 0%
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<tr[39m
+  [33mclass[39m=[32m"_primaryRow_f5fbb8 _evenPair_f5fbb8 _posC_f5fbb8"[39m
+[36m>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_nameCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_nameAndInjuryWrapper_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leftNamePart_f5fbb8"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_teamLogoSmall_f5fbb8"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"BOS"[39m
+            [33mdata-nimg[39m=[32m"1"[39m
+            [33mdecoding[39m=[32m"async"[39m
+            [33mheight[39m=[32m"20"[39m
+            [33mloading[39m=[32m"lazy"[39m
+            [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75"[39m
+            [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FBOS.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75 2x"[39m
+            [33mstyle[39m=[32m"color: transparent;"[39m
+            [33mwidth[39m=[32m"20"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_playerName_f5fbb8"[39m
+        [36m>[39m
+          [0mF. Agent[0m
+        [36m</span>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_teamAbbr_f5fbb8"[39m
+    [36m>[39m
+      [0mBOS[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<span>[39m
+      [0mUnknown[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_positionsCell_f5fbb8"[39m
+  [36m>[39m
+    [0mC, LW[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_metricsCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_percentileRow_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPTS[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mA[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSOG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPPP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mBLK[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mHIT[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mFOW[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPIM[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSHP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_scoreCell_f5fbb8"[39m
+  [36m>[39m
+    [0m0.0[0m
+  [36m</td>[39m
+[36m</tr>[39m
+   × pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero ("0x10") 8ms
+     → Found multiple elements with the text: 0%
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<tr[39m
+  [33mclass[39m=[32m"_primaryRow_f5fbb8 _evenPair_f5fbb8 _posC_f5fbb8"[39m
+[36m>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_nameCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_nameAndInjuryWrapper_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leftNamePart_f5fbb8"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_teamLogoSmall_f5fbb8"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"BOS"[39m
+            [33mdata-nimg[39m=[32m"1"[39m
+            [33mdecoding[39m=[32m"async"[39m
+            [33mheight[39m=[32m"20"[39m
+            [33mloading[39m=[32m"lazy"[39m
+            [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75"[39m
+            [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FBOS.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75 2x"[39m
+            [33mstyle[39m=[32m"color: transparent;"[39m
+            [33mwidth[39m=[32m"20"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_playerName_f5fbb8"[39m
+        [36m>[39m
+          [0mF. Agent[0m
+        [36m</span>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_teamAbbr_f5fbb8"[39m
+    [36m>[39m
+      [0mBOS[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<span>[39m
+      [0mUnknown[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_positionsCell_f5fbb8"[39m
+  [36m>[39m
+    [0mC, LW[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_metricsCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_percentileRow_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPTS[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mA[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSOG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPPP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mBLK[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mHIT[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mFOW[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPIM[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSHP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_scoreCell_f5fbb8"[39m
+  [36m>[39m
+    [0m0.0[0m
+  [36m</td>[39m
+[36m</tr>[39m
+   × pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero (-1) 9ms
+     → Found multiple elements with the text: 0%
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<tr[39m
+  [33mclass[39m=[32m"_primaryRow_f5fbb8 _evenPair_f5fbb8 _posC_f5fbb8"[39m
+[36m>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_nameCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_nameAndInjuryWrapper_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leftNamePart_f5fbb8"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_teamLogoSmall_f5fbb8"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"BOS"[39m
+            [33mdata-nimg[39m=[32m"1"[39m
+            [33mdecoding[39m=[32m"async"[39m
+            [33mheight[39m=[32m"20"[39m
+            [33mloading[39m=[32m"lazy"[39m
+            [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75"[39m
+            [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FBOS.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75 2x"[39m
+            [33mstyle[39m=[32m"color: transparent;"[39m
+            [33mwidth[39m=[32m"20"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_playerName_f5fbb8"[39m
+        [36m>[39m
+          [0mF. Agent[0m
+        [36m</span>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_teamAbbr_f5fbb8"[39m
+    [36m>[39m
+      [0mBOS[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<span>[39m
+      [0mUnknown[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_positionsCell_f5fbb8"[39m
+  [36m>[39m
+    [0mC, LW[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_metricsCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_percentileRow_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPTS[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mA[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSOG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPPP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mBLK[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mHIT[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mFOW[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPIM[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSHP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_scoreCell_f5fbb8"[39m
+  [36m>[39m
+    [0m0.0[0m
+  [36m</td>[39m
+[36m</tr>[39m
+   ✓ pickup ownership evidence > preserves undated zero as last-known evidence, never a fresh measured zero (0) 8ms
+   ✓ pickup ownership evidence > preserves undated zero as last-known evidence, never a fresh measured zero ("0") 12ms
+   × pickup ownership evidence > labels dated stale values and filters unknown separately at viewport 1024 13ms
+     → Found multiple elements with the text: 0%
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<span[39m
+  [33mtitle[39m=[32m"Yahoo ownership · 2026-10-22"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</span>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<tr[39m
+  [33mclass[39m=[32m"_primaryRow_f5fbb8 _evenPair_f5fbb8 _posC_f5fbb8"[39m
+[36m>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_nameCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_nameAndInjuryWrapper_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leftNamePart_f5fbb8"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_teamLogoSmall_f5fbb8"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"BOS"[39m
+            [33mdata-nimg[39m=[32m"1"[39m
+            [33mdecoding[39m=[32m"async"[39m
+            [33mheight[39m=[32m"20"[39m
+            [33mloading[39m=[32m"lazy"[39m
+            [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75"[39m
+            [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FBOS.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75 2x"[39m
+            [33mstyle[39m=[32m"color: transparent;"[39m
+            [33mwidth[39m=[32m"20"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_playerName_f5fbb8"[39m
+        [36m>[39m
+          [0mF. Agent[0m
+        [36m</span>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_teamAbbr_f5fbb8"[39m
+    [36m>[39m
+      [0mBOS[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33mtitle[39m=[32m"Yahoo ownership · 2026-10-22"[39m
+    [36m>[39m
+      [0m0%[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_positionsCell_f5fbb8"[39m
+  [36m>[39m
+    [0mC, LW[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_metricsCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_percentileRow_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPTS[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mA[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSOG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPPP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mBLK[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mHIT[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mFOW[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPIM[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSHP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_scoreCell_f5fbb8"[39m
+  [36m>[39m
+    [0m0.0[0m
+  [36m</td>[39m
+[36m</tr>[39m
+   ✓ pickup ownership evidence > labels dated stale values and filters unknown separately at viewport 390 52ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 8 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero (null)
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero (undefined)
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero ("")
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero ("   ")
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero (false)
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero ("0x10")
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero (-1)
+TestingLibraryElementError: Found multiple elements with the text: 0%
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<tr[39m
+  [33mclass[39m=[32m"_primaryRow_f5fbb8 _evenPair_f5fbb8 _posC_f5fbb8"[39m
+[36m>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_nameCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_nameAndInjuryWrapper_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leftNamePart_f5fbb8"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_teamLogoSmall_f5fbb8"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"BOS"[39m
+            [33mdata-nimg[39m=[32m"1"[39m
+            [33mdecoding[39m=[32m"async"[39m
+            [33mheight[39m=[32m"20"[39m
+            [33mloading[39m=[32m"lazy"[39m
+            [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75"[39m
+            [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FBOS.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75 2x"[39m
+            [33mstyle[39m=[32m"color: transparent;"[39m
+            [33mwidth[39m=[32m"20"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_playerName_f5fbb8"[39m
+        [36m>[39m
+          [0mF. Agent[0m
+        [36m</span>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_teamAbbr_f5fbb8"[39m
+    [36m>[39m
+      [0mBOS[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<span>[39m
+      [0mUnknown[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_positionsCell_f5fbb8"[39m
+  [36m>[39m
+    [0mC, LW[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_metricsCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_percentileRow_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPTS[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mA[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSOG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPPP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mBLK[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mHIT[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mFOW[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPIM[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSHP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_scoreCell_f5fbb8"[39m
+  [36m>[39m
+    [0m0.0[0m
+  [36m</td>[39m
+[36m</tr>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/PlayerPickupTable/PlayerPickupTable.test.ts:138:16
+    136|     const row = within(name.closest("tr")!);
+    137|     expect(row.getByText("Unknown")).toBeTruthy();
+    138|     expect(row.queryByText("0%")).toBeNull();
+       |                ^
+    139|   });
+    140| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/8]⎯
+
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > pickup ownership evidence > labels dated stale values and filters unknown separately at viewport 1024
+TestingLibraryElementError: Found multiple elements with the text: 0%
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+[36m<span[39m
+  [33mtitle[39m=[32m"Yahoo ownership · 2026-10-22"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</span>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+  [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+[36m>[39m
+  [0m0%[0m
+[36m</div>[39m
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+[36m<tr[39m
+  [33mclass[39m=[32m"_primaryRow_f5fbb8 _evenPair_f5fbb8 _posC_f5fbb8"[39m
+[36m>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_nameCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_nameAndInjuryWrapper_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leftNamePart_f5fbb8"[39m
+      [36m>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_teamLogoSmall_f5fbb8"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"BOS"[39m
+            [33mdata-nimg[39m=[32m"1"[39m
+            [33mdecoding[39m=[32m"async"[39m
+            [33mheight[39m=[32m"20"[39m
+            [33mloading[39m=[32m"lazy"[39m
+            [33msrc[39m=[32m"http://localhost:3000/_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75"[39m
+            [33msrcset[39m=[32m"/_next/image?url=%2FteamLogos%2FBOS.png&w=32&q=75 1x, /_next/image?url=%2FteamLogos%2FBOS.png&w=48&q=75 2x"[39m
+            [33mstyle[39m=[32m"color: transparent;"[39m
+            [33mwidth[39m=[32m"20"[39m
+          [36m/>[39m
+        [36m</span>[39m
+        [36m<span[39m
+          [33mclass[39m=[32m"_playerName_f5fbb8"[39m
+        [36m>[39m
+          [0mF. Agent[0m
+        [36m</span>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td>[39m
+    [36m<span[39m
+      [33mclass[39m=[32m"_teamAbbr_f5fbb8"[39m
+    [36m>[39m
+      [0mBOS[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<span[39m
+      [33mtitle[39m=[32m"Yahoo ownership · 2026-10-22"[39m
+    [36m>[39m
+      [0m0%[0m
+    [36m</span>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_positionsCell_f5fbb8"[39m
+  [36m>[39m
+    [0mC, LW[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_numCell_f5fbb8"[39m
+  [36m>[39m
+    [0mN/A[0m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_metricsCell_f5fbb8"[39m
+  [36m>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_percentileRow_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPTS[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mA[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSOG[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPPP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mBLK[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mHIT[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mFOW[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mPIM[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_percentileContainer_f5fbb8 _rowPairMetric_f5fbb8 _selected_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileLabel_f5fbb8 _selectedLabel_f5fbb8"[39m
+        [36m>[39m
+          [0mSHP[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_percentileBox_f5fbb8 _selectedBox_f5fbb8"[39m
+          [33mstyle[39m=[32m"background-color: rgba(255, 0, 0, 0.45); --metric-color: rgba(255, 0, 0, 0.45);"[39m
+        [36m>[39m
+          [0m0%[0m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</td>[39m
+  [36m<td[39m
+    [33mclass[39m=[32m"_scoreCell_f5fbb8"[39m
+  [36m>[39m
+    [0m0.0[0m
+  [36m</td>[39m
+[36m</tr>[39m
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ❯ getMultipleElementsFoundError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/PlayerPickupTable/PlayerPickupTable.test.ts:158:40
+    156|     const staleName = "O. Player";
+    157|     const name = await screen.findByText(freshName);
+    158|     expect(within(name.closest("tr")!).getByText("0%")).toBeTruthy();
+       |                                        ^
+    159|     expect(screen.getByText("Last known 0% · 2026-10-18 (stale)")).toB…
+    160|     const includeUnknown = screen.getByRole("checkbox", { name: "Inclu…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/8]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  8 failed | 17 passed (25)
+   Start at  09:44:41
+   Duration  1.09s (transform 186ms, setup 9ms, collect 289ms, tests 558ms, environment 132ms, prepare 27ms)
+

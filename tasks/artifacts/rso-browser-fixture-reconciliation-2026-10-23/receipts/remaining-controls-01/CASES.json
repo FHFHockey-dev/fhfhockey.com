@@ -1,0 +1,44 @@
+[
+  {
+    "title": "readiness controls reach existing inputs across the required viewports",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "provider refresh proposes repairs while keeping a selected move",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText('ADD Alpha Center')\nExpected: visible\nError: strict mode violation: getByText('ADD Alpha Center') resolved to 2 elements:\n    1) <strong>Next selected action: ADD Alpha Center</strong> aka getByText('Next selected action: ADD')\n    2) <strong>ADD Alpha Center</strong> aka getByText('ADD Alpha Center', { exact: true })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('ADD Alpha Center')\u001b[22m\n\n\n  477 |   await page.getByRole(\"button\", { name: \"All players\", exact: true }).click();\n  478 |   await page.getByRole(\"button\", { name: \"Select add\" }).click();\n> 479 |   await expect(page.getByText(\"ADD Alpha Center\")).toBeVisible();\n      |                                                    ^\n  480 |   const selected = await page.evaluate(() => JSON.parse(localStorage.getItem(\"fhfh:rso:workspace:v1\")!).intent);\n  481 |   await openPlanningSetup(page);\n  482 |   holdRefresh = true;\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:479:52"
+    ]
+  },
+  {
+    "title": "connected manager bench locks constrain the worker and preserve provider authority through undo and reload",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "mixed Kaprizov coverage stays unresolved until complete evidence supports the bench decision",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator:  getByText('Inputs reviewed for this session. Unknown values still need verification.')\nExpected: visible\nReceived: hidden\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText('Inputs reviewed for this session. Unknown values still need verification.')\u001b[22m\n\u001b[2m    33 \u00d7 locator resolved to <p>\u2026</p>\u001b[22m\n\u001b[2m       - unexpected value \"hidden\"\u001b[22m\n\n\n  780 |     await page.getByRole(\"button\", { name: \"View plan\", exact: true }).click();\n  781 |     await openDisclosure(page, /^League rules and scoring$/);\n> 782 |     await expect(page.getByText(\"Inputs reviewed for this session. Unknown values still need verification.\", { exact: false })).toBeVisible();\n      |                                                                                                                                 ^\n  783 |     await page.locator(\"#rso-rule-settings > summary\").click();\n  784 |     await openPlanDetails(page);\n  785 |     await page.getByText(\"Why players are outside this assignment\", { exact: true }).click();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:782:129"
+    ]
+  },
+  {
+    "title": "points goalie coverage survives worker reload and benches harmful starts once credited",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "candidate worker ranks the complete population without blocking filters and retains zero AGP",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBe\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m) // Object.is equality\u001b[22m\n\nExpected: \u001b[32mtrue\u001b[39m\nReceived: \u001b[31mfalse\u001b[39m\n\n  1602 |   const metrics = await page.evaluate(() => (window as any).__candidatePerformance);\n  1603 |   await writeFile(testInfo.outputPath(\"candidate-performance.json\"), JSON.stringify(metrics, null, 2));\n> 1604 |   expect(metrics.some((row: any) => row.evaluated === 999 && row.ticks > 0 && row.maxGapMs < 500)).toBe(true);\n       |                                                                                                    ^\n  1605 |   await browser.getByRole(\"searchbox\", { name: \"Find candidate\" }).fill(\"\");\n  1606 |   await page.screenshot({ path: testInfo.outputPath(\"rso-worker-zero-agp.png\"), fullPage: true });\n  1607 | });\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1604:100"
+    ]
+  }
+]

@@ -1,0 +1,57 @@
+{
+  "at": "2026-10-24T21:17:50.311764+00:00",
+  "base": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "snapshot": "/tmp/fhfh-c2-news-release-erhwh3yx",
+  "selected": {
+    "web/components/HomePage/HomepageStandingsInjuriesSection.test.tsx": {
+      "sha256": "17e6f87b89d521e24a41950017e118d91eb8fb3a5c0e95589db5c8694bd93ace",
+      "source": "Exact independently accepted six-path news serialization/source-attribution prerequisite"
+    },
+    "web/components/HomePage/HomepageStandingsInjuriesSection.tsx": {
+      "sha256": "8f1916979730fe35cd9bb1c2b5d905390d158a3a230510bf44d1395c0cb69f9f",
+      "source": "Exact independently accepted six-path news serialization/source-attribution prerequisite"
+    },
+    "web/lib/newsFeed.ts": {
+      "sha256": "de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d",
+      "source": "Exact independently accepted six-path news serialization/source-attribution prerequisite"
+    },
+    "web/pages/api/v1/db/tweet-pattern-review.ts": {
+      "sha256": "9c4f95ab257e088e0cbacb3dbdae36a1f85b2fa3f2cc6a13bb6cf176aea0aaea",
+      "source": "C2 authority-neutral metadata R1 final patch; duplicate-identity proposal excluded"
+    },
+    "web/lib/homepageNewsCompatibility.test.tsx": {
+      "sha256": "2c9c2e1fb1f5f5e4bd86c9199fd10cad980683d44e6da4dff889c8822043d3fe",
+      "source": "C2 authority-neutral metadata R1 final patch; duplicate-identity proposal excluded"
+    },
+    "web/lib/sources/fixtures/homepageNewsReceipt.json": {
+      "sha256": "ac3e9711a02275749990f9020611e560ae8c07b6f06daa476f587bb14467a0a1",
+      "source": "Exact independently accepted six-path news serialization/source-attribution prerequisite"
+    },
+    "web/components/NewsFeed/NewsCard.tsx": {
+      "sha256": "ab46854d98aa3ee4f2ae1e433dfb4f38b55af2c875d5c88fa58e47f72a3a928a",
+      "source": "Production-preserving C2 COPY backport: identical const/condition/text, no modern layout/lineup-grid imports"
+    },
+    "web/components/NewsFeed/NewsCard.test.tsx": {
+      "sha256": "a9e031dac51da085f7d9ec14ce08ec62049e6fde50d4259e4243eb63a9aa52af",
+      "source": "Production tests plus exact C2 COPY retained sanitized fixture/verified-claim/link/lineup regressions; original modern-layout tests not transplanted"
+    },
+    "web/lib/newsFeed.test.ts": {
+      "sha256": "ee8963100f43cef662af318ad091c27c95f38315730f34f4b83ad08014e53e08",
+      "source": "Read-only C7-reviewed 30-case newsFeed regression file"
+    }
+  },
+  "tests": [
+    "components/HomePage/HomepageStandingsInjuriesSection.test.tsx",
+    "lib/homepageNewsCompatibility.test.tsx",
+    "components/NewsFeed/NewsCard.test.tsx",
+    "lib/newsFeed.test.ts"
+  ],
+  "status": "Prepared production-specific news composition; backport awaits verification/review",
+  "exclusions": [
+    "All local Luna/manual/provider/budget/CLI/adjudicated-library inputs",
+    "News duplicate identity proposal",
+    "Modern NewsCard lineup/layout/style changes",
+    "Public claim authority changes, data sync invocation or production repair"
+  ],
+  "adaptation": "Only C2 COPY const and same unresolvedReason condition transplanted onto production NewsCard; exact fixture regressions reused. Metadata variant b and accepted serialization prerequisite are explicit."
+}

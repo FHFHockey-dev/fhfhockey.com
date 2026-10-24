@@ -1,0 +1,17 @@
+{
+  "success": true,
+  "mode": "offline-preflight",
+  "sourceCount": 7,
+  "sourceHashes": {
+    "web/lib/in-season/monthlyExecutor.ts": "6e4b2f2288bb668d45e3952bbf6ac7446ebf878cd630cbcc5dce732b657cbc94",
+    "web/lib/in-season/monthlyLifecycle.ts": "27d93048119a08f88272bf000375026aa948cb476fd95561d53ffce2782c7489",
+    "web/lib/in-season/monthlyStripe.ts": "b5feef17b907fb4f267761ad2e3cae3362a569df04c46c5dd1488792b5331f21",
+    "web/lib/in-season/monthlyLifecycle.test.ts": "2b37bf450bbe5ac6cd44d73bcc4bf5bf3ce8d1107ef3bd81c3f83ca1f3f99b09",
+    "web/lib/in-season/monthlyStripe.test.ts": "45ea46d44fbc619b09e1b6af0737000574d5e5663bc7c2881964b40ff87a294b",
+    "web/lib/in-season/monthlyIntegration.test.ts": "778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025",
+    "tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12"
+  },
+  "historicalManifestSha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659",
+  "relocationManifestSha256": "54b33decfb7dbf1173bb67c154665ff9c154982961be754c0eb7000b0e96efb2",
+  "databaseAccess": false
+}

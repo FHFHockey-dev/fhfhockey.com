@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/vitest.config.mts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+(node:97828) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ web/components/player-cards/EditorialPlayerCard.test.tsx (5 tests) 50ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  15:49:10
+   Duration  494ms (transform 143ms, setup 7ms, collect 199ms, tests 50ms, environment 135ms, prepare 30ms)
+

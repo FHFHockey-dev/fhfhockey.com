@@ -1,0 +1,20 @@
+
+> web@0.1.0 test
+> vitest --run --config vitest.offline.config.mts lib/cron/nstCoordination.test.ts lib/cron/nstBurstPlans.test.ts lib/cron/nstRateLimitPolicy.test.ts lib/nst/requestBudget.test.ts lib/cron/cronInventory.test.ts lib/cron/combinedCronInventory.test.ts __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts
+
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90m/private/tmp/fhfh-fpi-11-4-job79-v3/web[39m
+
+ [32m✓[39m lib/cron/nstCoordination.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m lib/nst/requestBudget.test.ts [2m([22m[2m20 tests[22m[2m)[22m[33m 448[2mms[22m[39m
+ [32m✓[39m lib/cron/combinedCronInventory.test.ts [2m([22m[2m42 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+ [32m✓[39m lib/cron/cronInventory.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m✓[39m __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m✓[39m lib/cron/nstBurstPlans.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+ [32m✓[39m lib/cron/nstRateLimitPolicy.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m7 passed[39m[22m[90m (7)[39m
+[2m      Tests [22m [1m[32m102 passed[39m[22m[90m (102)[39m
+[2m   Start at [22m 12:27:20
+[2m   Duration [22m 1.42s[2m (transform 69ms, setup 8ms, collect 129ms, tests 520ms, environment 0ms, prepare 206ms)[22m
+

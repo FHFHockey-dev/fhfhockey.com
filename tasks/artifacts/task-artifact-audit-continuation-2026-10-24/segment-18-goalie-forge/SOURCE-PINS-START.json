@@ -1,0 +1,30 @@
+[
+  {
+    "path": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+    "sha256": "c7c9de60578a6f1b21fb0180602908220dac38a6ef3cb0ccc46ccdff00a656ac",
+    "bytes": 48913,
+    "lines": 940,
+    "mtime_ns": 1792348998389935950
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/goalie-forge.md",
+    "sha256": "e1e58da5e8f11456750070be9db1628d1e95155d0362e429a4d3191e6c3103cd",
+    "bytes": 22296,
+    "lines": 401,
+    "mtime_ns": 1787194474818353251
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/prd/goalie-forge-implementation-plan.md",
+    "sha256": "c33a3a7e8e1dddc98906822885f3e9678050ce4f4f49c6e4c6145c9c1e4070a6",
+    "bytes": 2289,
+    "lines": 37,
+    "mtime_ns": 1785605126560472421
+  },
+  {
+    "path": "tasks/TASKS/forge-projections/v1/docs/goalie-forge-operator-runbook.md",
+    "sha256": "6dc10247757feedf2e1022b7b8f31a3cbb7231705b8935476ab9c01113e06075",
+    "bytes": 9340,
+    "lines": 166,
+    "mtime_ns": 1785605126559468677
+  }
+]

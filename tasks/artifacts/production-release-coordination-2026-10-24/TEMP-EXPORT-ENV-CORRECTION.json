@@ -1,0 +1,95 @@
+{
+  "at": "2026-10-24T21:23:11.155019+00:00",
+  "reason": "Full Git archive copied historical tracked .env files; prior no-env-copied wording was inaccurate",
+  "removed_temporary_files": [
+    {
+      "snapshot": "/tmp/fhfh-c1-c4-navigation-release-gmyae6br",
+      "path": "web/.env.production"
+    },
+    {
+      "snapshot": "/tmp/fhfh-c1-c4-navigation-release-gmyae6br",
+      "path": "web/.env.test"
+    },
+    {
+      "snapshot": "/tmp/fhfh-c1-c4-navigation-release-gmyae6br",
+      "path": "web/.env.development"
+    },
+    {
+      "snapshot": "/tmp/fhfh-c2-copy-only-release-ts8y0cz3",
+      "path": "web/.env.production"
+    },
+    {
+      "snapshot": "/tmp/fhfh-c2-copy-only-release-ts8y0cz3",
+      "path": "web/.env.test"
+    },
+    {
+      "snapshot": "/tmp/fhfh-c2-copy-only-release-ts8y0cz3",
+      "path": "web/.env.development"
+    },
+    {
+      "snapshot": "/tmp/fhfh-c2-news-release-erhwh3yx",
+      "path": "web/.env.production"
+    },
+    {
+      "snapshot": "/tmp/fhfh-c2-news-release-erhwh3yx",
+      "path": "web/.env.test"
+    },
+    {
+      "snapshot": "/tmp/fhfh-c2-news-release-erhwh3yx",
+      "path": "web/.env.development"
+    },
+    {
+      "snapshot": "/tmp/fhfh-claude-production-compose-f3h1oqot",
+      "path": "web/.env.production"
+    },
+    {
+      "snapshot": "/tmp/fhfh-claude-production-compose-f3h1oqot",
+      "path": "web/.env.test"
+    },
+    {
+      "snapshot": "/tmp/fhfh-claude-production-compose-f3h1oqot",
+      "path": "web/.env.development"
+    },
+    {
+      "snapshot": "/tmp/fhfh-claude-production-compose-vh5ae_ra",
+      "path": "web/.env.production"
+    },
+    {
+      "snapshot": "/tmp/fhfh-claude-production-compose-vh5ae_ra",
+      "path": "web/.env.test"
+    },
+    {
+      "snapshot": "/tmp/fhfh-claude-production-compose-vh5ae_ra",
+      "path": "web/.env.development"
+    },
+    {
+      "snapshot": "/tmp/fhfh-social-c3-auth-compose-v0a1u6ui",
+      "path": "web/.env.production"
+    },
+    {
+      "snapshot": "/tmp/fhfh-social-c3-auth-compose-v0a1u6ui",
+      "path": "web/.env.test"
+    },
+    {
+      "snapshot": "/tmp/fhfh-social-c3-auth-compose-v0a1u6ui",
+      "path": "web/.env.development"
+    },
+    {
+      "snapshot": "/tmp/fhfh-wigo-reader-release-xx5wxns_",
+      "path": "web/.env.production"
+    },
+    {
+      "snapshot": "/tmp/fhfh-wigo-reader-release-xx5wxns_",
+      "path": "web/.env.test"
+    },
+    {
+      "snapshot": "/tmp/fhfh-wigo-reader-release-xx5wxns_",
+      "path": "web/.env.development"
+    }
+  ],
+  "contents_or_hashes_read": false,
+  "canonical_env_changes": false,
+  "source_changes": false,
+  "checks_context": "Explicit synthetic URL/key/cron overrides and process network denial in composition checks; no server or hosted call. Future combined verification uses a filtered export with no env files.",
+  "commit_scope": "Existing production Git tree is preserved; no env/config change is part of either prepared commit. Cleanup affects only owned temporary verification snapshots."
+}

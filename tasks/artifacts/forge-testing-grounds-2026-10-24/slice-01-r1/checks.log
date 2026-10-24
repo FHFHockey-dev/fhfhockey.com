@@ -1,0 +1,20 @@
+Original independent review preserved unchanged at ../slice-01-review/boundaries.log: owner 20 passed, independent 18 passed / 2 failed (R1 microsecond heartbeat/start and event/snapshot controls).
+
+First correction verification:
+npm test -- --run lib/forge-testing-grounds/operationalProgress.test.ts lib/forge-testing-grounds/dataHealth.test.ts --maxWorkers=1 --no-file-parallelism
+PASS: 27/27 (17 progress including seven new precision controls; 10 original health). 683ms. Node punycode deprecation warnings.
+
+First exact reviewer-counterexample attempt using owned r1.vitest.config.mts:
+FAIL before test collection: Vite could not load the existing reviewer test file outside web/. Confirmed file still exists and is readable. Added server.fs.allow=[repository] only to owned artifact config; original reviewer config/logs untouched.
+
+First scoped static shell ran tsc then eslint: shell exit 0 reflected the final ESLint command, but tsc emitted TS2791 (bigint exponentiation requires target es2016+). Recorded as TypeScript failure, not a pass. Replaced bigint exponentiation with exact decimal-string scale construction; target/dependencies unchanged. ESLint itself passed.
+
+Corrected exact reviewer command:
+npm test -- --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1/r1.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+PASS: 2/2 R1 tests; 18 unrelated reviewer tests intentionally skipped. Exit 0, 331ms. Original reviewer source unchanged; own config/cache only.
+
+Corrected scoped TypeScript command:
+npx --no-install tsc --noEmit --strict --skipLibCheck --target es2015 --module esnext --moduleResolution bundler --esModuleInterop lib/forge-testing-grounds/operationalProgress.ts lib/forge-testing-grounds/operationalProgress.test.ts
+PASS: exit 0, no output.
+
+Final owner tests and scoped ESLint rerun after scale-construction correction are recorded in EVIDENCE.json. No full suite/server/model/provider/production operation.

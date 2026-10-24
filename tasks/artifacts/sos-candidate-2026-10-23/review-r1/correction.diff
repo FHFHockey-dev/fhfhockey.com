@@ -1,0 +1,142 @@
+--- before/sos_candidate.py
++++ after/sos_candidate.py
+@@ -261,6 +261,8 @@
+         if unresolved_by_team[focal]:
+             issues.append("unresolved_fixture_status")
+         record = model.score(focal, [opp for _, opp in fixtures])
++        if kind == "past_retrospective":
++            record["window"] = "past_fixture_list"
+         # An explicit outer list preserves the selected horizon. It intentionally
+         # suppresses RPI; own-result quality is never mislabeled schedule strength.
+         direct, rpi_sos = record["owp"], record["sos"]
+--- before/test_sos_candidate.py
++++ after/test_sos_candidate.py
+@@ -75,6 +75,7 @@
+     def test_zero_gp_known_prior_only(self):
+         r=calculate(payload(fixtures=[fixture('AB','A','B')]))['teams']['A']
+         self.assertEqual(r['direct_sos'],.5)
++        self.assertEqual(r['record_components']['window'],'future_fixture_list')
+         self.assertEqual(r['record_components']['direct_prior_only_fixture_weight'],1)
+         self.assertEqual(r['colley_prior_only_fixture_share'],1)
+ 
+@@ -224,6 +225,7 @@
+         p=balanced(); p['horizon']=dict(kind='past_retrospective',start='2026-10-10T00:00:00Z',end=T0)
+         r=calculate(p)['teams']['A']; self.assertEqual(r['fixture_count'],10)
+         self.assertEqual(r['direct_sos'],.5); self.assertIsNone(r['record_components']['rpi_style'])
++        self.assertEqual(r['record_components']['window'],'past_fixture_list')
+ 
+     def test_future_outer_weights_only(self):
+         p=confounded(); base=calculate(p)
+--- before/CORE-PROVENANCE.json
++++ after/CORE-PROVENANCE.json
+@@ -1,6 +1,9 @@
+ {
+   "source": "tasks/artifacts/codex-2026-10-20/research/imported-checkpoint/sos/sos_synthetic.py",
+   "source_sha256": "51026460179467476c84ff6cb713be3cb1287b8e6683bed9999b01476396863a",
+-  "extraction": "Exact prefix before def weighting_games(), unchanged arithmetic; candidate subclasses only entries for explicit point ledger.",
+-  "core_sha256": "eb886d1aa79ec8b49d23ed9f0c3e82a16c0b3ad693cea461bc45c3c3f0350258"
++  "extraction": "Literal source prefix before def weighting_games() with exactly one trailing LF removed; all other bytes and arithmetic unchanged. Candidate subclasses only entries for explicit point ledger.",
++  "core_sha256": "eb886d1aa79ec8b49d23ed9f0c3e82a16c0b3ad693cea461bc45c3c3f0350258",
++  "source_prefix_bytes": 7725,
++  "removed_trailing_lf_bytes": 1,
++  "delivered_core_bytes": 7724
+ }
+--- before/VERIFICATION.json
++++ after/VERIFICATION.json
+@@ -20,16 +20,27 @@
+   },
+   "example_cli": "generated and input hash verified",
+   "demo_cli": "two runs byte-identical",
+-  "core_reuse": "exact prefix and original source hashes verified",
++  "core_reuse": "Source hash verified; literal 7725-byte prefix with exactly one trailing LF removed equals the 7724-byte delivered core; all other bytes and arithmetic unchanged",
+   "unchanged_reviewed_source_pins": 8,
+   "local_markdown_links_checked": 26,
+   "syntax_parse": "PASS",
+   "authored_source_doc_diff_check": "PASS; no-index exit 1 is expected new-file difference",
+-  "frozen_core_whitespace": "One inherited blank line at EOF retained to preserve exact source hash",
++  "frozen_core_whitespace": "One blank line at EOF retained to preserve the pinned delivered-core hash; extraction removes one additional trailing LF from the source prefix",
+   "nhl_validation": "NOT RUN",
+   "application_tests": "NOT RUN; no application edits/imports",
+   "production_reads": 0,
+   "captures": 0,
+   "pushes": 0,
+-  "deployments": 0
++  "deployments": 0,
++  "review_correction": {
++    "at": "2026-10-23T15:35:09.241988+00:00",
++    "independent_base_passed": [
++      41,
++      7
++    ],
++    "focused_passed": 3,
++    "full_suites_repeated": false,
++    "receipt": "review-r1/CLOSURE.json",
++    "nhl_validation": "NOT RUN"
++  }
+ }
+--- before/CONTRACT.md
++++ after/CONTRACT.md
+@@ -1,6 +1,6 @@
+ # SoS candidate metric contract v1
+ 
+-Status: runnable offline research candidate. No selected production formula, calibrated NHL forecasts, public UI integration or numeric deployment. `sos_candidate.py` performs pure calculations; `run_candidate.py` is the local-file CLI. `record_core.py` is the unchanged prefix of the October20 exact-arithmetic prototype, pinned in CORE-PROVENANCE.json. No dependencies beyond Python's standard library.
++Status: runnable offline research candidate. No selected production formula, calibrated NHL forecasts, public UI integration or numeric deployment. `sos_candidate.py` performs pure calculations; `run_candidate.py` is the local-file CLI. `record_core.py` reuses the October20 exact-arithmetic prototype prefix with one trailing LF removed; every other byte and all arithmetic are unchanged, as pinned in CORE-PROVENANCE.json. No dependencies beyond Python's standard library.
+ 
+ ## What is being measured
+ 
+@@ -21,6 +21,8 @@
+ 1. **Past retrospective at t**: select finalized fixtures in past `[start,end)`; estimate each opponent using eligible season results known before t. Outcomes after the selected past window but before t can affect the estimate. Direct/RPI are descriptive opponent records; Colley additionally adjusts opponent quality for schedule. This is useful retrospective context, not a replay of a contemporaneous forecast.
+ 2. **Faced then**: `faced_then(past_payload, retained_pregame_snapshots)` evaluates each fixture with its own retained pregame cutoff and averages the per-fixture outputs. It requires the same season/cohort/config and exact fixture identity/start. Missing pregame snapshots return null; it never relabels today's reconstruction as historical knowledge. The snapshot cutoff must be strictly before kickoff.
+ 3. **Future as of t**: only the outer opponent list changes. All inner records/second-hop graph/model fits come from results known before t. This is an as-of-frozen estimate of forthcoming difficulty, **not empirically qualified predictive performance**. A changing team's future skill is not modeled.
++
++`record_components.window` is `past_fixture_list` for retrospective selections and `future_fixture_list` for future selections; the top-level horizon remains the temporal authority. Full RPI stays suppressed for both explicit fixture lists.
+ 
+ No future result, final-season standings, actual future starter or later schedule revision is admitted to a frozen evaluation. The calculator has no wall clock. All comparisons use supplied, timezone-aware timestamps. UTC is the comparison coordinate; the caller converts NHL/league calendar boundaries to instants, honoring DST. Date-only inputs are rejected.
+ 
+--- before/REPORT.md
++++ after/REPORT.md
+@@ -2,16 +2,22 @@
+ 
+ Implemented a pure, versioned past/future calculation plus explicit contract, research inventory and synthetic validation. No production formula is selected. No NHL predictive or fantasy-utility improvement is claimed.
+ 
+-Start with [CONTRACT.md](CONTRACT.md) for exact semantics and [EVIDENCE-AND-PLAN.md](EVIDENCE-AND-PLAN.md) for inherited research, current code findings and minimal GameGrid/WeekScore integration. [sos_candidate.py](sos_candidate.py) is the pure calculation; [run_candidate.py](run_candidate.py) is a local JSON CLI. The unchanged October20 record core is pinned in [CORE-PROVENANCE.json](CORE-PROVENANCE.json).
++Start with [CONTRACT.md](CONTRACT.md) for exact semantics and [EVIDENCE-AND-PLAN.md](EVIDENCE-AND-PLAN.md) for inherited research, current code findings and minimal GameGrid/WeekScore integration. [sos_candidate.py](sos_candidate.py) is the pure calculation; [run_candidate.py](run_candidate.py) is a local JSON CLI. The October20 record-core extraction removes one trailing LF and preserves all other bytes and arithmetic, as pinned in [CORE-PROVENANCE.json](CORE-PROVENANCE.json).
+ 
+ ## Verification actually completed
+ 
+ - **41/41 tests pass together**, including balanced/unbalanced leagues, published Colley arithmetic, schedule confounding, focal exclusions and naive negative control, missing/zero-GP teams, duplicate IDs, repeated opponents, strict result/schedule cutoffs, season boundaries, points systems, regulation ties, graph components, rank ties/churn, no-volume bonus, and retained-pregame replay. See [tests-final.log](tests-final.log).
+ - The corrected stability test uses exact Fraction checks for direct/RPI differences and a12-decimal comparison for the Colley solver. It verifies every team's score change and resulting competition rank. It replaces a mathematically false strict `<.1` bound that happened to pass through binary floating-point rounding.
+ - [example-input.json](example-input.json) runs through the file CLI and produces [EXAMPLE-RESULT.json](EXAMPLE-RESULT.json), including an input SHA256. [SYNTHETIC-REPORT.json](SYNTHETIC-REPORT.json) records all demonstration results. Two independent CLI demo invocations produced byte-identical JSON.
+-- Final input/output consistency, preserved-core provenance, source pins, artifact integrity and Markdown links are checked separately. Authored source/docs pass whitespace checks; the frozen imported core retains one inherited blank line at EOF to preserve its exact source hash. No application suite, build or browser test is warranted for this unimported offline artifact.
++- Final input/output consistency, preserved-core provenance, source pins, artifact integrity and Markdown links are checked separately. Authored source/docs pass whitespace checks; the frozen imported core retains one inherited blank line at EOF to preserve its pinned delivered-core hash. No application suite, build or browser test is warranted for this unimported offline artifact.
+ 
+ Initial failed/test-harness receipts remain historical evidence. Earlier interrupted continuations did not execute their commands. The final combined passing run supersedes the earlier40/41-plus-targeted status. The artifact lease was explicitly acknowledged by the release owner at14:00:52UTC, as relayed by the parent; older ledger pending text is historical.
++
++## Independent review and minor corrections
++
++The independent reviewer accepted the base packet for its declared offline scope after **41 supplied tests and 7 independent checks** passed, including exact arithmetic, strict cutoffs and 36 deterministic graph/mode/prior configurations. No substantive arithmetic or leakage defect was found. The preserved [review](review-r1/INDEPENDENT-REVIEW.md) applies to the earlier manifest recorded in [CLOSURE.json](review-r1/CLOSURE.json); it is not a new review of the correction revision.
++
++Two findings are closed: extraction provenance now explicitly records one removed trailing LF (7,725-byte prefix to 7,724-byte core), and retrospective outputs now report `past_fixture_list` instead of inheriting `future_fixture_list`. Future labels and all calculations remain unchanged. The existing past/future tests now assert these labels. **Three focused temporal tests pass** after the changes; the CLI demo and exact-input example remain byte-identical to the accepted outputs. See [focused-tests.log](review-r1/focused-tests.log). The full suites were not repeated for this label and bookkeeping correction. The core bytes, original research and application formulas remain untouched.
+ 
+ ## Results and limits
+ 
+@@ -32,7 +38,7 @@
+ 
+ Review the contract and obtain a qualified retained game-level dataset before fitting/tuning. Keep four-week Opportunity unchanged and expose any later SoS as separate per-game context. Shadow-test a replacement for WeekScore's existing matchup term only after explicit integration approval; do not double-count GP, off-nights, odds or FORGE matchup effects.
+ 
+-No environment/lease blocker remains for this completed offline packet. Independent review, historical-data eligibility, empirical qualification, TJ's metric/display decisions and runtime integration remain separate future work. No application files, original research, model/reference paths, dependencies, migrations, Git state, production data, captures, pushes or deployments were changed by this lane.
++No environment/lease blocker remains for this completed offline packet. Independent review accepted the base packet for offline research; the two minor corrections and their focused checks are documented in the review section. Historical-data eligibility, empirical qualification, TJ's metric/display decisions and runtime integration remain separate future work. No application files, original research, model/reference paths, dependencies, migrations, Git state, production data, captures, pushes or deployments were changed by this lane.
+ 
+ ## Reproduce
+ 
+--- before/EVIDENCE-AND-PLAN.md
++++ after/EVIDENCE-AND-PLAN.md
+@@ -19,7 +19,7 @@
+ | [SOS-METHODS.md](../codex-2026-10-20/research/imported-checkpoint/sos/SOS-METHODS.md) | Team quality versus schedule, temporal/exclusion rules, record/BT/Colley candidates, category distinctions and walk-forward gates. |
+ | [FHFH-SOS-AND-MATCHUP-RESEARCH-2026-10-20.md](../codex-2026-10-20/research/imported-checkpoint/sos/FHFH-SOS-AND-MATCHUP-RESEARCH-2026-10-20.md) | Consolidated memo/code map and findings; duplicated content is not independent evidence. |
+ | [SOS-CODE-MAP.md](../codex-2026-10-20/research/imported-checkpoint/sos/SOS-CODE-MAP.md) | Existing divergent SoS definitions, source units, FORGE effect ownership and missing historical provenance. |
+-| [SOS-SYNTHETIC.md](../codex-2026-10-20/research/imported-checkpoint/sos/SOS-SYNTHETIC.md), [sos_synthetic.py](../codex-2026-10-20/research/imported-checkpoint/sos/sos_synthetic.py) | Fifteen retained exact-arithmetic tests. The unchanged pure class prefix is reused and pinned in CORE-PROVENANCE.json. |
++| [SOS-SYNTHETIC.md](../codex-2026-10-20/research/imported-checkpoint/sos/SOS-SYNTHETIC.md), [sos_synthetic.py](../codex-2026-10-20/research/imported-checkpoint/sos/sos_synthetic.py) | Fifteen retained exact-arithmetic tests. The pure class prefix is reused with exactly one trailing LF removed; all other bytes and arithmetic match, as pinned in CORE-PROVENANCE.json. |
+ | [SOS-DEFINITION-FIXTURE.json](../codex-2026-10-20/research/imported-checkpoint/sos/SOS-DEFINITION-FIXTURE.json), [SOS-SCALE-FIXTURE.json](../codex-2026-10-20/research/imported-checkpoint/sos/SOS-SCALE-FIXTURE.json) | Retained synthetic evidence of incompatible win%/points% rankings and a100-centered producer/50-centered feature. No new production-harm claim. |
+ | [benchmark.mjs](../codex-2026-10-20/research/sos/benchmark.mjs), [results.json](../codex-2026-10-20/research/sos/results.json) | Existing synthetic RPI, ridge BT and Colley comparison. Reuse its methodology lineage; its results are not NHL evidence. |
+ | [Landing-page SoS PRD](../../TASKS/three-pillars-analytics/underlying-stats/prd/prd-underlying-stats-landing-page-sos.md), [task list](../../TASKS/three-pillars-analytics/underlying-stats/tasks-prd-underlying-stats-landing-page-sos.md) | Original50/50 design. The July29 overlay points to the successor roadmap as current authority. |

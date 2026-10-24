@@ -1,0 +1,1135 @@
+{
+  "at": "2026-10-24T21:35:16.816Z",
+  "scope": "Only AST export-call shapes of exact authFirstAuditRoutes declared by the failing C5 inherited test; no general repository audit, function execution or source mutation",
+  "declared_routes": 75,
+  "production_auth_first": 0,
+  "production_not_auth_first": 75,
+  "HEAD_auth_first": 74,
+  "rows": [
+    {
+      "path": "web/pages/api/Teams/nst-team-stats.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": null
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "105cfaaf7cf2dc9dfc6ac8b9ac9471ec58c24bbd3fee9f09c5da3288649685b0",
+      "HEAD_sha256": "93189097463995f6c3bf770a4c4f1ab897c5725b3e3af77971e6acac1f7987e3"
+    },
+    {
+      "path": "web/pages/api/v1/db/backfill-goalie-underlying-season.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "0a0477d916c02a26a35dff5fba33b901f473245b30ed5f91491cfbeaa5cde118",
+      "HEAD_sha256": "2d50d246e77da6174b74a8835e5d027d2bc1c12ed44c9c78a35ea72f383847ee"
+    },
+    {
+      "path": "web/pages/api/v1/db/backfill-player-underlying-season.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "0ac0dee587bc7c2e6d789dc74b02ac4a1cfdfc2885e0efbaa240592e4155ed89",
+      "HEAD_sha256": "60941ff55e77cef60dbe9f6bdae9ecf547f5c8b9632e9a9ed5dce6a568734e45"
+    },
+    {
+      "path": "web/pages/api/v1/db/backfill-team-underlying-season.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "6ac2157f1c4696b0892395210ce489b43d5b04f43ae277633a32cf13acd07eae",
+      "HEAD_sha256": "e230fabbf2a340b1474b2f96cd08324f5feac566f1c2273506c84f7c8b2adf7a"
+    },
+    {
+      "path": "web/pages/api/v1/db/calculate-wigo-stats.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "5c1b337eeb3c0d269b2ed90000951818c981c41bc197747dc581ef74a5d2c5c0",
+      "HEAD_sha256": "69014f862d3a3013827cc1fff2e5335d0609da2e4cb02621bc4a964580d7e0ec"
+    },
+    {
+      "path": "web/pages/api/v1/db/catch-up-goalie-underlying.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "5c5f8e3d2a22794c6ebadbbec6ed299879863672a18e907d759b601faf8a5994",
+      "HEAD_sha256": "03203f91f6af2faee0631f329111e2477eb3c9bdeaed35d3ad50cfde3dec0f69"
+    },
+    {
+      "path": "web/pages/api/v1/db/catch-up-player-underlying.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "9bf41d453a7902b1d5c3840f8d5b7de97b572e5868a66213c0d88920f9d8b24c",
+      "HEAD_sha256": "bb8a3df5102c4c5461fca04409296f16a1fcebfd351f90490f427fb1c5040414"
+    },
+    {
+      "path": "web/pages/api/v1/db/catch-up-team-underlying.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "5da457883138f7f25384c26abe792f6aa516cdf36ca9ceb0dcc3edb475b2eb50",
+      "HEAD_sha256": "f3ad1f80591c5fc5fd2091b741bfc9d6773b2df09d6fd96f82d3bd6a677e03ad"
+    },
+    {
+      "path": "web/pages/api/v1/db/cron/update-stats-cron.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "4e037bd92ad1f5842698b4e422e4132e9a2f6134d7cd14057bd4be7953ce5146",
+      "HEAD_sha256": "76b436ea442ae3f2b5a478149a18ff730ef4c029c8dda0a1bb4573a804c1de12"
+    },
+    {
+      "path": "web/pages/api/v1/db/draft-ranker-health.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "46de8eb1ee6ab637cb08d984927e260c066f332ed8c4eba8e0c789033b9e7291",
+      "HEAD_sha256": "2ca0be1a8e50591c24d0ef766bc13e3789dd154f758131167241ef14e7c2dee5"
+    },
+    {
+      "path": "web/pages/api/v1/db/powerPlayTimeFrame.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "70cd25f844b67d42fc1bbd88141da6122fe9f70315c8598466e169936d72221b",
+      "HEAD_sha256": "83a4331ced9dcd69e3f2e7446b94b99ceaa4e52968219956e919ba074c54cdaa"
+    },
+    {
+      "path": "web/pages/api/v1/db/refresh-draft-ranker-community.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "99407e680504cc6d618d6f1219d23ca05e2e82c1520f2a2ad8542d32d4df8405",
+      "HEAD_sha256": "4523c4197e77f50f800926c84966590ad5b266a18162ea8c57f926cb48c3e632"
+    },
+    {
+      "path": "web/pages/api/v1/db/refresh-draft-ranker-discovery.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "befc187bd03ff6a06f4e25e73c0049d6e50dd70fcfe9d73283c49ad0c5dd4a50",
+      "HEAD_sha256": "73b0eff48ab3841a2e61520c84d955379931eab0d5a55274a8fa5cd0988f05cc"
+    },
+    {
+      "path": "web/pages/api/v1/db/register-nhl-xg-model.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "c0ae6d4a38dba5175370452d41b5bc7e1e2e66ceb1f294ed7ff921c402cb7950",
+      "HEAD_sha256": "76b7dc863bcecbdb76a656df60d01cd6bc0a94012fdfc89fbfb2a51507731a3b"
+    },
+    {
+      "path": "web/pages/api/v1/db/run-fetch-wgo-data.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "51e3fb29f68bbf0a0f3cb750507503153ec85e0a2d94dc39fb8dd79dddb44ec1",
+      "HEAD_sha256": "657b1a98b85b483a75b411822724501359d74f819d3b68dc88932fb8dd5f9718"
+    },
+    {
+      "path": "web/pages/api/v1/db/sustainability/rebuild-baselines.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "6ed8fe538136e0af3395907982668cf88db28cfb462c42fc7065ef7bb5515d63",
+      "HEAD_sha256": "f2f520a55957f47b9827fdc5cf2d95ac481cbe6697172d942570565c52238231"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-PbP.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "a8f51d8e22885d21cf5bb15353fd8cf82fb8f95a2f7191cd3d6181839f39a893",
+      "HEAD_sha256": "5cd4bdbc588d396ab91f4a05ef394260cb3d2c5b7e5f20212696d3f10c48d5d4"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-drafted-prospects.ts",
+      "production": {
+        "outer": "adminOnly",
+        "inner": null
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": null
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": false,
+      "production_sha256": "980b050f88509ae0f333a458d4726a4c2b32986ed630b23c27c61d5d4b2b2c9c",
+      "HEAD_sha256": "980b050f88509ae0f333a458d4726a4c2b32986ed630b23c27c61d5d4b2b2c9c"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-entity-metric-rankings.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "574d79d9ee91f58b097a708b3d894ae51bbbdf015e30fa9c7f58d9136adba9fc",
+      "HEAD_sha256": "f2a186ea2fb1d49f6d5a8d131f4ee18d7d22a7ca76e94be19f80886f1890816c"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-games.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "d4f3adb52288e6adf918c0c51768566324fb4f5261d2643553f8910ae41a945e",
+      "HEAD_sha256": "671c2e12456ce5390380272007ef148d2bd8c42beec4bde16a1c044b67c63901"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-goalie-underlying-stats.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "5d9ce53850b130b71887df01085ad0dad5e3f8d7f1f386f70ccbeaa6d2e39c4f",
+      "HEAD_sha256": "ec242cf14c83a8ec8e9939819cc2d037ca90a4b283f0fff91eb74a78cb3d60b0"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-goalie-underlying-summaries.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "70eadc7d86ef49c4de0fc114b935cc446847e94b84c588b0c2eee53a8b7a93b6",
+      "HEAD_sha256": "f2951808e7617c16191a2a37e50f4bed57669c1709bc944371ffd47c3dd8d993"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-line-combinations/[id].ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "0e065c09c90b53f9611af2f429ab35da6d8848634363c5a20293c943c6a55afc",
+      "HEAD_sha256": "0efc3fe33f77d327af9ccb097625ece7821fbc938a2e1748629da8e418cac115"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-line-combinations/index.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "12984d6b0642cd2e8932477172be5a17d55f65b4787a533d3b075d1b37a48721",
+      "HEAD_sha256": "997896eb74b05f054402048e0bf1fb190f0b6375a8e0b0dfa5f2e784765c412e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-lineup-deployment-tallies.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "d63dc4ffad61035c7c46540c68a80259a49fe9651951cc14f71c1a6b78f40f29",
+      "HEAD_sha256": "b24167dc68a6e91e5b0a4218aa0dca119dffb27e194a7213b1b6459765d1343e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-market-prices.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "461c11857ed139e8a777fa0b39987077ae9c21f05c29bada9f7527281ae74768",
+      "HEAD_sha256": "1072c1eba8fb19772fc80ff4786a9ac16ee65427fad2e92216fba506a52752da"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-edge-stats.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "0e2ac47938f2e6eca3e32930665c1bdd91ce7c0dc5bdb57b41cbf980e85f1cea",
+      "HEAD_sha256": "f23721a71a166883fa4ba280ce2ec3a9e20e0fa6622aa0abd065030f6366c5d3"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-play-by-play.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "41ed2680ae216250fe99ba2ba76a1e094515e51cce938413e3c49ef84c3b0a9b",
+      "HEAD_sha256": "78be7a8c17e75e77bb3e5e9f6566b8762da1986689de418cb04447fb84d391f4"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-shift-charts.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "c3a8d5bbddd6f6b1b703736f76f4cde2321385b0823d72f5147d517acfdd89ad",
+      "HEAD_sha256": "156da5b2b99868d4d039b796aa5190b2ec64ddfcd104cd0de2904642b67da80f"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-aggregates.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "f8a5e249b48570dff62234b72cefc447b3e0942423187930ce40b13c1b8c24aa",
+      "HEAD_sha256": "b876769ee8d1f94bb51b06bccbb6076837092298b2548c756bbc120ee66bab06"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhl-xg-shot-predictions.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "9dbf5da070ffb24a519ab859c22fe79bdedc66393a0ea15cb6a589cac9660ba9",
+      "HEAD_sha256": "555bc676b180d3b1a5d5bd799db0dbba0a47b0f8c5bfbd77040802bdf6f3dc93"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nhlscraper-contracts.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "81bc33044d98be3e0aa76128a205459c21bdf4b450528c1bcf1ac74a07070a19",
+      "HEAD_sha256": "b1e3404bed8846d113718e648a3b012396e487934de7846086d58c9bf12a37a4"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-current-season.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "7f5822553c6701fcb61607f465b5e7f20fdabe75c5eb07a796d6ad982c5e8064",
+      "HEAD_sha256": "01cb818ffa53d4e30fcd594c7cc3ba84d95cfef021dd7873f8f5d037cf67db12"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-goalies.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "fac4cb5347d0081902cbea413fd1050f4313ebfb861a01e99034fa2337e7a2ef",
+      "HEAD_sha256": "aeaddea4bd81b246e08ac176468915c1378a4be20dc907ffffd0207df019520e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-nst-team-daily.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "569e72048fd33e40752f467db515efc43508b934c93ad96502f90685a8e72b72",
+      "HEAD_sha256": "abbe2bf9fd887e01334953e84c0f68bbf284c508ae1e3001677619819a799845"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-player-impact-ratings.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "8981c81c0c77fea64c3ee07248634e44bf15a68ea6d37448cf368bc091cad844",
+      "HEAD_sha256": "d76a4ae518e9048dfa8171d4077feaa63c06516852a744512dd5f4d0f436d4f2"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-player-trend-metrics.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "5aa487e6ab32de6eadea28bf16198404b05d2604b80a6a72b51af264d04a2849",
+      "HEAD_sha256": "0bc2e85776bcfd9b603259333517bec3bf662a7ace706b2fa70359476a0d8594"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-player-underlying-stats.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "7edb7bce0695e48909927ee02edb8c4ffff96636ba82169fce65c1e51d14b81a",
+      "HEAD_sha256": "9342e3b00688f4d0c6ff6bf95a2ad66197c6770d33d701eed6f08c6d8d62838d"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-player-underlying-summaries.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "d53ab8ff3f7c6bb46d6ab90bf11999dc05fecf2b158a54fd9f317c8701fef201",
+      "HEAD_sha256": "e87a8eb5cceb305bf9115754ccd386c75921cc6ff5e37067f1ef204531433249"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-player/[playerId].ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "d8e1210318b75fd9efcf834ae36a76bd9cc3c54603712a2c1fd45dbffa5f306f",
+      "HEAD_sha256": "296204b91d978d9d074ed57083c1a3b0bdbd075728bbea27c5c04fec2a472d30"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-players.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "bf8bd1348d2d3907b68ddece31262e035eed543b3070d46113c46108fb1c60e7",
+      "HEAD_sha256": "37d522de50e9f060148cf8f2f2613f799b5675a709bc0e285186733c9b420d42"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-power-play-combinations/[gameId].ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "1a00cdec1d22041fc33f89213b695ba7e59709ab0ce168f235a36430e8aeca7c",
+      "HEAD_sha256": "8c702065650099873efdb74967cb7ea648a310092b50c1f11d895cf192469ee3"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-power-play-combinations/index.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "fa0a3d04571e214e5b81dbb49c4b867a1b830e11853d1530d9f2591b2aa579ff",
+      "HEAD_sha256": "14a459c34cf47867012de4eefe86eb7e9eb8758d85ae7fc831dbbe90ae58d8be"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-rolling-games.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "96a6b1915606f36590ba5af7d8a5a2d2bb615346fcebc7224ea68fea4e8f8c2e",
+      "HEAD_sha256": "9b52f3e0053bb562729e5ddd2b6211920c8b6233e4ee11a7682334fdb5ff03b3"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-season-stats.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "fcd7ee717d63caf5c43c2c2a14ca8b37089fc16cc650d24b2763e9f2b42ad215",
+      "HEAD_sha256": "0f1f32281bf7be17c16770ec2eb33345e2a742a347e9a442d93157dd9c666354"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-seasons.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "b1a64235b6eaa38d3c170328ec4279c1b49cf00a0d10d0a6f6942b2691e4ce88",
+      "HEAD_sha256": "56cc24eea821952f2155ea2972209e5f80d46d3e11b880141e7dbe5df4ccde38"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-shifts.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "4ac6adfd2800d05289b5b7b06e581e79ccca61f64a540738626a685449b36e86",
+      "HEAD_sha256": "865077cb645a8366edb4352d07531c264c8e406d7331e800d64742d078c93e0d"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-skater-composite-ratings.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "59c1de4d10f7709a5de07f53111aa3cfa4b78653ba217acb0c6c9e67c2700713",
+      "HEAD_sha256": "6c79c199a648fe101992e37c3de71d52fedab8773f8c424e0ab6a7cb1cd53245"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-sko-stats.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "d8c89cc447038346452eb9c0c7c3ac2cdc7f2e9f3405e5293f69e41a6583ebf2",
+      "HEAD_sha256": "a24656c35b3ad5c646c24ee2139cc4aceb66e3c30dd3e7fe35dfd28942eca718"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-standings-details/index.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "28f9894813119c58c7d02daf53032015b512b94dd8bc87f4d3429457a89b184e",
+      "HEAD_sha256": "7392a00af4f8c9abb44ddee40deb35f168dd76945fb3f56de500d6e0d28273c4"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-stats/[gameId].ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "5fea520fe65eb626793d815dddc16e8731701870b9acb8a44a564a40278073a1",
+      "HEAD_sha256": "bef48906227b6bc417c0009af8dac7d9439d9a517341c33c42e48591cf8d1b8c"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-ctpi-daily.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "5b41a66dd8ef2f302fd7f35c9c2c3a8b4b16b9811c2405a07bd98b84d024edba",
+      "HEAD_sha256": "7ba8680eb056ffe7ed220d3c0955dc61569fca17050bfd516493a21377b3e7d7"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-power-ratings.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "02dc68abbc67fc3a4fdb2b0513141a3450875de1b46a0766c103cd4d5f6c1c49",
+      "HEAD_sha256": "59e73eaaf30ee5c5affbca1b4275dc99aa62fa6a0b7c2df1ae7227f7d69a396a"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-sos.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "0d023ae93d800c636960d1d80584fd3f89f0b468edff750ce8342a4cd252eac7",
+      "HEAD_sha256": "8e48f8e2cdae155f509558fa2cfdd1abb56320a5761d175f37d77eb0f0668d1e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-unit-toi.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "6391ae714db29654fa2f798342e4b787d1f07ee0a181e5a1330bf9499930d2b1",
+      "HEAD_sha256": "9d1b9d2a04306bc94b2ed9211d17534e50650d58a9b0dc41ef2b727fc07fae4c"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-team-yearly-summary.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "1b9ab6e2de8fe9ab9d33323a5169df7fbd04bd3a06265434a35531b3a6ff5919",
+      "HEAD_sha256": "d781c99c9c166f6ef276f583ff2c618d89bb5562310673f0fffdad865975c25e"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-wgo-averages.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "d9dc81498b790b5517fcb4082f9f07066e4664c669a4db7b4ffc9063f0f9dba3",
+      "HEAD_sha256": "d5898943c8a34d603b7fc3576b6497495fecefaeec036ec60367c74ddc7c3241"
+    },
+    {
+      "path": "web/pages/api/v1/db/update-wgo-goalie-totals.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "fe9ce9fa288a7752c2334991e66db4b60964967e318cacf94ea1c16ec8633b4c",
+      "HEAD_sha256": "85f457d25a453a9acd8475b0c9a1284101bd0000239c4abe40755ca05743b190"
+    },
+    {
+      "path": "web/pages/api/v1/db/upsert-csv.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "e68f873a59fb56043f3f07a45d2afbb14b1d06e57573a85c58d2cdd3837c52d9",
+      "HEAD_sha256": "29b769a325932485748c1865421cda771811e8290565bf47ab7cf764db1c177f"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/accuracy-loop.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "c13afb585f2960c45cde0acc9256ab6eff1395397803cf06d6155f52e3eb075e",
+      "HEAD_sha256": "0d03ab046bce5c8239f3bb8af1111eb0bf4db2a6994814028c7ea55fb20545ea"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/backfill-feature-snapshots.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "76470be889583062b07ac0346551c79955b3002c304709c9a37b123e077d5164",
+      "HEAD_sha256": "01d540273f6c5632754b060fadbd5d01fddd2e725a915a1fc6cac3f7fe1c5783"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/backtest-ablation.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "e79ed0873dae6bf1d4eef67b188226d014b0b85518d6573bd618e1a592b1ee46",
+      "HEAD_sha256": "27e790b39f6b0d73e8b23ac41ab265c61ac88561cbb0eb33d46e09073e48b092"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/backtest.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "e6d9e456775f104f7d28464395b22ac2d62b56d9a16469a460e8db2495ee619a",
+      "HEAD_sha256": "869ffb6f81a290c43644d317ff1c25fcdb606a9e1df020d5bfcdf248c957bbc4"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/feature-signal-analysis.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "dcea96ac213d9b9bf3e3f2d3b8c8d38b99e9e7ca6346eb3b5a52eba3c0fea847",
+      "HEAD_sha256": "a75310407b574487f80713397e98f3db1ef6f080f68ada9725309290e4515cdd"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/forecast.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "60f93dca002ffd3b0465548a121a970dfa5d0b4c5b0e97fe631bcb74b4c3ee85",
+      "HEAD_sha256": "d40712e02b9b3ba097e0cd7dea3a98e6aed6b98a52f0abe6b4753aec7a1facb1"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/generate.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "dec36224e42b93da55c2ce28288605fcea6d750bdde2809425ad696d5fbf8374",
+      "HEAD_sha256": "a63d55bb72803a536b57a781586355cfc4707896ea23c83451d6e24290237c0b"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/import-market-odds.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "01e95bd85a70afa7ba24b26e328b08567aac3d6866d0ea1826cd7dd182fa2e84",
+      "HEAD_sha256": "02aeecd2854e9d57d76873e99faf57b4910e798d0b30f8e90d984291f82bdc75"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/ingest-espn-odds.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "c9da67c6f1c3603174ebc2c3b38d79fb382babe3120a656068cc1d2069a1e3a4",
+      "HEAD_sha256": "d74eeae404a9e4a3964b6f1fe92b0871e9bcb7eac0bcb8352f9df94d8eda617b"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/promote-model-version.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "05428c71fb36494b4ed5a760120c68a790488019de12a53bd486d2cf55f9f969",
+      "HEAD_sha256": "2fea72c2149b23ed9b8b44b4b66ade05ec154e868ee15642b330f267eeb50210"
+    },
+    {
+      "path": "web/pages/api/v1/game-predictions/score.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "7a18d2b0910fd946c4b57686165716c5355bd90adfe40099da37b060f190a24d",
+      "HEAD_sha256": "048e5ee5965c1c6e6c5a17da0b744bea090b497a6e6ce0d0afb34cbc8d30a714"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/process-recompute-queue.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "b5f3fa69e2c7b527b4202bcd9565a704c8752c0f85a6c798b1de06d1a6708bca",
+      "HEAD_sha256": "020e436cf5267e2ff60fbb2863ba86b2289a24e6d8782dd3ad41e7c714774ed3"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/rebuild-priors.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "b4dc1cb4e28656285ed74ffce9d983196370be2ef8f6d170aff6b30be2606a07",
+      "HEAD_sha256": "598a684cc388a9156bb8bc90a4ed030fafd1f4d97b983b102c707f0c04ae89b7"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/rebuild-score.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "0d0ad21feab4c0ada18fe503d0d15741f3cca85f7603f1e608aea5fd0cd88ed3",
+      "HEAD_sha256": "6fddaeed41db6e5bf632d302606ffe57e76f5c8dcaef4a5259ec4d657e97859e"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/rebuild-trend-bands.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "f526c19cc7f96ecef61d847caf62c40f3cc6ef8709b5c337deca984c2e4af405",
+      "HEAD_sha256": "aa0680d2459e0f30c6edc4987f8a40443293f55eb7dc503c25cee1564b64c256"
+    },
+    {
+      "path": "web/pages/api/v1/sustainability/rebuild-window-z.ts",
+      "production": {
+        "outer": "withCronJobAudit",
+        "inner": "adminOnly"
+      },
+      "current_HEAD": {
+        "outer": "adminOnly",
+        "inner": "withCronJobAudit"
+      },
+      "prod_auth_first": false,
+      "HEAD_auth_first": true,
+      "production_sha256": "c396bc363b7b2c18d9f6db5b75f9a45260874c02976bcd0c1a6954c398fdc7c9",
+      "HEAD_sha256": "0dffa59bc819f47f07603732a66ef841d91a36d24639226518496c43995dd401"
+    }
+  ]
+}

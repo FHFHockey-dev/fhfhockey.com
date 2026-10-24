@@ -1,0 +1,184 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c3-isolated/web
+
+(node:38781) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ __tests__/contexts/AuthProviderContext.test.tsx (25 tests | 3 failed) 3176ms
+   ✓ AuthProviderContext > prefers a trimmed saved avatar and preserves the broken-image initials fallback 41ms
+   ✓ AuthProviderContext > uses metadata when the profile avatar is absent: null 9ms
+   ✓ AuthProviderContext > uses metadata when the profile avatar is absent: {"avatar_url":null} 5ms
+   ✓ AuthProviderContext > uses metadata when the profile avatar is absent: {"avatar_url":"   "} 4ms
+   ✓ AuthProviderContext > retains the displayed avatar after a profile read response error 8ms
+   ✓ AuthProviderContext > retains the displayed avatar after a profile read rejection error 6ms
+   ✓ AuthProviderContext > uses picture metadata when there is no saved avatar or avatar_url 3ms
+   ✓ AuthProviderContext > keeps the saved avatar during a same-user session event whose profile read fails 3ms
+   ✓ AuthProviderContext > ignores an older refresh that finishes after the latest refresh 11ms
+   ✓ AuthProviderContext > ignores a previous account's profile response after switching accounts 6ms
+   ✓ AuthProviderContext > ignores a pending avatar response after local sign-out 7ms
+   ✓ AuthProviderContext > does not let a refresh scoped to a previous user read the new user's profile 4ms
+   ✓ AuthProviderContext > fails closed to signed out and clears only targeted auth state when local sign-out rejects 7ms
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out resolves with no billing panel mounted 1009ms
+     → expected '{"ownerId":"user-1","requests":{"sub_…' to be null
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div>[39m
+        [36m<div>[39m
+          [0msigned-out[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mdata-testid[39m=[32m"avatar-url"[39m
+        [36m>[39m
+          [0mnone[0m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0mRefresh avatar[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0mSign Out[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out rejects with no billing panel mounted 1007ms
+     → expected '{"ownerId":"user-1","requests":{"sub_…' to be null
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div>[39m
+        [36m<div>[39m
+          [0msigned-out[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mdata-testid[39m=[32m"avatar-url"[39m
+        [36m>[39m
+          [0mnone[0m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0mRefresh avatar[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0mSign Out[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+   × AuthProviderContext > clears only the exact in-season cancellation key when sign-out times out with no billing panel mounted 1009ms
+     → expected '{"ownerId":"user-1","requests":{"sub_…' to be null
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div>[39m
+        [36m<div>[39m
+          [0msigned-out[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mdata-testid[39m=[32m"avatar-url"[39m
+        [36m>[39m
+          [0mnone[0m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0mRefresh avatar[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0mSign Out[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+   ✓ AuthProviderContext > reviewer: ignores initial session resolving after account switch 2ms
+   ✓ AuthProviderContext > reviewer: ignores initial session resolving after sign-out event 1ms
+   ✓ AuthProviderContext > reviewer: ignores initial session rejection after account switch 2ms
+   ✓ AuthProviderContext > ignores initial session resolution after explicit local sign-out without an auth event 3ms
+   ✓ AuthProviderContext > reviewer: removes a previously saved avatar after a null/deleted read: null 5ms
+   ✓ AuthProviderContext > reviewer: removes a previously saved avatar after a null/deleted read: {"avatar_url":null} 5ms
+   ✓ AuthProviderContext > reviewer: removes a previously saved avatar after a null/deleted read: {"avatar_url":" "} 5ms
+   ✓ AuthProviderContext > reviewer: an old same-user session response cannot replace a new session avatar 6ms
+   ✓ AuthProviderContext > reviewer: latest failed refresh retains saved avatar and rejects older success 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > clears only the exact in-season cancellation key when sign-out resolves with no billing panel mounted
+ FAIL  __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > clears only the exact in-season cancellation key when sign-out rejects with no billing panel mounted
+ FAIL  __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > clears only the exact in-season cancellation key when sign-out times out with no billing panel mounted
+AssertionError: expected '{"ownerId":"user-1","requests":{"sub_…' to be null
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div>[39m
+        [36m<div>[39m
+          [0msigned-out[0m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mdata-testid[39m=[32m"avatar-url"[39m
+        [36m>[39m
+          [0mnone[0m
+        [36m</div>[39m
+        [36m<button[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0mRefresh avatar[0m
+        [36m</button>[39m
+        [36m<button[39m
+          [33mtype[39m=[32m"button"[39m
+        [36m>[39m
+          [0mSign Out[0m
+        [36m</button>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+"{\"ownerId\":\"user-1\",\"requests\":{\"sub_fixture\":{\"requestId\":\"11111111-2222-4333-8444-555555555555\",\"savedAt\":1792858428351}}}"
+
+ ❯ __tests__/contexts/AuthProviderContext.test.tsx:257:97
+    255|       }
+    256|     } finally { vi.useRealTimers(); }
+    257|     await waitFor(() => expect(window.sessionStorage.getItem("fhfh:in-…
+       |                                                                                                 ^
+    258|     expect(window.sessionStorage.getItem("FHFH:In-Season-Cancellation:…
+    259|     expect(screen.getByText("signed-out")).toBeTruthy();
+ ❯ runWithExpensiveErrorDiagnosticsDisabled ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:47:12
+ ❯ checkCallback ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ❯ Timeout.checkRealTimersCallback ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 22 passed (25)
+   Start at  12:13:47
+   Duration  4.01s (transform 193ms, setup 3ms, collect 332ms, tests 3.18s, environment 258ms, prepare 49ms)
+
+JSON report written to /private/tmp/fhfh-c3-isolated/evidence/AUTH-REPRODUCTION-BEFORE-FIX.json

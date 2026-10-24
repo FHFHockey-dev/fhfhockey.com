@@ -1,0 +1,15 @@
+{
+  "argv": [
+    "npm",
+    "exec",
+    "--offline",
+    "--no",
+    "--",
+    "tsc",
+    "--noEmit",
+    "--project",
+    "audit.confirmation-tsconfig.json"
+  ],
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-confirmed-news-p9p6anwp/snapshot/web",
+  "exit_code": 0
+}

@@ -1,0 +1,40 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:104:5 › manual workspace retains reviewed intent, protections and locks through recalculation and reload
+[1A[2K[2/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1666:39 › compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1666:39 › compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoHaveLength[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected length: [32m7[39m
+    Received length: [31m3[39m
+    Received array:  [31m[{"after": "none", "band": "rgba(167, 180, 192, 0.25)", "before": "\"\"", "bottomLeftRadius": "10px", "outlineColors": ["rgba(167, 180, 192, 0.25)", "rgba(167, 180, 192, 0.25)", "rgba(167, 180, 192, 0.25)"], "outlineWidths": ["1px", "1px", "1px"], "style": "solid", "topLeftRadius": "10px", "width": "1px"}, {"after": "none", "band": "rgba(167, 180, 192, 0.25)", "before": "\"\"", "bottomLeftRadius": "10px", "outlineColors": ["rgba(167, 180, 192, 0.25)", "rgba(167, 180, 192, 0.25)", "rgba(167, 180, 192, 0.25)"], "outlineWidths": ["1px", "1px", "1px"], "style": "solid", "topLeftRadius": "10px", "width": "1px"}, {"after": "none", "band": "rgba(167, 180, 192, 0.25)", "before": "\"\"", "bottomLeftRadius": "10px", "outlineColors": ["rgba(167, 180, 192, 0.25)", "rgba(167, 180, 192, 0.25)", "rgba(167, 180, 192, 0.25)"], "outlineWidths": ["1px", "1px", "1px"], "style": "solid", "topLeftRadius": "10px", "width": "1px"}][39m
+
+      1734 |     before: getComputedStyle(node, "::before").content, after: getComputedStyle(node, "::after").content,
+      1735 |   })));
+    > 1736 |   expect(articleBorders).toHaveLength(7);
+           |                          ^
+      1737 |   for (const border of articleBorders) {
+      1738 |     expect(border.width).toBe("10px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("10px"); expect(border.bottomLeftRadius).toBe("10px");
+      1739 |     expect(border.outlineColors).toEqual([border.band, border.band, border.band]); expect(border.outlineWidths).toEqual(["1px", "1px", "1px"]);
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1736:26
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../focus-03/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../focus-03/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../focus-03/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../focus-03/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1666:39 › compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels 
+  1 passed (6.6s)

@@ -1,0 +1,50 @@
+{
+  "at": "2026-10-24T20:35:07.473779+00:00",
+  "status": "Segment22 coherent CCC/GDL group checkpoint delivered; whole-tree audit unfinished",
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "8b0a93d5e74ce9f32144e487ec7059ef33871505d7910e1c4bd47b0e7873b28e",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "24b32be9e45298af55635a1a6f36461ef968a5739ef2068ea1d471b693c97f4a",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "bc20a1f0096f3b265e20f9aa14e182d728b12b5d24802141891a0e4aff620fca"
+  },
+  "baseline_ids": 215,
+  "current_ids": 215,
+  "baseline_evidence": 1241,
+  "current_evidence": 1253,
+  "readable_children_before": 60,
+  "readable_children_after": 71,
+  "added_parent_ids": [],
+  "changed_existing_ids": [
+    "IFTTT-ACTIVATION"
+  ],
+  "all_prior_ids_scopes_evidence_preserved": true,
+  "legacy_blocks_byte_identical": 32,
+  "untouched_old_row_objects": 214,
+  "new_full_content_documents": 17,
+  "new_full_content_bytes": 283434,
+  "bounded_structured_files": 8,
+  "bounded_structured_bytes": 298008,
+  "normalized_equivalent_representatives": 2,
+  "inherited_bounded_support_files": 16,
+  "whole_tree_content_complete": false,
+  "remaining_tentative_unique_text_candidates": 1589,
+  "remaining_original_queue_entries": 11991,
+  "next_cursor": "tasks/prd-in-season-trust-clarity-decision-workflow.md",
+  "library_identity": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+  "library_version": 20,
+  "library_size_bytes": 735568,
+  "library_receipt_success": true,
+  "metadata_helper_exit": 0,
+  "xattrs": [
+    {
+      "name": "user.library-file-version",
+      "value": "20",
+      "readback_matched": true
+    }
+  ],
+  "independent_cloud_download_checksum_verified": false,
+  "application_tests_or_git_actions": 0,
+  "production_requests_or_writes": 0,
+  "new_workers": 0,
+  "blocked_or_uncertain_operations": [],
+  "pending_operations": []
+}

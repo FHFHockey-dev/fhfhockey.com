@@ -1,0 +1,321 @@
+{
+  "at": "2026-10-24T17:17:21.843365+00:00",
+  "added_ids": [],
+  "findings": [
+    {
+      "finding": "SEG08-01",
+      "stable_id": "REPO-DOCUMENTATION",
+      "detail": "Full CLEAN/DRM lists preserve narrower closures; only later recurrences/gates map to existing IDs. Old residual vulnerability counts and rejected major upgrades are not new dispatch.",
+      "status": "Existing-ID reconciliation; no added task",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/89b939a9a2d0-tasks-prd-cleanup-tasks.md",
+          "original_path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+          "line": 139,
+          "sha256": "89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/89b939a9a2d0-tasks-prd-cleanup-tasks.md",
+          "original_path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+          "line": 253,
+          "sha256": "89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/7d0cebf7d3c3-tasks-prd-drm-refactor.md",
+          "original_path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          "line": 143,
+          "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/8a1e4cb7e816-tasks-draft-dashboard-interface-polish.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md",
+          "line": 3,
+          "sha256": "8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          "line": 29,
+          "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ],
+      "next_action": "Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion.",
+      "limits": "Documentary/retained-receipt audit, no application/runtime/production verification."
+    },
+    {
+      "finding": "SEG08-02",
+      "stable_id": "PAID-SYNC",
+      "detail": "Retain parked live-draft durable-worker/target-migration/closed-browser controlled-rehearsal NO-GO under existing sync gates; local UI/OAuth fixtures do not qualify production.",
+      "status": "Existing-ID reconciliation; no added task",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/65f143fa43c8-live-draft-runbook.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md",
+          "line": 7,
+          "sha256": "65f143fa43c8b3eaadde4c2c5f273448ef3206307bb5546b1df3191fdff5c497",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/e584a8a3c87d-live-draft-production-readiness.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          "line": 11,
+          "sha256": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/e584a8a3c87d-live-draft-production-readiness.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          "line": 20,
+          "sha256": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/e584a8a3c87d-live-draft-production-readiness.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          "line": 34,
+          "sha256": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/fc43f5343286-yahoo-live-draft-backlog.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-live-draft-backlog.md",
+          "line": 3,
+          "sha256": "fc43f5343286440c25bd31490d2f8b325a2214c1467172a63c1513e616f33225",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ],
+      "next_action": "Release owner preserves the exact accepted35-path sales-off/paid-sync packet, existing/grandfathered grants, cancellation/recovery and manual workflows. Retain the older Yahoo live-draft readiness clauses as held reconciliation: supervised sub-minute worker substrate, exact target migration/runtime and closed-browser/provider rehearsal are not established by UI/OAuth/local fixture passes. The August24 tracker is NO-GO, not proof current infrastructure is absent. Reconcile newer owner receipts before any future restoration; do not activate a worker, change sales/rollout or invoke the rehearsal. Previously issued Stripe links remain an external risk with no mutation/refund authority.",
+      "limits": "Documentary/retained-receipt audit, no application/runtime/production verification."
+    },
+    {
+      "finding": "SEG08-03",
+      "stable_id": "SITE-PRIVACY-POLICY",
+      "detail": "Live-draft session/pick/audit/rehearsal retention is distinct from30-day observations and approved linked-token lifetime; current owner facts remain needed.",
+      "status": "Existing-ID reconciliation; no added task",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/65f143fa43c8-live-draft-runbook.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md",
+          "line": 132,
+          "sha256": "65f143fa43c8b3eaadde4c2c5f273448ef3206307bb5546b1df3191fdff5c497",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/e584a8a3c87d-live-draft-production-readiness.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          "line": 30,
+          "sha256": "e584a8a3c87dfa8507cdfc1266bdb4b58bd6ca46da0e21dc89e09fbeee8d03b6",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/3b8988c67e1a-yahoo-tables.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md",
+          "line": 171,
+          "sha256": "3b8988c67e1ac72c5d9674e978cea2f7febc71ae41aefa7da538864b8accbb06",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ],
+      "next_action": "Obtain a value-free owner fact sheet and reconcile the existing draft against it; propose exact copy and indexing disposition. Do not infer legal promises from code. Preserve the Oct19 approved linked-lifetime/same-purpose credential contract. Fact sheet must distinguish local disconnect/actual-auth-user deletion cleanup from user-facing account-deletion workflow, hosted cascade, backups/logs/derived-data erasure and upstream invalidation/provider rights, all unqualified by the reviewed policy. No new deletion feature or changed lifetime policy is requested. Full Draft/Yahoo source review adds separate session/pick/audit/rehearsal retention facts: the dated design has30-day poll observations but no automatic completed-session/pick deletion, with owner/legal policy needed before broad rollout. Reconcile current facts first;30days is not a new linked-credential or league-data lifetime policy.",
+      "limits": "Documentary/retained-receipt audit, no application/runtime/production verification."
+    },
+    {
+      "finding": "SEG08-04",
+      "stable_id": "YAHOO-HISTORY-RETIREMENT",
+      "detail": "Current-inventory static draft-history/cutover gaps conflict with same-document later applied/reader closure receipts; reconcile documentation, not duplicate writer repair.",
+      "status": "Existing-ID reconciliation; no added task",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          "line": 3,
+          "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          "line": 13,
+          "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          "line": 29,
+          "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9a4c0044bd1f-yahoo-current-inventory.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          "line": 83,
+          "sha256": "9a4c0044bd1f322ddc7cccfc69b8a426345b618ee3edc9c6f1ce9d8a00d159ec",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/3b8988c67e1a-yahoo-tables.md",
+          "original_path": "tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md",
+          "line": 1,
+          "sha256": "3b8988c67e1ac72c5d9674e978cea2f7febc71ae41aefa7da538864b8accbb06",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ],
+      "next_action": "Reconcile retained newer value-free lifecycle/equivalence/retirement receipts against the existing gated historical scope before proposing any bounded slice. Preserve completed canonical-reader cutover and local guard work; do not revive old unsafe legacy owners, guess a global league from accounts, launch backfill or count private-beta fixture/UI work as provider equivalence.",
+      "limits": "Documentary/retained-receipt audit, no application/runtime/production verification."
+    },
+    {
+      "finding": "SEG08-05",
+      "stable_id": "SITE-WIGO",
+      "detail": "Independent75/75/46pins and parent limited acceptance close the exact local correction review only; stored aggregates/backfill/whole-product remain unapproved.",
+      "status": "Existing-ID reconciliation; no added task",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/43a8edca387f-REVIEW.md",
+          "original_path": "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW.md",
+          "line": 3,
+          "sha256": "43a8edca387fa4d4b3742c03c98bdb2b097a7f27c262494aba7cdc6f4486e8e1",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/726b59e90abb-REVIEW-EVIDENCE.json",
+          "original_path": "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW-EVIDENCE.json",
+          "line": 1,
+          "sha256": "726b59e90abb89a410a98d78507f82859a38b2123825557e8da4d18cf158d4d8",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9b3c682e7952-PARENT-STEERS.json",
+          "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json",
+          "line": 1,
+          "sha256": "9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ],
+      "next_action": "Preserve accepted exact pins for parent integration and separate authorized release; do not repeat the completed review without a changed candidate. Stored L5 nulls, October5 source ingestion and any bounded refresh/backfill remain unapproved. Broad-route partial commits/population compatibility and the separate historical STD fallback are outside acceptance; no broad calculate-wigo-stats invocation or card-cohort claim.",
+      "limits": "Documentary/retained-receipt audit, no application/runtime/production verification."
+    },
+    {
+      "finding": "SEG08-06",
+      "stable_id": "SITE-FORGE-TESTING-GROUNDS",
+      "detail": "Original slice05 CHANGES REQUIRED S05-R1; owner two-file9pass/8skip correction frozen but not independently accepted. Owner activation already approved yetblocked0of1authreadsused; do not re-request settled approval.",
+      "status": "Existing-ID reconciliation; no added task",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/ca0670df6439-REVIEW.md",
+          "original_path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW.md",
+          "line": 3,
+          "sha256": "ca0670df6439d44cbbdcdc75c1c873ad09f88b6cc445ef4a8d3364e05f57a47b",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/7a5ac23ec40b-REVIEW-EVIDENCE.json",
+          "original_path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW-EVIDENCE.json",
+          "line": 1,
+          "sha256": "7a5ac23ec40bb5bd4c6d832023b3245ac14e2b18952b1ddfb08330b54e7d8e05",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/5cbacd13d0b3-HANDOFF.md",
+          "original_path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1/HANDOFF.md",
+          "line": 18,
+          "sha256": "5cbacd13d0b30702533370bd6d4e5cb3b16123344ac40670816bd7d4d575d9f7",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/5cbacd13d0b3-HANDOFF.md",
+          "original_path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1/HANDOFF.md",
+          "line": 25,
+          "sha256": "5cbacd13d0b30702533370bd6d4e5cb3b16123344ac40670816bd7d4d575d9f7",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9b3c682e7952-PARENT-STEERS.json",
+          "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json",
+          "line": 1,
+          "sha256": "9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ],
+      "next_action": "Same reviewer evaluates the frozen two-file S05-R1 correction; preserve the original failure and exact boundary without importing owner passes as acceptance. Resolve safe private verification transport/budget and inherited-write containment before the already-approved owner activation; no additional auth call or new approval request from this audit. No actual read adapter/runner/model or real-run acceptance; payload/owner/sealing and scientific gates remain separate.",
+      "limits": "Documentary/retained-receipt audit, no application/runtime/production verification."
+    },
+    {
+      "finding": "SEG08-07",
+      "stable_id": "SITE-PLAYER-CARDS",
+      "detail": "Slice01 independent review ongoing; no acceptance from owner preview tests.",
+      "status": "Existing-ID reconciliation; no added task",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9b3c682e7952-PARENT-STEERS.json",
+          "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json",
+          "line": 1,
+          "sha256": "9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9",
+          "observed_at": "2026-10-24T17:15:34.417533+00:00",
+          "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+        }
+      ],
+      "next_action": "Preserve scoped status and exact cited receipts",
+      "limits": "Documentary/retained-receipt audit, no application/runtime/production verification."
+    },
+    {
+      "finding": "SEG08-08",
+      "stable_id": null,
+      "detail": "Historical generated inventory has843unique flat records vs declared845; bounded provenance disposition does not require845deep source reads or establish current paths. Thirty-nine known supporting artifacts receive metadata-role disposition; eight unique reports remain deep-review candidates.",
+      "status": "Coverage-role disposition only",
+      "evidence": [
+        {
+          "path": "HISTORICAL-INVENTORY-STRUCTURE.json"
+        },
+        {
+          "path": "DISPOSITION-INDEX.json"
+        }
+      ],
+      "next_action": "Keep original index/mapping; review pending unique reports instead of replaying generated bodies.",
+      "limits": "Documentary/retained-receipt audit, no application/runtime/production verification."
+    }
+  ],
+  "parked_adjacent_yahoo_scopes": [
+    "Automatic league settings",
+    "Postdraft roster reconciliation",
+    "Transactions/add-drop",
+    "Personalized availability/recommendations",
+    "Keeper discovery",
+    "Matchup context",
+    "Ongoing roster sync",
+    "Historical draft analysis",
+    "Public ADP/ownership cadence proposals",
+    "Detailed two-view settings",
+    "OIDC/dedup/global governor/append-only history proposals"
+  ]
+}

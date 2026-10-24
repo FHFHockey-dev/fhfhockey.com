@@ -1,0 +1,397 @@
+{
+    "scene": "Assets/MapPrototype/Scenes/VesperBasin_v17_IndustrialDeck.unity",
+    "source": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+    "utc": "2026-10-24T17:42:38.5582970Z",
+    "shader": "VesperBasin/V17 Industrial Deck",
+    "material": "Assets/MapPrototype/SprintAssets/v17/V17 industrial deck graphite.mat",
+    "shaderHasErrors": false,
+    "swappedRenderers": 96,
+    "swappedSlots": 96,
+    "swaps": [
+        {
+            "renderer": "V02 / Reference-derived composition[2]/A energy plaza foundation[38]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/B hangar roof[127]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/B repair apron[102]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Base shoulder cap[10]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Base shoulder cap[26]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Base shoulder cap[29]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Base shoulder cap[7]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Blue base foundation[24]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/C bridge spur[76]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/C radar mast[78]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/C terrace surface[75]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/D artillery shoulder[131]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/D turret body[133]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/E drone gantry crossbar[158]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/E drone platform[153]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Energy pylon plinth[64]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Energy pylon plinth[68]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Energy relay crossbeam[72]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Energy tower crown[67]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Energy tower crown[71]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/North base connector[0]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/North base connector[19]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/North bridge approach connector[1]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/North bridge approach connector[20]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/North ramp landing[2]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/North ramp landing[21]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Northeast service block foundation[195]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Northeast service block roof[197]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Northwest comms block foundation[189]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Northwest comms block roof[191]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Protected spawn canopy[12]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Protected spawn canopy[31]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Red base foundation[5]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/South base connector[22]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/South base connector[3]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/South flank entry[23]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/South flank entry[4]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Southeast logistics block foundation[207]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Southeast logistics block roof[209]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Southwest loading block foundation[201]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Southwest loading block roof[203]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Underpass portal header[184]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Underpass portal header[186]",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Underpass upper cap[183]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Cargo recessed stripe[55]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Cargo recessed stripe[58]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Cargo recessed stripe[61]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Cargo recessed stripe[64]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/District sign backing A[44]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/District sign backing B[48]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/District sign backing C[46]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/District sign backing D[50]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/District sign backing E[52]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terrace access ramp[10]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terrace access ramp[17]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terrace access ramp[24]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terrace access ramp[3]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terrace paved cap[16]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terrace paved cap[2]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terrace paved cap[23]",
+            "slot": 0
+        },
+        {
+            "renderer": "V03 / Terraces and surface correction[3]/Terrace paved cap[9]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Base bastion roof[56]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Base bastion roof[59]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Base bastion roof[62]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Base bastion roof[65]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Bridge joint landing[36]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Bridge joint landing[39]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Bridge joint landing[42]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Bridge joint landing[45]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Bridge pylon footing[38]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Bridge pylon footing[41]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Bridge pylon footing[44]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Bridge pylon footing[47]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Contoured north bridge span[0]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Contoured north bridge span[14]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Contoured north bridge span[22]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Contoured north bridge span[29]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/Contoured north bridge span[7]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/South flank contoured surface[48]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/South flank contoured surface[49]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/South flank contoured surface[50]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/South flank contoured surface[51]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/South flank contoured surface[52]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/South flank contoured surface[53]",
+            "slot": 0
+        },
+        {
+            "renderer": "V05 / Contoured circulation and district silhouettes[5]/South flank contoured surface[54]",
+            "slot": 0
+        },
+        {
+            "renderer": "V06 / Joined road surfaces and depth-tested wayfinding[6]/South surface joined corner[16]",
+            "slot": 0
+        },
+        {
+            "renderer": "V06 / Joined road surfaces and depth-tested wayfinding[6]/South surface joined corner[17]",
+            "slot": 0
+        },
+        {
+            "renderer": "V06 / Joined road surfaces and depth-tested wayfinding[6]/South surface joined corner[18]",
+            "slot": 0
+        },
+        {
+            "renderer": "V06 / Joined road surfaces and depth-tested wayfinding[6]/South surface joined corner[19]",
+            "slot": 0
+        },
+        {
+            "renderer": "V06 / Joined road surfaces and depth-tested wayfinding[6]/South surface joined corner[20]",
+            "slot": 0
+        },
+        {
+            "renderer": "V06 / Joined road surfaces and depth-tested wayfinding[6]/South surface joined corner[21]",
+            "slot": 0
+        },
+        {
+            "renderer": "Vesper Basin / First Slice[0]/Center street[5]",
+            "slot": 0
+        },
+        {
+            "renderer": "Vesper Basin / First Slice[0]/North bridge east approach[7]",
+            "slot": 0
+        },
+        {
+            "renderer": "Vesper Basin / First Slice[0]/North bridge west approach[6]",
+            "slot": 0
+        },
+        {
+            "renderer": "Vesper Basin / First Slice[0]/South flank track[8]",
+            "slot": 0
+        },
+        {
+            "renderer": "Vesper Basin / First Slice[0]/South underpass roof[9]",
+            "slot": 0
+        }
+    ],
+    "note": "v16 preserved and read-only. v17 swaps every 'Road graphite' material slot to one world-space industrial deck material (running-bond 4 m slabs with joints, per-slab tone, aggregate, service hatches and drain grates, large-scale sand drift and oil wear; kerb faces shaded). Same tint as Road graphite. No other change. No Scout import, package, project-settings or main-project change."
+}

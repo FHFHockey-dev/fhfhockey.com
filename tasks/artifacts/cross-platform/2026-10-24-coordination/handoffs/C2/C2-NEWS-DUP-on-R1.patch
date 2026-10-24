@@ -1,0 +1,147 @@
+--- a/web/pages/api/v1/db/tweet-pattern-review.ts
++++ b/web/pages/api/v1/db/tweet-pattern-review.ts
+@@ -12,6 +12,7 @@
+ } from "lib/sources/tweetPatternReview";
+ import { buildRosterEventsFromReviewedTweet } from "lib/projections/rosterEvents";
+ import { fetchLinesCccTweetOEmbedAttempt } from "lib/sources/linesCccIngestion";
++import { extractTweetIdFromUrl } from "lib/sources/tweetLineupParsing";
+ import adminOnly from "utils/adminOnlyMiddleware";
+ 
+ type ReviewStatus = "pending" | "reviewed" | "ignored";
+@@ -120,6 +121,7 @@
+   tweet_posted_label: string | null;
+   status: string | null;
+   interpretation: unknown;
++  ifttt_event_id: string | null;
+ };
+ 
+ type LineSourceSnapshotReviewSourceRow = {
+@@ -155,6 +157,7 @@
+   tweet_posted_label: string | null;
+   status: string | null;
+   interpretation: unknown;
++  ifttt_event_id: string | null;
+ };
+ 
+ type LinesCccEventReviewSourceRow = {
+@@ -723,14 +726,14 @@
+       args.supabase
+         .from("lines_ccc" as any)
+         .select(
+-          "capture_key, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status, interpretation:metadata->interpretation"
++          "capture_key, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status, interpretation:metadata->interpretation, ifttt_event_id:metadata->>iftttEventId"
+         )
+         .order("observed_at", { ascending: false })
+         .limit(args.perSourceLimit),
+       args.supabase
+         .from("line_source_snapshots" as any)
+         .select(
+-          "capture_key, source_group, source_key, source_account, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status, interpretation:metadata->interpretation"
++          "capture_key, source_group, source_key, source_account, source, source_label, source_handle, author_name, snapshot_date, observed_at, tweet_id, tweet_url, source_url, quoted_tweet_id, quoted_tweet_url, quoted_author_handle, quoted_author_name, team_id, team_abbreviation, classification, nhl_filter_status, nhl_filter_reason, keyword_hits, raw_text, enriched_text, quoted_raw_text, quoted_enriched_text, raw_payload, primary_text_source, tweet_posted_label, status, interpretation:metadata->interpretation, ifttt_event_id:metadata->>iftttEventId"
+         )
+         .order("observed_at", { ascending: false })
+         .limit(args.perSourceLimit),
+@@ -759,19 +762,34 @@
+     if (result.error) throw result.error;
+   }
+ 
+-  const candidates = new Map<string, SyncCandidate>();
+-  for (const candidate of [
+-    ...((linesCccResult.data ?? []) as LinesCccReviewSourceRow[]).map(buildLinesCccCandidate),
+-    ...((lineSourceSnapshotResult.data ?? []) as LineSourceSnapshotReviewSourceRow[]).map(
+-      buildLineSourceSnapshotCandidate
+-    ),
++  const linesCccRows = (linesCccResult.data ?? []) as LinesCccReviewSourceRow[];
++  const lineSourceSnapshotRows = (lineSourceSnapshotResult.data ?? []) as LineSourceSnapshotReviewSourceRow[];
++  const snapshotCandidates = [
++    ...linesCccRows.map(buildLinesCccCandidate),
++    ...lineSourceSnapshotRows.map(buildLineSourceSnapshotCandidate)
++  ];
++  // A snapshot built from an IFTTT event names it, so a linkless event is that same source.
++  const snapshotKeyByEvent = new Map<string, string>();
++  [...linesCccRows.map((row) => ["lines_ccc_ifttt_events", row] as const),
++    ...lineSourceSnapshotRows.map((row) => ["line_source_ifttt_events", row] as const)]
++    .forEach(([eventTable, row], index) => {
++      if (row.ifttt_event_id) snapshotKeyByEvent.set(`${eventTable}:${row.ifttt_event_id}`, snapshotCandidates[index]!.dedupe_key);
++    });
++  const eventCandidates = [
+     ...((linesCccEventResult.data ?? []) as LinesCccEventReviewSourceRow[]).map(
+       buildLinesCccEventCandidate
+     ),
+     ...((lineSourceEventResult.data ?? []) as LineSourceEventReviewSourceRow[]).map(
+       buildLineSourceEventCandidate
+     )
+-  ]) {
++  ].map((candidate) => {
++    const snapshotKey = snapshotKeyByEvent.get(`${candidate.source_table}:${candidate.source_row_key}`);
++    const ownTweetId = candidate.tweet_id ?? extractTweetIdFromUrl(candidate.tweet_url);
++    return snapshotKey && !ownTweetId ? { ...candidate, dedupe_key: snapshotKey } : candidate;
++  });
++
++  const candidates = new Map<string, SyncCandidate>();
++  for (const candidate of [...snapshotCandidates, ...eventCandidates]) {
+     const existing = candidates.get(candidate.dedupe_key);
+     if (!existing || shouldReplaceCandidate(existing, candidate)) {
+       candidates.set(candidate.dedupe_key, candidate);
+--- a/web/lib/homepageNewsCompatibility.test.tsx
++++ b/web/lib/homepageNewsCompatibility.test.tsx
+@@ -17,14 +17,14 @@
+   // Receipt gives prefixes, not full retained text or raw evidence. Never reconstruct missing evidence.
+   metadata:{automation:{source:'tweet_news_phrase_dictionary',autoPublish:false,primaryRuleId:'manual-review'}},
+   players:r.players.map(p=>({...p,player_name:p.name})),card_status:'published'} as any);
+-function fakeDb(sourceRows:any[], sourceTable='lines_ccc', existingRows:any[]=[]) {
++function fakeDb(sourceRows:any[], sourceTable='lines_ccc', existingRows:any[]=[], otherTables:Record<string,any[]>={}) {
+   const writes:any[]=[];const selects:Record<string,string[]>={};
+   return {writes, selects, db:{from(table:string) {
+     let columns:string[]=[];
+     const q:any={select(text:string){ columns=text.split(',').map(s=>s.trim());selects[table]=columns;return q;},order(){return q;},limit(){return q;},in(){return q;},upsert(rows:any[]){writes.push(...rows);return q;},then(resolve:any){
+-      const rows=table===sourceTable?sourceRows:table==='tweet_pattern_review_items'?existingRows:[];
+-      // Faithful PostgREST projection, including `alias:column->key` JSON paths.
+-      const pick=(row:any,c:string)=>{const [alias,path=alias]=c.split(':');const [column,...keys]=path.split('->');return [alias,keys.reduce((v,k)=>v?.[k],row[column])??null];};
++      const rows=table===sourceTable?sourceRows:table==='tweet_pattern_review_items'?existingRows:otherTables[table]??[];
++      // Faithful PostgREST projection, including `alias:column->key` and `->>key` JSON paths.
++      const pick=(row:any,c:string)=>{const [alias,path=alias]=c.split(':');const [column,...keys]=path.split(/->>?/);return [alias,keys.reduce((v,k)=>v?.[k],row[column])??null];};
+       const data=rows.map(row=>Object.fromEntries(columns.map(c=>pick(row,c))));
+       return Promise.resolve(resolve({data,error:null}));
+     }};return q;
+@@ -300,3 +300,40 @@
+     expect(review.metadata.retainedInterpretation).toBeNull();
+   });
+ });
++
++describe('one retained source event and the snapshot built from it', () => {
++  const text = 'Levi starts in net vs the Oilers tonight.';
++  const event = (id: string, extra: any = {}) => ({id,source:'tweet',source_group:'gameday',source_key:'gamedaynewsnhl',source_account:'GameDayNewsNHL',username:'GameDayNewsNHL',
++    text,link_to_tweet:null,tweet_id:null,tweet_created_at:null,created_at_label:null,processing_status:'processed',received_at:'2026-10-22T16:57:27.000Z',raw_payload:{},...extra});
++  const snapshot = (eventId: string | null, extra: any = {}) => ({...baseRow,capture_key:`2026-10-22:22:no-game:no-wrapper-tweet:no-quoted-tweet:goalie_start:accepted:${eventId}`,
++    source_group:'gameday',source_key:'gamedaynewsnhl',source_account:'GameDayNewsNHL',tweet_id:null,tweet_url:null,source_url:null,raw_text:text,
++    observed_at:'2026-10-22T16:57:27.000Z',metadata:eventId ? {iftttEventId:eventId} : {},...extra});
++  const keys = async (snapshots: any[], events: any[]) => {
++    const f = fakeDb(snapshots,'line_source_snapshots',[],{line_source_ifttt_events:events});
++    await syncTweetPatternReviewItems({supabase:f.db,perSourceLimit:10});
++    return {f,keys:f.writes.map(w => w.dedupe_key)};
++  };
++  it('gives a linkless event and its linkless snapshot one review identity', async () => {
++    const {f,keys:k} = await keys([snapshot('evt-1')],[event('evt-1')]);
++    expect(k).toHaveLength(1);
++    expect(f.writes[0].source_table).toBe('line_source_snapshots');
++    expect(f.selects.line_source_snapshots).toContain('ifttt_event_id:metadata->>iftttEventId');
++  });
++  it('keys a linkless event to the tweet identity its snapshot recovered', async () => {
++    const {keys:k} = await keys([snapshot('evt-2',{tweet_id:'2113311716893463008'})],[event('evt-2')]);
++    expect(k).toEqual(['gamedaynewsnhl:2113311716893463008']);
++  });
++  it('keeps distinct events with identical text as distinct sources (no text matching)', async () => {
++    const {keys:k} = await keys([snapshot('evt-3'),snapshot('evt-4',{capture_key:'other-capture'})],[event('evt-3'),event('evt-4')]);
++    expect(new Set(k).size).toBe(2);
++  });
++  it('does not re-key an event that carries its own different post ID', async () => {
++    const {keys:k} = await keys([snapshot('evt-5',{tweet_id:'111'})],[event('evt-5',{tweet_id:'222'})]);
++    expect([...k].sort()).toEqual(['gamedaynewsnhl:111','gamedaynewsnhl:222']);
++  });
++  it('leaves an event alone when no snapshot names it', async () => {
++    const {keys:k} = await keys([snapshot(null)],[event('evt-6')]);
++    expect(k).toHaveLength(2); expect(k).toContain('gamedaynewsnhl:evt-6');
++  });
++});
++

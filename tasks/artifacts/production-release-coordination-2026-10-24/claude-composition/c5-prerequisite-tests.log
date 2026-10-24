@@ -1,0 +1,900 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c5-prerequisite-compose-f2n8ykuk/web
+
+(node:26637) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts (41 tests | 19 failed) 38ms
+   ✓ scheduled cron audit coverage > covers every active scheduled HTTP route with an audit owner 1ms
+   ✓ scheduled cron audit coverage > keeps manual audit owners explicit and all other routes on the shared wrapper 0ms
+   × scheduled cron audit coverage > freezes every active HTTP job, route auth mode, and non-cron caller shape before rollout 5ms
+     → expected [ { …(8) }, { …(8) }, { …(8) }, …(44) ] to have a length of 45 but got 47
+   ✓ scheduled cron audit coverage > keeps every scheduled route behind its reviewed authorization boundary 0ms
+   ✓ Vercel cron static source coverage > represents all configured entries without merging query or schedule identities 1ms
+   × Vercel cron static source coverage > keeps every unresolved audit owner explicit rather than granting an exemption 1ms
+     → expected [ '/api/internal/espn-sync', …(5) ] to deeply equal [ '/api/internal/starter-board', …(2) ]
+   ✓ Vercel cron static source coverage > qualifies the drafted-prospect refresh only through adminOnly(withCronJobAudit(...)) 1ms
+   ✓ Vercel cron static source coverage > keeps yahoo-live-draft's runtime audit delegate statically unqualified 1ms
+   ✓ Vercel cron static source coverage > binds starter-board qualification to its actual early rejection and supporting helper source 2ms
+   ✓ Vercel cron static source coverage > binds yahoo-live-draft qualification to its actual early rejection and supporting helper source 2ms
+   ✓ Vercel cron static source coverage > binds fantrax-sync qualification to its actual early rejection and supporting helper source 2ms
+   ✓ Vercel cron static source coverage > binds espn-sync qualification to its actual early rejection and supporting helper source 2ms
+   × Vercel cron static source coverage > qualifies only the actual auth-first espn-sync audit delegate 2ms
+     → expected 'unqualified' to be 'shared-wrapper' // Object.is equality
+   × Vercel cron static source coverage > qualifies only the actual auth-first fantrax-sync audit delegate 1ms
+     → expected 'unqualified' to be 'shared-wrapper' // Object.is equality
+   × Vercel cron static source coverage > requires Patreon's actual method-guarded audited delegate inside adminOnly 1ms
+     → expected { authMode: 'admin-or-cron', …(3) } to match object { authMode: 'admin-or-cron', …(1) }
+(2 matching properties omitted from actual)
+   ✓ Vercel cron static source coverage > qualifies reviewed exported wrappers, not imports, comments, strings or decoy calls 0ms
+   ✓ Vercel cron static source coverage > retains malformed or unsupported entries as explicit findings and bounds the input 1ms
+   × scoped cron auth ordering > authenticates before auditing every declared caller 4ms
+     → Teams/nst-team-stats.ts: expected 'withCronJobAudit' to be 'adminOnly' // Object.is equality
+   × '/api/v1/db/refresh-draft-ranker-disco…' authorization and audit boundary > rejects 'missing bearer' without an audit insert or business operation 2ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"Unauthorized.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 401,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.695Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.695Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/refresh-draft-ranker-discovery",
+        },
+        "job_name": "refresh-draft-ranker-discovery",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+   × '/api/v1/db/refresh-draft-ranker-disco…' authorization and audit boundary > rejects 'malformed bearer' without an audit insert or business operation 1ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"Unauthorized.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 401,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.697Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.697Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/refresh-draft-ranker-discovery",
+        },
+        "job_name": "refresh-draft-ranker-discovery",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+   × '/api/v1/db/refresh-draft-ranker-disco…' authorization and audit boundary > rejects 'invalid user token' without an audit insert or business operation 0ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"Unauthorized.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 401,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.697Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.697Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/refresh-draft-ranker-discovery",
+        },
+        "job_name": "refresh-draft-ranker-discovery",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+   × '/api/v1/db/refresh-draft-ranker-disco…' authorization and audit boundary > rejects 'non-admin token' without an audit insert or business operation 0ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"You are not an Admin.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 403,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.698Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.698Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/refresh-draft-ranker-discovery",
+        },
+        "job_name": "refresh-draft-ranker-discovery",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+   ✓ '/api/v1/db/refresh-draft-ranker-disco…' authorization and audit boundary > retains one admitted audit for Bearer synthetic-cron-secret 1ms
+   ✓ '/api/v1/db/refresh-draft-ranker-disco…' authorization and audit boundary > retains one admitted audit for Bearer admin-token 0ms
+   × '/api/v1/db/update-seasons' authorization and audit boundary > rejects 'missing bearer' without an audit insert or business operation 0ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"Unauthorized.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 401,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.699Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.699Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/update-seasons",
+        },
+        "job_name": "/api/v1/db/update-seasons",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+   × '/api/v1/db/update-seasons' authorization and audit boundary > rejects 'malformed bearer' without an audit insert or business operation 0ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"Unauthorized.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 401,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.700Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.700Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/update-seasons",
+        },
+        "job_name": "/api/v1/db/update-seasons",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+   × '/api/v1/db/update-seasons' authorization and audit boundary > rejects 'invalid user token' without an audit insert or business operation 0ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"Unauthorized.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 401,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.700Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.700Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/update-seasons",
+        },
+        "job_name": "/api/v1/db/update-seasons",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+   × '/api/v1/db/update-seasons' authorization and audit boundary > rejects 'non-admin token' without an audit insert or business operation 0ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"You are not an Admin.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 403,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.701Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.701Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/update-seasons",
+        },
+        "job_name": "/api/v1/db/update-seasons",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+   ✓ '/api/v1/db/update-seasons' authorization and audit boundary > retains one admitted audit for Bearer synthetic-cron-secret 0ms
+   ✓ '/api/v1/db/update-seasons' authorization and audit boundary > retains one admitted audit for Bearer admin-token 0ms
+   ✓ '/api/internal/patreon-reconcile' authorization and audit boundary > rejects 'missing bearer' without an audit insert or business operation 1ms
+   ✓ '/api/internal/patreon-reconcile' authorization and audit boundary > rejects 'malformed bearer' without an audit insert or business operation 0ms
+   ✓ '/api/internal/patreon-reconcile' authorization and audit boundary > rejects 'invalid user token' without an audit insert or business operation 0ms
+   ✓ '/api/internal/patreon-reconcile' authorization and audit boundary > rejects 'non-admin token' without an audit insert or business operation 0ms
+   × '/api/internal/patreon-reconcile' authorization and audit boundary > retains one admitted audit for Bearer synthetic-cron-secret 0ms
+     → expected undefined to be true // Object.is equality
+   × '/api/internal/patreon-reconcile' authorization and audit boundary > retains one admitted audit for Bearer admin-token 0ms
+     → expected undefined to be true // Object.is equality
+   × '/api/internal/patreon-reconcile' authorization and audit boundary > retains the 'empty' API result with exactly one safe invocation receipt 0ms
+     → expected { attempted: +0, synced: +0, …(2) } to deeply equal { attempted: +0, synced: +0, …(3) }
+   × '/api/internal/patreon-reconcile' authorization and audit boundary > retains the 'aggregate failure' API result with exactly one safe invocation receipt 0ms
+     → expected { attempted: 1, synced: +0, …(2) } to deeply equal { attempted: 1, synced: +0, …(3) }
+   × '/api/internal/patreon-reconcile' authorization and audit boundary > keeps its fixed catch response and safe failure receipt 0ms
+     → expected "spy" to be called 1 times, but got 0 times
+   ✓ '/api/internal/patreon-reconcile' authorization and audit boundary > rejects an admitted unsupported method before auditing or reconciliation 0ms
+   ✓ retains admitted method rejection and its operational audit 0ms
+(node:26646) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/cron/withCronJobAudit.test.ts (27 tests) 59ms
+(node:26648) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | __tests__/pages/api/internal/yahoo-live-draft.test.ts > Yahoo production scheduler > runs bounded batches across the minute boundary
+yahoo_live_draft_scheduled_cycle { cycles: 65, attempted: 65, succeeded: 65, failed: 0 }
+
+stdout | __tests__/pages/api/internal/yahoo-live-draft.test.ts > Yahoo production scheduler > records a partial batch as a failed run with its true counters
+yahoo_live_draft_scheduled_cycle { cycles: 65, attempted: 195, succeeded: 130, failed: 65 }
+
+ ✓ __tests__/pages/api/internal/yahoo-live-draft.test.ts (17 tests) 14ms
+(node:26650) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | lib/cron/nhlOffSeason.test.ts > withNhlOffSeasonSkip > runs the handler when the window is 'unknown'
+[nhl-off-season] season window unavailable; running job { reason: 'lookup failed' }
+
+stderr | lib/cron/nhlOffSeason.test.ts > withNhlOffSeasonSkip > marks the response as seasonal game data on skip, ignore and run paths alone
+[nhl-off-season] season window unavailable; running job { reason: 'lookup failed' }
+
+ ✓ lib/cron/nhlOffSeason.test.ts (11 tests) 14ms
+ ✓ __tests__/pages/api/v1/db/update-drafted-prospects.test.ts (14 tests) 8ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 19 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > scheduled cron audit coverage > freezes every active HTTP job, route auth mode, and non-cron caller shape before rollout
+AssertionError: expected [ { …(8) }, { …(8) }, { …(8) }, …(44) ] to have a length of 45 but got 47
+
+- Expected
++ Received
+
+- 45
++ 47
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:81:26
+     79|     // 2026-10-22: job 399 (route-runner-tick, cron-only) was schedule…
+     80|     // and job 79 (update-nst-gamelog, its route's only pg_cron owner)…
+     81|     expect(authFindings).toHaveLength(45);
+       |                          ^
+     82|     expect(
+     83|       authFindings.reduce(
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > Vercel cron static source coverage > keeps every unresolved audit owner explicit rather than granting an exemption
+AssertionError: expected [ '/api/internal/espn-sync', …(5) ] to deeply equal [ '/api/internal/starter-board', …(2) ]
+
+- Expected
++ Received
+
+  [
++   "/api/internal/espn-sync",
++   "/api/internal/fantrax-sync",
++   "/api/internal/patreon-reconcile",
+    "/api/internal/starter-board",
+    "/api/internal/yahoo-live-draft",
+    "/api/v1/db/replay-player-aliases",
+  ]
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:167:20
+    165|   it("keeps every unresolved audit owner explicit rather than granting…
+    166|     const routes = [...new Set(findings.filter((finding) => finding.au…
+    167|     expect(routes).toEqual(unresolvedAuditRoutes);
+       |                    ^
+    168|     expect(new Set(findings.filter((finding) => finding.auditMode === …
+    169|     for (const finding of findings.filter((finding) => finding.auditMo…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > Vercel cron static source coverage > qualifies only the actual auth-first espn-sync audit delegate
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > Vercel cron static source coverage > qualifies only the actual auth-first fantrax-sync audit delegate
+AssertionError: expected 'unqualified' to be 'shared-wrapper' // Object.is equality
+
+Expected: "shared-wrapper"
+Received: "unqualified"
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:218:63
+    216|     const route = `/api/internal/${name}`;
+    217|     const source = fs.readFileSync(path.resolve(webRoot, `pages${route…
+    218|     expect(classifyVercelCronSource(source, route).auditMode).toBe("sh…
+       |                                                               ^
+    219|     expect(classifyVercelCronSource(source.replace("return auditedSync…
+    220|     expect(classifyVercelCronSource(source.replace("!secretsMatch(bear…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > Vercel cron static source coverage > requires Patreon's actual method-guarded audited delegate inside adminOnly
+AssertionError: expected { authMode: 'admin-or-cron', …(3) } to match object { authMode: 'admin-or-cron', …(1) }
+(2 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "auditMode": "shared-wrapper",
++   "auditMode": "unqualified",
+    "authMode": "admin-or-cron",
+  }
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:229:53
+    227|     const route = "/api/internal/patreon-reconcile";
+    228|     const source = fs.readFileSync(path.resolve(webRoot, `pages${route…
+    229|     expect(classifyVercelCronSource(source, route)).toMatchObject({ au…
+       |                                                     ^
+    230|     expect(classifyVercelCronSource(source.replace("return auditedReco…
+    231|     expect(classifyVercelCronSource(source.replace('if (req.method !==…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > scoped cron auth ordering > authenticates before auditing every declared caller
+AssertionError: Teams/nst-team-stats.ts: expected 'withCronJobAudit' to be 'adminOnly' // Object.is equality
+
+Expected: "adminOnly"
+Received: "withCronJobAudit"
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:363:55
+    361|       expect(exported && ts.isCallExpression(exported), route).toBe(tr…
+    362|       if (!exported || !ts.isCallExpression(exported)) continue;
+    363|       expect(exported.expression.getText(ast), route).toBe("adminOnly"…
+       |                                                       ^
+    364|       const audited = exported.arguments[0];
+    365|       expect(audited && ts.isCallExpression(audited), route).toBe(true…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/v1/db/refresh-draft-ranker-disco…' authorization and audit boundary > rejects 'missing bearer' without an audit insert or business operation
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"Unauthorized.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 401,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.695Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.695Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/refresh-draft-ranker-discovery",
+        },
+        "job_name": "refresh-draft-ranker-discovery",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:466:44
+    464|     expect(res.statusCode).toBe(status);
+    465|     expect(res.body).toEqual({ success: false, message: status === 401…
+    466|     expect(authAuditMocks.auditInsert).not.toHaveBeenCalled();
+       |                                            ^
+    467|     expect(authAuditMocks.restGet).not.toHaveBeenCalled();
+    468|     expect(authAuditMocks.upsert).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/v1/db/refresh-draft-ranker-disco…' authorization and audit boundary > rejects 'malformed bearer' without an audit insert or business operation
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/v1/db/refresh-draft-ranker-disco…' authorization and audit boundary > rejects 'invalid user token' without an audit insert or business operation
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"Unauthorized.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 401,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.697Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.697Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/refresh-draft-ranker-discovery",
+        },
+        "job_name": "refresh-draft-ranker-discovery",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:466:44
+    464|     expect(res.statusCode).toBe(status);
+    465|     expect(res.body).toEqual({ success: false, message: status === 401…
+    466|     expect(authAuditMocks.auditInsert).not.toHaveBeenCalled();
+       |                                            ^
+    467|     expect(authAuditMocks.restGet).not.toHaveBeenCalled();
+    468|     expect(authAuditMocks.upsert).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/v1/db/refresh-draft-ranker-disco…' authorization and audit boundary > rejects 'non-admin token' without an audit insert or business operation
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"You are not an Admin.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 403,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.698Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.698Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/refresh-draft-ranker-discovery",
+        },
+        "job_name": "refresh-draft-ranker-discovery",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:466:44
+    464|     expect(res.statusCode).toBe(status);
+    465|     expect(res.body).toEqual({ success: false, message: status === 401…
+    466|     expect(authAuditMocks.auditInsert).not.toHaveBeenCalled();
+       |                                            ^
+    467|     expect(authAuditMocks.restGet).not.toHaveBeenCalled();
+    468|     expect(authAuditMocks.upsert).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/v1/db/update-seasons' authorization and audit boundary > rejects 'missing bearer' without an audit insert or business operation
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"Unauthorized.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 401,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.699Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.699Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/update-seasons",
+        },
+        "job_name": "/api/v1/db/update-seasons",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:466:44
+    464|     expect(res.statusCode).toBe(status);
+    465|     expect(res.body).toEqual({ success: false, message: status === 401…
+    466|     expect(authAuditMocks.auditInsert).not.toHaveBeenCalled();
+       |                                            ^
+    467|     expect(authAuditMocks.restGet).not.toHaveBeenCalled();
+    468|     expect(authAuditMocks.upsert).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/v1/db/update-seasons' authorization and audit boundary > rejects 'malformed bearer' without an audit insert or business operation
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/v1/db/update-seasons' authorization and audit boundary > rejects 'invalid user token' without an audit insert or business operation
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"Unauthorized.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 401,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.700Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.700Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/update-seasons",
+        },
+        "job_name": "/api/v1/db/update-seasons",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:466:44
+    464|     expect(res.statusCode).toBe(status);
+    465|     expect(res.body).toEqual({ success: false, message: status === 401…
+    466|     expect(authAuditMocks.auditInsert).not.toHaveBeenCalled();
+       |                                            ^
+    467|     expect(authAuditMocks.restGet).not.toHaveBeenCalled();
+    468|     expect(authAuditMocks.upsert).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/v1/db/update-seasons' authorization and audit boundary > rejects 'non-admin token' without an audit insert or business operation
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      Object {
+        "details": Object {
+          "cronClassification": null,
+          "durationMs": 0,
+          "error": null,
+          "failedRows": null,
+          "finalAudit": null,
+          "method": "GET",
+          "response": "{"message":"You are not an Admin.","success":false}",
+          "responseOutcome": Object {
+            "success": false,
+          },
+          "responseTruncated": false,
+          "rowsUpserted": null,
+          "statusCode": 403,
+          "timing": Object {
+            "durationMs": 0,
+            "endedAt": "2026-10-24T21:29:39.701Z",
+            "source": "audit",
+            "startedAt": "2026-10-24T21:29:39.701Z",
+            "timer": "00:00",
+          },
+          "url": "/api/v1/db/update-seasons",
+        },
+        "job_name": "/api/v1/db/update-seasons",
+        "rows_affected": null,
+        "status": "failure",
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:466:44
+    464|     expect(res.statusCode).toBe(status);
+    465|     expect(res.body).toEqual({ success: false, message: status === 401…
+    466|     expect(authAuditMocks.auditInsert).not.toHaveBeenCalled();
+       |                                            ^
+    467|     expect(authAuditMocks.restGet).not.toHaveBeenCalled();
+    468|     expect(authAuditMocks.upsert).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/internal/patreon-reconcile' authorization and audit boundary > retains one admitted audit for Bearer synthetic-cron-secret
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/internal/patreon-reconcile' authorization and audit boundary > retains one admitted audit for Bearer admin-token
+AssertionError: expected undefined to be true // Object.is equality
+
+- Expected: 
+true
+
++ Received: 
+undefined
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:478:30
+    476|     await handler(request(authorization), res as any);
+    477|     expect(res.statusCode).toBe(200);
+    478|     expect(res.body.success).toBe(true);
+       |                              ^
+    479|     expect(authAuditMocks.auditInsert).toHaveBeenCalledTimes(1);
+    480|     expect(authAuditMocks.auditInsert).toHaveBeenCalledWith(expect.obj…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/internal/patreon-reconcile' authorization and audit boundary > retains the 'empty' API result with exactly one safe invocation receipt
+AssertionError: expected { attempted: +0, synced: +0, …(2) } to deeply equal { attempted: +0, synced: +0, …(3) }
+
+- Expected
++ Received
+
+  {
+    "attempted": 0,
+    "failed": 0,
+    "results": [],
+-   "success": true,
+    "synced": 0,
+  }
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:513:24
+    511|       await handler(request("Bearer synthetic-cron-secret"), res as an…
+    512|       expect(res.statusCode).toBe(200);
+    513|       expect(res.body).toEqual({ ...result, success });
+       |                        ^
+    514|       expect(authAuditMocks.reconcilePatreon).toHaveBeenCalledExactlyO…
+    515|       expect(authAuditMocks.auditInsert).toHaveBeenCalledTimes(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/internal/patreon-reconcile' authorization and audit boundary > retains the 'aggregate failure' API result with exactly one safe invocation receipt
+AssertionError: expected { attempted: 1, synced: +0, …(2) } to deeply equal { attempted: 1, synced: +0, …(3) }
+
+- Expected
++ Received
+
+@@ -6,8 +6,7 @@
+        "error": "private provider detail account-id league-id",
+        "status": "failed",
+        "userId": "private-user-id",
+      },
+    ],
+-   "success": false,
+    "synced": 0,
+  }
+
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:513:24
+    511|       await handler(request("Bearer synthetic-cron-secret"), res as an…
+    512|       expect(res.statusCode).toBe(200);
+    513|       expect(res.body).toEqual({ ...result, success });
+       |                        ^
+    514|       expect(authAuditMocks.reconcilePatreon).toHaveBeenCalledExactlyO…
+    515|       expect(authAuditMocks.auditInsert).toHaveBeenCalledTimes(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/19]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts > '/api/internal/patreon-reconcile' authorization and audit boundary > keeps its fixed catch response and safe failure receipt
+AssertionError: expected "spy" to be called 1 times, but got 0 times
+ ❯ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:531:42
+    529|       expect(res.statusCode).toBe(500);
+    530|       expect(res.body).toEqual({ error: "Patreon reconciliation failed…
+    531|       expect(authAuditMocks.auditInsert).toHaveBeenCalledTimes(1);
+       |                                          ^
+    532|       const row = authAuditMocks.auditInsert.mock.calls[0][0];
+    533|       expect(row).toMatchObject({ status: "failure", rows_affected: nu…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/19]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  19 failed | 91 passed (110)
+   Start at  17:29:38
+   Duration  1.95s (transform 153ms, setup 15ms, collect 547ms, tests 134ms, environment 628ms, prepare 155ms)
+

@@ -1,0 +1,1136 @@
+--- before/tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md
++++ after/tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md
+@@ -1,8 +1,8 @@
+ # FHFH master task list — reconciled 2026-10-24
+ 
+-As of `2026-10-24T20:30:45.375060+00:00`. Canonical checkout `octoberBranch`; observed HEAD `2a5092d37cb863ec92a2a4e609999cf226bfa4a5`. This replaces the old master view using the existing sprint ledger IDs. Implementation, independent acceptance and release are separate. FA Portal is excluded.
+-
+-All **32 original master IDs** and **215 current ledger rows** are preserved. The exact prior master is retained in [the archival snapshot](../../tasks/artifacts/fhfh-sprint-ledger-2026-10-22/archive/MASTER-TASKLIST-2026-10-20.before-2026-10-23.md) (SHA256 `5d0126088c72f2216b6c6a89381798156a387a26cb85891cbfc2d4c750924b2a`). Older source findings and scopes remain available there; absence of a fresh review is not completion. Rows marked inventoried only have not received a file-health audit.
++As of `2026-10-24T20:48:23.669796+00:00`. Canonical checkout `octoberBranch`; observed HEAD `2a5092d37cb863ec92a2a4e609999cf226bfa4a5`. This replaces the old master view using the existing sprint ledger IDs. Implementation, independent acceptance and release are separate. FA Portal is excluded.
++
++All **32 original master IDs** and **217 current ledger rows** are preserved. The exact prior master is retained in [the archival snapshot](../../tasks/artifacts/fhfh-sprint-ledger-2026-10-22/archive/MASTER-TASKLIST-2026-10-20.before-2026-10-23.md) (SHA256 `5d0126088c72f2216b6c6a89381798156a387a26cb85891cbfc2d4c750924b2a`). Older source findings and scopes remain available there; absence of a fresh review is not completion. Rows marked inventoried only have not received a file-health audit.
+ 
+ **HISTORICAL CHECKPOINT AGGREGATION (earlier205-ID phase):** all 19 lane handoffs are accounted for and current turns ended at natural checkpoints. All original 188 task IDs and 32 original scopes remain preserved; Testing Grounds is now a locally implemented bounded slice, and16audit carry-forwards give205 IDs. Coherent release assembly and broader release acceptance are unfinished; this is not deployment approval.
+ 
+@@ -20,6 +20,15 @@
+ 
+ 
+ 
++
++
++## In-season trust/clarity evidence reconciliation — 2026-10-24T20:48:23.669796+00:00
++
++217 stable parent IDs preserve every prior scope/evidence entry. Two proposed/held parents retain shared in-season human/native-AT/real-account acceptance and parked Rankings dataset/component/stability qualification. Nine readable children expose those gates plus exact News execution lineage, historical Starter Board producer attribution and WiGO aggregate/metric-basis provenance under existing parents. Four existing rows receive only bounded evidence/status reconciliation; no source repair or implementation is dispatched.
++
++Today/upcoming Starter Board recovery, zero/zero DIFF, fantasy-preset and News consumer decisions are already resolved. Extensive local five-width/native zoom, sample/preset/PP-read/URL/timeout, RSO race/retained-provider read-only/manual-fork and other consumer fixes retain their scope. Candidate News batches and goalie-v2 run receipts narrow attribution but do not bind historical items/rows to immutable execution/code/input evidence. Current accepted News/WiGO packets, underlying rolling-history repair, AUDIT-A7 query acceptance, paused Rankings research and per-owner release/admission gates remain separate.
++
++The 104,259-byte PRD/task pair is fully read. 243 of 542 owner-memo lines were read for actual decisions/contradictions; 299 historical UI/QA-detail lines remain unreviewed. Private identifiers are redacted in clause snapshots, with original hashes and line numbers preserved separately. 33 structured receipts receive bounded parse/schema/count disposition and 79 historical image/log/script files metadata-only disposition. No pixels, source scripts, current application/tests, accounts, provider/production/cron/SQL, Git or additional workers. Overall audit remains unfinished. See [segment23 report](/Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/REPORT.md).
+ 
+ ## CCC/GDL ingestion and semantic-gate reconciliation — 2026-10-24T20:30:45.375060+00:00
+ 
+@@ -1392,15 +1401,17 @@
+ ### RSO-FE-07a — Validate baseline release and continuity
+ 
+ - **Owner:** UNASSIGNED (`unassigned`); reviewer UNASSIGNED (`unassigned`).
+-- **Implementation:** Local progress explicitly recorded; current authority leaves gate open
+-- **Acceptance:** not closed; exact newer evidence reconciliation required
+-- **Release:** Existing RSO bridge release does not activate all shared forecast gates
+-- **Evidence level / limits:** inventoried only. Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted.
+-- **Verification:** Canonical unchecked row with partial receipts, not a current whole-feature test pass. Private exports deliberately not read.
++- **Implementation:** Partial broader FE acceptance remains; dated IST consumer continuity, account-switch races and retained-provider read-only/manual-fork safeguards are locally implemented and verified. No current full FE release or real-account parity established.
++- **Acceptance:** not closed; exact newer evidence reconciliation required
++- **Release:** Existing RSO bridge release does not activate all shared forecast gates
++- **Evidence level / limits:** inventoried only. Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted.
++- **Verification:** Canonical unchecked row with partial receipts, not a current whole-feature test pass. Private exports deliberately not read. Full IST task history and named owner clauses retain daily/weekly recalculation, saved locks/protections/selected moves, stale provider/save callback isolation and explicit manual fork closure. October2 compiler recovery supersedes that source record's earlier failures only; it is not a current clean-build claim. Fictional sessions, fixture browser and native signed-out/manual evidence do not establish real-account or full producer/release acceptance.
+ - **Dependencies / gate:** FE-10a/10b Use exact canonical acceptance in source row; future/prospective, account and operation gates cannot be closed by local helper tests.
+-- **Next:** Assign explicit acceptance/implementation owner; map to native/RSO current candidate before doing duplicate work.
++- **Next:** Assign explicit acceptance/implementation owner; map to native/RSO current candidate before doing duplicate work. Preserve those completed IST consumer safeguards and reconcile only surviving adopted FE/real-account release evidence. Shared human/native-AT/real-account acceptance is retained under SITE-INSEASON-WORKFLOW-ACCEPTANCE; do not duplicate these completed race/guard fixes.
+ - **Status evidence date:** `2026-10-22T12:42:23+00:00`.
+ - **Pinned references:** [tasks/tasks-prd-roster-schedule-optimizer.md:146](../../tasks/tasks-prd-roster-schedule-optimizer.md) SHA256 `ced28e5f557e3d17cd3a0adb56164cac0f0f79ad6494d72bf3fea0ad942b49f8`.
++- **Segment23 reconciliation date:** `2026-10-24T20:48:23.669796+00:00`.
++- **Segment23 evidence:** [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:92](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:92>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:98](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:98>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:100](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:100>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:484](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:484>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`.
+ 
+ ### RSO-FE-09a — Measure actual consumer performance
+ 
+@@ -2045,9 +2056,9 @@
+ - **Acceptance:** Historical local rank/scoring, responsive/Chrome and performance receipts retain dated scope. Current NEW19/20 survival and trust-qualified end-to-end/release acceptance remain unverified in this documentary audit.
+ - **Release:** Historical July30 canonical-wrapper release retained. It does not close the reopened August tranche or later October drift/data/rollout/release gates; no current deployment inspected.
+ - **Evidence level / limits:** inventoried only. Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted.
+-- **Verification:** Six complete named sources read. Older 55/55 and duplicate model/schema proposals yield to the reopened Daily Starter Board contract. NEW19/20 are mapped to readable reconciliation children; no current app/browser/failure reproduced. Source-scoped passing tests/Chrome/latency are not a whole-project or current production claim.
++- **Verification:** Six complete named sources read. Older 55/55 and duplicate model/schema proposals yield to the reopened Daily Starter Board contract. NEW19/20 are mapped to readable reconciliation children; no current app/browser/failure reproduced. Source-scoped passing tests/Chrome/latency are not a whole-project or current production claim. IST later receipts locally close today/upcoming recovery, null-rank/source labels, keyboard/fit and selected contrast checks; original PRD fallback-policy questions are superseded. Stored goalie-v2 writer/audit leads narrow attribution without per-row or historical execution/version proof.
+ - **Dependencies / gate:** Exact current source/retained release; no native gate weakening Reconcile View all/initiallimit/category/performance budget with actual supported behavior
+-- **Next:** Reconcile newer exact NEW19/20 receipts and each child contract first. Preserve closed board/performance/browser work and reuse existing upstream/provider/model gates; propose only genuinely surviving bounded acceptance work.
++- **Next:** Reconcile newer exact NEW19/20 receipts and each child contract first. Preserve closed board/performance/browser work and reuse existing upstream/provider/model gates; propose only genuinely surviving bounded acceptance work. Preserve the later today/upcoming policy and local recovery closure. The older historical-slate child concerns qualified retained upstream evidence, not restoring past public date selection or bypassing current serving admission. Reconcile the narrower historical producer attribution below without new forecast generation.
+ - **Status evidence date:** `2026-10-23T12:55:59+00:00`.
+ - **Pinned references:** [web/pages/start-chart.tsx:1](../../web/pages/start-chart.tsx) SHA256 `647d68c7ec093705539f66beb7c382dcc1a57fb8e66ea35a0318f6dc77672761`; [web/lib/projections/startChartFantasyScoring.ts:1](../../web/lib/projections/startChartFantasyScoring.ts) SHA256 `43c1cb5cecb2071c36d301b0868ecde62a5069929e6f8904adaff89c34f861d2`; [web/lib/dashboard/perfBudget.ts:1](../../web/lib/dashboard/perfBudget.ts) SHA256 `6fd683b472132d08d90caa64017a1314f57e2dafb348f214143745c752cc0f44`.
+ 
+@@ -2060,6 +2071,12 @@
+ - [ ] **SITE-START-CONTRACT/eligible-slate-acceptance — Reconcile trusted current and historical slate acceptance.** Historical rank/API/browser evidence complete; eligible end-to-end proof open. Next: After retained upstream gate closure, reconcile one genuinely eligible current slate and one eligible historical slate through raw/rolling/FORGE/API rank/source/goalie coverage and visible values. Keep the exact 138-row quarantined trace and zero-goalie-team coverage as degraded evidence, not trusted qualification. Owner: UNASSIGNED. Dependencies: NATIVE-ISSUANCE, TRENDS-HISTORICAL-REPAIRS, PIPE-ROLLING-HISTORY-REPAIR, FORGE-RESULTS-COVERAGE. Gate: Reconcile later exact receipts before any implementation. No app/test/browser/provider/production call, repair, backfill, model/reader activation, publication or release by audit; preserve current ownership and gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:185>). Credit retained: Historical 138-row scoring/rank parity and Chrome workflow are retained; 14-date model rollout and provider/history/release authority remain separately owned.
+ - **Segment19 reconciliation date:** `2026-10-24T19:52:54.099295+00:00`.
+ - **Segment19 evidence:** [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:140](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:140>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:148](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:148>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:151](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:151>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:159](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:159>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:175](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:175>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:185](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:185>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:187](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:187>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:214](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:214>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:215](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:215>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:216](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:216>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:222](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:222>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:224](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:224>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`.
++
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **SITE-START-CONTRACT/IST-B-producer-attribution — Reconcile historical goalie probability output and source-state attribution.** Dated writer/audit leads recovered; screenshot/per-row/version linkage unverified. Next: Reconcile later exact screenshot date/IDs, per-goalie output-to-run/code/input receipts and the qualified source-state map. Stored goalie-v2 audits report updates but lack a per-row/deployment revision; command success alone does not establish downstream completion. An unconfirmed probability of1 is not proof of confirmation or a calculation defect. Do not infer a pending/failed run from an absent receipt. Owner: UNASSIGNED. Dependencies: FPI-07. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:516>). Credit retained: Today/upcoming recovery, null-score/rank, projected/confirmed/residual labels, source cutoffs and native recovery/focus fixes are already locally verified. Retain released FPI goalie/mixture work; no repeat producer repair.
++- **Segment23 reconciliation date:** `2026-10-24T20:48:23.669796+00:00`.
++- **Segment23 evidence:** [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:57](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:57>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:78](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:78>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:516](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:516>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`.
+ 
+ ### SITE-START-RECENTFORM — Qualified Recent Team Form before restoring old CTPI
+ 
+@@ -2883,9 +2900,9 @@
+ - **Acceptance:** Independent75/75 offline checks (58owner+17new controls), scoped lint and46unchanged pins support exact local acceptance only. Parent accepts with limits. Whole-web TypeScript still has the two prior Luna errors; no auth/browser/query-plan/population-wide/live-data or whole-WiGO acceptance follows.
+ - **Release:** Not released by this task
+ - **Evidence level / limits:** source inspected. Only the named functions/files in the source-input reconciliation below; no whole-area health claim
+-- **Verification:** Full independent REVIEW and REVIEW-EVIDENCE read. Reviewer reports exact four-file patch reconstruction, eight baseline/candidate copies and46pins; no reviewer source repair or hosted action. Auditor reran no application tests. Retained68-row matching remains5/9/13; absent legacy-rate row means that separate fix is not the demonstrated Kucherov cause. True gaps and source-arrival chronology remain qualified.
++- **Verification:** Full independent REVIEW and REVIEW-EVIDENCE read. Reviewer reports exact four-file patch reconstruction, eight baseline/candidate copies and46pins; no reviewer source repair or hosted action. Auditor reran no application tests. Retained68-row matching remains5/9/13; absent legacy-rate row means that separate fix is not the demonstrated Kucherov cause. True gaps and source-arrival chronology remain qualified. IST source receipts retain completed season/date join and missing count/TOI/rate guards plus cross-season and zero/zero decisions. Original McDavid aggregate lineage, override producer and full metric/window compatibility remain dated evidence gates, separate from the currently accepted Kucherov candidate. No current writer/reader, source capture or persisted values were rechecked here.
+ - **Dependencies / gate:** Parent dispatch and exact file lease; preserve release and Game Grid work Exact scoped tests and independent review before integration; no production calls, schema, credentials or deployment authority
+-- **Next:** Preserve accepted exact pins for parent integration and separate authorized release; do not repeat the completed review without a changed candidate. Stored L5 nulls, October5 source ingestion and any bounded refresh/backfill remain unapproved. Broad-route partial commits/population compatibility and the separate historical STD fallback are outside acceptance; no broad calculate-wigo-stats invocation or card-cohort claim.
++- **Next:** Preserve accepted exact pins for parent integration and separate authorized release; do not repeat the completed review without a changed candidate. Stored L5 nulls, October5 source ingestion and any bounded refresh/backfill remain unapproved. Broad-route partial commits/population compatibility and the separate historical STD fallback are outside acceptance; no broad calculate-wigo-stats invocation or card-cohort claim. Reconcile the two existing IST-D source/window obligations below against later exact receipts; preserve old local fixes and current independent acceptance. No second L5 repair, population refresh, provider read or historical reconstruction is dispatched.
+ - **Status evidence date:** `2026-10-24T15:36:16.638523+00:00`.
+ - **Pinned references:** [tasks/tasks-README.md:1](../../tasks/tasks-README.md) SHA256 `28fc17b6954a2d78660555cabd8124c30816bf761dc444f7d143706b711f2497`; [web/lib/navigation/siteSurfaceLinks.ts:1](../../web/lib/navigation/siteSurfaceLinks.ts) SHA256 `c37971f2c9679b8fc8825f82f37a67f4eaf15a9d5f093da718b97d9879093868`; [web/pages/wigoCharts.tsx:1](../../web/pages/wigoCharts.tsx) SHA256 `96806e645d81076869dbd9f139afa4338af6643b54c0bd7a5ac2fcac6444bb15`.
+ - **Artifact audit — October24:** Documentary scope/status update; prior evidence and narrower acceptance preserved.
+@@ -2901,6 +2918,13 @@
+ - **Segment08 reconciliation date:** `2026-10-24T17:15:34.417533+00:00`.
+ - **Segment08 evidence:** [tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/43a8edca387f-REVIEW.md:3>) SHA256 `43a8edca387fa4d4b3742c03c98bdb2b097a7f27c262494aba7cdc6f4486e8e1`; [tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW-EVIDENCE.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/726b59e90abb-REVIEW-EVIDENCE.json:1>) SHA256 `726b59e90abb89a410a98d78507f82859a38b2123825557e8da4d18cf158d4d8`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9b3c682e7952-PARENT-STEERS.json:1>) SHA256 `9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9`.
+ 
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **SITE-WIGO/IST-D-aggregate-provenance — Reconcile WiGO override ownership and aggregate window provenance.** Dated producer/window evidence gate; later exact closure unverified. Next: Locate later wigo_rates producer/refresh ownership and original aggregate/run evidence with selected game/season identities, cutoff, source revision and per-metric numerator/denominator coverage. The old exact McDavid case is distinct from the accepted Kucherov correction. Current reconstructed inputs or a new metadata column cannot authenticate old rows; retain unavailable history and propose any prospective additive contract separately. Owner: UNASSIGNED. Dependencies: existing parent contracts and receipt reconciliation. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:482>). Credit retained: Season/date matching, missing-count/TOI propagation, zero/zero dash policy and recent-rate null guards are completed local work. Preserve the current accepted four-file/75-check packet and its unapproved refresh/backfill boundary.
++- [ ] **SITE-WIGO/IST-D-comparison-basis — Reconcile complete metric and window compatibility for WiGO comparisons.** Accepted null guards retained; nonnull override/full-basis qualification unverified. Next: Reconcile later exact source/window/strength/unit and denominator compatibility receipts for nonnull overrides and comparisons. Show actual included samples and unavailable coverage honestly; do not infer L10 means ten games or convert absent input to zero. Preserve cross-season appearance selection and separately covered PP metrics; no broad writer invocation or legacy aggregate publication. Owner: UNASSIGNED. Dependencies: SITE-WIGO/IST-D-aggregate-provenance. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:112>). Credit retained: Existing unit conversions, compact metadata captions, fixture/native reflow and current four-file reader correction remain accepted within their original limits. Missingness fixes alone do not certify an unidentified nonnull override.
++- **Segment23 reconciliation date:** `2026-10-24T20:48:23.669796+00:00`.
++- **Segment23 evidence:** [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:111](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:111>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:112](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:112>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:113](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:113>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:36](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:36>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:482](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:482>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`.
++
+ ### SITE-SKO-FIXTURES — Reconcile duplicate SKO interpretation cases and complete bounded SKO/BLSH fixture mechanics
+ 
+ - **Owner:** UNASSIGNED (`unassigned`); reviewer UNASSIGNED (`unassigned`).
+@@ -3014,11 +3038,17 @@
+ - **Acceptance:** Serialization P2 independently closed:9 original reviewer assertions and10 actual pipeline checks pass; six candidate pins/both patches matched. Local acceptance only.
+ - **Release:** Uncommitted local packet; no production acceptance
+ - **Evidence level / limits:** independently accepted. Serialized presentation attribution only. Latest supported BILLING-REVIEW thread receipt read; no public claim, metadata-sync or dedup acceptance.
+-- **Verification:** Owner115tests and static checks retained; reviewer direct-source9+10 with mocked reads/network denied, not browser execution. Claim validator byte-identical. Current reviewed newsFeed.ts de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d.
++- **Verification:** Owner115tests and static checks retained; reviewer direct-source9+10 with mocked reads/network denied, not browser execution. Claim validator byte-identical. Current reviewed newsFeed.ts de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d. Segment23 reads the full IST contract pair and selected late owner receipts. Historical consumer claim safeguards and exact author originals exist; candidate publication-batch timing and deployment metadata still do not provide immutable per-item execution/source-time authority. No current claim-validator or public-safe display pin was re-reviewed or changed.
+ - **Dependencies / gate:** Exact six paths in release NEWS-LEASE.json; Luna public contract agreement; no claim-validator/schema or historical metadata repair lease. Independent author-conflict recheck, source-only authority controls and exact release composition. Metadata preservation and accepted-public loader require separate scoped work.
+-- **Next:** FORGE composes accepted six-file packet. Keep sync metadata loss, accepted-public claim producer/loader contract and duplicate-source identity as distinct open follow-ups; no historical repair or production action.
++- **Next:** FORGE composes accepted six-file packet. Keep sync metadata loss, accepted-public claim producer/loader contract and duplicate-source identity as distinct open follow-ups; no historical repair or production action. Retain the distinct IST-A exact-item lineage child below; do not recreate completed first-subject/provenance guards or promote historical observations into current public claim authority.
+ - **Status evidence date:** `2026-10-23T15:58:32+00:00`.
+ - **Pinned references:** [/Users/tim/Documents/Codex/2026-10-23/task-4/evidence/quote-author-correction/CANDIDATE.json:1](/Users/tim/Documents/Codex/2026-10-23/task-4/evidence/quote-author-correction/CANDIDATE.json) SHA256 `ea71eb0cfff5bfa2b3d7e10a6a027b53e2d8c5d79c58e7907fff07ab9663df97`; [/Users/tim/Documents/Codex/2026-10-23/task-4/SERIALIZATION-REVIEW.md:1](/Users/tim/Documents/Codex/2026-10-23/task-4/SERIALIZATION-REVIEW.md) SHA256 `ebea3b736faea2a3094a68c31e7ad17c7fc9e6e70d0e6f8b11854fd06c9c9181`; [/Users/tim/Documents/Codex/2026-10-23/task-4/evidence/attribution-serialization/CANDIDATE.json:1](/Users/tim/Documents/Codex/2026-10-23/task-4/evidence/attribution-serialization/CANDIDATE.json) SHA256 `0e2fa0c25dcd08791c7367c794226d96feddb5ee70a9ea50d774d3d947f8f8c6`.
++
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **NEWS-SOURCE-PRESENTATION/IST-A-exact-item-lineage — Reconcile the two exact News records against immutable writer evidence.** Consumer safeguards implemented; historical execution/source-time closure unverified. Next: Locate later per-item input/output, source-time subject/claim authority and actual request-to-deployment binding for the retained Barzal/He and cap-dependent Soucy cases. Two candidate batch starts match publication times, but capped response literals and a READY candidate do not bind those items or prove the deployed writer. Preserve neutral reports for unsupported transactions and unknown lineage; no row repair or new claim authority. Owner: UNASSIGNED. Dependencies: IFTTT-ACTIVATION. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:526>). Credit retained: Exact author originals and current captured passages/joins already exist. Historical local claim adapter and current independently accepted public-safe source display keep their separate limits. Inference-disabled batch metadata does not establish a paid model call.
++- **Segment23 reconciliation date:** `2026-10-24T20:48:23.669796+00:00`.
++- **Segment23 evidence:** [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:53](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:53>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:66](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:66>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:526](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:526>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:536](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:536>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`.
+ 
+ ## October24 coordination and planning
+ 
+@@ -3628,3 +3658,52 @@
+ - [ ] **SITE-ROLLING-READER-CONTRACT/G3-strength-truthfulness — Reconcile unsupported 5v5 requests and validation labels.** Proposed P3 contract reconciliation; no current defect reproduced. Next: Reconcile later exact route/selector receipts for true 5v5. Establish whether it is supported or explicitly rejected/disclosed; an unsupported request must not silently return all-strength data as the requested slice. Do not infer that writer support alone approves expanding the console. Owner: UNASSIGNED. Dependencies: existing parent contracts and receipt reconciliation. Gate: Reconciliation-first; no application edits/tests, hosted reads/writes, refresh/backfill, provider calls, schema change or deployment by this audit. Any surviving repair needs current exact ownership and separate acceptance/release scope. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md:154>). Credit retained: The original all/ev/pp/pk console scope and current Stats grain work retain their own limits; no new 5v5 product rollout is authorized.
+ - **Segment21 reconciliation date:** `2026-10-24T20:14:35.677441+00:00`.
+ - **Segment21 evidence:** [tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md:116](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/059fe8e750a5-tasks-rolling-player-pass-2-main-audit.md:116>) SHA256 `059fe8e750a5497c0372f3785add66d24c4ee228a65b4df3af5c23339b2c0637`; [tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md:126](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/5d8c5dc5b279-G3-rankings-rolling.md:126>) SHA256 `5d8c5dc5b279357673b380b6ed0ce711df4f65e16ee47531c5bde6c128b3adda`; [tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md:154](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/5d8c5dc5b279-G3-rankings-rolling.md:154>) SHA256 `5d8c5dc5b279357673b380b6ed0ce711df4f65e16ee47531c5bde6c128b3adda`; [tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:239](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md:239>) SHA256 `1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be`.
++
++### SITE-INSEASON-WORKFLOW-ACCEPTANCE — Retain shared in-season workflow acceptance beyond fixtures
++
++- **User impact:** Managers need truthful account state, usable assistive controls and measurable first-use setup without hidden context or saved-intent loss.
++- **Implementation:** IST-S7.1 supported links/context and extensive local five-width, native zoom, fixture flow and RSO session/read-only fixes are complete. IST-S7.2 still separates actual assistive speech, broader contrast, real accounts and declared first-use measurements. Later exact closure unverified.
++- **Acceptance:** Proposed carry-forward of shared acceptance only; completed consumer work is not reopened.
++- **Release:** No new release or production observation by this audit; dated local and previously accepted release credit retained.
++- **Owner:** UNASSIGNED
++- **Reviewer:** UNASSIGNED
++- **Dependencies:** IST-S7.2; RSO-FE-07a; PAID-SYNC; relevant NEWS/START/WIGO/Rankings gates and current frontend ownership.
++- **Verification:** Full IST pair and selected completion matrix read. Source five-width/zoom/keyboard/focus and34selected Starter Board contrast measurements retain dated scope. They do not establish screen-reader speech, all contrast states, authenticated provider parity or first-time-user measurements.
++- **Acceptance/release gate:** Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.
++- **Next:** Reconcile later accepted human/native-AT/real-account receipts for the children below. Reuse existing per-surface source/producer owners; no new UI redesign, forecast engine, entitlement change or account action.
++- **Evidence level:** Full primary pair and explicit selected owner clauses reviewed; current outcome unverified
++- **Evidence scope:** Reconciliation-first at cited source bounds. No whole-page, source-population, current runtime or independent pixel acceptance. Preserve paused/deferred/retired work.
++- **Dispatch class:** Proposed/held reconciliation; no implementation or external authority
++- **Source aliases:** IST-S7.2; IST-C3.3 adopted FE continuity; IST A–F narrower local closures
++
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **SITE-INSEASON-WORKFLOW-ACCEPTANCE/native-AT-and-contrast — Reconcile actual assistive speech and remaining rendered contrast.** Local keyboard/zoom and selected text contrast complete; broader AT unverified. Next: Locate later declared screen-reader/control/status/dialog speech results and the remaining rendered focus/icon/graph/hover/appearance contrast cases. Keep exact device/browser/task and data-state scope. Do not repeat already passed five-width/native zoom or the34selected Starter Board text measurements as if absent. Owner: UNASSIGNED. Dependencies: existing parent contracts and receipt reconciliation. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:164>). Credit retained: Five-width integrated flow, per-surface native zoom/focus, named log controls and measured Starter Board status/recovery text retain dated acceptance.
++- [ ] **SITE-INSEASON-WORKFLOW-ACCEPTANCE/real-account-workflow-parity — Reconcile real-account refresh/save/reopen/switch and free-manual parity.** Fictional session/local continuity passed; current real-account acceptance unverified. Next: Locate later exact real-account evidence for refresh/reconciliation, save/reopen, account switching, synced non-rostered/waiver-unknown state and explicit manual fork, preserving permissions and saved intent. Separate provider freshness, caller/producer admission and release from consumer fixtures; no auth/account/provider action authorized here. Owner: UNASSIGNED. Dependencies: RSO-FE-07a, PAID-SYNC. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:160>). Credit retained: Mounted fictional cross-tab races, stale save notice, retained-provider read-only guard, selected-move/protection/lock continuity and useful free manual schedule-only results are completed local work.
++- [ ] **SITE-INSEASON-WORKFLOW-ACCEPTANCE/first-use-measurement — Reconcile declared first-time setup and first useful result evidence.** Human baseline/participant/task/timing record unverified. Next: Locate a later declared participant/sample/task/timing record for manual setup→supported schedule result and confirmed-input completion. Distinguish cold/returning users, schedule-only/outcome-ready results and unresolved blockers. Do not invent a completion target or infer human usability from an automated browser pass. Owner: UNASSIGNED. Dependencies: existing parent contracts and receipt reconciliation. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:106>). Credit retained: Readiness destinations, labels/input review and native manual setup already exist; no competing planning/readiness engine is requested.
++- **Segment23 reconciliation date:** `2026-10-24T20:48:23.669796+00:00`.
++- **Segment23 evidence:** [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:160](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:160>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:164](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:164>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:184](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:184>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:398](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:398>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:484](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:484>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`.
++
++### SITE-RANKINGS-QUALIFICATION — Reconcile Rankings dataset, component and sample qualification
++
++- **User impact:** Historical/fantasy Rankings must disclose the cohort and supported components without treating eligibility thresholds as predictive stability.
++- **Implementation:** Historical purpose, opt-in fantasy preset, URL/context visibility, sample-label/unknown-rank safeguards, PP read selection and timeout/initial-request fixes are locally implemented in the source. Remaining IST-E5.1/5.3 dataset/component and stability evidence is parked for reconciliation under current Rankings pause.
++- **Acceptance:** Proposed/parked evidence qualification; no new metric, minimum, publisher run or experiment.
++- **Release:** No new release or production observation by this audit; dated local and previously accepted release credit retained.
++- **Owner:** UNASSIGNED
++- **Reviewer:** UNASSIGNED
++- **Dependencies:** IST-E5.1/5.3; PIPE-ROLLING-HISTORY-REPAIR for underlying history; AUDIT-A7 accepted query guards; SPRINT-OPTIMIZATION existing cost work.
++- **Verification:** Full IST pair and selected component/history/completion clauses distinguish published5v5 from unpersisted ALL rows, current-source diagnosis from immutable history and eligibility from stability. The old GP1/1/2 versus source56/65/82 comparison and one-player dry-run are diagnostic, not current population proof. No current Rankings source/data/app audit.
++- **Acceptance/release gate:** Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.
++- **Next:** Keep parked. Reconcile later exact source-completeness/component-qualified cohort and metric-evaluation receipts under existing contracts before any resumed work. Reuse underlying history repair; preserve current accepted query/optimization and preset/labels rather than repeat them.
++- **Evidence level:** Full primary pair and explicit selected owner clauses reviewed; current outcome unverified
++- **Evidence scope:** Reconciliation-first at cited source bounds. No whole-page, source-population, current runtime or independent pixel acceptance. Preserve paused/deferred/retired work.
++- **Dispatch class:** Parked reconciliation under existing Rankings pause; no resumed research, implementation, publication or threshold authority
++- **Source aliases:** IST-E5.1 / IST-E5.3; Rankings historical/fantasy source qualification; Underlying history aliases PIPE-ROLLING-HISTORY-REPAIR
++
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **SITE-RANKINGS-QUALIFICATION/component-qualified-cohort — Reconcile the actual component-qualified Rankings dataset.** Dated dataset/publisher/version and component closure unverified; parked. Next: Locate later producer/version, full-history reconciliation and component-qualified coverage tied to the actual season/strength/window/minimums. Published5v5 counts cannot certify the ALL preset; restored PP reads do not create a600-second-qualified percentile or published MCM rows. Treat underlying history correction as the existing pipeline task and any subsequent publication as separately gated. Owner: UNASSIGNED. Dependencies: PIPE-ROLLING-HISTORY-REPAIR, AUDIT-A7. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:131>). Credit retained: Eight-field PP selection, genuine-zero/null guards, minimum-relative labels, visible context, reproducible ALL preset and narrow AUDIT-A7 query acceptance retain credit.
++- [ ] **SITE-RANKINGS-QUALIFICATION/sample-stability-evidence — Reconcile metric-specific stability and early-season tradeoffs.** IST-E5.3 evidence gate parked; no new threshold/model dispatch. Next: Locate later stability/evaluation evidence for the selected metric/components, season/strength/window and eligibility rules. Keep the owner-approved preset and expert historical controls;1GP/600seconds and qualified flags establish eligibility only. Record unresolved tradeoffs rather than invent universal GP rules, forecast reliability or a new benchmark. Owner: UNASSIGNED. Dependencies: SITE-RANKINGS-QUALIFICATION/component-qualified-cohort. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:129>). Credit retained: The fantasy-preset decision is already approved and implemented locally; sample wording, unknown samples and local query/UI regressions are not reopened.
++- **Segment23 reconciliation date:** `2026-10-24T20:48:23.669796+00:00`.
++- **Segment23 evidence:** [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:125](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:125>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:131](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:131>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:133](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:133>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:483](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:483>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`.
+--- before/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md
++++ after/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md
+@@ -18,6 +18,15 @@
+ 
+ 
+ 
++
++
++## In-season trust/clarity evidence reconciliation — 2026-10-24T20:48:23.669796+00:00
++
++217 stable parent IDs preserve every prior scope/evidence entry. Two proposed/held parents retain shared in-season human/native-AT/real-account acceptance and parked Rankings dataset/component/stability qualification. Nine readable children expose those gates plus exact News execution lineage, historical Starter Board producer attribution and WiGO aggregate/metric-basis provenance under existing parents. Four existing rows receive only bounded evidence/status reconciliation; no source repair or implementation is dispatched.
++
++Today/upcoming Starter Board recovery, zero/zero DIFF, fantasy-preset and News consumer decisions are already resolved. Extensive local five-width/native zoom, sample/preset/PP-read/URL/timeout, RSO race/retained-provider read-only/manual-fork and other consumer fixes retain their scope. Candidate News batches and goalie-v2 run receipts narrow attribution but do not bind historical items/rows to immutable execution/code/input evidence. Current accepted News/WiGO packets, underlying rolling-history repair, AUDIT-A7 query acceptance, paused Rankings research and per-owner release/admission gates remain separate.
++
++The 104,259-byte PRD/task pair is fully read. 243 of 542 owner-memo lines were read for actual decisions/contradictions; 299 historical UI/QA-detail lines remain unreviewed. Private identifiers are redacted in clause snapshots, with original hashes and line numbers preserved separately. 33 structured receipts receive bounded parse/schema/count disposition and 79 historical image/log/script files metadata-only disposition. No pixels, source scripts, current application/tests, accounts, provider/production/cron/SQL, Git or additional workers. Overall audit remains unfinished. See [segment23 report](/Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/REPORT.md).
+ 
+ ## CCC/GDL ingestion and semantic-gate reconciliation — 2026-10-24T20:30:45.375060+00:00
+ 
+@@ -273,7 +282,7 @@
+ 
+ ## Latest scoped acceptance checkpoint
+ 
+-As of `2026-10-24T20:30:45.375060+00:00`, **gate-kit R1 is independently ACCEPTED and the prior variant-name collision BLOCK is cleared**. Reviewer receipt:26suite tests plus8independent naming probes, exact8-file reverse reconstruction and preserved arithmetic/inputs. Ledger verified19/19current kit pins. This accepts offline tooling only; actual model qualification remains **UNRUN**. Earlier pending/BLOCK observations below are historical.
++As of `2026-10-24T20:48:23.669796+00:00`, **gate-kit R1 is independently ACCEPTED and the prior variant-name collision BLOCK is cleared**. Reviewer receipt:26suite tests plus8independent naming probes, exact8-file reverse reconstruction and preserved arithmetic/inputs. Ledger verified19/19current kit pins. This accepts offline tooling only; actual model qualification remains **UNRUN**. Earlier pending/BLOCK observations below are historical.
+ 
+ **Billing:** parent reports local packet acceptance except one account-panel purchase-pitch defect; existing BILLING owner has the minimal correction. **Game Grid:** visual-v2 is locally complete and independent review is active with `01a168ae-fd25-7463-86cc-9bf261dbb031`. Neither status establishes deployment; production refresh latency remains unmeasured. No register commit in this update.
+ 
+@@ -1459,14 +1468,16 @@
+ 
+ ### RSO-FE-07a — Validate baseline release and continuity
+ 
+-- **Implementation:** Local progress explicitly recorded; current authority leaves gate open. **Acceptance:** not closed; exact newer evidence reconciliation required. **Release:** Existing RSO bridge release does not activate all shared forecast gates.
++- **Implementation:** Partial broader FE acceptance remains; dated IST consumer continuity, account-switch races and retained-provider read-only/manual-fork safeguards are locally implemented and verified. No current full FE release or real-account parity established. **Acceptance:** not closed; exact newer evidence reconciliation required. **Release:** Existing RSO bridge release does not activate all shared forecast gates.
+ - **Owner:** UNASSIGNED; **reviewer:** UNASSIGNED. **Dependencies:** FE-10a/10b.
+ - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
+-- **Verification:** Canonical unchecked row with partial receipts, not a current whole-feature test pass. Private exports deliberately not read.
+-- **Acceptance/release gate:** Use exact canonical acceptance in source row; future/prospective, account and operation gates cannot be closed by local helper tests.
+-- **Next:** Assign explicit acceptance/implementation owner; map to native/RSO current candidate before doing duplicate work.
++- **Verification:** Canonical unchecked row with partial receipts, not a current whole-feature test pass. Private exports deliberately not read. Full IST task history and named owner clauses retain daily/weekly recalculation, saved locks/protections/selected moves, stale provider/save callback isolation and explicit manual fork closure. October2 compiler recovery supersedes that source record's earlier failures only; it is not a current clean-build claim. Fictional sessions, fixture browser and native signed-out/manual evidence do not establish real-account or full producer/release acceptance.
++- **Acceptance/release gate:** Use exact canonical acceptance in source row; future/prospective, account and operation gates cannot be closed by local helper tests.
++- **Next:** Assign explicit acceptance/implementation owner; map to native/RSO current candidate before doing duplicate work. Preserve those completed IST consumer safeguards and reconcile only surviving adopted FE/real-account release evidence. Shared human/native-AT/real-account acceptance is retained under SITE-INSEASON-WORKFLOW-ACCEPTANCE; do not duplicate these completed race/guard fixes.
+ - **Queued proposal:** P07; Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required. Separate parent reservation required.
+ - **Evidence:** [tasks-prd-roster-schedule-optimizer.md:146](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-roster-schedule-optimizer.md:146>)
++- **Segment23 reconciliation date:** `2026-10-24T20:48:23.669796+00:00`.
++- **Segment23 evidence:** [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:92](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:92>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:98](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:98>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:100](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:100>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:484](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:484>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`.
+ 
+ ### RSO-FE-09a — Measure actual consumer performance
+ 
+@@ -2138,9 +2149,9 @@
+ - **Implementation:** Retain completed local shared contract, dated/source-safe selection, deterministic row identity, responsive Starter Board, local 900ms API budget and Chrome workflow. Later NEW19 partial-line and NEW20 paging/category/response metadata parity remain source-reported open pending newer exact closure evidence. **Acceptance:** Historical local rank/scoring, responsive/Chrome and performance receipts retain dated scope. Current NEW19/20 survival and trust-qualified end-to-end/release acceptance remain unverified in this documentary audit. **Release:** Historical July30 canonical-wrapper release retained. It does not close the reopened August tranche or later October drift/data/rollout/release gates; no current deployment inspected.
+ - **Owner:** UNASSIGNED; **reviewer:** UNASSIGNED. **Dependencies:** Exact current source/retained release; no native gate weakening.
+ - **Evidence level:** inventoried only. **Scope:** Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted. **Provenance:** retained task lists and receipts.
+-- **Verification:** Six complete named sources read. Older 55/55 and duplicate model/schema proposals yield to the reopened Daily Starter Board contract. NEW19/20 are mapped to readable reconciliation children; no current app/browser/failure reproduced. Source-scoped passing tests/Chrome/latency are not a whole-project or current production claim.
++- **Verification:** Six complete named sources read. Older 55/55 and duplicate model/schema proposals yield to the reopened Daily Starter Board contract. NEW19/20 are mapped to readable reconciliation children; no current app/browser/failure reproduced. Source-scoped passing tests/Chrome/latency are not a whole-project or current production claim. IST later receipts locally close today/upcoming recovery, null-rank/source labels, keyboard/fit and selected contrast checks; original PRD fallback-policy questions are superseded. Stored goalie-v2 writer/audit leads narrow attribution without per-row or historical execution/version proof.
+ - **Acceptance/release gate:** Reconcile View all/initiallimit/category/performance budget with actual supported behavior
+-- **Next:** Reconcile newer exact NEW19/20 receipts and each child contract first. Preserve closed board/performance/browser work and reuse existing upstream/provider/model gates; propose only genuinely surviving bounded acceptance work.
++- **Next:** Reconcile newer exact NEW19/20 receipts and each child contract first. Preserve closed board/performance/browser work and reuse existing upstream/provider/model gates; propose only genuinely surviving bounded acceptance work. Preserve the later today/upcoming policy and local recovery closure. The older historical-slate child concerns qualified retained upstream evidence, not restoring past public date selection or bypassing current serving admission. Reconcile the narrower historical producer attribution below without new forecast generation.
+ - **Queued proposal:** P07; Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required. Separate parent reservation required.
+ - **Evidence:** [tasks-prd-start-chart.md:216](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:216>); [tasks-forge-projection-audit-streamlining-2026-10-21.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:1>); [tasks-forge-projection-improvements-2026-10-22.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:1>); [start-chart.tsx:1](</Users/tim/Code/fhfhockey.com/web/pages/start-chart.tsx:1>); [startChartFantasyScoring.ts:1](</Users/tim/Code/fhfhockey.com/web/lib/projections/startChartFantasyScoring.ts:1>); [perfBudget.ts:1](</Users/tim/Code/fhfhockey.com/web/lib/dashboard/perfBudget.ts:1>)
+ 
+@@ -2153,6 +2164,12 @@
+ - [ ] **SITE-START-CONTRACT/eligible-slate-acceptance — Reconcile trusted current and historical slate acceptance.** Historical rank/API/browser evidence complete; eligible end-to-end proof open. Next: After retained upstream gate closure, reconcile one genuinely eligible current slate and one eligible historical slate through raw/rolling/FORGE/API rank/source/goalie coverage and visible values. Keep the exact 138-row quarantined trace and zero-goalie-team coverage as degraded evidence, not trusted qualification. Owner: UNASSIGNED. Dependencies: NATIVE-ISSUANCE, TRENDS-HISTORICAL-REPAIRS, PIPE-ROLLING-HISTORY-REPAIR, FORGE-RESULTS-COVERAGE. Gate: Reconcile later exact receipts before any implementation. No app/test/browser/provider/production call, repair, backfill, model/reader activation, publication or release by audit; preserve current ownership and gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:185>). Credit retained: Historical 138-row scoring/rank parity and Chrome workflow are retained; 14-date model rollout and provider/history/release authority remain separately owned.
+ - **Segment19 reconciliation date:** `2026-10-24T19:52:54.099295+00:00`.
+ - **Segment19 evidence:** [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:140](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:140>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:148](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:148>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:151](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:151>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:159](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:159>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:175](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:175>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:185](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:185>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:187](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:187>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:214](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:214>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:215](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:215>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:216](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:216>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:222](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:222>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`; [tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md:224](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md:224>) SHA256 `91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe`.
++
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **SITE-START-CONTRACT/IST-B-producer-attribution — Reconcile historical goalie probability output and source-state attribution.** Dated writer/audit leads recovered; screenshot/per-row/version linkage unverified. Next: Reconcile later exact screenshot date/IDs, per-goalie output-to-run/code/input receipts and the qualified source-state map. Stored goalie-v2 audits report updates but lack a per-row/deployment revision; command success alone does not establish downstream completion. An unconfirmed probability of1 is not proof of confirmation or a calculation defect. Do not infer a pending/failed run from an absent receipt. Owner: UNASSIGNED. Dependencies: FPI-07. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:516>). Credit retained: Today/upcoming recovery, null-score/rank, projected/confirmed/residual labels, source cutoffs and native recovery/focus fixes are already locally verified. Retain released FPI goalie/mixture work; no repeat producer repair.
++- **Segment23 reconciliation date:** `2026-10-24T20:48:23.669796+00:00`.
++- **Segment23 evidence:** [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:57](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:57>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:78](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:78>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:516](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:516>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`.
+ 
+ ### SITE-START-RECENTFORM — Qualified Recent Team Form before restoring old CTPI
+ 
+@@ -2952,9 +2969,9 @@
+ - **Implementation:** The exact four-file local WiGO correction at patcha63ef5a4e6dde4ee1255661a612f01b79a4e4306c5822f8d4fe078f89fbb394e now has independent ACCEPT WITH LIMITS and parent acceptance with limits. Preserve C4 workflow-link credit and both original diagnosis/failure packets; no persisted aggregate was refreshed by these local changes. **Acceptance:** Independent75/75 offline checks (58owner+17new controls), scoped lint and46unchanged pins support exact local acceptance only. Parent accepts with limits. Whole-web TypeScript still has the two prior Luna errors; no auth/browser/query-plan/population-wide/live-data or whole-WiGO acceptance follows. **Release:** Not released by this task.
+ - **Owner:** UNASSIGNED; **reviewer:** UNASSIGNED. **Dependencies:** Parent dispatch and exact file lease; preserve release and Game Grid work.
+ - **Evidence level:** source inspected. **Scope:** Only the named functions/files in the source-input reconciliation below; no whole-area health claim **Provenance:** Current local files and dated review receipts.
+-- **Verification:** Full independent REVIEW and REVIEW-EVIDENCE read. Reviewer reports exact four-file patch reconstruction, eight baseline/candidate copies and46pins; no reviewer source repair or hosted action. Auditor reran no application tests. Retained68-row matching remains5/9/13; absent legacy-rate row means that separate fix is not the demonstrated Kucherov cause. True gaps and source-arrival chronology remain qualified.
++- **Verification:** Full independent REVIEW and REVIEW-EVIDENCE read. Reviewer reports exact four-file patch reconstruction, eight baseline/candidate copies and46pins; no reviewer source repair or hosted action. Auditor reran no application tests. Retained68-row matching remains5/9/13; absent legacy-rate row means that separate fix is not the demonstrated Kucherov cause. True gaps and source-arrival chronology remain qualified. IST source receipts retain completed season/date join and missing count/TOI/rate guards plus cross-season and zero/zero decisions. Original McDavid aggregate lineage, override producer and full metric/window compatibility remain dated evidence gates, separate from the currently accepted Kucherov candidate. No current writer/reader, source capture or persisted values were rechecked here.
+ - **Acceptance/release gate:** Exact scoped tests and independent review before integration; no production calls, schema, credentials or deployment authority
+-- **Next:** Preserve accepted exact pins for parent integration and separate authorized release; do not repeat the completed review without a changed candidate. Stored L5 nulls, October5 source ingestion and any bounded refresh/backfill remain unapproved. Broad-route partial commits/population compatibility and the separate historical STD fallback are outside acceptance; no broad calculate-wigo-stats invocation or card-cohort claim.
++- **Next:** Preserve accepted exact pins for parent integration and separate authorized release; do not repeat the completed review without a changed candidate. Stored L5 nulls, October5 source ingestion and any bounded refresh/backfill remain unapproved. Broad-route partial commits/population compatibility and the separate historical STD fallback are outside acceptance; no broad calculate-wigo-stats invocation or card-cohort claim. Reconcile the two existing IST-D source/window obligations below against later exact receipts; preserve old local fixes and current independent acceptance. No second L5 repair, population refresh, provider read or historical reconstruction is dispatched.
+ - **Evidence:** [2026-10-23-claude-to-codex-unfinished-work-review.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md:1>); [tasks-README.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-README.md:1>); [siteSurfaceLinks.ts:1](</Users/tim/Code/fhfhockey.com/web/lib/navigation/siteSurfaceLinks.ts:1>); [wigoCharts.tsx:1](</Users/tim/Code/fhfhockey.com/web/pages/wigoCharts.tsx:1>)
+ - **Artifact audit — October24:** Documentary scope/status update; prior evidence and narrower acceptance preserved.
+ - **Retained audit scope:** MISS-WIGO-DATA: season totals, pooled rates, chart references, points, team cohorts and Game Score SQL/source version acceptance. Reuse IST comparison/TOI owner once.
+@@ -2968,6 +2985,13 @@
+ - **Segment07 evidence:** [tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/REPORT.md:5](</Users/tim/Code/fhfhockey.com/tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/REPORT.md:5>) SHA256 `12cae6a38cdae65b454fe76271a329b46759ab130654ed14691da3bc6373ed8b`; [tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/summary.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/summary.json:1>) SHA256 `fe17c8310839e30c7bc57c725ef4db6f9f27522752b2da51b64e92397c28f8e1`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/7a8b03d3ba14-OWNERSHIP.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/7a8b03d3ba14-OWNERSHIP.json:1>) SHA256 `7a8b03d3ba143d99a55dbdd99e6a3c1ce37ed703253190fec07b29889f8b2840`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/3013dc8decf8-HANDOFF.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/3013dc8decf8-HANDOFF.md:1>) SHA256 `3013dc8decf878efd428af3b6ee7662a8c1aa946cba4bbe489292bd8a68ae924`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/0721edd6d3b4-HANDOFF.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/0721edd6d3b4-HANDOFF.json:1>) SHA256 `0721edd6d3b4cb333c4d49ceff36e4759e0dd17470ba381b2dfac7e468376fa1`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/PARENT-STEERS.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/PARENT-STEERS.json:1>) SHA256 `52f8c719fbcdf7002e23b8f16b80233c9f9d4d2637c371089b21ed61baefef8d`.
+ - **Segment08 reconciliation date:** `2026-10-24T17:15:34.417533+00:00`.
+ - **Segment08 evidence:** [tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/43a8edca387f-REVIEW.md:3>) SHA256 `43a8edca387fa4d4b3742c03c98bdb2b097a7f27c262494aba7cdc6f4486e8e1`; [tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW-EVIDENCE.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/726b59e90abb-REVIEW-EVIDENCE.json:1>) SHA256 `726b59e90abb89a410a98d78507f82859a38b2123825557e8da4d18cf158d4d8`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/PARENT-STEERS.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/source-snapshots/9b3c682e7952-PARENT-STEERS.json:1>) SHA256 `9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9`.
++
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **SITE-WIGO/IST-D-aggregate-provenance — Reconcile WiGO override ownership and aggregate window provenance.** Dated producer/window evidence gate; later exact closure unverified. Next: Locate later wigo_rates producer/refresh ownership and original aggregate/run evidence with selected game/season identities, cutoff, source revision and per-metric numerator/denominator coverage. The old exact McDavid case is distinct from the accepted Kucherov correction. Current reconstructed inputs or a new metadata column cannot authenticate old rows; retain unavailable history and propose any prospective additive contract separately. Owner: UNASSIGNED. Dependencies: existing parent contracts and receipt reconciliation. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:482>). Credit retained: Season/date matching, missing-count/TOI propagation, zero/zero dash policy and recent-rate null guards are completed local work. Preserve the current accepted four-file/75-check packet and its unapproved refresh/backfill boundary.
++- [ ] **SITE-WIGO/IST-D-comparison-basis — Reconcile complete metric and window compatibility for WiGO comparisons.** Accepted null guards retained; nonnull override/full-basis qualification unverified. Next: Reconcile later exact source/window/strength/unit and denominator compatibility receipts for nonnull overrides and comparisons. Show actual included samples and unavailable coverage honestly; do not infer L10 means ten games or convert absent input to zero. Preserve cross-season appearance selection and separately covered PP metrics; no broad writer invocation or legacy aggregate publication. Owner: UNASSIGNED. Dependencies: SITE-WIGO/IST-D-aggregate-provenance. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:112>). Credit retained: Existing unit conversions, compact metadata captions, fixture/native reflow and current four-file reader correction remain accepted within their original limits. Missingness fixes alone do not certify an unidentified nonnull override.
++- **Segment23 reconciliation date:** `2026-10-24T20:48:23.669796+00:00`.
++- **Segment23 evidence:** [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:111](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:111>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:112](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:112>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:113](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:113>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:36](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:36>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:482](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:482>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`.
+ 
+ ### SITE-SKO-FIXTURES — Reconcile duplicate SKO interpretation cases and complete bounded SKO/BLSH fixture mechanics
+ 
+@@ -3108,7 +3132,7 @@
+ - **Dependencies:** Exact six paths in release NEWS-LEASE.json; Luna public contract agreement; no claim-validator/schema or historical metadata repair lease.
+ - **Evidence level:** independently accepted
+ - **Evidence scope:** Serialized presentation attribution only. Latest supported BILLING-REVIEW thread receipt read; no public claim, metadata-sync or dedup acceptance.
+-- **Verification:** Owner115tests and static checks retained; reviewer direct-source9+10 with mocked reads/network denied, not browser execution. Claim validator byte-identical. Current reviewed newsFeed.ts de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d.
++- **Verification:** Owner115tests and static checks retained; reviewer direct-source9+10 with mocked reads/network denied, not browser execution. Claim validator byte-identical. Current reviewed newsFeed.ts de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d. Segment23 reads the full IST contract pair and selected late owner receipts. Historical consumer claim safeguards and exact author originals exist; candidate publication-batch timing and deployment metadata still do not provide immutable per-item execution/source-time authority. No current claim-validator or public-safe display pin was re-reviewed or changed.
+ - **Acceptance/release gate:** Independent author-conflict recheck, source-only authority controls and exact release composition. Metadata preservation and accepted-public loader require separate scoped work.
+ - **Next action:** FORGE composes accepted six-file packet. Keep sync metadata loss, accepted-public claim producer/loader contract and duplicate-source identity as distinct open follow-ups; no historical repair or production action.
+ - **As of:** `2026-10-23T15:58:32+00:00`
+@@ -3118,6 +3142,13 @@
+   - `/Users/tim/Documents/Codex/2026-10-23/task-4/evidence/quote-author-correction/CANDIDATE.json:1`; SHA256 `ea71eb0cfff5bfa2b3d7e10a6a027b53e2d8c5d79c58e7907fff07ab9663df97`.
+   - `/Users/tim/Documents/Codex/2026-10-23/task-4/SERIALIZATION-REVIEW.md:1`; SHA256 `ebea3b736faea2a3094a68c31e7ad17c7fc9e6e70d0e6f8b11854fd06c9c9181`.
+   - `/Users/tim/Documents/Codex/2026-10-23/task-4/evidence/attribution-serialization/CANDIDATE.json:1`; SHA256 `0e2fa0c25dcd08791c7367c794226d96feddb5ee70a9ea50d774d3d947f8f8c6`.
++- **Current Next:** FORGE composes accepted six-file packet. Keep sync metadata loss, accepted-public claim producer/loader contract and duplicate-source identity as distinct open follow-ups; no historical repair or production action. Retain the distinct IST-A exact-item lineage child below; do not recreate completed first-subject/provenance guards or promote historical observations into current public claim authority.
++
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **NEWS-SOURCE-PRESENTATION/IST-A-exact-item-lineage — Reconcile the two exact News records against immutable writer evidence.** Consumer safeguards implemented; historical execution/source-time closure unverified. Next: Locate later per-item input/output, source-time subject/claim authority and actual request-to-deployment binding for the retained Barzal/He and cap-dependent Soucy cases. Two candidate batch starts match publication times, but capped response literals and a READY candidate do not bind those items or prove the deployed writer. Preserve neutral reports for unsupported transactions and unknown lineage; no row repair or new claim authority. Owner: UNASSIGNED. Dependencies: IFTTT-ACTIVATION. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:526>). Credit retained: Exact author originals and current captured passages/joins already exist. Historical local claim adapter and current independently accepted public-safe source display keep their separate limits. Inference-disabled batch metadata does not establish a paid model call.
++- **Segment23 reconciliation date:** `2026-10-24T20:48:23.669796+00:00`.
++- **Segment23 evidence:** [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:53](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:53>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:66](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:66>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:526](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:526>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:536](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:536>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`.
+ 
+ ## October24 coordination and planning
+ 
+@@ -3727,3 +3758,52 @@
+ - [ ] **SITE-ROLLING-READER-CONTRACT/G3-strength-truthfulness — Reconcile unsupported 5v5 requests and validation labels.** Proposed P3 contract reconciliation; no current defect reproduced. Next: Reconcile later exact route/selector receipts for true 5v5. Establish whether it is supported or explicitly rejected/disclosed; an unsupported request must not silently return all-strength data as the requested slice. Do not infer that writer support alone approves expanding the console. Owner: UNASSIGNED. Dependencies: existing parent contracts and receipt reconciliation. Gate: Reconciliation-first; no application edits/tests, hosted reads/writes, refresh/backfill, provider calls, schema change or deployment by this audit. Any surviving repair needs current exact ownership and separate acceptance/release scope. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md:154>). Credit retained: The original all/ev/pp/pk console scope and current Stats grain work retain their own limits; no new 5v5 product rollout is authorized.
+ - **Segment21 reconciliation date:** `2026-10-24T20:14:35.677441+00:00`.
+ - **Segment21 evidence:** [tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md:116](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/059fe8e750a5-tasks-rolling-player-pass-2-main-audit.md:116>) SHA256 `059fe8e750a5497c0372f3785add66d24c4ee228a65b4df3af5c23339b2c0637`; [tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md:126](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/5d8c5dc5b279-G3-rankings-rolling.md:126>) SHA256 `5d8c5dc5b279357673b380b6ed0ce711df4f65e16ee47531c5bde6c128b3adda`; [tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md:154](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/5d8c5dc5b279-G3-rankings-rolling.md:154>) SHA256 `5d8c5dc5b279357673b380b6ed0ce711df4f65e16ee47531c5bde6c128b3adda`; [tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:239](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md:239>) SHA256 `1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be`.
++
++### SITE-INSEASON-WORKFLOW-ACCEPTANCE — Retain shared in-season workflow acceptance beyond fixtures
++
++- **User impact:** Managers need truthful account state, usable assistive controls and measurable first-use setup without hidden context or saved-intent loss.
++- **Implementation:** IST-S7.1 supported links/context and extensive local five-width, native zoom, fixture flow and RSO session/read-only fixes are complete. IST-S7.2 still separates actual assistive speech, broader contrast, real accounts and declared first-use measurements. Later exact closure unverified.
++- **Acceptance:** Proposed carry-forward of shared acceptance only; completed consumer work is not reopened.
++- **Release:** No new release or production observation by this audit; dated local and previously accepted release credit retained.
++- **Owner:** UNASSIGNED
++- **Reviewer:** UNASSIGNED
++- **Dependencies:** IST-S7.2; RSO-FE-07a; PAID-SYNC; relevant NEWS/START/WIGO/Rankings gates and current frontend ownership.
++- **Verification:** Full IST pair and selected completion matrix read. Source five-width/zoom/keyboard/focus and34selected Starter Board contrast measurements retain dated scope. They do not establish screen-reader speech, all contrast states, authenticated provider parity or first-time-user measurements.
++- **Acceptance/release gate:** Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.
++- **Next:** Reconcile later accepted human/native-AT/real-account receipts for the children below. Reuse existing per-surface source/producer owners; no new UI redesign, forecast engine, entitlement change or account action.
++- **Evidence level:** Full primary pair and explicit selected owner clauses reviewed; current outcome unverified
++- **Evidence scope:** Reconciliation-first at cited source bounds. No whole-page, source-population, current runtime or independent pixel acceptance. Preserve paused/deferred/retired work.
++- **Dispatch class:** Proposed/held reconciliation; no implementation or external authority
++- **Source aliases:** IST-S7.2; IST-C3.3 adopted FE continuity; IST A–F narrower local closures
++
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **SITE-INSEASON-WORKFLOW-ACCEPTANCE/native-AT-and-contrast — Reconcile actual assistive speech and remaining rendered contrast.** Local keyboard/zoom and selected text contrast complete; broader AT unverified. Next: Locate later declared screen-reader/control/status/dialog speech results and the remaining rendered focus/icon/graph/hover/appearance contrast cases. Keep exact device/browser/task and data-state scope. Do not repeat already passed five-width/native zoom or the34selected Starter Board text measurements as if absent. Owner: UNASSIGNED. Dependencies: existing parent contracts and receipt reconciliation. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:164>). Credit retained: Five-width integrated flow, per-surface native zoom/focus, named log controls and measured Starter Board status/recovery text retain dated acceptance.
++- [ ] **SITE-INSEASON-WORKFLOW-ACCEPTANCE/real-account-workflow-parity — Reconcile real-account refresh/save/reopen/switch and free-manual parity.** Fictional session/local continuity passed; current real-account acceptance unverified. Next: Locate later exact real-account evidence for refresh/reconciliation, save/reopen, account switching, synced non-rostered/waiver-unknown state and explicit manual fork, preserving permissions and saved intent. Separate provider freshness, caller/producer admission and release from consumer fixtures; no auth/account/provider action authorized here. Owner: UNASSIGNED. Dependencies: RSO-FE-07a, PAID-SYNC. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:160>). Credit retained: Mounted fictional cross-tab races, stale save notice, retained-provider read-only guard, selected-move/protection/lock continuity and useful free manual schedule-only results are completed local work.
++- [ ] **SITE-INSEASON-WORKFLOW-ACCEPTANCE/first-use-measurement — Reconcile declared first-time setup and first useful result evidence.** Human baseline/participant/task/timing record unverified. Next: Locate a later declared participant/sample/task/timing record for manual setup→supported schedule result and confirmed-input completion. Distinguish cold/returning users, schedule-only/outcome-ready results and unresolved blockers. Do not invent a completion target or infer human usability from an automated browser pass. Owner: UNASSIGNED. Dependencies: existing parent contracts and receipt reconciliation. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:106>). Credit retained: Readiness destinations, labels/input review and native manual setup already exist; no competing planning/readiness engine is requested.
++- **Segment23 reconciliation date:** `2026-10-24T20:48:23.669796+00:00`.
++- **Segment23 evidence:** [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:160](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:160>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:164](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:164>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:184](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:184>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:398](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:398>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:484](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:484>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`.
++
++### SITE-RANKINGS-QUALIFICATION — Reconcile Rankings dataset, component and sample qualification
++
++- **User impact:** Historical/fantasy Rankings must disclose the cohort and supported components without treating eligibility thresholds as predictive stability.
++- **Implementation:** Historical purpose, opt-in fantasy preset, URL/context visibility, sample-label/unknown-rank safeguards, PP read selection and timeout/initial-request fixes are locally implemented in the source. Remaining IST-E5.1/5.3 dataset/component and stability evidence is parked for reconciliation under current Rankings pause.
++- **Acceptance:** Proposed/parked evidence qualification; no new metric, minimum, publisher run or experiment.
++- **Release:** No new release or production observation by this audit; dated local and previously accepted release credit retained.
++- **Owner:** UNASSIGNED
++- **Reviewer:** UNASSIGNED
++- **Dependencies:** IST-E5.1/5.3; PIPE-ROLLING-HISTORY-REPAIR for underlying history; AUDIT-A7 accepted query guards; SPRINT-OPTIMIZATION existing cost work.
++- **Verification:** Full IST pair and selected component/history/completion clauses distinguish published5v5 from unpersisted ALL rows, current-source diagnosis from immutable history and eligibility from stability. The old GP1/1/2 versus source56/65/82 comparison and one-player dry-run are diagnostic, not current population proof. No current Rankings source/data/app audit.
++- **Acceptance/release gate:** Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.
++- **Next:** Keep parked. Reconcile later exact source-completeness/component-qualified cohort and metric-evaluation receipts under existing contracts before any resumed work. Reuse underlying history repair; preserve current accepted query/optimization and preset/labels rather than repeat them.
++- **Evidence level:** Full primary pair and explicit selected owner clauses reviewed; current outcome unverified
++- **Evidence scope:** Reconciliation-first at cited source bounds. No whole-page, source-population, current runtime or independent pixel acceptance. Preserve paused/deferred/retired work.
++- **Dispatch class:** Parked reconciliation under existing Rankings pause; no resumed research, implementation, publication or threshold authority
++- **Source aliases:** IST-E5.1 / IST-E5.3; Rankings historical/fantasy source qualification; Underlying history aliases PIPE-ROLLING-HISTORY-REPAIR
++
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **SITE-RANKINGS-QUALIFICATION/component-qualified-cohort — Reconcile the actual component-qualified Rankings dataset.** Dated dataset/publisher/version and component closure unverified; parked. Next: Locate later producer/version, full-history reconciliation and component-qualified coverage tied to the actual season/strength/window/minimums. Published5v5 counts cannot certify the ALL preset; restored PP reads do not create a600-second-qualified percentile or published MCM rows. Treat underlying history correction as the existing pipeline task and any subsequent publication as separately gated. Owner: UNASSIGNED. Dependencies: PIPE-ROLLING-HISTORY-REPAIR, AUDIT-A7. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:131>). Credit retained: Eight-field PP selection, genuine-zero/null guards, minimum-relative labels, visible context, reproducible ALL preset and narrow AUDIT-A7 query acceptance retain credit.
++- [ ] **SITE-RANKINGS-QUALIFICATION/sample-stability-evidence — Reconcile metric-specific stability and early-season tradeoffs.** IST-E5.3 evidence gate parked; no new threshold/model dispatch. Next: Locate later stability/evaluation evidence for the selected metric/components, season/strength/window and eligibility rules. Keep the owner-approved preset and expert historical controls;1GP/600seconds and qualified flags establish eligibility only. Record unresolved tradeoffs rather than invent universal GP rules, forecast reliability or a new benchmark. Owner: UNASSIGNED. Dependencies: SITE-RANKINGS-QUALIFICATION/component-qualified-cohort. Gate: Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:129>). Credit retained: The fantasy-preset decision is already approved and implemented locally; sample wording, unknown samples and local query/UI regressions are not reopened.
++- **Segment23 reconciliation date:** `2026-10-24T20:48:23.669796+00:00`.
++- **Segment23 evidence:** [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:125](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:125>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:131](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:131>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:133](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md:133>) SHA256 `e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b`; [tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md:483](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md:483>) SHA256 `e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32`.
+--- before/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json
++++ after/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json
+@@ -1,5 +1,5 @@
+ {
+-  "as_of": "2026-10-24T20:30:45.375060+00:00",
++  "as_of": "2026-10-24T20:48:23.669796+00:00",
+   "scope": "Evidence/status audit and durable sprint ledger; FA Portal excluded. No current-model/author inference. All implementation acceptance and release are separate.",
+   "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+   "branch": "octoberBranch",
+@@ -3464,29 +3464,80 @@
+       "taskID": "RSO-FE-07a",
+       "group": "Current RSO forecast gates",
+       "scope": "Validate baseline release and continuity",
+-      "implementation": "Local progress explicitly recorded; current authority leaves gate open",
++      "implementation": "Partial broader FE acceptance remains; dated IST consumer continuity, account-switch races and retained-provider read-only/manual-fork safeguards are locally implemented and verified. No current full FE release or real-account parity established.",
+       "acceptance": "not closed; exact newer evidence reconciliation required",
+       "release": "Existing RSO bridge release does not activate all shared forecast gates",
+       "owner": "UNASSIGNED",
+       "reviewer": "UNASSIGNED",
+       "dependencies": "FE-10a/10b",
+-      "verification": "Canonical unchecked row with partial receipts, not a current whole-feature test pass. Private exports deliberately not read.",
++      "verification": "Canonical unchecked row with partial receipts, not a current whole-feature test pass. Private exports deliberately not read. Full IST task history and named owner clauses retain daily/weekly recalculation, saved locks/protections/selected moves, stale provider/save callback isolation and explicit manual fork closure. October2 compiler recovery supersedes that source record's earlier failures only; it is not a current clean-build claim. Fictional sessions, fixture browser and native signed-out/manual evidence do not establish real-account or full producer/release acceptance.",
+       "acceptance_release_gate": "Use exact canonical acceptance in source row; future/prospective, account and operation gates cannot be closed by local helper tests.",
+-      "next_action": "Assign explicit acceptance/implementation owner; map to native/RSO current candidate before doing duplicate work.",
++      "next_action": "Assign explicit acceptance/implementation owner; map to native/RSO current candidate before doing duplicate work. Preserve those completed IST consumer safeguards and reconcile only surviving adopted FE/real-account release evidence. Shared human/native-AT/real-account acceptance is retained under SITE-INSEASON-WORKFLOW-ACCEPTANCE; do not duplicate these completed race/guard fixes.",
+       "evidence": [
+         {
+           "path": "tasks/tasks-prd-roster-schedule-optimizer.md",
+           "line": 146,
+           "sha256": "ced28e5f557e3d17cd3a0adb56164cac0f0f79ad6494d72bf3fea0ad942b49f8"
+-        }
+-      ],
+-      "as_of": "2026-10-22T12:42:23+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 92,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 98,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 100,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md",
++          "original_path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
++          "line": 484,
++          "sha256": "e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32",
++          "original_sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Selected owner decisions, News contract/late lineage, Rankings source/history and final completion gates read at exact ranges; UUID/email identifiers redacted in readout. Other historical UI/QA receipts remain unread. No private values, pixels, execution or current runtime acceptance.",
++          "transformed_clause_snapshot": true
++        }
++      ],
++      "as_of": "2026-10-24T20:48:23.669796+00:00",
+       "evidence_level": "inventoried only",
+       "evidence_scope": "Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted.",
+       "evidence_provenance": "retained task lists and receipts",
+       "dispatch_class": "proposed staged packet; parent dispatch pending",
+       "proposed_packet": "P07",
+-      "proposed_owner": "Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required"
++      "proposed_owner": "Future forecast application implementer UNASSIGNED; current LEDGER trace complete; retained policy decision required",
++      "artifact_audit_segment23": [
++        {
++          "at": "2026-10-24T20:48:23.669796+00:00",
++          "before_fields": {
++            "implementation": "Local progress explicitly recorded; current authority leaves gate open",
++            "verification": "Canonical unchecked row with partial receipts, not a current whole-feature test pass. Private exports deliberately not read.",
++            "next_action": "Assign explicit acceptance/implementation owner; map to native/RSO current candidate before doing duplicate work."
++          },
++          "note": "Documentary reconciliation only; prior scope, evidence and narrower closures retained. No new authority."
++        }
++      ]
+     },
+     {
+       "taskID": "RSO-FE-09a",
+@@ -6182,9 +6233,9 @@
+       "owner": "UNASSIGNED",
+       "reviewer": "UNASSIGNED",
+       "dependencies": "Exact current source/retained release; no native gate weakening",
+-      "verification": "Six complete named sources read. Older 55/55 and duplicate model/schema proposals yield to the reopened Daily Starter Board contract. NEW19/20 are mapped to readable reconciliation children; no current app/browser/failure reproduced. Source-scoped passing tests/Chrome/latency are not a whole-project or current production claim.",
++      "verification": "Six complete named sources read. Older 55/55 and duplicate model/schema proposals yield to the reopened Daily Starter Board contract. NEW19/20 are mapped to readable reconciliation children; no current app/browser/failure reproduced. Source-scoped passing tests/Chrome/latency are not a whole-project or current production claim. IST later receipts locally close today/upcoming recovery, null-rank/source labels, keyboard/fit and selected contrast checks; original PRD fallback-policy questions are superseded. Stored goalie-v2 writer/audit leads narrow attribution without per-row or historical execution/version proof.",
+       "acceptance_release_gate": "Reconcile View all/initiallimit/category/performance budget with actual supported behavior",
+-      "next_action": "Reconcile newer exact NEW19/20 receipts and each child contract first. Preserve closed board/performance/browser work and reuse existing upstream/provider/model gates; propose only genuinely surviving bounded acceptance work.",
++      "next_action": "Reconcile newer exact NEW19/20 receipts and each child contract first. Preserve closed board/performance/browser work and reuse existing upstream/provider/model gates; propose only genuinely surviving bounded acceptance work. Preserve the later today/upcoming policy and local recovery closure. The older historical-slate child concerns qualified retained upstream evidence, not restoring past public date selection or bypassing current serving admission. Reconcile the narrower historical producer attribution below without new forecast generation.",
+       "evidence": [
+         {
+           "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+@@ -6316,9 +6367,39 @@
+           "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+           "observed_at": "2026-10-24T19:52:54.099295+00:00",
+           "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+-        }
+-      ],
+-      "as_of": "2026-10-24T19:52:54.099295+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 57,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 78,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md",
++          "original_path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
++          "line": 516,
++          "sha256": "e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32",
++          "original_sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Selected owner decisions, News contract/late lineage, Rankings source/history and final completion gates read at exact ranges; UUID/email identifiers redacted in readout. Other historical UI/QA receipts remain unread. No private values, pixels, execution or current runtime acceptance.",
++          "transformed_clause_snapshot": true
++        }
++      ],
++      "as_of": "2026-10-24T20:48:23.669796+00:00",
+       "evidence_level": "inventoried only",
+       "evidence_scope": "Task and receipt reconciliation only; no claim this whole area or all referenced source files were vetted.",
+       "evidence_provenance": "retained task lists and receipts",
+@@ -6420,6 +6501,111 @@
+           },
+           "approval_gate": "Reconcile later exact receipts before any implementation. No app/test/browser/provider/production call, repair, backfill, model/reader activation, publication or release by audit; preserve current ownership and gates.",
+           "existing_work_credit": "Historical 138-row scoring/rank parity and Chrome workflow are retained; 14-date model rollout and provider/history/release authority remain separately owned."
++        },
++        {
++          "child_id": "SITE-START-CONTRACT/IST-B-producer-attribution",
++          "title": "Reconcile historical goalie probability output and source-state attribution",
++          "status": "Dated writer/audit leads recovered; screenshot/per-row/version linkage unverified",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "FPI-07"
++          ],
++          "next_action": "Reconcile later exact screenshot date/IDs, per-goalie output-to-run/code/input receipts and the qualified source-state map. Stored goalie-v2 audits report updates but lack a per-row/deployment revision; command success alone does not establish downstream completion. An unconfirmed probability of1 is not proof of confirmation or a calculation defect. Do not infer a pending/failed run from an absent receipt.",
++          "source": {
++            "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
++            "line": 516
++          },
++          "approval_gate": "Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.",
++          "existing_work_credit": "Today/upcoming recovery, null-score/rank, projected/confirmed/residual labels, source cutoffs and native recovery/focus fixes are already locally verified. Retain released FPI goalie/mixture work; no repeat producer repair."
++        }
++      ],
++      "artifact_audit_segment23": [
++        {
++          "at": "2026-10-24T20:48:23.669796+00:00",
++          "before_fields": {
++            "verification": "Six complete named sources read. Older 55/55 and duplicate model/schema proposals yield to the reopened Daily Starter Board contract. NEW19/20 are mapped to readable reconciliation children; no current app/browser/failure reproduced. Source-scoped passing tests/Chrome/latency are not a whole-project or current production claim.",
++            "next_action": "Reconcile newer exact NEW19/20 receipts and each child contract first. Preserve closed board/performance/browser work and reuse existing upstream/provider/model gates; propose only genuinely surviving bounded acceptance work.",
++            "children": [
++              {
++                "child_id": "SITE-START-CONTRACT/NEW19-partial-score-line",
++                "title": "Reconcile partial G/A/PPP support and score/rank completeness",
++                "status": "Source P2/NEW19; surviving current defect unverified",
++                "owner": "UNASSIGNED",
++                "depends_on": [
++                  "NATIVE-ISSUANCE"
++                ],
++                "next_action": "Locate later exact partial-head regressions and accepted API/Dashboard consumer receipts. Ensure a missing supported ES/PP component cannot become a complete zero-valued scoring line; distinguish partial from all-null and valid-zero values before treating the old finding as current.",
++                "source": {
++                  "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
++                  "line": 215
++                },
++                "approval_gate": "Reconciliation-first; no repair or admission relaxation. Synthetic passing counts alone do not establish this exact regression or production behavior.",
++                "existing_work_credit": "Versioned scoring, deterministic row ranks, valid-zero/null and narrower accepted fixture/RSO work retain their original limits."
++              },
++              {
++                "child_id": "SITE-START-CONTRACT/NEW20-paging-disclosure",
++                "title": "Reconcile five-row/View-all versus older 25-more expectations",
++                "status": "Proposed source/receipt parity decision; current rendering unverified",
++                "owner": "UNASSIGNED",
++                "depends_on": [],
++                "next_action": "Match the later shipped five-row/View-all behavior to exact owner/UI receipts and update the source acceptance contract or record an intentional restoration decision. Do not rerun or erase the completed earlier25-more Chrome receipt as if it described current behavior.",
++                "source": {
++                  "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
++                  "line": 216
++                },
++                "approval_gate": "Reconcile later exact receipts before any implementation. No app/test/browser/provider/production call, repair, backfill, model/reader activation, publication or release by audit; preserve current ownership and gates.",
++                "existing_work_credit": "Completed responsive board, URL/history state, keyboard ARIA tabs, filters and earlier browser proof remain dated closure."
++              },
++              {
++                "child_id": "SITE-START-CONTRACT/NEW20-category-contract",
++                "title": "Reconcile category/control and ranking availability disclosure",
++                "status": "Proposed current contract reconciliation; no new scoring feature",
++                "owner": "UNASSIGNED",
++                "depends_on": [],
++                "next_action": "Reconcile live-category/comparison-basis source claims with unavailable.categoryMode metadata and removed tau/P75/category copy. Pin supported mode/profile/ranking semantics and honest unavailable controls; do not resurrect custom profiles/tau/risk or the superseded second engine.",
++                "source": {
++                  "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
++                  "line": 216
++                },
++                "approval_gate": "Reconcile later exact receipts before any implementation. No app/test/browser/provider/production call, repair, backfill, model/reader activation, publication or release by audit; preserve current ownership and gates.",
++                "existing_work_credit": "Canonical FORGE one-game stat line, read-time default scoring, structured 400/422 validation and ranking-independent ownership remain."
++              },
++              {
++                "child_id": "SITE-START-CONTRACT/NEW20-response-envelope",
++                "title": "Reconcile response-envelope metadata with the accepted reader budget",
++                "status": "900ms local gate complete; later byte-envelope contract unverified",
++                "owner": "UNASSIGNED",
++                "depends_on": [],
++                "next_action": "Locate later approved response-size policy and exact envelope fixture, then reconcile the 300,000-byte perf metadata with the reported 4,000,000-byte candidate envelope. Preserve uncached/warm latency scope and do not infer a need for new production benchmarking or the optional Yahoo RPC.",
++                "source": {
++                  "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md",
++                  "line": 81
++                },
++                "approval_gate": "Reconcile later exact receipts before any implementation. No app/test/browser/provider/production call, repair, backfill, model/reader activation, publication or release by audit; preserve current ownership and gates.",
++                "existing_work_credit": "Recorded 630.9/770.4ms cold and 0.3ms warm P95 close the old 900ms local budget; optional overlay RPC was not required."
++              },
++              {
++                "child_id": "SITE-START-CONTRACT/eligible-slate-acceptance",
++                "title": "Reconcile trusted current and historical slate acceptance",
++                "status": "Historical rank/API/browser evidence complete; eligible end-to-end proof open",
++                "owner": "UNASSIGNED",
++                "depends_on": [
++                  "NATIVE-ISSUANCE",
++                  "TRENDS-HISTORICAL-REPAIRS",
++                  "PIPE-ROLLING-HISTORY-REPAIR",
++                  "FORGE-RESULTS-COVERAGE"
++                ],
++                "next_action": "After retained upstream gate closure, reconcile one genuinely eligible current slate and one eligible historical slate through raw/rolling/FORGE/API rank/source/goalie coverage and visible values. Keep the exact 138-row quarantined trace and zero-goalie-team coverage as degraded evidence, not trusted qualification.",
++                "source": {
++                  "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
++                  "line": 185
++                },
++                "approval_gate": "Reconcile later exact receipts before any implementation. No app/test/browser/provider/production call, repair, backfill, model/reader activation, publication or release by audit; preserve current ownership and gates.",
++                "existing_work_credit": "Historical 138-row scoring/rank parity and Chrome workflow are retained; 14-date model rollout and provider/history/release authority remain separately owned."
++              }
++            ]
++          },
++          "note": "Documentary reconciliation only; prior scope, evidence and narrower closures retained. No new authority."
+         }
+       ]
+     },
+@@ -12053,9 +12239,9 @@
+       "owner": "UNASSIGNED",
+       "reviewer": "UNASSIGNED",
+       "dependencies": "Parent dispatch and exact file lease; preserve release and Game Grid work",
+-      "verification": "Full independent REVIEW and REVIEW-EVIDENCE read. Reviewer reports exact four-file patch reconstruction, eight baseline/candidate copies and46pins; no reviewer source repair or hosted action. Auditor reran no application tests. Retained68-row matching remains5/9/13; absent legacy-rate row means that separate fix is not the demonstrated Kucherov cause. True gaps and source-arrival chronology remain qualified.",
++      "verification": "Full independent REVIEW and REVIEW-EVIDENCE read. Reviewer reports exact four-file patch reconstruction, eight baseline/candidate copies and46pins; no reviewer source repair or hosted action. Auditor reran no application tests. Retained68-row matching remains5/9/13; absent legacy-rate row means that separate fix is not the demonstrated Kucherov cause. True gaps and source-arrival chronology remain qualified. IST source receipts retain completed season/date join and missing count/TOI/rate guards plus cross-season and zero/zero decisions. Original McDavid aggregate lineage, override producer and full metric/window compatibility remain dated evidence gates, separate from the currently accepted Kucherov candidate. No current writer/reader, source capture or persisted values were rechecked here.",
+       "acceptance_release_gate": "Exact scoped tests and independent review before integration; no production calls, schema, credentials or deployment authority",
+-      "next_action": "Preserve accepted exact pins for parent integration and separate authorized release; do not repeat the completed review without a changed candidate. Stored L5 nulls, October5 source ingestion and any bounded refresh/backfill remain unapproved. Broad-route partial commits/population compatibility and the separate historical STD fallback are outside acceptance; no broad calculate-wigo-stats invocation or card-cohort claim.",
++      "next_action": "Preserve accepted exact pins for parent integration and separate authorized release; do not repeat the completed review without a changed candidate. Stored L5 nulls, October5 source ingestion and any bounded refresh/backfill remain unapproved. Broad-route partial commits/population compatibility and the separate historical STD fallback are outside acceptance; no broad calculate-wigo-stats invocation or card-cohort claim. Reconcile the two existing IST-D source/window obligations below against later exact receipts; preserve old local fixes and current independent acceptance. No second L5 repair, population refresh, provider read or historical reconstruction is dispatched.",
+       "evidence": [
+         {
+           "path": "tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md",
+@@ -12203,9 +12389,59 @@
+           "sha256": "9b3c682e7952bf24aaac6bcd02e39a71c1cbf5f96b7dc3691ee71324041bddf9",
+           "observed_at": "2026-10-24T17:15:34.417533+00:00",
+           "review_scope": "Full documentary source read; stored commands not executed; owner/reviewer/external receipts retain exact limited scope. Snapshot is evidence, not authority."
+-        }
+-      ],
+-      "as_of": "2026-10-24T17:15:34.417533+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 111,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 112,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 113,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md",
++          "original_path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
++          "line": 36,
++          "sha256": "e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32",
++          "original_sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Selected owner decisions, News contract/late lineage, Rankings source/history and final completion gates read at exact ranges; UUID/email identifiers redacted in readout. Other historical UI/QA receipts remain unread. No private values, pixels, execution or current runtime acceptance.",
++          "transformed_clause_snapshot": true
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md",
++          "original_path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
++          "line": 482,
++          "sha256": "e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32",
++          "original_sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Selected owner decisions, News contract/late lineage, Rankings source/history and final completion gates read at exact ranges; UUID/email identifiers redacted in readout. Other historical UI/QA receipts remain unread. No private values, pixels, execution or current runtime acceptance.",
++          "transformed_clause_snapshot": true
++        }
++      ],
++      "as_of": "2026-10-24T20:48:23.669796+00:00",
+       "evidence_level": "source inspected",
+       "evidence_scope": "Only the named functions/files in the source-input reconciliation below; no whole-area health claim",
+       "evidence_provenance": "Current local files and dated review receipts",
+@@ -12277,6 +12513,49 @@
+             "dispatch_class": "Existing WiGO investigator handed back local four-file candidate; independent review pending, no new worker or execution authority from audit"
+           },
+           "note": "Dated content/status overlay. Prior scopes, evidence, narrower acceptance, parked/rejected work and original failed receipts preserved. No implementation/production authority."
++        }
++      ],
++      "artifact_audit_segment23": [
++        {
++          "at": "2026-10-24T20:48:23.669796+00:00",
++          "before_fields": {
++            "verification": "Full independent REVIEW and REVIEW-EVIDENCE read. Reviewer reports exact four-file patch reconstruction, eight baseline/candidate copies and46pins; no reviewer source repair or hosted action. Auditor reran no application tests. Retained68-row matching remains5/9/13; absent legacy-rate row means that separate fix is not the demonstrated Kucherov cause. True gaps and source-arrival chronology remain qualified.",
++            "next_action": "Preserve accepted exact pins for parent integration and separate authorized release; do not repeat the completed review without a changed candidate. Stored L5 nulls, October5 source ingestion and any bounded refresh/backfill remain unapproved. Broad-route partial commits/population compatibility and the separate historical STD fallback are outside acceptance; no broad calculate-wigo-stats invocation or card-cohort claim.",
++            "children": null
++          },
++          "note": "Documentary reconciliation only; prior scope, evidence and narrower closures retained. No new authority."
++        }
++      ],
++      "children": [
++        {
++          "child_id": "SITE-WIGO/IST-D-aggregate-provenance",
++          "title": "Reconcile WiGO override ownership and aggregate window provenance",
++          "status": "Dated producer/window evidence gate; later exact closure unverified",
++          "owner": "UNASSIGNED",
++          "depends_on": [],
++          "next_action": "Locate later wigo_rates producer/refresh ownership and original aggregate/run evidence with selected game/season identities, cutoff, source revision and per-metric numerator/denominator coverage. The old exact McDavid case is distinct from the accepted Kucherov correction. Current reconstructed inputs or a new metadata column cannot authenticate old rows; retain unavailable history and propose any prospective additive contract separately.",
++          "source": {
++            "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
++            "line": 482
++          },
++          "approval_gate": "Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.",
++          "existing_work_credit": "Season/date matching, missing-count/TOI propagation, zero/zero dash policy and recent-rate null guards are completed local work. Preserve the current accepted four-file/75-check packet and its unapproved refresh/backfill boundary."
++        },
++        {
++          "child_id": "SITE-WIGO/IST-D-comparison-basis",
++          "title": "Reconcile complete metric and window compatibility for WiGO comparisons",
++          "status": "Accepted null guards retained; nonnull override/full-basis qualification unverified",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "SITE-WIGO/IST-D-aggregate-provenance"
++          ],
++          "next_action": "Reconcile later exact source/window/strength/unit and denominator compatibility receipts for nonnull overrides and comparisons. Show actual included samples and unavailable coverage honestly; do not infer L10 means ten games or convert absent input to zero. Preserve cross-season appearance selection and separately covered PP metrics; no broad writer invocation or legacy aggregate publication.",
++          "source": {
++            "path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++            "line": 112
++          },
++          "approval_gate": "Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.",
++          "existing_work_credit": "Existing unit conversions, compact metadata captions, fixture/native reflow and current four-file reader correction remain accepted within their original limits. Missingness fixes alone do not certify an unidentified nonnull override."
+         }
+       ]
+     },
+@@ -12937,9 +13216,9 @@
+       "owner": "NEWS",
+       "reviewer": "BILLING-REVIEW",
+       "dependencies": "Exact six paths in release NEWS-LEASE.json; Luna public contract agreement; no claim-validator/schema or historical metadata repair lease.",
+-      "verification": "Owner115tests and static checks retained; reviewer direct-source9+10 with mocked reads/network denied, not browser execution. Claim validator byte-identical. Current reviewed newsFeed.ts de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d.",
++      "verification": "Owner115tests and static checks retained; reviewer direct-source9+10 with mocked reads/network denied, not browser execution. Claim validator byte-identical. Current reviewed newsFeed.ts de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d. Segment23 reads the full IST contract pair and selected late owner receipts. Historical consumer claim safeguards and exact author originals exist; candidate publication-batch timing and deployment metadata still do not provide immutable per-item execution/source-time authority. No current claim-validator or public-safe display pin was re-reviewed or changed.",
+       "acceptance_release_gate": "Independent author-conflict recheck, source-only authority controls and exact release composition. Metadata preservation and accepted-public loader require separate scoped work.",
+-      "next_action": "FORGE composes accepted six-file packet. Keep sync metadata loss, accepted-public claim producer/loader contract and duplicate-source identity as distinct open follow-ups; no historical repair or production action.",
++      "next_action": "FORGE composes accepted six-file packet. Keep sync metadata loss, accepted-public claim producer/loader contract and duplicate-source identity as distinct open follow-ups; no historical repair or production action. Retain the distinct IST-A exact-item lineage child below; do not recreate completed first-subject/provenance guards or promote historical observations into current public claim authority.",
+       "evidence": [
+         {
+           "path": "tasks/artifacts/release-integration-2026-10-23/NEWS-LEASE.json",
+@@ -12970,12 +13249,81 @@
+           "line": 1,
+           "sha256": "0e2fa0c25dcd08791c7367c794226d96feddb5ee70a9ea50d774d3d947f8f8c6",
+           "observed_at": "2026-10-23T15:58:32+00:00"
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 53,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 66,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md",
++          "original_path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
++          "line": 526,
++          "sha256": "e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32",
++          "original_sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Selected owner decisions, News contract/late lineage, Rankings source/history and final completion gates read at exact ranges; UUID/email identifiers redacted in readout. Other historical UI/QA receipts remain unread. No private values, pixels, execution or current runtime acceptance.",
++          "transformed_clause_snapshot": true
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md",
++          "original_path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
++          "line": 536,
++          "sha256": "e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32",
++          "original_sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Selected owner decisions, News contract/late lineage, Rankings source/history and final completion gates read at exact ranges; UUID/email identifiers redacted in readout. Other historical UI/QA receipts remain unread. No private values, pixels, execution or current runtime acceptance.",
++          "transformed_clause_snapshot": true
+         }
+       ],
+       "evidence_level": "independently accepted",
+       "evidence_scope": "Serialized presentation attribution only. Latest supported BILLING-REVIEW thread receipt read; no public claim, metadata-sync or dedup acceptance.",
+-      "as_of": "2026-10-23T15:58:32+00:00",
+-      "evidence_provenance": "Reboot recovery: read saved source-pinned owner/reviewer receipts and supported task summaries; imported tests were not rerun by ledger."
++      "as_of": "2026-10-24T20:48:23.669796+00:00",
++      "evidence_provenance": "Reboot recovery: read saved source-pinned owner/reviewer receipts and supported task summaries; imported tests were not rerun by ledger.",
++      "artifact_audit_segment23": [
++        {
++          "at": "2026-10-24T20:48:23.669796+00:00",
++          "before_fields": {
++            "verification": "Owner115tests and static checks retained; reviewer direct-source9+10 with mocked reads/network denied, not browser execution. Claim validator byte-identical. Current reviewed newsFeed.ts de83177935db749e99793a25ad55902c690c35a6ef3b4c03fe8a3f56e464218d.",
++            "next_action": "FORGE composes accepted six-file packet. Keep sync metadata loss, accepted-public claim producer/loader contract and duplicate-source identity as distinct open follow-ups; no historical repair or production action.",
++            "children": null
++          },
++          "note": "Documentary reconciliation only; prior scope, evidence and narrower closures retained. No new authority."
++        }
++      ],
++      "children": [
++        {
++          "child_id": "NEWS-SOURCE-PRESENTATION/IST-A-exact-item-lineage",
++          "title": "Reconcile the two exact News records against immutable writer evidence",
++          "status": "Consumer safeguards implemented; historical execution/source-time closure unverified",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "IFTTT-ACTIVATION"
++          ],
++          "next_action": "Locate later per-item input/output, source-time subject/claim authority and actual request-to-deployment binding for the retained Barzal/He and cap-dependent Soucy cases. Two candidate batch starts match publication times, but capped response literals and a READY candidate do not bind those items or prove the deployed writer. Preserve neutral reports for unsupported transactions and unknown lineage; no row repair or new claim authority.",
++          "source": {
++            "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
++            "line": 526
++          },
++          "approval_gate": "Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.",
++          "existing_work_credit": "Exact author originals and current captured passages/joins already exist. Historical local claim adapter and current independently accepted public-safe source display keep their separate limits. Inference-disabled batch metadata does not establish a paid model call."
++        }
++      ]
+     },
+     {
+       "taskID": "SITE-FORGE-TESTING-GROUNDS",
+@@ -16573,6 +16921,250 @@
+           },
+           "approval_gate": "Reconciliation-first; no application edits/tests, hosted reads/writes, refresh/backfill, provider calls, schema change or deployment by this audit. Any surviving repair needs current exact ownership and separate acceptance/release scope.",
+           "existing_work_credit": "The original all/ev/pp/pk console scope and current Stats grain work retain their own limits; no new 5v5 product rollout is authorized."
++        }
++      ]
++    },
++    {
++      "taskID": "SITE-INSEASON-WORKFLOW-ACCEPTANCE",
++      "group": "October24 artifact audit carry-forwards",
++      "scope": "Retain shared in-season workflow acceptance beyond fixtures",
++      "user_impact": "Managers need truthful account state, usable assistive controls and measurable first-use setup without hidden context or saved-intent loss.",
++      "implementation": "IST-S7.1 supported links/context and extensive local five-width, native zoom, fixture flow and RSO session/read-only fixes are complete. IST-S7.2 still separates actual assistive speech, broader contrast, real accounts and declared first-use measurements. Later exact closure unverified.",
++      "acceptance": "Proposed carry-forward of shared acceptance only; completed consumer work is not reopened.",
++      "release": "No new release or production observation by this audit; dated local and previously accepted release credit retained.",
++      "owner": "UNASSIGNED",
++      "reviewer": "UNASSIGNED",
++      "dependencies": "IST-S7.2; RSO-FE-07a; PAID-SYNC; relevant NEWS/START/WIGO/Rankings gates and current frontend ownership.",
++      "verification": "Full IST pair and selected completion matrix read. Source five-width/zoom/keyboard/focus and34selected Starter Board contrast measurements retain dated scope. They do not establish screen-reader speech, all contrast states, authenticated provider parity or first-time-user measurements.",
++      "acceptance_release_gate": "Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.",
++      "next_action": "Reconcile later accepted human/native-AT/real-account receipts for the children below. Reuse existing per-surface source/producer owners; no new UI redesign, forecast engine, entitlement change or account action.",
++      "evidence": [
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 160,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 164,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 184,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md",
++          "original_path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
++          "line": 398,
++          "sha256": "e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32",
++          "original_sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Selected owner decisions, News contract/late lineage, Rankings source/history and final completion gates read at exact ranges; UUID/email identifiers redacted in readout. Other historical UI/QA receipts remain unread. No private values, pixels, execution or current runtime acceptance.",
++          "transformed_clause_snapshot": true
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md",
++          "original_path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
++          "line": 484,
++          "sha256": "e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32",
++          "original_sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Selected owner decisions, News contract/late lineage, Rankings source/history and final completion gates read at exact ranges; UUID/email identifiers redacted in readout. Other historical UI/QA receipts remain unread. No private values, pixels, execution or current runtime acceptance.",
++          "transformed_clause_snapshot": true
++        }
++      ],
++      "as_of": "2026-10-24T20:48:23.669796+00:00",
++      "evidence_level": "Full primary pair and explicit selected owner clauses reviewed; current outcome unverified",
++      "evidence_scope": "Reconciliation-first at cited source bounds. No whole-page, source-population, current runtime or independent pixel acceptance. Preserve paused/deferred/retired work.",
++      "evidence_provenance": "Exact-hashed IST PRD/task and dated owner completion/late evidence clauses; private identifiers are not reproduced.",
++      "dispatch_class": "Proposed/held reconciliation; no implementation or external authority",
++      "source_inputs": [
++        "IST-S7.2",
++        "IST-C3.3 adopted FE continuity",
++        "IST A–F narrower local closures"
++      ],
++      "artifact_audit_segment23": [
++        {
++          "at": "2026-10-24T20:48:23.669796+00:00",
++          "before_fields": {
++            "children": null
++          },
++          "note": "Documentary reconciliation only; prior scope, evidence and narrower closures retained. No new authority."
++        }
++      ],
++      "children": [
++        {
++          "child_id": "SITE-INSEASON-WORKFLOW-ACCEPTANCE/native-AT-and-contrast",
++          "title": "Reconcile actual assistive speech and remaining rendered contrast",
++          "status": "Local keyboard/zoom and selected text contrast complete; broader AT unverified",
++          "owner": "UNASSIGNED",
++          "depends_on": [],
++          "next_action": "Locate later declared screen-reader/control/status/dialog speech results and the remaining rendered focus/icon/graph/hover/appearance contrast cases. Keep exact device/browser/task and data-state scope. Do not repeat already passed five-width/native zoom or the34selected Starter Board text measurements as if absent.",
++          "source": {
++            "path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++            "line": 164
++          },
++          "approval_gate": "Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.",
++          "existing_work_credit": "Five-width integrated flow, per-surface native zoom/focus, named log controls and measured Starter Board status/recovery text retain dated acceptance."
++        },
++        {
++          "child_id": "SITE-INSEASON-WORKFLOW-ACCEPTANCE/real-account-workflow-parity",
++          "title": "Reconcile real-account refresh/save/reopen/switch and free-manual parity",
++          "status": "Fictional session/local continuity passed; current real-account acceptance unverified",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "RSO-FE-07a",
++            "PAID-SYNC"
++          ],
++          "next_action": "Locate later exact real-account evidence for refresh/reconciliation, save/reopen, account switching, synced non-rostered/waiver-unknown state and explicit manual fork, preserving permissions and saved intent. Separate provider freshness, caller/producer admission and release from consumer fixtures; no auth/account/provider action authorized here.",
++          "source": {
++            "path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++            "line": 160
++          },
++          "approval_gate": "Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.",
++          "existing_work_credit": "Mounted fictional cross-tab races, stale save notice, retained-provider read-only guard, selected-move/protection/lock continuity and useful free manual schedule-only results are completed local work."
++        },
++        {
++          "child_id": "SITE-INSEASON-WORKFLOW-ACCEPTANCE/first-use-measurement",
++          "title": "Reconcile declared first-time setup and first useful result evidence",
++          "status": "Human baseline/participant/task/timing record unverified",
++          "owner": "UNASSIGNED",
++          "depends_on": [],
++          "next_action": "Locate a later declared participant/sample/task/timing record for manual setup→supported schedule result and confirmed-input completion. Distinguish cold/returning users, schedule-only/outcome-ready results and unresolved blockers. Do not invent a completion target or infer human usability from an automated browser pass.",
++          "source": {
++            "path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++            "line": 106
++          },
++          "approval_gate": "Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.",
++          "existing_work_credit": "Readiness destinations, labels/input review and native manual setup already exist; no competing planning/readiness engine is requested."
++        }
++      ]
++    },
++    {
++      "taskID": "SITE-RANKINGS-QUALIFICATION",
++      "group": "October24 artifact audit carry-forwards",
++      "scope": "Reconcile Rankings dataset, component and sample qualification",
++      "user_impact": "Historical/fantasy Rankings must disclose the cohort and supported components without treating eligibility thresholds as predictive stability.",
++      "implementation": "Historical purpose, opt-in fantasy preset, URL/context visibility, sample-label/unknown-rank safeguards, PP read selection and timeout/initial-request fixes are locally implemented in the source. Remaining IST-E5.1/5.3 dataset/component and stability evidence is parked for reconciliation under current Rankings pause.",
++      "acceptance": "Proposed/parked evidence qualification; no new metric, minimum, publisher run or experiment.",
++      "release": "No new release or production observation by this audit; dated local and previously accepted release credit retained.",
++      "owner": "UNASSIGNED",
++      "reviewer": "UNASSIGNED",
++      "dependencies": "IST-E5.1/5.3; PIPE-ROLLING-HISTORY-REPAIR for underlying history; AUDIT-A7 accepted query guards; SPRINT-OPTIMIZATION existing cost work.",
++      "verification": "Full IST pair and selected component/history/completion clauses distinguish published5v5 from unpersisted ALL rows, current-source diagnosis from immutable history and eligibility from stability. The old GP1/1/2 versus source56/65/82 comparison and one-player dry-run are diagnostic, not current population proof. No current Rankings source/data/app audit.",
++      "acceptance_release_gate": "Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.",
++      "next_action": "Keep parked. Reconcile later exact source-completeness/component-qualified cohort and metric-evaluation receipts under existing contracts before any resumed work. Reuse underlying history repair; preserve current accepted query/optimization and preset/labels rather than repeat them.",
++      "evidence": [
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 125,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 131,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/e4fc2b9ecdd0-tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "original_path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++          "line": 133,
++          "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "original_sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Full documentary PRD/task text read. Historical owner/browser/test/release claims keep dated provenance; no current app, pixel, hosted or execution verification. Stored runbooks/commands confer no authority.",
++          "transformed_clause_snapshot": false
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/source-snapshots/6aa646aa01bd-reviewed-clauses-owner-decisions-and-evidence.md",
++          "original_path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
++          "line": 483,
++          "sha256": "e3331de70faf2a79f3307b4024655976df80e5bf8a44f33952dff5a2f34b5a32",
++          "original_sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
++          "observed_at": "2026-10-24T20:48:23.669796+00:00",
++          "review_scope": "Selected owner decisions, News contract/late lineage, Rankings source/history and final completion gates read at exact ranges; UUID/email identifiers redacted in readout. Other historical UI/QA receipts remain unread. No private values, pixels, execution or current runtime acceptance.",
++          "transformed_clause_snapshot": true
++        }
++      ],
++      "as_of": "2026-10-24T20:48:23.669796+00:00",
++      "evidence_level": "Full primary pair and explicit selected owner clauses reviewed; current outcome unverified",
++      "evidence_scope": "Reconciliation-first at cited source bounds. No whole-page, source-population, current runtime or independent pixel acceptance. Preserve paused/deferred/retired work.",
++      "evidence_provenance": "Exact-hashed IST PRD/task and dated owner completion/late evidence clauses; private identifiers are not reproduced.",
++      "dispatch_class": "Parked reconciliation under existing Rankings pause; no resumed research, implementation, publication or threshold authority",
++      "source_inputs": [
++        "IST-E5.1 / IST-E5.3",
++        "Rankings historical/fantasy source qualification",
++        "Underlying history aliases PIPE-ROLLING-HISTORY-REPAIR"
++      ],
++      "artifact_audit_segment23": [
++        {
++          "at": "2026-10-24T20:48:23.669796+00:00",
++          "before_fields": {
++            "children": null
++          },
++          "note": "Documentary reconciliation only; prior scope, evidence and narrower closures retained. No new authority."
++        }
++      ],
++      "children": [
++        {
++          "child_id": "SITE-RANKINGS-QUALIFICATION/component-qualified-cohort",
++          "title": "Reconcile the actual component-qualified Rankings dataset",
++          "status": "Dated dataset/publisher/version and component closure unverified; parked",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "PIPE-ROLLING-HISTORY-REPAIR",
++            "AUDIT-A7"
++          ],
++          "next_action": "Locate later producer/version, full-history reconciliation and component-qualified coverage tied to the actual season/strength/window/minimums. Published5v5 counts cannot certify the ALL preset; restored PP reads do not create a600-second-qualified percentile or published MCM rows. Treat underlying history correction as the existing pipeline task and any subsequent publication as separately gated.",
++          "source": {
++            "path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++            "line": 131
++          },
++          "approval_gate": "Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.",
++          "existing_work_credit": "Eight-field PP selection, genuine-zero/null guards, minimum-relative labels, visible context, reproducible ALL preset and narrow AUDIT-A7 query acceptance retain credit."
++        },
++        {
++          "child_id": "SITE-RANKINGS-QUALIFICATION/sample-stability-evidence",
++          "title": "Reconcile metric-specific stability and early-season tradeoffs",
++          "status": "IST-E5.3 evidence gate parked; no new threshold/model dispatch",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "SITE-RANKINGS-QUALIFICATION/component-qualified-cohort"
++          ],
++          "next_action": "Locate later stability/evaluation evidence for the selected metric/components, season/strength/window and eligibility rules. Keep the owner-approved preset and expert historical controls;1GP/600seconds and qualified flags establish eligibility only. Record unresolved tradeoffs rather than invent universal GP rules, forecast reliability or a new benchmark.",
++          "source": {
++            "path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
++            "line": 129
++          },
++          "approval_gate": "Reconcile later exact closure or supersession first. Proposed/held documentary work only: no application/test/browser/account/provider/production call, repair, recompute, model or threshold change, publication, migration or release by this audit. Preserve current owners and accepted narrower work.",
++          "existing_work_credit": "The fantasy-preset decision is already approved and implemented locally; sample wording, unknown samples and local query/UI regressions are not reopened."
+         }
+       ]
+     }
+@@ -21599,12 +22191,12 @@
+     ],
+     "all_legacy_ids_mapped": true,
+     "task_rows_before": 188,
+-    "status": "Segment22:215 IDs;71 readable children; full content audit unfinished.",
++    "status": "Segment23:217 IDs;80 readable children; full content audit unfinished.",
+     "archive": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/archive/MASTER-TASKLIST-2026-10-20.before-2026-10-23.md",
+     "index_owner": "Parent retains Git/index/release; no Git mutation authorized by this update",
+     "roster": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/CHECKPOINT-INVENTORY.json",
+-    "after_sha256": "8b0a93d5e74ce9f32144e487ec7059ef33871505d7910e1c4bd47b0e7873b28e",
+-    "completed_at": "2026-10-24T20:30:45.375060+00:00",
++    "after_sha256": "b4f996bf98fe94e4d858e8848a3b07e940c6bebc0d5a3ce6d154c44137863bfa",
++    "completed_at": "2026-10-24T20:48:23.669796+00:00",
+     "git_status": "Local documentation only; release owner holds index, no ledger commit/push",
+     "reconciliation_history": {
+       "as_of": "2026-10-24T13:54:28.119238+00:00",
+@@ -21614,7 +22206,7 @@
+       "legacy_scopes_preserved": 32,
+       "new_task_id": "SITE-FORGE-TESTING-GROUNDS"
+     },
+-    "task_rows_after": 215
++    "task_rows_after": 217
+   },
+   "sos_unsaved_prerequisite_handoff": {
+     "as_of": "2026-10-23T15:58:32+00:00",
+@@ -22196,5 +22788,21 @@
+     "visible_children_added": 11,
+     "coverage": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/COVERAGE.json",
+     "whole_tree_content_complete": false
++  },
++  "artifact_audit_segment23_20261024": {
++    "at": "2026-10-24T20:48:23.669796+00:00",
++    "added_ids": [
++      "SITE-INSEASON-WORKFLOW-ACCEPTANCE",
++      "SITE-RANKINGS-QUALIFICATION"
++    ],
++    "changed_existing_ids": [
++      "NEWS-SOURCE-PRESENTATION",
++      "SITE-START-CONTRACT",
++      "SITE-WIGO",
++      "RSO-FE-07a"
++    ],
++    "visible_children_added": 9,
++    "coverage": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-23-inseason-trust-clarity/COVERAGE.json",
++    "whole_tree_content_complete": false
+   }
+ }

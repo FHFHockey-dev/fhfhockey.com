@@ -1,0 +1,32 @@
+{
+  "version": "fhfh-sos-data-prerequisite-v1",
+  "status": "target contract; no empirical cohort admitted",
+  "candidate_manifest_sha256": "d211aa5f1ac59bb396bb9f640de3acf47f30aea1ff5cccc7b425dd9311f2327b",
+  "network_or_production_execution_authorized": false,
+  "files": {
+    "cohort.json": {
+      "fields": ["season_id", "season_start", "season_end", "canonical_team_ids", "season_identity_mapping", "cutoffs", "expected_fixture_universe", "history_completeness_evidence", "schedule_completeness_evidence", "source_references", "exported_at", "export_sha256"],
+      "rules": ["one regular season", "full cohort", "no guessed relocation aliases", "missing coverage is explicit", "cutoffs fixed before outcome inspection"]
+    },
+    "result-revisions.jsonl": {
+      "fields": ["game_id", "season_id", "phase", "home_team_id", "away_team_id", "start_at", "end_at", "end_evidence", "outcome", "home_points", "away_points", "source_row_id", "source_revision_key", "source_payload_hash", "observed_at", "available_at", "supersedes_id", "export_row_sha256"],
+      "optional_fields": ["home_points", "away_points", "supersedes_id"],
+      "outcomes": ["home_reg", "away_reg", "home_ot", "away_ot", "home_so", "away_so"],
+      "rules": ["specific revision observed and available strictly before cutoff", "game ended strictly before cutoff", "no original publication timestamp attached to corrected later content", "duplicate or conflicting canonical IDs rejected", "historical actual ties need a separate points-system contract", "end_at is not synthesized from fetched_at; completion-bound alternative requires contract review"]
+    },
+    "schedule-snapshots.jsonl": {
+      "header_fields": ["snapshot_id", "season_id", "observed_at", "available_at", "horizon_start", "horizon_end", "complete_teams", "completeness_evidence", "revision_hash", "source_manifest", "export_sha256"],
+      "fixture_fields": ["game_id", "season_id", "phase", "home_team_id", "away_team_id", "scheduled_start_at", "status", "known_at", "source_revision_key"],
+      "rules": ["snapshot observation and availability strictly before cutoff", "each fixture revision known no later than snapshot observation", "future kickoff strictly after cutoff", "horizon start inclusive and end exclusive", "postponed/unresolved statuses are not silently omitted", "current final schedule is not a historical future schedule", "completeness flag alone is not proof"]
+    },
+    "comparison.json": {
+      "fields": ["candidate_version", "code_hashes", "data_hashes", "outcome_mode", "prior_mean", "prior_strength", "prior_known_at", "exclusion_policy", "cutoffs", "horizons_days", "development_and_evaluation_split", "baseline_methods", "evaluation_target", "metrics", "missingness_policy", "uncertainty_plan", "promotion_decision_rule"],
+      "rules": ["7-day and 28-day horizons reported separately", "identical team-fixture support across methods", "no tuning on held-out outcomes", "no arbitrary probability interpretation of raw indices", "no game-volume or off-night multiplier in SoS", "unresolved empirical choices remain explicit rather than populated with invented defaults"]
+    }
+  },
+  "optional_later_team_quality_inputs": {
+    "required_for_record_and_colley_baselines": false,
+    "fields_if_used": ["team_id", "metric_definition", "model_version", "source_through_at", "computed_at", "published_at", "available_at", "revision_id", "payload_hash", "value", "uncertainty", "coverage"],
+    "rules": ["no latest-only view for historical cutoff", "no current xG model recomputation presented as historical feature vintage", "source date and row creation time do not establish unchanged values after upsert"]
+  }
+}

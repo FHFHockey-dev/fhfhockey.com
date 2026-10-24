@@ -1,0 +1,190 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/executionAdapter.test.ts lib/player-forecasts/p07BridgeClaimOracle.test.ts hooks/useRosterPlanning.test.tsx hooks/useCandidateMetrics.test.tsx
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web
+
+(node:27933) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/executionAdapter.test.ts (19 tests) 55ms
+(node:27933) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ hooks/useCandidateMetrics.test.tsx (3 tests | 3 failed) 13ms
+   × delegates without synchronous fallback, reuses irrelevant-intent work, and cancels stale results 9ms
+     → expected "spy" to be called with arguments: [ { snapshot: { id: 'one' }, …(1) } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[33m@@ -1,16 +1,24 @@[90m
+[2m  [[22m
+[2m    {[22m
+[31m+     "candidateOptions": {[90m
+[31m+       "requestedPlayerIds": [],[90m
+[31m+     },[90m
+[2m      "intent": {[22m
+[32m-       "alternativeCount": 5,[90m
+[31m+       "alternativeCount": 10,[90m
+[2m        "excludedPlayerIds": [],[22m
+[2m        "goalieCoverage": "accept_risk",[22m
+[2m        "goalieSplit": "mon_thu",[22m
+[2m        "goalieWindow": "early",[22m
+[2m        "protectedPlayerIds": [],[22m
+[2m        "revision": 0,[22m
+[2m        "steps": [],[22m
+[31m+     },[90m
+[31m+     "options": {[90m
+[31m+       "allowRead": undefined,[90m
+[31m+       "publicContext": undefined,[90m
+[31m+       "refreshKey": "[null,0]",[90m
+[2m      },[22m
+[2m      "snapshot": {[22m
+[2m        "id": "one",[22m
+[2m      },[22m
+[2m    },[22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+   × reports Worker failure or absence without evaluating on the main thread 1ms
+     → the given combination of arguments (undefined and string) is invalid for this assertion. You can use an array, a map, an object, a set, a string, or a weakset instead of a string
+   × forwards manager-requested candidates as a distinct calculation without reusing bounded results 2ms
+     → expected undefined to deeply equal [ [ 'c', 1 ] ]
+(node:27933) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ hooks/useRosterPlanning.test.tsx (2 tests | 2 failed) 10ms
+   × hides previous results in the first render after revision, range, account or intent changes 8ms
+     → expected null to be { snapshotId: 'revision-one', …(1) } // Object.is equality
+   × clears obsolete errors immediately and cancels an unfinished worker 2ms
+     → the given combination of arguments (null and string) is invalid for this assertion. You can use an array, a map, an object, a set, a string, or a weakset instead of a string
+(node:27933) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/p07BridgeClaimOracle.test.ts (1 test) 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  hooks/useCandidateMetrics.test.tsx > delegates without synchronous fallback, reuses irrelevant-intent work, and cancels stale results
+AssertionError: expected "spy" to be called with arguments: [ { snapshot: { id: 'one' }, …(1) } ][90m
+
+Received: 
+
+[1m  1st spy call:
+
+[22m[33m@@ -1,16 +1,24 @@[90m
+[2m  [[22m
+[2m    {[22m
+[31m+     "candidateOptions": {[90m
+[31m+       "requestedPlayerIds": [],[90m
+[31m+     },[90m
+[2m      "intent": {[22m
+[32m-       "alternativeCount": 5,[90m
+[31m+       "alternativeCount": 10,[90m
+[2m        "excludedPlayerIds": [],[22m
+[2m        "goalieCoverage": "accept_risk",[22m
+[2m        "goalieSplit": "mon_thu",[22m
+[2m        "goalieWindow": "early",[22m
+[2m        "protectedPlayerIds": [],[22m
+[2m        "revision": 0,[22m
+[2m        "steps": [],[22m
+[31m+     },[90m
+[31m+     "options": {[90m
+[31m+       "allowRead": undefined,[90m
+[31m+       "publicContext": undefined,[90m
+[31m+       "refreshKey": "[null,0]",[90m
+[2m      },[22m
+[2m      "snapshot": {[22m
+[2m        "id": "one",[22m
+[2m      },[22m
+[2m    },[22m
+[39m[90m
+
+Number of calls: [1m1[22m
+[39m
+ ❯ hooks/useCandidateMetrics.test.tsx:25:29
+     23|   const first = MockWorker.instances[0];
+     24|   expect(first.postMessage).toHaveBeenCalledOnce();
+     25|   expect(first.postMessage).toHaveBeenCalledWith({ snapshot, intent: {…
+       |                             ^
+     26|   expect(intent.steps).toEqual([]);
+     27|   expect(result.current.loading).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  hooks/useCandidateMetrics.test.tsx > reports Worker failure or absence without evaluating on the main thread
+AssertionError: the given combination of arguments (undefined and string) is invalid for this assertion. You can use an array, a map, an object, a set, a string, or a weakset instead of a string
+ ❯ hooks/useCandidateMetrics.test.tsx:52:32
+     50|   const { result, unmount } = renderHook(() => useCandidateMetrics(sna…
+     51|   act(() => MockWorker.instances[0].onerror?.());
+     52|   expect(result.current.error).toContain("unavailable");
+       |                                ^
+     53|   expect(result.current.loading).toBe(false);
+     54|   unmount();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  hooks/useCandidateMetrics.test.tsx > forwards manager-requested candidates as a distinct calculation without reusing bounded results
+AssertionError: expected undefined to deeply equal [ [ 'c', 1 ] ]
+
+[32m- Expected:[39m 
+[
+  [
+    "c",
+    1,
+  ],
+]
+
+[31m+ Received:[39m 
+undefined
+
+ ❯ hooks/useCandidateMetrics.test.tsx:65:48
+     63|     { initialProps: { ids: [] as string[] } });
+     64|   act(() => MockWorker.instances[0].finish(1));
+     65|   expect(result.current.metrics?.activePoints).toEqual([["c", 1]]);
+       |                                                ^
+     66|   rerender({ ids: ["z", "c", "z"] });
+     67|   expect(result.current.metrics).toBeUndefined();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  hooks/useRosterPlanning.test.tsx > hides previous results in the first render after revision, range, account or intent changes
+AssertionError: expected null to be { snapshotId: 'revision-one', …(1) } // Object.is equality
+
+[32m- Expected:[39m 
+{
+  "intentRevision": 0,
+  "snapshotId": "revision-one",
+}
+
+[31m+ Received:[39m 
+null
+
+ ❯ hooks/useRosterPlanning.test.tsx:29:33
+     27|   const first = MockWorker.instances[0];
+     28|   act(() => first.finish(plan));
+     29|   expect(result.current.result).toBe(plan);
+       |                                 ^
+     30|   expect(first.terminate).toHaveBeenCalledOnce();
+     31|   rerender({ data: snapshot, selected: intent });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  hooks/useRosterPlanning.test.tsx > clears obsolete errors immediately and cancels an unfinished worker
+AssertionError: the given combination of arguments (null and string) is invalid for this assertion. You can use an array, a map, an object, a set, a string, or a weakset instead of a string
+ ❯ hooks/useRosterPlanning.test.tsx:61:32
+     59|   }, { initialProps: { selected: intent } });
+     60|   act(() => MockWorker.instances[0].onerror?.());
+     61|   expect(result.current.error).toContain("could not complete");
+       |                                ^
+     62|   expect(result.current.loading).toBe(false);
+     63|   const count = observed.length;
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  2 failed | 2 passed (4)
+      Tests  5 failed | 20 passed (25)
+   Start at  11:14:05
+   Duration  1.34s (transform 138ms, setup 17ms, collect 314ms, tests 79ms, environment 627ms, prepare 108ms)
+

@@ -1,0 +1,15 @@
+{
+  "source": "parent delegation plus task10 diary line10 and candidate.json",
+  "worker": "01a1645a-6c9d-77ac-a105-0513908cb0fc",
+  "planner": {
+    "pinned_r2": "f3ba1b151776a6fb1060a0b20d24eb2d28c2998cbab14682489c913c4f7791c9",
+    "current": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474",
+    "task10_candidate": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474",
+    "matches_task10_packet": true
+  },
+  "later_ui_lease": [
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+    "web/components/RosterScheduleOptimizer/SlotWeekGrid.tsx"
+  ],
+  "candidate_is_not_current_tree": true
+}

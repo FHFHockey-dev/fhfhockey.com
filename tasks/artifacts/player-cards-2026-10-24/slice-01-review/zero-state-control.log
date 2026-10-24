@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/player-cards-2026-10-24/slice-01-review/review.vitest.config.mts tasks/artifacts/player-cards-2026-10-24/slice-01-review/independent-controls.test.tsx -t keeps missing, valid unranked and observed-zero presentations distinct --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+(node:60777) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tasks/artifacts/player-cards-2026-10-24/slice-01-review/independent-controls.test.tsx (5 tests | 4 skipped) 18ms
+
+ Test Files  1 passed (1)
+      Tests  1 passed | 4 skipped (5)
+   Start at  13:03:53
+   Duration  456ms (transform 133ms, setup 8ms, collect 186ms, tests 18ms, environment 135ms, prepare 27ms)
+

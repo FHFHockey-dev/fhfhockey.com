@@ -1,0 +1,37 @@
+[
+  {
+    "title": "provider refresh proposes repairs while keeping a selected move",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "connected refresh and account save preserve forecast permissions and exclusions",
+    "project": "chromium",
+    "status": "timedOut",
+    "errors": [
+      "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+      "Error: locator.check: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#rso-roster-edit').getByRole('checkbox', { name: 'Protect', exact: true }).first()\u001b[22m\n\n\n  1086 |     return { provider: value.context.provider, intent: value.intent, roster: value.roster, lockedAssignments: value.lockedAssignments };\n  1087 |   })).toEqual({ provider: \"manual\", intent: beforeSwitch.intent, roster: beforeSwitch.roster, lockedAssignments: beforeSwitch.lockedAssignments });\n> 1088 |   await rosterPanel.getByRole(\"checkbox\", { name: \"Protect\", exact: true }).first().check();\n       |                                                                                     ^\n  1089 |   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem(\"fhfh:rso:workspace:v1\")!).intent.protectedPlayerIds)).toEqual([players[0].id]);\n  1090 |   expect(pageErrors).toEqual([]);\n  1091 |   await page.screenshot({ path: testInfo.outputPath(\"rso-manual-fork-editing.png\") });\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1088:85"
+    ]
+  },
+  {
+    "title": "candidate worker ranks the complete population without blocking filters and retains zero AGP",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "compact future and partial weeks use league dates and retain the full horizon without saving",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "compact initial future week defaults to Monday and preserves clipped horizons",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m1.7109375\u001b[39m\n\n  1721 |     await writeFile(test.info().outputPath(\"slider-alignment-failure.json\"), JSON.stringify({ date, viewport: page.viewportSize(), thumbCenter, headerCenter, delta: Math.abs(thumbCenter - headerCenter), geometry, selectedHeader }, null, 2));\n  1722 |   }\n> 1723 |   expect(Math.abs(thumbCenter - headerCenter)).toBeLessThanOrEqual(1);\n       |                                                ^\n  1724 | }\n  1725 |\n  1726 | for (const count of [19, 20, 29]) test(`compact layout accounts for ${count} slots with a maximum of 20 slot rows and internal labels`, async ({ page }, testInfo) => {\n    at expectDaySliderAligned (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1723:48)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2140:3"
+    ]
+  }
+]

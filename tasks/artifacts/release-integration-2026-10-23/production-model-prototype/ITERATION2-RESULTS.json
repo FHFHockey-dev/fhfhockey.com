@@ -1,0 +1,12 @@
+[
+  {
+    "name": "iteration2-types",
+    "exit_code": 0,
+    "ended_at": "2026-10-23T12:30:25.566750+00:00"
+  },
+  {
+    "name": "iteration2-tests",
+    "exit_code": 1,
+    "ended_at": "2026-10-23T12:30:28.337579+00:00"
+  }
+]

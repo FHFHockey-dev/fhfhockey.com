@@ -1,0 +1,55 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+ ✓ web/lib/forge-testing-grounds/boundedWorker.test.ts (16 tests) 22ms
+ ❯ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/boundaries.test.ts (10 tests | 1 failed) 17ms
+   ✓ Independent slice03 logical runner boundaries > fences a taken-over lease at expiry and preserves the newer checkpoint against all delayed result forms 4ms
+   ✓ Independent slice03 logical runner boundaries > atomically accepts one conflicting logical completion and never double-counts lost acknowledgements 1ms
+   ✓ Independent slice03 logical runner boundaries > rejects invalid or oversized completions without partial progress and preserves the valid lease for one acceptance 2ms
+   ✓ Independent slice03 logical runner boundaries > resumes the last accepted detached checkpoint after another worker crashes and rejects its late checkpoint 1ms
+   ✓ Independent slice03 logical runner boundaries > cancels an active later unit without discarding accepted-prefix accounting or reviving on old acknowledgements 1ms
+   ✓ Independent slice03 logical runner boundaries > detaches configuration/limits and prevents an active manifest from changing under its idempotency key 0ms
+   ✓ Independent slice03 logical runner boundaries > seals every payload until owner/time completion and denies real-history reveal even after the same conditions 1ms
+   ✓ Independent slice03 logical runner boundaries > discards an old worker's promise after takeover and a newer accepted output without rewriting progress 1ms
+   ✓ Independent slice03 logical runner boundaries > preserves pending outcome accounting when the run deadline stops an otherwise pending evaluation 0ms
+   × Independent slice03 logical runner boundaries > does not relabel unavailable future outcomes as failed when repeated pending checks exhaust execution budget [S03-R1] 5ms
+     → expected { phase: 'evaluation', total: 1, …(5) } to match object { successful: +0, failed: +0, …(1) }
+(4 matching properties omitted from actual)
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/boundaries.test.ts > Independent slice03 logical runner boundaries > does not relabel unavailable future outcomes as failed when repeated pending checks exhaust execution budget [S03-R1]
+AssertionError: expected { phase: 'evaluation', total: 1, …(5) } to match object { successful: +0, failed: +0, …(1) }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "failed": 0,
+-   "pending": 1,
++   "failed": 1,
++   "pending": 0,
+    "successful": 0,
+  }
+
+ ❯ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/boundaries.test.ts:136:60
+    134|     }
+    135|     expect(await store.claim(OWNER, runId, B, T + 4)).toBeNull();
+    136|     expect((await store.progress(OWNER, runId)).stages[0]).toMatchObje…
+       |                                                            ^
+    137|     expect(await store.results(OWNER, runId)).toEqual({ status: "seale…
+    138|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 25 passed (26)
+   Start at  11:39:21
+   Duration  317ms (transform 44ms, setup 3ms, collect 64ms, tests 39ms, environment 0ms, prepare 59ms)
+

@@ -1,0 +1,170 @@
+{
+  "at": "2026-10-24T20:14:03.488738+00:00",
+  "changes": {
+    "PIPE-ROLLING-DROP": {
+      "fields": {
+        "implementation": "R17 writer and 491-column drop shipped/applied. Dated October 22 first post-drop writer/natural completion is recorded, and later task2gate clears S-G row parity for its cohort. Space-reclamation outcome remains unverified; early-season stale/missing rows are separate history repair.",
+        "acceptance": "Dated column-drop/post-drop writer receipts and later 20-player/all-five-strength parity disposition retained; only 3 players have the detailed by-date/field proof. No whole-history, current natural-pipeline or completed vacuum claim.",
+        "verification": "Streamlining records R17 8b99c22d2 and applied ledger20261021185034, then October 22 rolling writes of 80/280 rows and 0 failed/0 degraded pipeline completion. Task2 VERDICT lines 57–68 clears the column drop: detailed later rows field-identical at 1e-6; early September29/30 and October3/6 gaps are stale-history, not a drop defect. pg_repack unavailable; TJ selected quiet-hour VACUUM FULL, with no later retained outcome inspected.",
+        "acceptance_release_gate": "Do not reopen cleared S-G parity or rerun the dated first-write check. Broader current natural proof stays PIPE-NATURAL; early-history application stays PIPE-ROLLING-HISTORY-REPAIR. Space reclamation remains a separate owner operation, never an audit command.",
+        "next_action": "Preserve the dated S-G/post-drop closures and reconcile only the existing owner space-reclamation outcome or deferral below. Keep current natural-run qualification and early-history repair under their existing IDs; no new parity replay or database maintenance.",
+        "children": [
+          {
+            "child_id": "PIPE-ROLLING-DROP/storage-reclaim-disposition",
+            "title": "Reconcile the owner space-reclamation outcome",
+            "status": "Owner operation selected; later retained completion unverified",
+            "owner": "PIPELINE",
+            "depends_on": [],
+            "next_action": "Locate an existing dated TJ VACUUM FULL outcome or explicit deferral. pg_repack was unavailable at 1.5.0 and no extension was created. Preserve quiet-hour/operator ownership; do not run SQL or infer completed reclamation from the column drop or first successful writes.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+              "line": 271
+            },
+            "approval_gate": "Owner-only operational disposition; no database, lock, maintenance, refresh or production action by this audit.",
+            "existing_work_credit": "R17/491-column drop, dated first post-drop writes and later S-G parity clearance retain closure. Early-season stale/missing rows remain PIPE-ROLLING-HISTORY-REPAIR."
+          }
+        ]
+      },
+      "refs": [
+        [
+          "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          252
+        ],
+        [
+          "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          271
+        ],
+        [
+          "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          314
+        ],
+        [
+          "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
+          57
+        ]
+      ]
+    }
+  },
+  "additions": [
+    {
+      "row": {
+        "taskID": "SITE-ROLLING-READER-CONTRACT",
+        "group": "October24 artifact audit carry-forwards",
+        "scope": "Reconcile public rolling-reader hydration and validation scope",
+        "user_impact": "Player Trends can lose stored rolling windows after compaction, and audit comparisons can flag intentional pruning as a data mismatch; silent strength substitution can mislabel the inspected slice.",
+        "implementation": "October 17 pass2 NEW7 explicitly reopens the public Trends and validation consumers after June 11 a8e1f5495d compaction. October 21 streamlining still describes the public reader as wide-row-only and distinguishes runtime columns from dropped columns. Later exact closure is unverified; no current source or runtime defect reproduced by this audit.",
+        "acceptance": "Proposed P1 reconciliation with two separately readable consumer obligations and a source-reported P3 strength-truthfulness follow-up. No implementation or acceptance granted.",
+        "release": "No new release or production observation. Earlier NEW-027 SELECT repair, R17 column-drop writer and Release B FORGE hydration keep their exact credit.",
+        "owner": "UNASSIGNED",
+        "reviewer": "UNASSIGNED",
+        "dependencies": "Pass2NEW7/C0039 supersedes C0011(2.4), C0024(4.2), remediation-blueprint4.6 and historical master5.2.7. PIPE-ROLLING-DROP, PIPE-ROLLING-HISTORY-REPAIR and FORGE-HYDRATION-HB remain distinct.",
+        "verification": "Full paired Rolling contracts/tasklists, backlog, formula ledger, owner reconciliation and G3 source read. No existing canonical row was found for these public/validation consumer clauses. Historical NEW-027 fixes a nonexistent-column SELECT; later FORGE hydration and dropped-column exclusions do not establish this public/validation closure. G3 source problem 5 separately reports 5v5-to-all coercion; actual current survival unverified.",
+        "acceptance_release_gate": "First reconcile later exact receipts and current consumer ownership. Any accepted local repair must prove compacted primary/support identity, intentional-null/missing/zero, comparison fidelity and truthful selected strength; source-scoped tests do not establish production qualification.",
+        "next_action": "Reconcile the three child scopes against later accepted receipts before proposing a bounded surviving repair. Reuse canonical contracts and preserve the completed writer/formula/availability/PP/auth/fullRefresh work; no whole rolling rebuild or historical forecast rewrite.",
+        "evidence": [],
+        "as_of": "2026-10-24T20:14:03.488738+00:00",
+        "evidence_level": "Dated task and contradictory source receipts fully read; current application/hosted closure unverified",
+        "evidence_scope": "Documentary source reconciliation only. Public player Trends, validation comparisons and truthful strength are separate from shipped FORGE hydration, storage parity, paused Rankings/GS2/S13/S14 and history repair.",
+        "evidence_provenance": "Exact hashed source task116, October 17 G3 findings126/154 and October 21 streamlining239.",
+        "dispatch_class": "Proposed/held reconciliation; no implementation or external authority",
+        "source_inputs": [
+          "Rolling pass2NEW7 / C0039",
+          "C0011(2.4) / C0024(4.2) / remediation-blueprint4.6 / historical master5.2.7",
+          "G3 top problem5 (5v5 truthfulness)"
+        ]
+      },
+      "children": [
+        {
+          "child_id": "SITE-ROLLING-READER-CONTRACT/NEW7-public-trends-hydration",
+          "title": "Reconcile public player Trends reads against compacted storage",
+          "status": "Dated P1 regression; current exact closure unverified",
+          "owner": "UNASSIGNED",
+          "depends_on": [],
+          "next_action": "Find later exact public-reader primary/sidecar hydration or intentional field-policy receipts and a regression built from genuinely compacted rows. Preserve row identity, selected strength/window and valid-zero/null semantics; do not treat a SELECT-only fix or HTTP200 as populated-chart proof.",
+          "source": {
+            "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md",
+            "line": 116
+          },
+          "approval_gate": "Reconciliation-first; no application edits/tests, hosted reads/writes, refresh/backfill, provider calls, schema change or deployment by this audit. Any surviving repair needs current exact ownership and separate acceptance/release scope.",
+          "existing_work_credit": "August 1 NEW-027 missing-column SELECT fix stays closed. The released FORGE S-F sidecar reader is a different consumer; this does not reopen its accepted hydration."
+        },
+        {
+          "child_id": "SITE-ROLLING-READER-CONTRACT/NEW7-validation-comparison",
+          "title": "Reconcile stored-versus-recomputed comparisons after compaction",
+          "status": "Dated P1 false-mismatch finding; current exact closure unverified",
+          "owner": "UNASSIGNED",
+          "depends_on": [],
+          "next_action": "Find later exact validation-payload/checker hydration or field-exclusion contract and compacted-row regressions. Compare the intended stored primary-plus-support surface and label intentional compaction separately from missing source data or real mismatches.",
+          "source": {
+            "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md",
+            "line": 116
+          },
+          "approval_gate": "Reconciliation-first; no application edits/tests, hosted reads/writes, refresh/backfill, provider calls, schema change or deployment by this audit. Any surviving repair needs current exact ownership and separate acceptance/release scope.",
+          "existing_work_credit": "Original formula/window metadata, comparison matrices, support visibility and test/UI work retain completion. R17 dropped-column exclusions alone do not prove retained pruned fields are rejoined."
+        },
+        {
+          "child_id": "SITE-ROLLING-READER-CONTRACT/G3-strength-truthfulness",
+          "title": "Reconcile unsupported 5v5 requests and validation labels",
+          "status": "Proposed P3 contract reconciliation; no current defect reproduced",
+          "owner": "UNASSIGNED",
+          "depends_on": [],
+          "next_action": "Reconcile later exact route/selector receipts for true 5v5. Establish whether it is supported or explicitly rejected/disclosed; an unsupported request must not silently return all-strength data as the requested slice. Do not infer that writer support alone approves expanding the console.",
+          "source": {
+            "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md",
+            "line": 154
+          },
+          "approval_gate": "Reconciliation-first; no application edits/tests, hosted reads/writes, refresh/backfill, provider calls, schema change or deployment by this audit. Any surviving repair needs current exact ownership and separate acceptance/release scope.",
+          "existing_work_credit": "The original all/ev/pp/pk console scope and current Stats grain work retain their own limits; no new 5v5 product rollout is authorized."
+        }
+      ],
+      "refs": [
+        [
+          "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md",
+          116
+        ],
+        [
+          "tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md",
+          126
+        ],
+        [
+          "tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md",
+          154
+        ],
+        [
+          "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+          239
+        ]
+      ]
+    }
+  ],
+  "deduplication": [
+    {
+      "candidate": "Public/validation compacted readers",
+      "decision": "One new parent; two consumer children plus truthful-strength child. Not FORGE hydration, history repair, S-G drop or NEW-027 SELECT closure."
+    },
+    {
+      "candidate": "Old21 pass2 backlog items",
+      "decision": "KeepDone per August19 owner decision; no new tasks."
+    },
+    {
+      "candidate": "Alias retirement / PKsource-tail",
+      "decision": "Keep owner-deferred; later491drop is not blanket compatibility-retirement proof. No new implementation task from old wording."
+    },
+    {
+      "candidate": "FullRefresh / gamepaging / auth / optional metrics",
+      "decision": "Completed source/release receipts retained; no reopening."
+    },
+    {
+      "candidate": "Post-drop first writer / parity",
+      "decision": "Correct stale PIPE-ROLLING-DROP status; current natural and early history remain separate."
+    },
+    {
+      "candidate": "Historical coordinator routes/runtime/cron",
+      "decision": "Map to existing pipeline/source/natural/documentation IDs; March operator runbooks grant no authority or current timing claim."
+    },
+    {
+      "candidate": "STATS-S13/S14 and deferred candlesticks",
+      "decision": "Untouched; public player Trends hydration is not GS2cohort scope or a new modeling proposal."
+    }
+  ]
+}

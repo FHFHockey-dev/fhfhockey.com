@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-24T18:39:49.093535+00:00",
+  "full_reviewed_source_drift": [],
+  "partial_live_changes_after_cutoff": [],
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "415d918354a7f40ceb6410aa732e8feebd6bc8c188631e282f49f128bb2f0b81",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "51c7962014116573f65538c640ab977dcbfe09d4ef58360bf6a70baabc7e2abf",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "894cb6a63fcf63244b10a08e610c93276c8e713b223ff7f53616f074c6c4190d"
+  },
+  "frozen_coordination_snapshot": "COORDINATION-READ.json",
+  "scope": "Checked snapshots preserve the stated cutoff; omitted and later live content remains partial."
+}

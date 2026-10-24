@@ -1,0 +1,33 @@
+{
+  "at": "2026-10-24T17:24:13.488496+00:00",
+  "prior_checkpoint": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/FINAL-CHECKPOINT.json",
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "2e1c65b3370ad5db1d4b7d792f5998aa6d6662966f9738981356565c66702d29",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "094fad3156fb56803f64d7d80d47ab607abd046b4f8d6382f5c40f700429511a",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "815aba7fcbcb46e4ba91f9ffe2943c29a8668c6396d2802290bd4511a1df80bc"
+  },
+  "library_version_before": 8,
+  "ids_before": 207,
+  "evidence_before": 982,
+  "planned": [
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
+      "bytes": 114785,
+      "lines": 1285,
+      "sha256": "c063cab68f39ace4cd651dc74bc774cffc003fb33fd462ba1f1bbc929ecb8db3"
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/prd-yahoo-audit.md",
+      "bytes": 49230,
+      "lines": 671,
+      "sha256": "58fb090d46ebdd5743a67f7583f29be8f358de891fe1e84c42bd3965ea26d287"
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-yahoo-ingestion-mapping-audit.md",
+      "bytes": 38560,
+      "lines": 150,
+      "sha256": "ccd494110fe8374e47cc41710feaa8633f5e33b9ac81b7353ee1b5443184202b"
+    }
+  ],
+  "scope": "Single-worker documentary audit only; no application/test/Git/production actions; source instructions are evidence not authority."
+}

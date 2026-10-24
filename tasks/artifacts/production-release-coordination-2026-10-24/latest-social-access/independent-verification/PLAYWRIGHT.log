@@ -1,0 +1,47 @@
+
+Running 5 tests using 1 worker
+
+social_editor_fixture_summary {"role":"social_editor","roleReads":2,"profileReads":3,"settingsReads":1,"blockedLocalApis":[],"abortedExternal":["https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://img.buymeacoffee.com/button-api/","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://cdn.vercel-insights.com/v1/script.debug.js","https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"],"rejectedBootstrap":[],"syntheticWriteAttempts":[]}
+  ✓  1 e2e/social-share.spec.ts:116:5 › default summary, recalculated dates and actual PNG match one frozen edition (2.0s)
+social_editor_fixture_summary {"role":"social_editor","roleReads":2,"profileReads":3,"settingsReads":1,"blockedLocalApis":[],"abortedExternal":["https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://img.buymeacoffee.com/button-api/","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://cdn.vercel-insights.com/v1/script.debug.js","https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"],"rejectedBootstrap":[],"syntheticWriteAttempts":[]}
+  ✘  2 e2e/social-share.spec.ts:823:5 › schedule-aware tier list shows only tier teams' players as list rows, strict and widened (1.5s)
+social_editor_fixture_summary {"role":"signed-out","roleReads":0,"profileReads":0,"settingsReads":0,"blockedLocalApis":[],"abortedExternal":["https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://img.buymeacoffee.com/button-api/","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://cdn.vercel-insights.com/v1/script.debug.js","https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"],"rejectedBootstrap":[],"syntheticWriteAttempts":[]}
+  ✓  3 e2e/social-share.spec.ts:851:5 › social access fixture denies a signed-out page without workspace or edition reads (721ms)
+social_editor_fixture_summary {"role":"basic","roleReads":2,"profileReads":3,"settingsReads":1,"blockedLocalApis":[],"abortedExternal":["https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://img.buymeacoffee.com/button-api/","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://cdn.vercel-insights.com/v1/script.debug.js","https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"],"rejectedBootstrap":[],"syntheticWriteAttempts":[]}
+  ✓  4 e2e/social-share.spec.ts:861:5 › social access fixture denies a basic role without workspace or edition reads (693ms)
+  ✓  5 e2e/social-share.spec.ts:871:5 › actual credential-free edition API denies before source work and stays private no-store (344ms)
+
+
+  1) e2e/social-share.spec.ts:823:5 › schedule-aware tier list shows only tier teams' players as list rows, strict and widened 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoEqual[2m([22m[32mexpected[39m[2m) // deep equality[22m
+
+    [32m- Expected  - 2[39m
+    [31m+ Received  + 2[39m
+
+    [2m  Object {[22m
+    [2m    "brokenImages": 0,[22m
+    [32m-   "fits": true,[39m
+    [32m-   "rowsInside": true,[39m
+    [31m+   "fits": false,[39m
+    [31m+   "rowsInside": false,[39m
+    [2m  }[22m
+
+      840 |       await expect(block.locator("[data-player]").first()).toContainText("L5 GP");
+      841 |     }
+    > 842 |     expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
+          |                                         ^
+      843 |     await expect(download).toBeEnabled();
+      844 |     await downloadedPng(page, `streaming-tiers-${mode}`);
+      845 |   }
+        at /private/tmp/fhfh-latest-social-access-zbjtop5e/web/e2e/social-share.spec.ts:842:41
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../../../Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/latest-social-access/independent-verification/test-results/social-share-schedule-awar-af104-ist-rows-strict-and-widened/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../../../Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/latest-social-access/independent-verification/test-results/social-share-schedule-awar-af104-ist-rows-strict-and-widened/error-context.md
+
+  1 failed
+    e2e/social-share.spec.ts:823:5 › schedule-aware tier list shows only tier teams' players as list rows, strict and widened 
+  4 passed (6.6s)

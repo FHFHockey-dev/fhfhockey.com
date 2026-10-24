@@ -5,11 +5,13 @@ type SnapshotRow = {
   playerId: number;
   ownership: number | null;
   observedOn: string | null;
+  unavailableReason?: "ambiguous_identity";
 };
 
 type PlayerIdResolution = {
   requestedId: string;
   yahooPlayerId: string | null;
+  ambiguousIdentity: boolean;
 };
 
 type SupabaseQueryClient = {
@@ -148,14 +150,15 @@ async function resolveYahooPlayerIds(
 
       namesById.forEach((name, nhlId) => {
         const matches = yahooByName.get(name);
-        if (matches?.size === 1) byNhlId.set(nhlId, [...matches][0]);
+        if (matches?.size) byNhlId.set(nhlId, matches.size === 1 ? [...matches][0] : null);
       });
     }
   }
 
   return playerIds.map((requestedId) => ({
     requestedId,
-    yahooPlayerId: byNhlId.get(requestedId) ?? null
+    yahooPlayerId: byNhlId.get(requestedId) ?? null,
+    ambiguousIdentity: byNhlId.has(requestedId) && byNhlId.get(requestedId) === null
   }));
 }
 
@@ -238,6 +241,7 @@ export default async function handler(
 
     const players: SnapshotRow[] = idResolution.map((entry) => ({
       playerId: Number(entry.requestedId),
+      ...(entry.ambiguousIdentity ? { unavailableReason: "ambiguous_identity" as const } : {}),
       ...(entry.yahooPlayerId !== null && byPlayer.has(entry.yahooPlayerId)
         ? resolveOwnership(byPlayer.get(entry.yahooPlayerId)!)
         : { ownership: null, observedOn: null })

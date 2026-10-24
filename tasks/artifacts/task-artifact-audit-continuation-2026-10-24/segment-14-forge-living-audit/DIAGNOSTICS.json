@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-24T18:55:53.136463+00:00",
+  "action": "Correct generated Markdown status rendering before Library delivery",
+  "target": [
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md"
+  ],
+  "reason": "Unscoped replacement of the short old release value matched a word in the new Implementation sentence. Initial repair assumed separate Markdown lines, while LEDGER has one combined inline status line; that assertion failed before repair writes.",
+  "completed": "Authoritative JSON status correct; both Markdown layouts repaired,18changed scalar labels verified. Initial draft bytes/hashes retained; reusable renderer changed to field-scoped matching. Guarded same-identity Library v13 delivered once with complete receipt and helper0.",
+  "pending_blocked_uncertain": false,
+  "application_or_production_work": false
+}

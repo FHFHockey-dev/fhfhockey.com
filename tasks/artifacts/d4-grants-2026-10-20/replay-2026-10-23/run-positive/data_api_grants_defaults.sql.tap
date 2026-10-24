@@ -1,0 +1,35 @@
+ok 1 - future postgres public table: anon denied SELECT until explicit grant
+ok 2 - future postgres public table: authenticated denied SELECT until explicit grant
+ok 3 - future postgres public table: service_role denied SELECT until explicit grant
+ok 4 - future postgres public table: anon denied INSERT until explicit grant
+ok 5 - future postgres public table: authenticated denied INSERT until explicit grant
+ok 6 - future postgres public table: service_role denied INSERT until explicit grant
+ok 7 - future postgres public table: anon denied UPDATE until explicit grant
+ok 8 - future postgres public table: authenticated denied UPDATE until explicit grant
+ok 9 - future postgres public table: service_role denied UPDATE until explicit grant
+ok 10 - future postgres public table: anon denied DELETE until explicit grant
+ok 11 - future postgres public table: authenticated denied DELETE until explicit grant
+ok 12 - future postgres public table: service_role denied DELETE until explicit grant
+ok 13 - future postgres public table: anon denied TRUNCATE until explicit grant
+ok 14 - future postgres public table: authenticated denied TRUNCATE until explicit grant
+ok 15 - future postgres public table: service_role denied TRUNCATE until explicit grant
+ok 16 - future postgres public table: anon denied REFERENCES until explicit grant
+ok 17 - future postgres public table: authenticated denied REFERENCES until explicit grant
+ok 18 - future postgres public table: service_role denied REFERENCES until explicit grant
+ok 19 - future postgres public table: anon denied TRIGGER until explicit grant
+ok 20 - future postgres public table: authenticated denied TRIGGER until explicit grant
+ok 21 - future postgres public table: service_role denied TRIGGER until explicit grant
+ok 22 - future postgres public sequence: anon denied USAGE until explicit grant
+ok 23 - future postgres public sequence: anon denied SELECT until explicit grant
+ok 24 - future postgres public sequence: anon denied UPDATE until explicit grant
+ok 25 - future postgres public sequence: authenticated denied USAGE until explicit grant
+ok 26 - future postgres public sequence: authenticated denied SELECT until explicit grant
+ok 27 - future postgres public sequence: authenticated denied UPDATE until explicit grant
+ok 28 - future postgres public sequence: service_role denied USAGE until explicit grant
+ok 29 - future postgres public sequence: service_role denied SELECT until explicit grant
+ok 30 - future postgres public sequence: service_role denied UPDATE until explicit grant
+ok 31 - anon cannot execute future postgres function without explicit grant
+ok 32 - authenticated cannot execute future postgres function without explicit grant
+ok 33 - service_role cannot execute future postgres function without explicit grant
+ok 34 - future function has no implicit PUBLIC EXECUTE (global default checked)
+1..34

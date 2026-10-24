@@ -1,0 +1,1156 @@
+{
+  "purpose": "Exact local task3 source search; metadata only, no observed data invented.",
+  "groups": [
+    {
+      "variant": "a",
+      "captures": [
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020090.json",
+          "sha256": "400863da70e96ca912d53fb11e57d5578443076259ad52694173fc95f041a6ef"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020091.json",
+          "sha256": "a4a0151634ca2b22b9c7b57f039c7d11ba95c267d3ed26e84bded7e1039d63c7"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020092.json",
+          "sha256": "a9bf19aa15f7f0f83a590bfd65e468749256c434fc4694787e53491b898649f2"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020093.json",
+          "sha256": "57b6c86d9451dc4d9410cd92c6d4399a758bc2cfb94a74b0165c0c627820f8af"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020094.json",
+          "sha256": "b83fcf55cd9297ee2785f40680befbea9f4e33778acec525b868650dbf6d1732"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020095.json",
+          "sha256": "1d4f1534b2a1fac7eeb6bded490fc590731e1ef88434a199c3073c2622aa5806"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020096.json",
+          "sha256": "e61cbf190592e2ba87ec684ef406bf842fda3bb755ce7e6f8764e8cd8cc43fc8"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020097.json",
+          "sha256": "c9135bb203c4a4d326ea6ce3a78b2a9c87405bb6786bc509cff230666f01430e"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020098.json",
+          "sha256": "122aad9a75e47c9907eb85fbecdcdfc7fcdce22f1f1e4c8bf4063fcaec3df966"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020099.json",
+          "sha256": "25331648e48f9313e25ac7b61a736274b3d366e2ce99bed96c59b30db979ed0e"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020100.json",
+          "sha256": "c00154c08a470f69c96362b84f7de38275a54d54c681e32954baaf06d3b8c3eb"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020101.json",
+          "sha256": "90fc64b3694faedd525e107fc63347728575446d5e5becbcc4b83bcb4fd2c068"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020102.json",
+          "sha256": "3dc54af6838eceac9cb2f66577b1c1d2bd4c22a5aa8bb4629f53b222a743f1e1"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020103.json",
+          "sha256": "05fa0ad73c757c577c76d058948943e31c57fb13bac25d7cd64deedf4f24c12d"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020104.json",
+          "sha256": "172ffa8cb4cc954ae30ac3170fb59393d3e0052b5ac2cdb212fed478bd213c7a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-13-2026020105.json",
+          "sha256": "3180d52c9888fdd39202b78bf1ef3070c0e484eaa3572f1d92e3aa238dad8219"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-14-2026020106.json",
+          "sha256": "120a068a9fe9b075a01ce5c0c7a6737016810f9df54337469de95d8a040a66ef"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-14-2026020107.json",
+          "sha256": "8409d54ddffa53e0f29c076dfbba8ca0bac7458e82151ca8e7a52babea960030"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-15-2026020108.json",
+          "sha256": "4a01165550a7b0f56dde71216071de3d6c17849f1fe5d1a0f5aa7d6165a69970"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-15-2026020109.json",
+          "sha256": "d95eaa3d72fb59ea7a8a81c0a11cf65d1cf9d4726604d8c3403585b76e4abe8f"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-15-2026020110.json",
+          "sha256": "ed219c33bb06b3c93ecd37c02e879500ed6b0f70de6c04ab515e63a7d6dd2bca"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-15-2026020111.json",
+          "sha256": "b36c82bfb56e86a6d204fac5fd306f1b1d289699c9aa77200d70c33e1f9b03aa"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-15-2026020112.json",
+          "sha256": "5a86c53502f16b4e936f9fc1e0a54ef8ffe0e897ea063ac83f5a31d0129a4861"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-15-2026020113.json",
+          "sha256": "384993c256763af75e33e83532c96af57be495283e5a49355ff68ed3ffa28314"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-15-2026020114.json",
+          "sha256": "f6aa1a49b0ac192375878bd7a9aac33fcc705ffbddb1d2085a4c7334719788eb"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-15-2026020115.json",
+          "sha256": "7bd29fd7599add35bb17c870d997c39bf5ad9b28b11cd9476038ccbc889cc960"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-15-2026020116.json",
+          "sha256": "d6ee21fdfac7132ea1f707b7de38782dee8e02a105c56cc00ff5debc28294cc0"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-15-2026020117.json",
+          "sha256": "c0f35107313f1ffccb8037f97df59f48c202ed5d6c9b37bdb90ea32d3a29bb8b"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-15-2026020118.json",
+          "sha256": "9cd7fad1ad7f942029e8fb6a7e583742ac1dcc752f75dc875017104a25970d3c"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-16-2026020119.json",
+          "sha256": "68859fbf3da4b4d4fa9bbfde8193b0010427dd4381281b0dbe4ef9216c796194"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-16-2026020120.json",
+          "sha256": "7152b58f96cd475f1aee357b23435d55205436285ff66d67b3a3992714ff0a31"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020121.json",
+          "sha256": "a905fa33bf5276bb830277709acfe9238a64052a93005ac768f505891534e593"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020122.json",
+          "sha256": "14fd165a8be2ef7338d739d766b0607e49d15f7b975ac9aa4a795e6e8b998274"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020123.json",
+          "sha256": "4d4597928adc018ec870ee685cc81fde2156c628fa1a7543085bb8435de6df86"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020124.json",
+          "sha256": "a7314a0217dbd3a17e0090aa4cf77d28fba5298bcbc491b293811c6d2ab3bc49"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020125.json",
+          "sha256": "12bdc9b344413224c769d0ad60dcea8987b3091270f7f86d99d142ce301e06ce"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020126.json",
+          "sha256": "bcbe03ee14abe0f1a7c85a2bff4b094355ae8793222749472e085cff89cb1c26"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020127.json",
+          "sha256": "195cee529a8c160076c7ceba47094fac3d5b4cf0e5a890afa99ad3d3d711ba45"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020128.json",
+          "sha256": "e9f78a1019b7762326aa976f696729d925cd8efccca0d562fe2554612df61853"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020129.json",
+          "sha256": "67a800fd7d9e8e4a8463fe5e9a3a7f72c838fb6176cafeb0a7acd2e6ce98620e"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020130.json",
+          "sha256": "b839e211a6140c1c819e1841e5463de4c3f48e2390f29e579e05009eaee27bba"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020131.json",
+          "sha256": "76d83b6228ece8bcf93b946852028117bdc6f7067cb172d4260891b197e46857"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020132.json",
+          "sha256": "7f8c580a37b076839f3670bf1db0c3899ae4e60b47bcdcf019e62d69d45f750c"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020133.json",
+          "sha256": "c4178d3e3a39469080f149f54bb968e9d74983ef47fc3e1bb09accbdaaa08519"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-17-2026020134.json",
+          "sha256": "d873f1a1acb0d047146893129603e261df55e6aa1eb818cb69402bf9cb8d5073"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-18-2026020135.json",
+          "sha256": "1e0dc704451084dcbb2e04d075281f69a436e14b8f4085d0361567ec8f0650eb"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-18-2026020136.json",
+          "sha256": "e5e4c8d9fe6c194d8e3ff6c95fe7a18f8371e470ab4e4a1b539edc958e5d2afd"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-19-2026020137.json",
+          "sha256": "a50ab691d262e1f9267cd21a5cd3a5c962931da94e21a0e6be996d7e282913cc"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-19-2026020138.json",
+          "sha256": "9aceaeca1154b429106fcf7fe2c5deebbbfcf4580024dcd36fe905951f205e03"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-19-2026020139.json",
+          "sha256": "5a5566564f5caa8baf2a938812cd3cbe9f8e414c0e501d2d545e9f923bcf5f11"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-19-2026020140.json",
+          "sha256": "2003faa2db023df9361f6687fdbbc14a9a5fe93eff99a89df4178ff1d0918256"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-20-2026020141.json",
+          "sha256": "c5387b0c7fb2f6796a39322045eccb2c12a95b9d967bcdb9755f6376e99a16d9"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-20-2026020142.json",
+          "sha256": "d74813ef449e83cede16d1f6492c738f9ec8a2a43248bc30feb03507e9c1dce3"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-20-2026020143.json",
+          "sha256": "2251bdc3d6f7ff23ae23bd6478d21d4e17f3e9262ae3b0b6214195176dd74aa6"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-20-2026020144.json",
+          "sha256": "d77b0947bb920268fcf2e19bc5eddd0aec954ba1a58b1113717d84b242003fff"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-20-2026020145.json",
+          "sha256": "ef34d44991d1a87a519e7ddefc6d83031d3f2c4ecde96d7db7721dfb150d7ae3"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-20-2026020146.json",
+          "sha256": "cc2da4fb1020cfbe8a384a5c08ec087ee084e5597468c5666090db34e52751a1"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-20-2026020147.json",
+          "sha256": "a2bfe273fd58a0a2a1df725a1e25fd32f8dd581b62e2dc75fb56a491ae28ca89"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-20-2026020148.json",
+          "sha256": "44d3d3cc7f9ca1a51a13049f494121c171d7d1e752c31114bb7ac33c3d88a80f"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-20-2026020149.json",
+          "sha256": "27f52571e6fcd7568358d74f4f57adb97334b9b11ce0e2b407300480ea7de728"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-20-2026020150.json",
+          "sha256": "7bf6dc8515ae0040bdb6d366953dace0001b56b4e976d2949658e07e86a1498a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a/2026-10-20-2026020151.json",
+          "sha256": "060848885eaa0f35d29f059a21c0d5092886756707f08668be271361a59b7fc5"
+        }
+      ],
+      "captureCount": 62,
+      "capturedDates": [
+        "2026-10-21"
+      ],
+      "rawReads": {
+        "nst_gamelog_es_counts": 0,
+        "nst_gamelog_es_counts_oi": 0,
+        "nst_gamelog_pp_counts": 0,
+        "nst_gamelog_pp_counts_oi": 0
+      },
+      "rollingSummaryKeys": []
+    },
+    {
+      "variant": "b",
+      "captures": [
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020090.json",
+          "sha256": "e1e0f5089da2f0f325798de3633af2a1c60eab9724834a92270eb5ed8aa50125"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020091.json",
+          "sha256": "11079d2091e9e9b6193838b10551af7a12fcfd4c0f2a6f83f30f18713a19f9b7"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020092.json",
+          "sha256": "9d9a5b5bb6c393fada7400cdaed0a5e22db87f68176ce0ba1609173678fd0cad"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020093.json",
+          "sha256": "78e75247212557afd422e7a51d93e53f4737058fdd1be17a5c7b9fd61c45c7ac"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020094.json",
+          "sha256": "fff5e3b26c2ccab98027477487d1e4909e8eaca928a830aa00127be2e738859f"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020095.json",
+          "sha256": "fe607bfd675a3cbefc777118db85e928173e4d41b6393015a51a460cfdb51358"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020096.json",
+          "sha256": "ec94ff74724fb38cc85517ac3b0b37840c8c38c8bbe85d55ff2a3e7c00888b16"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020097.json",
+          "sha256": "9f0f9ee5219b3309067f22fb91b9da974b2ac764a15ed7a6b0caff686142ae0e"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020098.json",
+          "sha256": "0cee40a7c746ecde84bd627d5b6abac4914dbb46b282a26fb024419c2c7ca89c"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020099.json",
+          "sha256": "818893ca32f3094d7eeca13562c4172b8b0a785d3958dd02d573f6c20fd75f33"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020100.json",
+          "sha256": "9f929301e7d2a3a33a27a60e6cb988cd4e333622cb0cd2354166eec5d343b0d3"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020101.json",
+          "sha256": "60a90e22815cb89c693362f355b6dd0db939fd7d4a17812be5487d68f438c7af"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020102.json",
+          "sha256": "24ae3ca89d7d033b496d9613b0786941a8707f91977a28d78e97c7dc27a93ad4"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020103.json",
+          "sha256": "e87650d60c8ab64ac8fc24d297364a56f7ee4665c7965d63ed4844a1dcabd2e2"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020104.json",
+          "sha256": "91ca2ce71d49749d82b802509056b6395178fa222c631c0d857767ac4655840a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-13-2026020105.json",
+          "sha256": "6f205194b5c03c0e5977ba77fece045869816a743191f945b8e79e1df1b4b069"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-14-2026020106.json",
+          "sha256": "e1456f15d11d85df50bbbafe16c31dda89562eeec209e340121a9dadfbb54f3e"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-14-2026020107.json",
+          "sha256": "8f237f60c9e67b52500a9f8c9b11d78586c00914d141315e1b7f8d1fabe321cf"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-15-2026020108.json",
+          "sha256": "5dd337c5bafa03a867c431cc2c3f468ec8743082ea2f056faa68a1f6e5b59cda"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-15-2026020109.json",
+          "sha256": "3ef158ec6d2b063e91d4d13338f45a7d4e84735b1138d09e6d05ceaf8720ecf8"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-15-2026020110.json",
+          "sha256": "c956bff556f1491e99339194aa4d59481c9a7e2b369cc0179f0b383e9db27868"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-15-2026020111.json",
+          "sha256": "c076d8a77371da1159590bdfc40ebfb17e70febc3bcced39ba3de5fc1bf46c23"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-15-2026020112.json",
+          "sha256": "01ea857f125fa8506c830f4fd8e702d7b5568f2a0795ad0aa241a5ff24fe2a11"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-15-2026020113.json",
+          "sha256": "eada0d6481b7566d9d153a20be95f803519fa911af96616b1a9a84312353a8f7"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-15-2026020114.json",
+          "sha256": "070ccfd62c5d766e4019b1636ae16429dbfef149f6f40d4589ff807d6942aa62"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-15-2026020115.json",
+          "sha256": "f0ffc0cb1da8f21586450b38d0cee472f27c4d896faa0f216aef285a354348a3"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-15-2026020116.json",
+          "sha256": "8d169cf17b9503f8fd885410e95ca327e2441464ee6ccfcbcea633d075466311"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-15-2026020117.json",
+          "sha256": "b721f5e9953acf5735795d9ab3c616aa9db02765fd1d7ff4489f06dbff79ce75"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-15-2026020118.json",
+          "sha256": "6a26bdb53ffcd304179ea01fd1ee94b914ae76856ebfbca04317f479078113a7"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-16-2026020119.json",
+          "sha256": "f4e9de0247e60694640a71e6110b957f275371d820b884545d1cb8b29b367bd9"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-16-2026020120.json",
+          "sha256": "509c4502ddcd7b86522ab06449d50864146e422f2225a768387dcb5ec623a045"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020121.json",
+          "sha256": "6930557394b3b79b002336ec81f2e0670eb400f5e0e181d8dd3bd02e844c4714"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020122.json",
+          "sha256": "560bd4ecbb33a9f836d1c669c714a0082857d9e73795acb24c811d8a0afb93eb"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020123.json",
+          "sha256": "bd995474406641283a15ac93e8236578fc62ecc6136993c955e84eff0a1582d4"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020124.json",
+          "sha256": "a13ac7b355f75f189c8aeff2fd00401db285a91951d91175b5b03d93fb21f054"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020125.json",
+          "sha256": "5e825d03a5ab45d3c7c3c2b2c3f58b46d8f9cc7014fd86a6fb104dc07aa0618c"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020126.json",
+          "sha256": "26630336ceefe56e5da7b815bca6746cf8ac681e467c2386fa460ce9a0a57f72"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020127.json",
+          "sha256": "f51fe2e710f43954565377bf2ee6ef7206a448e1fc4bbc87f0d72ed8deafa8ee"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020128.json",
+          "sha256": "0380c99b679ef2a22119390e71773bf7daa1822b1752afb5cea5fd5a92ddea01"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020129.json",
+          "sha256": "8666a2a73314c8e3151d0016602d002c22ba5a3b6e957f4999af0c88628346e9"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020130.json",
+          "sha256": "0ff68c155c097945500763defc667691f4e7555435ef058e373ce8ca9c59b7ca"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020131.json",
+          "sha256": "be8b21b850846280c7d2f17dc005a14716babf9f085c84b0696b1eed6a80d8e0"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020132.json",
+          "sha256": "eab1a07636487d676c4de66de07c7fd58d9dbd492e545a48f0a8122f513deb29"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020133.json",
+          "sha256": "aec32f0bd895a5fa78462f33aab6c5f40dbe0b22dd88189893bb979c6daa0d6c"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-17-2026020134.json",
+          "sha256": "3640c3fadd15f0ebd9f9703f3f8cf34f969a03d3e14dd1ea960d5338d50a1564"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-18-2026020135.json",
+          "sha256": "8bb5f4e0130b07a5e59a118dab4bea92122059054d1a33b4380785b0b4fcaf66"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-18-2026020136.json",
+          "sha256": "3f796000b6c570d090abf9ea8418af1cb64a2f3052eea0f86b4b50f3f8d3988d"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-19-2026020137.json",
+          "sha256": "4be4ccbb6e6b3a311897eab5536ae2f0469ebb3ffa0a4bb41298ed25395f6f1c"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-19-2026020138.json",
+          "sha256": "4dc2b4ea53983bfa37a370c25b699110c05babe35a081e47df124df79bf585ad"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-19-2026020139.json",
+          "sha256": "0e4f341f46d3011f11d671b2b205c3df6cc3610237ae0ef5120ca614a2799240"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-19-2026020140.json",
+          "sha256": "d28c18690951cd47a42c9d851d24323dc0f908ff53d5535394cfe2a13280017e"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-20-2026020141.json",
+          "sha256": "b430ef69c3ce5ff58f122a07428bf99d09fdec3f0ca3f9e8a8f8639e1968448c"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-20-2026020142.json",
+          "sha256": "e07f49877f1aa1450d1e4993429954a949d60ded0ab1c74df6a18219f93d6d93"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-20-2026020143.json",
+          "sha256": "c56f7a7432e40dcf8afad444368774c7bf8b95ef9c424cd64de0a63dbccb03d7"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-20-2026020144.json",
+          "sha256": "9bfe6d9ddf1d6c57a1ec61e8b37996c25a5bcf5e1c1a13e30677ca3326bcfb52"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-20-2026020145.json",
+          "sha256": "157dadfbb6275a60a302da1b19bead49ed40b193213c3f33af62c7da04ae7618"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-20-2026020146.json",
+          "sha256": "bfd2be005c53c17af303c1ac13535e1e6d5a2912f16075290530aef44c7c7bec"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-20-2026020147.json",
+          "sha256": "a939c47b26b647773e4289fc2e51033f2fad22e108f0f3f6cbe36da020b4f97e"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-20-2026020148.json",
+          "sha256": "1bed508f8503daf94aa4f348370331bee2ee38be8161da2d01c2e11cc40b0d9f"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-20-2026020149.json",
+          "sha256": "3ab186492e40958a4681da15a23f8a9de7c7f57cba5b80e4b2456f019a1605f8"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-20-2026020150.json",
+          "sha256": "a47ba56b8b30112ffc1c8f87d5fcc642a194ec44c6e7562f3c1ae0d95f38c963"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b/2026-10-20-2026020151.json",
+          "sha256": "7ff37c60c281893252d3fff095ea17d79fd0e8c91190624889047784fcf03871"
+        }
+      ],
+      "captureCount": 62,
+      "capturedDates": [
+        "2026-10-21"
+      ],
+      "rawReads": {
+        "nst_gamelog_es_counts": 0,
+        "nst_gamelog_es_counts_oi": 0,
+        "nst_gamelog_pp_counts": 0,
+        "nst_gamelog_pp_counts_oi": 0
+      },
+      "rollingSummaryKeys": [
+        "ipp_3ya",
+        "ipp_all",
+        "ipp_avg_3ya",
+        "ipp_avg_all",
+        "ipp_avg_career",
+        "ipp_avg_last10",
+        "ipp_avg_last20",
+        "ipp_avg_last3",
+        "ipp_avg_last5",
+        "ipp_avg_season",
+        "ipp_career",
+        "ipp_last3",
+        "ipp_on_ice_goals_for_3ya",
+        "ipp_on_ice_goals_for_all",
+        "ipp_on_ice_goals_for_career",
+        "ipp_on_ice_goals_for_last3",
+        "ipp_points_3ya",
+        "ipp_points_all",
+        "ipp_points_career",
+        "ipp_points_last3",
+        "ipp_total_all",
+        "ipp_total_last3",
+        "on_ice_sh_pct_goals_for_3ya",
+        "on_ice_sh_pct_goals_for_all",
+        "on_ice_sh_pct_goals_for_career",
+        "on_ice_sh_pct_goals_for_last3"
+      ]
+    },
+    {
+      "variant": "a0",
+      "captures": [
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020090.json",
+          "sha256": "290db1c18e466158c5f320d978079ef6d46a2765bc118f86364983709dacf47d"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020091.json",
+          "sha256": "82f5d3457e15be1b0728fc1f75e42caeff09481420edc77a773f69d8ca38c7fb"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020092.json",
+          "sha256": "88b8b41c4a0e7ec313a8b189b35c34e1e17e53c99ebf88773d49ca497739429a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020093.json",
+          "sha256": "dae028106d9cf61c04ca27f941ed94c75f8bfa7d8bbbcc4363765ccc15aca6df"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020094.json",
+          "sha256": "96898308613826e2be1a7159ca31b63fd809fcffe915ead7310902aa3674dd27"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020095.json",
+          "sha256": "1f7519b81fef65df591d9fe4057e32daaa025bd0d3616d7e3d3373e83cf80839"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020096.json",
+          "sha256": "890a2452ab3bf9caf28eab25cb4ce9d418905f94a825f1ae17ea31de3840755c"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020097.json",
+          "sha256": "fced019e6ef920aa479f5e9d3078a43c59fcb709fa3bee32db0094f579119039"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020098.json",
+          "sha256": "7d679f4bfdef4bd15b56c1cb0a84591c317a3a6c9b4de610d3fd9cf2a737f06b"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020099.json",
+          "sha256": "cd16465fdf2877b7b4a9744020141a5c2e82b54f23b456635e834b63845418a3"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020100.json",
+          "sha256": "9c8568ca2c219367e2a65d143adbdfc00c77e7973778394113971cd1a20667d0"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020101.json",
+          "sha256": "ce28c4520a3030ab3f20359b1d055075ff3bedc3227f384508d9e563bfdebb8a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020102.json",
+          "sha256": "b4ae8bd1e7c4fbecbdbf3746dfa2a0245f42e6d0702cee45a0b3e85108ed10c0"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020103.json",
+          "sha256": "cca9c07d8aae5c258e5abd8fec667ba0de12b734f9b99405eb802c80dd1f4d79"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020104.json",
+          "sha256": "35b2275dd01e76bb9cd6785a1d57bb63bb4dbe3d3695fd80772d2b8af11f3cbc"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-13-2026020105.json",
+          "sha256": "736870945ec50da0770009d63ae0d11e4405cd4595f263d79658f33f3bd45a18"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-14-2026020106.json",
+          "sha256": "630a158fa2905ac9de674012ae32ddcab529fe7519efa93a7e13066410ecfbd1"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-14-2026020107.json",
+          "sha256": "867ae970c8ba7fed1ff1c4454f315cc57962ee34aa3575e7314ae01394a9c624"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-15-2026020108.json",
+          "sha256": "84112a244a3fb47aa2b0a92cfa20b07706ab032a2a572e929c8cc2d220b418cd"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-15-2026020109.json",
+          "sha256": "3a66908edb6ee68c9f364e6b76bbc134738f16e7f4bd3565055f4c046dc06177"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-15-2026020110.json",
+          "sha256": "5d9baad5db438d280e49e8462966788e0ef2cb6fcad28da23a341344529d1a34"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-15-2026020111.json",
+          "sha256": "4bd59d4a146b4600a2ddf9f84587755fa7eff43cd8ab6fee19bd5a33572ea210"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-15-2026020112.json",
+          "sha256": "1f6e7bb32a69f0d740c4347082da03e4fd66b6c3ba64e1fe2552373a6dcd04ac"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-15-2026020113.json",
+          "sha256": "b95ead10025d5a1bf302e4e2633862373885554ce677226c83dc74e8a209029d"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-15-2026020114.json",
+          "sha256": "486cd55b55e596c018fffc0a88e89c1dd397c9ec4f5ff2a7025fab53b8415bdd"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-15-2026020115.json",
+          "sha256": "519fb5dfa00cb9bb8f112de9b57f3feda907a4fe2167ab9289b902fd2d25ae4a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-15-2026020116.json",
+          "sha256": "7cfce19dd4c8107e3a22ebdf73ff3c7863d16b16fed4c1360514330acdba291f"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-15-2026020117.json",
+          "sha256": "fe894739ffc76172a8fbacb1b10f785f57b9a21a899dee45a6c89960cf0a7ad1"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-15-2026020118.json",
+          "sha256": "40751ac8d718af92f8f4a05d859cd178f8cd94dd1142e76247ab19a6e495a3d4"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-16-2026020119.json",
+          "sha256": "9b245d37818448700b8bbb45cded771ad8dcb67cd303f18c64102550f36ee890"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-16-2026020120.json",
+          "sha256": "a22b15578f28eeca4de2e20717bb987a96e12befb41cf89514dd37d239f33c4d"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020121.json",
+          "sha256": "1de0ed5f939c9734ea64dafc4dd0878e5822e73e7b7bb88d58cb8069ec033a31"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020122.json",
+          "sha256": "d03bf6165d03128aece8e1ef6af553c6b57047208b6811ccd9634960118eeb58"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020123.json",
+          "sha256": "10c5fc7ac20cf7b368082e65f4e6110f550715fa4723bb335343a5b2558595c0"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020124.json",
+          "sha256": "13209bae250843b255a8a9d49553050ba74930aec1d39b18a7166c65eca2281a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020125.json",
+          "sha256": "e00bcf0c3d82d3b7d04f3105e42fcd1551897b1c8bb0ee10c5a32e6a1284f98a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020126.json",
+          "sha256": "a53dbc876511509006e34bb80c64f321d4d3f0dc052f82a7c314b50cd79df568"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020127.json",
+          "sha256": "839df22f42f67383278398c09be0e114c86e45b8a62ec0a5b04c4a83ba0ca447"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020128.json",
+          "sha256": "373772de68ca2afa80f5f1f5f0f9b3356809f0fe92d4affe902c6402d273a5b8"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020129.json",
+          "sha256": "9f46f08baac9fce17b3318f93d6f79331d6e202800a3753f198b2c4bbd847d56"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020130.json",
+          "sha256": "624256432041689387675f9926cdd3ece118d7fdf5cb504592ed3a40def5fac1"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020131.json",
+          "sha256": "42e2472ce26a0aef309af370e0f4151dd839f5967e4cfec4cb7a9da376a5f5a3"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020132.json",
+          "sha256": "1cc6f2b031a653c2453648eea53211d63c1334133991e53971efce878f816699"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020133.json",
+          "sha256": "d581fa1fc40cf1195cda31d665c0f04279f9bfcde571bb8f8a459a5a6e20d0fd"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-17-2026020134.json",
+          "sha256": "e690ba5e259b33bbd35b4fd656376c12dbeb3895df16f97ecb59f7c8bb154b10"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-18-2026020135.json",
+          "sha256": "39e16f3b4ff8ada60d9fba4bcfb3775d249c35b248808c5d9f91e1f8e7831851"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-18-2026020136.json",
+          "sha256": "75e7f9902a46c79351d1dd6b9aab79ec6b850578cba69cb3ac9962af14ba5ffd"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-19-2026020137.json",
+          "sha256": "c5d8af424716f7dcc4dd076a57767a3c75d97e2d2b6489b95fee9dbf5739e58f"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-19-2026020138.json",
+          "sha256": "c048a7bb0a9af566e4f06cc24e9dee98eb8f8f7331d836cbe173fdf241e89360"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-19-2026020139.json",
+          "sha256": "0a7340623c345699537e4d7d8729c480b58e10113f561b9d57b00e78da70a9a5"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-19-2026020140.json",
+          "sha256": "f6b04941ee782a7e5728ec5726828d14a8873bf2966fab5050efcd100710344a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-20-2026020141.json",
+          "sha256": "2d31e002f6146464f34332751c6d2ad543c113b6cc3e259a11b5fc534c16985d"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-20-2026020142.json",
+          "sha256": "fd99d11de21d297be03011ffce1b9d260e7f0bbac3dde3a72aea5df519daca1d"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-20-2026020143.json",
+          "sha256": "bcac9d32b49b278ebc39c1cb19558e0a03c30b0dfcf4ac34296e80c366b45014"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-20-2026020144.json",
+          "sha256": "cee8a75d78a7904cbaa0b5b3e2df0ff17a5dd96be005af5eecb9893fe01d6d62"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-20-2026020145.json",
+          "sha256": "223a058f56c698190356efc52fcab1f470c29e132a82ec6c6917565088f27087"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-20-2026020146.json",
+          "sha256": "61bd3aec89c1d7824e319bac6527fa7619e765d675cdebf40867273ecc869c2f"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-20-2026020147.json",
+          "sha256": "784da89f69c995c0ed759583002b469ee770a265f8e45bbe2e12d70af673e067"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-20-2026020148.json",
+          "sha256": "cb88b23a51b7d3ab119d89a9e9d3e883d4782a3ff57267f394f568104d056ffd"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-20-2026020149.json",
+          "sha256": "a921e2dcb0bf636d3c91696133db6297ab81b5bedffdb45908ca8c5052a71e2d"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-20-2026020150.json",
+          "sha256": "16f914dad4fe16aa7349fac6a3bd7c2dd976669d8224e315ca61993d3579559e"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/a0/2026-10-20-2026020151.json",
+          "sha256": "01631ee75840357f1a1bfc442e06ae52d28fa47f64a35d55d0aff5e4ee0d15a9"
+        }
+      ],
+      "captureCount": 62,
+      "capturedDates": [
+        "2026-10-21"
+      ],
+      "rawReads": {
+        "nst_gamelog_es_counts": 0,
+        "nst_gamelog_es_counts_oi": 0,
+        "nst_gamelog_pp_counts": 0,
+        "nst_gamelog_pp_counts_oi": 0
+      },
+      "rollingSummaryKeys": []
+    },
+    {
+      "variant": "b0",
+      "captures": [
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020090.json",
+          "sha256": "45d611c2b5be8b599b60c4225171b66dded77bb6cb10695db25e6c40c64f9e24"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020091.json",
+          "sha256": "7ca45f3ffdfd646f31b393112b16950d8e3a0f0e792e936830b3cbc1a6859ac3"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020092.json",
+          "sha256": "9af0f907f0159972119481f67e208cf8195c697f2a95d653ff7fab4c177029a3"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020093.json",
+          "sha256": "153acaa35f0833d4806ab7b127a9108d713a45040018bb477e2ba0936465612e"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020094.json",
+          "sha256": "189f83989d75708d8823171e271f72b87bdc04c1054f94b3dae2780cf17d388b"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020095.json",
+          "sha256": "38699b694ca3941ed9273f751fd22a2ff4f82e68839dfd2e956638a0624ed129"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020096.json",
+          "sha256": "6ffabd8ffaf50f2bef8d2748f78fe9ae7c773bca1e555c6ba74b84ad637a5dfd"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020097.json",
+          "sha256": "a0d0de1a21edb8ae042b246369107aa218b5525129291a8f5b7e355a14b7084a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020098.json",
+          "sha256": "05225873953d61610a691d0d05afc68349c2649a41cf455847079b90f69fe283"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020099.json",
+          "sha256": "8199dd8108e5911cce76649aacf42902b4437a228bcca509c6f3937a0bce599e"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020100.json",
+          "sha256": "1c9da6d295209aad86dc1c8a35558a273b3045f617bcce8a687f0812df613662"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020101.json",
+          "sha256": "df77d80b8b5dda1f2316984910e0a4b186abfd59a5f57ee5174f36324d758b40"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020102.json",
+          "sha256": "354a7fd4104c3286b632648cef1bbfbb3d55ada2e9ba34415dd465c2a1a2bbd2"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020103.json",
+          "sha256": "ab25914a20adf102d876051f30d9e1f15e4ccd2302871532921ca845a0382a58"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020104.json",
+          "sha256": "1261d5a4d6faf7abfb385f232ac73c589cc370773ab4dd5d33fbc082d52a0660"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-13-2026020105.json",
+          "sha256": "34e3eceffb5c4467b5307d4cae75990cab6db23c7d44ae635f38aa94cbe79209"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-14-2026020106.json",
+          "sha256": "701d0a336061be820946db203fbe849141171468e9a4e00ad00d47393d803475"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-14-2026020107.json",
+          "sha256": "a9298d25cf5c23c6668aed6d3c45523e78b4ae370b1fd0d6a4f958616351e330"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-15-2026020108.json",
+          "sha256": "a61074da3917ce00ec486b8724a8a04dd51b0793fb4ea8ceb5a6040f5a7fa136"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-15-2026020109.json",
+          "sha256": "7d6bf443523e5d598a06702aa53944abc750aa9a1c562bca2c3b8a434edf71b6"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-15-2026020110.json",
+          "sha256": "aeedae3a4abf56033c5946f67c946832827fe1c8135c07d42ddca97b8e82a467"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-15-2026020111.json",
+          "sha256": "c2f6d5bbddb545ba3708b566860e7c8453ea76562733ddb4e1305604e3c70232"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-15-2026020112.json",
+          "sha256": "5bbd98043a286b615dc2fe42ed653c497c8cd8168f096227ea8a079225d95ab4"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-15-2026020113.json",
+          "sha256": "f8bc9c5faebf5003c4b0f1fcbfdae752454c0cd3a736719c401d632a5d4bef0d"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-15-2026020114.json",
+          "sha256": "93cd4ad9308735271fcf239b22297d194167d83a4e4827a398735d9a6397a84c"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-15-2026020115.json",
+          "sha256": "647b178327c291276dff5ecf94244246a91c40bee8fd2e427149b8ff184e0e90"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-15-2026020116.json",
+          "sha256": "90dfc16f148df7ef723739933c226e45172c4496d791706620fb91f8881448f4"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-15-2026020117.json",
+          "sha256": "b7d0091f08a3f8bbcd0a89e287b090c116b510482158f57a88371219e5264d4a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-15-2026020118.json",
+          "sha256": "ce3e33ffa557b05fa22b7ccd74dac75a0cab398f495828e53ef729d1c5ed19f3"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-16-2026020119.json",
+          "sha256": "007f8d264dcf5c09f90d05534f60b31528483ae8aa2396f314897c0aa4e737c8"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-16-2026020120.json",
+          "sha256": "c4994defe44de9f097227b8fdeacfa8355321cbfd6bab324e42e9976055c4b99"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020121.json",
+          "sha256": "0452d5b25221a39b603bae5e20b4c1f835d94a203379b41b83bf94e916995f04"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020122.json",
+          "sha256": "503a267e5e08759894b28cd23dd29616ee395dc02e36e405239efed02088c1cc"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020123.json",
+          "sha256": "e634525db19021bc67991f733e678a2420a4ef1b18cc899f132186a6dc2f16e3"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020124.json",
+          "sha256": "20073eebc7c053f62484c96e21a0d1e218cf5215edd942f758727162821a63aa"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020125.json",
+          "sha256": "1a532a77a4013866dd106f2223906ac2f3f8faaa62f591cbf5bc690bba0b26b8"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020126.json",
+          "sha256": "919bf254b9e29185a3fe7f0f980b875cc2fa0cfe4df73c61d8ad7cdf5ae5d12a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020127.json",
+          "sha256": "9d32528ec7a1803029361658304e95eacd9778ee0b1550e6d7685c058f29736c"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020128.json",
+          "sha256": "1c9407683480c66d8cce1dd1a02d02686ffb1e904ba4829a414a5503658f9832"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020129.json",
+          "sha256": "e866e2280e7ec00a5c05d47b9594206538fd8f597277044dae7db34a3f3953b7"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020130.json",
+          "sha256": "8837760ae1ccebee648bfb76021458979da4f4ff82053fb276cea91bdd29d285"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020131.json",
+          "sha256": "56cbe0a9ad80c3827c4cd71125267664c7eddf7c6080418ca98978d6016f31d3"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020132.json",
+          "sha256": "8c44e9b1126b5ea1897c3117f49eb478f2ba85ce2e691e154697f682d66bf853"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020133.json",
+          "sha256": "213e718f64695489d89a59815f648622c4f628a6196d2ecda052d4c9339e5740"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-17-2026020134.json",
+          "sha256": "f575a146e1829179aad87ef7847739d39736bb03249e88da7f0f0bc859c028bd"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-18-2026020135.json",
+          "sha256": "a114ac754619a564958e187f5057cf6ed6753d06d00e02fb7cd734d42e42e75e"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-18-2026020136.json",
+          "sha256": "2e514f78979674f395576c9b94cbae66a1a64281e76ab8ae811e12462fefb99a"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-19-2026020137.json",
+          "sha256": "dc2831bbfd7c7e5354fcac8c960664138406377feb577b5a6239435a3002c354"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-19-2026020138.json",
+          "sha256": "6af89c5df2f0b4a640e7d611b1b53a97ddb1ddb24ce4e871a3c39d99156489a7"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-19-2026020139.json",
+          "sha256": "9061dfcefd98dcd9befcf8c083b20cb3751191cca09dc62a678d12b2d467d4fb"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-19-2026020140.json",
+          "sha256": "62d83cccf188c6d9212820d4e0fa382f094e8644ee6def3a7f94df592fe33994"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-20-2026020141.json",
+          "sha256": "6b7d89d9bd711e1d9b194c6581f25dde5f27b3e178b093b07d9cc69e247441cc"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-20-2026020142.json",
+          "sha256": "af6ddc04855d0b7809f92359c419504790366810f3b3919685dbe44569ebccd4"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-20-2026020143.json",
+          "sha256": "553ed128622f6fcc749e4359cfb6f46995eaea838fbf5af304c5a270614eedbb"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-20-2026020144.json",
+          "sha256": "6c0c74ba0a2488e00894e31c948ea6671d83181edab5627fa52a7558db857bcd"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-20-2026020145.json",
+          "sha256": "2a71853a22238a8c5c29e6a91b2362b3f3b930dedb2288d7ceb4ed46a93564ea"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-20-2026020146.json",
+          "sha256": "b62cb09381597378aee15134277251934f066d45b431a4bafb2733eda622bafc"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-20-2026020147.json",
+          "sha256": "3099572ca02e04c60051a3ca3014ae6d2cc40ef4f8634967e89678d2e00e423f"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-20-2026020148.json",
+          "sha256": "119558c4757c441846c2046fa5e35e7f5c24d16be3723584274adc27b917fc82"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-20-2026020149.json",
+          "sha256": "5b121602216fa01ceffb42e60fca3a76496be5a9b87d0b8fe1686005bcfb99a6"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-20-2026020150.json",
+          "sha256": "a5695983a2b4baf42c7480e0a9b589d305f82aef83d403fb453bf3a36241dccb"
+        },
+        {
+          "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out/b0/2026-10-20-2026020151.json",
+          "sha256": "8a25a315f77047a2b98bf4fdb25dbce1060c992ecc5ab576608f38c0a8bc2ff7"
+        }
+      ],
+      "captureCount": 62,
+      "capturedDates": [
+        "2026-10-21"
+      ],
+      "rawReads": {
+        "nst_gamelog_es_counts": 0,
+        "nst_gamelog_es_counts_oi": 0,
+        "nst_gamelog_pp_counts": 0,
+        "nst_gamelog_pp_counts_oi": 0
+      },
+      "rollingSummaryKeys": [
+        "ipp_3ya",
+        "ipp_all",
+        "ipp_avg_3ya",
+        "ipp_avg_all",
+        "ipp_avg_career",
+        "ipp_avg_last10",
+        "ipp_avg_last20",
+        "ipp_avg_last3",
+        "ipp_avg_last5",
+        "ipp_avg_season",
+        "ipp_career",
+        "ipp_last3",
+        "ipp_on_ice_goals_for_3ya",
+        "ipp_on_ice_goals_for_all",
+        "ipp_on_ice_goals_for_career",
+        "ipp_on_ice_goals_for_last3",
+        "ipp_points_3ya",
+        "ipp_points_all",
+        "ipp_points_career",
+        "ipp_points_last3",
+        "ipp_total_all",
+        "ipp_total_last3",
+        "on_ice_sh_pct_goals_for_3ya",
+        "on_ice_sh_pct_goals_for_all",
+        "on_ice_sh_pct_goals_for_career",
+        "on_ice_sh_pct_goals_for_last3"
+      ]
+    },
+    {
+      "variant": "c",
+      "captures": [],
+      "captureCount": 0,
+      "capturedDates": [],
+      "rawReads": {
+        "nst_gamelog_es_counts": 0,
+        "nst_gamelog_es_counts_oi": 0,
+        "nst_gamelog_pp_counts": 0,
+        "nst_gamelog_pp_counts_oi": 0
+      },
+      "rollingSummaryKeys": []
+    }
+  ],
+  "audit": {
+    "path": "/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/36e743be-fccb-484b-8982-5ef9e7a9ba43/scratchpad/fp-audit/rows.json",
+    "sha256": "f315992bd0e789b1a6da6e315e3031ef164248a13d2b290e287cb10940a6303b",
+    "rows": 2074,
+    "keys": [
+      "key",
+      "game_id",
+      "player_id",
+      "date",
+      "pos",
+      "actual",
+      "proj",
+      "rolling_ev"
+    ],
+    "classification": "historical_reconstruction_not_training_frames"
+  },
+  "nativeFixture": {
+    "path": "/Users/tim/Code/fhfhockey.com/web/scripts/fixtures/native-player-offline-synthetic.json",
+    "sha256": "12953ed69ad7ab160c91f712bee24b3f891ce62092ce12ac7d0962a489d538fe",
+    "classification": "synthetic_fixture",
+    "requiredTableRows": {
+      "nst_gamelog_es_counts": 0,
+      "nst_gamelog_es_counts_oi": 0,
+      "nst_gamelog_pp_counts": 0,
+      "nst_gamelog_pp_counts_oi": 0
+    }
+  },
+  "outcome": "No raw aligned individual+on-ice count pairs in retained real captures. Synthetic fixtures cannot fit empirical priors. Cumulative rolling summaries cannot recover independent split halves or value availability."
+}

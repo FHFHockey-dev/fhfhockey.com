@@ -1,0 +1,211 @@
+{
+  "at": "2026-10-24T18:05:19.695673+00:00",
+  "exclusion": "Own audit outputs/snapshots excluded from recursive source re-audit.",
+  "files": [
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/BASELINE-LEDGER.json",
+      "bytes": 1217003,
+      "sha256": "e32feecb77d79b89c8c6e1e6e01bd681c84a4315a151a8ee7276deed795819df"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/BASELINE-LEDGER.md",
+      "bytes": 566768,
+      "sha256": "a5177d320cae2004589baf53e061018151da8ce11098a785f4a11f6f95bd9c8b"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 530424,
+      "sha256": "f0580083b1af1708509104dcf103adc1623f52a31124ee5f68a33601693eaffa"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/CANDIDATE-LEDGER.json",
+      "bytes": 1254549,
+      "sha256": "2b4265ce9f77f1eff4f59df1737474ea244b22c916e3cf51635de67dc174fe75"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/CANDIDATE-LEDGER.md",
+      "bytes": 588241,
+      "sha256": "6758a380de00ec854622e2769b9a97cb32b347c4b1e3a5bd0f29a16fb491b7ba"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 551897,
+      "sha256": "493e31e256b456e724ce5e76600c3132f874a44bf879528ba967be5aa3fd9925"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/CANONICAL-CHECKPOINT.patch",
+      "bytes": 165044,
+      "sha256": "0d51edf98569b0e40678781bb0a5b470a48ed2ac8625bdcf903b145ce57caf27"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/CHANGELOG.json",
+      "bytes": 41491,
+      "sha256": "2145b3eedd660424661d6012f96109a0ea09a0c592ca6d7cfe651d0d4fad2d8e"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/CHECKPOINT-TIME.txt",
+      "bytes": 33,
+      "sha256": "820089cca8f516fbbcb2716541be42ff2db98bc1097c8db6398fe88cb2106223"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/CONTINUATION.json",
+      "bytes": 57095,
+      "sha256": "da181a781448a9ffa3fffd899d2c2624377cc1d51e425ade7c43a4dda464220d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/COUNTS-CHECKPOINT-RESULT.json",
+      "bytes": 433,
+      "sha256": "1cc1650b86d334605a4e5aaafb151d342c53b8b61490ddd44301e497c4c802c5"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/COUNTS-EXPLANATION.json",
+      "bytes": 5149,
+      "sha256": "c6328b21e950719e7d35d0c0bcd5214adeb2708200df83f3081cc569c346b011"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/COVERAGE.json",
+      "bytes": 10101,
+      "sha256": "4b6e43581365825925a17e40786a7920e18e05563b035885bae05e2e216b350a"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/FINAL-CHECKPOINT.json",
+      "bytes": 2277,
+      "sha256": "cfe5d9345a553dfe01e43ad67cae2683f8a5cea957d80ac100dcd1f91209e0bc"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/FINDINGS.json",
+      "bytes": 2949,
+      "sha256": "8ff963c1bf7be1c1c92937c59daba5465304b27fe39421cf55d944986b98fe72"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/FOLDERS.json",
+      "bytes": 1114,
+      "sha256": "89bcee241bcd18e460a09c955a3f66f4d870ace5f94179917cefe641014e07c7"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/LIBRARY-DELIVERY.json",
+      "bytes": 1113,
+      "sha256": "dd479ce4e1ca5d2d2b64017ae5e9f00f244e0b27c5f46ba132565a78bddf2dc7"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/LIVE-CHANGES.json",
+      "bytes": 136,
+      "sha256": "0d4056ddd41892d5e2ee0ea38b622660fa60cc83415417bf5ac58cf467959ba6"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/PROPOSED-CHANGES.json",
+      "bytes": 20793,
+      "sha256": "83ac31bb4c5f870d65db60315fe4d99748ee09d6090cb30c1025f7fbfbbf14b6"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/REPORT.md",
+      "bytes": 6905,
+      "sha256": "16a0e3ad9d366ab6a7c6d5b85223a77bf49cda558b9937524edcf697ff307c2d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/REPOSITORY-VARIANT-COMPARISON.json",
+      "bytes": 6980,
+      "sha256": "893859188a281e8b08480b87368147acd0c9c3e8329707911871d432f17e24e6"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/SOURCE-PINS.json",
+      "bytes": 2801,
+      "sha256": "b6cf71936151635437755f0ec86b41aa54a88b58b8637b4f9263699adc9cc422"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/SOURCE-SNAPSHOT-INDEX.json",
+      "bytes": 6100,
+      "sha256": "77488fd4646c3c578e061f542dfaa85f28525ec20d037a6781612e8d3c3ef13c"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/START.json",
+      "bytes": 3301,
+      "sha256": "27d74f5693464bc2d553b2c27a3f676d2fe6941a56a8f8072c037ec86149ba52"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/VALIDATION-CANONICAL.json",
+      "bytes": 1649,
+      "sha256": "b0a4f973d461719c5eb79e4ea560c4ea106f99e66a1c58777cfb3c5b485401b4"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/VALIDATION-PREPARED.json",
+      "bytes": 1606,
+      "sha256": "c7fcb60be418818b65b0040f395f6e5ede1f0a3e2f0da098962ae762dca9e981"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/reconcile.py",
+      "bytes": 12856,
+      "sha256": "bfaff65763ec68db49a44ea8e78bab09109b3e66a1fea241449f0c15be2809c4"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/36eadc05568d-prd-draft-ranker.md",
+      "bytes": 17503,
+      "sha256": "36eadc05568d4f917b2ce84b1e2c11848ba8970c12fd0fc8120cb5f2ed2fd995"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/5214b4749c30-implementation-plan.md",
+      "bytes": 50581,
+      "sha256": "5214b4749c30091e9f05197a68b9372717dc037e6e962f6ed8963a093c2ec442"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/574e7571b7ea-prd-draft-dash-debug.md",
+      "bytes": 105304,
+      "sha256": "574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/58c47def2c12-technical-contract.md",
+      "bytes": 24945,
+      "sha256": "58c47def2c12a73b9bc1dd85dd01fab50b27cc62584007b6173cd1da068d3aab"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/5f743a1bea52-SOURCE-NARROW.md",
+      "bytes": 17534,
+      "sha256": "5f743a1bea52d809f935b67de011cbad4fd2959f7fc37a989894ebdf893145b5"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/74950c630fe4-dr-012-migration-review.md",
+      "bytes": 5874,
+      "sha256": "74950c630fe43cf4bf713b0271f3ef1c3a72cce1aca45e7735217de08dd34583"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/91aab0f26c18-progress.md",
+      "bytes": 60423,
+      "sha256": "91aab0f26c18e546d0f7dcfc6d23c1bcc8d29feadd29657a65397b78f50ba758"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/a5fa835a2672-dr-011-yahoo-mapping-review.md",
+      "bytes": 3985,
+      "sha256": "a5fa835a26723d0b4b2ce5cbfc611a8249fb219e970e5833cedafa3f3ba470f2"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/bf7d08642ca4-dr-010-migration-review.md",
+      "bytes": 5211,
+      "sha256": "bf7d08642ca4f3a81b3741400b0737659b3e19a3a5c4ae87ac27fab8b42341aa"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/c063cab68f39-DraftDashboard_Audit.md",
+      "bytes": 114785,
+      "sha256": "c063cab68f39ace4cd651dc74bc774cffc003fb33fd462ba1f1bbc929ecb8db3"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/c6328b21e950-COUNTS-EXPLANATION.json",
+      "bytes": 5149,
+      "sha256": "c6328b21e950719e7d35d0c0bcd5214adeb2708200df83f3081cc569c346b011"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/ccd494110fe8-tasks-prd-yahoo-ingestion-mapping-audit.md",
+      "bytes": 38560,
+      "sha256": "ccd494110fe8374e47cc41710feaa8633f5e33b9ac81b7353ee1b5443184202b"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/source-snapshots/e240b9dbcb30-repository-record.md",
+      "bytes": 11891,
+      "sha256": "e240b9dbcb30e0052b9d7f32f73e839b7301bb992a88da02164421382125c5ff"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-11-ranker-contracts/verify-final.py",
+      "bytes": 8228,
+      "sha256": "41ae77efe8cd8254f4bc11eee3a68f7ea0215a4e294ee5e44d4da4b808b9d327"
+    }
+  ]
+}

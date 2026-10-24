@@ -1,0 +1,43 @@
+{
+  "checks": [
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SUSTAINABILITY-NATURAL",
+      "prior_children_preserved": 1,
+      "new_children_visible": 3
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "SUSTAINABILITY-NATURAL",
+      "prior_children_preserved": 1,
+      "new_children_visible": 3
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "prior_children_preserved": 1,
+      "new_children_visible": 1
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "prior_children_preserved": 1,
+      "new_children_visible": 1
+    },
+    {
+      "document": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SUSTAINABILITY-MATURED-EVIDENCE",
+      "prior_children_preserved": 0,
+      "new_children_visible": 2
+    },
+    {
+      "document": "CANDIDATE-LEDGER.md",
+      "taskID": "SUSTAINABILITY-MATURED-EVIDENCE",
+      "prior_children_preserved": 0,
+      "new_children_visible": 2
+    }
+  ],
+  "new_children_rendered": 6,
+  "prior_children_unchanged": true,
+  "app_runtime_observed": false
+}

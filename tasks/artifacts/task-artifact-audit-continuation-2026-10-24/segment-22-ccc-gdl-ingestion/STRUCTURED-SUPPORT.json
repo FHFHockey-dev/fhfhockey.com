@@ -1,0 +1,184 @@
+{
+  "at": "2026-10-24T20:25:45.475804+00:00",
+  "support_files": [
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-browser-source-evidence.json",
+      "sha256": "e2cf8133d58b477eb6ec17b0a203ddc3b5e7829bb8724d6920926c20105a0590",
+      "bytes": 9768,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "observedOn": "str",
+        "method": "str",
+        "originals": "array:2",
+        "vercel": "object:8",
+        "reviewerSetup": "object:2",
+        "limits": "array:5",
+        "correctionChain": "object:9",
+        "additionalOriginals": "array:7",
+        "editedOriginal": "object:8"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-deployment.json",
+      "sha256": "8a4b26896bc287cbf14a93ea0b2b5f8820b9ff737653addc80faca75e38e295b",
+      "bytes": 561,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "retrievedAt": "str",
+        "method": "str",
+        "deploymentId": "str",
+        "commit": "str",
+        "branch": "str",
+        "createdAt": "str",
+        "readyAt": "str",
+        "target": "str",
+        "flags": "str",
+        "model": "str",
+        "scheduledCallerParameters": "str",
+        "originalSourceEnrichmentCache": "str"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-games.json",
+      "sha256": "beaf7e7e5db61689faff224bc317c3711e3ed7f002be3dd765b11fec09253a0e",
+      "bytes": 326,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "retrievedAt": "str",
+        "method": "str",
+        "games": "array:1"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-holdout-context.json",
+      "sha256": "f31e5f733784f8e5e19c62eacc3cb2cf4aae0fea24b57b19e7383834ab143221",
+      "bytes": 82270,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "retrievedAt": "str",
+        "method": "str",
+        "snapshots": "array:24"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "sha256": "150880b7f63bfa1cbd459bb776d4763197392d407a7b2837d11de3c9749b87dd",
+      "bytes": 18560,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "version": "str",
+        "reviewer": "str",
+        "freezeOrder": "str",
+        "publicationTime": "str",
+        "canonicalAccuracyDenominator": "int",
+        "records": "array:35",
+        "labelReviewLimitation": "str"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-lineage.json",
+      "sha256": "602896f9666732597190426e1fd7d18e21b7050c9868e4609b3bf1ab86208f15",
+      "bytes": 1457,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "retrievedAt": "str",
+        "method": "str",
+        "requests": "array:3"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "sha256": "cafc2d85a65f6aaf3c0674ecb11a11fe7408ba1db70564339595b730d1bbb6c8",
+      "bytes": 176569,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "retrievedAt": "str",
+        "method": "str",
+        "events": "array:11",
+        "snapshots": "array:11",
+        "localDiagnosticReplay": "array:11",
+        "holdoutCandidates": "array:24",
+        "holdoutStatus": "str",
+        "persistedEvidence": "object:2"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-closure-receipts.json",
+      "sha256": "6d928c12262d4e63b02098248741f96cfde252945a5376c6b05968961c0e2a43",
+      "bytes": 8497,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "observedOn": "str",
+        "projectId": "str",
+        "method": "str",
+        "caller": "object:2",
+        "membership": "object:2",
+        "limits": "array:4"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    }
+  ],
+  "counts": {
+    "events": 11,
+    "snapshots": 11,
+    "diagnostic_replay": 11,
+    "holdout_candidates": 24,
+    "persisted_reports": 5,
+    "persisted_player_events": 2,
+    "labeled_records": 35,
+    "claim_annotated_records": 11,
+    "classification_only_records": 24,
+    "split_counts": {
+      "development_regression": 11,
+      "semantic_holdout_candidate": 19,
+      "quarantined_related": 5
+    },
+    "source_hashes_matching": 35,
+    "source_hashes_checked": 35,
+    "exact_spans_matching": 24,
+    "exact_spans_checked": 24,
+    "holdout_context_records": 24,
+    "holdout_context_nonempty_rosters": 19,
+    "canonical_accuracy_denominator": 0,
+    "browser_original_sections_count": 11
+  },
+  "id_crosslinks": {
+    "event_snapshot_sets_match": true,
+    "label_source_ids_match": true,
+    "holdout_context_ids_match": true
+  },
+  "limitations": [
+    "Structural/hash/span checks are not independent labels, original-source authentication, source-time roster acceptance, runtime parity or fresh production observations.",
+    "JSON does not create a new call budget or any execution authority.",
+    "Browser sources are recorded historical observations; no pixels or pages were opened in this audit."
+  ],
+  "resolved_inspection_issue": {
+    "action": "Bounded structural/label analysis",
+    "target": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+    "initial_result": "KeyError claims; no output written and no mutation/pending process",
+    "resolution": "Inspected schema:11claim-annotated records and24classification-only records. Branching by actual schema completed the intended checks."
+  }
+}

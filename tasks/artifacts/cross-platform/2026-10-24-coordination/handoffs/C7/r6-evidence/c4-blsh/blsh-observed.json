@@ -1,0 +1,22 @@
+{
+  "D1": {
+    "renders": 351,
+    "strays": [],
+    "strayCount": 0
+  },
+  "D2": {
+    "toggles": 7,
+    "focusedIsHeading": true,
+    "focusReturned": true,
+    "closed": true,
+    "openCount": 1,
+    "expanded": [
+      "false",
+      "true",
+      "false"
+    ]
+  },
+  "D3": {
+    "missing": []
+  }
+}

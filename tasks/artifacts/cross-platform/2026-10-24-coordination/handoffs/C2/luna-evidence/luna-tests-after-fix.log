@@ -1,0 +1,10 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c2-isolated/web
+
+ ✓ lib/sources/tweetLunaReview.test.ts (46 tests) 745ms
+
+ Test Files  1 passed (1)
+      Tests  46 passed (46)
+   Start at  12:18:36
+   Duration  1.13s (transform 151ms, setup 0ms, collect 263ms, tests 745ms, environment 0ms, prepare 30ms)
+

@@ -1,0 +1,191 @@
+{
+  "at": "2026-10-24T18:55:53.136463+00:00",
+  "outputs": [
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/BASELINE-LEDGER.json",
+      "bytes": 1286282,
+      "sha256": "894cb6a63fcf63244b10a08e610c93276c8e713b223ff7f53616f074c6c4190d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/BASELINE-LEDGER.md",
+      "bytes": 605472,
+      "sha256": "51c7962014116573f65538c640ab977dcbfe09d4ef58360bf6a70baabc7e2abf"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 569128,
+      "sha256": "415d918354a7f40ceb6410aa732e8feebd6bc8c188631e282f49f128bb2f0b81"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/CANDIDATE-LEDGER.json",
+      "bytes": 1314914,
+      "sha256": "b7e8654b37f05d682fa29c9a2dbfeda03eedec215146afd25c4b75741472d9d4"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/CANDIDATE-LEDGER.md",
+      "bytes": 624213,
+      "sha256": "1c6ab83284a1448b22d48034210318482a2db3e23816f2c6b844e2aaf1b654e3"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 587873,
+      "sha256": "d6b5da4dc78ba3cf83c088603cfb796cb565bcdf44e1e187c1ba30de8410bac1"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/CANONICAL-CHECKPOINT.patch",
+      "bytes": 123917,
+      "sha256": "a5b3035d03b2e02c237191273ae191b2484ddbf9b39d607b0a3ce39ff7d56c5c"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/CHANGELOG.json",
+      "bytes": 29183,
+      "sha256": "807c3981112360ab987ee60372cdb4be87f5bbd1792dba4688cd55badfc61c04"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/CHECKPOINT-TIME.txt",
+      "bytes": 33,
+      "sha256": "96c91eede11b6bb85d969d05a4fcac026547671a95d7afbffc7a00f37123a338"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/CONTINUATION.json",
+      "bytes": 65030,
+      "sha256": "43c9133a2d5122ad5686b8ea6164d52759e485e4756795cf6e64c00b287290f9"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/COVERAGE.json",
+      "bytes": 6298,
+      "sha256": "ab48f3e0fc842b7e166c9e524132460eb028ac6d7fc75e53bebec6834a15a3af"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/DIAGNOSTICS.json",
+      "bytes": 905,
+      "sha256": "09cbf4df621536e98299ee9bcd386dca6d42de84d8a0ec97350099aec42ad84b"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/FINAL-CHECKPOINT.json",
+      "bytes": 2619,
+      "sha256": "1fc6c3cabf3032c5408009bc8f8f1773c49cc69a446d3a1d64e5bc1d4a42a73f"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/FOLDERS.json",
+      "bytes": 383209,
+      "sha256": "8faeed060c86ba46ca18139c08183ef229ffff2e1db130af25c83581d7b35d90"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/LATER-PARITY-AND-RELEASE.json",
+      "bytes": 3398,
+      "sha256": "430def8d59b8652f0c6537a9b1a9e386fd71f3b317e041a181d5919d8b0df800"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/LIBRARY-DELIVERY.json",
+      "bytes": 1143,
+      "sha256": "fdf29a7a653d0bf1eb358d0e3c1bc71087d7bb3b8eb1d77015bd061ce6e02791"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/LIVE-CHANGES.json",
+      "bytes": 614,
+      "sha256": "539431da885ea235de14bb0cc2cca3d45edb5dd9d93d0c673e139c3957f8fe10"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/PROPOSED-CHANGES.json",
+      "bytes": 15993,
+      "sha256": "17df31291eb816d4dc734f2cc90facaaad395c84d77cba0274804ae012566b0a"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/RENDER-BEFORE-LEDGER.json",
+      "bytes": 1314914,
+      "sha256": "16238b2ff710ee069a5064f24d73531184fc505cd983504d06332fdaffd18a90"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/RENDER-BEFORE-LEDGER.md",
+      "bytes": 624216,
+      "sha256": "cf565ecf7bf877171c5f1683eb468e61344dfc05b02296f08d62b6c6b714e898"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/RENDER-BEFORE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 587873,
+      "sha256": "a4fbe728c67a20d6b88b2fa3f1827c8c11a026e5dcea70231a99279e408fd742"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/RENDER-REPAIR.json",
+      "bytes": 3537,
+      "sha256": "d8daabdbf0d1b2f0d87a44e4af0b7de65e1d9622a0e6550c05bba373fef34084"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/REPORT.md",
+      "bytes": 4396,
+      "sha256": "f8d10b452c738e7bbe387d33a1d77b8f720237a18e6dd505a2546f0403c4324d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/SOURCE-PINS-START.json",
+      "bytes": 1701,
+      "sha256": "db2911cf1cfa3c89488c772f3e48e3aa6092f030f5afb7c536cf305287cf78cb"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/SOURCE-PINS.json",
+      "bytes": 1618,
+      "sha256": "034a96c39c3668daa585dd67a2030fc5f4f2cfc8e3e6e0904b86a671cf509669"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/SOURCE-SNAPSHOT-INDEX.json",
+      "bytes": 3599,
+      "sha256": "c34215b6e87a28c5974e62829d97fe2947becbebd44bb242b9f24519656b589e"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/START.json",
+      "bytes": 878,
+      "sha256": "f9b292aa15abed5ad0a6a532c3c6bcfd0d633d5ae10d5f588a0bdaefcc92396f"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/VALIDATION-CANONICAL.json",
+      "bytes": 1792,
+      "sha256": "c30009150386d2362e32a680948454394e55d0e0851055d1ae507050a8cb31a0"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/VALIDATION-PREPARED.json",
+      "bytes": 1792,
+      "sha256": "c30009150386d2362e32a680948454394e55d0e0851055d1ae507050a8cb31a0"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/reconcile.py",
+      "bytes": 10904,
+      "sha256": "291b5220cefd01e772e30eb20b66e1d52de7640c1b857f3391bc626f37f19774"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1c5b086e4ade-FORGE_ECOSYSTEM_ELI5_AUDIT.md",
+      "bytes": 8757,
+      "sha256": "1c5b086e4ade172656c0aa9eb301f319188fec725193d168f2ad7855e8cf979d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md",
+      "bytes": 28784,
+      "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/4f015e185732-FORGE_EXPLAINED.md",
+      "bytes": 11657,
+      "sha256": "4f015e18573239112cfe2e7ef3be6539adeb6aff8915d0a1d2d231121f55031c"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/52da63113db4-tasks-forge-projection-improvements-2026-10-22.md",
+      "bytes": 19274,
+      "sha256": "52da63113db42c3da3b98baebbdcf505b7ce5fe48cdeb6d5341f9564852a146a"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/9946cdde6b70-VERDICT.md",
+      "bytes": 7793,
+      "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/b27a0139d90a-2026-10-22-claude-forge-model-lane-handover.md",
+      "bytes": 4145,
+      "sha256": "b27a0139d90a18964583e3cc88c855276d2cf0ff711fee2b02e8bc9409b05413"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md",
+      "bytes": 21140,
+      "sha256": "cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4"
+    }
+  ],
+  "excluded_from_recursive_reaudit": true
+}

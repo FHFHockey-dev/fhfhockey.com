@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-24T20:49:36.814873+00:00",
+  "status": "passed",
+  "all_changed_next_action_prefixes_preserved": true,
+  "all_new_dependencies_resolve": true,
+  "parked_rankings_status_explicit": true,
+  "partial_owner_snapshot_redacted_and_line_preserving": true,
+  "original_source_sha_and_snapshot_sha_distinct": true,
+  "children_match_both_markdown_blocks": true
+}

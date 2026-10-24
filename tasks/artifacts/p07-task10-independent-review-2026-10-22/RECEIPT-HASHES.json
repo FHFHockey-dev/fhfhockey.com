@@ -1,0 +1,22 @@
+{
+  "BROWSER.json": "a395d8c394eb469ffd048ad55f33684339c9d438f531b1766575c765cf48d10f",
+  "COMMANDS.md": "2f9d9ab25eab5f988b431193c0a0246d15078fa8ca5d54d67b596a9f98fc839e",
+  "CROSS-CLASS-COMMAND.txt": "b13fcb16196ca297e333a3529988cc9d65152d3908d3745f06077d3a3f5d921f",
+  "END-HASHES.json": "ef3ee2f5af22343f39d1180cf80031b2cc35b4e01095061efd7c6364fbcc6dad",
+  "FIXED-SNAPSHOT.json": "0ac8d6efb1cdfa0905c688f885672986d9ef91854948a1a3de7f31cd3007ef3a",
+  "REPORT.md": "8a38ff1709353725a24c67dafc20efeb8ef7f28c750f44a3bc1444efcd5caacb",
+  "SCRATCH-PATH.txt": "7bd84f062c1f530e16ac2dc9a3a9f5ea7810df135db33cacc193c9199e4d478a",
+  "START-HASHES.json": "de0304986ae24cb69394eaafd250371bcb8cf94e7d950a8df57ce14df73f65f8",
+  "TEST-COMMAND.txt": "f7a6125064fe2ab0fef2926485687882b903e5d4a7f072340caa7c50a4926034",
+  "VERIFICATION.json": "d70e1a2c43095f5e5a1009914a7e3656a8c9b6fa6f78bd77110088e6946f2982",
+  "audit-network-deny.cjs": "5fd1c8ce5bb65531ab0558bccf4fe9ef252e4c524c4bec4c944c37e4bd707c06",
+  "audit.offline.setup.ts": "7dbb56c149b2b620b5cc073456a414d2819b06cfbb5ec7c7f0cf02ef7d176a6f",
+  "audit.vitest.config.mts": "b5b353323c4ceef45aa2436a500f031d57aa7ffe5be888f5edde87c55143da52",
+  "browser-check.cjs": "782fc51802881d76a4e8b60f96e410f11d30a66e71b431ccb071edc1a85c8e4b",
+  "browser.log": "6d4983d7d94854ddfe8da0e9076750d208adb0c2ebefddc7bee0e2f0037af24b",
+  "cross-class.log": "c987462770b490ae02fbaa7bb64f09e70da386b4e17db9014733ccc0d2c052e1",
+  "focused.log": "22525cf388a61763b6eb0cd30137d45158c453bc8a281f1dce36654dbbe13f5d",
+  "p07Task10Independent.test.tsx": "b2ecdcb1e667c126b5507869ea2a6e19cdedc0573a2ed6214ba917c6afbe68c3",
+  "p07Task10Serialization.test.ts": "c015bf95740c749700e04f175324a0bd1c96207d84a30fa177a731e218f37e4f",
+  "serialization.log": "f766549426ee0622d7aa5f1ddd0c7e6523a9944951b7f5d02b047c31124b3d95"
+}

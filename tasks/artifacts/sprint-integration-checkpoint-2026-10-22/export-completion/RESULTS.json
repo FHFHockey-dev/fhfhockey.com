@@ -1,0 +1,40 @@
+[
+  {
+    "name": "migration-fixtures",
+    "argv": [
+      "npm",
+      "test",
+      "--",
+      "--run",
+      "--config",
+      "audit.vitest.config.mts",
+      "lib/supabase/supportedBaselineMigration.test.ts",
+      "--reporter=json",
+      "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/sprint-integration-checkpoint-2026-10-22/export-completion/migration-fixtures.json"
+    ],
+    "started_at": "2026-10-22T17:07:26.856537+00:00",
+    "ended_at": "2026-10-22T17:07:27.568270+00:00",
+    "exit_code": 0,
+    "log": "migration-fixtures.log"
+  },
+  {
+    "name": "application-types",
+    "argv": [
+      "npm",
+      "exec",
+      "--offline",
+      "--no",
+      "--",
+      "tsc",
+      "--noEmit",
+      "--incremental",
+      "false",
+      "--project",
+      "audit.integration-application-tsconfig.json"
+    ],
+    "started_at": "2026-10-22T17:07:27.568539+00:00",
+    "ended_at": "2026-10-22T17:08:11.408900+00:00",
+    "exit_code": 0,
+    "log": "application-types.log"
+  }
+]

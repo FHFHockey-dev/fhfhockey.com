@@ -1,0 +1,53 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-rso-correctness-20261023/web
+
+(node:33251) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts (4 tests | 1 failed) 36ms
+   × keeps forged, stale and future Yahoo marks informational through the actual worker and shared fallback 28ms
+     → expected { sourceKind: 'detailed', …(17) } to match object { startProbability: 0.3, …(2) }
+(38 matching properties omitted from actual)
+   ✓ does not extend an expired bridge with a current-looking Yahoo mark 5ms
+   ✓ does not admit an unreviewed native target even when Yahoo marks and bridge revision claims are present 2ms
+   ✓ denies changed bridge copies inside the read and serialized copies after its scope ends 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts > keeps forged, stale and future Yahoo marks informational through the actual worker and shared fallback
+AssertionError: expected { sourceKind: 'detailed', …(17) } to match object { startProbability: 0.3, …(2) }
+(38 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "confirmedStart": false,[39m
+[32m-   "startProbability": 0.3,[39m
+[31m+   "confirmedStart": true,[39m
+[31m+   "startProbability": 1,[39m
+[2m    "stats": {[22m
+[32m-     "SAVES_GOALIE": 7.5,[39m
+[31m+     "SAVES_GOALIE": 25,[39m
+[2m    },[22m
+[2m  }[22m
+
+ ❯ lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts:75:49
+     73|     expect(await second.promise).toBe(result); expect(fetch).toHaveBee…
+     74|     expect(result.readError).toBeNull();
+     75|     expect(result.displaySnapshot.forecasts[0]).toMatchObject({ startP…
+       |                                                 ^
+     76|     expect(result.displaySnapshot.players[0].startingStatus).toEqual(s…
+     77|     expect(result.result.selected.projectedValue).toBe(7.5);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  12:23:42
+   Duration  391ms (transform 118ms, setup 9ms, collect 128ms, tests 36ms, environment 126ms, prepare 26ms)
+

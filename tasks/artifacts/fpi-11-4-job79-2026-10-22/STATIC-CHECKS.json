@@ -1,0 +1,54 @@
+{
+  "patch-check": {
+    "command": [
+      "git",
+      "apply",
+      "--check",
+      "--whitespace=error-all",
+      "/Users/tim/Code/fhfhockey.com/tasks/artifacts/fpi-11-4-job79-2026-10-22/candidate.patch"
+    ],
+    "exit_code": 0
+  },
+  "patch-apply-fixture": {
+    "command": [
+      "git",
+      "apply",
+      "/Users/tim/Code/fhfhockey.com/tasks/artifacts/fpi-11-4-job79-2026-10-22/candidate.patch"
+    ],
+    "exit_code": 0
+  },
+  "typecheck_lock": "acquired and released by FPI-11.4",
+  "typecheck": {
+    "command": [
+      "npm",
+      "exec",
+      "--offline",
+      "--",
+      "tsc",
+      "--noEmit",
+      "-p",
+      "tsconfig.offline.json"
+    ],
+    "exit_code": 0
+  },
+  "lint": {
+    "command": [
+      "npm",
+      "exec",
+      "--offline",
+      "--",
+      "eslint",
+      "--config",
+      "eslint.config.mjs",
+      "__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+      "lib/cron/combinedCronInventory.test.ts",
+      "lib/cron/nstBurstPlans.test.ts",
+      "lib/cron/nstBurstPlans.ts",
+      "lib/cron/nstCoordination.test.ts",
+      "lib/cron/nstCoordination.ts",
+      "lib/cron/nstRateLimitPolicy.test.ts",
+      "lib/cron/nstRateLimitPolicy.ts"
+    ],
+    "exit_code": 0
+  }
+}

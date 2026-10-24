@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    ".next",
+    ".next-*",
+    "next-env.d.ts",
+    "__tests__/pages/api/v1/db/auditNstIndependent.test.ts",
+    "__tests__/pages/api/v1/db/auditNstR1Additional.test.ts",
+    "lib/reviewConsumerExposure.test.tsx",
+    "lib/reviewNegativeExposure.test.tsx"
+  ]
+}

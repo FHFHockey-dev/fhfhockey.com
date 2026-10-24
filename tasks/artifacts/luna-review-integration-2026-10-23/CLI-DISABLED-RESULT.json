@@ -1,0 +1,16 @@
+{
+  "version": "ifttt-luna-review-v1",
+  "canPublish": false,
+  "canWriteAliases": false,
+  "canChangeStatus": false,
+  "canExecuteReplacement": false,
+  "status": "disabled",
+  "holds": [],
+  "lineage": null,
+  "identity": null,
+  "goalieStatuses": [],
+  "decisionReview": null,
+  "attempts": 0,
+  "requestIds": [],
+  "reviewQueueKey": null
+}

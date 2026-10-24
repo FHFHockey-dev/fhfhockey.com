@@ -1,0 +1,15 @@
+{
+  "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/WORK-PACKETS.md",
+  "sha256": "802bf2543ab8f1981767c354cc52080a51e3724b7a7b00f2683e624b8537187c",
+  "bytes": 11208,
+  "lines": 52,
+  "mtime_ns": 1792757466627986377,
+  "coverage": "partially-inspected",
+  "reviewed_ranges": [
+    [
+      18,
+      27
+    ]
+  ],
+  "review_scope": "Only packet status lines18\u201327 read to distinguish public Trends completion from planned S13/S14 dependency/cohort scope. Historical packet allocation is not current dispatch authority; remainder unreviewed this segment."
+}

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ user: vi.fn(), access: vi.fn(), load: vi.fn(), rate: vi.fn() }));
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.user }));
 vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: mocks.access }));
@@ -7,7 +7,7 @@ vi.mock("lib/draft-pro/recommendationsRateLimit", () => ({ consumeRecommendation
 vi.mock("./pickupServer", () => ({ loadYahooPickupContext: mocks.load }));
 import handler from "pages/api/v1/account/yahoo/pickup";
 const response = () => { const res: any = { setHeader: vi.fn(), status: vi.fn(), json: vi.fn(), end: vi.fn() }; res.status.mockReturnValue(res); return res; };
-beforeEach(() => { vi.resetAllMocks(); mocks.user.mockResolvedValue({ id: "owner" }); mocks.access.mockResolvedValue({ eligible: true }); mocks.rate.mockReturnValue(true); mocks.load.mockResolvedValue(null); });
+beforeEach(() => { vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", "true"); vi.resetAllMocks(); mocks.user.mockResolvedValue({ id: "owner" }); mocks.access.mockResolvedValue({ eligible: true }); mocks.rate.mockReturnValue(true); mocks.load.mockResolvedValue(null); });
 describe("Yahoo pickup API", () => {
   it("requires sign-in before loading premium data", async () => {
     mocks.user.mockResolvedValue(null);
@@ -32,3 +32,5 @@ describe("Yahoo pickup API", () => {
 });
 
 vi.mock("lib/in-season/server", () => ({ loadInSeasonAccess: async () => ({ eligible: false, capabilities: [], reason: "no_active_grant" }) }));
+
+afterEach(() => vi.unstubAllEnvs());

@@ -1,0 +1,148 @@
+{
+  "at": "2026-10-24T16:58:41.190Z",
+  "checks": [
+    {
+      "name": "same owner reuses ID after reload",
+      "pass": true,
+      "a1": "b75115bb-38b0-41bd-90aa-de153fd95337",
+      "a2": "b75115bb-38b0-41bd-90aa-de153fd95337"
+    },
+    {
+      "name": "account switch gets a new ID",
+      "pass": true,
+      "b1": "100ee4f3-26fa-4314-9ee8-fb10c5d84f48"
+    },
+    {
+      "name": "app sign-out removes the key",
+      "pass": true
+    },
+    {
+      "name": "same owner after sign-out gets a new ID",
+      "pass": true,
+      "b2": "da4d5223-93ed-4044-8186-cf664e209e3b"
+    },
+    {
+      "name": "corrupt state gets a valid new ID",
+      "pass": true,
+      "b3": "f6b446c8-94da-4a4a-93cd-bd3af1c47fd1"
+    },
+    {
+      "name": "expired entry is not sent",
+      "pass": true,
+      "b4": "0750aa40-2829-4b22-b78c-fecb26571ce8"
+    },
+    {
+      "name": "non-UUID entry is not sent",
+      "pass": true,
+      "b5": "7440bcb0-efb9-43d3-b078-575f85f354a4"
+    },
+    {
+      "name": "every state screenshot is distinct",
+      "pass": true,
+      "count": 9
+    }
+  ],
+  "states": [
+    {
+      "state": "lost response (owner A)",
+      "file": "01-lost-response.png",
+      "sha256": "daf7a3c3555da50309d8ed8198f1ab01e703c7bfc717fd3ed3788b76beac74a7",
+      "stored": "{\"ownerId\":\"00000000-0000-4000-8000-00000000000a\",\"requests\":{\"sub_fixture\":{\"requestId\":\"b75115bb-38b0-41bd-90aa-de153fd95337\",\"savedAt\":1792861112274}}}",
+      "sent": [
+        "b75115bb-38b0-41bd-90aa-de153fd95337"
+      ]
+    },
+    {
+      "state": "after reload, before retry (owner A)",
+      "file": "02-after-reload.png",
+      "sha256": "872ebc79a5c17fd43a43ce04f14db3d27943b00b498f67202a9d0b0ffdd804cf",
+      "stored": "{\"ownerId\":\"00000000-0000-4000-8000-00000000000a\",\"requests\":{\"sub_fixture\":{\"requestId\":\"b75115bb-38b0-41bd-90aa-de153fd95337\",\"savedAt\":1792861112274}}}",
+      "sent": [
+        "b75115bb-38b0-41bd-90aa-de153fd95337"
+      ]
+    },
+    {
+      "state": "after reload, retry sent (owner A)",
+      "file": "03-after-reload-retry.png",
+      "sha256": "1dd0f28fe8fda3f8f69aa0083b37f94c279b26d781f4926c5352cf07b3fd3c1b",
+      "stored": "{\"ownerId\":\"00000000-0000-4000-8000-00000000000a\",\"requests\":{\"sub_fixture\":{\"requestId\":\"b75115bb-38b0-41bd-90aa-de153fd95337\",\"savedAt\":1792861112274}}}",
+      "sent": [
+        "b75115bb-38b0-41bd-90aa-de153fd95337",
+        "b75115bb-38b0-41bd-90aa-de153fd95337"
+      ]
+    },
+    {
+      "state": "after account switch to owner B, before retry",
+      "file": "04-after-account-switch.png",
+      "sha256": "a082474e54e8b80700506f23f9068693a03840945975b1c3d2e10393c3318c79",
+      "stored": null,
+      "sent": [
+        "b75115bb-38b0-41bd-90aa-de153fd95337",
+        "b75115bb-38b0-41bd-90aa-de153fd95337"
+      ]
+    },
+    {
+      "state": "after app menu sign-out (owner B)",
+      "file": "05-after-app-signout.png",
+      "sha256": "fc75509565e95aac192857ede5d5fb8f4d122490ddc0cfa3734fdeaa1ae2b34d",
+      "stored": null,
+      "sent": [
+        "b75115bb-38b0-41bd-90aa-de153fd95337",
+        "b75115bb-38b0-41bd-90aa-de153fd95337",
+        "100ee4f3-26fa-4314-9ee8-fb10c5d84f48"
+      ]
+    },
+    {
+      "state": "owner B signed in again after sign-out, retry sent",
+      "file": "06-same-owner-after-signout.png",
+      "sha256": "96b5b73b4cf60059ba31d2254a46419ca9b7d803750ae434e0ec4bee150d7e0a",
+      "stored": "{\"ownerId\":\"00000000-0000-4000-8000-00000000000b\",\"requests\":{\"sub_fixture\":{\"requestId\":\"da4d5223-93ed-4044-8186-cf664e209e3b\",\"savedAt\":1792861117166}}}",
+      "sent": [
+        "b75115bb-38b0-41bd-90aa-de153fd95337",
+        "b75115bb-38b0-41bd-90aa-de153fd95337",
+        "100ee4f3-26fa-4314-9ee8-fb10c5d84f48",
+        "da4d5223-93ed-4044-8186-cf664e209e3b"
+      ]
+    },
+    {
+      "state": "corrupt stored state, after reload (owner B)",
+      "file": "07-corrupt-state.png",
+      "sha256": "4c45c92516ba47612f8f7e5644f78b505ffa74fe7acf4474a19175c3e55976d4",
+      "stored": null,
+      "sent": [
+        "b75115bb-38b0-41bd-90aa-de153fd95337",
+        "b75115bb-38b0-41bd-90aa-de153fd95337",
+        "100ee4f3-26fa-4314-9ee8-fb10c5d84f48",
+        "da4d5223-93ed-4044-8186-cf664e209e3b"
+      ]
+    },
+    {
+      "state": "expired entry (25 h old), after reload (owner B)",
+      "file": "08-expired-state.png",
+      "sha256": "4671df52f173ea62466c1cd660c659945d8be293cabebdac53d697992719d952",
+      "stored": null,
+      "sent": [
+        "b75115bb-38b0-41bd-90aa-de153fd95337",
+        "b75115bb-38b0-41bd-90aa-de153fd95337",
+        "100ee4f3-26fa-4314-9ee8-fb10c5d84f48",
+        "da4d5223-93ed-4044-8186-cf664e209e3b",
+        "f6b446c8-94da-4a4a-93cd-bd3af1c47fd1"
+      ]
+    },
+    {
+      "state": "36-dash non-UUID entry, retry sent (owner B)",
+      "file": "09-non-uuid-rejected.png",
+      "sha256": "00ccbd4eb094df34013b40a12cc09e56f69ccee07a4232dd943fb96cc958c344",
+      "stored": "{\"ownerId\":\"00000000-0000-4000-8000-00000000000b\",\"requests\":{\"sub_fixture\":{\"requestId\":\"7440bcb0-efb9-43d3-b078-575f85f354a4\",\"savedAt\":1792861121140}}}",
+      "sent": [
+        "b75115bb-38b0-41bd-90aa-de153fd95337",
+        "b75115bb-38b0-41bd-90aa-de153fd95337",
+        "100ee4f3-26fa-4314-9ee8-fb10c5d84f48",
+        "da4d5223-93ed-4044-8186-cf664e209e3b",
+        "f6b446c8-94da-4a4a-93cd-bd3af1c47fd1",
+        "0750aa40-2829-4b22-b78c-fecb26571ce8",
+        "7440bcb0-efb9-43d3-b078-575f85f354a4"
+      ]
+    }
+  ]
+}

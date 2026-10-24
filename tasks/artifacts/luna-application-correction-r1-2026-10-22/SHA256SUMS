@@ -1,0 +1,4 @@
+2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a  web/lib/sources/tweetIdentityReplacementReview.ts
+3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451  web/lib/sources/tweetIdentityReplacementReview.test.ts
+ed584d5e242458530c23e4e1eeb835bcfd09a37b9835d7b857d857115c18b5f6  tasks/artifacts/luna-application-correction-r1-2026-10-22/correction.patch
+b8a639374e07c4839bef444fac7ca7f52ee02b7502b1328d6230c436c11d8bbb  tasks/artifacts/luna-application-correction-r1-2026-10-22/corrected-source.tar.gz

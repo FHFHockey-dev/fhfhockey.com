@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-24T19:38:24.508563+00:00",
+  "status": "succeeded",
+  "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+  "version_before": 15,
+  "version_after": 16,
+  "same_identity": true,
+  "replacement_attempts": 1,
+  "raw_response": "LIBRARY-REPLACE-RAW.json",
+  "parsed_receipt": "LIBRARY-REPLACE-RECEIPT.json",
+  "helper_exit_code": 0,
+  "native_returned_xattrs_matched": [
+    "user.library-file-version"
+  ],
+  "local_master_sha256": "4c397d24376c535505c76910f9d0383a16d2fc4cfd9dfc20a51fc0ffab46a47d",
+  "file_size_bytes": 660849,
+  "no_remote_download_checksum_claim": true,
+  "download_url": "https://chatgpt.com/api/library/files/libfile_9987e7d9d1b8819181b366a318cc9a9c/download",
+  "no_pending_or_uncertain_operation": true
+}

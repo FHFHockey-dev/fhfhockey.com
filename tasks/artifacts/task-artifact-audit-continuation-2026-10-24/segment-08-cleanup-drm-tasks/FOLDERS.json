@@ -1,0 +1,108 @@
+{
+  "at": "2026-10-24T17:17:21.843365+00:00",
+  "folders": {
+    "tasks/TASKS/dead-code-cleanup": {
+      "reviewed_entries": [
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+          "coverage": "content-reviewed",
+          "disposition": null
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          "coverage": "content-reviewed",
+          "disposition": null
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+          "coverage": "partially-inspected",
+          "disposition": "settled-historical-generated-index"
+        }
+      ],
+      "pending_unique_text_candidates": 0
+    },
+    "tasks/TASKS/draft-dashboard-yahoo/docs": {
+      "reviewed_entries": [
+        {
+          "path": "tasks/TASKS/draft-dashboard-yahoo/docs/live-draft-runbook.md",
+          "coverage": "content-reviewed",
+          "disposition": null
+        },
+        {
+          "path": "tasks/TASKS/draft-dashboard-yahoo/docs/yahoo-tables.md",
+          "coverage": "content-reviewed",
+          "disposition": null
+        }
+      ],
+      "pending_unique_text_candidates": 1
+    },
+    "tasks/TASKS/draft-dashboard-yahoo": {
+      "reviewed_entries": [
+        {
+          "path": "tasks/TASKS/draft-dashboard-yahoo/live-draft-production-readiness.md",
+          "coverage": "content-reviewed",
+          "disposition": null
+        },
+        {
+          "path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-live-draft-backlog.md",
+          "coverage": "content-reviewed",
+          "disposition": null
+        },
+        {
+          "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md",
+          "coverage": "content-reviewed",
+          "disposition": null
+        },
+        {
+          "path": "tasks/TASKS/draft-dashboard-yahoo/yahoo-current-inventory.md",
+          "coverage": "content-reviewed",
+          "disposition": null
+        }
+      ],
+      "pending_unique_text_candidates": 6
+    },
+    "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24": {
+      "reviewed_entries": [
+        {
+          "path": "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW.md",
+          "coverage": "content-reviewed",
+          "disposition": null
+        },
+        {
+          "path": "tasks/artifacts/wigo-local-fix-independent-review-2026-10-24/REVIEW-EVIDENCE.json",
+          "coverage": "content-reviewed",
+          "disposition": null
+        }
+      ],
+      "pending_unique_text_candidates": 0
+    },
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review": {
+      "reviewed_entries": [
+        {
+          "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW.md",
+          "coverage": "content-reviewed",
+          "disposition": null
+        },
+        {
+          "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-review/REVIEW-EVIDENCE.json",
+          "coverage": "content-reviewed",
+          "disposition": null
+        }
+      ],
+      "pending_unique_text_candidates": 0
+    },
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1": {
+      "reviewed_entries": [
+        {
+          "path": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1/HANDOFF.md",
+          "coverage": "content-reviewed",
+          "disposition": null
+        }
+      ],
+      "pending_unique_text_candidates": 0
+    }
+  },
+  "dead_code_folder_disposition": "All11task-bearing documents now full reviewed acrosssegments07\u201308; twelfth historical file inventory bounded/settled structurally. Underlying runtime/live/history claims remain qualified, not full application acceptance.",
+  "draft_yahoo_folder_remainder": "Large main audit/PRDs and paired Yahoo task lists remain unique substantive candidates; selected runbook/readiness/backlog/schema/inventory/interface docs are full reviewed.",
+  "metadata_and_duplicate_map": "See DISPOSITION-INDEX.json and preserved original INVENTORY/COVERAGE/duplicate mapping; no new recursive tree scan."
+}

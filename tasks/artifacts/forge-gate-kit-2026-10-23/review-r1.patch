@@ -1,0 +1,209 @@
+--- a/tasks/artifacts/forge-gate-kit-2026-10-23/score_gate.py
++++ b/tasks/artifacts/forge-gate-kit-2026-10-23/score_gate.py
+@@ -245,17 +245,16 @@
+ 
+ def bootstrap(rows, head, base, cand, reps=REPS, seed=SEED):
+     draws = {"delta_bias": [], "delta_rmse": []}
+-    for v in (base, cand):
+-        draws[v] = {"rel": [], "top": []}
++    variant_draws = {v: {"rel": [], "top": []} for v in (base, cand)}
+     for sample in cluster_samples(rows, reps, seed):
+         a, c = stats(sample, base, head), stats(sample, cand, head)
+         draws["delta_bias"].append(subtract(c["bias"], a["bias"]))
+         draws["delta_rmse"].append(subtract(c["rmse"], a["rmse"]))
+         for v, s in ((base, a), (cand, c)):
+             for metric in ("rel", "top"):
+-                draws[v][metric].append(s[metric])
++                variant_draws[v][metric].append(s[metric])
+     return {"delta_bias": interval(draws["delta_bias"]), "delta_rmse": interval(draws["delta_rmse"]),
+-            **{v: {m: interval(xs) for m, xs in draws[v].items()} for v in (base, cand)}}
++            "variants": {v: {m: interval(xs) for m, xs in variant_draws[v].items()} for v in (base, cand)}}
+ 
+ 
+ def mz(rows, variant, head):
+--- a/tasks/artifacts/forge-gate-kit-2026-10-23/score_pair.py
++++ b/tasks/artifacts/forge-gate-kit-2026-10-23/score_pair.py
+@@ -18,7 +18,7 @@
+             cells = [h, str(len(rows))]
+             for key, spec in (("bias", "+.4f"), ("rel", "+.1%"), ("rmse", ".4f"), ("top", ".3f")):
+                 cells.append(f"{sg.fmt(a[key], spec)} → {sg.fmt(c[key], spec)}")
+-            cells[-1] += " " + sg.ci(boot[cand]["top"], ".3f")
++            cells[-1] += " " + sg.ci(boot["variants"][cand]["top"], ".3f")
+             for key in ("delta_bias", "delta_rmse"):
+                 cells.append(sg.ci(boot[key], "+.4f"))
+             print("| " + " | ".join(cells) + " |")
+--- a/tasks/artifacts/forge-gate-kit-2026-10-23/gate_ci.py
++++ b/tasks/artifacts/forge-gate-kit-2026-10-23/gate_ci.py
+@@ -15,8 +15,8 @@
+         boot = sg.bootstrap(rows, h, base, cand)
+         for v in (base, cand):
+             values = sg.stats(rows, v, h)
+-            print(f"| {h} | {v} | {len(rows)} | {sg.fmt(values['rel'], '+.1%')} {sg.ci(boot[v]['rel'], '+.1%')} | "
+-                  f"{sg.fmt(values['top'], '.3f')} {sg.ci(boot[v]['top'], '.3f')} |")
++            print(f"| {h} | {v} | {len(rows)} | {sg.fmt(values['rel'], '+.1%')} {sg.ci(boot['variants'][v]['rel'], '+.1%')} | "
++                  f"{sg.fmt(values['top'], '.3f')} {sg.ci(boot['variants'][v]['top'], '.3f')} |")
+ 
+ 
+ if __name__ == "__main__":
+--- a/tasks/artifacts/forge-gate-kit-2026-10-23/tests/test_gate_kit.py
++++ b/tasks/artifacts/forge-gate-kit-2026-10-23/tests/test_gate_kit.py
+@@ -208,6 +208,23 @@
+         self.assertEqual(result, sg.bootstrap(rows, "G", "f", "candidate"))
+         self.assertNotEqual(list(sg.cluster_samples(rows, 40, 1)), list(sg.cluster_samples(rows, 40, 2)))
+ 
++    def test_bootstrap_variant_names_cannot_overwrite_bookkeeping(self):
++        rows = [metric_row(1, 1, 1, 1, 2), metric_row(2, 2, 3, 4, 3)]
++        expected = sg.bootstrap(rows, "G", "f", "candidate", reps=40)
++        pairs = [("delta_bias", "trial"), ("baseline", "delta_bias"),
++                 ("delta_rmse", "trial"), ("baseline", "delta_rmse"),
++                 ("delta_bias", "delta_rmse"), ("delta_rmse", "delta_bias"),
++                 ("variants", "trial"), ("baseline", "variants")]
++        for base, cand in pairs:
++            with self.subTest(base=base, candidate=cand):
++                renamed = [{**r, "preds": {base: r["preds"]["f"], cand: r["preds"]["candidate"]}} for r in rows]
++                result = sg.bootstrap(renamed, "G", base, cand, reps=40)
++                self.assertEqual(set(result), {"delta_bias", "delta_rmse", "variants"})
++                for key in ("delta_bias", "delta_rmse"):
++                    self.assertEqual(result[key], expected[key])
++                self.assertEqual(result["variants"][base], expected["variants"]["f"])
++                self.assertEqual(result["variants"][cand], expected["variants"]["candidate"])
++
+     def test_bootstrap_uses_only_common_head_eligible_game_clusters(self):
+         rows = [metric_row(1, 1, 2, 1, 2), metric_row(2, 1, 10, 9, 10)]
+         rows[1]["preds"]["candidate"]["G"] = None
+@@ -225,7 +242,7 @@
+         self.assertIsNone(s["top"])
+         result = sg.bootstrap(zero, "G", "f", "candidate", reps=40)
+         self.assertEqual(result["delta_rmse"]["bounds"], (0, 0))
+-        self.assertIsNone(result["candidate"]["top"]["bounds"])
++        self.assertIsNone(result["variants"]["candidate"]["top"]["bounds"])
+         empty = sg.bootstrap([], "G", "f", "candidate", reps=40)
+         self.assertEqual(empty["delta_bias"]["valid_reps"], 0)
+         partly_undefined = sg.interval([1]*1999 + [None])
+@@ -283,6 +300,25 @@
+                     self.assertIn("unavailable", done.stdout)
+                     self.assertIn("does not establish model qualification", done.stdout)
+                     self.assertNotIn("nan", done.stdout.lower())
++
++    def test_adversarial_variant_names_run_all_bootstrap_reports(self):
++        import gate_ci
++        import score_pair
++        pairs = [("delta_bias", "trial"), ("baseline", "delta_bias"),
++                 ("delta_rmse", "trial"), ("baseline", "delta_rmse"),
++                 ("delta_bias", "delta_rmse"), ("variants", "delta_bias")]
++        for base, cand in pairs:
++            with tempfile.TemporaryDirectory() as temp, self.subTest(base=base, candidate=cand):
++                args = write_fixture(temp, (base, cand))
++                for report in (score_pair.main, gate_ci.main):
++                    with contextlib.redirect_stdout(io.StringIO()) as output:
++                        report(*args)
++                    self.assertIn("2000 replicates, seed 1", output.getvalue())
++                    self.assertIn(base, output.getvalue())
++                    self.assertIn(cand, output.getvalue())
++                with contextlib.redirect_stdout(io.StringIO()) as output:
++                    sg.main(args[0], args[3], args[4], base, cand)
++                self.assertIn("Legacy Task2 numerical checks", output.getvalue())
+ 
+     def test_legacy_pair_reference_on_complete_synthetic_cohort(self):
+         with tempfile.TemporaryDirectory() as temp:
+@@ -307,8 +343,8 @@
+                         for v in cohort["variants"]:
+                             values = sg.stats(rows, v, h)
+                             self.assertEqual([
+-                                f"{values['rel']:+.1%} {sg.ci(boot[v]['rel'], '+.1%')}",
+-                                f"{values['top']:.3f} {sg.ci(boot[v]['top'], '.3f')}"
++                                f"{values['rel']:+.1%} {sg.ci(boot['variants'][v]['rel'], '+.1%')}",
++                                f"{values['top']:.3f} {sg.ci(boot['variants'][v]['top'], '.3f')}"
+                             ], reference["ci"][h][v])
+                         if h in reference["mz"]:
+                             cells = []
+@@ -320,7 +356,7 @@
+                     actual = [str(len(rows))]
+                     for metric, spec in (("bias", "+.4f"), ("rel", "+.1%"), ("rmse", ".4f")):
+                         actual.append(f"{a[metric] if a[metric] is not None else math.nan:{spec}} → {c[metric] if c[metric] is not None else math.nan:{spec}}")
+-                    actual.append(f"{a['top']:.3f} → {c['top']:.3f} {sg.ci(boot['candidate']['top'], '.3f')}")
++                    actual.append(f"{a['top']:.3f} → {c['top']:.3f} {sg.ci(boot['variants']['candidate']['top'], '.3f')}")
+                     actual.append(f"{c['bias']-a['bias']:+.4f} {sg.ci(boot['delta_bias'], '+.4f')}")
+                     actual.append(f"{c['rmse']-a['rmse']:+.4f} {sg.ci(boot['delta_rmse'], '+.4f')}")
+                     self.assertEqual(actual, expected, (group, h))
+--- a/tasks/artifacts/forge-gate-kit-2026-10-23/REPORT.md
++++ b/tasks/artifacts/forge-gate-kit-2026-10-23/REPORT.md
+@@ -10,9 +10,17 @@
+ 
+ All numerical thresholds, FP weights, 2,000 bootstrap repetitions, seed 1 and historical percentile indices are preserved. The missingness correction uses head-eligible games in every script; undefined intervals retain their failed-draw count rather than reporting a conditioned interval. Full ticket/model qualification is not automated or claimed.
+ 
++## Review correction R1 — variant-name namespace
++
++Independent review found that valid names `delta_bias` and `delta_rmse` collided with bootstrap bookkeeping. Corrected only the bootstrap storage/result namespace and its paired/CI report consumers: paired deltas retain their fixed keys, while caller-provided names live under `variants`. Names equal to `variants` are also safe inside that nested mapping. CLI signatures, math, thresholds, seed/reps and reference bytes are unchanged.
++
++Two new regression tests cover eight name-pair subcases in the core (both reported names in either position, together in both orders, and the new container name in either position) and six name-pair subcases through all three bootstrap-backed report entry points. The new core regression first reproduced the six reported collision cases against the reviewed source, then the full 26-test suite passed on the corrected source in 18.936s. The exact tested bytes were installed with hash preconditions; the next independent recheck belongs to reviewer `01a168ee-3844-74ba-ad3c-dcbb8a958010` and is pending.
++
++Revision diff: [review-r1.patch](review-r1.patch), covering all eight changed pre-existing packet files relative to the reviewed packet (not the original Git baseline). Before/after hashes and preserved input/reference pins: [review-r1-pins.json](review-r1-pins.json). These two added correction-evidence files supplement the original 13-file path list below. No claim that the independent BLOCK has been cleared before that recheck.
++
+ ## Verification
+ 
+-**24 synthetic tests passed** with `python3 -B -m unittest discover -s "$KIT/tests" -p 'test_*.py' -v`; receipt: [tests/RESULTS.log](tests/RESULTS.log).
++**26 synthetic tests passed** with `python3 -B -m unittest discover -s "$KIT/tests" -p 'test_*.py' -v`; receipt: [tests/RESULTS.log](tests/RESULTS.log).
+ 
+ Coverage includes composite player-game IDs across games; canonical integer/string IDs; both directions of unpaired rows; dressed actual presence/date; source versus paired counts; horizon filtering; duplicate actual/hits-blocks/capture/cross-file IDs; unpaired capture files and replay flags; structural F/D and unknown/conflicting positions; per-head paired missingness and dependent FP; numeric zeros/null/nonfinite/boolean categories; signed bias, relative bias, RMSE and decile ratios; unequal game clusters with replacement; paired deltas against an independent random-draw oracle; exact default seed/reps and CI indices; empty and partly undefined intervals; MZ slope/intercept and constant predictions; both historical top-decile count conventions; unchanged legacy numerical thresholds; imports without execution; standalone CLI runs from an isolated directory.
+ 
+@@ -34,7 +42,7 @@
+ | `REPORT.md` | This scoped handoff |
+ | `WORK-DIARY.md` | Scoped task diary; kept here under the exact artifact-only user lease |
+ | `tests/fixtures.py` | Synthetic fixture generator |
+-| `tests/test_gate_kit.py` | 24 offline regression tests |
++| `tests/test_gate_kit.py` | 26 offline regression tests |
+ | `tests/legacy_reference.json` | Synthetic historical scorer reference with source hashes |
+ | `tests/make_legacy_reference.py` | Optional source-pinned synthetic reference generator |
+ | `tests/RESULTS.log` | Final focused verification receipt |
+--- a/tasks/artifacts/forge-gate-kit-2026-10-23/WORK-DIARY.md
++++ b/tasks/artifacts/forge-gate-kit-2026-10-23/WORK-DIARY.md
+@@ -11,3 +11,9 @@
+ Verification checkpoint: 24 synthetic tests pass (2.209s in scratch). Golden references generated from scorer source blobs at 2a5092d37; no retained model captures read. Historical D/PPP fixture has zero actual total, so legacy +nan% became explicit unavailable; corrected the parity assertion to recognize that case. Matched complete-data legacy pair/CI/MZ outputs and isolated-copy CLI entry points. Documentation records signature, missingness, tie-order and strict identity/date differences. Next: install exact scoped files, verify source-cohort hashes and diff, then hand off without Git mutation.
+ 
+ Final checkpoint: exact packet installed in canonical kit after collision/hash preflight. Canonical-directory run passed 24 tests; git diff --check passed for the kit. All four supplied input hashes preserved. Register owner confirmed exclusive gate-kit lease and no duplicate owner; independent review remains unassigned. Actual model qualification unrun. No capture, network/production/credential/DB/dependency/application or Git mutation actions. Handoff report is REPORT.md; source/test/reference pins are SHA256SUMS.
++
++Review correction start: independent review at task-9/REVIEW.md blocks variant names delta_bias/delta_rmse colliding with bootstrap bookkeeping. Read review and gate-probes.json. Scope is minimal separate variant namespace plus all report consumers and adversarial-name regressions. Preserve thresholds, fixture/reference bytes and original inputs. No captures/model changes; reviewer 01a168ee-3844-74ba-ad3c-dcbb8a958010 will independently recheck.
++
++R1 correction verification: separate variant_draws and nested returned variants mapping; updated paired/CI consumers and existing tests. Added two regression methods (eight core name-pair subcases, six three-entry-point report subcases). Red check reproduced six collisions before fix; full 26-test suite passed in 18.936s. Legacy fixture/reference/generator hashes preserved, core AST differs only in bootstrap. Exact revision patch and before/after pins prepared; installing tested bytes under collision preconditions. Independent recheck remains pending.
++
++R1 handoff: tested correction installed; patch reconstruction and all before/after hash checks passed. Every non-correction packet/input/reference file is unchanged. Independent recheck pending; actual model qualification remains unrun. No captures, application/model changes or Git mutations.
+--- a/tasks/artifacts/forge-gate-kit-2026-10-23/tests/RESULTS.log
++++ b/tasks/artifacts/forge-gate-kit-2026-10-23/tests/RESULTS.log
+@@ -12,6 +12,7 @@
+ test_bias_rmse_relative_bias_are_distinct (test_gate_kit.MetricTests.test_bias_rmse_relative_bias_are_distinct) ... ok
+ test_bootstrap_default_seed_reps_and_independent_delta_oracle (test_gate_kit.MetricTests.test_bootstrap_default_seed_reps_and_independent_delta_oracle) ... ok
+ test_bootstrap_uses_only_common_head_eligible_game_clusters (test_gate_kit.MetricTests.test_bootstrap_uses_only_common_head_eligible_game_clusters) ... ok
++test_bootstrap_variant_names_cannot_overwrite_bookkeeping (test_gate_kit.MetricTests.test_bootstrap_variant_names_cannot_overwrite_bookkeeping) ... ok
+ test_d_representation_preserves_floor_and_unknown_denominator (test_gate_kit.MetricTests.test_d_representation_preserves_floor_and_unknown_denominator) ... ok
+ test_deciles_own_forecast_floor_boundaries_and_ties (test_gate_kit.MetricTests.test_deciles_own_forecast_floor_boundaries_and_ties) ... ok
+ test_game_cluster_sampling_keeps_all_players_and_multiplicity (test_gate_kit.MetricTests.test_game_cluster_sampling_keeps_all_players_and_multiplicity) ... ok
+@@ -19,11 +20,12 @@
+ test_mz_actual_on_predicted_slope_intercept_and_degeneracy (test_gate_kit.MetricTests.test_mz_actual_on_predicted_slope_intercept_and_degeneracy) ... ok
+ test_numeric_nulls_booleans_nonfinite_and_zero (test_gate_kit.MetricTests.test_numeric_nulls_booleans_nonfinite_and_zero) ... ok
+ test_zero_missing_and_empty_bootstrap_are_explicit (test_gate_kit.MetricTests.test_zero_missing_and_empty_bootstrap_are_explicit) ... ok
++test_adversarial_variant_names_run_all_bootstrap_reports (test_gate_kit.PortabilityTests.test_adversarial_variant_names_run_all_bootstrap_reports) ... ok
+ test_imports_have_no_scoring_side_effect (test_gate_kit.PortabilityTests.test_imports_have_no_scoring_side_effect) ... ok
+ test_legacy_pair_reference_on_complete_synthetic_cohort (test_gate_kit.PortabilityTests.test_legacy_pair_reference_on_complete_synthetic_cohort) ... ok
+ test_scripts_run_from_isolated_copy_without_siblings (test_gate_kit.PortabilityTests.test_scripts_run_from_isolated_copy_without_siblings) ... ok
+ 
+ ----------------------------------------------------------------------
+-Ran 24 tests in 2.240s
++Ran 26 tests in 18.936s
+ 
+ OK
+--- a/tasks/artifacts/forge-gate-kit-2026-10-23/SHA256SUMS
++++ b/tasks/artifacts/forge-gate-kit-2026-10-23/SHA256SUMS
+@@ -1,8 +1,8 @@
+-933081ea849c25dfe7376862e4bade88f1f5a8549c3add2bde4fa920f861599b  gate_ci.py
++e5d1491d705b166cbd884592fce542ef1bd8b6b5688f994045384581e2dfd56d  gate_ci.py
+ 1d92f3a27e26c5db25547fd17d78db7bf71cf45a9b9088117feae044d9c518d0  mz.py
+-7bc6c262c3e149b2b67b557552e69b7ad4e4fff593072b5ee5f1bb987955c8cb  score_gate.py
+-b353fc69b0526eedbdf2e9872afca37574aeba0d589127158fde2e887d4d5c60  score_pair.py
++bb58a55821e5fb6c0ac00215ee332ef8dd1aec6dd47f57885ee856128d2fdf78  score_gate.py
++14a1f4e64337583a396396ce319a55aa125505a95de592190f6c50f410d37d65  score_pair.py
+ 896eba1524d3bcf836e7a82600dd61bc9499fa223a87928fa31d90dd3b2fc19a  tests/fixtures.py
+ 9f62b7d8a6dfe6c699b47b727ed11ed6d2f20aa66b43be79543f9de9b1ae1a7d  tests/legacy_reference.json
+ 66c8362391d6bcf538aac93767ca858b1a20a67880d63e4440439c429a524492  tests/make_legacy_reference.py
+-533e7c8840d1849b3e480699145e5d462f6d011222f5999af25a9fcafcdc334e  tests/test_gate_kit.py
++082988dbe300b49bb51d39aeb37289b9de772a343ee532224c747855d7a8363a  tests/test_gate_kit.py

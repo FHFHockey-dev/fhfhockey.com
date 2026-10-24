@@ -1,0 +1,61 @@
+{
+  "at": "2026-10-24T18:24:21.337833+00:00",
+  "files": [
+    {
+      "path": "tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard.md",
+      "sha256": "743f09fe929cff0f26f5a30ab7ab9fa10802a5759e379d7bcf610cf3068ecc64",
+      "bytes": 18696,
+      "lines": 272,
+      "mtime_ns": 1785605126555171508
+    },
+    {
+      "path": "tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md",
+      "sha256": "644fe30a5cd1e7b0d5479afa04d62a7079341f5b0e4d026f5f439c4ff8834a65",
+      "bytes": 12982,
+      "lines": 156,
+      "mtime_ns": 1785605126593503925
+    },
+    {
+      "path": "tasks/artifacts/forge-dashboard-observability-followups.md",
+      "sha256": "5941db83cadb439b7ea265f1fc12cc2a7c1cd1142bb219e2c3b77a6f31323875",
+      "bytes": 1920,
+      "lines": 54,
+      "mtime_ns": 1785197963773716025
+    },
+    {
+      "path": "tasks/artifacts/forge-dashboard-freshness-policy.md",
+      "sha256": "035acc6b8851cc2fdf769070c643c36eae8a6c4099e7f71fa4ce2da9b0f53bda",
+      "bytes": 1518,
+      "lines": 24,
+      "mtime_ns": 1785197963770420100
+    },
+    {
+      "path": "tasks/artifacts/forge-dashboard-stale-state-policy.md",
+      "sha256": "f7b2fae6923c50acede2eef38ba29c32336c4419594066e47e22e5e2beb1fa3e",
+      "bytes": 10409,
+      "lines": 385,
+      "mtime_ns": 1785197963775474908
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/context/forge-tables.md",
+      "sha256": "df1fbdda862c7dffda4cfec4955701a6f7a850e0d1971bb0e328d69d1df1ff19",
+      "bytes": 14997,
+      "lines": 361,
+      "mtime_ns": 1785197963727115347
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/context/projectionTableStructure.md",
+      "sha256": "4d6680a32d0a3c00c2e0aede5bc4540f0a619efddc961f9bba07cd4bed0fa6d6",
+      "bytes": 8466,
+      "lines": 270,
+      "mtime_ns": 1785197963727394729
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/ecosystem-audits/forge-trends-combo-architecture.md",
+      "sha256": "4b387ed6ffe2d5ffd2da8ef879c1647ad84019f2894958673dd8e347ca0fb97b",
+      "bytes": 10511,
+      "lines": 324,
+      "mtime_ns": 1785605126556239957
+    }
+  ]
+}

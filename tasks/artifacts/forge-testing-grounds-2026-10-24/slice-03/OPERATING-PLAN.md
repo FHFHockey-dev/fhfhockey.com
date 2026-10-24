@@ -1,0 +1,55 @@
+# Runner A — local evidence and operating gates
+
+2026-10-24. TJ selected A: a dedicated Testing Grounds queue and checkpointed worker using the existing database lease/CAS pattern. That direction is settled. This packet proposes the next integration plan; it does not approve provisioning, schema changes, hosted execution or a pilot.
+
+## What this slice establishes
+
+The five leased modules implement a strict immutable run envelope and an internal store interface, an inert in-memory reference store, and one bounded executor step. The reference store reports `storageMode: memory_reference` in acceptance and progress. It loses all records on process exit. Reusing the same store across worker invocations proves checkpoint/retry semantics only, not process durability or laptop-independent service.
+
+Acceptance binds owner, idempotency key and canonical plan hash. The envelope pins baseline/candidate/input versions, source clocks/history class and preflight/chronology/evaluation contract hashes. Phase/key pairs produce deterministic unit identities. Duplicate acceptance returns the original run; changed content under the same key conflicts. This does not yet validate referenced model bytes or define the complete candidate/refit/evaluation schemas.
+
+Claims increment a fencing token and consume a bounded execution attempt. The current lease, worker and unit must still match at output acceptance, before expiry. Output, checkpoint and state changes are atomic within one JavaScript store instance; counters derive from accepted unique outputs. A lost acknowledgement can be retried without counting twice. A conflicting output is rejected. Old workers cannot overwrite a newer checkpoint or result. Cancellation requests stop acceptance at the next safe boundary; abandoned requests finalize after expiry. Already accepted outputs remain retained and sealed.
+
+An executor returns completion, checkpoint, pending outcomes or a sanitized failure. Pending outcomes do not increment failed work. Runtime validation rejects unknown result fields/codes. Payloads, checkpoints and arbitrary exception text never enter the allowlisted progress projection. Fitting has no percentage. Progress records claim/finish heartbeat, run timestamps and per-stage declared totals; there is no mid-step heartbeat renewal in this slice.
+
+The worker invokes one executor per call, sets an abort signal at the deadline, and discards late results, including when a blocked event loop delays the timer. **It cannot forcibly preempt synchronous CPU or stop a callback that ignores abort.** Fencing prevents that callback from publishing through the store. Executors must perform pure computation on immutable inputs and checkpoint cooperatively; no provider calls or external side effects are supported here. A reviewed runtime isolation/deadline mechanism and measured fitting bound are still required before hosted execution. Invalid/oversized payloads reject without partial output writes; their lease can expire and retry within the execution budget.
+
+Synthetic results require all units completed with evaluation marked settled, an explicit owner reveal call and the frozen time condition. Real-history results are always sealed in this implementation. A date or executor assertion cannot substitute for independent finality/population/revision evidence and authorized reveal. This deliberate local restriction preserves Release C; it is not a replacement production reveal policy.
+
+## Evidence and fixture limits
+
+Final focused run: 16 tests passed, 23 ms of fixture-test execution, 204 ms total Vitest duration; command wrapper observed 0.607 seconds. Scoped TypeScript and ESLint passed. These measurements cover tiny JSON/state-machine fixtures, **not a fit, model evaluation, throughput benchmark or production cost estimate**.
+
+Default fixture inputs explicitly cap 4 active queued runs, 1 active lease, 10 units, 20 ms step deadline, 100 ms lease, 10,000 ms run deadline, 10 executions and 2 failures per unit, 5 ms retry delay, 1,000-byte outputs/checkpoints and 100,000 bytes of retained plan/payload data per run. Specific tests reduce limits to force rejection. These are synthetic stress controls, not proposed production limits. Serialized byte accounting excludes JavaScript object/map overhead. Completed records/checkpoint history are retained; no automatic pruning or whole-store retention policy is implemented.
+
+Fixtures verify owner isolation, immutable copies and canonical hashes; duplicate acceptance and lost acknowledgements; queue/concurrency/deadline budgets; stale leases/results/checkpoints; crash and checkpoint restart; cancellation; delayed outcomes; storage limits; timeout/late completion; generic errors; explicit memory mode; sealed projections and synthetic-only reveal. The exact commands and both successful test iterations are retained in `checks.log`.
+
+## Persistence adapter design — not executed
+
+Use a dedicated experiment store, never the maintenance queue/tick. `web/lib/routeRunner/store.ts` supplies a local design reference for conditional ownership updates and affected-row-count verification; the maintenance tick statically imports production handlers and must not be imported by the experiment executor. No SQL, migration, database connection or scheduler change is included here.
+
+The future adapter must provide database transactions or an equivalently proven atomic mechanism for:
+
+1. Owner plus idempotency-key uniqueness and immutable launch-manifest acceptance; return success only after durable commit. Handle an uncertain/lost acknowledgement by querying/retrying the same key and content hash.
+2. Atomic capacity admission and lease claim using a trusted database clock, monotonically increasing fence, expected state and expiry. Concurrent claimers across processes must be tested; the memory tests cannot prove this.
+3. One unique accepted output per run/unit, with matching manifest/fence/worker/expiry, checkpoint append and state/counter update committed together. A separate output INSERT followed by a state UPDATE is insufficient. Duplicate identical acknowledgements may return success without any state mutation; conflicting hashes must fail.
+4. Serialized cancel/accept/reveal races. Persist checkpoints before acknowledging continuation, retain original failures and immutable prior checkpoint evidence, and prevent stale/cancelled workers publishing current artifacts.
+5. Separate owner-readable operational views from sealed outcomes/checkpoints/artifacts. Authenticate using the reviewed TJ-only server policy, with no admin/cron/local bypass. Worker access, CSRF, grants/RLS and private artifact authorization need dedicated tests. This internal interface accepts trusted principal IDs and is not a public API.
+
+Start with small immutable manifests/reports/checkpoints in database records. If measured artifact sizes require private object storage, select and review it separately: upload to an immutable temporary key, verify content hash/size, atomically attach that key under the valid fence, then handle unreferenced objects under an approved retention policy. No public bucket, new service or credential is selected. Full event-log/retention/export design remains incomplete; the reference store exposes only a safe latest-event code.
+
+An independently scheduled server worker must discover runnable jobs, claim one bounded unit and exit. Monitoring reads persisted operational state; closing a browser/phone must not affect execution. Actual scheduler cadence, provider function/worker limits, hard termination, concurrency, database/IO budget and lifecycle ownership remain unverified. The existing tick's documented 240-second limit is not evidence a FORGE fit fits or that Testing Grounds has that deployed capacity.
+
+## Model decisions and next gates
+
+Verified compiled controls remain HIT/BLK prior minutes 50/300, recent-shrink minutes 240/1000 and prior-season weight 0.5. They are used by the calculator but are not injectable dashboard controls with approved bounds. A role-history helper accepts a window with default 10; end-to-end wiring and maximum remain unverified. Recommend a narrow, coordinated HIT/BLK adapter seam first, preserving the pinned baseline. No shared model lease is held by this slice.
+
+The simplest existing explicit probability target is **goalie official start**, method `goalie-rolling-14d-start-frequency-v1`: official starts divided by eligible opportunities over the prior 14 New York calendar days, up to 20 selected games, with unresolved starter/eligibility evidence withholding the estimate. It is an uncalibrated probability head, not a confirmed start. Validate exact versions, source/as-of membership and baseline/candidate compatibility before calibration evaluation. Expected goals against `goals >= 1` can additionally support **rank-only ROC-AUC**, never Brier/log-loss/reliability from a count mean and never a replacement probability pilot. No new shot-level xG model is proposed.
+
+Parent's metric steer is retained: explicitly labeled non-interpolated average precision, grouped ties and prevalence; probability metrics require an explicit supported head/mapping. Numerical epsilon/clipping and affected counts, probability buckets, frozen thresholds/populations and dependence-aware uncertainty still belong in the reviewed evaluation contract, before results. This slice implements no metrics or model qualification.
+
+Protected requirements are settled: no live quality/outcomes; planned reveal across API/log/export; Release C October 23–30 excluded from tuning; independent population/finality/revision evidence and separate bounded-read approval. Existing first-serving evidence and seven settled game-bearing days must be established; October 30 is not an automatic reveal authorization. No protected outcomes were read.
+
+The next few decisions are therefore concrete: coordinate the exact model-adapter seam and parameter bounds; approve a complete evaluation/input contract; and, after offline representative fit/checkpoint measurements plus persistence tests, approve the exact runtime/network/storage/retention/cost plan and cohort for a hosted pilot. **Cost remains unknown.** Required evidence is actual per-unit CPU/memory/elapsed and checkpoint size, total work-unit counts, IO/provider fan-out, retry overhead, platform limits and current billing rates. No dollar estimate or production capacity follows from these synthetic tests. Direction B (a separate hosted worker/provider) is only a fallback if measured fitting cannot meet A's bounds; TJ need not re-decide A now.
+
+Independent implementation can proceed with a fixture-backed configure/monitor UI that prominently states memory-only/synthetic mode, and with pure candidate/evaluation contracts once their inputs are settled. Durable adapter, shared auth/routes/schema/scheduler and model changes need exact coordinated leases. Actual owner activation, production reads/writes, real captures, paid runs, provisioning and deployment remain unapproved.

@@ -1,0 +1,16 @@
+Running 12 tests using 1 worker
+
+  ✓   1 [chromium] › e2e/social-share.spec.ts:81:5 › default summary, recalculated dates and actual PNG match one frozen edition (1.9s)
+  ✓   2 [chromium] › e2e/social-share.spec.ts:152:5 › Wednesday excludes Wednesday; mobile controls and detail PNG preserve selected games (1.2s)
+  ✓   3 [chromium] › e2e/social-share.spec.ts:188:5 › long text and missing logo stay inside the square and export with a branded fallback (1.1s)
+  ✓   4 [chromium] › e2e/social-share.spec.ts:201:5 › failed refresh preserves only a nonexportable preview and retries the same selection (1.2s)
+  ✓   5 [chromium] › e2e/social-share.spec.ts:231:5 › partial, stale and valid zero-game sources do not publish rankings (1.0s)
+  ✓   6 [chromium] › e2e/social-share.spec.ts:250:5 › export font failures are explicit and retry without refetching schedule data (1.4s)
+  ✓   7 [chromium] › e2e/social-share.spec.ts:264:5 › edition expiry disables export and unsupported formats stay explicitly gated (2.6s)
+  ✓   8 [chromium] › e2e/social-share.spec.ts:281:5 › Monday default grid ranks every team by Game Grid weekScore in square day cells and exports (1.8s)
+  ✓   9 [chromium] › e2e/social-share.spec.ts:314:5 › Monday grid falls back to abbreviation tiles and never ranks an untrusted edition (1.7s)
+  ✓  10 [chromium] › e2e/social-share.spec.ts:333:5 › pinned Monday grid edition exports the same PNG bytes every run (1.6s)
+  ✓  11 [chromium] › e2e/social-share.spec.ts:363:5 › Easiest schedules and streaming matchup cards rank by Game Grid opponent DEF and export (1.7s)
+  ✓  12 [chromium] › e2e/social-share.spec.ts:395:5 › matchup cards never rank or export without current, complete opponent ratings (1.2s)
+
+  12 passed (19.2s)

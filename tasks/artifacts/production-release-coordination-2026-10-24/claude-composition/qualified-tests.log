@@ -1,0 +1,68 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-qualified-release-bundle-zpic0uuj/web
+
+(node:25548) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx (25 tests) 273ms
+(node:25555) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/TeamTabNavigation/TeamTabNavigation.test.tsx (22 tests) 647ms
+(node:25559) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/NewsFeed/NewsCard.test.tsx (26 tests) 127ms
+(node:25561) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | utils/fetchWigoPlayerStats.test.ts > shared points and consistency game log > surfaces conflicting duplicates instead of choosing a score
+Unexpected error in fetchPlayerGameLogConsistencyData for player 1, season 20252026: Error: Game log contains conflicting rows for the same game.
+    at Module.fetchPlayerGameLogConsistencyData (/private/tmp/fhfh-qualified-release-bundle-zpic0uuj/web/utils/fetchWigoPlayerStats.ts:915:15)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at /private/tmp/fhfh-qualified-release-bundle-zpic0uuj/web/utils/fetchWigoPlayerStats.test.ts:42:5
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+stderr | utils/fetchWigoPlayerStats.test.ts > shared points and consistency game log > rejects unknown game identities rather than silently merging them
+Unexpected error in fetchPlayerGameLogConsistencyData for player 1, season 20252026: Error: Game log contains a missing or invalid game identity.
+    at Module.fetchPlayerGameLogConsistencyData (/private/tmp/fhfh-qualified-release-bundle-zpic0uuj/web/utils/fetchWigoPlayerStats.ts:910:15)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at /private/tmp/fhfh-qualified-release-bundle-zpic0uuj/web/utils/fetchWigoPlayerStats.test.ts:47:5
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > preserves a source failure as an error instead of an empty game log
+Workspaceing game log for Goals (Player 1, Season 20252026) from wgo_skater_stats.goals using date='date' and season='season_id'
+
+stderr | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > preserves a source failure as an error instead of an empty game log
+Supabase error fetching game log for Goals (Player 1, Season 20252026): source unavailable
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > uses numeric season_id and date for WGO game logs
+Workspaceing game log for Goals (Player 8478402, Season 20252026) from wgo_skater_stats.goals using date='date' and season='season_id'
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > uses numeric season_id and date for WGO game logs
+Workspaceed data for Goals: 1 rows
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > uses the numeric season column and date_scraped for NST game logs
+Workspaceing game log for ixG (Player 8478402, Season 20252026) from nst_gamelog_as_counts.ixg using date='date_scraped' and season='season'
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > uses the numeric season column and date_scraped for NST game logs
+Workspaceed data for ixG: 1 rows
+
+ ✓ utils/fetchWigoPlayerStats.test.ts (25 tests) 10ms
+(node:25563) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ hooks/useShotData.test.tsx (16 tests) 20ms
+(node:25565) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/GoalieShareChart/GoalieShareChart.pagination.test.tsx (16 tests) 138ms
+(node:25567) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/wigoCharts.test.tsx (6 tests) 131ms
+(node:25569) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/stats/team/teamAbbreviation.test.tsx (4 tests) 18ms
+(node:25571) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/GoalieShareChart/GoalieShareChart.test.ts (4 tests) 7ms
+
+ Test Files  9 passed (9)
+      Tests  144 passed (144)
+   Start at  17:23:57
+   Duration  4.86s (transform 316ms, setup 18ms, collect 913ms, tests 1.37s, environment 1.47s, prepare 275ms)
+

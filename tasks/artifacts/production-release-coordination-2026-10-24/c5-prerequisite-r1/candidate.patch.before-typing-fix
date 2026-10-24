@@ -1,0 +1,2803 @@
+--- a/tasks/TASKS/cron-operations/cron-schedule.md
++++ b/tasks/TASKS/cron-operations/cron-schedule.md
+@@ -19,6 +19,15 @@
+ -- The JSON inventory below is the current-state source of truth; job 308 is
+ -- inactive and distinct horizon-5 job 393 remains active.
+ 
++-- 2026-10-21 job 393 run-forge-projection-v2-weekly (10:12 UTC, run-projection-v2?horizonGames=5)
++-- unscheduled (cron.unschedule(393), by explicit TJ approval via session local_08a0bf1c). No reader
++-- consumed horizon-5 rows (the RSO bridge, Start Chart and run-projection-accuracy filter
++-- horizon_games = 1); the run competed for the same-date lease with the scheduled pipeline's h1 run
++-- and could be selected as the newest succeeded run by horizon-blind readers (fixed in release R15).
++-- The pipeline's projection stage projects today and tomorrow at horizon 1. The reference SQL below
++-- (10:12 UTC option-A block) restores it if ever needed. Evidence:
++-- tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md section 3 finding 3 and Q2.
++
+ -- 2026-10-21 job 278 update-rolling-player-averages moved from daily 08:15 UTC to weekly Sunday
+ -- 08:15 UTC (cron.alter_job(278, '15 8 * * 0'), by explicit TJ approval in session local_08a0bf1c).
+ -- The scheduled pipeline recomputes run-1 daily; the bare route's 14-day window never finished
+@@ -40,6 +49,14 @@
+ -- and duplicated the 10:05Z pipeline's upstream_skater_sources step, which
+ -- fetches the previous day's NST gamelogs. Its 07:25 slot left
+ -- NST_ACTIVE_DIRECT_CRON_STARTS. Gap repair is a manual /db/runner job.
++
++-- 2026-10-17 read-only reconciliation: job 234 daily-cron-report (21:15 UTC)
++-- was intentionally disabled at TJ's request; cron.job reads back
++-- active=false and its last run was 2026-10-15 21:15 UTC. The Vercel cron
++-- `0 13 * * *` /api/v1/db/cron-report (web/vercel.json) is the sole daily
++-- report, so job 234 is no longer an expected run. Live active SQL jobs 394,
++-- 396 and 397 (player-forecasts, created by the player-forecast migrations)
++-- were absent and are now listed from the same read-only cron.job snapshot.
+ 
+ # ALL CRON JOBS:
+ ```json
+@@ -426,11 +443,41 @@
+     "jobname": "run-forge-projection-v2-weekly",
+     "schedule": "12 10 * * *",
+     "run_time_utc": "10:12 UTC",
+-    "active": true,
++    "active": false,
+     "method": "POST",
+     "route": "/api/v1/db/run-projection-v2?horizonGames=5",
+     "auth": "Supabase Vault cron_secret",
+     "verification": "Old token rejected 401; new token authorized 200; zero-game horizon-5 no-op returned HTTP 200 in 430 ms on production deployment dpl_D8gth3djEPB1JLZ6B2fAL44oETVE"
++  },
++  {
++    "jobid": 394,
++    "jobname": "player-forecasts-daily-seed",
++    "schedule": "0 10 * * *",
++    "run_time_utc": "10:00 UTC",
++    "active": true,
++    "method": "SQL",
++    "command": "select fhfh_internal.invoke_player_forecast_endpoint('/api/v1/player-forecasts/jobs/daily')",
++    "verification": "Live cron.job read-only snapshot 2026-10-17 (tasks/artifacts/ops-health-2026-10-17/live-cron-job-2026-10-17.json); SQL wrapper submits the endpoint, so route execution is evidenced only by that endpoint's own audit"
++  },
++  {
++    "jobid": 396,
++    "jobname": "player-forecasts-settlement",
++    "schedule": "20 * * * *",
++    "run_time_utc": null,
++    "active": true,
++    "method": "SQL",
++    "command": "select fhfh_internal.invoke_player_forecast_endpoint('/api/v1/player-forecasts/jobs/settle')",
++    "verification": "Live cron.job read-only snapshot 2026-10-17 (tasks/artifacts/ops-health-2026-10-17/live-cron-job-2026-10-17.json); SQL wrapper submits the endpoint, so route execution is evidenced only by that endpoint's own audit"
++  },
++  {
++    "jobid": 397,
++    "jobname": "player-forecasts-queue-drain",
++    "schedule": "*/5 * * * *",
++    "run_time_utc": null,
++    "active": true,
++    "method": "SQL",
++    "command": "select fhfh_internal.invoke_player_forecast_endpoint('/api/v1/player-forecasts/jobs/drain?dryRun=true')",
++    "verification": "Live cron.job read-only snapshot 2026-10-17 (tasks/artifacts/ops-health-2026-10-17/live-cron-job-2026-10-17.json); SQL wrapper submits the endpoint, so route execution is evidenced only by that endpoint's own audit"
+   },
+   {
+     "jobid": 318,
+@@ -470,6 +517,14 @@
+     "route": "/api/v1/db/update-wgo-averages"
+   },
+   {
++    "jobid": 374,
++    "jobname": "daily-refresh-player-totals-unified-matview",
++    "schedule": "38 10 * * *",
++    "run_time_utc": "10:38 UTC",
++    "active": true,
++    "method": "SQL"
++  },
++  {
+     "jobid": 326,
+     "jobname": "rebuild-sustainability-baselines",
+     "schedule": "40 10 * * *",
+@@ -480,14 +535,6 @@
+     "auth": "Supabase Vault cron_secret"
+   },
+   {
+-    "jobid": 374,
+-    "jobname": "daily-refresh-player-totals-unified-matview",
+-    "schedule": "41 10 * * *",
+-    "run_time_utc": "10:41 UTC",
+-    "active": true,
+-    "method": "SQL"
+-  },
+-  {
+     "jobid": 376,
+     "jobname": "rebuild-sustainability-priors",
+     "schedule": "42 10 * * *",
+@@ -631,7 +678,7 @@
+     "jobname": "daily-cron-report",
+     "schedule": "15 21 * * *",
+     "run_time_utc": "21:15 UTC",
+-    "active": true,
++    "active": false,
+     "method": "GET",
+     "route": "/api/v1/db/cron-report"
+   },
+@@ -780,8 +827,8 @@
+ -- - 10:25 UTC / 05:25 EST: update-rolling-games-recent (inactive legacy route)
+ -- - 10:30 UTC / 05:30 EST: update-sko-stats-full-season
+ -- - 10:35 UTC / 05:35 EST: update-wgo-averages
++-- - 10:38 UTC / 05:38 EST: daily-refresh-player-totals-unified-matview (CONCURRENTLY; moved from 10:41 on 2026-10-17, ops plan P-B)
+ -- - 10:40 UTC / 05:40 EST: rebuild-sustainability-baselines
+--- - 10:41 UTC / 05:41 EST: daily-refresh-player-totals-unified-matview
+ -- - 10:42 UTC / 05:42 EST: rebuild-sustainability-priors
+ -- - 10:43 UTC / 05:43 EST: rebuild-sustainability-window-z
+ -- - 10:44 UTC / 05:44 EST: rebuild-sustainability-score
+@@ -798,12 +845,12 @@
+ -- - 17:34 UTC / 12:34 EST: game-predictions-ingest-espn-odds-h0-h1
+ -- - 20:51 UTC / 15:51 EST: update-pbp
+ -- - 21:10 UTC / 16:10 EST: game-predictions-ingest-espn-odds-utc-spillover
+--- - 21:15 UTC / 16:15 EST: daily-cron-report
++-- - 21:15 UTC / 16:15 EST: daily-cron-report (job 234, inactive; last run 2026-10-15)
+ --
+ -- Schedule floor
+--- - Daily report should run after the final scheduled data job.
++-- - The daily report covers the trailing 24 hours, so evening jobs are reported the next morning.
+ -- - Current intended final data job: 21:10 UTC / 16:10 EST game-predictions-ingest-espn-odds-utc-spillover.
+--- - Current intended report job: 21:15 UTC / 16:15 EST daily-cron-report.
++-- - Current intended report job: 13:00 UTC Vercel cron /api/v1/db/cron-report (web/vercel.json); pg_cron job 234 is inactive.
+ -- - Direct NST cron starts require at least 10 minutes of separation. The active
+ --   schedule currently provides a minimum of 15 minutes (08:30 -> 08:45 UTC).
+ --
+@@ -1670,7 +1717,7 @@
+ --     $$
+ -- );
+ 
+--- 10:12 UTC option-A weekly owner (approved 2026-07-11; ACTIVE as job 393):
++-- 10:12 UTC option-A weekly owner (approved 2026-07-11; was job 393, UNSCHEDULED 2026-10-21 — see the dated note at the top):
+ -- - runs after the daily writer's 4m30s ceiling plus buffer
+ -- - owns only genuine horizon-5 output
+ -- - uses a separate run id on the same as-of date
+@@ -2338,6 +2385,7 @@
+ -- |||||||||||||||||||||||||||||||||  16:15 EST  |||||||||||||||||||||||||||||||||
+ -- |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+ 
++-- Historical: job 234 is inactive; the Vercel 13:00 UTC cron is the daily report.
+ -- SELECT cron.schedule(
+ --     'daily-cron-report',
+ --     '15 21 * * *', -- 21:15 UTC
+--- a/web/__tests__/pages/api/internal/yahoo-live-draft.test.ts
++++ b/web/__tests__/pages/api/internal/yahoo-live-draft.test.ts
+@@ -1,12 +1,30 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ 
+-const mocks = vi.hoisted(() => ({ run: vi.fn(), limit: vi.fn() }));
++const mocks = vi.hoisted(() => {
++  // Installed before the route graph loads, so an import-time request would be caught.
++  // A plain counter, so vi.clearAllMocks cannot hide an earlier request.
++  const network = { requests: 0 };
++  globalThis.fetch = (() => { network.requests += 1; throw new Error("Network forbidden in route test"); }) as any;
++  return { run: vi.fn(), limit: vi.fn(), auditInsert: vi.fn(), network };
++});
+ vi.mock("lib/integrations/yahoo/pollCoordinator", () => ({ runYahooDraftPollCoordinator: mocks.run }));
+-vi.mock("lib/supabase/server", () => ({ default: { from: () => ({ select: () => ({ in: () => ({ limit: mocks.limit }) }) }) } }));
++vi.mock("lib/supabase/server", () => ({ default: { from: (table: string) => table === "cron_job_audit"
++  ? { insert: mocks.auditInsert }
++  : { select: () => ({ in: () => ({ limit: mocks.limit }) }) } } }));
+ import handler from "../../../../pages/api/internal/yahoo-live-draft";
+ 
+-const response = () => ({ setHeader: vi.fn(), status: vi.fn().mockReturnThis(), json: vi.fn() });
+-const request = (authorization = "Bearer test-secret", method = "GET") => ({ method, headers: { authorization } });
++const response = () => {
++  // The audit wrapper swaps res.json, so assertions keep the original spy as `sent`.
++  const res: any = { statusCode: 200, headersSent: false, setHeader: vi.fn() };
++  res.json = res.sent = vi.fn(() => { res.headersSent = true; return res; });
++  res.status = vi.fn((code: number) => { res.statusCode = code; return res; });
++  return res;
++};
++const request = (authorization = "Bearer test-secret", method = "GET") => ({ method, url: "/api/internal/yahoo-live-draft", headers: { authorization } });
++const auditRow = () => {
++  expect(mocks.auditInsert).toHaveBeenCalledTimes(1);
++  return mocks.auditInsert.mock.calls[0][0];
++};
+ 
+ describe("Yahoo production scheduler", () => {
+   beforeEach(() => {
+@@ -19,6 +37,7 @@
+     vi.stubEnv("YAHOO_LIVE_DRAFT_TARGET_SEASON_ID", "20262027");
+     mocks.limit.mockResolvedValue({ data: [], error: null });
+     mocks.run.mockResolvedValue({ attempted: 1, succeeded: 1, failed: 0 });
++    mocks.auditInsert.mockResolvedValue({ error: null });
+   });
+   afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
+   it("rejects wrong methods and unauthorized requests without provider work", async () => {
+@@ -28,6 +47,7 @@
+       expect(res.status).toHaveBeenCalledWith(status);
+     }
+     expect(mocks.run).not.toHaveBeenCalled();
++    expect(mocks.auditInsert).not.toHaveBeenCalled();
+   });
+   it("fails closed without a scheduler secret", async () => {
+     vi.stubEnv("CRON_SECRET", "");
+@@ -35,15 +55,19 @@
+     await handler(request() as any, res as any);
+     expect(res.status).toHaveBeenCalledWith(503);
+     expect(mocks.limit).not.toHaveBeenCalled();
++    expect(mocks.auditInsert).not.toHaveBeenCalled();
+   });
+   it("does no work when disabled or no sessions are active", async () => {
+     const res = response();
+     await handler(request() as any, res as any);
+-    expect(res.json).toHaveBeenCalledWith({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
++    expect(res.sent).toHaveBeenCalledWith({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
++    expect(auditRow()).toMatchObject({ job_name: "/api/internal/yahoo-live-draft", status: "success", rows_affected: null });
+     vi.stubEnv("YAHOO_LIVE_DRAFT_ENABLED", "false");
+     await handler(request() as any, res as any);
+-    expect(res.json).toHaveBeenLastCalledWith({ disabled: true });
++    expect(res.sent).toHaveBeenLastCalledWith({ disabled: true });
+     expect(mocks.run).not.toHaveBeenCalled();
++    // The disabled exit is not an execution and adds no second row.
++    expect(mocks.auditInsert).toHaveBeenCalledTimes(1);
+   });
+   it("suspends off-season polling before configuration, database or provider work", async () => {
+     vi.setSystemTime(new Date("2027-08-01T03:59:59.999Z"));
+@@ -51,9 +75,10 @@
+     const res = response();
+     await handler(request() as any, res as any);
+     expect(res.status).toHaveBeenCalledWith(200);
+-    expect(res.json).toHaveBeenCalledWith({ suspended: true, resumesAt: "2027-08-01T00:00:00-04:00" });
++    expect(res.sent).toHaveBeenCalledWith({ suspended: true, resumesAt: "2027-08-01T00:00:00-04:00" });
+     expect(mocks.limit).not.toHaveBeenCalled();
+     expect(mocks.run).not.toHaveBeenCalled();
++    expect(mocks.auditInsert).not.toHaveBeenCalled();
+     expect(vi.getTimerCount()).toBe(0);
+   });
+   it("runs bounded batches across the minute boundary", async () => {
+@@ -66,12 +91,107 @@
+     expect(mocks.run).toHaveBeenCalledTimes(65);
+     expect(mocks.run).toHaveBeenCalledWith({ limit: 4, concurrency: 4 });
+     expect(res.status).toHaveBeenCalledWith(200);
++    // One row for the whole invocation, written before the response is flushed.
++    const row = auditRow();
++    expect(row).toMatchObject({ status: "success", rows_affected: null,
++      details: { statusCode: 200, rowsUpserted: null, failedRows: null, error: null } });
++    expect(JSON.parse(row.details.response)).toEqual({ cycles: 65, attempted: 65, succeeded: 65, failed: 0 });
++    expect(mocks.auditInsert.mock.invocationCallOrder[0]).toBeLessThan(res.sent.mock.invocationCallOrder[0]);
+   });
++  it("records a partial batch as a failed run with its true counters", async () => {
++    mocks.limit.mockResolvedValue({ data: [{ id: "session" }], error: null });
++    mocks.run.mockResolvedValue({ attempted: 3, succeeded: 2, failed: 1 });
++    const res = response();
++    const pending = handler(request() as any, res as any);
++    await vi.advanceTimersByTimeAsync(65_000);
++    await pending;
++    expect(res.status).toHaveBeenCalledWith(503);
++    const row = auditRow();
++    expect(row).toMatchObject({ status: "failure", details: { statusCode: 503 } });
++    expect(JSON.parse(row.details.response)).toEqual({ cycles: 65, attempted: 195, succeeded: 130, failed: 65 });
++  });
+   it("does not leak provider or database errors", async () => {
+     mocks.limit.mockResolvedValue({ data: null, error: new Error("private details") });
+     const res = response();
+     await handler(request() as any, res as any);
+     expect(res.status).toHaveBeenCalledWith(503);
+-    expect(res.json).toHaveBeenCalledWith({ error: "Yahoo polling coordinator unavailable" });
++    expect(res.sent).toHaveBeenCalledWith({ error: "Yahoo polling coordinator unavailable" });
++    expect(auditRow()).toMatchObject({ status: "failure", details: { statusCode: 503 } });
++    expect(JSON.stringify(auditRow())).not.toContain("private details");
+   });
++  it("records a thrown coordinator as one safe failure row", async () => {
++    mocks.limit.mockResolvedValue({ data: [{ id: "session" }], error: null });
++    mocks.run.mockRejectedValue(new Error("private provider detail"));
++    const res = response();
++    await handler(request() as any, res as any);
++    expect(res.status).toHaveBeenCalledWith(503);
++    expect(res.sent).toHaveBeenCalledExactlyOnceWith({ error: "Yahoo polling coordinator unavailable" });
++    const row = auditRow();
++    expect(row).toMatchObject({ status: "failure", details: { statusCode: 503, error: null,
++      responseOutcome: { error: "Yahoo polling coordinator unavailable" } } });
++    for (const sensitive of ["private provider detail", "test-secret"]) expect(JSON.stringify(row)).not.toContain(sensitive);
++  });
++  it("still answers when the audit insert fails", async () => {
++    mocks.auditInsert.mockResolvedValue({ error: { message: "audit unavailable" } });
++    const error = vi.spyOn(console, "error").mockImplementation(() => {});
++    const res = response();
++    await handler(request() as any, res as any);
++    expect(res.sent).toHaveBeenCalledExactlyOnceWith({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
++    expect(mocks.auditInsert).toHaveBeenCalledTimes(1);
++    error.mockRestore();
++  });
++  describe("idle heartbeat", () => {
++    const suspendedBody = { suspended: true, resumesAt: "2027-08-01T00:00:00-04:00" };
++    it.each([
++      { name: "suspended", at: "2027-07-15T12:00:30Z", enabled: "true", body: suspendedBody },
++      { name: "disabled", at: "2027-08-15T12:00:00Z", enabled: "false", body: { disabled: true } },
++    ])("records one bounded $name row in the 12:00 UTC minute", async ({ at, enabled, body }) => {
++      vi.setSystemTime(new Date(at));
++      vi.stubEnv("YAHOO_LIVE_DRAFT_ENABLED", enabled);
++      const res = response();
++      await handler(request() as any, res as any);
++      expect(res.status).toHaveBeenCalledWith(200);
++      expect(res.sent).toHaveBeenCalledExactlyOnceWith(body);
++      const row = auditRow();
++      expect(row).toMatchObject({ job_name: "/api/internal/yahoo-live-draft", status: "success", rows_affected: null,
++        details: { statusCode: 200, rowsUpserted: null, failedRows: null, error: null } });
++      expect(JSON.parse(row.details.response)).toEqual(body);
++      expect(mocks.limit).not.toHaveBeenCalled();
++      expect(mocks.run).not.toHaveBeenCalled();
++    });
++    it.each(["2027-07-15T11:59:59.999Z", "2027-07-15T12:01:00Z"])("writes no idle row outside the heartbeat minute (%s)", async (at) => {
++      vi.setSystemTime(new Date(at));
++      const res = response();
++      await handler(request() as any, res as any);
++      expect(res.sent).toHaveBeenCalledExactlyOnceWith(suspendedBody);
++      expect(mocks.auditInsert).not.toHaveBeenCalled();
++    });
++    it("keeps denied and unconfigured calls unaudited in the heartbeat minute", async () => {
++      vi.setSystemTime(new Date("2027-07-15T12:00:00Z"));
++      await handler(request("wrong") as any, response() as any);
++      vi.stubEnv("CRON_SECRET", "");
++      await handler(request() as any, response() as any);
++      expect(mocks.auditInsert).not.toHaveBeenCalled();
++    });
++    it("writes only the poll row when an active run lands in the heartbeat minute", async () => {
++      vi.setSystemTime(new Date("2027-08-15T12:00:00Z"));
++      const res = response();
++      await handler(request() as any, res as any);
++      expect(res.sent).toHaveBeenCalledExactlyOnceWith({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
++      expect(JSON.parse(auditRow().details.response)).toEqual({ cycles: 0, attempted: 0, succeeded: 0, failed: 0 });
++    });
++    it("still answers when the heartbeat insert fails", async () => {
++      vi.setSystemTime(new Date("2027-07-15T12:00:00Z"));
++      mocks.auditInsert.mockResolvedValue({ error: { message: "audit unavailable" } });
++      const error = vi.spyOn(console, "error").mockImplementation(() => {});
++      const res = response();
++      await handler(request() as any, res as any);
++      expect(res.sent).toHaveBeenCalledExactlyOnceWith(suspendedBody);
++      expect(mocks.auditInsert).toHaveBeenCalledTimes(1);
++      error.mockRestore();
++    });
++  });
++  it("makes no network request at import or during a run", () => {
++    expect(mocks.network.requests).toBe(0);
++  });
+ });
+--- a/web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts
++++ b/web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts
+@@ -1,13 +1,16 @@
+ import fs from "fs";
+ import path from "path";
+ 
+-import { describe, expect, it } from "vitest";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import ts from "typescript";
+ 
+ import {
+   CRON_AUDIT_EXEMPTIONS,
+   CRON_AUTH_DIRECT_SECRET_ROUTES,
+   inspectScheduledCronAuditCoverage,
+   inspectScheduledCronAuthCoverage,
++  inspectVercelCronCoverage,
++  classifyVercelCronSource,
+ } from "lib/cron/cronAuditCoverage";
+ 
+ describe("scheduled cron audit coverage", () => {
+@@ -68,22 +71,32 @@
+       {},
+     );
+ 
+-    expect(authFindings).toHaveLength(47);
++    // 2026-10-17: pg_cron job 234 (daily-cron-report) is intentionally
++    // inactive (tasks/artifacts/ops-health-2026-10-17, OPS-06). Its route is
++    // scheduled only by the Vercel 0 13 * * * cron, outside this pg_cron set.
++    // 2026-10-21: job 393 (run-projection-v2?horizonGames=5) was unscheduled;
++    // run-projection-v2 has no other active pg_cron owner.
++    // 2026-10-22: job 399 (route-runner-tick, cron-only) was scheduled after R21,
++    // and job 79 (update-nst-gamelog, its route's only pg_cron owner) was unscheduled.
++    expect(authFindings).toHaveLength(45);
+     expect(
+       authFindings.reduce(
+         (jobCount, finding) => jobCount + finding.jobNames.length,
+         0,
+       ),
+-    ).toBe(51);
++    ).toBe(49);
+     expect(modeCounts).toEqual({
+-      "admin-or-cron": 47,
++      "admin-or-cron": 45,
+     });
+     expect(callerCounts).toEqual({
+       "browser-admin": 5,
+       "browser-admin-and-internal": 4,
+       "cron-only": 27,
+-      "internal-server": 11,
++      "internal-server": 9,
+     });
++    expect(authFindings.some((finding) => finding.routePath === "/api/v1/db/cron-report")).toBe(false);
++    const vercelConfig = JSON.parse(fs.readFileSync(path.resolve(webRoot, "vercel.json"), "utf8"));
++    expect(vercelConfig.crons).toContainEqual({ path: "/api/v1/db/cron-report", schedule: "0 13 * * *" });
+     expect(authFindings.filter((finding) => !finding.filePath)).toEqual([]);
+ 
+     for (const finding of authFindings) {
+@@ -116,6 +129,441 @@
+     expect(CRON_AUTH_DIRECT_SECRET_ROUTES).toEqual({
+       "/api/internal/sync-yahoo-players-to-sheet":
+         "Internal destructive sheet sync; exact cron bearer only.",
++    });
++  });
++});
++
++describe("Vercel cron static source coverage", () => {
++  const webRoot = process.cwd();
++  const { crons } = JSON.parse(fs.readFileSync(path.resolve(webRoot, "vercel.json"), "utf8"));
++  const findings = inspectVercelCronCoverage({ crons, webRoot });
++  const unresolvedAuditRoutes = [
++    "/api/internal/starter-board",
++    "/api/internal/yahoo-live-draft",
++    "/api/v1/db/replay-player-aliases",
++  ];
++
++  it("represents all configured entries without merging query or schedule identities", () => {
++    expect(findings).toHaveLength(30);
++    expect(findings.map(({ entryIndex, configuredPath, schedule }) => ({ entryIndex, configuredPath, schedule })))
++      .toEqual(crons.map((entry: { path: string; schedule: string }, entryIndex: number) => ({
++        entryIndex, configuredPath: entry.path, schedule: entry.schedule,
++      })));
++    expect(new Set(findings.map((finding) => finding.routePath)).size).toBe(21);
++    expect(findings.filter((finding) => finding.inputReason || !finding.filePath)).toEqual([]);
++    expect(findings.filter((finding) => finding.authMode === "unqualified")).toEqual([]);
++    expect(findings.filter((finding) => finding.authMode === "cron-secret-only").map((finding) => finding.routePath).sort())
++      .toEqual(["/api/internal/espn-sync", "/api/internal/fantrax-sync", "/api/internal/starter-board", "/api/internal/yahoo-live-draft"]);
++    const windows = findings.filter((finding) => finding.routePath === "/api/v1/sustainability/rebuild-window-z");
++    expect(windows.map((finding) => finding.queryString)).toEqual([
++      "season=current&limit=250&offset=0", "season=current&limit=250&offset=250", "season=current&limit=250&offset=500",
++    ]);
++    expect(new Set(windows.map((finding) => finding.filePath)).size).toBe(1);
++    expect(new Set(windows.map((finding) => finding.schedule)).size).toBe(3);
++  });
++
++  it("keeps every unresolved audit owner explicit rather than granting an exemption", () => {
++    const routes = [...new Set(findings.filter((finding) => finding.auditMode === "unqualified").map((finding) => finding.routePath))].sort();
++    expect(routes).toEqual(unresolvedAuditRoutes);
++    expect(new Set(findings.filter((finding) => finding.auditMode === "shared-wrapper").map((finding) => finding.routePath)).size).toBe(18);
++    for (const finding of findings.filter((finding) => finding.auditMode === "unqualified")) {
++      expect(finding.auditReason).toContain("manual/helper-owned auditing remains unqualified (not an exemption)");
++    }
++  });
++
++  it("qualifies the drafted-prospect refresh only through adminOnly(withCronJobAudit(...))", () => {
++    const route = "/api/v1/db/update-drafted-prospects";
++    const source = fs.readFileSync(path.resolve(webRoot, `pages${route}.ts`), "utf8");
++    expect(classifyVercelCronSource(source, route)).toMatchObject({ authMode: "admin-or-cron", auditMode: "shared-wrapper" });
++    expect(classifyVercelCronSource(source.replace("adminOnly(withCronJobAudit(", "adminOnly(("), route).auditMode).toBe("unqualified");
++  });
++
++  // 2026-10-24 (C5): yahoo-live-draft returns a withCronJobAudit delegate after
++  // its exact secret prefix (plus a daily idle-heartbeat delegate), but the shared
++  // classifier reviews delegates only for espn/fantrax/patreon. It stays
++  // unqualified until that owner adds a reviewed yahoo form; no exemption.
++  it("keeps yahoo-live-draft's runtime audit delegate statically unqualified", () => {
++    const route = "/api/internal/yahoo-live-draft";
++    const source = fs.readFileSync(path.resolve(webRoot, `pages${route}.ts`), "utf8");
++    expect(source).toContain("const auditedPoll = withCronJobAudit(");
++    expect(source).toContain("const auditedIdle = withCronJobAudit(");
++    expect(source).toContain("  return auditedPoll(req, res);\n}");
++    expect(classifyVercelCronSource(source, route)).toMatchObject({ authMode: "cron-secret-only", auditMode: "unqualified" });
++  });
++
++  it.each(["starter-board", "yahoo-live-draft", "fantrax-sync", "espn-sync"])(
++    "binds %s qualification to its actual early rejection and supporting helper source", (name) => {
++      const route = `/api/internal/${name}`;
++      const source = fs.readFileSync(path.resolve(webRoot, `pages${route}.ts`), "utf8");
++      expect(classifyVercelCronSource(source, route).authMode).toBe("cron-secret-only");
++      expect(classifyVercelCronSource(source.replace("if (!secret", "if (secret"), route).authMode).toBe("unqualified");
++      const bypass = name === "fantrax-sync" || name === "espn-sync"
++        ? source.replace("!secretsMatch(bearerToken(req), secret)", "false")
++        : source.replace('req.headers.authorization !== `Bearer ${secret}`', "false");
++      expect(classifyVercelCronSource(bypass, route).authMode).toBe("unqualified");
++      // Moving the same guard after work is not the reviewed early boundary.
++      const late = source.replace('const secret = process.env.CRON_SECRET', 'await doWork(); const secret = process.env.CRON_SECRET');
++      expect(classifyVercelCronSource(late, route).authMode).toBe("unqualified");
++      if (name === "fantrax-sync" || name === "espn-sync") {
++        expect(classifyVercelCronSource(source.replace('authorization.startsWith("Bearer ")', 'authorization.includes("Bearer ")'), route).authMode).toBe("unqualified");
++        expect(classifyVercelCronSource(source.replace('"node:crypto"', '"unreviewed-crypto"'), route).authMode).toBe("unqualified");
++      }
++      expect(classifyVercelCronSource(source, "/api/internal/unreviewed").authMode).toBe("unqualified");
++    },
++  );
++
++  it.each(["espn-sync", "fantrax-sync"])("qualifies only the actual auth-first %s audit delegate", (name) => {
++    const route = `/api/internal/${name}`;
++    const source = fs.readFileSync(path.resolve(webRoot, `pages${route}.ts`), "utf8");
++    expect(classifyVercelCronSource(source, route).auditMode).toBe("shared-wrapper");
++    expect(classifyVercelCronSource(source.replace("return auditedSync(req, res);", "return res.status(200).json({ skipped: true });"), route).auditMode).toBe("unqualified");
++    expect(classifyVercelCronSource(source.replace("!secretsMatch(bearerToken(req), secret)", "false"), route).auditMode).toBe("unqualified");
++    expect(classifyVercelCronSource(source.replace("return auditedSync(req, res);", "await doWork(); return auditedSync(req, res);"), route).auditMode).toBe("unqualified");
++    expect(classifyVercelCronSource(source.replace("return auditedSync(req, res);", "return unauditedSync(req, res);"), route).auditMode).toBe("unqualified");
++    expect(classifyVercelCronSource(source.replace('"lib/cron/withCronJobAudit"', '"unreviewed/audit"'), route).auditMode).toBe("unqualified");
++  });
++
++  it("requires Patreon's actual method-guarded audited delegate inside adminOnly", () => {
++    const route = "/api/internal/patreon-reconcile";
++    const source = fs.readFileSync(path.resolve(webRoot, `pages${route}.ts`), "utf8");
++    expect(classifyVercelCronSource(source, route)).toMatchObject({ authMode: "admin-or-cron", auditMode: "shared-wrapper" });
++    expect(classifyVercelCronSource(source.replace("return auditedReconcile(req, res);", "return res.json({ skipped: true });"), route).auditMode).toBe("unqualified");
++    expect(classifyVercelCronSource(source.replace('if (req.method !== "GET")', "if (false)"), route).auditMode).toBe("unqualified");
++  });
++
++  it("qualifies reviewed exported wrappers, not imports, comments, strings or decoy calls", () => {
++    const imports = `import adminOnly from "utils/adminOnlyMiddleware";
++      import { withCronJobAudit } from "lib/cron/withCronJobAudit";`;
++    for (const expression of ["adminOnly(withCronJobAudit(handler))", "withCronJobAudit(adminOnly(handler))", "adminOnly(withCronJobAudit(handler) as any)"]) {
++      expect(classifyVercelCronSource(`${imports} export default ${expression};`, "/api/fixture"))
++        .toMatchObject({ authMode: "admin-or-cron", auditMode: "shared-wrapper" });
++    }
++    expect(classifyVercelCronSource(`${imports}
++      // adminOnly(withCronJobAudit(handler))
++      const text = "adminOnly(withCronJobAudit(handler)) CRON_SECRET";
++      const unused = adminOnly(withCronJobAudit(handler));
++      export default handler;`, "/api/fixture"))
++      .toMatchObject({ authMode: "unqualified", auditMode: "unqualified" });
++    expect(classifyVercelCronSource(`${imports.replaceAll('"utils/adminOnlyMiddleware"', '"unknown"').replaceAll('"lib/cron/withCronJobAudit"', '"unknown"')}
++      export default adminOnly(withCronJobAudit(handler));`, "/api/fixture"))
++      .toMatchObject({ authMode: "unqualified", auditMode: "unqualified" });
++    expect(classifyVercelCronSource(`${imports} export default unsupported(adminOnly(withCronJobAudit(handler)));`, "/api/fixture"))
++      .toMatchObject({ authMode: "unqualified", auditMode: "unqualified" });
++  });
++
++  it("retains malformed or unsupported entries as explicit findings and bounds the input", () => {
++    const invalid = [null, {}, { path: "/api/../escape", schedule: "* * * * *" },
++      { path: "https://example.invalid/api/work", schedule: "* * * * *" },
++      { path: "/api/work?bad=%zz", schedule: "* * * * *" },
++      { path: "/api/work", schedule: "@daily" },
++      { path: "/api/work", schedule: "99 * * * *" },
++      { path: "/api/work", schedule: "* * * * 5-2" },
++      { path: "/api/work", schedule: "* * * * *", unsupported: true }];
++    const results = inspectVercelCronCoverage({ crons: invalid, webRoot });
++    expect(results).toHaveLength(invalid.length);
++    expect(results.every((finding) => finding.inputReason && !finding.filePath && finding.authMode === "unqualified" && finding.auditMode === "unqualified")).toBe(true);
++    expect(() => inspectVercelCronCoverage({ crons: {}, webRoot })).toThrow("bounded array");
++    expect(() => inspectVercelCronCoverage({ crons: Array(513).fill(null), webRoot })).toThrow("bounded array");
++    expect(inspectVercelCronCoverage({ crons: Array(2), webRoot }).every((finding) => finding.inputReason)).toBe(true);
++    const missing = inspectVercelCronCoverage({ crons: [{ path: "/api/nonexistent-static-fixture", schedule: "0 1 * * *" }], webRoot });
++    expect(missing[0]).toMatchObject({ inputReason: null, filePath: null, authMode: "unqualified", auditMode: "unqualified" });
++    expect(missing[0].auditReason).toContain("No Pages API route file");
++  });
++});
++
++
++// This explicit scope excludes the concurrent/fenced consumers documented in
++// tasks/codex-sprint-2026-10-19/security-cron-auth/OWNERSHIP.md.
++const authFirstAuditRoutes = [
++  "Teams/nst-team-stats.ts",
++  "v1/db/backfill-goalie-underlying-season.ts",
++  "v1/db/backfill-player-underlying-season.ts",
++  "v1/db/backfill-team-underlying-season.ts",
++  "v1/db/calculate-wigo-stats.ts",
++  "v1/db/catch-up-goalie-underlying.ts",
++  "v1/db/catch-up-player-underlying.ts",
++  "v1/db/catch-up-team-underlying.ts",
++  "v1/db/cron/update-stats-cron.ts",
++  "v1/db/draft-ranker-health.ts",
++  "v1/db/powerPlayTimeFrame.ts",
++  "v1/db/refresh-draft-ranker-community.ts",
++  "v1/db/refresh-draft-ranker-discovery.ts",
++  "v1/db/register-nhl-xg-model.ts",
++  "v1/db/run-fetch-wgo-data.ts",
++  "v1/db/sustainability/rebuild-baselines.ts",
++  "v1/db/update-PbP.ts",
++  "v1/db/update-drafted-prospects.ts",
++  "v1/db/update-entity-metric-rankings.ts",
++  "v1/db/update-games.ts",
++  "v1/db/update-goalie-underlying-stats.ts",
++  "v1/db/update-goalie-underlying-summaries.ts",
++  "v1/db/update-line-combinations/[id].ts",
++  "v1/db/update-line-combinations/index.ts",
++  "v1/db/update-lineup-deployment-tallies.ts",
++  "v1/db/update-market-prices.ts",
++  "v1/db/update-nhl-edge-stats.ts",
++  "v1/db/update-nhl-play-by-play.ts",
++  "v1/db/update-nhl-shift-charts.ts",
++  "v1/db/update-nhl-xg-aggregates.ts",
++  "v1/db/update-nhl-xg-shot-predictions.ts",
++  "v1/db/update-nhlscraper-contracts.ts",
++  "v1/db/update-nst-current-season.ts",
++  "v1/db/update-nst-goalies.ts",
++  "v1/db/update-nst-team-daily.ts",
++  "v1/db/update-player-impact-ratings.ts",
++  "v1/db/update-player-trend-metrics.ts",
++  "v1/db/update-player-underlying-stats.ts",
++  "v1/db/update-player-underlying-summaries.ts",
++  "v1/db/update-player/[playerId].ts",
++  "v1/db/update-players.ts",
++  "v1/db/update-power-play-combinations/[gameId].ts",
++  "v1/db/update-power-play-combinations/index.ts",
++  "v1/db/update-rolling-games.ts",
++  "v1/db/update-season-stats.ts",
++  "v1/db/update-seasons.ts",
++  "v1/db/update-shifts.ts",
++  "v1/db/update-skater-composite-ratings.ts",
++  "v1/db/update-sko-stats.ts",
++  "v1/db/update-standings-details/index.ts",
++  "v1/db/update-stats/[gameId].ts",
++  "v1/db/update-team-ctpi-daily.ts",
++  "v1/db/update-team-power-ratings.ts",
++  "v1/db/update-team-sos.ts",
++  "v1/db/update-team-unit-toi.ts",
++  "v1/db/update-team-yearly-summary.ts",
++  "v1/db/update-wgo-averages.ts",
++  "v1/db/update-wgo-goalie-totals.ts",
++  "v1/db/upsert-csv.ts",
++  "v1/game-predictions/accuracy-loop.ts",
++  "v1/game-predictions/backfill-feature-snapshots.ts",
++  "v1/game-predictions/backtest-ablation.ts",
++  "v1/game-predictions/backtest.ts",
++  "v1/game-predictions/feature-signal-analysis.ts",
++  "v1/game-predictions/forecast.ts",
++  "v1/game-predictions/generate.ts",
++  "v1/game-predictions/import-market-odds.ts",
++  "v1/game-predictions/ingest-espn-odds.ts",
++  "v1/game-predictions/promote-model-version.ts",
++  "v1/game-predictions/score.ts",
++  "v1/sustainability/process-recompute-queue.ts",
++  "v1/sustainability/rebuild-priors.ts",
++  "v1/sustainability/rebuild-score.ts",
++  "v1/sustainability/rebuild-trend-bands.ts",
++  "v1/sustainability/rebuild-window-z.ts",
++] as const;
++
++describe("scoped cron auth ordering", () => {
++  it("authenticates before auditing every declared caller", () => {
++    for (const route of authFirstAuditRoutes) {
++      const source = fs.readFileSync(path.resolve(process.cwd(), "pages/api", route), "utf8");
++      const ast = ts.createSourceFile(route, source, ts.ScriptTarget.Latest, true);
++      const exported = ast.statements.find(ts.isExportAssignment)?.expression;
++      expect(exported && ts.isCallExpression(exported), route).toBe(true);
++      if (!exported || !ts.isCallExpression(exported)) continue;
++      expect(exported.expression.getText(ast), route).toBe("adminOnly");
++      const audited = exported.arguments[0];
++      expect(audited && ts.isCallExpression(audited), route).toBe(true);
++      if (!audited || !ts.isCallExpression(audited)) continue;
++      expect(audited.expression.getText(ast), route).toBe("withCronJobAudit");
++    }
++  });
++});
++
++const authAuditMocks = vi.hoisted(() => ({
++  auditInsert: vi.fn(),
++  upsert: vi.fn(),
++  getUser: vi.fn(),
++  role: vi.fn(),
++  tokenClient: vi.fn(),
++  restGet: vi.fn(),
++  buildSnapshot: vi.fn(),
++  persistSnapshot: vi.fn(),
++  reconcilePatreon: vi.fn(),
++}));
++
++vi.mock("lib/supabase/server", () => ({
++  default: {
++    from: vi.fn((table: string) => {
++      if (table === "cron_job_audit") return { insert: authAuditMocks.auditInsert };
++      if (table === "seasons") return { upsert: authAuditMocks.upsert };
++      throw new Error(`Unexpected synthetic service table: ${table}`);
++    }),
++  },
++}));
++vi.mock("lib/supabase", () => ({ createClientWithToken: authAuditMocks.tokenClient }));
++vi.mock("lib/NHL/base", () => ({ restGet: authAuditMocks.restGet }));
++vi.mock("lib/draft-ranker/discoveryServer", () => ({
++  buildDraftRankerDiscoverySnapshot: authAuditMocks.buildSnapshot,
++  persistDraftRankerDiscoverySnapshot: authAuditMocks.persistSnapshot,
++}));
++vi.mock("lib/integrations/patreon/sync", () => ({ reconcilePatreonAccounts: authAuditMocks.reconcilePatreon }));
++
++import refreshDiscovery from "pages/api/v1/db/refresh-draft-ranker-discovery";
++import updateSeasons from "pages/api/v1/db/update-seasons";
++import reconcilePatreon from "pages/api/internal/patreon-reconcile";
++
++function authAuditResponse() {
++  return {
++    statusCode: 200,
++    headersSent: false,
++    headers: {} as Record<string, unknown>,
++    body: undefined as any,
++    status(code: number) { this.statusCode = code; return this; },
++    setHeader(name: string, value: unknown) { this.headers[name] = value; return this; },
++    json(body: unknown) { this.body = body; this.headersSent = true; return this; },
++    send(body: unknown) { this.body = body; this.headersSent = true; return this; },
++  };
++}
++
++const representativeAuditRoutes = [
++  { route: "/api/v1/db/refresh-draft-ranker-discovery", jobName: "refresh-draft-ranker-discovery", handler: refreshDiscovery },
++  { route: "/api/v1/db/update-seasons", jobName: "/api/v1/db/update-seasons", handler: updateSeasons },
++  { route: "/api/internal/patreon-reconcile", jobName: "/api/internal/patreon-reconcile", handler: reconcilePatreon },
++];
++
++describe.each(representativeAuditRoutes)("$route authorization and audit boundary", ({ route, jobName, handler }) => {
++  beforeEach(() => {
++    vi.clearAllMocks();
++    vi.stubEnv("NODE_ENV", "test");
++    vi.stubEnv("CRON_SECRET", "synthetic-cron-secret");
++    vi.stubGlobal("fetch", vi.fn(() => { throw new Error("Network forbidden in auth/audit test"); }));
++    authAuditMocks.auditInsert.mockResolvedValue({ error: null });
++    authAuditMocks.upsert.mockResolvedValue({ error: null });
++    authAuditMocks.restGet.mockResolvedValue({ data: [] });
++    authAuditMocks.getUser.mockResolvedValue({ data: { user: { id: "synthetic-user" } }, error: null });
++    authAuditMocks.role.mockResolvedValue({ data: { role: "admin" } });
++    authAuditMocks.tokenClient.mockReturnValue({
++      auth: { getUser: authAuditMocks.getUser },
++      from: () => ({ select: () => ({ eq: () => ({ maybeSingle: authAuditMocks.role }) }) }),
+     });
++    authAuditMocks.buildSnapshot.mockResolvedValue({ projectionConsensus: [], signals: [], warningCodes: [] });
++    authAuditMocks.reconcilePatreon.mockResolvedValue({ attempted: 1, synced: 1, failed: 0, results: [{ userId: "private-user-id", status: "synced" }] });
+   });
++
++  afterEach(() => {
++    vi.unstubAllEnvs();
++    vi.unstubAllGlobals();
++  });
++
++  function request(authorization?: string, method = "GET") {
++    return { method, url: route, headers: { authorization }, query: {}, body: {}, socket: { remoteAddress: "198.51.100.2" } } as any;
++  }
++
++  it.each([
++    { name: "missing bearer", authorization: undefined, status: 401 },
++    { name: "malformed bearer", authorization: "Bearer", status: 401 },
++    { name: "invalid user token", authorization: "Bearer invalid-token", status: 401 },
++    { name: "non-admin token", authorization: "Bearer member-token", status: 403 },
++  ])("rejects $name without an audit insert or business operation", async ({ authorization, status }) => {
++    if (authorization === "Bearer invalid-token") {
++      authAuditMocks.getUser.mockResolvedValue({ data: { user: null }, error: new Error("invalid token") });
++    }
++    if (status === 403) authAuditMocks.role.mockResolvedValue({ data: { role: "member" } });
++    const res = authAuditResponse();
++    await handler(request(authorization), res as any);
++    expect(res.statusCode).toBe(status);
++    expect(res.body).toEqual({ success: false, message: status === 401 ? "Unauthorized." : "You are not an Admin." });
++    expect(authAuditMocks.auditInsert).not.toHaveBeenCalled();
++    expect(authAuditMocks.restGet).not.toHaveBeenCalled();
++    expect(authAuditMocks.upsert).not.toHaveBeenCalled();
++    expect(authAuditMocks.buildSnapshot).not.toHaveBeenCalled();
++    expect(authAuditMocks.persistSnapshot).not.toHaveBeenCalled();
++    expect(authAuditMocks.reconcilePatreon).not.toHaveBeenCalled();
++  });
++
++  it.each(["Bearer synthetic-cron-secret", "Bearer admin-token"])("retains one admitted audit for %s", async (authorization) => {
++    const res = authAuditResponse();
++    await handler(request(authorization), res as any);
++    expect(res.statusCode).toBe(200);
++    expect(res.body.success).toBe(true);
++    expect(authAuditMocks.auditInsert).toHaveBeenCalledTimes(1);
++    expect(authAuditMocks.auditInsert).toHaveBeenCalledWith(expect.objectContaining({
++      job_name: jobName,
++      status: "success",
++      details: expect.objectContaining({ method: "GET", url: route, statusCode: 200 }),
++    }));
++    if (authorization === "Bearer synthetic-cron-secret") expect(authAuditMocks.tokenClient).not.toHaveBeenCalled();
++    else expect(authAuditMocks.getUser).toHaveBeenCalledTimes(1);
++    if (route.endsWith("update-seasons")) {
++      expect(authAuditMocks.restGet).toHaveBeenCalledWith("/season");
++      expect(authAuditMocks.upsert).toHaveBeenCalledTimes(1);
++    } else if (route === "/api/internal/patreon-reconcile") {
++      expect(authAuditMocks.reconcilePatreon).toHaveBeenCalledExactlyOnceWith({});
++      const row = authAuditMocks.auditInsert.mock.calls[0][0];
++      expect(row.rows_affected).toBeNull();
++      expect(row.details.rowsUpserted).toBeNull();
++      expect(row.details.failedRows).toBeNull();
++      expect(JSON.parse(row.details.response)).toEqual({ success: true, attempted: 1, synced: 1, failed: 0 });
++      expect(JSON.stringify(row)).not.toContain("private-user-id");
++    } else {
++      expect(authAuditMocks.buildSnapshot).toHaveBeenCalledTimes(1);
++    }
++  });
++
++  if (route === "/api/internal/patreon-reconcile") {
++    it.each([
++      { name: "empty", result: { attempted: 0, synced: 0, failed: 0, results: [] }, success: true },
++      { name: "aggregate failure", result: { attempted: 1, synced: 0, failed: 1,
++        results: [{ userId: "private-user-id", status: "failed", error: "private provider detail account-id league-id" }] }, success: false },
++    ])("retains the $name API result with exactly one safe invocation receipt", async ({ result, success }) => {
++      authAuditMocks.reconcilePatreon.mockResolvedValue(result);
++      const res = authAuditResponse();
++      await handler(request("Bearer synthetic-cron-secret"), res as any);
++      expect(res.statusCode).toBe(200);
++      expect(res.body).toEqual({ ...result, success });
++      expect(authAuditMocks.reconcilePatreon).toHaveBeenCalledExactlyOnceWith({});
++      expect(authAuditMocks.auditInsert).toHaveBeenCalledTimes(1);
++      const row = authAuditMocks.auditInsert.mock.calls[0][0];
++      const safe = { success, attempted: result.attempted, synced: result.synced, failed: result.failed };
++      expect(row).toMatchObject({ job_name: route, status: success ? "success" : "failure", rows_affected: null,
++        details: { statusCode: 200, rowsUpserted: null, failedRows: null, error: null, responseOutcome: { success } } });
++      expect(JSON.parse(row.details.response)).toEqual(safe);
++      for (const sensitive of ["private-user-id", "private provider detail", "account-id", "league-id", "synthetic-cron-secret"])
++        expect(JSON.stringify(row)).not.toContain(sensitive);
++    });
++
++    it("keeps its fixed catch response and safe failure receipt", async () => {
++      authAuditMocks.reconcilePatreon.mockRejectedValue(new Error("private provider detail"));
++      const res = authAuditResponse();
++      await handler(request("Bearer synthetic-cron-secret"), res as any);
++      expect(res.statusCode).toBe(500);
++      expect(res.body).toEqual({ error: "Patreon reconciliation failed." });
++      expect(authAuditMocks.auditInsert).toHaveBeenCalledTimes(1);
++      const row = authAuditMocks.auditInsert.mock.calls[0][0];
++      expect(row).toMatchObject({ status: "failure", rows_affected: null, details: { rowsUpserted: null, failedRows: null, responseOutcome: {} } });
++      expect(JSON.stringify(row)).not.toContain("private provider detail");
++    });
++
++    it("rejects an admitted unsupported method before auditing or reconciliation", async () => {
++      const res = authAuditResponse();
++      await handler(request("Bearer synthetic-cron-secret", "POST"), res as any);
++      expect(res.statusCode).toBe(405);
++      expect(res.headers.Allow).toBe("GET");
++      expect(res.body).toEqual({ error: "Method Not Allowed" });
++      expect(authAuditMocks.reconcilePatreon).not.toHaveBeenCalled();
++      expect(authAuditMocks.auditInsert).not.toHaveBeenCalled();
++    });
++  }
+ });
++
++it("retains admitted method rejection and its operational audit", async () => {
++  vi.stubEnv("CRON_SECRET", "synthetic-cron-secret");
++  authAuditMocks.auditInsert.mockClear();
++  authAuditMocks.auditInsert.mockResolvedValue({ error: null });
++  const res = authAuditResponse();
++  try {
++    await refreshDiscovery({
++      method: "DELETE", url: "/api/v1/db/refresh-draft-ranker-discovery", query: {},
++      headers: { authorization: "Bearer synthetic-cron-secret" },
++    } as any, res as any);
++    expect(res.statusCode).toBe(405);
++    expect(res.headers.Allow).toEqual(["GET", "POST"]);
++    expect(res.body).toEqual({ success: false, error: "Method not allowed." });
++    expect(authAuditMocks.auditInsert).toHaveBeenCalledTimes(1);
++    expect(authAuditMocks.auditInsert).toHaveBeenCalledWith(expect.objectContaining({
++      status: "failure", details: expect.objectContaining({ statusCode: 405 }),
++    }));
++  } finally {
++    vi.unstubAllEnvs();
++  }
++});
+--- a/web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts
++++ b/web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts
+@@ -1,56 +1,145 @@
+ // @vitest-environment node
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+-const mocks = vi.hoisted(() => ({ preview: vi.fn(), importIdentity: vi.fn() }));
+-vi.mock("utils/adminOnlyMiddleware", () => ({ default: (handler: unknown) => handler }));
++// The real adminOnly guard and withCronJobAudit wrapper run; only their service
++// clients and the NHL source are synthetic.
++const mocks = vi.hoisted(() => {
++  // A plain counter, so vi.clearAllMocks cannot hide an import-time request.
++  const network = { requests: 0 };
++  globalThis.fetch = (() => { network.requests += 1; throw new Error("Network forbidden in route test"); }) as any;
++  const state = { updates: [] as any[], updateResults: [] as Array<() => Promise<{ error: unknown }>> };
++  const chain: any = { select: () => chain, eq: () => chain,
++    single: async () => ({ data: { payload: { latestYear: 2026, year: 2025, after: 219 } }, error: null }),
++    update: (value: unknown) => { state.updates.push(value); return chain; },
++    then: (resolve: any, reject: any) => (state.updateResults.shift() ?? (async () => ({ error: null })))().then(resolve, reject) };
++  return { network, state, chain, preview: vi.fn(), importIdentity: vi.fn(), rpc: vi.fn(), auditInsert: vi.fn(),
++    getUser: vi.fn(), role: vi.fn(), tokenClient: vi.fn() };
++});
++vi.mock("lib/supabase/server", () => ({ default: {
++  from: (table: string) => table === "cron_job_audit" ? { insert: mocks.auditInsert } : mocks.chain,
++  rpc: mocks.rpc,
++} }));
++vi.mock("lib/supabase", () => ({ createClientWithToken: mocks.tokenClient }));
+ vi.mock("lib/sources/nhlProspectIdentity", () => ({ previewNhlDraftBatch: mocks.preview, importNhlIdentity: mocks.importIdentity }));
+ import handler from "pages/api/v1/db/update-drafted-prospects";
+-function fixture(query = {}) {
+-  const updates: any[] = [];
+-  const chain: any = { select: () => chain, eq: () => chain, single: async () => ({ data: { payload: { latestYear: 2026, year: 2025, after: 219 } }, error: null }),
+-    update: (value: unknown) => { updates.push(value); return chain; }, then: (resolve: any) => Promise.resolve({ error: null }).then(resolve) };
+-  const req: any = { method: "GET", query, supabase: { from: () => chain, rpc: vi.fn(async () => ({ data: true, error: null })) } };
+-  const res: any = { statusCode: 200, body: null, status: (code: number) => { res.statusCode = code; return res; }, json: (value: any) => { res.body = value; return res; } };
+-  return { req, res, updates };
++const route = "/api/v1/db/update-drafted-prospects";
++function fixture(query = {}, authorization: string | null = "Bearer synthetic-cron-secret", method = "GET") {
++  const req: any = { method, url: `${route}?scheduled=true`, query, headers: authorization == null ? {} : { authorization }, socket: { remoteAddress: "198.51.100.2" } };
++  const res: any = { statusCode: 200, body: null, headersSent: false, status: (code: number) => { res.statusCode = code; return res; },
++    json: (value: any) => { res.body = value; res.headersSent = true; return res; }, end: () => { res.headersSent = true; return res; } };
++  return { req, res, updates: mocks.state.updates };
+ }
++const auditRow = () => {
++  expect(mocks.auditInsert).toHaveBeenCalledTimes(1);
++  return mocks.auditInsert.mock.calls[0][0];
++};
++const enableWrites = () => {
++  vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true"); vi.stubEnv("NHL_PROSPECT_REFRESH_ENABLED", "true");
++};
+ beforeEach(() => {
+   vi.clearAllMocks(); vi.useFakeTimers(); vi.setSystemTime(new Date("2026-09-18T12:00:00Z"));
+-  mocks.preview.mockResolvedValue({ year: 2025, players: [{ nhlId: 8485689 }], warnings: [], nextCursor: 220 });
++  vi.stubEnv("NODE_ENV", "test"); vi.stubEnv("CRON_SECRET", "synthetic-cron-secret");
++  mocks.state.updates.length = 0; mocks.state.updateResults.length = 0;
++  mocks.preview.mockResolvedValue({ year: 2025, total: 1, players: [{ nhlId: 8485689 }], warnings: [], nextCursor: 220 });
+   mocks.importIdentity.mockResolvedValue({ availableToPipeline: true });
++  mocks.rpc.mockResolvedValue({ data: true, error: null });
++  mocks.auditInsert.mockResolvedValue({ error: null });
++  mocks.getUser.mockResolvedValue({ data: { user: { id: "synthetic-user" } }, error: null });
++  mocks.role.mockResolvedValue({ data: { role: "admin" } });
++  mocks.tokenClient.mockReturnValue({ auth: { getUser: mocks.getUser },
++    from: () => ({ select: () => ({ eq: () => ({ maybeSingle: mocks.role }) }) }) });
+ });
+ afterEach(() => { vi.unstubAllEnvs(); vi.useRealTimers(); });
+ describe("bounded draft refresh", () => {
+   it("defaults to a read-only preview", async () => {
+     const { req, res } = fixture({ year: "2025" }); await handler(req, res);
+-    expect(res.body.dryRun).toBe(true); expect(mocks.importIdentity).not.toHaveBeenCalled(); expect(req.supabase.rpc).not.toHaveBeenCalled();
++    expect(res.body.dryRun).toBe(true); expect(mocks.importIdentity).not.toHaveBeenCalled(); expect(mocks.rpc).not.toHaveBeenCalled();
++    expect(auditRow()).toMatchObject({ job_name: route, status: "success", rows_affected: null });
+   });
+   it("keeps scheduled production writes disabled unless both gates are enabled", async () => {
+     vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true");
+     const { req, res } = fixture({ scheduled: "true" }); await handler(req, res);
+     expect(res.body.skipped).toBe(true); expect(mocks.preview).not.toHaveBeenCalled();
++    const row = auditRow();
++    expect(row.status).toBe("success");
++    expect(JSON.parse(row.details.response)).toEqual({ success: true, skipped: true, reason: "Prospect writes are disabled." });
+   });
+   it("resumes the claimed cursor and persists progress after the batch succeeds", async () => {
+-    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true"); vi.stubEnv("NHL_PROSPECT_REFRESH_ENABLED", "true");
++    enableWrites();
+     const { req, res, updates } = fixture({ scheduled: "true" }); await handler(req, res);
+     expect(mocks.preview).toHaveBeenCalledWith({ year: 2025, after: 219, limit: 25 });
+     expect(res.body.imports).toHaveLength(1);
++    expect(updates).toHaveLength(1);
+     expect(updates[0]).toMatchObject({ status: "pending", attempts: 0, payload: { year: 2025, after: 220 } });
++    const row = auditRow();
++    expect(row).toMatchObject({ status: "success", details: { statusCode: 200, rowsUpserted: null, failedRows: null, error: null } });
++    // Only bounded primitives persist; the player and import lists stay in the response.
++    expect(JSON.parse(row.details.response)).toEqual({ success: true, dryRun: false, year: 2025, total: 1, nextCursor: 220 });
+   });
+   it("preserves the cursor and backs off when a write fails", async () => {
+-    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true"); vi.stubEnv("NHL_PROSPECT_REFRESH_ENABLED", "true");
++    enableWrites();
+     mocks.importIdentity.mockRejectedValue(new Error("Identity conflict"));
+     const { req, res, updates } = fixture({ scheduled: "true" }); await handler(req, res);
+     expect(res.statusCode).toBe(400); expect(updates[0]).toMatchObject({ status: "failed", failure_stage: "prospect_identity_refresh" });
+     expect(updates[0].payload).toBeUndefined();
++    expect(auditRow()).toMatchObject({ status: "failure", details: { statusCode: 400, responseOutcome: { success: false } } });
+   });
++  it("records a partially imported batch as one failed run without advancing the cursor", async () => {
++    enableWrites();
++    mocks.preview.mockResolvedValue({ year: 2025, total: 2, players: [{ nhlId: 1 }, { nhlId: 2 }], warnings: [], nextCursor: 221 });
++    mocks.importIdentity.mockResolvedValueOnce({ availableToPipeline: true }).mockRejectedValueOnce(new Error("Identity conflict"));
++    const { req, res, updates } = fixture({ scheduled: "true" }); await handler(req, res);
++    expect(mocks.importIdentity).toHaveBeenCalledTimes(2);
++    expect(res.statusCode).toBe(400);
++    expect(updates).toHaveLength(1);
++    expect(updates[0]).toMatchObject({ status: "failed" }); expect(updates[0].payload).toBeUndefined();
++    expect(auditRow()).toMatchObject({ status: "failure", details: { statusCode: 400 } });
++  });
++  it("records a throw from the failure write as one bounded wrapper failure", async () => {
++    enableWrites();
++    mocks.importIdentity.mockRejectedValue(new Error("Identity conflict"));
++    mocks.state.updateResults.push(async () => { throw new Error("lease write failed"); });
++    const { req, res, updates } = fixture({ scheduled: "true" }); await handler(req, res);
++    expect(updates).toHaveLength(1);
++    expect(res.statusCode).toBe(500);
++    expect(res.body).toMatchObject({ success: false, error: "lease write failed" });
++    expect(auditRow()).toMatchObject({ status: "failure", details: { statusCode: 500, error: "Handler failed." } });
++  });
+   it("does no work when another refresh holds the lease", async () => {
+-    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true"); vi.stubEnv("NHL_PROSPECT_REFRESH_ENABLED", "true");
+-    const { req, res } = fixture({ scheduled: "true" }); req.supabase.rpc.mockResolvedValue({ data: false, error: null });
++    enableWrites();
++    const { req, res } = fixture({ scheduled: "true" }); mocks.rpc.mockResolvedValue({ data: false, error: null });
+     await handler(req, res); expect(res.body.skipped).toBe(true); expect(mocks.preview).not.toHaveBeenCalled();
++    expect(mocks.state.updates).toHaveLength(0);
++    expect(auditRow().status).toBe("success");
+   });
+   it("honors an explicit dry run even when scheduled writes are enabled", async () => {
+-    vi.stubEnv("TWEET_PIPELINE_INTERPRETATION_ENABLED", "true"); vi.stubEnv("NHL_PROSPECT_REFRESH_ENABLED", "true");
++    enableWrites();
+     const { req, res } = fixture({ scheduled: "true", dryRun: "true" }); await handler(req, res);
+-    expect(res.body.dryRun).toBe(true); expect(req.supabase.rpc).not.toHaveBeenCalled(); expect(mocks.importIdentity).not.toHaveBeenCalled();
++    expect(res.body.dryRun).toBe(true); expect(mocks.rpc).not.toHaveBeenCalled(); expect(mocks.importIdentity).not.toHaveBeenCalled();
+   });
+-
++  it.each([
++    { name: "missing bearer", authorization: null, status: 401 },
++    { name: "invalid user token", authorization: "Bearer invalid-token", status: 401 },
++    { name: "non-admin token", authorization: "Bearer member-token", status: 403 },
++  ])("rejects a $name before auditing or any refresh work", async ({ authorization, status }) => {
++    enableWrites();
++    if (status === 401 && authorization) mocks.getUser.mockResolvedValue({ data: { user: null }, error: new Error("invalid token") });
++    if (status === 403) mocks.role.mockResolvedValue({ data: { role: "member" } });
++    const { req, res } = fixture({ scheduled: "true" }, authorization); await handler(req, res);
++    expect(res.statusCode).toBe(status);
++    expect(mocks.auditInsert).not.toHaveBeenCalled();
++    expect(mocks.rpc).not.toHaveBeenCalled(); expect(mocks.preview).not.toHaveBeenCalled();
++  });
++  it("admits a verified admin token with one audit row", async () => {
++    const { req, res } = fixture({ year: "2025" }, "Bearer admin-token"); await handler(req, res);
++    expect(res.statusCode).toBe(200); expect(mocks.getUser).toHaveBeenCalledTimes(1);
++    expect(auditRow().status).toBe("success");
++  });
++  it("audits an admitted unsupported method as a failure without refresh work", async () => {
++    const { req, res } = fixture({}, "Bearer synthetic-cron-secret", "DELETE"); await handler(req, res);
++    expect(res.statusCode).toBe(405); expect(mocks.preview).not.toHaveBeenCalled();
++    expect(auditRow()).toMatchObject({ status: "failure", details: { method: "DELETE", statusCode: 405 } });
++  });
++  it("makes no network request at import or during a run", () => {
++    expect(mocks.network.requests).toBe(0);
++  });
+ });
+--- a/web/lib/cron/cronAuditCoverage.ts
++++ b/web/lib/cron/cronAuditCoverage.ts
+@@ -1,5 +1,6 @@
+ import fs from "fs";
+ import path from "path";
++import ts from "typescript";
+ 
+ import { parseCronInventoryFromMarkdown } from "lib/cron/cronInventory";
+ 
+@@ -389,4 +390,217 @@
+             : null,
+       };
+     });
++}
++
++export type VercelCronCoverageFinding = {
++  entryIndex: number;
++  configuredPath: string | null;
++  schedule: string | null;
++  routePath: string | null;
++  queryString: string | null;
++  filePath: string | null;
++  inputReason: string | null;
++  authMode: "admin-or-cron" | "cron-secret-only" | "unqualified";
++  auditMode: "shared-wrapper" | "unqualified";
++  authReason: string;
++  auditReason: string;
++};
++
++// AST signatures ignore formatting/comments, but preserve operators, literals
++// and statement order. These are deliberately narrow reviewed source contracts,
++// not a general authorization or control-flow analyzer.
++function sourceSignature(source: string) {
++  const ast = ts.createSourceFile("contract.ts", source, ts.ScriptTarget.Latest, true);
++  const signature: (number | string)[] = [];
++  function visit(node: ts.Node) {
++    signature.push(node.kind);
++    let hasChildren = false;
++    ts.forEachChild(node, (child) => { hasChildren = true; visit(child); });
++    if (!hasChildren) signature.push(node.getText(ast));
++  }
++  visit(ast);
++  return JSON.stringify(signature);
++}
++
++const directBearerPrefixes: Readonly<Record<string, string>> = {
++  "/api/internal/starter-board": `
++    res.setHeader("Cache-Control", "no-store");
++    if (req.method !== "GET") { res.setHeader("Allow", "GET"); return res.status(405).end(); }
++    const secret = process.env.CRON_SECRET;
++    if (!secret?.trim()) return res.status(503).json({ error: "Scheduler not configured" });
++    if (req.headers.authorization !== \`Bearer \${secret}\`) return res.status(401).end();`,
++  "/api/internal/yahoo-live-draft": `
++    res.setHeader("Cache-Control", "no-store");
++    if (req.method !== "GET") {
++      res.setHeader("Allow", "GET");
++      return res.status(405).json({ error: "Method Not Allowed" });
++    }
++    const secret = process.env.CRON_SECRET;
++    if (!secret?.trim()) return res.status(503).json({ error: "Scheduler not configured" });
++    if (req.headers.authorization !== \`Bearer \${secret}\`) {
++      return res.status(401).json({ error: "Unauthorized" });
++    }`,
++};
++
++const constantTimeBearerHelper = `function bearerToken(req: NextApiRequest) {
++  const authorization = req.headers.authorization;
++  return typeof authorization === "string" && authorization.startsWith("Bearer ")
++    ? authorization.slice("Bearer ".length) : "";
++}`;
++const constantTimeMatchHelper = `function secretsMatch(received: string, expected: string) {
++  const receivedBytes = Buffer.from(received);
++  const expectedBytes = Buffer.from(expected);
++  return (receivedBytes.length === expectedBytes.length &&
++    timingSafeEqual(Uint8Array.from(receivedBytes), Uint8Array.from(expectedBytes)));
++}`;
++const constantTimePrefix = `
++  if (req.method !== "GET") {
++    res.setHeader("Allow", "GET");
++    return res.status(405).json({ error: "Method Not Allowed" });
++  }
++  const secret = process.env.CRON_SECRET?.trim();
++  if (!secret) return res.status(503).json({ error: "CRON_SECRET is not configured" });
++  if (!secretsMatch(bearerToken(req), secret)) {
++    return res.status(401).json({ error: "Unauthorized" });
++  }`;
++
++export function classifyVercelCronSource(source: string, routePath: string) {
++  const ast = ts.createSourceFile("cron-route.ts", source, ts.ScriptTarget.Latest, true);
++  function imported(name: string, module: string, defaultImport = false) {
++    return ast.statements.some((statement) => {
++      if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier) ||
++          statement.moduleSpecifier.text !== module || statement.importClause?.isTypeOnly) return false;
++      if (defaultImport) return statement.importClause?.name?.text === name;
++      const bindings = statement.importClause?.namedBindings;
++      return bindings && ts.isNamedImports(bindings) && bindings.elements.some((element) =>
++        !element.isTypeOnly && element.name.text === name && (element.propertyName?.text ?? name) === name);
++    });
++  }
++  const exported = ast.statements.find(ts.isExportAssignment)?.expression;
++  let current = exported;
++  let admin = false;
++  let audited = false;
++  // Only traverse the actual exported first-argument wrapper chain. Unused
++  // imports, comments, strings and calls elsewhere do not qualify a route.
++  while (current) {
++    if (ts.isAsExpression(current) || ts.isParenthesizedExpression(current)) {
++      current = current.expression;
++      continue;
++    }
++    if (!ts.isCallExpression(current) || !ts.isIdentifier(current.expression) || !current.arguments[0]) break;
++    const name = current.expression.text;
++    if (name === "adminOnly" && imported(name, "utils/adminOnlyMiddleware", true)) admin = true;
++    else if (name === "withCronJobAudit" && imported(name, "lib/cron/withCronJobAudit")) audited = true;
++    else if (!(name === "withNhlOffSeasonSkip" && imported(name, "lib/cron/nhlOffSeason"))) break;
++    current = current.arguments[0];
++  }
++  const defaultHandler = ast.statements.find((statement): statement is ts.FunctionDeclaration =>
++    ts.isFunctionDeclaration(statement) && !!statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword));
++  function prefixMatches(expected: string, count: number, handler: ts.FunctionDeclaration | ts.ArrowFunction | undefined = defaultHandler) {
++    const body = handler?.body;
++    const actual = body && ts.isBlock(body)
++      ? body.statements.slice(0, count).map((statement) => statement.getText(ast)).join("\n") : null;
++    return actual != null && sourceSignature(actual) === sourceSignature(expected);
++  }
++  let bespoke = false;
++  const directPrefix = directBearerPrefixes[routePath];
++  if (directPrefix) bespoke = prefixMatches(directPrefix, 5);
++  if (routePath === "/api/internal/espn-sync" || routePath === "/api/internal/fantrax-sync") {
++    const functionMatches = (name: string, expected: string) => {
++      const functions = ast.statements.filter((statement): statement is ts.FunctionDeclaration =>
++        ts.isFunctionDeclaration(statement) && statement.name?.text === name);
++      return functions.length === 1 && sourceSignature(functions[0].getText(ast)) === sourceSignature(expected);
++    };
++    // The two reviewed handlers differ only in braces around this early return.
++    const prefix = routePath.endsWith("fantrax-sync")
++      ? constantTimePrefix.replace('if (!secret) return res.status(503).json({ error: "CRON_SECRET is not configured" });',
++          'if (!secret) { return res.status(503).json({ error: "CRON_SECRET is not configured" }); }')
++      : constantTimePrefix;
++    // Fantrax's reviewed timingSafeEqual call has a trailing comma.
++    const matchHelper = routePath.endsWith("fantrax-sync")
++      ? constantTimeMatchHelper.replace("Uint8Array.from(expectedBytes))", "Uint8Array.from(expectedBytes),)")
++      : constantTimeMatchHelper;
++    bespoke = imported("timingSafeEqual", "node:crypto") && prefixMatches(prefix, 4) &&
++      functionMatches("bearerToken", constantTimeBearerHelper) && functionMatches("secretsMatch", matchHelper);
++  }
++  function returnsAuditDelegate(handler: ts.FunctionDeclaration | ts.ArrowFunction | undefined, prefixLength: number) {
++    const body = handler?.body;
++    if (!body || !ts.isBlock(body) || body.statements.length !== prefixLength + 1) return false;
++    const returned = body.statements[prefixLength];
++    const call = ts.isReturnStatement(returned) ? returned.expression : null;
++    if (!call || !ts.isCallExpression(call) || !ts.isIdentifier(call.expression) ||
++        sourceSignature(call.getText(ast)) !== sourceSignature(`${call.expression.text}(req, res)`)) return false;
++    const delegateName = call.expression.text;
++    const declarations = ast.statements.filter(ts.isVariableStatement)
++      .filter((statement) => !!(statement.declarationList.flags & ts.NodeFlags.Const))
++      .flatMap((statement) => [...statement.declarationList.declarations])
++      .filter((declaration) => ts.isIdentifier(declaration.name) && declaration.name.text === delegateName);
++    const initializer = declarations.length === 1 ? declarations[0].initializer : null;
++    return initializer != null && ts.isCallExpression(initializer) &&
++      ts.isIdentifier(initializer.expression) && initializer.expression.text === "withCronJobAudit" &&
++      imported("withCronJobAudit", "lib/cron/withCronJobAudit") &&
++      initializer.arguments[0] != null && ts.isArrowFunction(initializer.arguments[0]);
++  }
++  // Only these reviewed providers use an auth-first early-guard/delegate form.
++  // An unused audited function, a bypassed guard or extra work before the
++  // returned delegate cannot qualify this source contract.
++  const patreonHandler = routePath === "/api/internal/patreon-reconcile" && admin && current && ts.isArrowFunction(current)
++    ? current : undefined;
++  const delegatedAudit = ((routePath === "/api/internal/espn-sync" || routePath === "/api/internal/fantrax-sync") &&
++      bespoke && returnsAuditDelegate(defaultHandler, 4)) ||
++    (patreonHandler != null && prefixMatches(`if (req.method !== "GET") {
++      res.setHeader("Allow", "GET");
++      return res.status(405).json({ error: "Method Not Allowed" });
++    }`, 1, patreonHandler) && returnsAuditDelegate(patreonHandler, 1));
++  audited = audited || delegatedAudit;
++  return {
++    authMode: admin ? "admin-or-cron" as const : bespoke ? "cron-secret-only" as const : "unqualified" as const,
++    auditMode: audited ? "shared-wrapper" as const : "unqualified" as const,
++    authReason: admin ? "Reviewed adminOnly import occurs in the exported wrapper chain." : bespoke
++      ? "Reviewed route-specific nonempty-secret rejection and exact bearer guard precede work."
++      : "No supported reviewed authorization source contract matched.",
++    auditReason: delegatedAudit ? "Reviewed withCronJobAudit delegate is returned immediately after the exact admission/method prefix."
++      : audited ? "Reviewed withCronJobAudit import occurs in the exported wrapper chain."
++      : "No direct reviewed audit wrapper; manual/helper-owned auditing remains unqualified (not an exemption).",
++  };
+ }
++
++/** Static local source evidence only; never imports or invokes a scheduled route. */
++export function inspectVercelCronCoverage(args: { crons: unknown; webRoot: string }): VercelCronCoverageFinding[] {
++  if (!Array.isArray(args.crons) || args.crons.length > 512) {
++    throw new Error("Vercel crons must be a bounded array of at most 512 entries.");
++  }
++  return Array.from(args.crons, (entry: unknown, entryIndex) => {
++    const record = entry != null && typeof entry === "object" && !Array.isArray(entry)
++      ? entry as Record<string, unknown> : null;
++    const configuredPath = typeof record?.path === "string" ? record.path : null;
++    const schedule = typeof record?.schedule === "string" ? record.schedule : null;
++    const [pathname, ...queryParts] = configuredPath?.split("?") ?? [];
++    const queryString = queryParts.length ? queryParts.join("?") : "";
++    const validPath = configuredPath != null && configuredPath.length <= 2048 &&
++      /^\/api\/[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(pathname) &&
++      !/[\s#]/.test(queryString) && !/%(?![\da-f]{2})/i.test(queryString);
++    const limits = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 7]];
++    const fields = schedule?.split(" ");
++    const validSchedule = schedule != null && schedule.length <= 128 && fields?.length === 5 &&
++      fields.every((field, index) => field.split(",").every((part) => {
++        const match = /^(\*|\d+(?:-\d+)?)(?:\/([1-9]\d*))?$/.exec(part);
++        if (!match) return false;
++        if (match[1] === "*") return true;
++        const [start, end = start] = match[1].split("-").map(Number);
++        return start >= limits[index][0] && end <= limits[index][1] && start <= end;
++      }));
++    const inputReason = !record || Object.keys(record).some((key) => key !== "path" && key !== "schedule") || !validPath || !validSchedule
++      ? "Unsupported Vercel entry: expected a bounded local /api path/query and five numeric cron fields, with only path/schedule keys."
++      : null;
++    const routePath = validPath ? pathname : null;
++    const filePath = !inputReason && routePath ? resolveCronRouteFile(args.webRoot, routePath) : null;
++    const qualification = filePath && routePath
++      ? classifyVercelCronSource(fs.readFileSync(filePath, "utf8"), routePath)
++      : { authMode: "unqualified" as const, auditMode: "unqualified" as const,
++          authReason: inputReason ?? "No Pages API route file resolves from this Vercel entry.",
++          auditReason: inputReason ?? "No Pages API route file resolves from this Vercel entry." };
++    return { entryIndex, configuredPath, schedule, routePath, queryString: configuredPath == null ? null : queryString,
++      filePath, inputReason, ...qualification };
++  });
++}
+--- a/web/lib/cron/nhlOffSeason.test.ts
++++ b/web/lib/cron/nhlOffSeason.test.ts
+@@ -1,5 +1,7 @@
+ import { describe, expect, it, vi } from "vitest";
++import { cronClassificationOf } from "./withCronJobAudit";
+ import {
++  CRON_CLASSIFICATION_KEY,
+   resolveNhlSeasonWindow,
+   withNhlOffSeasonSkip,
+   type NhlSeasonSpan,
+@@ -148,4 +150,24 @@
+     );
+     expect(handler).toHaveBeenCalledTimes(1);
+   });
++
++  it("marks the response as seasonal game data on skip, ignore and run paths alone", async () => {
++    const unwrapped = response();
++    expect(cronClassificationOf(unwrapped)).toBeNull();
++    for (const [query, window] of [
++      [{}, offSeason],
++      [{ ignoreOffSeason: "true" }, offSeason],
++      [{}, { state: "unknown", today: "2026-08-01", reason: "lookup failed" }],
++    ] as const) {
++      const res = response();
++      await withNhlOffSeasonSkip(vi.fn(), { loadWindow: async () => window })(
++        { query } as never,
++        res as never,
++      );
++      expect(cronClassificationOf(res)).toBe("nhl_seasonal_game_data");
++      expect((res as any)[CRON_CLASSIFICATION_KEY]).toBe("nhl_seasonal_game_data");
++      expect(Object.keys(res)).not.toContain("cronClassification");
++      expect(JSON.stringify(res.body ?? {})).not.toContain("nhl_seasonal_game_data");
++    }
++  });
+ });
+--- a/web/lib/cron/nhlOffSeason.ts
++++ b/web/lib/cron/nhlOffSeason.ts
+@@ -161,6 +161,16 @@
+   cachedWindow = null;
+ }
+ 
++// Canonical cron classification: a route whose request passed through
++// withNhlOffSeasonSkip writes NHL game data that pauses between seasons. The
++// gate marks the response object it was handed, so an audit wrapper on either
++// side of it (or around a handler that calls a gated worker) can record it
++// without guessing from route names, imports or row counts. withCronJobAudit
++// reads the same registered symbol (see cronClassificationOf there).
++export const NHL_SEASONAL_GAME_DATA = "nhl_seasonal_game_data";
++export type CronClassification = typeof NHL_SEASONAL_GAME_DATA;
++export const CRON_CLASSIFICATION_KEY = Symbol.for("fhfh.cron.classification");
++
+ function ignoresOffSeason(req: NextApiRequest): boolean {
+   const value = req.query?.ignoreOffSeason;
+   const flag = Array.isArray(value) ? value[0] : value;
+@@ -181,6 +191,8 @@
+ ): (req: Req, res: Res) => Promise<unknown> {
+   const loadWindow = options.loadWindow ?? cachedNhlSeasonWindow;
+   return async (req, res) => {
++    (res as unknown as Record<symbol, CronClassification>)[CRON_CLASSIFICATION_KEY] =
++      NHL_SEASONAL_GAME_DATA;
+     if (!ignoresOffSeason(req)) {
+       const window = await loadWindow();
+       if (window.state === "unknown") {
+--- a/web/lib/cron/withCronJobAudit.test.ts
++++ b/web/lib/cron/withCronJobAudit.test.ts
+@@ -10,7 +10,15 @@
+   },
+ }));
+ 
+-import { withCronJobAudit } from "lib/cron/withCronJobAudit";
++import {
++  cronClassificationFromAuditDetails,
++  withCronJobAudit,
++} from "lib/cron/withCronJobAudit";
++import {
++  NHL_SEASONAL_GAME_DATA,
++  withNhlOffSeasonSkip,
++  type NhlSeasonWindow,
++} from "lib/cron/nhlOffSeason";
+ import { withCronJobTiming } from "lib/cron/timingContract";
+ 
+ function createMockReq(overrides: Record<string, unknown> = {}) {
+@@ -209,6 +217,7 @@
+     await rolling(createMockReq(), createMockRes());
+ 
+     expect(insertMock.mock.calls.map((call) => call[0].status)).toEqual(["continued", "continued"]);
++    expect(insertMock.mock.calls[0][0].details.responseOutcome.termination.state).toBe("continuation_required");
+   });
+ 
+   it("keeps a 207 continuation that lists failures or errors as a failure", async () => {
+@@ -307,6 +316,57 @@
+     expect(row.details.failedRows).toBeNull();
+   });
+ 
++  it("limits opted-in audit previews to own primitive fields without changing the API or status inference", async () => {
++    const body = Object.assign(Object.create({ inherited: "private-inherited-value" }), {
++      success: false,
++      attempted: 2,
++      failed: 1,
++      results: [{ userId: "private-user-id", error: "private-provider-error" }],
++      unavailableCount: Number.NaN,
++    });
++    const wrapped = withCronJobAudit(
++      async (_req, res) => res.json(body),
++      {
++        jobName: "bounded-provider-summary",
++        recordRowMetrics: false,
++        responsePreviewKeys: ["attempted", "failed", "results", "inherited", "unavailableCount"],
++      }
++    );
++    const res = createMockRes();
++
++    await wrapped(createMockReq(), res);
++
++    expect(res.statusCode).toBe(200);
++    expect(res.body).toBe(body);
++    expect(insertMock).toHaveBeenCalledTimes(1);
++    const row = insertMock.mock.calls[0][0];
++    expect(row.status).toBe("failure");
++    expect(row.rows_affected).toBeNull();
++    expect(JSON.parse(row.details.response)).toEqual({ attempted: 2, failed: 1 });
++    expect(row.details.responseOutcome).toEqual({});
++    expect(JSON.stringify(row)).not.toContain("private-");
++  });
++
++  it("uses a fixed audit error for opted-in previews while preserving thrown-response behavior", async () => {
++    const wrapped = withCronJobAudit(
++      async () => { throw new Error("private-provider-error"); },
++      { jobName: "bounded-provider-throw", responsePreviewKeys: ["success"] }
++    );
++    const res = createMockRes();
++
++    await wrapped(createMockReq(), res);
++
++    expect(res.statusCode).toBe(500);
++    expect(res.body.error).toBe("private-provider-error");
++    expect(insertMock).toHaveBeenCalledTimes(1);
++    const row = insertMock.mock.calls[0][0];
++    expect(row.status).toBe("failure");
++    expect(row.details.error).toBe("Handler failed.");
++    expect(JSON.parse(row.details.response)).toEqual({ success: false });
++    expect(row.details.responseOutcome).toEqual({ success: false });
++    expect(JSON.stringify(row)).not.toContain("private-provider-error");
++  });
++
+   it("surfaces a resolved Supabase audit insert error", async () => {
+     const consoleErrorSpy = vi
+       .spyOn(console, "error")
+@@ -394,8 +454,76 @@
+     expect(insertMock.mock.calls[0][0].details.response).toContain(
+       '"finalAudit":{"owner":"withCronJobAudit","status":"persisted"}'
+     );
++  });
++
++  it("retains structured preflight outcomes when the legacy response preview is truncated", async () => {
++    const response = {
++      success: false,
++      asOfDate: "2026-10-11",
++      error: "Preflight freshness checks failed",
++      preflight: {
++        status: "FAIL",
++        asOfDate: "2026-10-11",
++        gates: [
++          { gate_key: "core_roster_schedule", status: "PASS", detail: "ready" },
++          { gate_key: "projection_derived_v2", status: "FAIL", detail: "player_latest=none, team_latest=none, goalie_latest=none" },
++          { gate_key: "stale_goalie_game_rows", status: "FAIL", detail: "teams_missing_recent_goalie_rows=5" },
++        ],
++      },
++      termination: { state: "blocked", resumeRequired: true, nextStartDate: "2026-10-11" },
++      pipeline: { description: "x".repeat(5000), arbitrary: "not a receipt field" },
++    };
++    const wrapped = withCronJobAudit(async (_req, res) => res.status(422).json(response));
++    const res = createMockRes();
++
++    await wrapped(createMockReq(), res);
++
++    const row = insertMock.mock.calls[0][0];
++    expect(row.status).toBe("failure");
++    expect(row.details.response).toHaveLength(4000);
++    expect(() => JSON.parse(row.details.response)).toThrow();
++    expect(row.details.responseTruncated).toBe(true);
++    expect(row.details.responseOutcome).toEqual({
++      success: false,
++      error: "Preflight freshness checks failed",
++      asOfDate: "2026-10-11",
++      termination: response.termination,
++      preflight: {
++        status: "FAIL", asOfDate: "2026-10-11", gateCount: 3, failedGateCount: 2,
++        failedGates: response.preflight.gates.slice(1),
++      },
++    });
++    expect(res.statusCode).toBe(422);
++    expect(res.body).toEqual(response);
+   });
+ 
++  it("bounds game failure witnesses and failed gates without losing their total counts", async () => {
++    const errors = Array.from({ length: 5 }, (_, index) => ({
++      gameId: 2026010056 + index, date: "2026-09-26", stage: "capture_raw_sources",
++      message: "INVALID_PROJECTION_RAW_SHIFT_ROWS " + "x".repeat(3000), arbitrary: "excluded",
++    }));
++    const gates = Array.from({ length: 12 }, (_, index) => ({
++      gate_key: `gate_${index}`, status: "FAIL", detail: "x".repeat(1000), arbitrary: "excluded",
++    }));
++    const wrapped = withCronJobAudit(async (_req, res) => res.json({
++      success: false, nextGameId: 2026010056, rowsUpserted: null, errors,
++      preflight: { status: "FAIL", gates }, arbitrary: "excluded",
++    }));
++
++    await wrapped(createMockReq(), createMockRes());
++
++    const outcome = insertMock.mock.calls[0][0].details.responseOutcome;
++    expect(outcome).toMatchObject({ success: false, nextGameId: 2026010056, rowsUpserted: null });
++    expect(outcome.errors).toMatchObject({ count: 5 });
++    expect(outcome.errors.sample).toHaveLength(3);
++    expect(outcome.errors.sample[0]).toMatchObject({ gameId: 2026010056, date: "2026-09-26", stage: "capture_raw_sources" });
++    expect(outcome.errors.sample[0].message).toHaveLength(2000);
++    expect(outcome.preflight).toMatchObject({ gateCount: 12, failedGateCount: 12 });
++    expect(outcome.preflight.failedGates).toHaveLength(10);
++    expect(outcome.preflight.failedGates[0].detail).toHaveLength(300);
++    expect(JSON.stringify(outcome)).not.toContain("arbitrary");
++  });
++
+   it("reports a failed final-audit receipt when persistence returns an error", async () => {
+     const consoleErrorSpy = vi
+       .spyOn(console, "error")
+@@ -429,3 +557,126 @@
+     );
+   });
+ });
++
++describe("withCronJobAudit seasonal game-data classification", () => {
++  const inSeason: NhlSeasonWindow = {
++    state: "in_season",
++    today: "2026-10-20",
++    seasonId: 20262027,
++    activeFrom: "2026-09-19",
++    activeUntil: "2027-06-13",
++  };
++  const offSeason: NhlSeasonWindow = {
++    state: "off_season",
++    today: "2026-08-01",
++    lastSeasonId: 20252026,
++    lastActiveUntil: "2026-06-18",
++    nextSeasonId: null,
++    resumesOn: null,
++  };
++  const gate = (handler: (req: any, res: any) => unknown, window: NhlSeasonWindow = inSeason) =>
++    withNhlOffSeasonSkip(handler, { loadWindow: async () => window });
++  const insertedDetails = () => insertMock.mock.calls.at(-1)?.[0].details;
++
++  it("exports the canonical classification value", () => {
++    expect(NHL_SEASONAL_GAME_DATA).toBe("nhl_seasonal_game_data");
++  });
++
++  beforeEach(() => {
++    insertMock.mockReset();
++    insertMock.mockResolvedValue({});
++  });
++
++  it("stamps the classification from the actual wrapper chain, whatever the route is called", async () => {
++    const wrapped = withCronJobAudit(gate(async (_req, res) => res.status(200).json({ success: true, rowsUpserted: 0 })));
++
++    await wrapped(createMockReq({ url: "/api/v1/db/not-a-listed-route", query: {} }), createMockRes());
++
++    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
++    expect(cronClassificationFromAuditDetails(insertedDetails())).toBe("nhl_seasonal_game_data");
++  });
++
++  it("stamps a gate nested inside the audited handler and a gate outside the audit wrapper", async () => {
++    const work = gate(async (_req, res) => res.status(200).json({ success: true }));
++    const nested = withCronJobAudit(async (req, res) => work(req, res));
++    const outer = gate(withCronJobAudit(async (_req, res) => res.status(200).json({ success: true })));
++
++    await nested(createMockReq({ query: {} }), createMockRes());
++    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
++    await outer(createMockReq({ query: {} }), createMockRes());
++    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
++  });
++
++  it("records null for a non-wrapped control, even on a route the legacy list names", async () => {
++    const wrapped = withCronJobAudit(async (_req, res) => res.status(200).json({ success: true, rowsUpserted: 0 }));
++
++    await wrapped(createMockReq({ url: "/api/v1/db/update-PbP" }), createMockRes());
++
++    expect(insertedDetails()).toHaveProperty("cronClassification", null);
++    expect(cronClassificationFromAuditDetails(insertedDetails())).toBeNull();
++  });
++
++  it("ignores an unused import and a comment or string naming the gate", async () => {
++    // withNhlOffSeasonSkip is imported by this file but never wraps this handler.
++    const unusedImport = withCronJobAudit(async (_req, res) => {
++      // withNhlOffSeasonSkip(handler) — a comment is not a wrapper.
++      const note = "withNhlOffSeasonSkip lib/cron/nhlOffSeason nhl_seasonal_game_data";
++      return res.status(200).json({ success: true, note, cronClassification: NHL_SEASONAL_GAME_DATA });
++    });
++    void withNhlOffSeasonSkip;
++
++    await unusedImport(createMockReq({ query: {} }), createMockRes());
++
++    expect(insertedDetails().cronClassification).toBeNull();
++  });
++
++  it("stamps success, failure, thrown, off-season skip and ignoreOffSeason runs", async () => {
++    const cases: Array<[(req: any, res: any) => unknown, NhlSeasonWindow, Record<string, unknown>, string]> = [
++      [async (_req, res) => res.status(200).json({ success: true }), inSeason, {}, "success"],
++      [async (_req, res) => res.status(500).json({ success: false, error: "boom" }), inSeason, {}, "failure"],
++      [async () => { throw new Error("thrown"); }, inSeason, {}, "failure"],
++      [async (_req, res) => res.status(200).json({ success: true }), offSeason, {}, "success"],
++      [async (_req, res) => res.status(200).json({ success: true }), offSeason, { ignoreOffSeason: "true" }, "success"],
++    ];
++    for (const [handler, window, query, status] of cases) {
++      await withCronJobAudit(gate(handler, window))(createMockReq({ query }), createMockRes());
++      expect(insertMock.mock.calls.at(-1)?.[0].status).toBe(status);
++      expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
++    }
++    expect(insertMock.mock.calls[3][0].details.responseOutcome.success).toBe(true);
++  });
++
++  it("keeps the classification when the response preview is truncated", async () => {
++    const wrapped = withCronJobAudit(gate(async (_req, res) =>
++      res.status(200).json({ success: true, payload: "x".repeat(5000) })));
++
++    await wrapped(createMockReq({ query: {} }), createMockRes());
++
++    expect(insertedDetails().responseTruncated).toBe(true);
++    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
++  });
++
++  it("keeps the classification and continued status on a planned 207 continuation", async () => {
++    const wrapped = withCronJobAudit(gate(async (_req, res) => res.status(207).json({
++      success: false,
++      termination: { state: "continuation_required", resumeRequired: true },
++      payload: "x".repeat(5000),
++    })));
++
++    await wrapped(createMockReq({ query: {} }), createMockRes());
++
++    expect(insertMock.mock.calls[0][0].status).toBe("continued");
++    expect(insertedDetails().responseTruncated).toBe(true);
++    expect(insertedDetails().cronClassification).toBe("nhl_seasonal_game_data");
++  });
++
++  it("reports a historical row without the field as unknown, not as unclassified", () => {
++    const historical = { statusCode: 200, rowsUpserted: 0, response: "{}" };
++
++    expect(cronClassificationFromAuditDetails(historical)).toBeUndefined();
++    expect(cronClassificationFromAuditDetails(null)).toBeUndefined();
++    expect(cronClassificationFromAuditDetails("not-an-object")).toBeUndefined();
++    expect(cronClassificationFromAuditDetails({ cronClassification: "something_else" })).toBeUndefined();
++    expect(cronClassificationFromAuditDetails({ cronClassification: null })).toBeNull();
++  });
++});
+--- a/web/lib/cron/withCronJobAudit.ts
++++ b/web/lib/cron/withCronJobAudit.ts
+@@ -5,6 +5,7 @@
+   withCronJobTiming,
+ } from "lib/cron/timingContract";
+ import supabase from "lib/supabase/server";
++import type { CronClassification } from "lib/cron/nhlOffSeason";
+ 
+ // "continued" marks a planned partial run: the route stopped at its runtime
+ // budget and handed back a cursor for the next call. It is not a failure.
+@@ -28,7 +29,57 @@
+     return truncateString(JSON.stringify(value), maxLen);
+   } catch {
+     return null;
++  }
++}
++
++function outcomeFields(value: unknown, keys: readonly string[], maxLen = 300) {
++  const result: Record<string, string | number | boolean | null> = {};
++  if (!value || typeof value !== "object" || Array.isArray(value)) return result;
++  const record = value as Record<string, unknown>;
++  for (const key of keys) {
++    const field = record[key];
++    if (typeof field === "string") result[key] = truncateString(field, maxLen);
++    else if (field === null || typeof field === "boolean" ||
++      (typeof field === "number" && Number.isFinite(field))) result[key] = field;
++  }
++  return result;
++}
++
++/** Keep outcome facts queryable even when the legacy response preview is cut. */
++function responseOutcome(body: unknown) {
++  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
++  const record = body as Record<string, unknown>;
++  const outcome: Record<string, unknown> = outcomeFields(record, [
++    "success", "status", "error", "asOfDate", "nextGameId", "nextStartDate",
++    "lastCompletedGameId", "rowsUpserted", "rowsVerified", "rowsPruned",
++  ], 2000);
++  if (Array.isArray(record.errors)) {
++    outcome.errors = {
++      count: record.errors.length,
++      sample: record.errors.slice(0, 3).map((error) =>
++        typeof error === "string" ? { message: truncateString(error, 2000) }
++          : outcomeFields(error, ["gameId", "date", "stage", "message"], 2000)),
++    };
++  }
++  if (record.termination && typeof record.termination === "object") {
++    outcome.termination = outcomeFields(record.termination, [
++      "state", "resumeRequired", "nextStartDate",
++    ]);
++  }
++  if (record.preflight && typeof record.preflight === "object") {
++    const preflight = record.preflight as Record<string, unknown>;
++    const gates = Array.isArray(preflight.gates) ? preflight.gates : null;
++    const failedGates = gates?.filter((gate) =>
++      gate && typeof gate === "object" && gate.status === "FAIL");
++    outcome.preflight = {
++      ...outcomeFields(preflight, ["status", "asOfDate"]),
++      gateCount: gates?.length ?? null,
++      failedGateCount: failedGates?.length ?? null,
++      failedGates: failedGates?.slice(0, 10).map((gate) =>
++        outcomeFields(gate, ["gate_key", "status", "detail"])) ?? null,
++    };
+   }
++  return outcome;
+ }
+ 
+ function inferRowsAffected(body: unknown): number | null {
+@@ -167,6 +218,35 @@
+   if (typeof b.failureSummary?.failedStepCount === "number")
+     return b.failureSummary.failedStepCount === 0;
+   return (inferFailedRows(body) ?? 0) === 0;
++}
++
++// The registered symbol withNhlOffSeasonSkip stamps on the response. It is read
++// through the global registry rather than imported, so route tests that mock
++// lib/cron/nhlOffSeason still run this wrapper unchanged.
++const CRON_CLASSIFICATION_KEY = Symbol.for("fhfh.cron.classification");
++const SEASONAL_GAME_DATA: CronClassification = "nhl_seasonal_game_data";
++
++function knownClassification(value: unknown): CronClassification | null {
++  return value === SEASONAL_GAME_DATA ? SEASONAL_GAME_DATA : null;
++}
++
++/** The classification the off-season gate stamped on this response, if any. */
++export function cronClassificationOf(res: object): CronClassification | null {
++  return knownClassification((res as Record<symbol, unknown>)[CRON_CLASSIFICATION_KEY]);
++}
++
++/**
++ * Reads `details.cronClassification` from a cron_job_audit row. New rows carry
++ * the classification or null (not seasonal game data); undefined means the row
++ * predates the field (or holds an unrecognised value), so callers must fall back.
++ */
++export function cronClassificationFromAuditDetails(
++  details: unknown,
++): CronClassification | null | undefined {
++  if (!details || typeof details !== "object" || Array.isArray(details)) return undefined;
++  const value = (details as Record<string, unknown>).cronClassification;
++  if (value === null) return null;
++  return knownClassification(value) ?? undefined;
+ }
+ 
+ function defaultJobName(req: NextApiRequest): string {
+@@ -181,6 +261,9 @@
+     jobName?: string;
+     includeFinalAuditReceipt?: boolean;
+     recordRowMetrics?: boolean;
++    // Limit persisted response data to safe primitive summary fields. The API
++    // response and outcome inference still use the complete handler result.
++    responsePreviewKeys?: readonly string[];
+   }
+ ): (req: any, res: any) => Promise<void> {
+   return async (req: NextApiRequest, res: NextApiResponse) => {
+@@ -278,6 +361,12 @@
+ 
+     let finalAuditStatus: "persisted" | "failed" = "persisted";
+ 
++    const auditBody = opts?.responsePreviewKeys == null
++      ? capturedBody
++      : outcomeFields(capturedBody, opts.responsePreviewKeys.filter((key) =>
++          Object.prototype.hasOwnProperty.call(capturedBody ?? {}, key)));
++    const responsePreview = safeJson(auditBody, 4000);
++
+     const row: CronAuditRow = {
+       job_name: jobName,
+       status: plannedContinuation
+@@ -302,9 +391,14 @@
+           : null,
+         error:
+           thrown != null
+-            ? ((thrown as any)?.message ?? safeJson(thrown, 2000))
++            ? opts?.responsePreviewKeys != null
++              ? "Handler failed."
++              : ((thrown as any)?.message ?? safeJson(thrown, 2000))
+             : null,
+-        response: safeJson(capturedBody, 4000),
++        response: responsePreview,
++        responseTruncated: responsePreview?.endsWith("…") ?? false,
++        responseOutcome: responseOutcome(auditBody),
++        cronClassification: cronClassificationOf(res),
+       },
+     };
+ 
+--- a/web/pages/api/Teams/nst-team-stats.ts
++++ b/web/pages/api/Teams/nst-team-stats.ts
+@@ -554,7 +554,7 @@
+   return remainingBudget >= requestCount * MIN_REQUEST_BUDGET_MS;
+ }
+ 
+-const handler = adminOnly(withNhlOffSeasonSkip(async (req: any, res: NextApiResponse) => {
++const handler = withNhlOffSeasonSkip(async (req: any, res: NextApiResponse) => {
+   const scriptStartTime = Date.now();
+   const { supabase } = req;
+   lastNstRequestCompletedAt = 0;
+@@ -1122,6 +1122,6 @@
+       success: false,
+     });
+   }
+-}));
++});
+ 
+-export default withCronJobAudit(handler);
++export default adminOnly(withCronJobAudit(handler));
+--- a/web/pages/api/internal/espn-sync.ts
++++ b/web/pages/api/internal/espn-sync.ts
+@@ -3,6 +3,7 @@
+ import type { NextApiRequest, NextApiResponse } from "next";
+ 
+ import { runEspnScheduledSync } from "lib/integrations/espn/server";
++import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+ 
+ function bearerToken(req: NextApiRequest) {
+   const authorization = req.headers.authorization;
+@@ -20,6 +21,16 @@
+   );
+ }
+ 
++const auditedSync = withCronJobAudit(async (_req: NextApiRequest, res: NextApiResponse) => {
++  try {
++    const result = await runEspnScheduledSync({});
++    return res.status(200).json({ ...result, success: Number.isFinite(result.failed) && result.failed === 0 });
++  } catch {
++    return res.status(500).json({ error: "ESPN sync failed." });
++  }
++}, { jobName: "/api/internal/espn-sync", recordRowMetrics: false,
++  responsePreviewKeys: ["success", "processed", "changed", "failed", "disabled"] });
++
+ export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+   if (req.method !== "GET") {
+     res.setHeader("Allow", "GET");
+@@ -30,9 +41,5 @@
+   if (!secretsMatch(bearerToken(req), secret)) {
+     return res.status(401).json({ error: "Unauthorized" });
+   }
+-  try {
+-    return res.status(200).json(await runEspnScheduledSync({}));
+-  } catch {
+-    return res.status(500).json({ error: "ESPN sync failed." });
+-  }
++  return auditedSync(req, res);
+ }
+--- a/web/pages/api/internal/fantrax-sync.ts
++++ b/web/pages/api/internal/fantrax-sync.ts
+@@ -2,6 +2,7 @@
+ import type { NextApiRequest, NextApiResponse } from "next";
+ 
+ import { runFantraxScheduledSync } from "lib/integrations/fantrax/server";
++import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+ 
+ function bearerToken(req: NextApiRequest) {
+   const authorization = req.headers.authorization;
+@@ -22,6 +23,16 @@
+   );
+ }
+ 
++const auditedSync = withCronJobAudit(async (_req: NextApiRequest, res: NextApiResponse) => {
++  try {
++    const result = await runFantraxScheduledSync({});
++    return res.status(200).json({ ...result, success: Number.isFinite(result.failed) && result.failed === 0 });
++  } catch {
++    return res.status(500).json({ error: "Fantrax sync failed." });
++  }
++}, { jobName: "/api/internal/fantrax-sync", recordRowMetrics: false,
++  responsePreviewKeys: ["success", "processed", "changed", "failed", "disabled"] });
++
+ export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+   if (req.method !== "GET") {
+     res.setHeader("Allow", "GET");
+@@ -34,9 +45,5 @@
+   if (!secretsMatch(bearerToken(req), secret)) {
+     return res.status(401).json({ error: "Unauthorized" });
+   }
+-  try {
+-    return res.status(200).json(await runFantraxScheduledSync({}));
+-  } catch {
+-    return res.status(500).json({ error: "Fantrax sync failed." });
+-  }
++  return auditedSync(req, res);
+ }
+--- a/web/pages/api/internal/patreon-reconcile.ts
++++ b/web/pages/api/internal/patreon-reconcile.ts
+@@ -2,15 +2,22 @@
+ 
+ import { reconcilePatreonAccounts } from "lib/integrations/patreon/sync";
+ import adminOnly from "utils/adminOnlyMiddleware";
++import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+ 
++const auditedReconcile = withCronJobAudit(async (_req: NextApiRequest, res: NextApiResponse) => {
++  try {
++    const result = await reconcilePatreonAccounts({});
++    return res.status(200).json({ ...result, success: Number.isFinite(result.failed) && result.failed === 0 });
++  } catch {
++    return res.status(500).json({ error: "Patreon reconciliation failed." });
++  }
++}, { jobName: "/api/internal/patreon-reconcile", recordRowMetrics: false,
++  responsePreviewKeys: ["success", "attempted", "synced", "failed"] });
++
+ export default adminOnly(async (req: NextApiRequest, res: NextApiResponse) => {
+   if (req.method !== "GET") {
+     res.setHeader("Allow", "GET");
+     return res.status(405).json({ error: "Method Not Allowed" });
+   }
+-  try {
+-    return res.status(200).json(await reconcilePatreonAccounts({}));
+-  } catch {
+-    return res.status(500).json({ error: "Patreon reconciliation failed." });
+-  }
++  return auditedReconcile(req, res);
+ });
+--- a/web/pages/api/internal/yahoo-live-draft.ts
++++ b/web/pages/api/internal/yahoo-live-draft.ts
+@@ -4,23 +4,11 @@
+ import { getYahooLiveDraftSeasonConfig } from "lib/integrations/yahoo/config";
+ import { runYahooDraftPollCoordinator } from "lib/integrations/yahoo/pollCoordinator";
+ import { isYahooDraftBackgroundPollingSuspended, YAHOO_DRAFT_BACKGROUND_RESUMES_AT } from "lib/integrations/yahoo/pollPolicy";
++import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+ 
+-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+-  res.setHeader("Cache-Control", "no-store");
+-  if (req.method !== "GET") {
+-    res.setHeader("Allow", "GET");
+-    return res.status(405).json({ error: "Method Not Allowed" });
+-  }
+-  const secret = process.env.CRON_SECRET;
+-  if (!secret?.trim()) return res.status(503).json({ error: "Scheduler not configured" });
+-  if (req.headers.authorization !== `Bearer ${secret}`) {
+-    return res.status(401).json({ error: "Unauthorized" });
+-  }
+-  if (!isYahooLiveDraftEnabled()) return res.status(200).json({ disabled: true });
+-  if (isYahooDraftBackgroundPollingSuspended()) {
+-    return res.status(200).json({ suspended: true, resumesAt: YAHOO_DRAFT_BACKGROUND_RESUMES_AT });
+-  }
+-
++// One audit row per admitted, enabled, unsuspended run. The coordinator owns
++// its own errors, so persist only the fixed counters, never provider detail.
++const auditedPoll = withCronJobAudit(async (_req: NextApiRequest, res: NextApiResponse) => {
+   try {
+     getYahooLiveDraftSeasonConfig();
+     const { data, error } = await serviceRoleClient.from("yahoo_draft_sessions")
+@@ -47,4 +35,38 @@
+   } catch {
+     return res.status(503).json({ error: "Yahoo polling coordinator unavailable" });
+   }
++}, { jobName: "/api/internal/yahoo-live-draft", recordRowMetrics: false,
++  responsePreviewKeys: ["cycles", "attempted", "succeeded", "failed", "error"] });
++
++// Disabled and off-season exits do no work, so most of them write no row. The
++// invocation in one fixed UTC minute records a heartbeat instead: about one row
++// a day showing the schedule still fires and which idle state it is in.
++function idleState() {
++  if (!isYahooLiveDraftEnabled()) return { disabled: true };
++  if (isYahooDraftBackgroundPollingSuspended()) {
++    return { suspended: true, resumesAt: YAHOO_DRAFT_BACKGROUND_RESUMES_AT };
++  }
++  return null;
+ }
++
++const isIdleHeartbeatMinute = (now = new Date()) => now.getUTCHours() === 12 && now.getUTCMinutes() === 0;
++
++const auditedIdle = withCronJobAudit(async (_req: NextApiRequest, res: NextApiResponse) =>
++  res.status(200).json(idleState()), { jobName: "/api/internal/yahoo-live-draft", recordRowMetrics: false,
++  responsePreviewKeys: ["disabled", "suspended", "resumesAt"] });
++
++export default async function handler(req: NextApiRequest, res: NextApiResponse) {
++  res.setHeader("Cache-Control", "no-store");
++  if (req.method !== "GET") {
++    res.setHeader("Allow", "GET");
++    return res.status(405).json({ error: "Method Not Allowed" });
++  }
++  const secret = process.env.CRON_SECRET;
++  if (!secret?.trim()) return res.status(503).json({ error: "Scheduler not configured" });
++  if (req.headers.authorization !== `Bearer ${secret}`) {
++    return res.status(401).json({ error: "Unauthorized" });
++  }
++  const idle = idleState();
++  if (idle) return isIdleHeartbeatMinute() ? auditedIdle(req, res) : res.status(200).json(idle);
++  return auditedPoll(req, res);
++}
+--- a/web/pages/api/v1/db/backfill-goalie-underlying-season.ts
++++ b/web/pages/api/v1/db/backfill-goalie-underlying-season.ts
+@@ -285,6 +285,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler), {
++export default adminOnly(withCronJobAudit(handler, {
+   jobName: "/api/v1/db/backfill-goalie-underlying-season",
+-});
+\ No newline at end of file
++}));
+\ No newline at end of file
+--- a/web/pages/api/v1/db/backfill-player-underlying-season.ts
++++ b/web/pages/api/v1/db/backfill-player-underlying-season.ts
+@@ -285,6 +285,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler), {
++export default adminOnly(withCronJobAudit(handler, {
+   jobName: "/api/v1/db/backfill-player-underlying-season",
+-});
+\ No newline at end of file
++}));
+\ No newline at end of file
+--- a/web/pages/api/v1/db/backfill-team-underlying-season.ts
++++ b/web/pages/api/v1/db/backfill-team-underlying-season.ts
+@@ -289,6 +289,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler), {
++export default adminOnly(withCronJobAudit(handler, {
+   jobName: "/api/v1/db/backfill-team-underlying-season",
+-});
+\ No newline at end of file
++}));
+\ No newline at end of file
+--- a/web/pages/api/v1/db/calculate-wigo-stats.ts
++++ b/web/pages/api/v1/db/calculate-wigo-stats.ts
+@@ -1315,4 +1315,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+--- a/web/pages/api/v1/db/catch-up-goalie-underlying.ts
++++ b/web/pages/api/v1/db/catch-up-goalie-underlying.ts
+@@ -203,6 +203,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler), {
++export default adminOnly(withCronJobAudit(handler, {
+   jobName: "/api/v1/db/catch-up-goalie-underlying",
+-});
+\ No newline at end of file
++}));
+\ No newline at end of file
+--- a/web/pages/api/v1/db/catch-up-player-underlying.ts
++++ b/web/pages/api/v1/db/catch-up-player-underlying.ts
+@@ -203,6 +203,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler), {
++export default adminOnly(withCronJobAudit(handler, {
+   jobName: "/api/v1/db/catch-up-player-underlying",
+-});
+\ No newline at end of file
++}));
+\ No newline at end of file
+--- a/web/pages/api/v1/db/catch-up-team-underlying.ts
++++ b/web/pages/api/v1/db/catch-up-team-underlying.ts
+@@ -201,6 +201,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler), {
++export default adminOnly(withCronJobAudit(handler, {
+   jobName: "/api/v1/db/catch-up-team-underlying",
+-});
+\ No newline at end of file
++}));
+\ No newline at end of file
+--- a/web/pages/api/v1/db/cron/update-stats-cron.ts
++++ b/web/pages/api/v1/db/cron/update-stats-cron.ts
+@@ -71,8 +71,8 @@
+     : null;
+ }
+ 
+-export default withCronJobAudit(
+-  adminOnly(async (req, res) => {
++export default adminOnly(withCronJobAudit(
++  async (req, res) => {
+     const { supabase } = req;
+     const count = parseStatsCronCount(req.query.count);
+     if (count === null) {
+@@ -302,5 +302,5 @@
+         dependencyError,
+       });
+     }
+-  }),
+-);
++  },
++));
+--- a/web/pages/api/v1/db/draft-ranker-health.ts
++++ b/web/pages/api/v1/db/draft-ranker-health.ts
+@@ -145,6 +145,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(draftRankerHealthHandler as any), {
++export default adminOnly(withCronJobAudit(draftRankerHealthHandler as any, {
+   jobName: "draft-ranker-health-operations",
+-});
++}));
+--- a/web/pages/api/v1/db/powerPlayTimeFrame.ts
++++ b/web/pages/api/v1/db/powerPlayTimeFrame.ts
+@@ -9,7 +9,7 @@
+ import getPowerPlayBlocks, { Block } from "utils/getPowerPlayBlocks"; // Adjust the import path as necessary
+ import { extractPowerPlayDetails, PowerPlay } from "utils/extractPPDetails"; // Import the new function
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(async (req, res) => {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) => {
+   const { supabase } = req;
+ 
+   // Correctly extract gameId from req.query
+--- a/web/pages/api/v1/db/refresh-draft-ranker-community.ts
++++ b/web/pages/api/v1/db/refresh-draft-ranker-community.ts
+@@ -141,9 +141,9 @@
+   }
+ }
+ 
+-export default withCronJobAudit(
+-  adminOnly(refreshDraftRankerCommunityHandler as any),
++export default adminOnly(withCronJobAudit(
++  refreshDraftRankerCommunityHandler as any,
+   {
+     jobName: "refresh-draft-ranker-community",
+   },
+-);
++));
+--- a/web/pages/api/v1/db/refresh-draft-ranker-discovery.ts
++++ b/web/pages/api/v1/db/refresh-draft-ranker-discovery.ts
+@@ -112,9 +112,9 @@
+   }
+ }
+ 
+-export default withCronJobAudit(
+-  adminOnly(refreshDraftRankerDiscoveryHandler as any),
++export default adminOnly(withCronJobAudit(
++  refreshDraftRankerDiscoveryHandler as any,
+   {
+     jobName: "refresh-draft-ranker-discovery",
+   },
+-);
++));
+--- a/web/pages/api/v1/db/register-nhl-xg-model.ts
++++ b/web/pages/api/v1/db/register-nhl-xg-model.ts
+@@ -129,6 +129,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "register-nhl-xg-model",
+-});
++}));
+--- a/web/pages/api/v1/db/run-fetch-wgo-data.ts
++++ b/web/pages/api/v1/db/run-fetch-wgo-data.ts
+@@ -56,4 +56,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+--- a/web/pages/api/v1/db/sustainability/rebuild-baselines.ts
++++ b/web/pages/api/v1/db/sustainability/rebuild-baselines.ts
+@@ -428,4 +428,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+--- a/web/pages/api/v1/db/update-PbP.ts
++++ b/web/pages/api/v1/db/update-PbP.ts
+@@ -192,6 +192,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
+   jobName: "update-PbP",
+-});
++}));
+--- a/web/pages/api/v1/db/update-drafted-prospects.ts
++++ b/web/pages/api/v1/db/update-drafted-prospects.ts
+@@ -2,10 +2,11 @@
+ import adminOnly from "utils/adminOnlyMiddleware";
+ import { previewNhlDraftBatch, importNhlIdentity } from "lib/sources/nhlProspectIdentity";
+ import { tweetPipelineFlags } from "lib/sources/tweetInterpretation";
++import { withCronJobAudit } from "lib/cron/withCronJobAudit";
+ 
+ export const config = { maxDuration: 120 };
+ 
+-export default adminOnly(async (req, res) => {
++export default adminOnly(withCronJobAudit(async (req, res) => {
+   if (!["GET", "POST"].includes(req.method ?? "")) return res.status(405).end();
+   const scheduled = req.query.scheduled === "true";
+   const dryRun = req.query.dryRun === "true" || (!scheduled && req.query.dryRun !== "false");
+@@ -48,4 +49,5 @@
+     }).eq("job_key", key).eq("owner", owner);
+     return res.status(400).json({ success: false, message: error instanceof Error ? error.message : "Prospect refresh failed." });
+   }
+-});
++}, { jobName: "/api/v1/db/update-drafted-prospects", recordRowMetrics: false,
++  responsePreviewKeys: ["success", "skipped", "reason", "dryRun", "year", "total", "nextCursor", "message"] }));
+--- a/web/pages/api/v1/db/update-entity-metric-rankings.ts
++++ b/web/pages/api/v1/db/update-entity-metric-rankings.ts
+@@ -243,6 +243,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "update-entity-metric-rankings",
+-});
++}));
+--- a/web/pages/api/v1/db/update-games.ts
++++ b/web/pages/api/v1/db/update-games.ts
+@@ -121,7 +121,7 @@
+   return data[0].id;
+ }
+ 
+-export default withCronJobAudit(adminOnly(async (req, res) => {
++export default adminOnly(withCronJobAudit(async (req, res) => {
+   if (req.query.mode !== undefined || req.body?.date !== undefined || req.body?.gameIds !== undefined || req.body?.dryRun !== undefined) {
+     if (req.query.mode !== "bounded_slate") return res.status(400).json({ success: false, message: "Unknown schedule ingestion mode" });
+     return updateBoundedSchedule(req, res);
+--- a/web/pages/api/v1/db/update-goalie-underlying-stats.ts
++++ b/web/pages/api/v1/db/update-goalie-underlying-stats.ts
+@@ -289,6 +289,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler), {
++export default adminOnly(withCronJobAudit(handler, {
+   jobName: "/api/v1/db/update-goalie-underlying-stats",
+-});
++}));
+--- a/web/pages/api/v1/db/update-goalie-underlying-summaries.ts
++++ b/web/pages/api/v1/db/update-goalie-underlying-summaries.ts
+@@ -318,6 +318,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler), {
++export default adminOnly(withCronJobAudit(handler, {
+   jobName: "/api/v1/db/update-goalie-underlying-summaries",
+-});
++}));
+--- a/web/pages/api/v1/db/update-line-combinations/[id].ts
++++ b/web/pages/api/v1/db/update-line-combinations/[id].ts
+@@ -13,8 +13,8 @@
+ } from "components/LinemateMatrix";
+ import adminOnly from "utils/adminOnlyMiddleware";
+ 
+-export default withCronJobAudit(
+-  adminOnly(async (req, res) => {
++export default adminOnly(withCronJobAudit(
++  async (req, res) => {
+     const supabase = req.supabase;
+     const gameId = Number(req.query.id);
+     try {
+@@ -31,8 +31,8 @@
+       console.error(e);
+       res.status(400).json({ message: e.message, success: false });
+     }
+-  }),
+-);
++  },
++));
+ 
+ export async function updateLineCombos(id: number, supabase: SupabaseClient) {
+   const lineCombos = await getLineCombos(id);
+--- a/web/pages/api/v1/db/update-line-combinations/index.ts
++++ b/web/pages/api/v1/db/update-line-combinations/index.ts
+@@ -155,7 +155,7 @@
+   return (data ?? []) as HistoricalGameRow[];
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(async (req, res) => {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) => {
+   const supabase = req.supabase;
+   const repairMode = parseRepairMode(req.query.repairMode);
+   const count = parsePositiveCount(req.query.count, 5);
+--- a/web/pages/api/v1/db/update-lineup-deployment-tallies.ts
++++ b/web/pages/api/v1/db/update-lineup-deployment-tallies.ts
+@@ -21,8 +21,8 @@
+   return rawValue === "all" ? "all" : "current";
+ }
+ 
+-export default withCronJobAudit(
+-  adminOnly(withNhlOffSeasonSkip(async (req, res) => {
++export default adminOnly(withCronJobAudit(
++  withNhlOffSeasonSkip(async (req, res) => {
+     const action = parseAction(req.query.action);
+     const explicitSeasonId = parsePositiveInteger(req.query.seasonId);
+     const playerId = parsePositiveInteger(req.query.playerId);
+@@ -68,6 +68,6 @@
+         playerId
+       }
+     });
+-  })),
++  }),
+   { jobName: "update-lineup-deployment-tallies" }
+-);
++));
+--- a/web/pages/api/v1/db/update-market-prices.ts
++++ b/web/pages/api/v1/db/update-market-prices.ts
+@@ -177,8 +177,8 @@
+   return Array.from(map.values());
+ }
+ 
+-export default withCronJobAudit(
+-  adminOnly(async (req, res) => {
++export default adminOnly(withCronJobAudit(
++  async (req, res) => {
+     try {
+       const snapshotDate = parseRequestedDate(req.query.date);
+       const scheduledGames = await fetchScheduledGamesForDate({
+@@ -379,8 +379,8 @@
+         error: error?.message ?? "Unknown error"
+       });
+     }
+-  }),
++  },
+   {
+     jobName: "/api/v1/db/update-market-prices"
+   }
+-);
++));
+--- a/web/pages/api/v1/db/update-nhl-edge-stats.ts
++++ b/web/pages/api/v1/db/update-nhl-edge-stats.ts
+@@ -1100,6 +1100,6 @@
+   return runNhlEdgeStatsSnapshot(req, res);
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
+   jobName: "update-nhl-edge-stats"
+-});
++}));
+--- a/web/pages/api/v1/db/update-nhl-play-by-play.ts
++++ b/web/pages/api/v1/db/update-nhl-play-by-play.ts
+@@ -7,6 +7,6 @@
+   routeAlias: "play-by-play",
+ });
+ 
+-export default withCronJobAudit(adminOnly(handler), {
++export default adminOnly(withCronJobAudit(handler, {
+   jobName: "/api/v1/db/update-nhl-play-by-play",
+-});
++}));
+--- a/web/pages/api/v1/db/update-nhl-shift-charts.ts
++++ b/web/pages/api/v1/db/update-nhl-shift-charts.ts
+@@ -7,6 +7,6 @@
+   routeAlias: "shift-charts",
+ });
+ 
+-export default withCronJobAudit(adminOnly(handler), {
++export default adminOnly(withCronJobAudit(handler, {
+   jobName: "/api/v1/db/update-nhl-shift-charts",
+-});
++}));
+--- a/web/pages/api/v1/db/update-nhl-xg-aggregates.ts
++++ b/web/pages/api/v1/db/update-nhl-xg-aggregates.ts
+@@ -552,9 +552,9 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(withXgExecutionLeaseApi(handler, {
++export default adminOnly(withCronJobAudit(withXgExecutionLeaseApi(handler, {
+   leaseKey: "xg:aggregates",
+   ttlSeconds: 1800,
+-}) as any), {
++}) as any, {
+   jobName: "update-nhl-xg-aggregates",
+-});
++}));
+--- a/web/pages/api/v1/db/update-nhl-xg-shot-predictions.ts
++++ b/web/pages/api/v1/db/update-nhl-xg-shot-predictions.ts
+@@ -588,9 +588,9 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withXgExecutionLeaseApi(handler, {
++export default adminOnly(withCronJobAudit(withXgExecutionLeaseApi(handler, {
+   leaseKey: "xg:shot-predictions",
+   ttlSeconds: 1800
+-}) as any), {
++}) as any, {
+   jobName: "update-nhl-xg-shot-predictions"
+-});
++}));
+--- a/web/pages/api/v1/db/update-nhlscraper-contracts.ts
++++ b/web/pages/api/v1/db/update-nhlscraper-contracts.ts
+@@ -173,6 +173,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "update-nhlscraper-contracts",
+-});
++}));
+--- a/web/pages/api/v1/db/update-nst-current-season.ts
++++ b/web/pages/api/v1/db/update-nst-current-season.ts
+@@ -769,4 +769,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+--- a/web/pages/api/v1/db/update-nst-goalies.ts
++++ b/web/pages/api/v1/db/update-nst-goalies.ts
+@@ -883,4 +883,4 @@
+   return latestDate;
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+--- a/web/pages/api/v1/db/update-nst-team-daily.ts
++++ b/web/pages/api/v1/db/update-nst-team-daily.ts
+@@ -909,4 +909,4 @@
+   }
+ };
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+--- a/web/pages/api/v1/db/update-player-impact-ratings.ts
++++ b/web/pages/api/v1/db/update-player-impact-ratings.ts
+@@ -295,6 +295,6 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "update-player-impact-ratings",
+-});
++}));
+--- a/web/pages/api/v1/db/update-player-trend-metrics.ts
++++ b/web/pages/api/v1/db/update-player-trend-metrics.ts
+@@ -49,6 +49,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
+   jobName: "update-player-trend-metrics",
+-});
++}));
+--- a/web/pages/api/v1/db/update-player-underlying-stats.ts
++++ b/web/pages/api/v1/db/update-player-underlying-stats.ts
+@@ -323,6 +323,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler)), {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler), {
+   jobName: "/api/v1/db/update-player-underlying-stats",
+-});
++}));
+--- a/web/pages/api/v1/db/update-player-underlying-summaries.ts
++++ b/web/pages/api/v1/db/update-player-underlying-summaries.ts
+@@ -403,6 +403,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler), {
++export default adminOnly(withCronJobAudit(handler, {
+   jobName: "/api/v1/db/update-player-underlying-summaries",
+-});
++}));
+--- a/web/pages/api/v1/db/update-player/[playerId].ts
++++ b/web/pages/api/v1/db/update-player/[playerId].ts
+@@ -4,7 +4,7 @@
+ import { get } from "lib/NHL/base";
+ import adminOnly from "utils/adminOnlyMiddleware";
+ 
+-export default withCronJobAudit(adminOnly(async (req, res) => {
++export default adminOnly(withCronJobAudit(async (req, res) => {
+   const { supabase } = req;
+   const playerId = Number(req.query.playerId);
+   try {
+--- a/web/pages/api/v1/db/update-players.ts
++++ b/web/pages/api/v1/db/update-players.ts
+@@ -4,7 +4,7 @@
+ import adminOnly from "utils/adminOnlyMiddleware";
+ import { fetchNhlRosterPreview, type Player } from "lib/sources/nhlRosterPreview";
+ 
+-export default withCronJobAudit(adminOnly(async function handler(req, res) {
++export default adminOnly(withCronJobAudit(async function handler(req, res) {
+   try {
+     const { supabase } = req;
+     const seasonId = req.query.seasonId == null ? rosterSeasonForDate() : Number(req.query.seasonId);
+--- a/web/pages/api/v1/db/update-power-play-combinations/[gameId].ts
++++ b/web/pages/api/v1/db/update-power-play-combinations/[gameId].ts
+@@ -56,7 +56,7 @@
+   };
+ }
+ 
+-export default withCronJobAudit(adminOnly(async (req, res) => {
++export default adminOnly(withCronJobAudit(async (req, res) => {
+   const { supabase } = req;
+   const gameId = Number(req.query.gameId);
+   if (!gameId) {
+--- a/web/pages/api/v1/db/update-power-play-combinations/index.ts
++++ b/web/pages/api/v1/db/update-power-play-combinations/index.ts
+@@ -57,7 +57,7 @@
+   return (data ?? []) as GameRow[];
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(async (req, res) => {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async (req, res) => {
+   const { supabase } = req;
+   const gameIds = parseGameIdsParam(req.query.gameIds);
+   const startDate =
+--- a/web/pages/api/v1/db/update-rolling-games.ts
++++ b/web/pages/api/v1/db/update-rolling-games.ts
+@@ -36,4 +36,4 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler));
++export default adminOnly(withCronJobAudit(handler));
+--- a/web/pages/api/v1/db/update-season-stats.ts
++++ b/web/pages/api/v1/db/update-season-stats.ts
+@@ -1098,4 +1098,4 @@
+   };
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler)));
+--- a/web/pages/api/v1/db/update-seasons.ts
++++ b/web/pages/api/v1/db/update-seasons.ts
+@@ -3,7 +3,7 @@
+ import { restGet } from "lib/NHL/base";
+ import adminOnly from "utils/adminOnlyMiddleware";
+ 
+-export default withCronJobAudit(adminOnly(async function handler(req, res) {
++export default adminOnly(withCronJobAudit(async function handler(req, res) {
+   try {
+     const { supabase } = req;
+     const seasons = await getSeasons();
+--- a/web/pages/api/v1/db/update-shifts.ts
++++ b/web/pages/api/v1/db/update-shifts.ts
+@@ -12,6 +12,6 @@
+   return delegatedShiftChartsHandler(req, res);
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler)), {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler), {
+   jobName: "update-shift-charts",
+-});
++}));
+--- a/web/pages/api/v1/db/update-skater-composite-ratings.ts
++++ b/web/pages/api/v1/db/update-skater-composite-ratings.ts
+@@ -171,6 +171,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "update-skater-composite-ratings",
+-});
++}));
+--- a/web/pages/api/v1/db/update-sko-stats.ts
++++ b/web/pages/api/v1/db/update-sko-stats.ts
+@@ -1841,4 +1841,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+--- a/web/pages/api/v1/db/update-standings-details/index.ts
++++ b/web/pages/api/v1/db/update-standings-details/index.ts
+@@ -20,7 +20,7 @@
+   return new Promise((resolve) => setTimeout(resolve, ms));
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(async function handler(
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(async function handler(
+   req: NextApiRequest & { supabase?: SupabaseClient },
+   res: NextApiResponse
+ ) {
+--- a/web/pages/api/v1/db/update-stats/[gameId].ts
++++ b/web/pages/api/v1/db/update-stats/[gameId].ts
+@@ -196,8 +196,8 @@
+ 
+ // --- API Route Logic ---
+ 
+-export default withCronJobAudit(
+-  adminOnly(async (req, res) => {
++export default adminOnly(withCronJobAudit(
++  async (req, res) => {
+     const { supabase } = req;
+     const gameId = Number(req.query.gameId);
+ 
+@@ -269,8 +269,8 @@
+         dependencyError,
+       });
+     }
+-  }),
+-);
++  },
++));
+ 
+ // --- Core Stat Update Logic ---
+ 
+--- a/web/pages/api/v1/db/update-team-ctpi-daily.ts
++++ b/web/pages/api/v1/db/update-team-ctpi-daily.ts
+@@ -339,6 +339,6 @@
+   }
+ };
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
+   jobName: "/api/v1/db/update-team-ctpi-daily",
+-});
++}));
+--- a/web/pages/api/v1/db/update-team-power-ratings.ts
++++ b/web/pages/api/v1/db/update-team-power-ratings.ts
+@@ -400,4 +400,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+--- a/web/pages/api/v1/db/update-team-sos.ts
++++ b/web/pages/api/v1/db/update-team-sos.ts
+@@ -340,4 +340,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+--- a/web/pages/api/v1/db/update-team-unit-toi.ts
++++ b/web/pages/api/v1/db/update-team-unit-toi.ts
+@@ -117,6 +117,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "update-team-unit-toi",
+-});
++}));
+--- a/web/pages/api/v1/db/update-team-yearly-summary.ts
++++ b/web/pages/api/v1/db/update-team-yearly-summary.ts
+@@ -110,4 +110,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+--- a/web/pages/api/v1/db/update-wgo-averages.ts
++++ b/web/pages/api/v1/db/update-wgo-averages.ts
+@@ -1175,4 +1175,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+--- a/web/pages/api/v1/db/update-wgo-goalie-totals.ts
++++ b/web/pages/api/v1/db/update-wgo-goalie-totals.ts
+@@ -267,4 +267,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));
+--- a/web/pages/api/v1/db/upsert-csv.ts
++++ b/web/pages/api/v1/db/upsert-csv.ts
+@@ -295,7 +295,7 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(
++export default adminOnly(withCronJobAudit(
+   async (
+     req: NextApiRequest & { supabase: SupabaseClient },
+     res: NextApiResponse
+--- a/web/pages/api/v1/game-predictions/accuracy-loop.ts
++++ b/web/pages/api/v1/game-predictions/accuracy-loop.ts
+@@ -161,6 +161,6 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "game-predictions-accuracy-loop",
+-});
++}));
+--- a/web/pages/api/v1/game-predictions/backfill-feature-snapshots.ts
++++ b/web/pages/api/v1/game-predictions/backfill-feature-snapshots.ts
+@@ -89,6 +89,6 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "game-predictions-backfill-feature-snapshots",
+-});
++}));
+--- a/web/pages/api/v1/game-predictions/backtest-ablation.ts
++++ b/web/pages/api/v1/game-predictions/backtest-ablation.ts
+@@ -136,6 +136,6 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "game-predictions-backtest-ablation",
+-});
++}));
+--- a/web/pages/api/v1/game-predictions/backtest.ts
++++ b/web/pages/api/v1/game-predictions/backtest.ts
+@@ -104,6 +104,6 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "game-predictions-backtest",
+-});
++}));
+--- a/web/pages/api/v1/game-predictions/feature-signal-analysis.ts
++++ b/web/pages/api/v1/game-predictions/feature-signal-analysis.ts
+@@ -104,6 +104,6 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "game-predictions-feature-signal-analysis",
+-});
++}));
+--- a/web/pages/api/v1/game-predictions/forecast.ts
++++ b/web/pages/api/v1/game-predictions/forecast.ts
+@@ -86,6 +86,6 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
+   jobName: "game-predictions-forecast",
+-});
++}));
+--- a/web/pages/api/v1/game-predictions/generate.ts
++++ b/web/pages/api/v1/game-predictions/generate.ts
+@@ -49,6 +49,6 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "game-predictions-generate",
+-});
++}));
+--- a/web/pages/api/v1/game-predictions/import-market-odds.ts
++++ b/web/pages/api/v1/game-predictions/import-market-odds.ts
+@@ -162,6 +162,6 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "game-predictions-import-market-odds",
+-});
++}));
+--- a/web/pages/api/v1/game-predictions/ingest-espn-odds.ts
++++ b/web/pages/api/v1/game-predictions/ingest-espn-odds.ts
+@@ -127,6 +127,6 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
+   jobName: "game-predictions-ingest-espn-odds",
+-});
++}));
+--- a/web/pages/api/v1/game-predictions/promote-model-version.ts
++++ b/web/pages/api/v1/game-predictions/promote-model-version.ts
+@@ -100,6 +100,6 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(handler as any), {
++export default adminOnly(withCronJobAudit(handler as any, {
+   jobName: "game-predictions-promote-model-version",
+-});
++}));
+--- a/web/pages/api/v1/game-predictions/score.ts
++++ b/web/pages/api/v1/game-predictions/score.ts
+@@ -61,6 +61,6 @@
+   });
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
+   jobName: "game-predictions-score",
+-});
++}));
+--- a/web/pages/api/v1/sustainability/process-recompute-queue.ts
++++ b/web/pages/api/v1/sustainability/process-recompute-queue.ts
+@@ -171,9 +171,9 @@
+   }
+ }
+ 
+-export default withCronJobAudit(
+-  adminOnly(processRecomputeQueueHandler as any),
++export default adminOnly(withCronJobAudit(
++  processRecomputeQueueHandler as any,
+   {
+     jobName: "process-sustainability-recompute-queue",
+   },
+-);
++));
+--- a/web/pages/api/v1/sustainability/rebuild-priors.ts
++++ b/web/pages/api/v1/sustainability/rebuild-priors.ts
+@@ -144,6 +144,6 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(rebuildPriorsHandler as any)), {
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(rebuildPriorsHandler as any), {
+   jobName: "rebuild-sustainability-priors"
+-});
++}));
+--- a/web/pages/api/v1/sustainability/rebuild-score.ts
++++ b/web/pages/api/v1/sustainability/rebuild-score.ts
+@@ -313,4 +313,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(rebuildScoreHandler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(rebuildScoreHandler as any)));
+--- a/web/pages/api/v1/sustainability/rebuild-trend-bands.ts
++++ b/web/pages/api/v1/sustainability/rebuild-trend-bands.ts
+@@ -296,4 +296,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(rebuildTrendBandsHandler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(rebuildTrendBandsHandler as any)));
+--- a/web/pages/api/v1/sustainability/rebuild-window-z.ts
++++ b/web/pages/api/v1/sustainability/rebuild-window-z.ts
+@@ -149,4 +149,4 @@
+   }
+ }
+ 
+-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(rebuildWindowZHandler as any)));
++export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(rebuildWindowZHandler as any)));

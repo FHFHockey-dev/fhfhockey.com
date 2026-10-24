@@ -1,0 +1,37 @@
+   ✓ useShotData request ownership > keeps cached A after A → B → A while B games are pending 8ms
+   ✓ useShotData request ownership > keeps cached A after A → B → A while B shots are pending 2ms
+   ✓ useShotData request ownership > ignores stale success and finally while the current request is loading 1ms
+   ✓ useShotData request ownership > ignores stale empty and finally while the current request is loading 1ms
+   ✓ useShotData request ownership > ignores stale error and finally while the current request is loading 1ms
+   ✓ useShotData request ownership > defers hidden reads and preserves the loaded key across tab visibility and equal filters 1ms
+   ✓ useShotData request ownership > retires a pending hidden-tab request and fetches again when shown 1ms
+   ✓ useShotData request ownership > owns pending reads by event filter as well as team 1ms
+   ✓ useShotData request ownership > owns pending reads by game filter as well as team 1ms
+   ✓ useShotData request ownership > owns pending reads by season filter as well as team 1ms
+   × useShotData request ownership > reads only games of the selected game types 4ms
+   × useShotData request ownership > returns nothing for a selection that excludes every game 3ms
+   × useShotData request ownership > makes no read when no event type is selected 1ms
+   × useShotData request ownership > makes no read when no game type is selected 2ms
+   × useShotData request ownership > drops unparseable coordinates instead of plotting them at center ice 1ms
+   ✓ useShotData request ownership > clears the previous error when loading a different key 1ms
+   ✓ TeamTabNavigation schedule identity > forwards the synchronous Arizona source identity for canonical Utah's 2023-24 schedule 16ms
+   ✓ TeamTabNavigation schedule identity > preserves an ordinary current-team schedule identity 3ms
+   ✓ TeamTabNavigation schedule identity > does not mount the calendar before a validated schedule identity exists 12ms
+   × TeamTabNavigation Season Stats line combinations > reads nothing while other tabs are shown and reuses the result when the tab returns 10ms
+   × TeamTabNavigation Season Stats line combinations > discards a late response for the previous team after A → B 4ms
+   × TeamTabNavigation Season Stats line combinations > shows the line read error instead of a grid 3ms
+   × TeamTabNavigation Season Stats line combinations > shows the player map error instead of a grid 4ms
+   ✓ TeamTabNavigation Season Stats line combinations > shows the no persisted lines instead of a grid 2ms
+   × TeamTabNavigation Season Stats line combinations > drops null and blank IDs and flattens nested line rows 2ms
+   × TeamTabNavigation Shot Map error > hands the read error to the visualization instead of a detached banner 4ms
+   ✓ LineCombinationsGrid mixed line shapes > shows every dressed skater for 12F/6D 46ms
+   ✓ LineCombinationsGrid mixed line shapes > shows every dressed skater for 11F/7D 20ms
+   × LineCombinationsGrid mixed line shapes > shows every dressed skater for 13F/5D 5ms
+   × LineCombinationsGrid mixed line shapes > shows every dressed skater for 10F/8D 6ms
+   × ShotVisualization filters > keeps the filters usable in the loading state 69ms
+   × ShotVisualization filters > keeps the filters usable in the empty state 4ms
+   × ShotVisualization filters > keeps the filters usable in the error state 2ms
+   × ShotVisualization filters > keeps the filters usable in the no selection state 3ms
+   × ShotVisualization filters > changes and resets filters from an empty result 2ms
+⎯⎯⎯⎯⎯⎯ Failed Tests 18 ⎯⎯⎯⎯⎯⎯⎯
+      Tests  18 failed | 17 passed (35)

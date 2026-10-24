@@ -1,0 +1,10 @@
+{
+  "owner": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+  "at": "2026-10-23T12:41:34.020802+00:00",
+  "scope": "Test-only confirmation/negative controls; probable floors preserved pending separate policy decision. Source lease released without edits.",
+  "files": {
+    "web/lib/rosterScheduleData/forgeDailyBridge.ts": "651eff511275b93f6f598181f3c5402c9b4d1b57d3959eb772528842910855f5",
+    "web/lib/rosterScheduleData/forgeDailyBridge.test.ts": "fa27e06bd7d3dca46cce6c1c27ed74288dea7b573d14abca6d150a41326e5fc8"
+  },
+  "source_unchanged": true
+}

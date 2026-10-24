@@ -1,0 +1,46 @@
+
+Running 1 test using 1 worker
+
+[1A[2K[1/1] [chromium] › e2e/roster-schedule-optimizer.spec.ts:698:5 › Yahoo timeout retains schedule analysis and matchup-week navigation without actionable acquisitions
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:698:5 › Yahoo timeout retains schedule analysis and matchup-week navigation without actionable acquisitions 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveCount[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator:  getByRole('region', { name: 'Candidate browser' }).getByRole('button', { name: 'Select add', exact: true })
+    Expected: [32m0[39m
+    Received: [31m1[39m
+    Timeout:  15000ms
+
+    Call log:
+    [2m  - Expect "toHaveCount" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('region', { name: 'Candidate browser' }).getByRole('button', { name: 'Select add', exact: true })[22m
+    [2m    34 × locator resolved to 1 element[22m
+    [2m       - unexpected value "1"[22m
+
+
+      722 |   await page.getByRole("button", { name: "All players", exact: true }).click();
+      723 |   const candidateBrowser = page.getByRole("region", { name: "Candidate browser" });
+    > 724 |   await expect(candidateBrowser.getByRole("button", { name: "Select add", exact: true })).toHaveCount(0);
+          |                                                                                           ^
+      725 |   await expect(candidateBrowser.getByRole("button", { name: /^Preview swap/ })).toHaveCount(0);
+      726 |   await expect(candidateBrowser.getByText("Net AGP", { exact: true })).toHaveCount(0);
+      727 |   await openDisclosure(page, /^More tools$/);
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:724:91
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../retained-yahoo-final-01/results/roster-schedule-optimizer--a284c-out-actionable-acquisitions-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../retained-yahoo-final-01/results/roster-schedule-optimizer--a284c-out-actionable-acquisitions-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../retained-yahoo-final-01/results/roster-schedule-optimizer--a284c-out-actionable-acquisitions-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../retained-yahoo-final-01/results/roster-schedule-optimizer--a284c-out-actionable-acquisitions-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  1 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:698:5 › Yahoo timeout retains schedule analysis and matchup-week navigation without actionable acquisitions 

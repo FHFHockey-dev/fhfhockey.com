@@ -1,0 +1,69 @@
+{
+  "at": "2026-10-24T19:38:24.508563+00:00",
+  "status": "Verified bounded family checkpoint; whole tasks-tree audit unfinished",
+  "canonical_ids": 213,
+  "canonical_evidence": 1183,
+  "readable_children": 45,
+  "added_parent_ids": [],
+  "changed_existing_ids": [
+    "TRENDS-HISTORICAL-REPAIRS",
+    "PIPE-ROLLING-HISTORY-REPAIR",
+    "FORGE-RESULTS-COVERAGE",
+    "REPO-DOCUMENTATION",
+    "SITE-FORGE-TESTING-GROUNDS",
+    "SITE-PLAYER-CARDS"
+  ],
+  "readable_children_added": 9,
+  "evidence_added": 34,
+  "all_prior_213_ids_scopes_evidence_preserved": true,
+  "legacy_blocks_byte_identical": 32,
+  "unchanged_existing_rows_identical": 207,
+  "prior_children_preserved": true,
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "4c397d24376c535505c76910f9d0383a16d2fc4cfd9dfc20a51fc0ffab46a47d",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "a4cbacc76d0e554ed833604d564cdf044f4236c3fb8d046b066dca6f03067c29",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "d2c65286db3ce90b0cf8826cbb5384054cb57e2114a78ed190d59ae0a5157755"
+  },
+  "library": {
+    "at": "2026-10-24T19:38:24.508563+00:00",
+    "status": "succeeded",
+    "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "version_before": 15,
+    "version_after": 16,
+    "same_identity": true,
+    "replacement_attempts": 1,
+    "raw_response": "LIBRARY-REPLACE-RAW.json",
+    "parsed_receipt": "LIBRARY-REPLACE-RECEIPT.json",
+    "helper_exit_code": 0,
+    "native_returned_xattrs_matched": [
+      "user.library-file-version"
+    ],
+    "local_master_sha256": "4c397d24376c535505c76910f9d0383a16d2fc4cfd9dfc20a51fc0ffab46a47d",
+    "file_size_bytes": 660849,
+    "no_remote_download_checksum_claim": true,
+    "download_url": "https://chatgpt.com/api/library/files/libfile_9987e7d9d1b8819181b366a318cc9a9c/download",
+    "no_pending_or_uncertain_operation": true
+  },
+  "segment_coverage": {
+    "content-reviewed_source_texts": 6,
+    "full_text_bytes": 190548,
+    "bounded_structured_snapshots": 2,
+    "parent_reported_context_receipt": 1,
+    "structured_all_row_semantics_reviewed": false
+  },
+  "captured_family_coverage": {
+    "source_texts_fully_reviewed": 12,
+    "bounded_structured_snapshots": 2,
+    "remaining_original_entries": 0,
+    "new_live_tree_inventory": false
+  },
+  "user_milestones": "TG user-observed viewing only; card prototype direction approved toward references, first visual checkpoint required, final design open.",
+  "remaining_unique_text_candidates": 1640,
+  "not_all_candidates_deep_read_obligations": true,
+  "remaining_base_queue_items": 12066,
+  "next_cursor": "tasks/TASKS/forge-projections/v1/tasks-goalie-forge.md",
+  "pending_or_uncertain_operations": [],
+  "audit_blockers": [],
+  "application_tests_git_production_provider_new_workers": 0,
+  "wording_correction": "WORDING-CORRECTION.json"
+}

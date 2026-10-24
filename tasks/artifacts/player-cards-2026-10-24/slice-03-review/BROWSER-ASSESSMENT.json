@@ -1,0 +1,22 @@
+{
+  "raw_result_file": "browser-results.json",
+  "raw_passed": 5,
+  "raw_failed": 2,
+  "usable_passed": 4,
+  "usable_failed": 2,
+  "excluded_passing_group": "PC-S03-02: known undefined zero-exposure ratios are not labeled missing source",
+  "exclusion_reason": "Measured status after successful PNG export; download message replaced initial availability banner. Excluded from that assurance; pre-download issue independently reproduced by zero-state-banner.log and initial offline body.",
+  "page_HTTP_attempts": 0,
+  "page_errors": 0,
+  "PNGexports": 2,
+  "partial_PNG_byte_equal_frozen_owner": true,
+  "zero_PP_ratio_coverage": {
+    "expectedPlayers": 18,
+    "suppliedPlayers": 18,
+    "valid": 0,
+    "knownUndefined": 18,
+    "missingIncomplete": 0,
+    "knownShort": 0,
+    "fullEligiblePopulationVerified": true
+  }
+}

@@ -1,0 +1,401 @@
+{
+  "at": "2026-10-24T19:24:17.455705+00:00",
+  "changes": {
+    "SUSTAINABILITY-NATURAL": {
+      "fields": {
+        "verification": "Failed-jobs task line99 records C0019 timeout/partial-write failure and closure requirement. NST tasks189/202 distinguish earlier NEW61 success from later NEW73. Prior segment04 narrow source read found rowsUpserted/partialWrite counters survive the catch; it did not execute or prove release. Schedule JSON has job374 at10:38 and baseline326 at10:40, which is configured intent rather than observed non-overlap. Historical82/171 marker backlog and4 fresh markers do not certify all batches. Segment16 full owning checklists and local handoffs distinguish NEW17 complete scheduled population, NEW18 operational finalization and health membership evidence. R-SCORE uses real chunk/distribution helpers over synthetic rows with source/model boundaries mocked. R-HEALTH final integration is 18/18 and unknown counts fail closed; expectedPopulation stays null and equal counts are not completeness, lineage or freshness. No new production/natural observation.",
+        "children": [
+          {
+            "child_id": "SUSTAINABILITY-NATURAL/dashboard-promotion",
+            "title": "Reconcile prospective same-day dashboard Sustainability qualification",
+            "status": "Held/unverified current closure; historical exception retained",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "approval_gate": "No reconstruction of March 7–20 history with later priors; no run/backfill/capture/publication authority. Existing natural-batch and matured-cohort gates remain distinct.",
+            "next_action": "Locate later same-day source-to-render qualification or explicit supersession, separately from batch-complete terminal markers and matured-cohort proof.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md",
+              "line": 95
+            },
+            "existing_work_credit": "Historical repairs, truthful quarantine and existing natural-chain closures preserved; no active work reopened."
+          },
+          {
+            "child_id": "SUSTAINABILITY-NATURAL/scheduled-score-population",
+            "title": "Reconcile deployed all-player score batching and natural completion",
+            "status": "Local full-population route fixtures accepted; deployed/natural closure unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile the exact shipped candidate, schedule capacity and later U-1/natural receipt against an authoritative eligible-player set, all offsets and four windows. Include tail players and committed counts; preserve C0019/NEW6 baseline batch receipts and C0065/NEW73 ordering. A latest cutoff from one player or three fixed offsets cannot prove completion.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+              "line": 181
+            },
+            "approval_gate": "No schedule change, endpoint call, SQL, refresh, replay or natural run by audit. Existing owner must first reconcile retained evidence and exact approval boundaries.",
+            "existing_work_credit": "R-SCORE exercised 1,001 synthetic players, five batches and 4,004 unique player/window keys with the real 400-row chunker; classifier/source/model boundaries were mocked. Do not repeat accepted local tests."
+          },
+          {
+            "child_id": "SUSTAINABILITY-NATURAL/distribution-finalizer",
+            "title": "Reconcile scheduled distribution, quintile and drift finalization",
+            "status": "Local runAll/finalizer behavior accepted; operational finalization or accepted gap open",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Find later evidence that one correctly owned finalizer follows the complete score population, or record an explicit accepted operational gap. Keep exact model/config/season/date/window identity, deterministic quintiles, complete distribution population and drift receipt distinct from paged score success.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+              "line": 182
+            },
+            "approval_gate": "No enablement, new scheduler/owner, queue processing, configuration activation or backfill. Preserve cross-provider owner/order contract; any future operational change needs its own exact approval.",
+            "existing_work_credit": "Local successful runAll and dry fixtures exercise real distributions/quintiles and persistence mapping; queue/activation schema proof and historical release remain complete within their scope."
+          },
+          {
+            "child_id": "SUSTAINABILITY-NATURAL/population-proof",
+            "title": "Qualify population membership separately from health observations",
+            "status": "Health diagnostics accepted locally; complete membership/freshness unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Before declaring a natural snapshot complete, reconcile an authoritative eligible-player denominator and exact membership with version/model lineage and source freshness. Preserve null expectedPopulation and unverified coverage until that evidence exists; equal per-window or producer counts are insufficient.",
+            "source": {
+              "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-HEALTH-HANDOFF.md",
+              "line": 22
+            },
+            "approval_gate": "Evidence qualification only. No broad read, health endpoint call, extra query expansion, new runtime change or repeated accepted fixture run.",
+            "existing_work_credit": "R-HEALTH final 18/18 integration and fail-closed unknown aggregate counts are retained. Maximum 12 queries/5 additional rows is a source/mock scope bound, not measured database CPU or full coverage."
+          }
+        ]
+      },
+      "before_fields": {
+        "verification": "Failed-jobs task line99 records C0019 timeout/partial-write failure and closure requirement. NST tasks189/202 distinguish earlier NEW61 success from later NEW73. Prior segment04 narrow source read found rowsUpserted/partialWrite counters survive the catch; it did not execute or prove release. Schedule JSON has job374 at10:38 and baseline326 at10:40, which is configured intent rather than observed non-overlap. Historical82/171 marker backlog and4 fresh markers do not certify all batches.",
+        "children": [
+          {
+            "child_id": "SUSTAINABILITY-NATURAL/dashboard-promotion",
+            "title": "Reconcile prospective same-day dashboard Sustainability qualification",
+            "status": "Held/unverified current closure; historical exception retained",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "approval_gate": "No reconstruction of March 7–20 history with later priors; no run/backfill/capture/publication authority. Existing natural-batch and matured-cohort gates remain distinct.",
+            "next_action": "Locate later same-day source-to-render qualification or explicit supersession, separately from batch-complete terminal markers and matured-cohort proof.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md",
+              "line": 95
+            },
+            "existing_work_credit": "Historical repairs, truthful quarantine and existing natural-chain closures preserved; no active work reopened."
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/672025f32a41-tasks-prd-sustainability-barometer.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+          "line": 181,
+          "sha256": "672025f32a41613265f97ff57683e49725fd00121b9de3ecf8ed07ccf633cc5e",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/672025f32a41-tasks-prd-sustainability-barometer.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+          "line": 182,
+          "sha256": "672025f32a41613265f97ff57683e49725fd00121b9de3ecf8ed07ccf633cc5e",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/a249f36f38f1-R-SCORE-HANDOFF.md",
+          "original_path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SCORE-HANDOFF.md",
+          "line": 5,
+          "sha256": "a249f36f38f1ac469e8dce2d78673eeab8a93d000c12865c672bbe4f0108f067",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/a249f36f38f1-R-SCORE-HANDOFF.md",
+          "original_path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SCORE-HANDOFF.md",
+          "line": 14,
+          "sha256": "a249f36f38f1ac469e8dce2d78673eeab8a93d000c12865c672bbe4f0108f067",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/4009ae136811-R-HEALTH-HANDOFF.md",
+          "original_path": "tasks/codex-sprint-2026-10-19/continuation-review/R-HEALTH-HANDOFF.md",
+          "line": 22,
+          "sha256": "4009ae136811288947089ea320075054e16d7190cac50b169fabcb845b684acd",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/4009ae136811-R-HEALTH-HANDOFF.md",
+          "original_path": "tasks/codex-sprint-2026-10-19/continuation-review/R-HEALTH-HANDOFF.md",
+          "line": 45,
+          "sha256": "4009ae136811288947089ea320075054e16d7190cac50b169fabcb845b684acd",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/d597e9096b20-SUSTAINABILITY-RUNBOOK.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md",
+          "line": 84,
+          "sha256": "d597e9096b20a8e96312dfb41a022182f4db6645985c6f66388bf7aa26c2c923",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/d597e9096b20-SUSTAINABILITY-RUNBOOK.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md",
+          "line": 93,
+          "sha256": "d597e9096b20a8e96312dfb41a022182f4db6645985c6f66388bf7aa26c2c923",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        }
+      ]
+    },
+    "SUSTAINABILITY-MATURED-EVIDENCE": {
+      "fields": {
+        "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test. Segment16 confirms the completed harness and July30 named-row closure. Checklist 3.1/3.2 checkmarks are limited by the explicit pending-calibration/seven-stat runbook contract; held-out prediction-versus-actual evidence and calibrated Hot/Normal/Cold publication remain separate parked child gates. July11 empty projection counts are dated evidence, not a current outage finding.",
+        "children": [
+          {
+            "child_id": "SUSTAINABILITY-MATURED-EVIDENCE/matured-baseline-results",
+            "title": "Retain genuine matured projection-versus-baseline evidence",
+            "status": "Intentionally parked; completed harness is not empirical qualification",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "If legitimately resumed later, reconcile genuine version/cutoff-qualified projection snapshots, resolved 5/10-game actuals, held-out dates/players and per-variant sample counts. Record MAE/RMSE/bias versus career, season, recent and naive baselines without fabricating history or treating score/trend rows as projections.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+              "line": 178
+            },
+            "approval_gate": "Keep parked; no fitting, capture, backfill, production read, snapshot generation or results publication by audit. Current no-backfill and source-qualification boundaries remain.",
+            "existing_work_credit": "Paginated harness, insufficient-history behavior, documented metrics, tests and named-player API/UI closure remain complete."
+          },
+          {
+            "child_id": "SUSTAINABILITY-MATURED-EVIDENCE/probability-calibration",
+            "title": "Retain the held-out Hot/Normal/Cold publication gate",
+            "status": "Parked/unqualified publication; pending_calibration remains the recorded contract",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile later target, fitted/calibrated-model and held-out Brier/reliability/coverage receipts before any probability or baseline-win claim. A sigmoid sustainability index, implemented label/helper or checked modeling row does not establish calibrated streak probabilities.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md",
+              "line": 23
+            },
+            "approval_gate": "Keep parked. No model retraining, label allocation, new experiment or probability publication is authorized. Preserve separately approved score-v2 weights/provenance and unavailable API states.",
+            "existing_work_credit": "Source helper/unit coverage and explicit null/pending_calibration public response retain credit; no current data outage or missing implementation inferred."
+          }
+        ]
+      },
+      "before_fields": {
+        "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/62e0adf2c393-tasks-prd-sustainability-model.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+          "line": 171,
+          "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/62e0adf2c393-tasks-prd-sustainability-model.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+          "line": 178,
+          "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/62e0adf2c393-tasks-prd-sustainability-model.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+          "line": 179,
+          "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/62e0adf2c393-tasks-prd-sustainability-model.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+          "line": 194,
+          "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/62e0adf2c393-tasks-prd-sustainability-model.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+          "line": 201,
+          "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/d597e9096b20-SUSTAINABILITY-RUNBOOK.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md",
+          "line": 23,
+          "sha256": "d597e9096b20a8e96312dfb41a022182f4db6645985c6f66388bf7aa26c2c923",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/d597e9096b20-SUSTAINABILITY-RUNBOOK.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md",
+          "line": 76,
+          "sha256": "d597e9096b20a8e96312dfb41a022182f4db6645985c6f66388bf7aa26c2c923",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/5d2cf40da1c4-prd-sustainability-model.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-model.md",
+          "line": 194,
+          "sha256": "5d2cf40da1c43791450d28cb0b0064a07b6452bd9b9fa8a3fb27a44647cb66c7",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        }
+      ]
+    },
+    "REPO-DOCUMENTATION": {
+      "fields": {
+        "verification": "Current source and retained receipts inspected; no application tests rerun. Segment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority. Segment15 distinguishes completed 36/36 modularization and approved scalar epsilon 0.005 from still-tracked PP-ACC-001–005 accuracy proposals. Meta A–K checkmarks do not close granular Sustainability or OCT14 requirements. Latest V1 tail supersedes earlier missing-identity, unresolved 73-slot and exact-cap-blocker statements; do not repeat those resolved decisions. Current canonical admission/reconciliation test packets remain authoritative over old NEW6/NEW7 issue wording. Segment16 full Sustainability sources retain later Option A, score-v2, canonical windows, applied provenance migration, local route/health acceptance and named-player UI closure over old draft/step4 instructions. The broad checked stat/probability rows need a documented scope disposition against the runbook; no current API defect was reproduced. NEW17/18 supersede old all-complete orchestration/drift language, not accepted unrelated fixes.",
+        "children": [
+          {
+            "child_id": "REPO-DOCUMENTATION/forge-refresh-itinerary",
+            "title": "Reconcile the old full-refresh itinerary against approved bounded operating contracts",
+            "status": "Open documentary follow-up; no endpoint execution",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Correct or clearly mark the obsolete all-date/fullRefresh RPC-truncate itinerary, old page/schema authority and unqualified fallback guidance. Link current bounded README/runner/admission contracts without weakening existing full-refresh protections.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md",
+              "line": 210
+            },
+            "approval_gate": "Documentation-only under current exact file custody; no cron, SQL, refresh, truncate, provider call, or new remote verification.",
+            "existing_work_credit": "Existing full-refresh safety and writer fixes remain completed; stored instructions are not new authority."
+          },
+          {
+            "child_id": "REPO-DOCUMENTATION/sustainability-contract-disposition",
+            "title": "Reconcile stale Sustainability projection and operating claims",
+            "status": "Proposed documentary disposition; current runtime not inspected",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile the checked broad stat-projection/model rows with the runbook seven-stat menu and pending-calibration state. Find a later accepted implementation or intentional scope decision for PIM, plus/minus and FOW/FO%; otherwise correct the completion language. Mark old draft schema/window/integer-score, three-offset completeness and pre-migration instructions as superseded where later receipts govern.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+              "line": 135
+            },
+            "approval_gate": "Documentation/owner-disposition only. No inferred feature dispatch, schema repair, restored Python writes, migration, scheduling, model fitting or endpoint execution.",
+            "existing_work_credit": "Option A TypeScript ownership, canonical l3/l5/l10/l20, two-decimal score-v2 logit contract, applied provenance migration and July30 named-player render closure are retained."
+          }
+        ]
+      },
+      "before_fields": {
+        "verification": "Current source and retained receipts inspected; no application tests rerun. Segment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority. Segment15 distinguishes completed 36/36 modularization and approved scalar epsilon 0.005 from still-tracked PP-ACC-001–005 accuracy proposals. Meta A–K checkmarks do not close granular Sustainability or OCT14 requirements. Latest V1 tail supersedes earlier missing-identity, unresolved 73-slot and exact-cap-blocker statements; do not repeat those resolved decisions. Current canonical admission/reconciliation test packets remain authoritative over old NEW6/NEW7 issue wording.",
+        "children": [
+          {
+            "child_id": "REPO-DOCUMENTATION/forge-refresh-itinerary",
+            "title": "Reconcile the old full-refresh itinerary against approved bounded operating contracts",
+            "status": "Open documentary follow-up; no endpoint execution",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Correct or clearly mark the obsolete all-date/fullRefresh RPC-truncate itinerary, old page/schema authority and unqualified fallback guidance. Link current bounded README/runner/admission contracts without weakening existing full-refresh protections.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md",
+              "line": 210
+            },
+            "approval_gate": "Documentation-only under current exact file custody; no cron, SQL, refresh, truncate, provider call, or new remote verification.",
+            "existing_work_credit": "Existing full-refresh safety and writer fixes remain completed; stored instructions are not new authority."
+          }
+        ]
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/672025f32a41-tasks-prd-sustainability-barometer.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+          "line": 38,
+          "sha256": "672025f32a41613265f97ff57683e49725fd00121b9de3ecf8ed07ccf633cc5e",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/1718ff3d93f1-prd-sustainability-barometer.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-barometer.md",
+          "line": 459,
+          "sha256": "1718ff3d93f1206c8b4bc288a34ed70f30e94b0d12b78c644258b343e31e3afc",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/1718ff3d93f1-prd-sustainability-barometer.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-barometer.md",
+          "line": 467,
+          "sha256": "1718ff3d93f1206c8b4bc288a34ed70f30e94b0d12b78c644258b343e31e3afc",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/1718ff3d93f1-prd-sustainability-barometer.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-barometer.md",
+          "line": 475,
+          "sha256": "1718ff3d93f1206c8b4bc288a34ed70f30e94b0d12b78c644258b343e31e3afc",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/62e0adf2c393-tasks-prd-sustainability-model.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+          "line": 133,
+          "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/62e0adf2c393-tasks-prd-sustainability-model.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+          "line": 135,
+          "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/d597e9096b20-SUSTAINABILITY-RUNBOOK.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md",
+          "line": 23,
+          "sha256": "d597e9096b20a8e96312dfb41a022182f4db6645985c6f66388bf7aa26c2c923",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/d597e9096b20-SUSTAINABILITY-RUNBOOK.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md",
+          "line": 48,
+          "sha256": "d597e9096b20a8e96312dfb41a022182f4db6645985c6f66388bf7aa26c2c923",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/d597e9096b20-SUSTAINABILITY-RUNBOOK.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md",
+          "line": 93,
+          "sha256": "d597e9096b20a8e96312dfb41a022182f4db6645985c6f66388bf7aa26c2c923",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/0a0f26cc0914-prd-sustainability-step4.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-step4.md",
+          "line": 53,
+          "sha256": "0a0f26cc091418420f0b0beb2c8fe6380f81446ff62442679d4421698b80c8fa",
+          "observed_at": "2026-10-24T19:24:17.455705+00:00",
+          "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+        }
+      ]
+    }
+  },
+  "added_ids": [],
+  "deduplication": {
+    "natural": "Three readable child obligations within the existing natural-chain scope; no duplicate new scheduler task. Existing dashboard-promotion child retained.",
+    "matured": "Two parked qualification children under the existing paused parent; no new modeling dispatch or revival.",
+    "documentation": "One documentary scope-disposition child; current feature/runtime coverage unverified, no new implementation task.",
+    "closure": "July30 NEW8 named-row UI closure, local all-population/health fixtures, canonical score/window/owner/migration decisions and parked model work preserved."
+  }
+}

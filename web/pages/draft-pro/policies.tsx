@@ -8,12 +8,13 @@ export default function DraftProPolicies() {
     <Head><title>Draft Pro policies | Five Hole Fantasy Hockey</title><meta name="robots" content="noindex" /></Head>
     <article className={styles.policies}>
       <h1>Draft Pro policies</h1>
+      <p>New Draft Pro purchases are closed. These terms remain available for existing purchases and account support.</p>
       <p>Last updated September 9, 2026.</p>
       <p>Draft Pro is offered by Tim Branson, operating Five Hole Fantasy Hockey in Pennsylvania, United States. Contact <a href="mailto:tim@fhfhockey.com">tim@fhfhockey.com</a> for payment, access, privacy, and support requests.</p>
       <nav aria-label="Policy sections"><a href="#terms">Terms</a><a href="#refunds">Refund requests</a><a href="#privacy">Privacy</a></nav>
       <section id="terms">
         <h2>Draft Pro terms</h2>
-        <p>The 2026–27 pass costs US$5.99 plus applicable tax, shown before payment. It is a one-time purchase with no automatic renewal. Access ends July 1, 2027 at 12:00 a.m. America/New_York, covering all of June 30. Buying later in the season does not extend that date.</p>
+        <p>The 2026–27 pass was offered at US$5.99 plus applicable tax, shown before payment. It is a one-time purchase with no automatic renewal. Access ends July 1, 2027 at 12:00 a.m. America/New_York, covering all of June 30. Buying later in the season does not extend that date.</p>
         <p>Sign in to your FHFH account before purchasing. Stripe hosts checkout and processes card and eligible Link payments. Access activates after successful server verification; a return from checkout alone does not confirm payment.</p>
         <p>Review the available capabilities in your Draft Pro account panel before purchasing. Planned features, including Yahoo sync, have no guaranteed release date. Features released within the pass period are included in the same pass. Projections and draft analysis are estimates, not guarantees of results.</p>
         <p>Verified active paid supporters of the configured FHFH Patreon campaign can also qualify. Canceling renewal does not remove benefits while paid membership remains eligible. Membership must be reverified, and a provider failure may temporarily prevent premium access. A valid purchased pass remains independent of Patreon eligibility.</p>

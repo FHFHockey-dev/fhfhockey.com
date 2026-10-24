@@ -1,0 +1,36 @@
+{
+  "config": {
+    "extends": "./tsconfig.json",
+    "exclude": [
+      "node_modules",
+      ".next",
+      ".next-*",
+      "next-env.d.ts",
+      "__tests__/pages/api/v1/db/auditNstIndependent.test.ts",
+      "__tests__/pages/api/v1/db/auditNstR1Additional.test.ts",
+      "lib/reviewConsumerExposure.test.tsx",
+      "lib/reviewNegativeExposure.test.tsx",
+      "components/RosterScheduleOptimizer/p07Task10Independent.test.tsx",
+      "lib/rosterScheduleOptimizer/p07Task10Serialization.test.ts",
+      "lib/rosterScheduleOptimizer/p07R2IndependentCorrelation.test.ts"
+    ]
+  },
+  "additional_exclusions": {
+    "components/RosterScheduleOptimizer/p07Task10Independent.test.tsx": {
+      "tracked": false,
+      "canonical_exists": false,
+      "source": "p07-task10-independent-review-2026-10-22/p07Task10Independent.test.tsx"
+    },
+    "lib/rosterScheduleOptimizer/p07Task10Serialization.test.ts": {
+      "tracked": false,
+      "canonical_exists": false,
+      "source": "p07-task10-independent-review-2026-10-22/p07Task10Serialization.test.ts"
+    },
+    "lib/rosterScheduleOptimizer/p07R2IndependentCorrelation.test.ts": {
+      "tracked": false,
+      "canonical_exists": false,
+      "source": "p07-r2-independent-review-2026-10-22/p07R2IndependentCorrelation.test.ts"
+    }
+  },
+  "reason": "These are external independent reviewer fixtures copied only into the isolated test tree. Original compiler error and fixture bytes remain unchanged; this separate check covers application files."
+}

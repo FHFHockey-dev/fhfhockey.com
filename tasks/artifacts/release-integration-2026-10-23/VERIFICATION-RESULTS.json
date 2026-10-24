@@ -1,0 +1,59 @@
+[
+  {
+    "name": "release-gates",
+    "argv": [
+      "npm",
+      "test",
+      "--",
+      "--run",
+      "--config",
+      "audit.vitest.config.mts",
+      "lib/player-forecasts/nativeContributionAdmission.test.ts",
+      "lib/player-forecasts/nativeCatalogHead.test.ts",
+      "lib/player-forecasts/forecastServingSource.test.ts",
+      "lib/player-forecasts/nativeBaselinePublication.test.ts",
+      "lib/player-forecasts/planningContributions.test.ts",
+      "lib/projections/startChartPipeline.test.ts",
+      "lib/rosterScheduleData/planning.test.ts",
+      "lib/supabase/supportedBaselineMigration.test.ts",
+      "--reporter=json",
+      "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/release-gates.json"
+    ],
+    "started_at": "2026-10-23T12:15:20.619375+00:00",
+    "ended_at": "2026-10-23T12:15:24.822547+00:00",
+    "exit_code": 1
+  },
+  {
+    "name": "current-types",
+    "argv": [
+      "npm",
+      "exec",
+      "--offline",
+      "--no",
+      "--",
+      "tsc",
+      "--noEmit",
+      "--incremental",
+      "false"
+    ],
+    "started_at": "2026-10-23T12:15:24.822829+00:00",
+    "ended_at": "2026-10-23T12:16:13.358985+00:00",
+    "exit_code": 0
+  },
+  {
+    "name": "correction-lint",
+    "argv": [
+      "npm",
+      "exec",
+      "--offline",
+      "--no",
+      "--",
+      "eslint",
+      "lib/rosterScheduleOptimizer/currentPlanningRead.ts",
+      "lib/rosterScheduleOptimizer/executionAdapter.test.ts"
+    ],
+    "started_at": "2026-10-23T12:16:13.359366+00:00",
+    "ended_at": "2026-10-23T12:16:14.828682+00:00",
+    "exit_code": 0
+  }
+]

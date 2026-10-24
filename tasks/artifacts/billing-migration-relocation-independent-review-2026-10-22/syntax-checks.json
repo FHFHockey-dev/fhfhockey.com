@@ -1,0 +1,17 @@
+[
+  {
+    "path": "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-SQL-CHECK.cjs",
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs",
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "path": "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-AUTH-CHECK.cjs",
+    "exit_code": 0,
+    "output": ""
+  }
+]

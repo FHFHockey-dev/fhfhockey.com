@@ -1,0 +1,187 @@
+{
+  "at": "2026-10-24T17:56:59.403694+00:00",
+  "comparison": "Initial189-ID handoff baseline versus installed209-ID v10 canonical; excludes in-preparation segment11 update.",
+  "baseline": {
+    "path": "tasks/artifacts/task-artifact-reconciliation-2026-10-24/BASELINE-LEDGER.json",
+    "sha256": "36ac4334594670bc37ac3c40f6ad536d81177d9b1781f00804313ad614d1b9ee",
+    "ids": 189,
+    "evidence": 736
+  },
+  "current": {
+    "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json",
+    "sha256": "e32feecb77d79b89c8c6e1e6e01bd681c84a4315a151a8ee7276deed795819df",
+    "ids": 209,
+    "evidence": 1030
+  },
+  "added_ids": [
+    "AUTH-LEGACY-CONTAINMENT",
+    "AUTH-PATREON-TRANSACTION",
+    "AUTH-PKCE-COMPLETION",
+    "CRON-SCHEDULE-DISPOSITION",
+    "FORGE-RESULTS-COVERAGE",
+    "PIPE-DRM-NATURAL",
+    "PIPE-ROLLING-HISTORY-REPAIR",
+    "REPO-ADVISORY-CI",
+    "REPO-IMPORT-SAFETY",
+    "SECURITY-RESIDUAL-ACL",
+    "SITE-DRAFT-CSV-RESOLVER",
+    "SITE-HOMEPAGE-PLAN",
+    "SITE-PARLAY-PROPS",
+    "SITE-PICKUP-TOKENS",
+    "SITE-PLAYER-CARDS",
+    "SITE-PRIVACY-POLICY",
+    "SUSTAINABILITY-MATURED-EVIDENCE",
+    "TRENDS-HISTORICAL-REPAIRS",
+    "XG-SERVING-DISPOSITION",
+    "YAHOO-HISTORY-RETIREMENT"
+  ],
+  "added_count": 20,
+  "original_existing_materially_changed_count": 18,
+  "original_existing_material_changes": {
+    "STATS-S06": [
+      "implementation",
+      "acceptance",
+      "next_action",
+      "dispatch_class"
+    ],
+    "PIPE-NATURAL": [
+      "next_action"
+    ],
+    "PIPE-JOB79": [
+      "implementation",
+      "acceptance",
+      "release",
+      "acceptance_release_gate",
+      "next_action",
+      "dispatch_class"
+    ],
+    "WGO-HISTORY": [
+      "implementation",
+      "acceptance",
+      "next_action"
+    ],
+    "SUSTAINABILITY-NATURAL": [
+      "implementation",
+      "acceptance",
+      "release",
+      "acceptance_release_gate",
+      "next_action"
+    ],
+    "PAID-SYNC": [
+      "next_action"
+    ],
+    "LUNA-LOCAL": [
+      "acceptance",
+      "reviewer",
+      "next_action",
+      "dispatch_class"
+    ],
+    "IFTTT-ACTIVATION": [
+      "next_action"
+    ],
+    "SPRINT-INTEGRATE": [
+      "implementation",
+      "acceptance",
+      "next_action"
+    ],
+    "SPRINT-LEDGER": [
+      "implementation",
+      "acceptance",
+      "owner",
+      "next_action",
+      "dispatch_class"
+    ],
+    "SPRINT-OPTIMIZATION": [
+      "next_action"
+    ],
+    "REPO-DOCUMENTATION": [
+      "next_action",
+      "dispatch_class"
+    ],
+    "REPO-GENERATED-TRACKING": [
+      "implementation",
+      "next_action"
+    ],
+    "BILLING-CANCEL-RELOAD": [
+      "implementation",
+      "acceptance",
+      "next_action",
+      "dispatch_class"
+    ],
+    "CRON-AUDIT-COVERAGE": [
+      "implementation",
+      "acceptance",
+      "next_action",
+      "dispatch_class"
+    ],
+    "SITE-WIGO": [
+      "implementation",
+      "acceptance",
+      "next_action",
+      "dispatch_class"
+    ],
+    "SITE-SOCIAL-SHARE": [
+      "implementation",
+      "acceptance",
+      "next_action",
+      "dispatch_class"
+    ],
+    "SITE-FORGE-TESTING-GROUNDS": [
+      "implementation",
+      "acceptance",
+      "release",
+      "dependencies",
+      "next_action",
+      "dispatch_class"
+    ]
+  },
+  "status_corrected_original_existing_ids": [
+    "STATS-S06",
+    "PIPE-JOB79",
+    "WGO-HISTORY",
+    "SUSTAINABILITY-NATURAL",
+    "LUNA-LOCAL",
+    "SPRINT-INTEGRATE",
+    "SPRINT-LEDGER",
+    "REPO-GENERATED-TRACKING",
+    "BILLING-CANCEL-RELOAD",
+    "CRON-AUDIT-COVERAGE",
+    "SITE-WIGO",
+    "SITE-SOCIAL-SHARE",
+    "SITE-FORGE-TESTING-GROUNDS"
+  ],
+  "status_corrected_count": 13,
+  "action_or_dependency_refined_count": 18,
+  "evidence_or_verification_only_original_existing_ids": [
+    "SITE-DRAFTRANKER-HOMEPAGE"
+  ],
+  "unchanged_legacy_scope_blocks": 32,
+  "legacy_reopened_count": 0,
+  "count_categories_overlap": true,
+  "reopened_nonlegacy_count": "Not inferred mechanically from prose; do not count every next-action refinement as a reopening.",
+  "coverage_after_completed_current_batch": {
+    "new_sources": 12,
+    "direct_full_reads": 11,
+    "common_text_plus_all_variant_deltas": 1,
+    "bytes": 251521,
+    "unique_text_candidates_still_to_triage_or_read": 1694,
+    "not_all_candidates_verified_substantive": true,
+    "known_selected_unique_reports_pending": 8
+  },
+  "why_not_every_finding_adds_id": [
+    "Later source receipts close or supersede older unchecked/proposed work",
+    "Related evidence maps to an existing stable ID instead of parallel register",
+    "Phase8 and other deliberate holds/retirements are not reopened",
+    "Substantial unique-content queue remains, so no claim all missed work found"
+  ],
+  "overmerge_check": {
+    "result": "Readable-child gap confirmed in two proposed/broad parent rows; independent closeable commitments currently embedded in prose.",
+    "parents": [
+      "YAHOO-HISTORY-RETIREMENT",
+      "SITE-DRAFT-CSV-RESOLVER"
+    ],
+    "planned_readable_children": 10,
+    "new_top_level_ids_from_child_display": 0,
+    "reason": "Expose separate source clauses/status/dependency/approval gates; do not split merely to inflate counts."
+  }
+}

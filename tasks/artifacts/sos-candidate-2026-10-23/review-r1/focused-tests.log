@@ -1,0 +1,8 @@
+test_past_retrospective_selected_horizon (test_sos_candidate.ContractTests.test_past_retrospective_selected_horizon) ... ok
+test_zero_gp_known_prior_only (test_sos_candidate.ContractTests.test_zero_gp_known_prior_only) ... ok
+test_faced_then_separate_from_retrospective (test_sos_candidate.ContractTests.test_faced_then_separate_from_retrospective) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.006s
+
+OK

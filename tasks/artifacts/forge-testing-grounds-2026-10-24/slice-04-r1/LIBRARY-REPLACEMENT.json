@@ -1,0 +1,15 @@
+{
+  "status": "succeeded",
+  "library_file_id": "libfile_cc38ec891b2481918b7a88ecd0c24341",
+  "file_id": "file_000000009e9c81fdb6b4a09b473d9f4a",
+  "file_name": "preview(2).html",
+  "current_version_number": 1,
+  "expected_current_version": 0,
+  "previous_file_id": "file_00000000d41481fd8a1a40aac3162ff1",
+  "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04-r1/preview.html",
+  "bytes": 236446,
+  "metadataHelperExit": 0,
+  "identityPreserved": true,
+  "originalArtifact": "../slice-04/preview.html preserved unchanged",
+  "visualQA": "Not performed; source/DOM and actual artifact jsdom checks only."
+}

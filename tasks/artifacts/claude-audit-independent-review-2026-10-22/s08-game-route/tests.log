@@ -1,0 +1,19 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts __tests__/pages/statsGame.test.tsx __tests__/pages/reviewStatsGame.test.tsx
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-tucc0hgy/isolation/snapshot/web
+
+(node:26347) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/statsGame.test.tsx (37 tests) 228ms
+(node:26347) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/reviewStatsGame.test.tsx (12 tests) 138ms
+
+ Test Files  2 passed (2)
+      Tests  49 passed (49)
+   Start at  11:03:00
+   Duration  1.16s (transform 152ms, setup 11ms, collect 289ms, tests 366ms, environment 341ms, prepare 56ms)
+

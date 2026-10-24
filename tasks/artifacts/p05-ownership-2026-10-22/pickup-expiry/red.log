@@ -1,0 +1,872 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts components/PlayerPickupTable/PlayerPickupTable.test.ts -t mounted pickup ownership freshness
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-4tjbf816/isolation/snapshot/web
+
+(node:2937) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/PlayerPickupTable/PlayerPickupTable.test.ts (31 tests | 6 failed | 25 skipped) 390ms
+   ↓ Player Pickup season identity > keeps the Yahoo start year stable after the NHL season ends
+   ↓ Player Pickup season identity > fails closed for missing or malformed season identities
+   ↓ pickup eligibility normalization > validates eligibility " c "
+   ↓ pickup eligibility normalization > validates eligibility ["C","LW","C"]
+   ↓ pickup eligibility normalization > validates eligibility [{"position":"C"},{"position":"LW"}]
+   ↓ pickup eligibility normalization > validates eligibility {"position":"G"}
+   ↓ pickup eligibility normalization > validates eligibility null
+   ↓ pickup eligibility normalization > validates eligibility [{},42,{"position":{}},"unknown","BN"]
+   ↓ Player pickup interactions > loads dated ownership from existing player rows and filters zero-owned players by team
+   ↓ Player pickup interactions > retries a failed player request
+   ↓ Player pickup interactions > uses Yahoo non-rostered status with sync timestamp 2026-09-17T12:00:00Z
+   ↓ Player pickup interactions > uses Yahoo non-rostered status with sync timestamp 
+   ↓ Player pickup interactions > uses Yahoo non-rostered status with sync timestamp not-a-date
+   ↓ Player pickup interactions > discloses the general pool after Yahoo failure and allows refresh
+   ↓ pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero (null)
+   ↓ pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero (undefined)
+   ↓ pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero ("")
+   ↓ pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero ("   ")
+   ↓ pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero (false)
+   ↓ pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero ("0x10")
+   ↓ pickup ownership evidence > does not coerce missing or malformed season/row ownership into zero (-1)
+   ↓ pickup ownership evidence > preserves undated zero as last-known evidence, never a fresh measured zero (0)
+   ↓ pickup ownership evidence > preserves undated zero as last-known evidence, never a fresh measured zero ("0")
+   ↓ pickup ownership evidence > labels dated stale values and filters unknown separately at viewport 1024
+   ↓ pickup ownership evidence > labels dated stale values and filters unknown separately at viewport 390
+   × mounted pickup ownership freshness > expires a mounted zero at the existing three-day boundary without fetching (viewport 1024) 87ms
+     → Unable to find an element with the text: Last known 0% · 2026-10-19 (stale). This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_container_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_filters_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_filtersTitle_f5fbb8"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33maria-label[39m=[32m"Best Players Available"[39m
+            [33mclass[39m=[32m"_titleContent_f5fbb8"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_titleWord_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_acronym_f5fbb8"[39m
+              [36m>[39m
+                [0mB[0m
+              [36m</span>[39m
+              [0mest[0m
+            [36m</span>[39m
+            [0m [0m
+            [36m<span[39m
+              [33mclass[39m=[32m"_titleWord_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_acronym_f5fbb8"[39m
+              [36m>[39m
+                [0mP[0m
+              [36m</span>[39m
+              [0mlayers[0m
+            [36m</span>[39m
+            [0m [0m
+            [36m<span[39m
+              [33mclass[39m=[32m"_titleWord_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_acronym_f5fbb8"[39m
+              [36m>[39m
+                [0mA[0m
+              [36m</span>[39m
+              [0mvailable[0m
+            [36m</span>[39m
+          [36m</h2>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_filtersBody_f5fbb8"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_filterContainer_f5fbb8"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_filterRowGridTop_f5fbb8"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_filterRow_f5fbb8"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_label_f5fbb8"[39m
+                  [33mfor[39m=[32m"pickup-ownership-threshold"[39m
+                [36m>[39m
+                  [0mOwnership %: [0m
+                  [0m50[0m
+                  [0m%[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33mclass[39m=[32m"_slider_f5fbb8"[39m
+                  [33mid[39m=[32m"pickup-ownership-threshold"[39m
+                  [33mmax[39m=[32m"100"[39m
+                  [33mmin[39m=[32m"0"[39m
+                  [33mtype[39m=[32m"range"[39m
+                  [33mvalue[39m=[32m"50"[39m
+                [36m/>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_filterRow_f5fbb8 _filterRowTeam_f5fbb8"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_label_f5fbb8"[39m
+                  [33mfor[39m=[32m"pickup-team-filter"[39m
+                [36m>[39m
+                  [0mTeam:[0m
+                [36m</label>[39m
+                [36m<select[39m
+                  [33mclass[39m=[32m"_select_f5fbb8"[39m
+                  [33mid[39m=[32m"pickup-team-filter"[39m
+                [36m>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"ALL"[39m
+                  [36m>[39m
+                    [0mALL[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"BOS"[39m
+                  [36m>[39m
+                    [0mBOS[0m
+                  [36m</option>[39m
+                [36m</select>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_filterRow_f5fbb8 _filterRowPositions_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_label_f5fbb8"[39m
+              [36m>[39m
+                [0mPositions:[0m
+              [36m</span>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_positionCheckboxGroup_f5fbb8"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mchecked[39m=[32m""[39m
+                    [33mtype[39m=[32m"checkbox"[39m
+                  [36m/>[39m
+                  [0m [0m
+                  [0mC[0m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mchecked[39m=[32m""[39m
+                    [33mtype[39m=[32m"checkbox"[39m
+                  [36m/>[39m
+                  [0m [0m
+                  [0mLW[0m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mchecked[39m=[32m""[39m
+                    [33mtype[39m=[32m"checkbox"[39m
+                  [36m/>[39m
+                  [0m [0m
+                  [0mRW[0m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mchecked[39m=[32m""[39m
+                    [33mtype[39m=[32m"checkbox"[39m
+                  [36m/>[39m
+                  [0m [0m
+                  [0mD[0m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mchecked[39m=[32m""[39m
+                    [33mtype[39m=[32m"checkbox"[39m
+                  [36m/>[39m
+                  [0m [0m
+                  [0mG[0m
+                [36m</label>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_filterRow_f5fbb8"[39m
+          [36m>[39m
+            [36m<label>[39m
+              [36m<input[39m
+                [33mchecked[39m=[32m""[39m
+                [33mtype[39m=[32m"checkbox"[39m
+              [36m/>[39m
+              [0m [0m
+              [0mInclude unknown ownership[0m
+            [36m</label>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_metricFilterContainer_f5fbb8"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_metricFilterHeader_f5fbb8...
+   × mounted pickup ownership freshness > expires a mounted zero at the existing three-day boundary without fetching (viewport 390) 24ms
+     → Unable to find an element with the text: Last known 0% · 2026-10-19 (stale). This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_container_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_filters_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-controls[39m=[32m"player-table-content"[39m
+          [33maria-expanded[39m=[32m"true"[39m
+          [33mclass[39m=[32m"_filtersTitle_f5fbb8"[39m
+          [33mdata-interactive[39m=[32m"true"[39m
+          [33mrole[39m=[32m"button"[39m
+          [33mtabindex[39m=[32m"0"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33maria-label[39m=[32m"Best Players Available"[39m
+            [33mclass[39m=[32m"_titleContent_f5fbb8"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_titleWord_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_acronym_f5fbb8"[39m
+              [36m>[39m
+                [0mB[0m
+              [36m</span>[39m
+              [0mest[0m
+            [36m</span>[39m
+            [0m [0m
+            [36m<span[39m
+              [33mclass[39m=[32m"_titleWord_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_acronym_f5fbb8"[39m
+              [36m>[39m
+                [0mP[0m
+              [36m</span>[39m
+              [0mlayers[0m
+            [36m</span>[39m
+            [0m [0m
+            [36m<span[39m
+              [33mclass[39m=[32m"_titleWord_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_acronym_f5fbb8"[39m
+              [36m>[39m
+                [0mA[0m
+              [36m</span>[39m
+              [0mvailable[0m
+            [36m</span>[39m
+          [36m</h2>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_minimizeToggleIcon_f5fbb8"[39m
+          [36m>[39m
+            [0m▼[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_filtersBody_f5fbb8"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_filterContainerMobile_f5fbb8"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_filterRowMobileCombined_f5fbb8"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_compactField_f5fbb8"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_labelMobile_f5fbb8"[39m
+                  [33mfor[39m=[32m"pickup-ownership-threshold"[39m
+                [36m>[39m
+                  [0mOwn %: [0m
+                  [0m50[0m
+                  [0m%[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33mclass[39m=[32m"_sliderMobile_f5fbb8"[39m
+                  [33mid[39m=[32m"pickup-ownership-threshold"[39m
+                  [33mmax[39m=[32m"100"[39m
+                  [33mmin[39m=[32m"0"[39m
+                  [33mtype[39m=[32m"range"[39m
+                  [33mvalue[39m=[32m"50"[39m
+                [36m/>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_compactField_f5fbb8 _compactFieldInline_f5fbb8"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_labelMobile_f5fbb8"[39m
+                  [33mfor[39m=[32m"pickup-team-filter"[39m
+                [36m>[39m
+                  [0mTeam:[0m
+                [36m</label>[39m
+                [36m<select[39m
+                  [33mclass[39m=[32m"_selectMobile_f5fbb8"[39m
+                  [33mid[39m=[32m"pickup-team-filter"[39m
+                [36m>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"ALL"[39m
+                  [36m>[39m
+                    [0mALL[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"BOS"[39m
+                  [36m>[39m
+                    [0mBOS[0m
+                  [36m</option>[39m
+                [36m</select>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_compactField_f5fbb8 _positionsField_f5fbb8"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"_labelMobile_f5fbb8"[39m
+                [36m>[39m
+                  [0mPos:[0m
+                [36m</span>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"_positionCheckboxGroup_f5fbb8"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [0mC[0m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [0mLW[0m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [0mRW[0m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [0mD[0m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [0mG[0m
+                  [36m</label>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_filterRow_f5fbb8"[39m
+          [36m>[39m
+            [36m<label>[39m
+ ...
+   × mounted pickup ownership freshness > rechecks retained evidence after hidden clock suspension on visibilitychange 79ms
+     → expected <span class="_playerName_f5fbb8"></span> to be null
+   × mounted pickup ownership freshness > rechecks retained evidence after hidden clock suspension on focus 68ms
+     → expected <span class="_playerName_f5fbb8"></span> to be null
+   × mounted pickup ownership freshness > rechecks retained evidence after hidden clock suspension on pageshow 66ms
+     → expected <span class="_playerName_f5fbb8"></span> to be null
+   × mounted pickup ownership freshness > rechecks ownership during a filter interaction even when the expiry timeout has not run 65ms
+     → expected <span class="_playerName_f5fbb8"></span> to be null
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > mounted pickup ownership freshness > expires a mounted zero at the existing three-day boundary without fetching (viewport 1024)
+TestingLibraryElementError: Unable to find an element with the text: Last known 0% · 2026-10-19 (stale). This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_container_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_filters_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_filtersTitle_f5fbb8"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33maria-label[39m=[32m"Best Players Available"[39m
+            [33mclass[39m=[32m"_titleContent_f5fbb8"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_titleWord_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_acronym_f5fbb8"[39m
+              [36m>[39m
+                [0mB[0m
+              [36m</span>[39m
+              [0mest[0m
+            [36m</span>[39m
+            [0m [0m
+            [36m<span[39m
+              [33mclass[39m=[32m"_titleWord_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_acronym_f5fbb8"[39m
+              [36m>[39m
+                [0mP[0m
+              [36m</span>[39m
+              [0mlayers[0m
+            [36m</span>[39m
+            [0m [0m
+            [36m<span[39m
+              [33mclass[39m=[32m"_titleWord_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_acronym_f5fbb8"[39m
+              [36m>[39m
+                [0mA[0m
+              [36m</span>[39m
+              [0mvailable[0m
+            [36m</span>[39m
+          [36m</h2>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_filtersBody_f5fbb8"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_filterContainer_f5fbb8"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_filterRowGridTop_f5fbb8"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_filterRow_f5fbb8"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_label_f5fbb8"[39m
+                  [33mfor[39m=[32m"pickup-ownership-threshold"[39m
+                [36m>[39m
+                  [0mOwnership %: [0m
+                  [0m50[0m
+                  [0m%[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33mclass[39m=[32m"_slider_f5fbb8"[39m
+                  [33mid[39m=[32m"pickup-ownership-threshold"[39m
+                  [33mmax[39m=[32m"100"[39m
+                  [33mmin[39m=[32m"0"[39m
+                  [33mtype[39m=[32m"range"[39m
+                  [33mvalue[39m=[32m"50"[39m
+                [36m/>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_filterRow_f5fbb8 _filterRowTeam_f5fbb8"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_label_f5fbb8"[39m
+                  [33mfor[39m=[32m"pickup-team-filter"[39m
+                [36m>[39m
+                  [0mTeam:[0m
+                [36m</label>[39m
+                [36m<select[39m
+                  [33mclass[39m=[32m"_select_f5fbb8"[39m
+                  [33mid[39m=[32m"pickup-team-filter"[39m
+                [36m>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"ALL"[39m
+                  [36m>[39m
+                    [0mALL[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"BOS"[39m
+                  [36m>[39m
+                    [0mBOS[0m
+                  [36m</option>[39m
+                [36m</select>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_filterRow_f5fbb8 _filterRowPositions_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_label_f5fbb8"[39m
+              [36m>[39m
+                [0mPositions:[0m
+              [36m</span>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_positionCheckboxGroup_f5fbb8"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mchecked[39m=[32m""[39m
+                    [33mtype[39m=[32m"checkbox"[39m
+                  [36m/>[39m
+                  [0m [0m
+                  [0mC[0m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mchecked[39m=[32m""[39m
+                    [33mtype[39m=[32m"checkbox"[39m
+                  [36m/>[39m
+                  [0m [0m
+                  [0mLW[0m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mchecked[39m=[32m""[39m
+                    [33mtype[39m=[32m"checkbox"[39m
+                  [36m/>[39m
+                  [0m [0m
+                  [0mRW[0m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mchecked[39m=[32m""[39m
+                    [33mtype[39m=[32m"checkbox"[39m
+                  [36m/>[39m
+                  [0m [0m
+                  [0mD[0m
+                [36m</label>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                [36m>[39m
+                  [36m<input[39m
+                    [33mchecked[39m=[32m""[39m
+                    [33mtype[39m=[32m"checkbox"[39m
+                  [36m/>[39m
+                  [0m [0m
+                  [0mG[0m
+                [36m</label>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_filterRow_f5fbb8"[39m
+          [36m>[39m
+            [36m<label>[39m
+              [36m<input[39m
+                [33mchecked[39m=[32m""[39m
+                [33mtype[39m=[32m"checkbox"[39m
+              [36m/>[39m
+              [0m [0m
+              [0mInclude unknown ownership[0m
+            [36m</label>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_metricFilterContainer_f5fbb8"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_metricFilterHeader_f5fbb8...
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/PlayerPickupTable/PlayerPickupTable.test.ts:195:19
+    193|     expect(screen.queryByText(staleLabel)).toBeNull();
+    194|     await act(async () => { vi.advanceTimersByTime(1); });
+    195|     expect(screen.getByText(staleLabel)).toBeTruthy();
+       |                   ^
+    196|     const includeUnknown = screen.getByRole("checkbox", { name: "Inclu…
+    197|     fireEvent.click(includeUnknown);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > mounted pickup ownership freshness > expires a mounted zero at the existing three-day boundary without fetching (viewport 390)
+TestingLibraryElementError: Unable to find an element with the text: Last known 0% · 2026-10-19 (stale). This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_container_f5fbb8"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_filters_f5fbb8"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-controls[39m=[32m"player-table-content"[39m
+          [33maria-expanded[39m=[32m"true"[39m
+          [33mclass[39m=[32m"_filtersTitle_f5fbb8"[39m
+          [33mdata-interactive[39m=[32m"true"[39m
+          [33mrole[39m=[32m"button"[39m
+          [33mtabindex[39m=[32m"0"[39m
+        [36m>[39m
+          [36m<h2[39m
+            [33maria-label[39m=[32m"Best Players Available"[39m
+            [33mclass[39m=[32m"_titleContent_f5fbb8"[39m
+          [36m>[39m
+            [36m<span[39m
+              [33mclass[39m=[32m"_titleWord_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_acronym_f5fbb8"[39m
+              [36m>[39m
+                [0mB[0m
+              [36m</span>[39m
+              [0mest[0m
+            [36m</span>[39m
+            [0m [0m
+            [36m<span[39m
+              [33mclass[39m=[32m"_titleWord_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_acronym_f5fbb8"[39m
+              [36m>[39m
+                [0mP[0m
+              [36m</span>[39m
+              [0mlayers[0m
+            [36m</span>[39m
+            [0m [0m
+            [36m<span[39m
+              [33mclass[39m=[32m"_titleWord_f5fbb8"[39m
+            [36m>[39m
+              [36m<span[39m
+                [33mclass[39m=[32m"_acronym_f5fbb8"[39m
+              [36m>[39m
+                [0mA[0m
+              [36m</span>[39m
+              [0mvailable[0m
+            [36m</span>[39m
+          [36m</h2>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_minimizeToggleIcon_f5fbb8"[39m
+          [36m>[39m
+            [0m▼[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_filtersBody_f5fbb8"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_filterContainerMobile_f5fbb8"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_filterRowMobileCombined_f5fbb8"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_compactField_f5fbb8"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_labelMobile_f5fbb8"[39m
+                  [33mfor[39m=[32m"pickup-ownership-threshold"[39m
+                [36m>[39m
+                  [0mOwn %: [0m
+                  [0m50[0m
+                  [0m%[0m
+                [36m</label>[39m
+                [36m<input[39m
+                  [33mclass[39m=[32m"_sliderMobile_f5fbb8"[39m
+                  [33mid[39m=[32m"pickup-ownership-threshold"[39m
+                  [33mmax[39m=[32m"100"[39m
+                  [33mmin[39m=[32m"0"[39m
+                  [33mtype[39m=[32m"range"[39m
+                  [33mvalue[39m=[32m"50"[39m
+                [36m/>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_compactField_f5fbb8 _compactFieldInline_f5fbb8"[39m
+              [36m>[39m
+                [36m<label[39m
+                  [33mclass[39m=[32m"_labelMobile_f5fbb8"[39m
+                  [33mfor[39m=[32m"pickup-team-filter"[39m
+                [36m>[39m
+                  [0mTeam:[0m
+                [36m</label>[39m
+                [36m<select[39m
+                  [33mclass[39m=[32m"_selectMobile_f5fbb8"[39m
+                  [33mid[39m=[32m"pickup-team-filter"[39m
+                [36m>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"ALL"[39m
+                  [36m>[39m
+                    [0mALL[0m
+                  [36m</option>[39m
+                  [36m<option[39m
+                    [33mvalue[39m=[32m"BOS"[39m
+                  [36m>[39m
+                    [0mBOS[0m
+                  [36m</option>[39m
+                [36m</select>[39m
+              [36m</div>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_compactField_f5fbb8 _positionsField_f5fbb8"[39m
+              [36m>[39m
+                [36m<span[39m
+                  [33mclass[39m=[32m"_labelMobile_f5fbb8"[39m
+                [36m>[39m
+                  [0mPos:[0m
+                [36m</span>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"_positionCheckboxGroup_f5fbb8"[39m
+                [36m>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [0mC[0m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [0mLW[0m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [0mRW[0m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [0mD[0m
+                  [36m</label>[39m
+                  [36m<label[39m
+                    [33mclass[39m=[32m"_positionCheckbox_f5fbb8"[39m
+                  [36m>[39m
+                    [36m<input[39m
+                      [33mchecked[39m=[32m""[39m
+                      [33mtype[39m=[32m"checkbox"[39m
+                    [36m/>[39m
+                    [0mG[0m
+                  [36m</label>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_filterRow_f5fbb8"[39m
+          [36m>[39m
+            [36m<label>[39m
+ ...
+ ❯ Object.getElementError ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/PlayerPickupTable/PlayerPickupTable.test.ts:195:19
+    193|     expect(screen.queryByText(staleLabel)).toBeNull();
+    194|     await act(async () => { vi.advanceTimersByTime(1); });
+    195|     expect(screen.getByText(staleLabel)).toBeTruthy();
+       |                   ^
+    196|     const includeUnknown = screen.getByRole("checkbox", { name: "Inclu…
+    197|     fireEvent.click(includeUnknown);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > mounted pickup ownership freshness > rechecks retained evidence after hidden clock suspension on visibilitychange
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > mounted pickup ownership freshness > rechecks retained evidence after hidden clock suspension on focus
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > mounted pickup ownership freshness > rechecks retained evidence after hidden clock suspension on pageshow
+AssertionError: expected <span class="_playerName_f5fbb8"></span> to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+<span
+  class="_playerName_f5fbb8"
+>
+  F. Agent
+</span>
+
+ ❯ components/PlayerPickupTable/PlayerPickupTable.test.ts:215:44
+    213|     visibility.mockReturnValue("visible");
+    214|     fireEvent(resumeEvent === "visibilitychange" ? document : window, …
+    215|     expect(screen.queryByText("F. Agent")).toBeNull();
+       |                                            ^
+    216|     fireEvent.click(includeUnknown);
+    217|     expect(screen.getByText(staleLabel)).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  components/PlayerPickupTable/PlayerPickupTable.test.ts > mounted pickup ownership freshness > rechecks ownership during a filter interaction even when the expiry timeout has not run
+AssertionError: expected <span class="_playerName_f5fbb8"></span> to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+<span
+  class="_playerName_f5fbb8"
+>
+  F. Agent
+</span>
+
+ ❯ components/PlayerPickupTable/PlayerPickupTable.test.ts:227:44
+    225|     const includeUnknown = screen.getByRole("checkbox", { name: "Inclu…
+    226|     fireEvent.click(includeUnknown);
+    227|     expect(screen.queryByText("F. Agent")).toBeNull();
+       |                                            ^
+    228|     fireEvent.click(includeUnknown);
+    229|     expect(screen.getByText(staleLabel)).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  6 failed | 25 skipped (31)
+   Start at  10:05:56
+   Duration  896ms (transform 189ms, setup 10ms, collect 258ms, tests 390ms, environment 140ms, prepare 29ms)
+

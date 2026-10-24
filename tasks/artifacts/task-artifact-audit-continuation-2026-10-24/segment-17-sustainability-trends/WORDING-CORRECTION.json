@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-24T19:36:05.176291+00:00",
+  "taskID": "FORGE-RESULTS-COVERAGE",
+  "field": "acceptance_release_gate",
+  "before": "Reconcile later exact migration and eligible-run receipts first. Separate bounded operation approval, replay/coverage/readback and rollback evidence remain required. No mutation request may include the 21contaminated runs/projections/result scopes, retrospective provenance stamping, parallel history class, evaluation-cohort opening or model publication.",
+  "after": "Reconcile later exact migration and eligible-run receipts first. Separate bounded operation approval, replay/coverage/readback and rollback evidence remain required. No mutation request may include the 21 contaminated runs/projections/result scopes, retrospective provenance stamping, parallel history class, evaluation-cohort opening or model publication.",
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "f6a9d45949be216a258ff7dd32ef222704a0a1b2faef5dc3bab80ffe84b43e8f",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "55266ae5c67bdc8fe4b0bd477a52dc41df7932874daefca1891d1f803290c2e4",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "3c700ca1d47add2d5c350b51ae939800f949a8170919a7bafd24e1e855b65e11"
+  },
+  "canonical_after": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "4c397d24376c535505c76910f9d0383a16d2fc4cfd9dfc20a51fc0ffab46a47d",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "a4cbacc76d0e554ed833604d564cdf044f4236c3fb8d046b066dca6f03067c29",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "d2c65286db3ce90b0cf8826cbb5384054cb57e2114a78ed190d59ae0a5157755"
+  },
+  "preserved_prior_candidate_receipts": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/pre-wording-correction",
+  "no_scope_change": true
+}

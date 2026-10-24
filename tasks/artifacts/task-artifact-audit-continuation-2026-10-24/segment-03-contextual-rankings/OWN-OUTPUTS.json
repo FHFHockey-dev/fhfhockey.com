@@ -1,0 +1,150 @@
+{
+  "at": "2026-10-24T15:54:22.262762+00:00",
+  "files": [
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/BASELINE-LEDGER.json",
+      "size": 1066471,
+      "sha256": "996eb0ee519ab8ea142f815fd31e9042189800a46c8238e9f087c8c633ff94fc",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/BASELINE-LEDGER.md",
+      "size": 489032,
+      "sha256": "dec4ec33657385d83cb60e0ee06e5bb5715ab7b58b2377be7d98bb777dfb16b0",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+      "size": 452660,
+      "sha256": "cce603df004b4056eea3a65585e2f087545a2f1334e91e44938505573d13560d",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/CANDIDATE-LEDGER.json",
+      "size": 1078983,
+      "sha256": "9dfd1bb0bb019ad140d42f0c811c5e6544ffc54e46d970f8fc9e2189c92f4c71",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/CANDIDATE-LEDGER.md",
+      "size": 494348,
+      "sha256": "538e4bd8230eff1b9cfb0d8613f5471216175f8b5d4f8d8b25ae1f1978a9582a",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "size": 457976,
+      "sha256": "ac006c547ed467ff29951bc56e4921a25c5c3ae5922362bcf1dbbbdfd622d488",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/CANONICAL-CHECKPOINT.patch",
+      "size": 92006,
+      "sha256": "a2388f82c4cef3880e6b22c9ce508111f1d580b03e8d3b2bf520b96dbe2456ba",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/CHANGELOG.json",
+      "size": 15999,
+      "sha256": "4c852659e588c2f5a2696ae58e360a87d3561b731de798379910eadece7ab448",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/CONTINUATION.json",
+      "size": 16539,
+      "sha256": "1e49051e243e05cdea29aeae7479a34712585e1dc0b0a6ba608a50dd4c65a939",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/COVERAGE.json",
+      "size": 8146,
+      "sha256": "d1cdcb972af0be95a605d23d0d4c949a132994339b1f6a362227736e3c45caf3",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/FINAL-CHECKPOINT.json",
+      "size": 1101,
+      "sha256": "77fdb9c0bff654c14cbc46b610be41af26267b1253cb8ea727d696eb7b52f9b9",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/FINDINGS.json",
+      "size": 17687,
+      "sha256": "a83bb23e804c1449fd6df9767a95ca7c3efb55000e324d56cb90e6c34cbd9fa8",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/FOLDERS.json",
+      "size": 2945,
+      "sha256": "08340c2fc3922c112efc0f71faf42d9c50d774a1d25a21deb56caf2c6b9f0e36",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/LIBRARY-DELIVERY.json",
+      "size": 1110,
+      "sha256": "ca2a4778f96d1dd41a529978883e79f3d9ba2d7e793d4e911b320264b7f7ac7b",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/REPORT.md",
+      "size": 7926,
+      "sha256": "507f2a702174d786deeec8d36cf91cb2d168e0b47a5f7bdd5eaf9c54eae3dad4",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/START.json",
+      "size": 2052,
+      "sha256": "98a3e0c6bbc53c7e8f4e9ee97533d4e3d556347dadb0f4434077b9ed7b92fc6a",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/VALIDATION-candidate.json",
+      "size": 1034,
+      "sha256": "8c0efec3565deb0f3fd2e555f18ecdcc470ff3f9c6622a67f07a9c3ed0fb5f0d",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/VALIDATION-canonical.json",
+      "size": 1034,
+      "sha256": "3b481f0932bbb69caeed9b7d09fe63b0a3b3e2c3761289b593cbbedc3631c40b",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/reconcile.py",
+      "size": 11352,
+      "sha256": "32ac60fd6be96c5a3a4685bfddf92d1279b994c7b8056f570696bec98c195869",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-03-contextual-rankings/validate.py",
+      "size": 3951,
+      "sha256": "bce9033bfcbf57aec96fbc0a991a2b22e9a6b9014e2e045b92a818e38c08ec0c",
+      "type": "file",
+      "coverage": "Self-generated audit output; excluded from recursive semantic re-audit."
+    }
+  ],
+  "self_listed": [
+    "OWN-OUTPUTS.json",
+    "SHA256SUMS"
+  ],
+  "diary": "tasks/diaries/2026-10-24-codex-task-artifact-audit.md"
+}

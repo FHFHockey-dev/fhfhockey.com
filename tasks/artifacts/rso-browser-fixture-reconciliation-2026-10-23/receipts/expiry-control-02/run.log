@@ -1,0 +1,90 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [desktop] › e2e/acceptance/rso-p07-acceptance.spec.ts:222:5 › trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks
+[1A[2K  1) [desktop] › e2e/acceptance/rso-p07-acceptance.spec.ts:222:5 › trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveAttribute[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator:  getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)
+    Expected: [32m"Expected fantasy points: [7munavailable[27m"[39m
+    Received: [31m"Expected fantasy points: [7m5.0[27m"[39m
+    Timeout:  20000ms
+
+    Call log:
+    [2m  - Expect "toHaveAttribute" with timeout 20000ms[22m
+    [2m  - waiting for getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)[22m
+    [2m    43 × locator resolved to <span data-tier="high" class="SlotWeekGrid_points__3oPUA" aria-label="Expected fantasy points: 5.0" title="Expected fantasy points for this game, including participation probability.">…</span>[22m
+    [2m       - unexpected value "Expected fantasy points: 5.0"[22m
+
+
+      126 | async function expectPoints(target: ReturnType<Page["getByRole"]>, expected: string, ifStarts?: string) {
+      127 |   const exp = target.getByLabel(/^Expected fantasy points:/);
+    > 128 |   await expect(exp).toHaveAttribute("aria-label", `Expected fantasy points: ${expected === "—" ? "unavailable" : expected}`);
+          |                     ^
+      129 |   await expect(exp).toContainText(expected);
+      130 |   if (ifStarts !== undefined) {
+      131 |     const cond = target.getByLabel(/^Fantasy points if starts:/);
+        at expectPoints (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts:128:21)
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts:247:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../expiry-control-02/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-desktop/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../expiry-control-02/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-desktop/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../expiry-control-02/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-desktop/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../expiry-control-02/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-desktop/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/2] [mobile] › e2e/acceptance/rso-p07-acceptance.spec.ts:222:5 › trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks
+[1A[2K  2) [mobile] › e2e/acceptance/rso-p07-acceptance.spec.ts:222:5 › trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoHaveAttribute[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator:  getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)
+    Expected: [32m"Expected fantasy points: [7munavailable[27m"[39m
+    Received: [31m"Expected fantasy points: [7m5.0[27m"[39m
+    Timeout:  20000ms
+
+    Call log:
+    [2m  - Expect "toHaveAttribute" with timeout 20000ms[22m
+    [2m  - waiting for getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)[22m
+    [2m    43 × locator resolved to <span data-tier="high" class="SlotWeekGrid_points__3oPUA" aria-label="Expected fantasy points: 5.0" title="Expected fantasy points for this game, including participation probability.">…</span>[22m
+    [2m       - unexpected value "Expected fantasy points: 5.0"[22m
+
+
+      126 | async function expectPoints(target: ReturnType<Page["getByRole"]>, expected: string, ifStarts?: string) {
+      127 |   const exp = target.getByLabel(/^Expected fantasy points:/);
+    > 128 |   await expect(exp).toHaveAttribute("aria-label", `Expected fantasy points: ${expected === "—" ? "unavailable" : expected}`);
+          |                     ^
+      129 |   await expect(exp).toContainText(expected);
+      130 |   if (ifStarts !== undefined) {
+      131 |     const cond = target.getByLabel(/^Fantasy points if starts:/);
+        at expectPoints (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts:128:21)
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts:247:9
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../expiry-control-02/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-mobile/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../expiry-control-02/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-mobile/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../expiry-control-02/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-mobile/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../expiry-control-02/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-mobile/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  2 failed
+    [desktop] › e2e/acceptance/rso-p07-acceptance.spec.ts:222:5 › trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks 
+    [mobile] › e2e/acceptance/rso-p07-acceptance.spec.ts:222:5 › trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks 

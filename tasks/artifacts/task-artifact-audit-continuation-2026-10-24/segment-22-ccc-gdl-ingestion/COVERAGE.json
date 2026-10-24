@@ -1,0 +1,459 @@
+{
+  "at": "2026-10-24T20:27:15.446024+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/lines-ccc-ingestion/prd-lines-ccc-ingestion.md",
+      "sha256": "416a942dae8a8701ec64e1b186bf834dabfb6b15176a8cd64b5002f3cbf2d430",
+      "bytes": 18972,
+      "lines": 333,
+      "mtime_ns": 1785605126562419078,
+      "kind": "unique-task-document",
+      "inventory_sha256": "416a942dae8a8701ec64e1b186bf834dabfb6b15176a8cd64b5002f3cbf2d430",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          333
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/TASKS/lines-ccc-ingestion/tasks-prd-lines-ccc-ingestion.md",
+      "sha256": "9f8625fc709582f7958888f3800fe5078b55b339440c5c632cf2c16c5e200f51",
+      "bytes": 28946,
+      "lines": 225,
+      "mtime_ns": 1785605126562716230,
+      "kind": "unique-task-document",
+      "inventory_sha256": "9f8625fc709582f7958888f3800fe5078b55b339440c5c632cf2c16c5e200f51",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          225
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/GDL-INGESTION-RUNBOOK.md",
+      "sha256": "d94e7c571ccd117102404bf7ec9a5bff4ae2e1e46165e46e189955b099efc0d3",
+      "bytes": 9200,
+      "lines": 138,
+      "mtime_ns": 1785197963731687433,
+      "kind": "unique-task-document",
+      "inventory_sha256": "d94e7c571ccd117102404bf7ec9a5bff4ae2e1e46165e46e189955b099efc0d3",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          138
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/TWEET-PIPELINE-RELEASE.md",
+      "sha256": "1a7d90a9ce427ad4df93acf9b6f4520e12ba75e17078c6c7a6f11aa0f1c7360f",
+      "bytes": 17775,
+      "lines": 117,
+      "mtime_ns": 1789779580609049706,
+      "kind": "unique-task-document",
+      "inventory_sha256": "1a7d90a9ce427ad4df93acf9b6f4520e12ba75e17078c6c7a6f11aa0f1c7360f",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          117
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-hardening.md",
+      "sha256": "9091531a63216fd8e6d9cf45b5a894da1fb9db406f7331dde0f81dd4421dbb9e",
+      "bytes": 21626,
+      "lines": 95,
+      "mtime_ns": 1790860070462829608,
+      "kind": "unique-task-document",
+      "inventory_sha256": "9091531a63216fd8e6d9cf45b5a894da1fb9db406f7331dde0f81dd4421dbb9e",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          95
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-implementation.md",
+      "sha256": "b93b9c3677e3e81e134dffc014bd39c2c9f326c8d9fc1af3fe70e251c6fbd30f",
+      "bytes": 36550,
+      "lines": 149,
+      "mtime_ns": 1790890865901176311,
+      "kind": "unique-task-document",
+      "inventory_sha256": "b93b9c3677e3e81e134dffc014bd39c2c9f326c8d9fc1af3fe70e251c6fbd30f",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          149
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/game-line-snapshots-local-handoff.md",
+      "sha256": "e22fda98d7fd7f7b378ee23f63ef7f3420ff61bb427d52f62ec8b9f67c57e3ce",
+      "bytes": 14299,
+      "lines": 81,
+      "mtime_ns": 1790954989335000961,
+      "kind": "unique-task-document",
+      "inventory_sha256": "e22fda98d7fd7f7b378ee23f63ef7f3420ff61bb427d52f62ec8b9f67c57e3ce",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          81
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/goalie-confirmation-context-snapshot-2026-10-06.md",
+      "sha256": "a985bba1796fd360c952248ef3fddf37d808677969ebe40bdcf1cf580d37b58a",
+      "bytes": 18028,
+      "lines": 77,
+      "mtime_ns": 1791282076834973773,
+      "kind": "unique-task-document",
+      "inventory_sha256": "a985bba1796fd360c952248ef3fddf37d808677969ebe40bdcf1cf580d37b58a",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          77
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/prd/prd-gdl-suite-ingestion.md",
+      "sha256": "a336daf9730ab8863a3d502e047f4449d105cd4ffa7030cc1d0b7551db251284",
+      "bytes": 16245,
+      "lines": 114,
+      "mtime_ns": 1785605173392384511,
+      "kind": "unique-task-document",
+      "inventory_sha256": "a336daf9730ab8863a3d502e047f4449d105cd4ffa7030cc1d0b7551db251284",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          114
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+      "sha256": "e3b6adf794d175771bfa12bdc5b5f968a10281a192fcf246bba1532d129b15a6",
+      "bytes": 38937,
+      "lines": 244,
+      "mtime_ns": 1785605173392594792,
+      "kind": "unique-task-document",
+      "inventory_sha256": "e3b6adf794d175771bfa12bdc5b5f968a10281a192fcf246bba1532d129b15a6",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          244
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-hockey-update-classification-hardening.md",
+      "sha256": "8e7416c20b29d9203cfe7596a76fd88b9799c081ba41a66b8ca46e3d54fa4ed0",
+      "bytes": 18207,
+      "lines": 88,
+      "mtime_ns": 1790890430896128236,
+      "kind": "unique-task-document",
+      "inventory_sha256": "8e7416c20b29d9203cfe7596a76fd88b9799c081ba41a66b8ca46e3d54fa4ed0",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          88
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/artifacts/codex-2026-10-20/I1.md",
+      "sha256": "a8efd469ab98dbfb127c1f1679c52ba123a9ae17512abb97cf364f580254917b",
+      "bytes": 3549,
+      "lines": 17,
+      "mtime_ns": 1792512668028002422,
+      "kind": "directly-linked-task-or-reconciliation-receipt",
+      "inventory_sha256": "a8efd469ab98dbfb127c1f1679c52ba123a9ae17512abb97cf364f580254917b",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          17
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/README.md",
+      "sha256": "177da5b44e0558b609464ffff32cb96e044a72e999193ee694088e8bc9f317c9",
+      "bytes": 3790,
+      "lines": 26,
+      "mtime_ns": 1792273099125876200,
+      "kind": "directly-linked-task-or-reconciliation-receipt",
+      "inventory_sha256": "177da5b44e0558b609464ffff32cb96e044a72e999193ee694088e8bc9f317c9",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          26
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/comparison-content-continuation-v1-2026-10-19/FOCUSED-HUMAN-QUEUE.md",
+      "sha256": "49a7b14c595900d28952f44abea7c6f9d20062727ff81a664e843cc87c2c363a",
+      "bytes": 1710,
+      "lines": 11,
+      "mtime_ns": 1792454017469209395,
+      "kind": "directly-linked-task-or-reconciliation-receipt",
+      "inventory_sha256": "49a7b14c595900d28952f44abea7c6f9d20062727ff81a664e843cc87c2c363a",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          11
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-v4/REVIEW.md",
+      "sha256": "34549a83ee97ff2d4a49504aa987dd252883f9d5ea9539b6c53311928be8663d",
+      "bytes": 10066,
+      "lines": 63,
+      "mtime_ns": 1792123925805260625,
+      "kind": "directly-linked-task-or-reconciliation-receipt",
+      "inventory_sha256": "34549a83ee97ff2d4a49504aa987dd252883f9d5ea9539b6c53311928be8663d",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          63
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/review-sidecar-recovery-2026-10-19/CHECKPOINT.md",
+      "sha256": "5f410a7bf8515f4c8515bcab79e3fa4fbe519bb2ebad27869c5c2acfa88619be",
+      "bytes": 7432,
+      "lines": 45,
+      "mtime_ns": 1792428539440227203,
+      "kind": "directly-linked-task-or-reconciliation-receipt",
+      "inventory_sha256": "5f410a7bf8515f4c8515bcab79e3fa4fbe519bb2ebad27869c5c2acfa88619be",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          45
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    {
+      "path": "tasks/ifttt-integration-2026-10-16/rollout-approval-2026-10-17/ROLLOUT-APPROVAL.md",
+      "sha256": "f2949718515c7d053eac239cd9b47f1d0bc44fe31df92fd889f517bd44201e6d",
+      "bytes": 18102,
+      "lines": 192,
+      "mtime_ns": 1792273099125708368,
+      "kind": "directly-linked-task-or-reconciliation-receipt",
+      "inventory_sha256": "f2949718515c7d053eac239cd9b47f1d0bc44fe31df92fd889f517bd44201e6d",
+      "changed_since_inventory": false,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          192
+        ]
+      ],
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    }
+  ],
+  "structured_support": [
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-browser-source-evidence.json",
+      "sha256": "e2cf8133d58b477eb6ec17b0a203ddc3b5e7829bb8724d6920926c20105a0590",
+      "bytes": 9768,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "observedOn": "str",
+        "method": "str",
+        "originals": "array:2",
+        "vercel": "object:8",
+        "reviewerSetup": "object:2",
+        "limits": "array:5",
+        "correctionChain": "object:9",
+        "additionalOriginals": "array:7",
+        "editedOriginal": "object:8"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-deployment.json",
+      "sha256": "8a4b26896bc287cbf14a93ea0b2b5f8820b9ff737653addc80faca75e38e295b",
+      "bytes": 561,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "retrievedAt": "str",
+        "method": "str",
+        "deploymentId": "str",
+        "commit": "str",
+        "branch": "str",
+        "createdAt": "str",
+        "readyAt": "str",
+        "target": "str",
+        "flags": "str",
+        "model": "str",
+        "scheduledCallerParameters": "str",
+        "originalSourceEnrichmentCache": "str"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-games.json",
+      "sha256": "beaf7e7e5db61689faff224bc317c3711e3ed7f002be3dd765b11fec09253a0e",
+      "bytes": 326,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "retrievedAt": "str",
+        "method": "str",
+        "games": "array:1"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-holdout-context.json",
+      "sha256": "f31e5f733784f8e5e19c62eacc3cb2cf4aae0fea24b57b19e7383834ab143221",
+      "bytes": 82270,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "retrievedAt": "str",
+        "method": "str",
+        "snapshots": "array:24"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-labels.json",
+      "sha256": "150880b7f63bfa1cbd459bb776d4763197392d407a7b2837d11de3c9749b87dd",
+      "bytes": 18560,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "version": "str",
+        "reviewer": "str",
+        "freezeOrder": "str",
+        "publicationTime": "str",
+        "canonicalAccuracyDenominator": "int",
+        "records": "array:35",
+        "labelReviewLimitation": "str"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-lineage.json",
+      "sha256": "602896f9666732597190426e1fd7d18e21b7050c9868e4609b3bf1ab86208f15",
+      "bytes": 1457,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "retrievedAt": "str",
+        "method": "str",
+        "requests": "array:3"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-seeds.json",
+      "sha256": "cafc2d85a65f6aaf3c0674ecb11a11fe7408ba1db70564339595b730d1bbb6c8",
+      "bytes": 176569,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "retrievedAt": "str",
+        "method": "str",
+        "events": "array:11",
+        "snapshots": "array:11",
+        "localDiagnosticReplay": "array:11",
+        "holdoutCandidates": "array:24",
+        "holdoutStatus": "str",
+        "persistedEvidence": "object:2"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    },
+    {
+      "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-closure-receipts.json",
+      "sha256": "6d928c12262d4e63b02098248741f96cfde252945a5376c6b05968961c0e2a43",
+      "bytes": 8497,
+      "coverage": "bounded-structured-inspection",
+      "all_json_parsed": true,
+      "top_level_shapes": {
+        "observedOn": "str",
+        "projectId": "str",
+        "method": "str",
+        "caller": "object:2",
+        "membership": "object:2",
+        "limits": "array:4"
+      },
+      "review_scope": "Complete structural parse/schema/count/hash/cross-link analysis; selected semantic support from fully read task/audit/implementation text. Raw captured posts, roster contexts and browser content not all-row semantically/visually reviewed. Not current hosted proof.",
+      "disposition": "Supporting dated evidence mapped to classification contract; no separate task generated from each receipt. Original artifact retained."
+    }
+  ],
+  "full_new_files": 17,
+  "full_new_bytes": 283434,
+  "bounded_structured_files": 8,
+  "bounded_structured_bytes": 298008,
+  "reused_prior_full_reviews": [],
+  "scope": "Coherent CCC/GDL current task/contract, classification audit/local closure, frozen-entry producer, paused goalie diagnosis and directly necessary later IFTTT scope receipts.",
+  "whole_tree_content_complete": false
+}

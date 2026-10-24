@@ -5,8 +5,8 @@ import { toFourWeekMetricBands } from "./fourWeekMetricBands";
 
 export const OPPONENT_RATING_VERSION = "xg-observed-percentile-v1";
 export const OPPORTUNITY_VERSION = "remaining-utc-on-0.25-v1";
-export const RATING_INFO = "ATK / DEF: percentile (0–100) of this week's opponents — attack by xGF/GP, defense by xGA/GP inverted. Higher = stronger opponents. Descriptive, not a forecast.";
-export const OPPORTUNITY_INFO = "4WK Value = remaining games + 0.25 × off-night games, selected Mon–Sun week plus the next three. Sparkline: weekly value on a shared scale; colour = skater matchup (green easier · cyan average · orange harder).";
+export const RATING_INFO = "Opponent strength: percentile (0–100) of the selected opponents — Attack by xGF/GP, Defense by xGA/GP inverted. Higher = stronger opponents. Descriptive, not a forecast.";
+export const OPPORTUNITY_INFO = "4-Week Opportunity = remaining team games + 0.25 × off-night games, selected Mon–Sun week plus the next three. Line height = weekly opportunity on a shared scale, higher = more opportunity. Colour = skater matchup (green easier · yellow average · pink-red harder). Team schedule opportunity, not guaranteed roster starts.";
 export type SkaterMatchup = "easier" | "average" | "harder" | "unknown" | "no_games";
 export const MATCHUP_LABELS: Record<SkaterMatchup, string> = { easier: "Easy", average: "Avg", harder: "Hard", unknown: "Unknown", no_games: "No games" };
 

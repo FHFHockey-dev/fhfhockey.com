@@ -1,0 +1,15 @@
+{
+  "id": "CODEX-LATEST-SOCIAL-3140-20261024",
+  "at": "2026-10-24T22:03:08.165892+00:00",
+  "owner": "/root/review_social_access under release coordinator",
+  "resource": "127.0.0.1:3140; isolated /tmp/fhfh-latest-social-access-zbjtop5e Next cache/generated files only",
+  "status": "Completed and released; exact owned processes stopped, port3140 free and heavy lock released per independent execution",
+  "boundaries": "No canonical app/spec/cache write; synthetic sessions and fully intercepted/denied service requests; no live account, role or provider action; stop only exact owned QA process",
+  "helper": "web/e2e/fixtures/socialEditorSession.ts in isolated snapshot only, verified absent canonically",
+  "spec": "web/e2e/social-share.spec.ts in isolated snapshot only; canonical Claude spec read-only",
+  "source_cut": "tasks/artifacts/production-release-coordination-2026-10-24/latest-social-access/CANDIDATE.json",
+  "heavy_lock": "Shared atomic lock, no overlap with root unit/static group",
+  "initial_status": "Reserved for bounded latest-SS1/auth fixture QA; observed no listener, mandatory recheck before bind",
+  "completed_at": "2026-10-24T22:23:01.505108+00:00",
+  "final_execution": "independent-verification/css-r1-run2/EXECUTION.json"
+}

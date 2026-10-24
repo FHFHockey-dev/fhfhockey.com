@@ -1,0 +1,37 @@
+diff --git a/web/pages/wigoCharts.tsx b/web/pages/wigoCharts.tsx
+index 83bcd691a..12e5290b0 100644
+--- a/web/pages/wigoCharts.tsx
++++ b/web/pages/wigoCharts.tsx
+@@ -92,7 +92,9 @@ const WigoCharts: React.FC = () => {
+       description={
+         teamAbbreviation
+           ? `Open ${teamAbbreviation} team context or a league-wide decision view. Back returns to this player.`
+-          : "Select a player to add their team HQ and lines; these league-wide views open now."
++          : selectedPlayer
++            ? "Team HQ and lines appear once this player's team is known; these league-wide views open now."
++            : "Select a player to add their team HQ and lines; these league-wide views open now."
+       }
+       links={getWigoSurfaceLinks(teamAbbreviation)}
+     />
+diff --git a/web/__tests__/pages/wigoCharts.test.tsx b/web/__tests__/pages/wigoCharts.test.tsx
+index 7b8e1e2b7..5fb45dbdb 100644
+--- a/web/__tests__/pages/wigoCharts.test.tsx
++++ b/web/__tests__/pages/wigoCharts.test.tsx
+@@ -74,6 +74,7 @@ describe("WiGO workflow links", () => {
+     render(<WigoCharts />);
+ 
+     expect(screen.getByRole("heading", { name: "Keep exploring" })).toBeTruthy();
++    expect(screen.getByText(/^Select a player to add their team HQ and lines/)).toBeTruthy();
+     expect(workflowHrefs()).toEqual([
+       "/trends",
+       "/game-grid/7-Day-Forecast",
+@@ -89,6 +90,9 @@ describe("WiGO workflow links", () => {
+ 
+     expect(workflowHrefs()).not.toContain("/stats/team/null");
+     expect(screen.queryByRole("link", { name: /team lines/i })).toBeNull();
++    expect(screen.getByRole("heading", { name: "Take the Connor McDavid read further" })).toBeTruthy();
++    expect(screen.getByText(/appear once this player's team is known/)).toBeTruthy();
++    expect(screen.queryByText(/Select a player/)).toBeNull();
+   });
+ 
+   it("carries the resolved team into Team HQ and Team Lines without nesting anchors", () => {

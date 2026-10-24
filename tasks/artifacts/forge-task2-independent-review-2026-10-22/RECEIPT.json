@@ -1,0 +1,127 @@
+{
+  "outcome": "changes_requested",
+  "findingCount": 1,
+  "finding": {
+    "priority": "P2",
+    "path": "web/lib/projections/calculators/skater-adjustments.ts",
+    "line": 503,
+    "title": "Unknown current-season counts normalized to zero while positive exposure retained",
+    "introducedByTask2Delta": false,
+    "retainedDependency": true,
+    "reproducedMetrics": [
+      "hits",
+      "blocks"
+    ],
+    "repairNotPerformed": true
+  },
+  "checkedAt": "2026-10-22T16:24:35.032228+00:00",
+  "base": "84cb1229cd1c1cdd037c43e660d2a181304ada51",
+  "reviewedSourceHashes": [
+    {
+      "path": "web/lib/projections/queries/skater-queries.ts",
+      "sha256": "4589f8d79dd6c30be4c2653fe82af1166535b97450eaaa5fd049459c54441893"
+    },
+    {
+      "path": "web/lib/projections/queries/skater-queries.test.ts",
+      "sha256": "cdc0a351a4c71db1d30879c25763023fc4da36f148ab0313e317af1346ac9c15"
+    },
+    {
+      "path": "web/lib/projections/stages/skater-stage.ts",
+      "sha256": "e0f760d1bccf50ef02ba33cbb934ff3317e8abedd54df3801e721b890098d966"
+    },
+    {
+      "path": "web/lib/projections/nativeGoalAccounting.test.ts",
+      "sha256": "ab32053a3ee2a4fc030c55c89fc0ba1b9425d9b9da0d2aa9ac0aa1188d26e1d8"
+    },
+    {
+      "path": "web/scripts/fixtures/native-player-offline-synthetic.json",
+      "sha256": "12953ed69ad7ab160c91f712bee24b3f891ce62092ce12ac7d0962a489d538fe"
+    },
+    {
+      "path": "web/scripts/qualify-native-players-offline.ts",
+      "sha256": "d345fcc4913c8e9ecf87b00f6500aa811a9f9f64e0f6e7988dfb8da61bcb7275"
+    },
+    {
+      "path": "web/scripts/qualify-native-players-offline.test.ts",
+      "sha256": "cf99e337551c94231b7d0df81a045dcf1a0c497f2a093c16d80e8be526d1dfbc"
+    },
+    {
+      "path": "web/scripts/qualify-native-players-offline.md",
+      "sha256": "13d962de7c6975bfc773a302f0992e32c2d4302cceb73578c9fa9628eb25f8d9"
+    },
+    {
+      "path": "web/lib/projections/calculators/skater-adjustments.ts",
+      "sha256": "39b0c8ed9745902fd387b3db01da72c3ac411adeb185bab82259053116dc7636"
+    },
+    {
+      "path": "web/lib/projections/constants/projection-weights.ts",
+      "sha256": "1200d9379191de7e569bed14f680777e307829df2d92520b2ed67609ea14792e"
+    },
+    {
+      "path": "web/lib/projections/types/run-forge-projections.types.ts",
+      "sha256": "2f7ddc868b55e8cb042abf2c0ef3c5904777cb8817b3d985440e1fe40f07e1a6"
+    },
+    {
+      "path": "web/lib/projections/runProjectionV2.test.ts",
+      "sha256": "82e6a983efbd16bbc35362fa1d280fd1d72fa09fe4f02b4016c8ede5fce0e8c0"
+    },
+    {
+      "path": "supabase/migrations/20261021182129_forge_latest_rolling_rows.sql",
+      "sha256": "7f1ef23da246a8f535e4e00a5a3aef33e70f7772f7d502d1baef5e233da70fce"
+    }
+  ],
+  "sourceArchiveSha256": "398cc9347c6e6dc4f948acb7da1c5eaa6af89868f2ffdefb167d55838632778b",
+  "patchSha256": "3479aaa86cdbcb1867381e2e70cba431d77da5e4e7027fdb53bcc3d56ef3cafd",
+  "tests": {
+    "node": "v22.11.0",
+    "npm": "10.9.0",
+    "focusedInitialPassed": 310,
+    "focusedInitialEnvironmentFailures": 1,
+    "receiptCaseAfterPinnedMetadataAdapter": 1,
+    "focusedDistinctVerified": 311,
+    "independentPassed": 9,
+    "independentFailed": 2,
+    "relatedOwnerCasesNotRerun": 118,
+    "fullTypecheckRerun": false,
+    "lintRerun": false
+  },
+  "isolation": {
+    "nonGitSnapshot": true,
+    "noGitDirOverride": true,
+    "sourcePinsUnchangedAtEnd": true,
+    "packetUnchangedAtEnd": true,
+    "applicationEdits": false,
+    "networkDispatched": false,
+    "sqlExecuted": false,
+    "commitsOrDeployment": false
+  },
+  "releaseQualified": false,
+  "releaseBlockers": [
+    "P2 partial-season unknown-count handling",
+    "No matched current-query physical/all-strength input cohort",
+    "Variant c absent",
+    "Real 20-player by 5-strength writer comparison absent",
+    "Current-candidate predictive quantification and production Q5/Q6 not performed"
+  ],
+  "ownerGateEvidenceHashes": {
+    "CURRENT-REPLAY.json": "6687db45c68f2837b89ed50da26c9cea67fbf52acebbeba0e05c1f978435b668",
+    "COHORT-AVAILABILITY.json": "61bdeddb3a08dde4b0365e84d696e55c137414ac49b928f97bd13ee015371fe2",
+    "HISTORICAL-62-GAME-RESCORE.md": "bcabd13c1f5750f409192ad481d2276029736eb48f5efe7291e05f073ff41846",
+    "TYPECHECK.log": "c475b972e30da87fa3ee8709bd1670f118ee1e46843fa4c2b4002d6252d8a919",
+    "LINT.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "evidenceHashes": {
+    "network-fence.cjs": "4a32e097fc4f57e49166f423c1f98fa7cca502cff364ae7c91ecf110435af547",
+    "RECEIPT-CASE-COMMAND.json": "3e5392801eadf1faa9cb5c84dbe67dbee07993bc73dca062b6a45b2396cae159",
+    "FOCUSED-TESTS.log": "08c453ed2e649a29b203f6799083179374335c34f5ae1f7409ea603c23b393f2",
+    "FOCUSED-COMMAND.json": "a585d77848aff561d4217d187296e3c77afb7665284e449a9675f8f15444c641",
+    "ADVERSARIAL-COMMAND.json": "95a077978713e3db0c4b378050d7fca9ec8d61879330299a9db4c2f7ff098f95",
+    "git-metadata.cjs": "0f3953f05e9dfb23056f1c619d5dba38ab00dc43347cdda843d4c9d2a3b1126c",
+    "SNAPSHOT.json": "a657fc16e0e7cfbf7d6644846f70d4380dba20f6e1606a9f903c3145e087bacd",
+    "RECEIPT-CASE.log": "4fdae81496f7a252f41ed7816a6c8f28d7ea13aefe4f95a1c6f0efc303f6098b",
+    "adversarial.test.ts": "2783b8afa538b285b257af0ab5bcde9284cc4b5315c5e5100e1fc815034a3e8f",
+    "REVIEW.md": "3b172f07ad35c5bfeb4c055c3306ee450b5a4d04b78141dd69f6e3abe9dc0d62",
+    "PATCH-CHECK.json": "6d620d1c454a90e41ee536109b1fee6ba5177ac2ee9d3aeb3a9f1e108bf3f044",
+    "ADVERSARIAL.log": "7d153043813c26c0b81b5d4f0d3c683f81de9d915332a6fb761259f20f19d05e"
+  }
+}

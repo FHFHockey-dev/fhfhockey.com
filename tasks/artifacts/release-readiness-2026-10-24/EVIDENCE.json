@@ -1,0 +1,44 @@
+{
+  "at": "2026-10-24T14:36:55.597248+00:00",
+  "status": "Bounded readiness complete; frozen candidate held on one test-fixture correction and broader release gates",
+  "candidateManifestSha256": "a266fa1296cf961b60dbeb620e15479b827a035c048bcefc0e4d28444b91ce3a",
+  "archiveSha256": "a08f698fa74f07da67fdc188224fa7a3d4c5f5c245eb109b9c6a1b63fc4ab664",
+  "contentTreeSha256": "d54286fd7f8ad2a32abb2fa928f21a01b3c8d8ce300d4caa526cfb2fb0e53f95",
+  "files": 3637,
+  "selectedPins": 109,
+  "tests": {
+    "passed": 160,
+    "failed": 1,
+    "skipped": 1,
+    "actualMatchedFiles": 4,
+    "absentNamedFilter": "lib/rosterScheduleOptimizer/currentPlanningRead.test.ts"
+  },
+  "typesExit": 0,
+  "lintExit": 0,
+  "lintWarnings": 8,
+  "artifactDiagnostics": {
+    "passed": 2,
+    "failed": 0
+  },
+  "proposal": {
+    "at": "2026-10-24T14:34:34.900998+00:00",
+    "status": "Test-only correction proposal; NOT applied to canonical or frozen candidate; not accepted as a passing rerun",
+    "path": "web/__tests__/pages/api/v1/start-chart.test.ts",
+    "beforeSha256": "9f70e810de91003b78d4b64d3e8a06c6740493d1902a99331f94e41405664504",
+    "proposedSha256": "eebd86016d6cc3809ab15b2e936b884464d41666519d689ce26112a967d203c7",
+    "patchSha256": "a8a2f2bf20949e303b550383047d38daa13eae2d6d4d169511ce6a5a694aa0cf",
+    "cause": "Cross-consumer positive fixture does not supply fictional RSO target review/bindings after P07 review-before-use policy; production denial is intentional.",
+    "controls": "Two independent artifact tests passed: production empty-catalog denial; exact fictional positive GOALS/SOG selection and revocation.",
+    "preserved": "Original Start Chart API/rank/numeric/assignment assertions and mutation check, production empty catalog, no model or public contract change",
+    "leaseNeeded": "Parent-reviewed test-only correction lease for this one path before canonical write; then rerun only affected crowded-day case and relevant negative controls on a versioned candidate."
+  },
+  "remainingGates": [
+    "parent-reviewed test-only correction lease; failed case rerun on versioned candidate",
+    "whole-release accepted/inherited scope and privacy/resource/migration-source reconciliation",
+    "exact commit browser/parent acceptance and release project/deployment checks"
+  ],
+  "canonicalApplicationWrites": 0,
+  "gitMutations": 0,
+  "productionRequests": 0,
+  "activeOperations": []
+}

@@ -1,0 +1,917 @@
+{
+  "kind": "HARNESS VALIDATION on a non-candidate commit - NOT ACCEPTANCE",
+  "candidate": {
+    "id": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+    "objectType": "commit",
+    "tree": "3ee7ed51d3ad2c5c99e6cabd6810e5fdcc354114",
+    "exportedWith": "git archive <id> web"
+  },
+  "goaliePolicy": "badge-only",
+  "startedAt": "2026-10-23T13:22:46Z",
+  "finishedAt": "2026-10-23T13:46:36.248Z",
+  "environment": {
+    "server": "next dev on 127.0.0.1:3117 from the export (PLAYWRIGHT_ISOLATED_NEXT=1, env -i, backend URLs -> http://127.0.0.1:9)",
+    "browser": "Playwright Chromium (bundled build), fictional fixtures, non-local requests aborted, unmocked /api/** -> 503",
+    "nodeModules": "symlink to /Users/tim/Code/fhfhockey.com/web/node_modules",
+    "packageLock": {
+      "candidate": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+      "installed": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+      "match": true
+    },
+    "productionRequests": 0
+  },
+  "keyFileSha256": {
+    "web/components/RosterScheduleOptimizer/AcquisitionPeriodTimes.tsx": "ba4a9703f5f94f56e25197f5c97699c0500d2b5534a34bcd113ef0c627f4193b",
+    "web/components/RosterScheduleOptimizer/BenchDays.tsx": "b783b16a228852b2d90ea4e631688c217df3d4034231458246b4f6fbf0c85065",
+    "web/components/RosterScheduleOptimizer/BenchDecisions.tsx": "4818120e212f13b0b729515e67b88dab21403d175061fbd703e4bd3634b72000",
+    "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx": "c3ff6cb96ea340c40ccd0719109fcdb0e09c1eb8e54518cd3d8eb0a6785611a7",
+    "web/components/RosterScheduleOptimizer/CandidateCard.tsx": "39cfa74dcbedd1897cc0f87b586cd8a53b44796b6f8d1ad697533e21658f8dda",
+    "web/components/RosterScheduleOptimizer/CategoryGains.tsx": "7e388abfebde4d4859ba7d0b17a20ea924e16c916945b66962325a2dca3c68c2",
+    "web/components/RosterScheduleOptimizer/CompactSchedule.tsx": "e203017397116abb2a0cf1b3e98b41cff44f01cd6fad916c1ed96e6b5e8f1ec9",
+    "web/components/RosterScheduleOptimizer/ForecastEvidence.tsx": "b0a1518642de5c7fb3bf61e5ce9e514558b23c5fa54ce42cb5fd062210fc03d8",
+    "web/components/RosterScheduleOptimizer/ForecastPoints.tsx": "38ba29a3e5c2c85f7229568b3395a500c409ab0257403a1fb4930d7f3c98b9bf",
+    "web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx": "793e2d277551cba192d2f6595d4e91393d48c775794502e8e5e5e3e4c79f70b3",
+    "web/components/RosterScheduleOptimizer/InfoTooltip.tsx": "edbf37198e95677235f360e4f6e99e17bd820b0532c7964c8213ff36d681cce7",
+    "web/components/RosterScheduleOptimizer/OptimizeLineup.tsx": "2fef26b8a71d2c947ee06c68057765b617eca5bb85a21229184960fb6b01266a",
+    "web/components/RosterScheduleOptimizer/RosterContribution.tsx": "3bd18cbb9a56b711fcfa2bdb0456fe9ba5c9647388efd082898bc8608ec04b15",
+    "web/components/RosterScheduleOptimizer/RosterPlayerRow.tsx": "1f07bbf9bae54b646fba5ffdf95415f4ad0bfeaba9cb2c633159749d6e4995f2",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "e699974c923445dae29e54304413cc3213ff6219f98ad41fc039bfa7478bffc5",
+    "web/components/RosterScheduleOptimizer/SlotWeekGrid.tsx": "8b885637080bc0f5edc26d4f38405bf28eb866557d569c44ca334194c786faaa",
+    "web/components/RosterScheduleOptimizer/TeamScheduleContext.tsx": "fd294f0302475e2de1c91198a9cd5ca3837306f50e060751d7f91d953e358652",
+    "web/lib/player-forecasts/rsoUsePolicy.ts": "712730f58ba95e2890daab74b31c68e7a3f8840b9b2c1e66fe4ceae3a921455c",
+    "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "3e65a79ee7f293e9df9620688019191eae1187bb2fe387c2282e5773beaea1f7",
+    "web/lib/player-forecasts/resolvedPlanningForecast.ts": "2070019c4ea4d9c8cda19b11da5050b2da845825732eacde30b02da1e46ef745",
+    "web/lib/rosterScheduleOptimizer/planning.ts": "d1300a64ac98d97765b9daff8017f3fe8341aa8757984ff176a177fc3a2674f2",
+    "web/lib/rosterScheduleData/bridgeForecastWire.ts": "d5e4aa7b51cdc6d5362ebfe5b70f163701764b80d9db14feae35beef53959b27",
+    "web/pages/api/v1/roster-schedule-optimizer/data.ts": "a8549dccf6bfda665576ae2d41df6e39db9ca09e2be11098a467e85a5b63e049",
+    "web/components/StatsPage/PlayerSearchBar.tsx": "078fc18af0c5a50c5b1aa859f7bc99b13227c46025ed0138fd321bfe2f0a2826",
+    "web/e2e/roster-schedule-optimizer.spec.ts": "48d68eeedcced893df2a90c123eb3b510b4cec74b457ab1f7125b688dc9031e4",
+    "web/e2e/draft-pro-fixtures.ts": "cd4a65ad3c9f6638ca42d61eb9e3c80041d12706620195fa708b98082e9a7e9a",
+    "web/package-lock.json": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378"
+  },
+  "harnessSha256": {
+    "acceptance.config.ts": "c8cdba8d91ba044e12a8e43cadfa74e05f12ca14af7495a6c4f76af684d8232f",
+    "p04-search-acceptance.spec.ts": "14709b440f20a2b55bf28ab6b279bae2c69de5ed99767e32f83ca1d26102a01c",
+    "rso-p07-acceptance.spec.ts": "589476950b5617e473e080c5b4e499d79a563bd6fb3604e5e3f0d32d1a61c8a1",
+    "run-acceptance.sh": "19eb2fdac6109b27c6446ef6fbdbf42cf8b7e1c72f52f580bbccf6433b49d9ec",
+    "write-receipt.mjs": "88417f0b6770a3fc304be6713c0bf3fb3c68ee3dbaf64d1653ae06c499530fc6"
+  },
+  "specs": {
+    "acceptance": {
+      "exitCode": 1,
+      "summary": {
+        "failed": 4,
+        "passed": 6,
+        "skipped": 2
+      },
+      "errors": [],
+      "missing": false,
+      "tests": [
+        {
+          "file": "p04-search-acceptance.spec.ts",
+          "line": 24,
+          "title": "P04: search ignores stale responses, supports keyboard and Escape, never prefetches on hover/touch, and clicks navigate client-side",
+          "project": "desktop",
+          "viewport": "1440x900",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:22:55.253Z",
+          "durationMs": 2490,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: router.prefetch calls after hover/touch\n\nexpect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 4"
+        },
+        {
+          "file": "p04-search-acceptance.spec.ts",
+          "line": 24,
+          "title": "P04: search ignores stale responses, supports keyboard and Escape, never prefetches on hover/touch, and clicks navigate client-side",
+          "project": "mobile",
+          "viewport": "375x812 (Pixel 5, touch)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:23:26.689Z",
+          "durationMs": 2550,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: router.prefetch calls after hover/touch\n\nexpect(received).toEqual(expected) // deep equality\n\n- Expected  - 1\n+ Received  + 5"
+        },
+        {
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 140,
+          "title": "P07 + task 10: complete authorized rows show expected and if-starts points; partial rows show — not a partial sum",
+          "project": "desktop",
+          "viewport": "1440x900",
+          "result": "passed",
+          "startedAt": "2026-10-23T13:22:59.241Z",
+          "durationMs": 1620,
+          "retries": 0,
+          "skipReason": null,
+          "error": null
+        },
+        {
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 159,
+          "title": "P07: a serialized forecast that claims its own allowed uses is not summed",
+          "project": "desktop",
+          "viewport": "1440x900",
+          "result": "passed",
+          "startedAt": "2026-10-23T13:23:00.968Z",
+          "durationMs": 1478,
+          "retries": 0,
+          "skipReason": null,
+          "error": null
+        },
+        {
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 173,
+          "title": "current-read nonce mismatch withholds projected points; the echoed nonce restores them",
+          "project": "desktop",
+          "viewport": "1440x900",
+          "result": "passed",
+          "startedAt": "2026-10-23T13:23:02.450Z",
+          "durationMs": 2357,
+          "retries": 0,
+          "skipReason": null,
+          "error": null
+        },
+        {
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 191,
+          "title": "Yahoo goalie marks from a provider snapshot are badges only: start chance and points unchanged",
+          "project": "desktop",
+          "viewport": "1440x900",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:23:04.810Z",
+          "durationMs": 21224,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toHaveText(expected) failed\n\nLocator: getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Starting Goalie, G, 2026-10-05' }).getByLabel(/^Starting \\(Yahoo, read .+\\); FORGE's start chance unchanged$/)\nExpected: \"✓\"\nTimeout: 20000ms\nError: element(s) not found"
+        },
+        {
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 208,
+          "title": "Yahoo goalie marks from the trusted server read set start chance (server-confirmed policy only)",
+          "project": "desktop",
+          "viewport": "1440x900",
+          "result": "skipped",
+          "startedAt": "2026-10-23T13:23:26.395Z",
+          "durationMs": 0,
+          "retries": 0,
+          "skipReason": "Release owner policy is badge-only: no trusted server mark path to accept.",
+          "error": null
+        },
+        {
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 140,
+          "title": "P07 + task 10: complete authorized rows show expected and if-starts points; partial rows show — not a partial sum",
+          "project": "mobile",
+          "viewport": "375x812 (Pixel 5, touch)",
+          "result": "passed",
+          "startedAt": "2026-10-23T13:23:29.779Z",
+          "durationMs": 1628,
+          "retries": 0,
+          "skipReason": null,
+          "error": null
+        },
+        {
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 159,
+          "title": "P07: a serialized forecast that claims its own allowed uses is not summed",
+          "project": "mobile",
+          "viewport": "375x812 (Pixel 5, touch)",
+          "result": "passed",
+          "startedAt": "2026-10-23T13:23:31.515Z",
+          "durationMs": 1470,
+          "retries": 0,
+          "skipReason": null,
+          "error": null
+        },
+        {
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 173,
+          "title": "current-read nonce mismatch withholds projected points; the echoed nonce restores them",
+          "project": "mobile",
+          "viewport": "375x812 (Pixel 5, touch)",
+          "result": "passed",
+          "startedAt": "2026-10-23T13:23:32.989Z",
+          "durationMs": 2613,
+          "retries": 0,
+          "skipReason": null,
+          "error": null
+        },
+        {
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 191,
+          "title": "Yahoo goalie marks from a provider snapshot are badges only: start chance and points unchanged",
+          "project": "mobile",
+          "viewport": "375x812 (Pixel 5, touch)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:23:35.605Z",
+          "durationMs": 21349,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toHaveText(expected) failed\n\nLocator: getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Starting Goalie, G, 2026-10-05' }).getByLabel(/^Starting \\(Yahoo, read .+\\); FORGE's start chance unchanged$/)\nExpected: \"✓\"\nTimeout: 20000ms\nError: element(s) not found"
+        },
+        {
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 208,
+          "title": "Yahoo goalie marks from the trusted server read set start chance (server-confirmed policy only)",
+          "project": "mobile",
+          "viewport": "375x812 (Pixel 5, touch)",
+          "result": "skipped",
+          "startedAt": "2026-10-23T13:23:57.567Z",
+          "durationMs": 1,
+          "retries": 0,
+          "skipReason": "Release owner policy is badge-only: no trusted server mark path to accept.",
+          "error": null
+        }
+      ]
+    },
+    "existing": {
+      "files": [
+        "e2e/roster-schedule-optimizer.spec.ts"
+      ],
+      "exitCode": 1,
+      "summary": {
+        "passed": 3,
+        "failed": 41
+      },
+      "errors": [],
+      "missing": false,
+      "tests": [
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 56,
+          "title": "connected refresh fixtures preserve nonzero intent through offline, cooldown, Undo and reopen",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "passed",
+          "startedAt": "2026-10-23T13:23:58.283Z",
+          "durationMs": 2142,
+          "retries": 0,
+          "skipReason": null,
+          "error": null
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 102,
+          "title": "manual workspace retains reviewed intent, protections and locks through recalculation and reload",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:24:00.526Z",
+          "durationMs": 61030,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 153,
+          "title": "mobile tabs keep selection and expose the matchup and player details",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:25:01.858Z",
+          "durationMs": 16171,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('button', { name: 'Remove Alpha Center' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 191,
+          "title": "readiness controls reach existing inputs across the required viewports",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:25:18.442Z",
+          "durationMs": 796,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: locator.focus: Error: strict mode violation: locator('details').filter({ has: getByText('Planning readiness', { exact: true }) }).locator(':scope > summary') resolved to 2 elements:\n    1) <summary>More tools</summary> aka getByText('More tools')\n    2) <summary>…</summary> aka getByText('Planning readiness · Roster')\n\nCall log:\n  - waiting for locator('details').filter({ has: getByText('Planning readiness', { exact: true }) }).locator(':scope > summary')"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 249,
+          "title": "streams A to B to C through successive conditional acquisitions and keeps expanded desktop layout",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:25:19.631Z",
+          "durationMs": 16173,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toContainText(expected) failed\n\nLocator: getByRole('region', { name: 'Itinerary' }).getByRole('table').first()\nExpected substring: \"Alpha Center\"\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 311,
+          "title": "weekly lock keeps one fixed occupant across a window, including a confirmed midpoint assignment",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:25:36.232Z",
+          "durationMs": 16170,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toContainText(expected) failed\n\nLocator: getByRole('region', { name: 'Itinerary' }).getByRole('table').first().getByRole('row', { name: /C#1/ }).getByRole('cell').first()\nExpected substring: \"Alpha Center\"\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 332,
+          "title": "fixture category tradeoffs use only startable post-acquisition games on desktop and mobile",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:25:52.828Z",
+          "durationMs": 60977,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 332,
+          "title": "fixture category gains use only startable post-acquisition games on desktop and mobile",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:26:54.223Z",
+          "durationMs": 61007,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 332,
+          "title": "fixture category unavailable baseline use only startable post-acquisition games on desktop and mobile",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:27:55.672Z",
+          "durationMs": 61029,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 399,
+          "title": "provider refresh proposes repairs while keeping a selected move",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:28:57.131Z",
+          "durationMs": 61044,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 518,
+          "title": "connected manager bench locks constrain the worker and preserve provider authority through undo and reload",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:29:58.612Z",
+          "durationMs": 15946,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toHaveText(expected) failed\n\nLocator: getByRole('region', { name: 'Plan summary' }).locator('article').filter({ has: getByText('Projected outcome', { exact: true }) }).locator('strong')\nExpected: \"5\"\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 575,
+          "title": "provider refresh adopts the authoritative league timezone and keeps the selected horizon and intent on reload",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:30:14.986Z",
+          "durationMs": 61186,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 620,
+          "title": "shows sequential stream occupants with real games and retains workspace layout when details expand",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:31:16.595Z",
+          "durationMs": 16268,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toContainText(expected) failed\n\nLocator: getByRole('region', { name: 'Itinerary' }).getByRole('table').first()\nExpected substring: \"Alpha Center\"\nReceived string:    \"ⓘMon Sep 210 NHLTue Sep 220 NHLWed Sep 230 NHLThu Sep 240 NHLFri Sep 250 NHLSat Sep 260 NHLSun Sep 270 NHLC———————LW——————————————RW——————————————D————————————————————————————UTIL———————G——————————————BNFilled\"\nTimeout: 15000ms"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 647,
+          "title": "dense roster keeps schedule views and their scrollbars inside the desktop frame",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:31:33.416Z",
+          "durationMs": 16045,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toContainText(expected) failed\n\nLocator: getByRole('region', { name: 'Itinerary', exact: true }).getByRole('table')\nExpected substring: \"Roster Player 1\"\nReceived string:    \"ⓘMon Oct 50 NHLTue Oct 60 NHLWed Oct 70 NHLThu Oct 80 NHLFri Oct 90 NHLSat Oct 100 NHLSun Oct 110 NHLC————————————————————————————————————————————————————————————————————————————————————BN1No game1No game1No game1No game1No game1No game1No game2No game2No game2No game2No game2No game2No game2No game3No game3No game3No game3No game3No game3No game3No game4No game4No game4No game4No game4No game4No game4No game5No game5No game5No game5No game5No game5No game5No game+13 off+13 off+13 off+13 off+13 off+13 off+13 offFilled\"\nTimeout: 15000ms"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 679,
+          "title": "Yahoo timeout retains schedule analysis and matchup-week navigation without actionable acquisitions",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:31:49.892Z",
+          "durationMs": 60982,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 719,
+          "title": "mixed Kaprizov coverage stays unresolved until complete evidence supports the bench decision",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:32:51.257Z",
+          "durationMs": 61027,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 770,
+          "title": "weekly LW/RW and UTIL bench explanations preserve midpoint locks through worker reload",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:33:52.707Z",
+          "durationMs": 60999,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 814,
+          "title": "manual league eligibility must be confirmed and survives a reload",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:34:54.131Z",
+          "durationMs": 15949,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('button', { name: 'Show schedule-capacity assignment' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 843,
+          "title": "goalie competition stays unresolved across the worker and evidence view",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:35:10.459Z",
+          "durationMs": 15989,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('button', { name: 'Show schedule-capacity assignment' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 896,
+          "title": "assignment-only forecasts preserve their allowed uses in the browser",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:35:26.824Z",
+          "durationMs": 15965,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('button', { name: 'Show lineup analysis' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 896,
+          "title": "totals-only forecasts preserve their allowed uses in the browser",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:35:43.158Z",
+          "durationMs": 15931,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('button', { name: 'Show schedule-capacity assignment' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 896,
+          "title": "legacy forecasts preserve their allowed uses in the browser",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:35:59.446Z",
+          "durationMs": 15946,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('button', { name: 'Show schedule-capacity assignment' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 896,
+          "title": "unproven-lineage forecasts cannot certify readiness in the browser",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:36:15.749Z",
+          "durationMs": 15965,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('button', { name: 'Show schedule-capacity assignment' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 930,
+          "title": "connected refresh and account save preserve forecast permissions and exclusions",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:36:32.079Z",
+          "durationMs": 60989,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1060,
+          "title": "conflicting forecasts keep capacity planning and show the affected target",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:37:33.604Z",
+          "durationMs": 15954,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('button', { name: 'Show schedule-capacity assignment' })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1080,
+          "title": "points goalie coverage survives worker reload and benches harmful starts once credited",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:37:49.963Z",
+          "durationMs": 61056,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1134,
+          "title": "retained blended inputs survive worker reload and expire borrowed participation (manual)",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:38:51.453Z",
+          "durationMs": 61019,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1134,
+          "title": "retained blended inputs survive worker reload and expire borrowed participation (connected)",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:39:52.919Z",
+          "durationMs": 61008,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1322,
+          "title": "candidate feedback views preserve eligibility, availability and planned-add semantics",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:40:54.306Z",
+          "durationMs": 15949,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('region', { name: 'Candidate browser' }).getByText('CAR · 2 players', { exact: true })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1400,
+          "title": "projected candidate fit values usable points above schedule quantity",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:41:10.671Z",
+          "durationMs": 60985,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1442,
+          "title": "planning worker measures the full typical workload and cancels superseded edits",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:42:12.029Z",
+          "durationMs": 16558,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(received).toMatchObject(expected)\n\n- Expected  - 10\n+ Received  +  2\n\n  Object {"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1519,
+          "title": "candidate worker ranks the complete population without blocking filters and retains zero AGP",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:42:28.970Z",
+          "durationMs": 60977,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Test timeout of 60000ms exceeded."
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1567,
+          "title": "Audit1 native candidate Worker finds complete swaps before any plan is selected",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:43:30.335Z",
+          "durationMs": 1093,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(received).toBe(expected) // Object.is equality\n\nExpected: 191\nReceived: null"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1659,
+          "title": "compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:43:31.795Z",
+          "durationMs": 15946,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator: getByRole('slider', { name: 'Selected planning day' })\nExpected: \"Wed, Oct 7\"\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1659,
+          "title": "compact layout accounts for 20 slots with a maximum of 20 slot rows and internal labels",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:43:48.126Z",
+          "durationMs": 15966,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator: getByRole('slider', { name: 'Selected planning day' })\nExpected: \"Wed, Oct 7\"\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1659,
+          "title": "compact layout accounts for 29 slots with a maximum of 20 slot rows and internal labels",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:44:04.453Z",
+          "durationMs": 15890,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator: getByRole('slider', { name: 'Selected planning day' })\nExpected: \"Wed, Oct 7\"\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1823,
+          "title": "compact day and bench controls preserve saved intent and keyboard selection",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:44:20.697Z",
+          "durationMs": 15927,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator: getByRole('slider', { name: 'Selected planning day' })\nExpected: \"Wed, Oct 7\"\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1923,
+          "title": "compact short desktop and mobile retain rows, day state, reserves and unknown goalie status",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:44:37.012Z",
+          "durationMs": 15914,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator: getByRole('slider', { name: 'Selected planning day' })\nExpected: \"Wed, Oct 7\"\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 1980,
+          "title": "compact future and partial weeks use league dates and retain the full horizon without saving",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:44:53.346Z",
+          "durationMs": 15921,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator: getByRole('slider', { name: 'Selected planning day' })\nExpected: \"Mon, Oct 5\"\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 2021,
+          "title": "compact initial future week defaults to Monday and preserves clipped horizons",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:45:09.627Z",
+          "durationMs": 15947,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator: getByRole('slider', { name: 'Selected planning day' })\nExpected: \"Mon, Oct 12\"\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 2096,
+          "title": "compact vacancies and non-playing holds survive day changes and Bench collapse",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:45:25.972Z",
+          "durationMs": 15961,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toHaveAttribute(expected) failed\n\nLocator: getByRole('slider', { name: 'Selected planning day' })\nExpected: \"Wed, Oct 7\"\nTimeout: 15000ms\nError: element(s) not found"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 2130,
+          "title": "compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "failed",
+          "startedAt": "2026-10-23T13:45:42.306Z",
+          "durationMs": 15928,
+          "retries": 0,
+          "skipReason": null,
+          "error": "Error: expect(locator).toHaveCount(expected) failed\n\nLocator:  getByRole('table', { name: 'Individual player weekly schedule' }).locator('[data-player-id]')\nExpected: 20\nReceived: 0\nTimeout:  15000ms"
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 2199,
+          "title": "alerts on a healthy player left in IR and shows what activating him gains",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "passed",
+          "startedAt": "2026-10-23T13:45:58.640Z",
+          "durationMs": 997,
+          "retries": 0,
+          "skipReason": null,
+          "error": null
+        },
+        {
+          "file": "roster-schedule-optimizer.spec.ts",
+          "line": 2234,
+          "title": "plans tonight's goalie from Yahoo's Starting and Not Starting marks and shows them in the grid",
+          "project": "chromium",
+          "viewport": "set inside each test (project default 1280x720)",
+          "result": "passed",
+          "startedAt": "2026-10-23T13:45:59.749Z",
+          "durationMs": 1129,
+          "retries": 0,
+          "skipReason": null,
+          "error": null
+        }
+      ]
+    }
+  },
+  "screenshots": [
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__p04-search-acceptance-P04--3da2c-clicks-navigate-client-side-desktop__p04-results-desktop.png",
+      "sha256": "43df676918092435f47dae2e8b07cf2687b38eac60890bc1d47fee01ac49ba36"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__p04-search-acceptance-P04--3da2c-clicks-navigate-client-side-desktop__test-failed-1.png",
+      "sha256": "d25691a8777eb714dd7ec7b95ed6a27a4294292c1d33e1bb52575feeaff9310c"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__p04-search-acceptance-P04--3da2c-clicks-navigate-client-side-mobile__p04-results-mobile.png",
+      "sha256": "594e5dec83e7d7233c2b11ba8b99625b1405af8640071e29892b1dca99f8d240"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__p04-search-acceptance-P04--3da2c-clicks-navigate-client-side-mobile__test-failed-1.png",
+      "sha256": "2acc74211c6e185628dc46a109544f9bbde2468435b24d81bc1bebcd6017bd2f"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-P07-a-s-e77e6--allowed-uses-is-not-summed-desktop__p07-unreviewed-serialized-desktop.png",
+      "sha256": "e99dd9d7a33551a606423284c5aee8870954ffe9ec1ab2c775ea22f95eb74cb1"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-P07-a-s-e77e6--allowed-uses-is-not-summed-desktop__p07-unreviewed-serialized-grid-desktop.png",
+      "sha256": "5a82e1f154e286698e2244b4734012a114a31538bef8b3fcef44aff360c5f6d0"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-P07-a-s-e77e6--allowed-uses-is-not-summed-mobile__p07-unreviewed-serialized-grid-mobile.png",
+      "sha256": "9272d782b76f61906669bfd0699232b066f738ee53540a4e2f50a5ea51db1965"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-P07-a-s-e77e6--allowed-uses-is-not-summed-mobile__p07-unreviewed-serialized-mobile.png",
+      "sha256": "46ebbd4087ae2603cf4a1f6c626611dfacdd812eb877fc59334db07e9a03596b"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-P07-tas-89fc5-ws-show-—-not-a-partial-sum-desktop__p07-task10-complete-and-partial-desktop.png",
+      "sha256": "b83ad915bca2a96560b7a3c44241d57a6c99127efe2dab18a7c8a9204eecedb1"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-P07-tas-89fc5-ws-show-—-not-a-partial-sum-desktop__p07-task10-complete-and-partial-grid-desktop.png",
+      "sha256": "097d4ea1640ab522fe4c838d531b014deedc05b9f9baacb90a4d4778d0b0ed1a"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-P07-tas-89fc5-ws-show-—-not-a-partial-sum-mobile__p07-task10-complete-and-partial-grid-mobile.png",
+      "sha256": "045158c679af1c1a8016cc8facbefac98897b2918b632b17eff417b4d6cbfb1a"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-P07-tas-89fc5-ws-show-—-not-a-partial-sum-mobile__p07-task10-complete-and-partial-mobile.png",
+      "sha256": "ba24786724ade20ddf0b17e0c1af81d2bfa70e847931ef79258506ff579a381d"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-Yahoo-g-80fff-chance-and-points-unchanged-desktop__test-failed-1.png",
+      "sha256": "4fdf54730e6f2416c3ead968115677df717edd298b87bc134ecfc216a018729b"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-Yahoo-g-80fff-chance-and-points-unchanged-mobile__test-failed-1.png",
+      "sha256": "2a0df304754723aae2f4f0b710b09f611d5fabb46aa20358eb108a0a9a3d9b5f"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-current-ca671--echoed-nonce-restores-them-desktop__nonce-echo-control-desktop.png",
+      "sha256": "d09219f0772d9699a1539b94e990005d588ddf1ee6c3755b261d0c6006c7375b"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-current-ca671--echoed-nonce-restores-them-desktop__nonce-echo-control-grid-desktop.png",
+      "sha256": "1342533c36669cf3a566880705cb58198be27e8f2dec0107b9b797960a3d6349"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-current-ca671--echoed-nonce-restores-them-desktop__nonce-mismatch-withheld-desktop.png",
+      "sha256": "dceabe4cb8371eae9712b194e347cec38a1313f3dd9d649358c2b64216141ca7"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-current-ca671--echoed-nonce-restores-them-desktop__nonce-mismatch-withheld-grid-desktop.png",
+      "sha256": "b1db9d0b94229c80b91e36056eae9120e29a66b581895939376f1cb19404549c"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-current-ca671--echoed-nonce-restores-them-mobile__nonce-echo-control-grid-mobile.png",
+      "sha256": "49f938351f12c05c9acf454e27132b0308d6494fd1a97c4228ef782144f5673d"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-current-ca671--echoed-nonce-restores-them-mobile__nonce-echo-control-mobile.png",
+      "sha256": "a1c54faa4b481d0f5d10cba2fd56d755a5071ccdb6f22f01d14d6d4450f7f02a"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-current-ca671--echoed-nonce-restores-them-mobile__nonce-mismatch-withheld-grid-mobile.png",
+      "sha256": "a74b412731c08a86f94c45b121216bd3401ee93a53b7dc9070ef812727c2ad20"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/acceptance__rso-p07-acceptance-current-ca671--echoed-nonce-restores-them-mobile__nonce-mismatch-withheld-mobile.png",
+      "sha256": "e33d4db3734cda2b228e2e2d26bb7e9358098e46311ba29ce32d77bcf6dfe4ba"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/existing__roster-schedule-optimizer--20e0d--and-shows-them-in-the-grid-chromium__yahoo-goalie-marks-1440x900.png",
+      "sha256": "dc51257711b5039c9df40e50189b31dfa01583ccff678401055fcae1aa5db0e6"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/existing__roster-schedule-optimizer--40b1f-s-what-activating-him-gains-chromium__healthy-ir-alert-1440x900.png",
+      "sha256": "74f96e7526ad47e002b455cf32235718f792aec319a0bf6ba6311404dea75b77"
+    },
+    {
+      "path": "screenshots/2a5092d37cb8/existing__roster-schedule-optimizer--fda39-ne-cooldown-Undo-and-reopen-chromium__rso-refresh-fixture.png",
+      "sha256": "63dfc0c3a4cef9160e794ed8ec71f0e41ac68b2478a76b7a9edc9b1054231fbf"
+    }
+  ]
+}

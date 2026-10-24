@@ -1,0 +1,82 @@
+{
+  "cwd": "/tmp/fhfh-release-readiness-r1-nyoxuc81/snapshot/web",
+  "environment": {
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/tmp/fhfh-release-readiness-r1-nyoxuc81/home",
+    "TMPDIR": "/tmp/fhfh-release-readiness-r1-nyoxuc81/tmp",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://unit-tests.supabase.invalid",
+    "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY": "synthetic-public-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "synthetic-service-role-key",
+    "NODE_OPTIONS": "--max-old-space-size=8192 --require /Users/tim/Code/fhfhockey.com/tasks/artifacts/release-readiness-2026-10-24/offline-network-deny.cjs",
+    "npm_config_offline": "true",
+    "npm_config_audit": "false",
+    "npm_config_fund": "false",
+    "npm_config_update_notifier": "false",
+    "TZ": "UTC",
+    "CI": "1",
+    "PLAYWRIGHT_ISOLATED_NEXT": "1"
+  },
+  "node": "v22.11.0",
+  "npm": "10.9.0",
+  "matchedFiles": [
+    "lib/projections/apiHelpers.runAdmission.test.ts",
+    "lib/player-forecasts/nativeContributionAdmission.test.ts",
+    "lib/integrations/yahoo/planningConfirmationRoute.test.ts",
+    "__tests__/pages/api/v1/start-chart.test.ts"
+  ],
+  "commands": [
+    [
+      "tests",
+      [
+        "npm",
+        "exec",
+        "--no",
+        "--",
+        "vitest",
+        "run",
+        "lib/projections/apiHelpers.runAdmission.test.ts",
+        "lib/player-forecasts/nativeContributionAdmission.test.ts",
+        "lib/integrations/yahoo/planningConfirmationRoute.test.ts",
+        "__tests__/pages/api/v1/start-chart.test.ts",
+        "--maxWorkers=1",
+        "--minWorkers=1",
+        "--reporter=json",
+        "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-readiness-2026-10-24/r1/tests.json"
+      ]
+    ],
+    [
+      "scoped-types",
+      [
+        "npm",
+        "exec",
+        "--no",
+        "--",
+        "tsc",
+        "--project",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-readiness-2026-10-24/r1/tsconfig.json",
+        "--noEmit",
+        "--pretty",
+        "false"
+      ]
+    ],
+    [
+      "scoped-lint",
+      [
+        "npm",
+        "exec",
+        "--no",
+        "--",
+        "eslint",
+        "__tests__/pages/api/v1/start-chart.test.ts"
+      ]
+    ]
+  ],
+  "lock": {
+    "pid": 14356,
+    "token": "9be29815-6ad9-42a2-8748-bfd9da7e0a43",
+    "thread": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+    "scope": "R1 parent-reviewed test-only correction;4 matched boundary files then changed-file scoped types/lint; no server/fullsuite",
+    "at": "2026-10-24T14:43:06.278294+00:00"
+  },
+  "packageLockSha256": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378"
+}

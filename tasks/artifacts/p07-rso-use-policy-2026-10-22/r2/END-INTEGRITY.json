@@ -1,0 +1,12 @@
+{
+  "checked_at": "2026-10-22T16:13:43.074247+00:00",
+  "observed_head": "84cb1229cd1c1cdd037c43e660d2a181304ada51",
+  "r2_leased_mismatches": {},
+  "canonical_other_candidate_differences": {
+    "web/lib/rosterScheduleOptimizer/planning.ts": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474"
+  },
+  "r1_manifest_preserved": true,
+  "r1_overlay_preserved": true,
+  "original_reviewer_fixture_mismatches": {},
+  "boundary_assertions_unchanged": true
+}

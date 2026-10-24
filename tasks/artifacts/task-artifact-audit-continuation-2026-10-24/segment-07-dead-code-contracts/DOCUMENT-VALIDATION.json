@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-24T16:55:08.068130+00:00",
+  "checks": [
+    {
+      "file": "CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "utf8": true,
+      "single_terminal_newline": true
+    },
+    {
+      "file": "CANDIDATE-LEDGER.md",
+      "utf8": true,
+      "single_terminal_newline": true
+    },
+    {
+      "file": "CANDIDATE-LEDGER.json",
+      "utf8": true,
+      "single_terminal_newline": true
+    }
+  ],
+  "no_added_trailing_whitespace": true,
+  "all_evidence_paths_exist": true,
+  "no_git_or_application_command": true
+}

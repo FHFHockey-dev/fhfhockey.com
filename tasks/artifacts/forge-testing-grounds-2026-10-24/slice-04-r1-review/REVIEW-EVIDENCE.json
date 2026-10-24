@@ -1,0 +1,40 @@
+{
+  "verdict": "ACCEPT WITH LIMITS",
+  "resolvedFinding": "S04-R1/P2 for new two-file pins",
+  "pinChecks": 99,
+  "pinMatches": 99,
+  "protectedPins": 90,
+  "suppliedReceiptHashesMatch": true,
+  "pinDrift": 0,
+  "focusedTests": {
+    "originalUnchangedControlsPassed": 2,
+    "ownerBoundaryCasesPassed": 4,
+    "newIndependentCasesPassed": 3,
+    "totalPassed": 9,
+    "intentionallySkipped": 12,
+    "failed": 0,
+    "runs": 1
+  },
+  "scopedTypeScript": "passed",
+  "scopedESLint": "passed",
+  "originalFailureEvidence": "unchanged",
+  "nativeProgressAndOperationalJson": "unchanged in exercised boundaries",
+  "accessibilityEvidence": "DOM aria-valuetext only; no actual screenreader/browser/native accessibility QA",
+  "library": "Local guarded replacement receipt inspected; no remote operation or re-verification",
+  "sourceRepairs": 0,
+  "blockedChecks": [],
+  "runningOperations": [],
+  "boundaries": {
+    "canonicalSourceWrites": 0,
+    "sharedWrites": 0,
+    "gitMutations": 0,
+    "externalRequests": 0,
+    "browserSlots": 0,
+    "subagents": 0
+  },
+  "notAccepted": [
+    "visual/screenshots/browser/native accessibility",
+    "slice05/page/auth integration",
+    "full dashboard/hosted runner/live data/pilot"
+  ]
+}

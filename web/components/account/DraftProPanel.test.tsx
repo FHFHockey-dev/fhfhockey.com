@@ -127,16 +127,15 @@ describe("DraftProPanel", () => {
     expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/v1/account/draft-pro/checkout/verify");
   });
 
-  it("keeps a no-URL checkout in its confirming state", async () => {
-    const inactiveAccount = { ...account, access: { ...account.access, eligible: false } };
-    const fetchMock = vi.fn()
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: inactiveAccount }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ url: null, state: "confirming" }) });
+  it("never offers new checkout even from a stale available response", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { ...account, access: { ...account.access, eligible: false } } }) });
     vi.stubGlobal("fetch", fetchMock);
     render(<DraftProPanel />);
-    fireEvent.click(await screen.findByRole("button", { name: /Get Draft Pro/ }));
-    expect(await screen.findByText(/Checkout is still open or confirming/i)).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Check purchase status again" })).toBeTruthy();
+    expect(await screen.findByText(/New Draft Pro purchases are closed/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Get Draft Pro|Buy/ })).toBeNull();
+    expect(screen.getByLabelText("Draft Pro access code")).toBeTruthy();
+    expect(screen.getByText("Opening night")).toBeTruthy();
+    expect(fetchMock.mock.calls.some(([url]) => url === "/api/v1/account/draft-pro/checkout")).toBe(false);
   });
 
   it("cancels a pending checkout retry when the panel unmounts", async () => {

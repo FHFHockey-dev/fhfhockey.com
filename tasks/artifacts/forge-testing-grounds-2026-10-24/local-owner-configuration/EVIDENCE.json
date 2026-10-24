@@ -1,0 +1,79 @@
+{
+  "at": "2026-10-24T17:28:16.458093+00:00",
+  "status": "Exact local setting completed; authenticated sample viewing pending containment",
+  "baseHead": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "branch": "octoberBranch",
+  "configuration_target": "web/.env.development.local",
+  "configuration_key": "FORGE_TESTING_GROUNDS_OWNER_USER_ID",
+  "configuration_bytes_or_hash_exported": false,
+  "candidate_code_changes": [],
+  "unchanged_current_slice05_pins": [
+    {
+      "path": "web/lib/forge-testing-grounds/serverOwnerBoundary.ts",
+      "sha256": "5bdd35c403441dd6c04f34908ea0bb3f91a7de4fb7690d63e884cf642bc09fde"
+    },
+    {
+      "path": "web/lib/forge-testing-grounds/serverOwnerBoundary.test.ts",
+      "sha256": "ec88815502d2bfbfd71d5cd14f8c5626fb319a4ea70a83b7d0dcc36974db3cb8"
+    },
+    {
+      "path": "web/lib/forge-testing-grounds/ownerRoutes.ts",
+      "sha256": "33c185c9c693e42872b61b9e003dbade8471e2a8f9f73abede6debf7437cb249"
+    },
+    {
+      "path": "web/lib/forge-testing-grounds/ownerRoutes.test.ts",
+      "sha256": "54476cd5db0cb4505544ea91d1e0559164845cb08951a6a690588ddec6c0dad3"
+    },
+    {
+      "path": "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.tsx",
+      "sha256": "3bcd1c56aae644f7ea7f0caaaf7053d38feb03a33d5ed4412dc54592b8dc5f4c"
+    },
+    {
+      "path": "web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx",
+      "sha256": "ad376e0cb335723bed1a741a24a418e2d88012f539260405a48b8848f34c4eee"
+    },
+    {
+      "path": "web/pages/forge/testing-grounds.tsx",
+      "sha256": "69860a37f7df17830b5c09645d774d51c31ec3bb6b1c531bf9f87dcc693daba2"
+    },
+    {
+      "path": "web/pages/api/v1/forge/testing-grounds/access.ts",
+      "sha256": "abcb5af6c8a9cb97822b6bfad8f8bf217ab305b4e2e76e9c8d5671f9eb737b25"
+    },
+    {
+      "path": "web/pages/api/v1/forge/testing-grounds/runs/index.ts",
+      "sha256": "94469027fcb99205b3b6337e2228f978a697ba4f499aafb10b6e3b28ef4ed836"
+    },
+    {
+      "path": "web/pages/api/v1/forge/testing-grounds/runs/[runId]/[operation].ts",
+      "sha256": "6f0bbf14d718075a6d1b38c614bc132510f4550af2f7a395a72f64ab3d5c8962"
+    }
+  ],
+  "read_dependencies": {
+    "web/lib/forge-testing-grounds/ownerPolicy.ts": "b0de88d27e731856e37470aee46cde57cf50af351fa6cc8ebeacb070842748c5",
+    "web/contexts/AuthProviderContext/index.tsx": "ba911142eb7c7e52c880df27a4b7236e95dd2345012a32078df9671073ff4be8",
+    "web/lib/user-settings/ensureUserRecords.ts": "2ab6d5d51b7029d33f832f4f2124e4aa83772d7845c04b0ad55d56cd7db1a4f5",
+    "web/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js": "2c45ef10257d9147051b58d963870d437578c55b9c427c7f287f415c27f36399"
+  },
+  "artifactHashes": {
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/OWNERSHIP.md": "a4e9f2ac587fbce0674795c355f021ab1841eccd3f2b6d37603abf8171927de0",
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/configuration-check.json": "78a4aa226c9ff9a2e447383f3af79150fee081f7b074897c70fc0273e65ecb9c",
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/local-http.json": "807537f18a7d9d293152e7ffdb4886ec5be683e59bb1bca2bbd777db44ac4519",
+    "tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/HANDOFF.md": "5a28ac3a15416a071174b6f8fd299e01193ac5b9818bb1df2733f8f21cb7b151"
+  },
+  "checks": {
+    "configuration_readback": "pass; original bytes and permissions preserved",
+    "local_http": "pass; one credential-free GET,401 unauthenticated",
+    "listener": "PID49759 unchanged",
+    "source_integrity": "10/10 match",
+    "new_tests_or_build": "not run; env-only change",
+    "authenticated_owner_access": "not performed; containment pending"
+  },
+  "auth_read_budget": {
+    "approved": 1,
+    "worker_used": 0
+  },
+  "remaining_gate": "Exclude inherited profile/settings writes and bound verification before reopening authenticated app; no further identity input or manual restart required for the completed setting",
+  "browser_disposition": "Existing local preview tab left at about:blank; no app reload",
+  "review": "No self-certification of authenticated access or hosted readiness"
+}

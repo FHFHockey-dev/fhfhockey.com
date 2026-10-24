@@ -1,0 +1,311 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-claude-production-compose-vh5ae_ra/web
+
+(node:23347) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:23349) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/TeamTabNavigation/TeamTabNavigation.test.tsx (22 tests) 694ms
+(node:23353) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | __tests__/pages/api/internal/yahoo-live-draft.test.ts > Yahoo production scheduler > runs bounded batches across the minute boundary
+yahoo_live_draft_scheduled_cycle { cycles: 65, attempted: 65, succeeded: 65, failed: 0 }
+
+stdout | __tests__/pages/api/internal/yahoo-live-draft.test.ts > Yahoo production scheduler > records a partial batch as a failed run with its true counters
+yahoo_live_draft_scheduled_cycle { cycles: 65, attempted: 195, succeeded: 130, failed: 65 }
+
+ ❯ __tests__/pages/api/internal/yahoo-live-draft.test.ts (17 tests | 1 failed) 18ms
+   ✓ Yahoo production scheduler > rejects wrong methods and unauthorized requests without provider work 2ms
+   ✓ Yahoo production scheduler > fails closed without a scheduler secret 0ms
+   ✓ Yahoo production scheduler > does no work when disabled or no sessions are active 1ms
+   ✓ Yahoo production scheduler > suspends off-season polling before configuration, database or provider work 0ms
+   ✓ Yahoo production scheduler > runs bounded batches across the minute boundary 3ms
+   ✓ Yahoo production scheduler > records a partial batch as a failed run with its true counters 2ms
+   ✓ Yahoo production scheduler > does not leak provider or database errors 0ms
+   × Yahoo production scheduler > records a thrown coordinator as one safe failure row 4ms
+     → expected { …(4) } to match object { Object (status, details) }
+(15 matching properties omitted from actual)
+   ✓ Yahoo production scheduler > still answers when the audit insert fails 1ms
+   ✓ Yahoo production scheduler > idle heartbeat > records one bounded 'suspended' row in the 12:00 UTC minute 1ms
+   ✓ Yahoo production scheduler > idle heartbeat > records one bounded 'disabled' row in the 12:00 UTC minute 0ms
+   ✓ Yahoo production scheduler > idle heartbeat > writes no idle row outside the heartbeat minute (2027-07-15T11:59:59.999Z) 0ms
+   ✓ Yahoo production scheduler > idle heartbeat > writes no idle row outside the heartbeat minute (2027-07-15T12:01:00Z) 0ms
+   ✓ Yahoo production scheduler > idle heartbeat > keeps denied and unconfigured calls unaudited in the heartbeat minute 0ms
+   ✓ Yahoo production scheduler > idle heartbeat > writes only the poll row when an active run lands in the heartbeat minute 0ms
+   ✓ Yahoo production scheduler > idle heartbeat > still answers when the heartbeat insert fails 0ms
+   ✓ Yahoo production scheduler > makes no network request at import or during a run 0ms
+(node:23355) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:23357) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ hooks/useShotData.test.tsx (16 tests) 23ms
+(node:23359) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/GoalieShareChart/GoalieShareChart.pagination.test.tsx (16 tests) 151ms
+(node:23361) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/NHL/client/index.test.tsx (5 tests | 2 failed) 340ms
+   × Game Grid shared public reads > loads four windows and one team list with selected odds in extended=false 118ms
+     → expected [ [ …(2) ], [ …(2) ], [ …(2) ], …(1) ] to have a length of 5 but got 4
+   ✓ Game Grid shared public reads > loads four windows and one team list with selected odds in extended=true 158ms
+   ✓ Game Grid shared public reads > shares odds-bearing windows but never uses fixture-only payloads for an odds request 1ms
+   × Game Grid shared public reads > unmounting one hook does not abort a shared window or start the cancelled chain 61ms
+     → expected [ [ …(2) ], [ …(2) ], [ …(2) ], …(1) ] to have a length of 2 but got 4
+   ✓ Game Grid shared public reads > aborts transport only after its last subscriber leaves and permits a fresh retry 1ms
+(node:23363) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:23365) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/stats/team/teamAbbreviation.test.tsx (4 tests) 20ms
+(node:23367) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/dashboard/clientFetchCache.test.ts (3 tests) 6ms
+(node:23369) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/NHL/client/sharedRead.test.ts (3 tests) 5ms
+ ❯ __tests__/pages/api/v1/db/update-drafted-prospects.test.ts (14 tests | 3 failed) 14ms
+   ✓ bounded draft refresh > defaults to a read-only preview 3ms
+   ✓ bounded draft refresh > keeps scheduled production writes disabled unless both gates are enabled 1ms
+   × bounded draft refresh > resumes the claimed cursor and persists progress after the batch succeeds 5ms
+     → expected { success: true, dryRun: false, …(6) } to deeply equal { success: true, dryRun: false, …(3) }
+   × bounded draft refresh > preserves the cursor and backs off when a write fails 2ms
+     → expected { …(4) } to match object { Object (status, details) }
+(16 matching properties omitted from actual)
+   ✓ bounded draft refresh > records a partially imported batch as one failed run without advancing the cursor 0ms
+   × bounded draft refresh > records a throw from the failure write as one bounded wrapper failure 1ms
+     → expected { …(4) } to match object { Object (status, details) }
+(15 matching properties omitted from actual)
+   ✓ bounded draft refresh > does no work when another refresh holds the lease 0ms
+   ✓ bounded draft refresh > honors an explicit dry run even when scheduled writes are enabled 0ms
+   ✓ bounded draft refresh > rejects a 'missing bearer' before auditing or any refresh work 1ms
+   ✓ bounded draft refresh > rejects a 'invalid user token' before auditing or any refresh work 0ms
+   ✓ bounded draft refresh > rejects a 'non-admin token' before auditing or any refresh work 1ms
+   ✓ bounded draft refresh > admits a verified admin token with one audit row 0ms
+   ✓ bounded draft refresh > audits an admitted unsupported method as a failure without refresh work 0ms
+   ✓ bounded draft refresh > makes no network request at import or during a run 0ms
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/pages/wigoCharts.test.tsx [ __tests__/pages/wigoCharts.test.tsx ]
+Error: Failed to resolve import "pages/wigoCharts" from "__tests__/pages/wigoCharts.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /private/tmp/fhfh-claude-production-compose-vh5ae_ra/web/__tests__/pages/wigoCharts.test.tsx:48:0
+  60 |  const __vi_import_1__ = await import("@testing-library/react");
+  61 |  const __vi_import_2__ = await import("@testing-library/user-event");
+  62 |  const __vi_import_3__ = await import("pages/wigoCharts");
+     |                                       ^
+  63 |  
+  64 |  
+ ❯ TransformPluginContext._formatLog ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41
+ ❯ TransformPluginContext.error ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16
+ ❯ normalizeUrl ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+ ❯ TransformPluginContext.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7
+ ❯ EnvironmentPluginContainer.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18
+ ❯ loadAndTransform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/9]⎯
+
+ FAIL  components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx [ components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx ]
+Error: Failed to resolve import "lib/buyLowSellHigh/storage" from "components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /private/tmp/fhfh-claude-production-compose-vh5ae_ra/web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx:5:33
+  2  |  import { afterEach, describe, expect, it } from "vitest";
+  3  |  import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+  4  |  import { BLSH_STORAGE_KEY } from "lib/buyLowSellHigh/storage";
+     |                                    ^
+  5  |  import BuyLowSellHighPreview from "./BuyLowSellHighPreview";
+  6  |  afterEach(cleanup);
+ ❯ TransformPluginContext._formatLog ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41
+ ❯ TransformPluginContext.error ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16
+ ❯ normalizeUrl ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+ ❯ TransformPluginContext.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7
+ ❯ EnvironmentPluginContainer.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18
+ ❯ loadAndTransform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/9]⎯
+
+ FAIL  __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts [ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts ]
+Error: Failed to resolve import "pages/api/v1/db/refresh-draft-ranker-discovery" from "__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /private/tmp/fhfh-claude-production-compose-vh5ae_ra/web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts:401:0
+  30 |  const __vi_import_2__ = await import("typescript");
+  31 |  const __vi_import_3__ = await import("lib/cron/cronAuditCoverage");
+  32 |  const __vi_import_4__ = await import("pages/api/v1/db/refresh-draft-ranker-discovery");
+     |                                       ^
+  33 |  const __vi_import_5__ = await import("pages/api/v1/db/update-seasons");
+  34 |  const __vi_import_6__ = await import("pages/api/internal/patreon-reconcile");
+ ❯ TransformPluginContext._formatLog ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41
+ ❯ TransformPluginContext.error ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16
+ ❯ normalizeUrl ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+ ❯ TransformPluginContext.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7
+ ❯ EnvironmentPluginContainer.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18
+ ❯ loadAndTransform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/9]⎯
+
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/NHL/client/index.test.tsx > Game Grid shared public reads > loads four windows and one team list with selected odds in extended=false
+AssertionError: expected [ [ …(2) ], [ …(2) ], [ …(2) ], …(1) ] to have a length of 5 but got 4
+
+- Expected
++ Received
+
+- 5
++ 4
+
+ ❯ lib/NHL/client/index.test.tsx:53:25
+     51|     await waitFor(() => expect(view.result.current.selected[2]).toBe(f…
+     52|     // Upgrading a previously fixture-only window needs odds from the …
+     53|     expect(schedules()).toHaveLength(extended ? 4 : 5);
+       |                         ^
+     54|     if (!extended) expect(view.result.current.selected[0][0].nWED?.hom…
+     55|     view.rerender({ extended, excluded: true });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/9]⎯
+
+ FAIL  lib/NHL/client/index.test.tsx > Game Grid shared public reads > unmounting one hook does not abort a shared window or start the cancelled chain
+AssertionError: expected [ [ …(2) ], [ …(2) ], [ …(2) ], …(1) ] to have a length of 2 but got 4
+
+- Expected
++ Received
+
+- 2
++ 4
+
+ ❯ lib/NHL/client/index.test.tsx:94:76
+     92|     await waitFor(() => expect(selected.result.current[2]).toBe(false)…
+     93|     expect(selected.result.current[0][0].WED?.homeTeam.winOdds).toBe(7…
+     94|     expect(fetch.mock.calls.filter(([url]) => url.includes("/schedule/…
+       |                                                                            ^
+     95|   });
+     96| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/9]⎯
+
+ FAIL  __tests__/pages/api/internal/yahoo-live-draft.test.ts > Yahoo production scheduler > records a thrown coordinator as one safe failure row
+AssertionError: expected { …(4) } to match object { Object (status, details) }
+(15 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "details": {
+      "error": null,
+-     "responseOutcome": {
+-       "error": "Yahoo polling coordinator unavailable",
+-     },
+      "statusCode": 503,
+    },
+    "status": "failure",
+  }
+
+ ❯ __tests__/pages/api/internal/yahoo-live-draft.test.ts:130:17
+    128|     expect(res.sent).toHaveBeenCalledExactlyOnceWith({ error: "Yahoo p…
+    129|     const row = auditRow();
+    130|     expect(row).toMatchObject({ status: "failure", details: { statusCo…
+       |                 ^
+    131|       responseOutcome: { error: "Yahoo polling coordinator unavailable…
+    132|     for (const sensitive of ["private provider detail", "test-secret"]…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/9]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-drafted-prospects.test.ts > bounded draft refresh > resumes the claimed cursor and persists progress after the batch succeeds
+AssertionError: expected { success: true, dryRun: false, …(6) } to deeply equal { success: true, dryRun: false, …(3) }
+
+- Expected
++ Received
+
+  {
+    "dryRun": false,
++   "imports": [
++     {
++       "availableToPipeline": true,
++     },
++   ],
+    "nextCursor": 220,
++   "players": [
++     {
++       "nhlId": 8485689,
++     },
++   ],
+    "success": true,
+    "total": 1,
++   "warnings": [],
+    "year": 2025,
+  }
+
+ ❯ __tests__/pages/api/v1/db/update-drafted-prospects.test.ts:76:46
+     74|     expect(row).toMatchObject({ status: "success", details: { statusCo…
+     75|     // Only bounded primitives persist; the player and import lists st…
+     76|     expect(JSON.parse(row.details.response)).toEqual({ success: true, …
+       |                                              ^
+     77|   });
+     78|   it("preserves the cursor and backs off when a write fails", async ()…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/9]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-drafted-prospects.test.ts > bounded draft refresh > preserves the cursor and backs off when a write fails
+AssertionError: expected { …(4) } to match object { Object (status, details) }
+(16 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "details": {
+-     "responseOutcome": {
+-       "success": false,
+-     },
+      "statusCode": 400,
+    },
+    "status": "failure",
+  }
+
+ ❯ __tests__/pages/api/v1/db/update-drafted-prospects.test.ts:84:24
+     82|     expect(res.statusCode).toBe(400); expect(updates[0]).toMatchObject…
+     83|     expect(updates[0].payload).toBeUndefined();
+     84|     expect(auditRow()).toMatchObject({ status: "failure", details: { s…
+       |                        ^
+     85|   });
+     86|   it("records a partially imported batch as one failed run without adv…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/9]⎯
+
+ FAIL  __tests__/pages/api/v1/db/update-drafted-prospects.test.ts > bounded draft refresh > records a throw from the failure write as one bounded wrapper failure
+AssertionError: expected { …(4) } to match object { Object (status, details) }
+(15 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "details": {
+-     "error": "Handler failed.",
++     "error": "lease write failed",
+      "statusCode": 500,
+    },
+    "status": "failure",
+  }
+
+ ❯ __tests__/pages/api/v1/db/update-drafted-prospects.test.ts:105:24
+    103|     expect(res.statusCode).toBe(500);
+    104|     expect(res.body).toMatchObject({ success: false, error: "lease wri…
+    105|     expect(auditRow()).toMatchObject({ status: "failure", details: { s…
+       |                        ^
+    106|   });
+    107|   it("does no work when another refresh holds the lease", async () => {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/9]⎯
+
+
+ Test Files  6 failed | 6 passed (12)
+      Tests  6 failed | 94 passed (100)
+   Start at  17:09:05
+   Duration  5.49s (transform 311ms, setup 28ms, collect 786ms, tests 1.27s, environment 1.83s, prepare 399ms)
+

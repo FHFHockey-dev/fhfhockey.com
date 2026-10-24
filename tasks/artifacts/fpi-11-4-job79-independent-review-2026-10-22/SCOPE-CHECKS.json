@@ -1,0 +1,26 @@
+{
+  "changedJsonRecords": [
+    79
+  ],
+  "addedJsonRecords": [
+    399
+  ],
+  "otherJsonRecordsUnchanged": true,
+  "replacementDailyOwner": {
+    "path": "/api/v1/db/run-rolling-forge-pipeline?mode=daily_incremental&includeDownstream=true&includeAccuracy=false&stopOnFailure=false",
+    "schedule": "5,10,15,20,30,35,40,45,55 10 * * *"
+  },
+  "vercelConfigUnchanged": true,
+  "budgetAndBudgetTestsBaseSourceIdentical": true,
+  "patchPaths": [
+    "tasks/TASKS/cron-operations/cron-schedule.md",
+    "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+    "web/lib/cron/combinedCronInventory.test.ts",
+    "web/lib/cron/nstBurstPlans.test.ts",
+    "web/lib/cron/nstBurstPlans.ts",
+    "web/lib/cron/nstCoordination.test.ts",
+    "web/lib/cron/nstCoordination.ts",
+    "web/lib/cron/nstRateLimitPolicy.test.ts",
+    "web/lib/cron/nstRateLimitPolicy.ts"
+  ]
+}

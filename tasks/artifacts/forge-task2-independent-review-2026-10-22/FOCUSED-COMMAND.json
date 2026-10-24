@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "/usr/local/bin/npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "review-vitest.config.mts",
+    "lib/projections/queries/skater-queries.test.ts",
+    "lib/projections/nativeGoalAccounting.test.ts",
+    "scripts/qualify-native-players-offline.test.ts",
+    "lib/projections/runProjectionV2.test.ts"
+  ],
+  "cwd": "/tmp/fhfh-task2-review-et29jk5z/web",
+  "exitCode": 1,
+  "isolatedEnvironment": true,
+  "networkFence": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task2-independent-review-2026-10-22/network-fence.cjs"
+}

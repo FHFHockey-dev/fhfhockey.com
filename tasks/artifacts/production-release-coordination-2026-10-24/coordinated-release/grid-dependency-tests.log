@@ -1,0 +1,47 @@
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf/web
+
+(node:52277) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/GameGrid/SortableHeaders.test.tsx (13 tests) 533ms
+(node:52285) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/GameGrid/utils/useFourWeekSchedule.test.ts (23 tests) 1038ms
+(node:52287) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/GameGrid/utils/FourWeekGrid.test.tsx (4 tests | 1 failed) 102ms
+   × FourWeekGrid > moves the warning into the footer and removes it when coverage completes 21ms
+     → expected '' to be 'Schedule incomplete. Affected totals …' // Object.is equality
+   ✓ FourWeekGrid > starts compact, retains HQ links and exposes the heuristic in closed Info 24ms
+   ✓ FourWeekGrid > treats absent coverage and score as unavailable, and shows four weekly slots 28ms
+   ✓ FourWeekGrid > preserves sorting through expansion and collapse 28ms
+(node:52289) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/GameGrid/utils/opponentCategoryEffects.test.ts (5 tests) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/GameGrid/utils/FourWeekGrid.test.tsx > FourWeekGrid > moves the warning into the footer and removes it when coverage completes
+AssertionError: expected '' to be 'Schedule incomplete. Affected totals …' // Object.is equality
+
+- Expected
++ Received
+
+- Schedule incomplete. Affected totals are unavailable; check back after schedule updates.
+
+ ❯ components/GameGrid/utils/FourWeekGrid.test.tsx:79:32
+     77|     const calendar = { start: "2026-10-05", end: "2026-11-01", knownDa…
+     78|     const { container, rerender } = render(<FourWeekGrid teamDataArray…
+     79|     expect(footer.textContent).toBe("Schedule incomplete. Affected tot…
+       |                                ^
+     80|     expect(footer.querySelector('[role="status"]')?.getAttribute("aria…
+     81|     expect(container.querySelector('[role="status"]')).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 44 passed (45)
+   Start at  19:41:42
+   Duration  3.82s (transform 421ms, setup 13ms, collect 998ms, tests 1.67s, environment 625ms, prepare 125ms)
+

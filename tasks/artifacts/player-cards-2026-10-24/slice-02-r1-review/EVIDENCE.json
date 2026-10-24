@@ -1,0 +1,215 @@
+{
+  "scope": "Independent bounded slice02 R1 domain correction re-review",
+  "recommendation": "accept-r1-close-both-p2",
+  "parentAcceptanceOwner": "Scout",
+  "remainingIssuesInCorrection": [],
+  "checks": {
+    "pins": {
+      "initial": 58,
+      "final": 58,
+      "allPassed": true
+    },
+    "patchFilesReconstructedExactly": 3,
+    "originalProbes": {
+      "passed": 29,
+      "failed": 0,
+      "originalSixUnchanged": true,
+      "sha256": "654038435e7c47190dd64bbde9ea735babb5298a4ad71f0d8a3cab55f2d05f10"
+    },
+    "focusedUnitTests": {
+      "passed": 26,
+      "files": 2
+    },
+    "scopedTypes": "passed",
+    "scopedLint": "passed",
+    "capture": {
+      "pooledValues": 4,
+      "unavailableControls": 2,
+      "knownGap": 1,
+      "passed": true
+    }
+  },
+  "commands": [
+    {
+      "name": "probes",
+      "command": "node counterexamples.original.cjs",
+      "cwd": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review",
+      "start": "2026-10-24T17:24:25.362Z",
+      "end": "2026-10-24T17:24:25.622Z",
+      "exitCode": 0,
+      "signal": null,
+      "error": null,
+      "note": "Actual source; original probes copied byte-identically at same directory depth solely to preserve original receipts. Existing local dependencies; original tests with artifact-owned Node/no-setup/no-cache native config. Types/lint scope excludes slice03."
+    },
+    {
+      "name": "tests",
+      "command": "npm test -- --run --config ../tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review/vitest.review.config.mjs --configLoader native --no-cache lib/player-cards/domain.test.ts lib/player-cards/aggregation.r1.test.ts",
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "start": "2026-10-24T17:24:25.363Z",
+      "end": "2026-10-24T17:24:26.026Z",
+      "exitCode": 0,
+      "signal": null,
+      "error": null,
+      "note": "Actual source; original probes copied byte-identically at same directory depth solely to preserve original receipts. Existing local dependencies; original tests with artifact-owned Node/no-setup/no-cache native config. Types/lint scope excludes slice03."
+    },
+    {
+      "name": "types",
+      "command": "npm exec --offline -- tsc --noEmit --project ../tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review/tsconfig.json",
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "start": "2026-10-24T17:24:25.361Z",
+      "end": "2026-10-24T17:24:26.495Z",
+      "exitCode": 0,
+      "signal": null,
+      "error": null,
+      "note": "Actual source; original probes copied byte-identically at same directory depth solely to preserve original receipts. Existing local dependencies; original tests with artifact-owned Node/no-setup/no-cache native config. Types/lint scope excludes slice03."
+    },
+    {
+      "name": "lint",
+      "command": "npm exec --offline -- eslint lib/player-cards/aggregation.ts lib/player-cards/domain.test.ts lib/player-cards/aggregation.r1.test.ts",
+      "cwd": "/Users/tim/Code/fhfhockey.com/web",
+      "start": "2026-10-24T17:24:25.361Z",
+      "end": "2026-10-24T17:24:26.939Z",
+      "exitCode": 0,
+      "signal": null,
+      "error": null,
+      "note": "Actual source; original probes copied byte-identically at same directory depth solely to preserve original receipts. Existing local dependencies; original tests with artifact-owned Node/no-setup/no-cache native config. Types/lint scope excludes slice03."
+    },
+    {
+      "name": "capture",
+      "command": "node capture-reconciliation.original.cjs",
+      "cwd": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-02-r1-review",
+      "start": "2026-10-24T17:24:25.362Z",
+      "end": "2026-10-24T17:24:25.596Z",
+      "exitCode": 0,
+      "signal": null,
+      "error": null,
+      "note": "Actual source; original probes copied byte-identically at same directory depth solely to preserve original receipts. Existing local dependencies; original tests with artifact-owned Node/no-setup/no-cache native config. Types/lint scope excludes slice03."
+    }
+  ],
+  "networkAttempts": 0,
+  "applicationWrites": 0,
+  "originalEvidenceWrites": 0,
+  "authorR1PacketWrites": 0,
+  "gitActions": 0,
+  "notRun": [
+    "slice01 UI/TestingGrounds",
+    "slice03/browser/server",
+    "whole-app checks/build",
+    "provider/DB/production",
+    "installs",
+    "Git",
+    "deployment",
+    "agents"
+  ],
+  "limits": [
+    "Live-source/population/rights/product-policy gates unchanged",
+    "No live readiness or league coverage proved by fixtures or prior captured arithmetic"
+  ],
+  "files": [
+    {
+      "path": "HANDOFF.md",
+      "sizeBytes": 4048,
+      "sha256": "f2c74098ba496bf50137260beea3ad169cd51dc2e53a63557130a55ae6829e43"
+    },
+    {
+      "path": "capture-reconciliation-results.json",
+      "sizeBytes": 1657,
+      "sha256": "a8eae71fe87d7b0f681272b6e363c068fdf87c33ce6822212f4a56c89f618019"
+    },
+    {
+      "path": "capture-reconciliation.original.cjs",
+      "sizeBytes": 5491,
+      "sha256": "a76ab4f0f8e280af9650c29863795e5b4f521b4f6ad60ccf11eea2ee5a26969c"
+    },
+    {
+      "path": "capture.json",
+      "sizeBytes": 577,
+      "sha256": "ede38a97502aaa2af08913fdedc83e544181517dac9736a813508d7d681a1594"
+    },
+    {
+      "path": "capture.log",
+      "sizeBytes": 1657,
+      "sha256": "a8eae71fe87d7b0f681272b6e363c068fdf87c33ce6822212f4a56c89f618019"
+    },
+    {
+      "path": "counterexamples-results.json",
+      "sizeBytes": 8477,
+      "sha256": "4d3625f09a08e56f51603b6bcc9b000dd0ae7f9e9799cb2ed6762476a5786bc7"
+    },
+    {
+      "path": "counterexamples.original.cjs",
+      "sizeBytes": 16462,
+      "sha256": "654038435e7c47190dd64bbde9ea735babb5298a4ad71f0d8a3cab55f2d05f10"
+    },
+    {
+      "path": "lint.json",
+      "sizeBytes": 611,
+      "sha256": "82a7d82696e30514e6f2fde6a124a00f9d60c564ec97d7e6cffdcafd9a9d6817"
+    },
+    {
+      "path": "lint.log",
+      "sizeBytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "pins-final.json",
+      "sizeBytes": 17858,
+      "sha256": "3fcbb93d34fb59c86596defdf71aa1e78648b47aebb311ad9e8ebd13856bf8e2"
+    },
+    {
+      "path": "pins-initial.json",
+      "sizeBytes": 17860,
+      "sha256": "034d5e7f0be728b4b4e58e6f1a786e4bfb24a00ab2d6c57b3c5554bc44d667b7"
+    },
+    {
+      "path": "probes.json",
+      "sizeBytes": 569,
+      "sha256": "4be983c9fd09789b49d5bb03bf73e2d5de49abf578c6665b302881df5ccf4bda"
+    },
+    {
+      "path": "probes.log",
+      "sizeBytes": 2293,
+      "sha256": "b4b3cdde87c52cbb50df6ff736fff7e35c7a11329bfeb9294adb4f2af98ba587"
+    },
+    {
+      "path": "run-check.cjs",
+      "sizeBytes": 2790,
+      "sha256": "7caeddbcd0769b00ea1541f39f8c85e0a867613898d613fd815969ff9b4e3781"
+    },
+    {
+      "path": "tests.json",
+      "sizeBytes": 698,
+      "sha256": "0c02ac056029e782e12c08e843409c53c8d5d522bb23ef0d48d98614b2058b46"
+    },
+    {
+      "path": "tests.log",
+      "sizeBytes": 580,
+      "sha256": "416a3e93188954eef8c118c8b867bf3eb860ff88505746897d2da10407418765"
+    },
+    {
+      "path": "tsconfig.json",
+      "sizeBytes": 378,
+      "sha256": "e5dff65748b827383f1022b71be15500a68c85fc8504247fb78e5d4def8af4ca"
+    },
+    {
+      "path": "types.json",
+      "sizeBytes": 600,
+      "sha256": "041d786ec31043a4ce2b87a5c25a12d1d96c7f896ab5232cb553cafeb5c31c9b"
+    },
+    {
+      "path": "types.log",
+      "sizeBytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "verify-r1.cjs",
+      "sizeBytes": 4410,
+      "sha256": "586ad2bbeaafd7e0d20a51254ab7e5bdebfa42554a26ffac87a50027e03ab062"
+    },
+    {
+      "path": "vitest.review.config.mjs",
+      "sizeBytes": 372,
+      "sha256": "7bfa373557e290440a8bcbff1c95e32e12530dfbf37608dc67a608329e1e2029"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-social-c3-auth-compose-v0a1u6ui/web
+
+(node:24141) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  __tests__/contexts/AuthProviderContext.test.tsx [ __tests__/contexts/AuthProviderContext.test.tsx ]
+Error: Failed to resolve import "lib/socialShare/access" from "contexts/AuthProviderContext/index.tsx". Does the file exist?
+  Plugin: vite:import-analysis
+  File: /private/tmp/fhfh-social-c3-auth-compose-v0a1u6ui/web/contexts/AuthProviderContext/index.tsx:17:34
+  11 |  import { resetSupabaseBrowserAuthState } from "lib/supabase/browser-auth";
+  12 |  import { ensureUserRecords } from "lib/user-settings/ensureUserRecords";
+  13 |  import { isSocialShareRole } from "lib/socialShare/access";
+     |                                     ^
+  14 |  const AuthContext = createContext({
+  15 |    isLoading: true,
+ ❯ TransformPluginContext._formatLog ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42658:41
+ ❯ TransformPluginContext.error ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42655:16
+ ❯ normalizeUrl ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40634:23
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40753:37
+ ❯ TransformPluginContext.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:40680:7
+ ❯ EnvironmentPluginContainer.transform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:42453:18
+ ❯ loadAndTransform ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/vite/dist/node/chunks/dep-Dm0c1Wj2.js:35845:27
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  17:15:34
+   Duration  534ms (transform 44ms, setup 8ms, collect 0ms, tests 0ms, environment 254ms, prepare 34ms)
+

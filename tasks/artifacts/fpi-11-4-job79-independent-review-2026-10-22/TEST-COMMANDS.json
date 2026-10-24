@@ -1,0 +1,27 @@
+{
+  "TARGETED-TESTS": {
+    "argv": [
+      "/usr/local/bin/npm",
+      "test",
+      "--",
+      "--run",
+      "--config",
+      "vitest.offline.config.mts",
+      "lib/cron/nstCoordination.test.ts",
+      "lib/nst/requestBudget.test.ts"
+    ],
+    "exitCode": 0
+  },
+  "ADVERSARIAL": {
+    "argv": [
+      "/usr/local/bin/npm",
+      "test",
+      "--",
+      "--run",
+      "--config",
+      "vitest.offline.config.mts",
+      "adversarial.test.ts"
+    ],
+    "exitCode": 0
+  }
+}

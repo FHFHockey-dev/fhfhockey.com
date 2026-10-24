@@ -1,0 +1,28 @@
+{
+  "observed_at": "2026-10-23T16:57:39.290527+00:00",
+  "status": "succeeded",
+  "source": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+  "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+  "file_id": "file_00000000698081fd882b09c5727661f2",
+  "version": 0,
+  "bytes": 361564,
+  "sha256": "86260ab86adc99fe4a17a29ca4487b5f7768eecd97bfd77d00ab4e49d6759347",
+  "format": "unchanged text/markdown",
+  "qualification": "Checkpoint aggregation complete: 19 natural handoffs, 188 IDs, 32 legacy scopes preserved. Coherent release assembly and acceptance unfinished.",
+  "local_xattr_written": true,
+  "previous_snapshots": [
+    {
+      "observed_at": "2026-10-23T16:46:54.236045+00:00",
+      "status": "succeeded",
+      "source": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "library_file_id": "libfile_3208764721c08191a49656fae03d0813",
+      "file_id": "file_0000000090f481f5af23897dcf1a76c9",
+      "version": 0,
+      "bytes": 361718,
+      "sha256": "669883bcbcd9c0ad61fa5b7b20ad9785bbcdf00bf28492ded0524116f4c594c7",
+      "format": "unchanged text/markdown",
+      "qualification": "Partial consolidation; protected lane final outcomes pending.",
+      "local_xattr_written": true
+    }
+  ]
+}

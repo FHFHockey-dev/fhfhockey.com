@@ -1,0 +1,236 @@
+{
+  "mode": "baseline",
+  "at": "2026-10-24T18:09:48.950Z",
+  "checks": [
+    {
+      "name": "refund: 422 configuration error with its own code (re-capture of ticket-4 state 05): no raw, private or false text",
+      "pass": false,
+      "shown": [
+        "The 7-day refund request window for this purchase has closed. Contact support if you need help."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "refund: 422 the current route relabels refund_window_closed (known boundary limit): no raw, private or false text",
+      "pass": true,
+      "shown": [
+        "The 7-day refund request window for this purchase has closed. Contact support if you need help."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "refund: unrelated 404 HTML from a proxy: no raw, private or false text",
+      "pass": false,
+      "shown": [
+        "This purchase isn't eligible for an account refund request. Contact support if you think this is wrong."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "refund: 409 with a different code: no raw, private or false text",
+      "pass": false,
+      "shown": [
+        "This purchase already has an open refund request. We'll review it case by case."
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "refund window notice: open request, deadline in 36 h: no raw, private or false text",
+      "pass": false,
+      "shown": [],
+      "windowNotice": [
+        "Refund eligibility: eligible. The request window ended October 26, 2026 Eastern."
+      ]
+    },
+    {
+      "name": "refund window notice: deadline 36 h ago: no raw, private or false text",
+      "pass": true,
+      "shown": [],
+      "windowNotice": [
+        "Refund eligibility: window_closed. The request window ended October 23, 2026 Eastern."
+      ]
+    },
+    {
+      "name": "account load: 500 with database, email and key names: no raw, private or false text",
+      "pass": false,
+      "shown": [
+        "Draft Pro\n\nrelation \"draft_pro_purchases\" does not exist; user tim@example.com"
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "account load: 401 expired session: no raw, private or false text",
+      "pass": false,
+      "shown": [
+        "Draft Pro\n\ninvalid JWT: token is expired"
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "access code: network failure: no raw, private or false text",
+      "pass": false,
+      "shown": [
+        "Failed to fetch"
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "recovery code: 403 naming another account: no raw, private or false text",
+      "pass": false,
+      "shown": [
+        "This Checkout session cs_live_a1b2 belongs to user 7d2a"
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "access code accepted, every account refresh fails: no raw, private or false text",
+      "pass": false,
+      "shown": [
+        "relation \"draft_pro_purchases\" does not exist; user tim@example.com"
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "checkout verify: 503 configuration error: no raw, private or false text",
+      "pass": false,
+      "shown": [
+        "Payment is confirming with Stripe.\n\nCheck purchase status again",
+        "Stripe checkout is not configured. STRIPE_SECRET_KEY unset"
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "Patreon connect: 500 with private details: no raw, private or false text",
+      "pass": false,
+      "shown": [
+        "[object Object]"
+      ],
+      "windowNotice": []
+    },
+    {
+      "name": "every state screenshot is distinct",
+      "pass": true,
+      "count": 13
+    }
+  ],
+  "states": [
+    {
+      "state": "refund: 422 configuration error with its own code (re-capture of ticket-4 state 05)",
+      "file": "01-refund-config-422.png",
+      "sha256": "4ce382023c4a05e289bb8b73e4b8b991c0f5873dfff90025b407bb0522f80e46",
+      "shown": [
+        "The 7-day refund request window for this purchase has closed. Contact support if you need help."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "refund: 422 the current route relabels refund_window_closed (known boundary limit)",
+      "file": "02-refund-relabelled-422.png",
+      "sha256": "b0771d6541fb8225d0c1124c9d338270d4321f8c4ee3db0fe620b08009f816d0",
+      "shown": [
+        "The 7-day refund request window for this purchase has closed. Contact support if you need help."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "refund: unrelated 404 HTML from a proxy",
+      "file": "03-refund-proxy-404.png",
+      "sha256": "5fbd5e9c344b68422dfa5437bdfc0ee750eaf82e414938d9bd064e4891c92ffa",
+      "shown": [
+        "This purchase isn't eligible for an account refund request. Contact support if you think this is wrong."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "refund: 409 with a different code",
+      "file": "04-refund-409-other-code.png",
+      "sha256": "947891224bea9e7f1dc0dbe2290195af0d49f41dd200a666e9e7861df5fb103a",
+      "shown": [
+        "This purchase already has an open refund request. We'll review it case by case."
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "refund window notice: open request, deadline in 36 h",
+      "file": "05-window-ends.png",
+      "sha256": "615644b1f19fa8ba2107a8cb087f095af58afa4e4d903fa2ffcc907b0f427d4e",
+      "shown": [],
+      "windowNotice": [
+        "Refund eligibility: eligible. The request window ended October 26, 2026 Eastern."
+      ]
+    },
+    {
+      "state": "refund window notice: deadline 36 h ago",
+      "file": "06-window-ended.png",
+      "sha256": "b18616593f868dbb76f0ad9d456b53f0a4ddce497f5888588e0b3b02037afe5a",
+      "shown": [],
+      "windowNotice": [
+        "Refund eligibility: window_closed. The request window ended October 23, 2026 Eastern."
+      ]
+    },
+    {
+      "state": "account load: 500 with database, email and key names",
+      "file": "07-account-private-500.png",
+      "sha256": "604832b823924a86cecd163eb74ab573e5aa14a35d66ccb508e5d85432d255b7",
+      "shown": [
+        "Draft Pro\n\nrelation \"draft_pro_purchases\" does not exist; user tim@example.com"
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "account load: 401 expired session",
+      "file": "08-account-401.png",
+      "sha256": "cf8ebc439b1ad814ead45bf2990c25bc8c65316404617bff9e1d9408bbe87bd0",
+      "shown": [
+        "Draft Pro\n\ninvalid JWT: token is expired"
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "access code: network failure",
+      "file": "09-redeem-network.png",
+      "sha256": "8b3252a9628bb11dedf6dbe249aa0bfc1b884af77e5da04896748fb3dc3067a2",
+      "shown": [
+        "Failed to fetch"
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "recovery code: 403 naming another account",
+      "file": "10-recovery-403.png",
+      "sha256": "80867bc5ec95ace2f823f35fdc4edc28b47e6204cdf66c67f1d8cb9347cef541",
+      "shown": [
+        "This Checkout session cs_live_a1b2 belongs to user 7d2a"
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "access code accepted, every account refresh fails",
+      "file": "11-redeem-refresh-fails.png",
+      "sha256": "7189de487c2a65bc056add2d9247ee26bc6d9a01c9aecfe6eae9d8b4a464b0ab",
+      "shown": [
+        "relation \"draft_pro_purchases\" does not exist; user tim@example.com"
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "checkout verify: 503 configuration error",
+      "file": "12-checkout-config-503.png",
+      "sha256": "1bd294097a8a03829e6589bb176d4696c2b415924eed03df40ff9458976187ee",
+      "shown": [
+        "Payment is confirming with Stripe.\n\nCheck purchase status again",
+        "Stripe checkout is not configured. STRIPE_SECRET_KEY unset"
+      ],
+      "windowNotice": []
+    },
+    {
+      "state": "Patreon connect: 500 with private details",
+      "file": "13-patreon-connect-500.png",
+      "sha256": "a6e6d043f70de53337b9d885beaf544a5de7c51903fcd2d153d1e44da70ae83c",
+      "shown": [
+        "[object Object]"
+      ],
+      "windowNotice": []
+    }
+  ]
+}

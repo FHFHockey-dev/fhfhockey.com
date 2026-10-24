@@ -1,0 +1,99 @@
+{
+  "at": "2026-10-24T22:21:00.427802+00:00",
+  "status": "HOLD: TJ requested coordinated checkpoint and wait; no publication now",
+  "recorded_production_base": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "publication_target": {
+    "project": "fhfhockey",
+    "project_id": "prj_LV0wbwH5gRjOsZlowzEFNGRuX7Lw",
+    "team_id": "team_KVFicHhQJARTbO6wRD2x6jpq",
+    "branch": "master",
+    "environment": "production"
+  },
+  "order": [
+    {
+      "sequence": 1,
+      "candidate_commit": "270def4ec6b0abc05b0ceeb2f55d75445b27a35a",
+      "scope": "WiGO reader, stats, WiGO navigation, plain NewsCard copy, C3 sign-out cleanup",
+      "qualification": "Unchanged22-path candidate;144 tests/full-app TypeScript/scoped lint passed",
+      "state": "Included as an ancestor of the final social candidate; no separate publication is needed."
+    },
+    {
+      "sequence": 2,
+      "candidate_commit": "8f883c65269be83500b665b8be78f9d5e74d26b6",
+      "parent_commit": "270def4ec6b0abc05b0ceeb2f55d75445b27a35a",
+      "additional_paths": 46,
+      "paths_vs_production": 67,
+      "scope": "Latest SS1 t13, exact editor access/C3 merged test, accepted pure percentile dependency, local font licenses, synthetic test helper/spec and one reviewed CSS overflow correction",
+      "qualification": "161 focused unit cases, full app TypeScript/scoped lint;4 original Next/browser/API passes plus1 corrected strict/widened test and both PNGs",
+      "state": "This is the already verified composed tip for one publication after direct exact approval. Allen role assignment and live positive account/RLS verification remain separate."
+    },
+    {
+      "sequence": 3,
+      "candidate_patch": "../c5-prerequisite-r1/candidate.patch",
+      "patch_sha256": "c1da3563ab3a160aaf8d809fa6e1de8d40660a874d67a3aad4a2b453c2c6ff26",
+      "base": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+      "paths": 88,
+      "scope": "Auth-before-audit and safe job-result prerequisites for scheduled Yahoo live-draft/prospect-refresh audit coverage; endpoint bodies preserved",
+      "qualification": "110 tests/full app TypeScript/lint and independent review with limits on its own production-based snapshot",
+      "state": "Separate qualified local patch, not included in270 or latest social commit. No path overlap with social cut. If selected after them, compose onto the actual released parent and verify that exact combination before obtaining exact SHA authorization. No job invocation, schedule change or provider read is approved."
+    }
+  ],
+  "build_policy": {
+    "before_approved_publication": "Recheck existing deployment/build for exact SHA and reuse success or wait for in-progress; do not duplicate builds",
+    "last_verified_expected_fanout": "4 project entries:1 web build,3 existing companion ignore/cancellations",
+    "automatic_previews": "Remain disabled",
+    "production_readback": "No requests performed in this phase. Inspect exact read-path behavior, state a maximum5 sequential read-only smoke budget and stopping condition, and use only approved routes after exact release approval."
+  },
+  "excluded": [
+    "Allen or any persistent role grant",
+    "Expanded live tier trim or new recent/provider reads",
+    "Tuesday/unsupported social sources",
+    "C2 metadata/homepage prerequisites, alias/Luna activation",
+    "C3 panel/refund/server billing expansion",
+    "BLSH foundational/model integration",
+    "FORGE/RSO/Start Chart blanket packet adoption",
+    "Testing Grounds real runner/model/paid execution",
+    "Player-card synthetic/design prototypes and new free-RSO analysis",
+    "Unity/Blender assets and background-removal work",
+    "WiGO stored-data repair/backfill"
+  ],
+  "actual_remote_actions": {
+    "push": 0,
+    "build": 0,
+    "deployment": 0,
+    "application_requests": 0,
+    "account_or_role_writes": 0
+  },
+  "source_custody": "Canonical app and Claude spec remain unchanged; audit retains sole master/ledger custody",
+  "newer_work_not_in_frozen_candidate": "CLAUDE-047 reports SS1 ticket14 local tier-row trim in progress using already-read layer; no new tables/reads/live requests. Require exact final receipt and focused reconciliation before any inclusion. Preserve current canonical work.",
+  "recommended_publication": {
+    "candidate_commit": "8f883c65269be83500b665b8be78f9d5e74d26b6",
+    "contains_dependencies": [
+      "212d38c65c3f48fc6f6ec820cd4edbacd1d364e8",
+      "270def4ec6b0abc05b0ceeb2f55d75445b27a35a"
+    ],
+    "push_count": 1,
+    "expected_web_builds": 1,
+    "expected_ignored_companion_entries": 3,
+    "expected_total_deployment_entries": 4,
+    "C5_included": false,
+    "C5_required_for_social_share": false,
+    "clarification": "Earlier numbered items describe source dependencies. No separate publication of reader212 or bundle270 is needed before publishing final8f. Existing checks verified the composed 67 file production difference.",
+    "authority": "New exact direct approval of8f is required. No publication authority inferred from the prior pending270 request."
+  },
+  "execution_sequence": [
+    "After direct approval of commit 8f, recheck remote master and exact-SHA deployment/build status; stop on unexpected drift or reuse/wait for an existing suitable deployment.",
+    "Publish exact commit 8f to master once for fhfhockey production; expected 1 web build plus 3 existing ignored/canceled companion entries, no project setting changes.",
+    "Wait for that exact SHA READY deployment; perform at most 2 sequential credential-free read-only checks: /social-share/game-grid generic frame and /api/v1/social-share/game-grid expected 401/private-no-store. Stop on unexpected result; no authenticated provider read.",
+    "Only after code/deployment verification, request the separate exact social_editor assignment for Allen's already verified existing account. No role grant is approved/applied in this task.",
+    "After the separate grant, Allen can sign in to the deployed studio. Live positive account/RLS/source behavior remains unverified here; ticket 14 live-tier functionality requires its own final receipt and is excluded."
+  ],
+  "updated_at": "2026-10-24T22:31:24.265265+00:00",
+  "current_control": {
+    "at": "2026-10-24T22:33:39.477601+00:00",
+    "instruction": "Preserve exact candidates and await coordinated production push",
+    "sequence_authority": "Future plan only; do not execute until hold is explicitly released and exact action is approved",
+    "role_assignment": "Separate parent action-time confirmation pending; no grant",
+    "player_card_sharing": "New pending analysis/review scope; excluded from frozen candidate"
+  }
+}

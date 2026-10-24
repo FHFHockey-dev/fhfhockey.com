@@ -1,5 +1,7 @@
 # A1–A4 / A6 local fix handoff
 
+**Latest integration receipt:** [combined A1–A10 plus accepted NST R1](combined-audit-nst/REPORT.md) pins 31 unique changed paths and records 770 passing test executions. Application TypeScript passes; two diagnostics in an unchanged external reviewer fixture are recorded separately. The original packet archive and historical account below remain preserved. Qualification, storage, rollout and release gates stay open.
+
 Fourteen application/test files are changed locally on `octoberBranch`, base HEAD `a811b0762ffe29006c3df7eaa4c19bf18deecda3`. The owned canonical files match the tested snapshot. No commit, push, branch/worktree change, dependency change, migration, production request, external-model call, or deployment occurred. Existing dirty work was preserved. Parent retains A5/A10 and A7–A9; this task dispatched no workers.
 
 ## Implemented behavior

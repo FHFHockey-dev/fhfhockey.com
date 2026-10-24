@@ -1,0 +1,13 @@
+{
+  "at": "2026-10-24T17:30:07.417761+00:00",
+  "path": "tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md",
+  "sha256": "4458ec50593056026baa680ee997932d25fe5ee9ea03e44732cbd9ef7fa4caaa",
+  "status": "partially-inspected",
+  "selected_lines": [
+    {
+      "line": 5545,
+      "text": "- [ ] `SRC::tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md::C0057` (live NEW) \u2014 NEW 15.0 **P3 Player Pickup reintroduced raw colors (2026-10-17 completion audit):** `web/components/GameGrid/PlayerPickupTable/PlayerPickupTable.module.scss:1748-1763` (`.yahooContext`, from `f90bb13cd`, 2026-09-17, in production) uses `rgba(255,255,255,0.16/0.25)`, `#77cfff`, `#20252d` and `#10384e`, so the zero-literal-white/black and empty raw-color scans no longer hold. Supersedes 4.4 (C0023), 8.1 (C0041) and the raw-color clauses of master 4.10 and 5.7.19. Close by moving the colors to shared tokens and re-running the scoped scan. Evidence: `tasks/artifacts/super-goal-audit-2026-10-17/findings/G4-underlying-site-ux.md`."
+    }
+  ],
+  "scope": "Exact source alias only; broad accidental search output was truncated and earns no full-content credit."
+}

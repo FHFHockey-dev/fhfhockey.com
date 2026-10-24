@@ -1,0 +1,91 @@
+{
+  "at": "2026-10-24T20:30:45.375060+00:00",
+  "before_ids": 215,
+  "after_ids": 215,
+  "before_evidence": 1241,
+  "after_evidence": 1253,
+  "added_ids": [],
+  "changed_existing_ids": [
+    "IFTTT-ACTIVATION"
+  ],
+  "all_prior_ids_scopes_evidence_prefixes_preserved": true,
+  "legacy_blocks_byte_identical": 32,
+  "unchanged_existing_rows_identical": 214,
+  "readable_children_before": 60,
+  "readable_children_after": 71,
+  "scalar_label_checks": [
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "IFTTT-ACTIVATION",
+      "field": "implementation",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "IFTTT-ACTIVATION",
+      "field": "acceptance",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "IFTTT-ACTIVATION",
+      "field": "release",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "IFTTT-ACTIVATION",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "IFTTT-ACTIVATION",
+      "field": "next_action",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "IFTTT-ACTIVATION",
+      "field": "implementation",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "IFTTT-ACTIVATION",
+      "field": "acceptance",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "IFTTT-ACTIVATION",
+      "field": "release",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "IFTTT-ACTIVATION",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "IFTTT-ACTIVATION",
+      "field": "next_action",
+      "label_value_matched": true
+    }
+  ],
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "e129b880044db73f7537725da8cbca040ca5641cc537243aaf7f0177a8901db1",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "6f791ca5a313972beafc4c65c7c3b1f9481902e8a7b33d314d556b2cd1899992",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "889fc2f653d702a55faca193cdbc7a096a80409cd1a1743339f64ce57094000e"
+  },
+  "candidate_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "8b0a93d5e74ce9f32144e487ec7059ef33871505d7910e1c4bd47b0e7873b28e",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "24b32be9e45298af55635a1a6f36461ef968a5739ef2068ea1d471b693c97f4a",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "bc20a1f0096f3b265e20f9aa14e182d728b12b5d24802141891a0e4aff620fca"
+  },
+  "no_added_trailing_whitespace": true,
+  "application_tests_git_or_external_operations": 0,
+  "whole_tree_content_audit_complete": false
+}

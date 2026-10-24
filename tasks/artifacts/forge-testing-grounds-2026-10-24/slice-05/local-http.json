@@ -1,0 +1,30 @@
+{
+  "atUtc": "2026-10-24T16:32:31Z",
+  "source": "parent-authorized diagnosis after TJ reported locked page",
+  "method": "GET",
+  "url": "http://127.0.0.1:3000/api/v1/forge/testing-grounds/access",
+  "credentialsSent": false,
+  "initialSandboxOutcome": "curl exit7; no connection",
+  "escalatedReadOutcome": "approved; curl exit0",
+  "status": 503,
+  "body": {
+    "error": "owner_not_configured"
+  },
+  "cacheControl": "private, no-store, max-age=0",
+  "providerCalls": 0,
+  "configInspection": {
+    "key": "FORGE_TESTING_GROUNDS_OWNER_USER_ID",
+    "files": {
+      "web/.env.development.local": 0,
+      "web/.env.local": 0,
+      "web/.env.development": 0
+    },
+    "reported": "presence only; no values; process environment not inspected"
+  },
+  "serverObserved": {
+    "pid": 49759,
+    "cwd": "/Users/tim/Code/fhfhockey.com/web",
+    "owner": "unconfirmed concurrent process"
+  },
+  "conclusion": "Running policy lacks a valid dedicated owner; denial precedes session verification. Admin role and token validity were not evaluated."
+}

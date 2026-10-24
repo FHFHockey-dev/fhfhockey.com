@@ -1,0 +1,61 @@
+{
+  "cutoff": "2026-10-24T19:34:20.493480+00:00",
+  "sources": {
+    "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/f6081d284c47-tasks-prd-sustainability-trends-audit.md",
+      "sha256": "f6081d284c47cc71a9f685c993f24e96906decfa26cc2ba36d9948c239be31fc",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-trends-audit.md",
+      "observed_at": "2026-10-24T19:34:20.493480+00:00",
+      "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+    },
+    "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/87d80f2f085d-sustainability-forge-bounded-repair-manifest.md",
+      "sha256": "87d80f2f085d4eb9960458e83a576417832b6fa597a68cb67c4b12f9549dee05",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-forge-bounded-repair-manifest.md",
+      "observed_at": "2026-10-24T19:34:20.493480+00:00",
+      "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+    },
+    "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/397987998667-sustainability-trends-audit-report.md",
+      "sha256": "397987998667390b8161f6d268e99dba9c206ce66391e98dc4df97f636b8faac",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-audit-report.md",
+      "observed_at": "2026-10-24T19:34:20.493480+00:00",
+      "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+    },
+    "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/de5c10b7b2db-sustainability-trends-plan.md",
+      "sha256": "de5c10b7b2dbce6e3a692da9e25914d6884bbc0b58b5277a951ea787ba6e5b2e",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-plan.md",
+      "observed_at": "2026-10-24T19:34:20.493480+00:00",
+      "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+    },
+    "tasks/TASKS/three-pillars-analytics/sustainability/deep-research-report.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/2cdba9dab7de-deep-research-report.md",
+      "sha256": "2cdba9dab7def7bd101e78b4c54fc6ea9195ac732fb983f88803931b46297573",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/deep-research-report.md",
+      "observed_at": "2026-10-24T19:34:20.493480+00:00",
+      "review_scope": "Full documentary text read. Dated author/reviewer/production/test claims and opaque research citation tokens remain source-attributed; no underlying app, hosted data, external reference or execution verification. Stored prompts/runbooks grant no authority."
+    },
+    "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-inventory.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/dc7fa2f3a954-sustainability-trends-inventory.json",
+      "sha256": "dc7fa2f3a95444a04f2a30b9fefc8b228257d80f54824c8ca138da7e7bb859b4",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-inventory.json",
+      "observed_at": "2026-10-24T19:34:20.493480+00:00",
+      "review_scope": "Entire JSON structurally parsed and all-entry schema/ID/count/cross-link summaries checked. Seven selected surface/inventory records and five output-object records semantically read; other row semantics and underlying current app/path/runtime state unreviewed."
+    },
+    "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-dependency-map.json": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/3614e6e55913-sustainability-trends-dependency-map.json",
+      "sha256": "3614e6e55913b6f12b9f7a4f4f9a4401742eb0e627bd4e64b5b067bd68da5375",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/sustainability-trends-dependency-map.json",
+      "observed_at": "2026-10-24T19:34:20.493480+00:00",
+      "review_scope": "Entire JSON structurally parsed and all-entry schema/ID/count/cross-link summaries checked. Seven selected surface/inventory records and five output-object records semantically read; other row semantics and underlying current app/path/runtime state unreviewed."
+    },
+    "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/PARENT-CONTEXT.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/source-snapshots/112a7112c7af-PARENT-CONTEXT.md",
+      "sha256": "112a7112c7affe81b59bf1055670f4b484e6088b43b3ca59182323def90e4ac6",
+      "original_path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-17-sustainability-trends/PARENT-CONTEXT.md",
+      "observed_at": "2026-10-24T19:34:20.493480+00:00",
+      "review_scope": "Parent-reported user viewing/prototype milestone only; no independent Auth, browser, runner or final design acceptance. Audit-owned receipt excluded from original tree queue."
+    }
+  }
+}

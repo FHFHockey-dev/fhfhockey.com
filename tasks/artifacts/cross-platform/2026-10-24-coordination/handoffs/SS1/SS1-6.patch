@@ -1,0 +1,963 @@
+--- a/web/lib/socialShare/export.ts
++++ b/web/lib/socialShare/export.ts
+@@ -41,7 +41,7 @@
+   return canvas.toDataURL("image/png");
+ }
+ 
+-export type ShareExportOptions = { opponents?: boolean; players?: boolean; card?: string };
++export type ShareExportOptions = { opponents?: boolean; players?: boolean; trends?: boolean; movers?: boolean; card?: string };
+ 
+ export function assertExportable(snapshot: SocialShareSnapshot, options: ShareExportOptions = {}) {
+   if (snapshot.state !== "ready" || snapshot.source.state !== "ready") throw new Error("A complete, fresh schedule is required to download.");
+@@ -49,6 +49,8 @@
+   if (!snapshot.selectedDates.length || !snapshot.rows.some(row => row.remainingGames > 0)) throw new Error("Select dates with remaining games before downloading.");
+   if (options.opponents && snapshot.opponents?.state !== "ready") throw new Error("Current, complete opponent team ratings are required to download this card.");
+   if (options.players && snapshot.players?.state !== "ready") throw new Error("Current player ownership and season totals are required to download this card.");
++  if (options.trends && snapshot.trends?.state !== "ready") throw new Error("Current rolling game metrics are required to download this card.");
++  if (options.movers && snapshot.trends?.moversState !== "ready") throw new Error("Current Yahoo ownership is required to download this card.");
+ }
+ 
+ async function embeddedFonts() {
+--- a/web/lib/socialShare/schedule.ts
++++ b/web/lib/socialShare/schedule.ts
+@@ -4,7 +4,7 @@
+ import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
+ import calcWeekScore from "components/GameGrid/utils/calcWeekScore";
+ import { calcWeightedOffNights } from "components/GameGrid/utils/helper";
+-import { SHARE_TIME_ZONE, type ShareGame, type ShareTeam, type SocialScheduleData, type SocialScheduleGame, type SocialShareFormat, type SocialShareSnapshot } from "./types";
++import { SCHEDULE_FORMATS, SHARE_TIME_ZONE, type ShareGame, type ShareTeam, type SocialScheduleData, type SocialScheduleGame, type SocialShareFormat, type SocialShareSnapshot } from "./types";
+ 
+ export function assertCalendarDate(date: string): string {
+   if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(Date.parse(`${date}T00:00:00Z`)) || new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date) throw new Error("Use a real YYYY-MM-DD calendar date.");
+@@ -88,7 +88,7 @@
+     expiresAt = new Date(expiry).toISOString();
+     if (expiry <= asOf) { state = "stale"; reasons.push("Schedule read is older than the applicable freshness limit."); }
+   }
+-  if (!["game-grid", "remaining-week"].includes(snapshot.format)) { state = "blocked"; reasons.push("This format requires ownership or player evidence that is not available in this schedule-only edition."); }
++  if (!SCHEDULE_FORMATS.includes(snapshot.format)) { state = "blocked"; reasons.push("This format requires ownership or player evidence that is not available in this schedule-only edition."); }
+   const rows = snapshot.teams.map(team => {
+     const games = snapshot.games.filter(game => game.homeTeam.id === team.id || game.awayTeam.id === team.id);
+     const opportunities = remaining.filter(game => game.homeTeam.id === team.id || game.awayTeam.id === team.id);
+--- a/web/lib/socialShare/schedule.test.ts
++++ b/web/lib/socialShare/schedule.test.ts
+@@ -204,7 +204,7 @@
+     expect((await request({ format: "game-grid" }, "POST")).code).toBe(405);
+     expect((await request({ format: "game-grid", weekStart: "2026-02-30" })).code).toBe(400);
+     expect((await request({ format: "game-grid", weekStart, selectedDates: `${dates[0]},${dates[0]}` })).code).toBe(400);
+-    const blocked = await request({ format: "tuesday-trends", weekStart });
++    const blocked = await request({ format: "player-spotlight", weekStart });
+     expect(blocked.code).toBe(200); expect(blocked.body.state).toBe("blocked");
+     expect(blocked.body.source).toMatchObject({ state: "blocked", fetchedAt: null, updatedAt: null, coveredDates: [] });
+     expect(upstream.getSchedule).not.toHaveBeenCalled();
+@@ -251,6 +251,16 @@
+       expect(partial.body.opponents.teams.NJD).toEqual({ gp: 40, xgf: 100, xga: 120 });
+       expect(JSON.stringify(partial.body.opponents)).not.toContain("private-name");
+     } finally { vi.useRealTimers(); }
++  });
++  it("serves Tuesday trends as a schedule edition without reading team rates", async () => {
++    upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockClear();
++    upstream.getSchedule.mockResolvedValue({ data: {}, numGamesPerDay: [1, 0, 0, 0, 0, 0, 0], coveredDates: dates, fetchedAt: now, games: [game()] });
++    const result = await request({ format: "tuesday-trends", weekStart });
++    expect(result.code).toBe(200); expect(result.body.state).toBe("ready");
++    expect(result.body.selectedDates).toEqual(dates);
++    expect(result.body.opponents ?? null).toBeNull(); expect(result.body.trends ?? null).toBeNull();
++    expect(upstream.getSchedule).toHaveBeenCalledTimes(1);
++    expect(opponentSource.loadShareTeamRates).not.toHaveBeenCalled();
+   });
+   it("reads opponent rates only after the schedule read succeeds", async () => {
+     upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockClear();
+--- a/web/lib/socialShare/server.ts
++++ b/web/lib/socialShare/server.ts
+@@ -2,7 +2,7 @@
+ import { assertCalendarDate, buildScheduleSnapshot, calendarWeekStart, currentSeason, weekDates } from "./schedule";
+ import { buildOpponentLayer } from "./matchups";
+ import { loadShareTeamRates } from "./teamRates";
+-import { isSocialShareFormat, type SocialShareFormat, type SocialShareSnapshot } from "./types";
++import { isSocialShareFormat, OPPONENT_RATE_FORMATS, SCHEDULE_FORMATS, type SocialShareFormat, type SocialShareSnapshot } from "./types";
+ 
+ export class SocialShareRequestError extends Error {
+   constructor(message: string, public status: number) { super(message); }
+@@ -16,7 +16,7 @@
+     assertSupportedSeason(start, requestedAt);
+     if (selectedDates && (new Set(selectedDates).size !== selectedDates.length || selectedDates.some(date => !dates.includes(assertCalendarDate(date))))) throw new Error("Selected dates must be unique dates within the selected week.");
+   } catch (error) { throw new SocialShareRequestError(error instanceof Error ? error.message : "Invalid date selection.", 400); }
+-  if (format !== "game-grid" && format !== "remaining-week") {
++  if (!SCHEDULE_FORMATS.includes(format)) {
+     const blocked = buildScheduleSnapshot({ format, weekStart: start, selectedDates, generatedAt: requestedAt, schedule: { data: {}, numGamesPerDay: [], coveredDates: [] } });
+     blocked.source = { name: "NHL schedule", fetchedAt: null, updatedAt: null, coveredDates: [], state: "blocked", reasons: ["No upstream schedule read was made for this unsupported format."] };
+     blocked.reasons = ["This format requires ownership or player evidence that is not available in this schedule-only edition."];
+@@ -27,8 +27,9 @@
+     const schedule = await getSchedule(start, { includeOdds: false });
+     snapshot = buildScheduleSnapshot({ format, weekStart: start, selectedDates, generatedAt: new Date().toISOString(), schedule });
+   } catch { throw new SocialShareRequestError("NHL schedule is unavailable. Refresh to retry.", 503); }
+-  // Opponent rates are read only after the schedule succeeds and only feed the matchup cards;
+-  // their failure never blocks the schedule edition.
++  // Opponent rates are read only after the schedule succeeds and only for formats with matchup
++  // cards; their failure never blocks the schedule edition. Tuesday trend sources are not connected.
++  if (!OPPONENT_RATE_FORMATS.includes(format)) return snapshot;
+   const season = currentSeason(start);
+   const stats = await loadShareTeamRates(season).catch(() => null);
+   snapshot.opponents = buildOpponentLayer(stats, { season, teams: snapshot.teams, fetchedAt: new Date().toISOString(), generatedAt: snapshot.generatedAt });
+--- a/web/lib/socialShare/types.ts
++++ b/web/lib/socialShare/types.ts
+@@ -18,6 +18,10 @@
+ ] as const;
+ 
+ export type SocialShareFormat = typeof SOCIAL_SHARE_FORMATS[number];
++/** Formats backed by the NHL schedule edition; the rest stay source-gated. */
++export const SCHEDULE_FORMATS: readonly SocialShareFormat[] = ["game-grid", "remaining-week", "tuesday-trends"];
++/** Formats whose matchup cards use opponent team rates. */
++export const OPPONENT_RATE_FORMATS: readonly SocialShareFormat[] = ["game-grid", "remaining-week"];
+ export type ShareDataState = "ready" | "partial" | "stale" | "missing" | "blocked";
+ export const SHARE_TIME_ZONE = "America/New_York";
+ 
+@@ -98,6 +102,50 @@
+   players: SharePlayer[];
+ };
+ 
++/** One skater's last-5 vs season windows from rolling_player_game_metrics (strength "all"). */
++export type ShareTrendPlayer = {
++  nhlId: number;
++  name: string;
++  team: string;
++  position: string;
++  /** Latest game in the rolling rows and the player's season games played through it. */
++  lastGame: string;
++  seasonGames: number;
++  pointsPerGame: { last5: number | null; season: number | null };
++  toiSeconds: { last5: number | null; season: number | null };
++  ppSharePct: { last5: number | null; season: number | null };
++  sogPer60: { last5: number | null; season: number | null };
++  icfPer60: { last5: number | null; season: number | null };
++  ixgPer60: { last5: number | null; season: number | null };
++  /** Total TOI over the last five games, the sample behind the last-5 per-60 rates. */
++  toiSecondsLast5: number | null;
++  /** Line slot and PP unit in the latest game and five games earlier (null when unknown). */
++  line: { now: number | null; before: number | null; group: string | null };
++  ppUnit: { now: number | null; before: number | null };
++};
++/** One Yahoo rostered-% mover (ownership-trends rule: latest vs the value at or before 5 days earlier). */
++export type ShareOwnershipMover = { /** Public name|team, never a Yahoo key. */ key: string; name: string; team: string | null; positions: string; latest: number; previous: number; delta: number; latestDate: string; previousDate: string };
++export type ShareTrendLayer = {
++  name: "FHFH rolling game metrics + Yahoo ownership";
++  season: number;
++  fetchedAt: string | null;
++  /** Oldest latest-game date among included skaters. */
++  metricsThrough: string | null;
++  /** Oldest rolling-row update time among included skaters. */
++  metricsUpdatedAt: string | null;
++  /** Oldest latest ownership date among included movers. */
++  ownershipAsOf: string | null;
++  moverWindowDays: number;
++  /** Rolling-metric state (hot/cold, deployment, rates). */
++  state: ShareDataState;
++  reasons: string[];
++  /** Ownership-mover state, gated separately so stale ownership never blocks metric cards. */
++  moversState: ShareDataState;
++  moversReasons: string[];
++  players: ShareTrendPlayer[];
++  movers: ShareOwnershipMover[];
++};
++
+ /** Public presentation only; never a forecast capture packet or private league state. */
+ export type SocialShareSnapshot = {
+   schemaVersion: 1;
+@@ -128,6 +176,8 @@
+   opponents?: ShareOpponentStats | null;
+   /** Optional player layer for the pickups and specialists cards. */
+   players?: SharePlayerLayer | null;
++  /** Optional trend layer for the Tuesday edition. */
++  trends?: ShareTrendLayer | null;
+ };
+ 
+ export const isSocialShareFormat = (value: string): value is SocialShareFormat =>
+--- a/web/components/SocialShare/SocialShare.tsx
++++ b/web/components/SocialShare/SocialShare.tsx
+@@ -1,10 +1,11 @@
+ /* eslint-disable @next/next/no-img-element -- Native owned SVG is decoded and embedded by html-to-image for exact PNG exports. */
+ import { useCallback, useEffect, useRef, useState } from "react";
+-import type { SocialShareFormat, SocialShareSnapshot, ShareTeam, ShareTeamRow } from "lib/socialShare/types";
++import { SCHEDULE_FORMATS, type SocialShareFormat, type SocialShareSnapshot, type ShareTeam, type ShareTeamRow } from "lib/socialShare/types";
+ import { calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
+ import { bounded, downloadSharePng, readyShareFonts, SHARE_SIZE, teamLogoDataUrl } from "lib/socialShare/export";
+ import { mondayGridRows } from "lib/socialShare/mondayGrid";
+ import { easiestSchedules, opponentsReady, SOFT_DEFENSE_MAX, STREAM_TEAM_RANK_MAX, streamingNights, type MatchupGame } from "lib/socialShare/matchups";
++import { deploymentChanges, hotCold, MIN_RATE_TOI_SECONDS_LAST5, MIN_TREND_SEASON_GAMES, moversReady, ownershipMovers, rateStandouts, TREND_WINDOW_GAMES, trendsReady, type RateMetric, type TrendPick } from "lib/socialShare/trends";
+ import { MIN_GOALIE_STARTS, MIN_SKATER_GAMES, PICKUP_BANDS, PLAYER_TEAM_RANK_MAX, pickupTiers, playersReady, specialists, type RankedPlayer, type SpecialistCategory } from "lib/socialShare/players";
+ import styles from "./SocialShare.module.scss";
+ 
+@@ -18,8 +19,17 @@
+ const scoreLabel = (row: ShareTeamRow) => row.remainingGames ? row.score.toFixed(1) : "No games";
+ const titleDay = (label: string) => label.charAt(0) + label.slice(1, 3).toLowerCase();
+ const cx = (...names: (string | false | null | undefined)[]) => names.filter(Boolean).join(" ");
+-// Monday's Game Grid edition opens on the logo grid; other formats keep the leaders summary.
+-const defaultGraphic = (format: SocialShareFormat) => format === "game-grid" ? "grid" : "leaders";
++// Monday and Wednesday open on the logo grid, Tuesday on hot and cold; other formats keep the leaders summary.
++const defaultGraphic = (format: SocialShareFormat) => format === "game-grid" || format === "remaining-week" ? "grid" : format === "tuesday-trends" ? "hot" : "leaders";
++const editionDays: Partial<Record<SocialShareFormat, string>> = { "game-grid": "Monday", "tuesday-trends": "Tuesday", "remaining-week": "Wednesday" };
++const editionDay = (snapshot: SocialShareSnapshot) => editionDays[snapshot.format] ?? "Weekly";
++/** Selected days as "Thu–Sun" when contiguous, else "Mon, Wed, Fri". */
++function coveredDays(snapshot: SocialShareSnapshot) {
++  const indexes = snapshot.days.map((day, index) => day.selected ? index : -1).filter(index => index >= 0);
++  const label = (index: number) => titleDay(snapshot.days[index].label);
++  const contiguous = indexes.every((index, i) => i === 0 || index === indexes[i - 1] + 1);
++  return !indexes.length ? "No days" : indexes.length === 1 ? label(indexes[0]) : contiguous ? `${label(indexes[0])}–${label(indexes[indexes.length - 1])}` : indexes.map(label).join(", ");
++}
+ type MatchupKind = "easiest" | "stream";
+ const matchupTitles: Record<MatchupKind, string> = { easiest: "EASIEST SCHEDULES", stream: "STREAMING MATCHUPS" };
+ const softness = (def: number | null) => def === null ? null : def <= SOFT_DEFENSE_MAX ? "soft" : def >= 100 - SOFT_DEFENSE_MAX ? "strong" : "average";
+@@ -42,7 +52,7 @@
+   const dayLabel = (date: string) => titleDay(snapshot.days.find(day => day.date === date)!.label);
+   const offNights = snapshot.days.filter(day => day.offNight).map(day => titleDay(day.label)).join(", ") || "none";
+   const rows = mondayGridRows(snapshot, trusted).map(row => `${row.rank ? `${row.rank}. ` : ""}${row.team.name}: ${row.remainingGames} ${trusted ? "" : "known "}games left, ${row.offNightGames} off-night; ${row.cells.flatMap(cell => cell.games.map(game => `${dayLabel(cell.date)} ${game.home ? "vs" : "@"} ${game.opponent.abbreviation}${game.counted ? "" : " (not counted)"}`)).join(", ") || "no games"}`);
+-  return `FHFH Best schedules, Monday streamer grid, ${yearDateLabel(snapshot.weekStart)} through ${yearDateLabel(snapshot.weekEnd)}. ${trusted ? "Teams ranked by FHFH Game Grid Week Score, schedule only" : "Unranked preview in alphabetical order; ranking unavailable because the source or edition is not ready"}. Selected dates: ${snapshot.selectedDates.map(dateLabel).join(", ") || "none"}. Off-nights (8 or fewer NHL games): ${offNights}. ${rows.join("; ")}. NHL schedule checked ${timeLabel(snapshot.source.fetchedAt)}. No odds or player projections.`;
++  return `FHFH Best schedules, ${editionDay(snapshot)} streamer grid, ${yearDateLabel(snapshot.weekStart)} through ${yearDateLabel(snapshot.weekEnd)}${snapshot.selectedDates.length === 7 ? "" : `, covering ${coveredDays(snapshot)}`}. ${trusted ? "Teams ranked by FHFH Game Grid Week Score, schedule only" : "Unranked preview in alphabetical order; ranking unavailable because the source or edition is not ready"}. Selected dates: ${snapshot.selectedDates.map(dateLabel).join(", ") || "none"}. Off-nights (8 or fewer NHL games): ${offNights}. ${rows.join("; ")}. NHL schedule checked ${timeLabel(snapshot.source.fetchedAt)}. No odds or player projections.`;
+ }
+ 
+ function TeamMark({ team, logo, size }: { team: ShareTeam; logo: string | null | undefined; size: number }) {
+@@ -53,14 +63,16 @@
+   return <div className={cx(styles.gridHeader, compact && styles.compactHeader)}>
+     <div className={styles.gridBrand}>{brandLogo ? <img src={brandLogo} alt="FHFH" width="135" height="40" /> : <strong>FHFH</strong>}<span>FHFHOCKEY.COM</span></div>
+     <div className={styles.gridTitle}><p>{eyebrow}</p><h2>{title}</h2></div>
+-    <div className={styles.gridWeek}><span>WEEK OF</span><strong>{dateLabel(snapshot.weekStart)} – {dateLabel(snapshot.weekEnd)}</strong><span>{snapshot.weekEnd.slice(0, 4)}</span></div>
++    {/* A full-week selection keeps the "week of" block; anything less names the covered days. */}
++    {snapshot.selectedDates.length === 7 ? <div className={styles.gridWeek}><span>WEEK OF</span><strong>{dateLabel(snapshot.weekStart)} – {dateLabel(snapshot.weekEnd)}</strong><span>{snapshot.weekEnd.slice(0, 4)}</span></div>
++      : <div className={styles.gridWeek} data-covered={snapshot.selectedDates.join(",")}><span>COVERS {coveredDays(snapshot).toUpperCase()}</span><strong>{snapshot.selectedDates.length ? `${dateLabel(snapshot.selectedDates[0])} – ${dateLabel(snapshot.selectedDates[snapshot.selectedDates.length - 1])}` : "No days"}</strong><span>{snapshot.weekEnd.slice(0, 4)}</span></div>}
+   </div>;
+ }
+ 
+ function MondayGrid({ snapshot, trusted, logos, brandLogo }: { snapshot: SocialShareSnapshot; trusted: boolean; logos: Record<string, string | null>; brandLogo: string | null }) {
+   const rows = mondayGridRows(snapshot, trusted);
+   return <>
+-    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={trusted ? "Monday · Streamer grid" : "Unranked preview"} title={trusted ? "BEST SCHEDULES" : "KNOWN SCHEDULES"} />
++    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={trusted ? `${editionDay(snapshot)} · ${snapshot.format === "remaining-week" ? "Rest of week" : "Streamer grid"}` : "Unranked preview"} title={trusted ? "BEST SCHEDULES" : "KNOWN SCHEDULES"} />
+     <div className={styles.grid}>{[rows.slice(0, 16), rows.slice(16)].map((half, index) => <div key={index} className={styles.gridPanel}>
+       <div className={cx(styles.gridRow, styles.gridDays)}>
+         <span>{trusted ? "RK" : ""}</span><span>TEAM</span>
+@@ -119,7 +131,7 @@
+   const easiest = kind === "easiest" ? easiestSchedules(snapshot, ready) : null;
+   const nights = kind === "stream" ? streamingNights(snapshot, ready) : [];
+   return <>
+-    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? (kind === "easiest" ? "Monday · Softest opponents" : "Monday · Soft defenses") : "Unranked preview"} title={matchupTitles[kind]} compact />
++    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `${editionDay(snapshot)} · ${kind === "easiest" ? "Softest opponents" : "Soft defenses"}` : "Unranked preview"} title={matchupTitles[kind]} compact />
+     {!ready ? <div className={styles.matchupEmpty}><strong>Ranking unavailable</strong><p>Opponent ratings need a ready schedule and complete, current NST team stats; {unreadyReason(snapshot, trusted)}.</p></div>
+       : easiest ? <div className={styles.easyList}>
+         <div className={cx(styles.easyRow, styles.easyHead)}><span>RK</span><span>TEAM</span><span>OPPONENTS</span><span>GP</span><span>OPP DEF</span></div>
+@@ -197,7 +209,7 @@
+     ? (["F", "D", "G"] as const).map(group => ({ key: group, title: groupTitles[group], players: pickupTiers(snapshot, true).find(tier => tier.max === card.max)!.groups[group].map(player => { const [stat, label] = pickupStat(player); return { player, stat, label }; }) }))
+     : (Object.entries(specialists(snapshot, true)) as [SpecialistCategory, ReturnType<typeof specialists>["hits"]][]).map(([category, list]) => ({ key: category, title: specialistTitles[category][0], players: list.map(player => ({ player, stat: player.perGame.toFixed(1), label: specialistTitles[category][1] })) }));
+   return <>
+-    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? (card.kind === "pickups" ? `Monday · Pickups on top-${PLAYER_TEAM_RANK_MAX} schedules` : `Monday · Under 50% rostered`) : "Unranked preview"} title={card.kind === "pickups" ? `${bandLabel(card.max).toUpperCase()} ROSTERED` : "CATEGORY SPECIALISTS"} compact />
++    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `${editionDay(snapshot)} · ${card.kind === "pickups" ? `Pickups on top-${PLAYER_TEAM_RANK_MAX} schedules` : "Under 50% rostered"}` : "Unranked preview"} title={card.kind === "pickups" ? `${bandLabel(card.max).toUpperCase()} ROSTERED` : "CATEGORY SPECIALISTS"} compact />
+     {!ready ? <div className={styles.matchupEmpty}><strong>Ranking unavailable</strong><p>Player cards need a ready schedule and current Yahoo ownership plus NHL.com season totals; {playerUnreadyReason(snapshot, trusted)}.</p></div>
+       : <div className={styles.playerColumns}>{columns.map(column => <div key={column.key} className={styles.playerColumn}>
+         <h3>{column.title}</h3>
+@@ -209,12 +221,107 @@
+         ? <><span><b>PTS/GP</b> skater season points per game (min {MIN_SKATER_GAMES} GP)</span><span><b>QS%</b> goalie quality-start % (min {MIN_GOALIE_STARTS} starts)</span><span>Bands: 30–49% · 20–29% · under 20%</span></>
+         : <><span><b>Per GP</b> = season total ÷ games played</span><span>Skaters under 50% rostered · min {MIN_SKATER_GAMES} GP</span></>}</div>
+       <p><span>Top-{PLAYER_TEAM_RANK_MAX} Week Score teams · {card.kind === "pickups" ? "ranked by that rate, then team schedule rank" : "ranked by per-game rate, then team schedule rank"} · Season rates, not projections · Yahoo rostered % as of {dayDate(snapshot.players?.ownershipAsOf ?? null)} · NHL.com season totals updated {timeLabel(snapshot.players?.statsUpdatedAt ?? null)}</span><strong className={styles.gridWatermark}>{ready ? "SCHEDULE + PLAYER RATES" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
++    </footer>
++  </>;
++}
++
++type TrendKind = "hot" | "deployment" | "rates" | "movers";
++const TREND_KINDS: readonly TrendKind[] = ["hot", "deployment", "rates", "movers"];
++const trendTitles: Record<TrendKind, string> = { hot: "HOT & COLD", deployment: "DEPLOYMENT CHANGES", rates: "RATE STANDOUTS", movers: "OWNERSHIP MOVERS" };
++const rateTitles: Record<RateMetric, string> = { sogPer60: "SOG/60", icfPer60: "iCF/60", ixgPer60: "ixG/60" };
++const signed = (value: number, digits: number) => `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toFixed(digits)}`;
++const clock = (seconds: number) => `${Math.floor(Math.abs(seconds) / 60)}:${String(Math.round(Math.abs(seconds) % 60)).padStart(2, "0")}`;
++const signedClock = (seconds: number) => `${seconds > 0 ? "+" : seconds < 0 ? "−" : ""}${clock(seconds)}`;
++const lineName = (slot: number | null, group: string | null) => slot === null ? null : `${group === "defense" ? "D" : "L"}${slot}`;
++const unitName = (unit: number | null) => unit === null ? "no PP" : `PP${unit}`;
++
++type TrendRowData = { key: string; team: string | null; name: string; meta: string; detail: string; value: string; label: string; tone: "up" | "down"; badges: string[] };
++type TrendColumn = { key: string; title: string; rows: TrendRowData[] };
++
++function trendUnreadyReason(kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) {
++  if (!trusted) return "the schedule edition is not ready";
++  const trends = snapshot.trends;
++  if (!trends) return "rolling game metrics and ownership are not connected";
++  const [state, reasons] = kind === "movers" ? [trends.moversState, trends.moversReasons] : [trends.state, trends.reasons];
++  return `${kind === "movers" ? "ownership" : "rolling metrics"} are ${state}${reasons.length ? ` (${reasons[0].replace(/\.$/, "")})` : ""}`;
++}
++const trendReady = (kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) => trusted && (kind === "movers" ? moversReady(snapshot) : trendsReady(snapshot));
++
++function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColumn[] {
++  const meta = (pick: TrendPick) => `${pick.team} · ${pick.position} · ${pick.weekGames ?? "?"} GP this week`;
++  if (kind === "hot") {
++    const { hot, cold } = hotCold(snapshot, true);
++    const row = (pick: TrendPick): TrendRowData => ({ key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), detail: `L${TREND_WINDOW_GAMES} ${pick.last5.toFixed(2)} · season ${pick.season.toFixed(2)} P/GP`, value: signed(pick.delta, 2), label: "P/GP", tone: pick.delta > 0 ? "up" : "down", badges: [] });
++    return [{ key: "hot", title: "HOT", rows: hot.map(row) }, { key: "cold", title: "COLD", rows: cold.map(row) }];
++  }
++  if (kind === "deployment") {
++    const { up, down } = deploymentChanges(snapshot, true);
++    const row = (pick: TrendPick): TrendRowData => {
++      const lineNow = lineName(pick.line.now, pick.line.group), lineBefore = lineName(pick.line.before, pick.line.group);
++      const badges = [
++        ...(lineNow && lineBefore && lineNow !== lineBefore ? [`${pick.line.now! < pick.line.before! ? "▲" : "▼"} ${lineBefore} → ${lineNow}`] : lineNow ? [lineNow] : []),
++        ...(pick.ppUnit.now !== pick.ppUnit.before && pick.ppUnit.before !== undefined ? [`${unitName(pick.ppUnit.before)} → ${unitName(pick.ppUnit.now)}`] : [unitName(pick.ppUnit.now)]),
++        ...(pick.ppSharePct.last5 !== null && pick.ppSharePct.season !== null ? [`PP share ${Math.round(pick.ppSharePct.season)}% → ${Math.round(pick.ppSharePct.last5)}%`] : []),
++      ];
++      return { key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), detail: `L${TREND_WINDOW_GAMES} ${clock(pick.last5)} · season ${clock(pick.season)} TOI/GP`, value: signedClock(pick.delta), label: "TOI/GP", tone: pick.delta > 0 ? "up" : "down", badges };
++    };
++    return [{ key: "up", title: "ICE TIME UP", rows: up.map(row) }, { key: "down", title: "ICE TIME DOWN", rows: down.map(row) }];
++  }
++  if (kind === "rates") {
++    const board = rateStandouts(snapshot, true);
++    return (Object.keys(rateTitles) as RateMetric[]).map(metric => ({ key: metric, title: rateTitles[metric], rows: board[metric].map(pick => ({
++      key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick),
++      detail: `L${TREND_WINDOW_GAMES} ${pick.last5.toFixed(metric === "ixgPer60" ? 2 : 1)} · season ${pick.season.toFixed(metric === "ixgPer60" ? 2 : 1)} · ${Math.round((pick.toiSecondsLast5 ?? 0) / 60)} L${TREND_WINDOW_GAMES} min`,
++      value: signed(pick.delta, metric === "ixgPer60" ? 2 : 1), label: rateTitles[metric], tone: "up" as const, badges: [] })) }));
++  }
++  const { risers, fallers } = ownershipMovers(snapshot, true);
++  const row = (mover: (typeof risers)[number]): TrendRowData => ({ key: mover.key, team: mover.team, name: mover.name, meta: `${mover.team ?? "—"} · ${mover.positions}`,
++    detail: `${Math.floor(mover.previous)}% → ${Math.floor(mover.latest)}% since ${dateLabel(mover.previousDate)}`, value: signed(mover.delta, 0), label: "ROSTERED %", tone: mover.delta > 0 ? "up" : "down", badges: [] });
++  return [{ key: "risers", title: "RISING", rows: risers.map(row) }, { key: "fallers", title: "FALLING", rows: fallers.map(row) }];
++}
++
++function trendAltText(kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) {
++  const trends = snapshot.trends;
++  const head = `FHFH Tuesday trends, ${trendTitles[kind].toLowerCase()}, week of ${yearDateLabel(snapshot.weekStart)}.`;
++  const tail = kind === "movers" ? `Yahoo ownership as of ${dayDate(trends?.ownershipAsOf ?? null)}; add and drop counts are not in FHFH's sources.` : `FHFH rolling game metrics, all situations, through ${dayDate(trends?.metricsThrough ?? null)}, updated ${timeLabel(trends?.metricsUpdatedAt ?? null)}. Observed rates, not projections.`;
++  if (!trendReady(kind, snapshot, trusted)) return `${head} Unranked preview; ranking unavailable because ${trendUnreadyReason(kind, snapshot, trusted)}. ${tail}`;
++  return `${head} ${trendColumns(kind, snapshot).map(column => `${column.title}: ${column.rows.map(row => `${row.name} (${row.meta}), ${row.value} ${row.label}, ${row.detail}${row.badges.length ? `, ${row.badges.join(", ")}` : ""}`).join("; ") || "none"}`).join(". ")}. ${tail}`;
++}
++
++const trendLegends: Record<TrendKind, string[]> = {
++  hot: [`Window: last ${TREND_WINDOW_GAMES} games played vs season to date`, "Points per game", `Skaters with ${MIN_TREND_SEASON_GAMES}+ season games`],
++  deployment: [`TOI/GP: last ${TREND_WINDOW_GAMES} vs season`, `Line and PP unit: latest game vs ${TREND_WINDOW_GAMES} games earlier`, "PP share: season → last 5"],
++  rates: [`Per-60 rates: last ${TREND_WINDOW_GAMES} vs season`, `Min ${MIN_RATE_TOI_SECONDS_LAST5 / 60} last-${TREND_WINDOW_GAMES} minutes`, "iCF = all individual shot attempts"],
++  movers: ["Yahoo rostered %: latest vs on or before 5 days earlier", "Add/drop counts are not in FHFH's sources"],
++};
++
++function TrendCard({ kind, snapshot, trusted, logos, brandLogo }: { kind: TrendKind; snapshot: SocialShareSnapshot; trusted: boolean; logos: Record<string, string | null>; brandLogo: string | null }) {
++  const ready = trendReady(kind, snapshot, trusted), trends = snapshot.trends;
++  const columns = ready ? trendColumns(kind, snapshot) : [];
++  return <>
++    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `Tuesday · ${kind === "movers" ? "Rostered % movers" : "Last 5 games vs season"}` : "Unranked preview"} title={trendTitles[kind]} compact />
++    {!ready ? <div className={styles.matchupEmpty}><strong>Ranking unavailable</strong><p>Trend cards need a ready schedule and current {kind === "movers" ? "Yahoo ownership" : "rolling game metrics"}; {trendUnreadyReason(kind, snapshot, trusted)}.</p></div>
++      : <div className={styles.trendColumns} style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>{columns.map(column => <div key={column.key} className={styles.trendColumn}>
++        <h3>{column.title}</h3>
++        {column.rows.map(row => {
++          const team = snapshot.teams.find(item => item.abbreviation === row.team) ?? { id: 0, abbreviation: row.team ?? "—", name: row.team ?? "Unknown team" };
++          return <div key={row.key} data-player={row.key} data-team={row.team ?? ""} className={cx(styles.trendRow, columns.length > 2 && styles.trendRowStacked)}>
++            <TeamMark team={team} logo={row.team ? logos[row.team] : null} size={44} />
++            <span className={styles.trendWho}><strong>{row.name}</strong><small>{row.meta}</small><small>{row.detail}</small>{row.badges.length > 0 && <span className={styles.trendBadges}>{row.badges.map(badge => <i key={badge}>{badge}</i>)}</span>}</span>
++            <span className={cx(styles.trendValue, row.tone === "down" && styles.trendDown)}><strong>{row.value}</strong><small>{row.label}</small></span>
++          </div>;
++        })}
++        {!column.rows.length && <p className={styles.playerShort}>None qualify</p>}
++      </div>)}</div>}
++    <footer className={styles.gridFooter}>
++      <div className={styles.legend}>{trendLegends[kind].map(item => <span key={item}>{item}</span>)}</div>
++      <p><span>{kind === "movers" ? `Source: Yahoo ownership timelines · as of ${dayDate(trends?.ownershipAsOf ?? null)} · this card shows rostered-% movers, not adds or drops` : `Source: FHFH rolling game metrics (all situations) through ${dayDate(trends?.metricsThrough ?? null)} · updated ${timeLabel(trends?.metricsUpdatedAt ?? null)} · Observed rates, not projections`}</span><strong className={styles.gridWatermark}>{ready ? (kind === "movers" ? "YAHOO OWNERSHIP" : "LAST 5 VS SEASON") : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
+     </footer>
+   </>;
+ }
+ 
+ export default function SocialShare({ format, asOf }: { format: SocialShareFormat; asOf: string }) {
+-  const supported = format === "game-grid" || format === "remaining-week";
++  const supported = SCHEDULE_FORMATS.includes(format);
+   const [weekStart, setWeekStart] = useState(() => calendarWeekStart(asOf));
+   const [snapshot, setSnapshot] = useState<SocialShareSnapshot | null>(null);
+   const [loading, setLoading] = useState(supported);
+@@ -237,6 +344,7 @@
+   const gridCard = graphic === "grid";
+   const matchupKind: MatchupKind | null = graphic === "easiest" || graphic === "stream" ? graphic : null;
+   const playerCard = parsePlayerCard(graphic);
++  const trendKind = (TREND_KINDS as readonly string[]).includes(graphic) ? graphic as TrendKind : null;
+ 
+   const prepareAssets = useCallback(async () => {
+     setAssetsReady(false); setAssetError("");
+@@ -300,11 +408,12 @@
+   const rows = focusTeam ? displayRows.filter(row => String(row.team.id) === focusTeam && row.remainingGames > 0) : displayRows.filter(row => row.remainingGames > 0).slice(0, 3);
+   const itinerary = snapshot && focusTeam && rows[0] ? futureItinerary(snapshot, rows[0]) : [];
+   const logosReady = !!snapshot && snapshot.teams.every(team => team.abbreviation in teamLogos);
+-  const squareReady = assetsReady && (!(gridCard || matchupKind || playerCard) || logosReady);
+-  const squareAlt = (current: SocialShareSnapshot) => gridCard ? gridAltText(current, trusted) : matchupKind ? matchupAltText(matchupKind, current, trusted) : playerCard ? playerAltText(playerCard, current, trusted) : altText(current, rows, trusted, !!focusTeam);
++  const squareReady = assetsReady && (!(gridCard || matchupKind || playerCard || trendKind) || logosReady);
++  const squareAlt = (current: SocialShareSnapshot) => gridCard ? gridAltText(current, trusted) : matchupKind ? matchupAltText(matchupKind, current, trusted) : playerCard ? playerAltText(playerCard, current, trusted) : trendKind ? trendAltText(trendKind, current, trusted) : altText(current, rows, trusted, !!focusTeam);
++  const trendHasRows = !trendKind || !snapshot ? true : trendReady(trendKind, snapshot, trusted) && trendColumns(trendKind, snapshot).some(column => column.rows.length > 0);
+   const playerHasRows = !playerCard || !snapshot ? true : playerCard.kind === "pickups" ? Object.values(pickupTiers(snapshot, trusted).find(tier => tier.max === playerCard.max)?.groups ?? {}).some(list => list.length > 0) : Object.values(specialists(snapshot, trusted)).some(list => list.length > 0);
+   const matchupHasRows = !matchupKind || !snapshot ? true : matchupKind === "easiest" ? easiestSchedules(snapshot, trusted).rows.length > 0 : streamingNights(snapshot, trusted).length > 0;
+-  const canExport = trusted && squareReady && !loading && !!snapshot?.selectedDates.length && rows.some(row => row.remainingGames > 0) && (!matchupKind || (opponentsReady(snapshot!) && matchupHasRows)) && (!playerCard || (playersReady(snapshot!) && playerHasRows));
++  const canExport = trusted && squareReady && !loading && !!snapshot?.selectedDates.length && rows.some(row => row.remainingGames > 0) && (!matchupKind || (opponentsReady(snapshot!) && matchupHasRows)) && (!playerCard || (playersReady(snapshot!) && playerHasRows)) && (!trendKind || trendHasRows);
+   const changeWeek = (value: string) => {
+     if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+     const monday = calendarWeekStart(`${value}T16:00:00Z`);
+@@ -312,14 +421,20 @@
+   };
+ 
+   return <div className={styles.page}>
+-    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1></div><span className={styles.scope}>{supported ? "Schedule only · NHL schedule source" : "Source qualification pending"}</span></header>
++    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1></div><span className={styles.scope}>{!supported ? "Source qualification pending" : format === "tuesday-trends" ? "Rolling game metrics · Yahoo ownership · NHL schedule" : "Schedule only · NHL schedule source"}</span></header>
+     {!supported ? <section className={styles.panel}><h2>Source qualification required</h2><p>This format is blocked until current-season player data, dated ownership evidence, participation and provider rights qualify. No player rankings are available.</p><a href="/social-share/game-grid">Open the schedule studio</a></section> : <>
+       <section className={styles.panel} aria-label="Schedule settings">
+         <div className={styles.controls}>
+           <label>Week of (Monday)<input type="date" value={weekStart} onChange={event => changeWeek(event.target.value)} disabled={loading || exporting} /></label>
+           <button type="button" disabled={loading || exporting} onClick={() => void load(weekStart, selectedRef.current)}>Refresh schedule</button>
+           <label>Graphic<select value={graphic} onChange={event => { setGraphic(event.target.value); setFeedback(""); }} disabled={!snapshot || loading || exporting}>
+-            <option value="grid">{trusted ? "Best schedules grid (Monday default)" : "Known schedules grid (unranked)"}</option>
++            {format === "tuesday-trends" ? <>
++            <option value="hot">Hot &amp; cold (Tuesday default)</option>
++            <option value="deployment">Deployment changes (TOI, line, PP)</option>
++            <option value="rates">Rate standouts (SOG/60, iCF/60, ixG/60)</option>
++            <option value="movers">Ownership movers (rostered %)</option>
++            </> : <>
++            <option value="grid">{trusted ? `Best schedules grid (${editionDays[format] ?? "weekly"} default)` : "Known schedules grid (unranked)"}</option>
+             <option value="easiest">Easiest schedules (opponent defense)</option>
+             <option value="stream">Streaming matchups (soft defenses)</option>
+             <option value="pickups-50">Pickups · 30–49% rostered</option>
+@@ -327,6 +442,7 @@
+             <option value="pickups-20">Pickups · under 20% rostered</option>
+             <option value="specialists">Specialists · hits, shots, blocks</option>
+             <option value="leaders">{trusted ? "Top three schedule leaders" : "Known schedule context (unranked)"}</option>{snapshot?.teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
++            </>}
+           </select></label>
+         </div>
+         <fieldset className={styles.days} disabled={!snapshot || !snapshotMatchesWeek || loading || exporting}><legend>Selected days · America/New_York</legend>
+@@ -350,10 +466,10 @@
+       </div>
+       <div className={styles.workspace}>
+         <section className={styles.panel} aria-label="Graphic preview">
+-          <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{!trusted ? "Unranked context" : gridCard ? "Best schedules grid" : matchupKind === "easiest" ? "Easiest schedules" : matchupKind === "stream" ? "Streaming matchups" : playerCard ? (playerCard.kind === "pickups" ? `Pickups ${bandLabel(playerCard.max).toLowerCase()}` : "Category specialists") : focusTeam ? "Team focus" : "Schedule leaders"}</span></div>
++          <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{!trusted ? "Unranked context" : gridCard ? "Best schedules grid" : matchupKind === "easiest" ? "Easiest schedules" : matchupKind === "stream" ? "Streaming matchups" : playerCard ? (playerCard.kind === "pickups" ? `Pickups ${bandLabel(playerCard.max).toLowerCase()}` : "Category specialists") : trendKind ? trendTitles[trendKind].toLowerCase() : focusTeam ? "Team focus" : "Schedule leaders"}</span></div>
+           <div className={styles.previewFrame} ref={frame} style={{ height: scale * SHARE_SIZE }}>
+-            {snapshot && squareReady && <div ref={preview} className={cx(styles.square, (gridCard || matchupKind || playerCard) && styles.gridSquare)} style={{ transform: `scale(${scale})` }} data-testid="share-square" role="img" aria-label={squareAlt(snapshot)}>
+-              {gridCard ? <MondayGrid snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : matchupKind ? <MatchupCard kind={matchupKind} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : playerCard ? <PlayerCard card={playerCard} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : <>
++            {snapshot && squareReady && <div ref={preview} className={cx(styles.square, (gridCard || matchupKind || playerCard || trendKind) && styles.gridSquare)} style={{ transform: `scale(${scale})` }} data-testid="share-square" role="img" aria-label={squareAlt(snapshot)}>
++              {gridCard ? <MondayGrid snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : matchupKind ? <MatchupCard kind={matchupKind} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : playerCard ? <PlayerCard card={playerCard} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : trendKind ? <TrendCard kind={trendKind} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : <>
+               <div className={styles.squareBrand}>{logo ? <img src={logo} alt="FHFH" width="162" height="48" /> : <strong>FHFH</strong>}<span>FHFHOCKEY.COM</span></div>
+               <div className={styles.squareTitle}><p>{trusted ? "Schedule only" : "Unranked context"} / {labels[format]}</p><h2>{!trusted ? "KNOWN SCHEDULE\nCONTEXT" : focusTeam ? "YOUR TEAM’S\nOPPORTUNITY" : "THE WEEK’S\nSCHEDULE EDGE"}</h2><p>{yearDateLabel(snapshot.weekStart)} – {yearDateLabel(snapshot.weekEnd)} · {trusted ? "Remaining games" : "Known games · Ranking unavailable"}</p></div>
+               <div className={styles.leaders}>{rows.length ? rows.map(row => <div key={row.team.id} className={styles.leader}>
+@@ -373,7 +489,7 @@
+           </div>
+           <div className={styles.actions}><button type="button" disabled={!canExport || exporting} onClick={async () => {
+             if (!preview.current || !snapshot) return; setExporting(true); setFeedback("");
+-            try { await downloadSharePng(preview.current, snapshot, matchupKind ? { opponents: true, card: matchupKind } : playerCard ? { players: true, card: graphic } : {}); setFeedback("PNG downloaded: 1080 × 1080."); }
++            try { await downloadSharePng(preview.current, snapshot, matchupKind ? { opponents: true, card: matchupKind } : playerCard ? { players: true, card: graphic } : trendKind ? { [trendKind === "movers" ? "movers" : "trends"]: true, card: trendKind } : {}); setFeedback("PNG downloaded: 1080 × 1080."); }
+             catch (cause) { setFeedback(cause instanceof Error ? cause.message : "Download failed. Retry the same edition."); }
+             finally { setExporting(false); }
+           }}>{exporting ? "Creating PNG…" : "Download PNG"}</button>
+--- a/web/components/SocialShare/SocialShare.module.scss
++++ b/web/components/SocialShare/SocialShare.module.scss
+@@ -253,6 +253,32 @@
+ }
+ .playerSchedule { font-size: 15px; color: v.$color-blue-300; }
+ .playerShort { font-size: 18px; color: v.$text-secondary; text-align: center; align-self: center; }
++// Tuesday trend cards: two columns of up to five rows, or three columns of stacked tiles.
++$trend-row: 140px;
++.trendColumns { flex: 1; display: grid; gap: 24px; min-height: 0; }
++.trendColumn { display: grid; grid-template-rows: 32px; grid-auto-rows: $trend-row; row-gap: 10px; align-content: start; min-width: 0;
++  h3 { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: 0.08em; color: v.$color-blue-300; border-bottom: 2px solid rgba(v.$color-blue-300, 0.4); }
++}
++.trendRow { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; column-gap: 12px; padding: 10px 14px; border-radius: 12px;
++  background: rgba(v.$color-white, 0.05); border: 2px solid rgba(v.$color-white, 0.12); min-width: 0;
++  img, > b { display: block; width: 44px; height: 44px; }
++}
++.trendRowStacked { grid-template-columns: 44px minmax(0, 1fr); row-gap: 4px;
++  .trendValue { grid-column: 1 / -1; display: flex; align-items: baseline; gap: v.$space-xs; justify-items: start; }
++}
++.trendWho { display: grid; gap: 3px; min-width: 0;
++  strong { font-size: 23px; font-weight: 800; color: v.$color-white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
++  small { font-size: 15px; color: v.$text-secondary; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
++  small + small { font-size: 14px; color: v.$color-blue-300; }
++}
++.trendBadges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 2px;
++  i { font-style: normal; font-size: 12px; font-weight: 700; padding: 2px 6px; border-radius: 4px; background: rgba(v.$color-blue-300, 0.14); color: v.$color-blue-300; }
++}
++.trendValue { display: grid; justify-items: end; line-height: 1;
++  strong { font: 600 34px "Share Martian Mono", monospace; color: v.$success-color; }
++  small { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; color: v.$text-secondary; margin-top: 4px; }
++}
++.trendDown strong { color: v.$color-pink-red; }
+ @media (max-width: v.$breakpoint-tablet) {
+   .page { padding: v.$space-xs; }
+   .workspace { grid-template-columns: minmax(0, 1fr); }
+--- a/web/e2e/social-share.spec.ts
++++ b/web/e2e/social-share.spec.ts
+@@ -9,6 +9,8 @@
+ import { buildPlayerLayer, pickupTiers, specialists } from "../lib/socialShare/players";
+ import { fictionalPlayerSources } from "../lib/socialShare/pickupsFixture";
+ import { localDate } from "../lib/rosterScheduleOptimizer/planningDates";
++import { buildTrendLayer, deploymentChanges, hotCold, ownershipMovers, rateStandouts } from "../lib/socialShare/trends";
++import { fictionalTrendSources } from "../lib/socialShare/trendsFixture";
+ 
+ const evidence = process.env.SOCIAL_SHARE_EVIDENCE_DIR || "/tmp/fhf-social-card-readiness-evidence-20261008";
+ const upcomingWeek = calendarWeekStart(new Date(Date.now() + 7 * 86400000).toISOString());
+@@ -18,7 +20,7 @@
+ // Fictional public schedule mechanics, deliberately separate from live NHL evidence.
+ type Rates = "ready" | "stale" | "missing";
+ type PlayerMode = Rates | "thin";
+-function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinnedAt?: string, rates: Rates = "ready", players: PlayerMode = "ready"): SocialShareSnapshot {
++function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinnedAt?: string, rates: Rates = "ready", players: PlayerMode = "ready", trends: Rates = "ready"): SocialShareSnapshot {
+   const dates = weekDates(weekStart), generatedAt = pinnedAt ?? new Date().toISOString();
+   const year = Number(weekStart.slice(0, 4)) - (Number(weekStart.slice(5, 7)) < 8 ? 1 : 0);
+   const pairs = [[0, 1, 2], [0, 10, 8], [1, 3, 1], [2, 2, 4], [3, 1, 2], [4, 1, 3], [6, 2, 3]];
+@@ -32,6 +34,9 @@
+     const observedOn = new Date(Date.parse(generatedAt) - (players === "stale" ? 72 : 0) * 3600000).toISOString();
+     const sources = players === "missing" ? null : fictionalPlayerSources(season, localDate(observedOn, "America/New_York"), new Date(Date.parse(generatedAt) - 4 * 3600000).toISOString());
+     snapshot.players = buildPlayerLayer(sources, { season, teams: snapshot.teams.map(team => team.abbreviation), fetchedAt: generatedAt, generatedAt });
++    // Fictional rolling metrics (4 h old, or 80 h when stale) and seven-day ownership timelines.
++    const trendSources = trends === "missing" ? null : fictionalTrendSources(season, localDate(generatedAt, "America/New_York"), new Date(Date.parse(generatedAt) - (trends === "stale" ? 80 : 4) * 3600000).toISOString());
++    snapshot.trends = buildTrendLayer(trendSources, { season, teams: snapshot.teams, fetchedAt: generatedAt, generatedAt });
+     // "thin": one goalie under 20% rostered on a top-10 team, so the column renders "Only 1 qualifies".
+     if (players === "thin") {
+       const top = new Set(snapshot.rows.filter(row => row.rank <= 10).map(row => row.team.abbreviation));
+@@ -53,13 +58,13 @@
+ }
+ 
+ async function install(page: Page) {
+-  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, latest: null as SocialShareSnapshot | null };
++  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, latest: null as SocialShareSnapshot | null };
+   await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
+   await page.route("**/api/v1/social-share/**", async route => {
+     controller.requests++;
+     if (controller.fail) return route.fulfill({ status: 503, json: { error: "NHL schedule is unavailable. Refresh to retry." } });
+     const url = new URL(route.request().url());
+-    let next = fixture(url.pathname.split("/").pop() as SocialShareFormat, url.searchParams.get("weekStart")!, controller.mode, controller.pinnedAt, controller.rates, controller.players);
++    let next = fixture(url.pathname.split("/").pop() as SocialShareFormat, url.searchParams.get("weekStart")!, controller.mode, controller.pinnedAt, controller.rates, controller.players, controller.trends);
+     if (url.searchParams.has("selectedDates")) next = selectScheduleDates(next, url.searchParams.get("selectedDates")?.split(",").filter(Boolean) || []);
+     if (controller.longName) {
+       for (const row of next.rows) if (row.team.id === 1) row.team.name = "New Jersey Extremely Long Fantasy Hockey Team Name";
+@@ -284,7 +289,7 @@
+   await page.clock.fastForward(6 * 3600000 + 60000);
+   await expect(download).toBeDisabled();
+   await expect(page.getByText("This edition has expired. Refresh the schedule to download.")).toBeVisible();
+-  for (const format of ["tuesday-trends", "player-spotlight", "category-rescue"]) {
++  for (const format of ["player-spotlight", "category-rescue"]) {
+     await page.goto(`/social-share/${format}`);
+     await expect(page.getByRole("heading", { name: "Source qualification required" })).toBeVisible();
+     await expect(page.getByRole("button", { name: "Download PNG" })).toHaveCount(0);
+@@ -537,4 +542,117 @@
+   await expect(square).toHaveAttribute("aria-label", new RegExp(`GOALIES: ${tier.groups.G[0].name} \\(`));
+   await expect(download).toBeEnabled();
+   await downloadedPng(page, "monday-pickups-under-20-thin");
++});
++
++async function exportCards(page: Page, cards: string[], prefix: string) {
++  const lines: string[] = [];
++  for (const card of cards) {
++    await page.getByRole("combobox", { name: /^Graphic/ }).selectOption(card);
++    await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
++    const bytes = await downloadedPng(page, `${prefix}-${card}-pinned`);
++    lines.push(`${createHash("sha256").update(new Uint8Array(bytes)).digest("hex")}  ${prefix}-${card}-pinned.png`);
++  }
++  await writeFile(`${evidence}/${prefix}-cards-pinned.sha256`, `${lines.join("\n")}\n`);
++  return lines.map(line => line.slice(0, 64)).join(",");
++}
++
++test("pinned Wednesday and Tuesday editions export the same PNG bytes every run", async ({ page }) => {
++  const source = await install(page), week = "2026-10-26";
++  source.mode = "league"; source.pinnedAt = `${week}T13:00:00.000Z`;
++  await page.clock.install({ time: new Date(`${week}T13:05:00Z`) });
++  await page.goto("/social-share/remaining-week");
++  await page.getByLabel("Week of (Monday)").fill(week);
++  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
++  const wednesday = await exportCards(page, ["grid", "easiest", "stream", "pickups-50", "pickups-30", "pickups-20", "specialists"], "wednesday");
++  if (process.env.SOCIAL_SHARE_PINNED_WEDNESDAY_SHA256) expect(wednesday).toBe(process.env.SOCIAL_SHARE_PINNED_WEDNESDAY_SHA256);
++  await page.goto("/social-share/tuesday-trends");
++  await page.getByLabel("Week of (Monday)").fill(week);
++  await expect(page.getByRole("button", { name: "Download PNG", exact: true })).toBeEnabled();
++  const tuesday = await exportCards(page, ["hot", "deployment", "rates", "movers"], "tuesday");
++  if (process.env.SOCIAL_SHARE_PINNED_TUESDAY_SHA256) expect(tuesday).toBe(process.env.SOCIAL_SHARE_PINNED_TUESDAY_SHA256);
++});
++
++test("Wednesday edition recomputes every card for Thursday to Sunday and names the covered dates", async ({ page }) => {
++  const source = await install(page), errors: string[] = [];
++  source.mode = "league";
++  page.on("pageerror", error => errors.push(error.message));
++  await open(page, "remaining-week");
++  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
++  await expect(graphic).toHaveValue("grid");
++  await expect(download).toBeEnabled();
++  const edition = source.latest!, covered = weekDates(upcomingWeek).slice(3);
++  expect(edition.selectedDates).toEqual(covered);
++  await expect(square).toContainText("WEDNESDAY · REST OF WEEK", { ignoreCase: true });
++  await expect(square).toContainText("COVERS THU–SUN");
++  await expect(square.locator("[data-covered]")).toHaveAttribute("data-covered", covered.join(","));
++  expect(await square.locator("[data-team]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-team")))).toEqual(edition.rows.map(row => row.team.abbreviation));
++  await downloadedPng(page, "wednesday-best-schedules-grid");
++  const cards: [string, string[]][] = [
++    ["easiest", easiestSchedules(edition, true).rows.map(row => row.team.abbreviation)],
++    ["stream", streamingNights(edition, true).map(night => night.team.abbreviation)],
++    ["pickups-50", Object.values(pickupTiers(edition, true)[0].groups).flat().map(player => player.team)],
++    ["specialists", Object.values(specialists(edition, true)).flat().map(player => player.team)],
++  ];
++  for (const [card, teams] of cards) {
++    await graphic.selectOption(card);
++    await expect(square).toContainText("COVERS THU–SUN");
++    await expect(square).toContainText("Wednesday ·");
++    expect(teams.length).toBeGreaterThan(0);
++    expect(await square.locator("[data-team]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-team")))).toEqual(teams);
++    expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
++    await expect(download).toBeEnabled();
++    await downloadedPng(page, `wednesday-${card}`);
++  }
++  expect(errors).toEqual([]);
+ });
++
++test("Tuesday trend cards rank real rolling windows and ownership movers and export", async ({ page }) => {
++  const source = await install(page), errors: string[] = [];
++  source.mode = "league";
++  page.on("pageerror", error => errors.push(error.message));
++  await open(page, "tuesday-trends");
++  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
++  await expect(graphic).toHaveValue("hot");
++  await expect(download).toBeEnabled();
++  const edition = source.latest!, keys = (list: { nhlId: number }[]) => list.map(item => String(item.nhlId));
++  const cards: [string, string, string[], string][] = [
++    ["hot", "HOT & COLD", [...keys(hotCold(edition, true).hot), ...keys(hotCold(edition, true).cold)], "Window: last 5 games played vs season to date"],
++    ["deployment", "DEPLOYMENT CHANGES", [...keys(deploymentChanges(edition, true).up), ...keys(deploymentChanges(edition, true).down)], "Line and PP unit: latest game vs 5 games earlier"],
++    ["rates", "RATE STANDOUTS", Object.values(rateStandouts(edition, true)).flatMap(keys), "Min 50 last-5 minutes"],
++    ["movers", "OWNERSHIP MOVERS", [...ownershipMovers(edition, true).risers, ...ownershipMovers(edition, true).fallers].map(mover => mover.key), "Add/drop counts are not in FHFH's sources"],
++  ];
++  for (const [card, title, expected, legend] of cards) {
++    await graphic.selectOption(card);
++    await expect(square).toContainText(title);
++    await expect(square).toContainText(legend);
++    await expect(square).toContainText(card === "movers" ? "Source: Yahoo ownership timelines" : "Source: FHFH rolling game metrics (all situations) through");
++    expect(expected.length).toBeGreaterThanOrEqual(8);
++    expect(await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-player")))).toEqual(expected);
++    expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
++    await expect(download).toBeEnabled();
++    await downloadedPng(page, `tuesday-${card}`);
++  }
++  await expect(square).toHaveAttribute("aria-label", /^FHFH Tuesday trends, ownership movers.*add and drop counts are not in FHFH's sources\.$/);
++  expect(errors).toEqual([]);
++});
++
++test("Tuesday cards never rank stale or missing sources, and stale metrics do not block movers", async ({ page }) => {
++  const source = await install(page);
++  source.mode = "league"; source.trends = "stale";
++  await open(page, "tuesday-trends");
++  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
++  for (const card of ["hot", "deployment", "rates"]) {
++    await graphic.selectOption(card);
++    await expect(square).toContainText("Ranking unavailable");
++    await expect(square).toContainText("Most rolling metric rows are stale");
++    await expect(square.locator("[data-player]")).toHaveCount(0);
++    await expect(download).toBeDisabled();
++  }
++  await graphic.selectOption("movers");
++  await expect(download).toBeEnabled();
++  source.trends = "missing";
++  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
++  await expect(square).toContainText("not connected");
++  await expect(download).toBeDisabled();
++  await downloadedPreview(page, "tuesday-movers-unavailable-preview");
++});
+--- /dev/null
++++ b/web/lib/socialShare/trends.ts
+@@ -0,0 +1,162 @@
++import type { Database } from "lib/supabase/database-generated.types";
++import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
++import { PICKUP_YAHOO_TEAM_ALIASES, type PickupOwnershipRow } from "./pickupsFixture";
++import { PLAYER_STATS_MAX_AGE_MS } from "./players";
++import { SHARE_TIME_ZONE, type ShareDataState, type ShareOwnershipMover, type ShareTeam, type ShareTrendLayer, type ShareTrendPlayer, type SocialShareSnapshot } from "./types";
++
++type Tables = Database["public"]["Tables"];
++/** Read-only source shapes (rolling_player_game_metrics rows are one per player per game). */
++export type ShareRollingRow = Pick<Tables["rolling_player_game_metrics"]["Row"],
++  "player_id" | "team_id" | "season" | "game_date" | "strength_state" | "updated_at" | "season_games_played" |
++  "points_avg_last5" | "points_avg_season" | "toi_seconds_avg_last5" | "toi_seconds_avg_season" | "toi_seconds_total_last5" |
++  "pp_share_pct_last5" | "pp_share_pct_season" | "sog_per_60_last5" | "sog_per_60_season" |
++  "shot_attempts_per_60_last5" | "shot_attempts_per_60_season" | "ixg_per_60_last5" | "ixg_per_60_season" |
++  "line_combo_slot" | "line_combo_group" | "pp_unit">;
++export type SharePlayerNameRow = Pick<Tables["players"]["Row"], "id" | "fullName" | "position">;
++export type ShareTrendSources = { rolling: ShareRollingRow[]; players: SharePlayerNameRow[]; ownership: PickupOwnershipRow[] };
++
++/** Trend windows: last five games played vs season to date; movers over five days. */
++export const TREND_WINDOW_GAMES = 5;
++export const MOVER_WINDOW_DAYS = 5;
++/** A trend needs a real season baseline. */
++export const MIN_TREND_SEASON_GAMES = 10;
++/** Last-5 per-60 rates need at least 50 minutes of ice time behind them. */
++export const MIN_RATE_TOI_SECONDS_LAST5 = 3000;
++/** A player whose latest game is older than this is not on a current trend (injury, scratch). */
++export const TREND_MAX_GAME_AGE_DAYS = 7;
++export const TREND_LIST = 5;
++export const DEPLOYMENT_LIST = 4;
++export const RATE_LIST = 3;
++
++const shiftDate = (date: string, days: number) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
++const isDate = (value: unknown): value is string => typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value) && new Date(`${value}T00:00:00Z`).toISOString().slice(0, 10) === value;
++const pct = (value: unknown) => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100 ? value : null;
++const pair = (last5: number | null, season: number | null) => ({ last5: Number.isFinite(last5) ? last5 : null, season: Number.isFinite(season) ? season : null });
++const staleMajority = (stale: number, kept: number, what: string) => `Most ${what} are stale (${stale} of ${stale + kept}).`;
++
++function buildMovers(rows: PickupOwnershipRow[], yahooSeason: number, today: string) {
++  const yesterday = shiftDate(today, -1), target = shiftDate(today, -MOVER_WINDOW_DAYS);
++  const movers: ShareOwnershipMover[] = [];
++  let stale = 0, future = 0, asOf: string | null = null;
++  for (const row of rows) {
++    if (row.season !== yahooSeason || !Array.isArray(row.ownership_timeline)) continue;
++    const timeline = (row.ownership_timeline as { date?: unknown; value?: unknown }[])
++      .filter((point): point is { date: string; value: number } => isDate(point?.date) && pct(point?.value) !== null)
++      .sort((a, b) => a.date.localeCompare(b.date));
++    const latest = timeline[timeline.length - 1];
++    if (!latest) continue;
++    if (latest.date > today) { future++; continue; }
++    if (latest.date < yesterday) { stale++; continue; }
++    // Same rule as pages/api/v1/transactions/ownership-trends.ts: the point on the target date,
++    // else the latest earlier point at or before it.
++    const previous = timeline.find(point => point.date === target) ?? [...timeline.slice(0, -1)].reverse().find(point => point.date <= target);
++    if (!previous) continue;
++    const team = row.editorial_team_abbreviation ? PICKUP_YAHOO_TEAM_ALIASES[row.editorial_team_abbreviation] ?? row.editorial_team_abbreviation : null;
++    if (!row.player_name) continue;
++    // Keyed by public name and team: no Yahoo identifiers leave the layer.
++    movers.push({ key: `${row.player_name}|${team ?? ""}`, name: row.player_name, team, positions: row.display_position ?? "", latest: latest.value, previous: previous.value,
++      delta: Number((latest.value - previous.value).toFixed(2)), latestDate: latest.date, previousDate: previous.date });
++    if (!asOf || latest.date < asOf) asOf = latest.date;
++  }
++  let state: ShareDataState = "ready";
++  const reasons: string[] = [];
++  if (stale > movers.length) { state = "stale"; reasons.push(staleMajority(stale, movers.length, "ownership rows")); }
++  else if (!movers.length) { state = future ? "missing" : "partial"; reasons.push(future ? "Ownership time is in the future." : `No player has ownership points ${MOVER_WINDOW_DAYS} days apart.`); }
++  return { movers, state, reasons, asOf };
++}
++
++/**
++ * Latest rolling row per skater (strength "all") with the row five games earlier for line and
++ * PP-unit context. Freshness is gated per player (F1): rows updated over 72 h ago are stale,
++ * and a majority of stale rows makes the layer stale.
++ */
++export function buildTrendLayer(sources: ShareTrendSources | null, input: { season: number; teams: ShareTeam[]; fetchedAt: string; generatedAt: string }): ShareTrendLayer {
++  const base = { name: "FHFH rolling game metrics + Yahoo ownership" as const, season: input.season, fetchedAt: input.fetchedAt, moverWindowDays: MOVER_WINDOW_DAYS };
++  if (!sources) {
++    const reasons = ["Rolling game metrics and ownership are not connected."];
++    return { ...base, metricsThrough: null, metricsUpdatedAt: null, ownershipAsOf: null, state: "missing", reasons, moversState: "missing", moversReasons: reasons, players: [], movers: [] };
++  }
++  const today = localDate(input.generatedAt, SHARE_TIME_ZONE), generated = Date.parse(input.generatedAt), oldestGame = shiftDate(today, -TREND_MAX_GAME_AGE_DAYS);
++  const names = new Map(sources.players.map(row => [row.id, row]));
++  const teams = new Map(input.teams.map(team => [team.id, team.abbreviation]));
++  const byPlayer = new Map<number, ShareRollingRow[]>();
++  for (const row of sources.rolling) {
++    if (row.season !== input.season || row.strength_state !== "all" || !isDate(row.game_date)) continue;
++    byPlayer.set(row.player_id, [...(byPlayer.get(row.player_id) ?? []), row]);
++  }
++  const players: ShareTrendPlayer[] = [];
++  let stale = 0, future = 0, inactive = 0, through: string | null = null, updatedAt: string | null = null;
++  for (const [playerId, rows] of byPlayer) {
++    rows.sort((a, b) => a.game_date.localeCompare(b.game_date));
++    const latest = rows[rows.length - 1], before = rows.length > TREND_WINDOW_GAMES ? rows[rows.length - 1 - TREND_WINDOW_GAMES] : null;
++    const who = names.get(playerId), team = latest.team_id === null ? undefined : teams.get(latest.team_id);
++    if (!who || who.position === "G" || !team || (latest.season_games_played ?? 0) < MIN_TREND_SEASON_GAMES) continue;
++    const updated = Date.parse(latest.updated_at);
++    if (latest.game_date > today || updated > generated) { future++; continue; }
++    if (!Number.isFinite(updated) || generated - updated > PLAYER_STATS_MAX_AGE_MS) { stale++; continue; }
++    if (latest.game_date < oldestGame) { inactive++; continue; }
++    players.push({
++      nhlId: playerId, name: who.fullName, team, position: who.position, lastGame: latest.game_date, seasonGames: latest.season_games_played!,
++      pointsPerGame: pair(latest.points_avg_last5, latest.points_avg_season), toiSeconds: pair(latest.toi_seconds_avg_last5, latest.toi_seconds_avg_season),
++      ppSharePct: pair(latest.pp_share_pct_last5, latest.pp_share_pct_season), sogPer60: pair(latest.sog_per_60_last5, latest.sog_per_60_season),
++      icfPer60: pair(latest.shot_attempts_per_60_last5, latest.shot_attempts_per_60_season), ixgPer60: pair(latest.ixg_per_60_last5, latest.ixg_per_60_season),
++      toiSecondsLast5: latest.toi_seconds_total_last5, line: { now: latest.line_combo_slot, before: before?.line_combo_slot ?? null, group: latest.line_combo_group },
++      ppUnit: { now: latest.pp_unit, before: before?.pp_unit ?? null },
++    });
++    if (!through || latest.game_date < through) through = latest.game_date;
++    const iso = new Date(updated).toISOString();
++    if (!updatedAt || iso < updatedAt) updatedAt = iso;
++  }
++  let state: ShareDataState = "ready";
++  const reasons: string[] = [];
++  if (stale > players.length) { state = "stale"; reasons.push(staleMajority(stale, players.length, "rolling metric rows")); }
++  else if (!players.length) { state = future ? "missing" : "partial"; reasons.push(future ? "Rolling metric time is in the future." : "No skater has a current rolling row."); }
++  else if (stale || future || inactive) reasons.push(`Excluded ${stale} stale, ${future} future-dated and ${inactive} inactive skaters.`);
++  const movers = buildMovers(sources.ownership, Math.floor(input.season / 10000), today);
++  return { ...base, metricsThrough: through, metricsUpdatedAt: updatedAt, ownershipAsOf: movers.asOf, state, reasons, moversState: movers.state, moversReasons: movers.reasons,
++    players: players.sort((a, b) => a.nhlId - b.nhlId), movers: movers.movers.sort((a, b) => a.key.localeCompare(b.key)) };
++}
++
++export const trendsReady = (snapshot: SocialShareSnapshot) => snapshot.trends?.state === "ready";
++export const moversReady = (snapshot: SocialShareSnapshot) => snapshot.trends?.moversState === "ready";
++
++export type TrendPick = ShareTrendPlayer & { delta: number; last5: number; season: number; weekGames: number | null };
++type Metric = "pointsPerGame" | "toiSeconds" | "sogPer60" | "icfPer60" | "ixgPer60";
++function picks(snapshot: SocialShareSnapshot, metric: Metric, filter: (player: ShareTrendPlayer) => boolean = () => true): TrendPick[] {
++  const games = new Map(snapshot.rows.map(row => [row.team.abbreviation, row.remainingGames]));
++  return (snapshot.trends?.players ?? []).filter(filter).flatMap(player => {
++    const { last5, season } = player[metric];
++    return last5 === null || season === null ? [] : [{ ...player, last5, season, delta: last5 - season, weekGames: games.get(player.team) ?? null }];
++  });
++}
++const byDelta = (direction: 1 | -1) => (a: TrendPick, b: TrendPick) => direction * (b.delta - a.delta) || b.season - a.season || a.name.localeCompare(b.name) || a.nhlId - b.nhlId;
++
++/** Hot and cold: points per game over the last 5 games vs season to date, largest gaps first. */
++export function hotCold(snapshot: SocialShareSnapshot, trusted: boolean) {
++  if (!trusted || !trendsReady(snapshot)) return { hot: [], cold: [] };
++  const all = picks(snapshot, "pointsPerGame");
++  return { hot: all.filter(pick => pick.delta > 0).sort(byDelta(1)).slice(0, TREND_LIST), cold: all.filter(pick => pick.delta < 0).sort(byDelta(-1)).slice(0, TREND_LIST) };
++}
++
++/** Deployment: TOI per game over the last 5 games vs season, with line and PP unit vs five games earlier. */
++export function deploymentChanges(snapshot: SocialShareSnapshot, trusted: boolean) {
++  if (!trusted || !trendsReady(snapshot)) return { up: [], down: [] };
++  const all = picks(snapshot, "toiSeconds");
++  return { up: all.filter(pick => pick.delta > 0).sort(byDelta(1)).slice(0, DEPLOYMENT_LIST), down: all.filter(pick => pick.delta < 0).sort(byDelta(-1)).slice(0, DEPLOYMENT_LIST) };
++}
++
++export type RateMetric = "sogPer60" | "icfPer60" | "ixgPer60";
++/** Rate standouts: biggest last-5 over season gains in SOG/60, iCF/60 and ixG/60 with 50+ L5 minutes. */
++export function rateStandouts(snapshot: SocialShareSnapshot, trusted: boolean): Record<RateMetric, TrendPick[]> {
++  if (!trusted || !trendsReady(snapshot)) return { sogPer60: [], icfPer60: [], ixgPer60: [] };
++  const sampled = (player: ShareTrendPlayer) => (player.toiSecondsLast5 ?? 0) >= MIN_RATE_TOI_SECONDS_LAST5;
++  return Object.fromEntries((["sogPer60", "icfPer60", "ixgPer60"] as const).map(metric =>
++    [metric, picks(snapshot, metric, sampled).filter(pick => pick.delta > 0).sort(byDelta(1)).slice(0, RATE_LIST)])) as Record<RateMetric, TrendPick[]>;
++}
++
++/** Ownership movers: largest five-day rostered-% gains and drops. */
++export function ownershipMovers(snapshot: SocialShareSnapshot, trusted: boolean) {
++  if (!trusted || !moversReady(snapshot)) return { risers: [], fallers: [] };
++  const all = snapshot.trends!.movers, order = (direction: 1 | -1) => (a: ShareOwnershipMover, b: ShareOwnershipMover) => direction * (b.delta - a.delta) || b.latest - a.latest || a.name.localeCompare(b.name);
++  return { risers: all.filter(mover => mover.delta > 0).sort(order(1)).slice(0, TREND_LIST), fallers: all.filter(mover => mover.delta < 0).sort(order(-1)).slice(0, TREND_LIST) };
++}
+--- /dev/null
++++ b/web/lib/socialShare/trends.test.ts
+@@ -0,0 +1,89 @@
++import { describe, expect, it } from "vitest";
++import { buildScheduleSnapshot, weekDates } from "./schedule";
++import { fictionalLeagueWeek } from "./fixtures";
++import { fictionalTrendSources } from "./trendsFixture";
++import { buildTrendLayer, deploymentChanges, hotCold, MIN_RATE_TOI_SECONDS_LAST5, MIN_TREND_SEASON_GAMES, MOVER_WINDOW_DAYS, ownershipMovers, rateStandouts, TREND_MAX_GAME_AGE_DAYS } from "./trends";
++import type { SocialShareSnapshot } from "./types";
++
++const weekStart = "2026-10-26", now = "2026-10-27T13:00:00Z", season = 20262027;
++function edition(sources: ReturnType<typeof fictionalTrendSources> | null = fictionalTrendSources(season, "2026-10-27", "2026-10-27T08:00:00Z")): SocialShareSnapshot {
++  const snapshot = buildScheduleSnapshot({ format: "tuesday-trends", weekStart, generatedAt: now, schedule: fictionalLeagueWeek(weekStart, now) });
++  return { ...snapshot, trends: buildTrendLayer(sources, { season, teams: snapshot.teams, fetchedAt: now, generatedAt: now }) };
++}
++
++describe("trend layer", () => {
++  it("keeps the latest strength-all row per current skater with five-games-earlier line and PP context", () => {
++    const sources = fictionalTrendSources(season, "2026-10-27", "2026-10-27T08:00:00Z"), layer = edition(sources).trends!;
++    expect(layer).toMatchObject({ state: "ready", moversState: "ready", metricsUpdatedAt: "2026-10-27T08:00:00.000Z", ownershipAsOf: "2026-10-27", moverWindowDays: MOVER_WINDOW_DAYS });
++    expect(layer.reasons[0]).toMatch(/^Excluded 0 stale, 0 future-dated and \d+ inactive skaters\.$/);
++    const oldest = new Date(Date.parse("2026-10-27T00:00:00Z") - TREND_MAX_GAME_AGE_DAYS * 86400000).toISOString().slice(0, 10);
++    for (const player of layer.players) {
++      expect(player.position).not.toBe("G");
++      expect(player.seasonGames).toBeGreaterThanOrEqual(MIN_TREND_SEASON_GAMES);
++      expect(player.lastGame >= oldest).toBe(true);
++      const rows = sources.rolling.filter(row => row.player_id === player.nhlId).sort((a, b) => a.game_date.localeCompare(b.game_date));
++      expect(player.pointsPerGame).toEqual({ last5: rows[5].points_avg_last5, season: rows[5].points_avg_season });
++      expect(player.line).toEqual({ now: rows[5].line_combo_slot, before: rows[0].line_combo_slot, group: rows[5].line_combo_group });
++      expect(player.ppUnit).toEqual({ now: rows[5].pp_unit, before: rows[0].pp_unit });
++    }
++    expect(layer.players.length).toBeLessThan(new Set(sources.rolling.map(row => row.player_id)).size);
++    expect(JSON.stringify(layer)).not.toMatch(/465\.p\.|ownership_timeline|updated_at/);
++  });
++
++  it("gates freshness per skater and marks a mostly stale source stale", () => {
++    const mixed = fictionalTrendSources(season, "2026-10-27", "2026-10-20T00:00:00Z");
++    const fresh = mixed.rolling.find(row => row.player_id === 8480001)!.player_id;
++    for (const row of mixed.rolling.filter(item => item.player_id === fresh)) row.updated_at = "2026-10-27T08:00:00Z";
++    const layer = edition(mixed).trends!;
++    expect(layer.state).toBe("stale");
++    expect(layer.reasons[0]).toMatch(/^Most rolling metric rows are stale \(\d+ of \d+\)\.$/);
++    expect(hotCold({ ...edition(), trends: layer }, true)).toEqual({ hot: [], cold: [] });
++    expect(edition(null).trends).toMatchObject({ state: "missing", moversState: "missing", players: [], movers: [] });
++  });
++
++  it("computes movers with the ownership-trends rule and gates stale ownership separately", () => {
++    const sources = fictionalTrendSources(season, "2026-10-27", "2026-10-27T08:00:00Z"), layer = edition(sources).trends!;
++    for (const mover of layer.movers) {
++      const timeline = sources.ownership.find(row => row.player_name === mover.name)!.ownership_timeline as { date: string; value: number }[];
++      expect(mover.latestDate).toBe("2026-10-27");
++      expect(mover.previousDate).toBe("2026-10-22");
++      expect(mover.delta).toBeCloseTo(timeline[6].value - timeline[1].value, 10);
++    }
++    const old = fictionalTrendSources(season, "2026-10-24", "2026-10-27T08:00:00Z");
++    const staleOwnership = edition({ ...sources, ownership: old.ownership }).trends!;
++    expect(staleOwnership).toMatchObject({ state: "ready", moversState: "stale" });
++    expect(ownershipMovers({ ...edition(), trends: staleOwnership }, true)).toEqual({ risers: [], fallers: [] });
++    expect(hotCold({ ...edition(), trends: staleOwnership }, true).hot.length).toBeGreaterThan(0);
++  });
++});
++
++describe("trend cards", () => {
++  it("hot and cold rank last-5 minus season points per game, five each", () => {
++    const { hot, cold } = hotCold(edition(), true);
++    expect(hot).toHaveLength(5); expect(cold).toHaveLength(5);
++    for (const pick of hot) expect(pick.delta).toBeCloseTo(pick.pointsPerGame.last5! - pick.pointsPerGame.season!, 12);
++    for (let i = 1; i < 5; i++) { expect(hot[i - 1].delta).toBeGreaterThanOrEqual(hot[i].delta); expect(cold[i - 1].delta).toBeLessThanOrEqual(cold[i].delta); }
++    expect(hot.every(pick => pick.delta > 0) && cold.every(pick => pick.delta < 0)).toBe(true);
++    expect(hot.every(pick => pick.weekGames !== null)).toBe(true);
++  });
++
++  it("deployment ranks TOI per game change; rate standouts need 50 last-5 minutes", () => {
++    const { up, down } = deploymentChanges(edition(), true);
++    expect(up).toHaveLength(4); expect(down).toHaveLength(4);
++    for (const pick of [...up, ...down]) expect(pick.delta).toBe(pick.toiSeconds.last5! - pick.toiSeconds.season!);
++    const rates = rateStandouts(edition(), true);
++    for (const [metric, list] of Object.entries(rates)) {
++      expect(list).toHaveLength(3);
++      for (const pick of list) { expect(pick.toiSecondsLast5).toBeGreaterThanOrEqual(MIN_RATE_TOI_SECONDS_LAST5); expect(pick.delta).toBeGreaterThan(0); expect(pick[metric as "sogPer60"].last5).toBe(pick.last5); }
++    }
++  });
++
++  it("movers rank five-day rostered-% change and nothing ranks for an untrusted schedule", () => {
++    const { risers, fallers } = ownershipMovers(edition(), true);
++    expect(risers).toHaveLength(5); expect(fallers).toHaveLength(5);
++    for (let i = 1; i < 5; i++) { expect(risers[i - 1].delta).toBeGreaterThanOrEqual(risers[i].delta); expect(fallers[i - 1].delta).toBeLessThanOrEqual(fallers[i].delta); }
++    expect(hotCold(edition(), false)).toEqual({ hot: [], cold: [] });
++    expect(ownershipMovers(edition(), false)).toEqual({ risers: [], fallers: [] });
++    expect(weekDates(weekStart)).toHaveLength(7);
++  });
++});
+--- /dev/null
++++ b/web/lib/socialShare/trendsFixture.ts
+@@ -0,0 +1,54 @@
++import { teamsInfo, activeTeamAbbreviations } from "lib/teamsInfo";
++import { PICKUP_YAHOO_TEAM_ALIASES, type PickupOwnershipRow } from "./pickupsFixture";
++import type { SharePlayerNameRow, ShareRollingRow, ShareTrendSources } from "./trends";
++
++const NHL_TO_YAHOO = Object.fromEntries(Object.entries(PICKUP_YAHOO_TEAM_ALIASES).map(([yahoo, nhl]) => [nhl, yahoo]));
++const SKATERS = ["C", "C", "L", "L", "R", "R", "C", "L", "D", "D", "D", "D"] as const;
++const shift = (date: string, days: number) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
++
++/**
++ * Deterministic fictional Tuesday sources for every active team, shaped like the real read-only rows:
++ * rolling_player_game_metrics (six game rows per skater, newest last), players (names) and
++ * yahoo_players (seven-day ownership timelines). Names are "Fixture TEAM-Tn"; every value is invented.
++ */
++export function fictionalTrendSources(season: number, today: string, updatedAt: string, seed = 2718): ShareTrendSources {
++  let state = seed >>> 0;
++  const random = () => ((state = Math.imul(state ^ (state >>> 16), 2654435761) + 0x5bd1e995 >>> 0) / 4294967296);
++  const round = (value: number, places = 2) => Math.round(value * 10 ** places) / 10 ** places;
++  const rolling: ShareRollingRow[] = [], players: SharePlayerNameRow[] = [], ownership: PickupOwnershipRow[] = [];
++  [...activeTeamAbbreviations].forEach((abbrev, teamIndex) => {
++    const team = String(abbrev), teamId = teamsInfo[abbrev].id;
++    SKATERS.forEach((position, index) => {
++      const id = 8480000 + teamIndex * 20 + index, defense = position === "D", name = `Fixture ${team}-T${index + 1}`;
++      players.push({ id, fullName: name, position });
++      // A few invented edge cases: an inactive skater (last game 12 days ago) and a small sample.
++      const inactive = (teamIndex + index) % 19 === 0, seasonGames = (teamIndex + index) % 23 === 0 ? 8 : 12;
++      const ppg = round((defense ? 0.15 : 0.25) + random() * (defense ? 0.55 : 0.85)), toi = Math.round((defense ? 1150 : 900) + random() * 400);
++      const pp = round(random() * 55, 1), sog = round(4 + random() * 8, 2), icf = round(sog * (1.6 + random() * 0.6), 2), ixg = round(0.3 + random() * 1.1, 3);
++      const swing = () => 0.45 + random() * 1.3;
++      const toiL5 = Math.max(600, Math.round(toi + (random() - 0.5) * 420));
++      const lineNow = 1 + Math.floor(random() * (defense ? 3 : 4)), lineBefore = random() < 0.25 ? Math.min(defense ? 3 : 4, lineNow + 1) : lineNow;
++      const unitNow = pp > 25 ? 1 : pp > 8 ? 2 : null, unitBefore = random() < 0.2 ? (unitNow === 1 ? 2 : 1) : unitNow;
++      for (let game = 5; game >= 0; game--) {
++        const latest = game === 0, date = shift(today, -(inactive ? 12 : 1) - game * 2);
++        rolling.push({
++          player_id: id, team_id: teamId, season, game_date: date, strength_state: "all", updated_at: updatedAt, season_games_played: seasonGames - game,
++          points_avg_last5: round(ppg * swing()), points_avg_season: ppg, toi_seconds_avg_last5: toiL5, toi_seconds_avg_season: toi, toi_seconds_total_last5: toiL5 * 5,
++          pp_share_pct_last5: round(Math.min(100, Math.max(0, pp + (random() - 0.5) * 30)), 1), pp_share_pct_season: pp,
++          sog_per_60_last5: round(sog * swing()), sog_per_60_season: sog, shot_attempts_per_60_last5: round(icf * swing()), shot_attempts_per_60_season: icf,
++          ixg_per_60_last5: round(ixg * swing(), 3), ixg_per_60_season: ixg,
++          line_combo_slot: latest ? lineNow : lineBefore, line_combo_group: defense ? "defense" : "forward", pp_unit: latest ? unitNow : unitBefore,
++        });
++      }
++      const start = Math.round(3 + random() * 60), change = Math.round((random() - 0.45) * 30);
++      const timeline = Array.from({ length: 7 }, (_, day) => ({ date: shift(today, day - 6), value: Math.max(0, Math.min(100, Math.round(start + (change * day) / 6))) }));
++      ownership.push({
++        player_key: `465.p.${70000 + teamIndex * 20 + index}`, player_id: String(70000 + teamIndex * 20 + index), player_name: name,
++        editorial_team_abbreviation: NHL_TO_YAHOO[team] ?? team, display_position: position === "L" ? "LW" : position === "R" ? "RW" : position,
++        eligible_positions: [{ position: position === "L" ? "LW" : position === "R" ? "RW" : position }], position_type: "P",
++        percent_ownership: timeline[6].value, ownership_timeline: timeline, status: null, season: Math.floor(season / 10000), last_updated: `${today}T09:00:00Z`,
++      });
++    });
++  });
++  return { rolling, players, ownership };
++}

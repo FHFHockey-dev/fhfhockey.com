@@ -1,0 +1,117 @@
+{
+  "at": "2026-10-24T16:30:28.159103+00:00",
+  "excluded_from_recursive_reaudit": true,
+  "outputs": [
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/BASELINE-LEDGER.json",
+      "bytes": 1078983,
+      "sha256": "9dfd1bb0bb019ad140d42f0c811c5e6544ffc54e46d970f8fc9e2189c92f4c71"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/BASELINE-LEDGER.md",
+      "bytes": 494348,
+      "sha256": "538e4bd8230eff1b9cfb0d8613f5471216175f8b5d4f8d8b25ae1f1978a9582a"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/BASELINE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 457976,
+      "sha256": "ac006c547ed467ff29951bc56e4921a25c5c3ae5922362bcf1dbbbdfd622d488"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/CANDIDATE-LEDGER.json",
+      "bytes": 1100668,
+      "sha256": "09f13408bdf961f813c3680de4d3fa89a7a7df4ab13b1035665e6657fd4dcda3"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/CANDIDATE-LEDGER.md",
+      "bytes": 504937,
+      "sha256": "01e4e3b089a79424f919a9b5cb8259c77bd682bc7ed5964531250a642f54c4de"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/CANDIDATE-MASTER-TASKLIST-2026-10-20.md",
+      "bytes": 468565,
+      "sha256": "11cdb7f985621231a80b803429a34d0aa8a111db66c8f697581b7f7601361fea"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/CANONICAL-CHECKPOINT.patch",
+      "bytes": 227193,
+      "sha256": "e3d543f91190fa155821e1c76f04a29807c6f2519c55f85a9ad65ccc8825f338"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/CHANGELOG.json",
+      "bytes": 28514,
+      "sha256": "f56605db2f0a1289916edc14b46250776f9483022a676d57ccebb5a7b97a2202"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/CHECKPOINT-TIME.txt",
+      "bytes": 33,
+      "sha256": "7113934c16c4f993431dcb0d70b2787f8e74a98be853ad2b8c6384365ea1dc7b"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/CONTINUATION.json",
+      "bytes": 25347,
+      "sha256": "de42910bb1d3e36d336604d5fea1cf30896a8410234b76fc86cbff7d684b551d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/COVERAGE.json",
+      "bytes": 10254,
+      "sha256": "d5a433f3be11fe12586ca2df965f5de46b686fcfffcc759dc3f25ef3acf6d565"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/FINAL-CHECKPOINT.json",
+      "bytes": 1598,
+      "sha256": "bbb84230be59c9d0ba24f102399fcf99ff1c7b763add16df0db356bad4d76551"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/FINDINGS.json",
+      "bytes": 20579,
+      "sha256": "39a557832c80993c8a2acb655ebe5869b94598fae88816e17e449112449939b6"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/FOLDERS.json",
+      "bytes": 3817,
+      "sha256": "998e5f902c5a3e872c451d392b6fcb274aa476ba6d02f67cf29d8dfe9f801097"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/LIBRARY-DELIVERY.json",
+      "bytes": 1110,
+      "sha256": "e82aabe99514d7883d9d48ebe5b6974e3ed1a75733874c96583ef8dc81464824"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/LIVE-CHANGES.json",
+      "bytes": 2313,
+      "sha256": "a91968bd48a9ade9ec2d1efc83543537d80b518a83d22c71e26ca3007521806d"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/REPORT.md",
+      "bytes": 4725,
+      "sha256": "18586aa0c691c5c61d97e70fa374525e23c114d7caf994d61001df384a6d9d93"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/SOURCE-PINS.json",
+      "bytes": 1864,
+      "sha256": "0a5e551ebf1a9dd1f15b5fb401be131491eab62aeede9f68f6e5f1a0f871a5a4"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/START.json",
+      "bytes": 2968,
+      "sha256": "121d0beed558b0ff8974be8e09e7d4b9430092c268955074675dcd115a75243f"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/VALIDATION-CANONICAL.json",
+      "bytes": 1602,
+      "sha256": "dbb67b2517f4d9c443836f72e3e456754e99930f7bca1a6e01169546342b960c"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/VALIDATION-PREPARED.json",
+      "bytes": 1274,
+      "sha256": "dc3817ab8def239a7143a04af21449d7b45adc853ab85897cbc518f1146d9159"
+    },
+    {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-05-cron-natural/reconcile.py",
+      "bytes": 21183,
+      "sha256": "37b93c224e13871dbad8fee131d670f82ac5c7dd2f18443bb2ff90b37ec9b50b"
+    }
+  ],
+  "notes": "Own outputs listed separately; checksum/index exclude themselves to avoid recursive self-hash. No output grants authority."
+}

@@ -7,7 +7,7 @@ October 1 IST adoption receipt (Chef): comparison tasks 13.2–13.4/13.7 and TOI
 - `web/utils/fetchWigoPlayerStats.ts` and its existing test — Aggregate precedence, totals, game-log queries and units.
 - `web/pages/api/v1/db/calculate-wigo-stats.ts` and `web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts` — Aggregate writer and reconstruction coverage.
 - `web/components/WiGO/StatsTable.tsx`, `StatsTable.test.tsx`, `StatsTableRowChart.tsx`, `StatsTableRowChart.test.tsx` — Expanded-chart identity, errors and references.
-- `web/components/WiGO/WigoComparisonMatrix.tsx` — Existing uncommitted wide-screen matrix; preserve and verify alongside the standard table.
+- `web/components/WiGO/WigoComparisonMatrix.tsx` — Existing wide-screen matrix (committed since `2d38d1da5`); preserve and verify alongside the standard table.
 - `web/components/WiGO/PerGameStatsTable.tsx` and its existing test — Snapshot, season gating and pace.
 - `web/utils/calculateWigoRatings.ts`, `fetchWigoRatingStats.ts`, `fetchWigoPercentiles.ts` and their existing tests — Rating/cohort calculations and caching.
 - `web/hooks/usePercentileRank.ts` and its existing test — Radar source and missing-data behavior.

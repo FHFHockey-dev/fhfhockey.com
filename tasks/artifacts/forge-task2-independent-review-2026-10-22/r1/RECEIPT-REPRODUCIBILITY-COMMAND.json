@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "/usr/local/bin/npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "review-vitest.config.mts",
+    "scripts/qualify-native-players-offline.test.ts",
+    "-t",
+    "reproduces current native calculations with genuine admission and zero live client/transport/writes"
+  ],
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-r1-independent-ksvb02so/web",
+  "exitCode": 0,
+  "seconds": 1.03,
+  "environment": "clean, synthetic credentials, transport denial, one worker"
+}

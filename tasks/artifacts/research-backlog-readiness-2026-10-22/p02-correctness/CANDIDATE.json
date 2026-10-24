@@ -1,0 +1,171 @@
+{
+  "packet": "P02 goalie correctness",
+  "status": "implemented locally; independent review pending",
+  "branch": "octoberBranch",
+  "head": "a6e9f8b61903ed4bb2bba6b21bf8597f51ac85d0",
+  "final_snapshot": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p02-check-71Z5S7/isolation/snapshot/web",
+  "node": "22.11.0",
+  "files": [
+    {
+      "path": "web/components/PlayerStats/playerStatsContract.ts",
+      "before_sha256": "a8f885fc0d50320bafe458ed92605b1515656a78d262945e004fd0d418fc1165",
+      "after_sha256": "d9453373cc4b774ac61e458e616091440559399bcb1358f704c4c90abffdf242",
+      "operation": "modify"
+    },
+    {
+      "path": "web/components/PlayerStats/playerStatsContract.test.ts",
+      "before_sha256": "e0b7a2587d4ffae3c8752baa5c511b0aadb344491a3e2fd3ff243abde534fcf1",
+      "after_sha256": "bf22582beb95ada6aa25daaa32c5e98a2f4a5160f99ed02e358dce8de34663d4",
+      "operation": "modify"
+    },
+    {
+      "path": "web/components/PlayerStats/PlayerContextualStats.tsx",
+      "before_sha256": "0158328a731330d18a3ea10f2b4d640ee2e0f426ffb9facc271740c04cfcdd47",
+      "after_sha256": "7872aa27fe8c421a5e3d17be898a6ece641589e3fa2cdfb1d4a3087c57c557b9",
+      "operation": "modify"
+    },
+    {
+      "path": "web/components/PlayerStats/PlayerContextualStats.test.tsx",
+      "before_sha256": null,
+      "after_sha256": "30c95ab42a569c8eb1fd973d390a62fb3d7728db22e85f5aef04cd5dc6988adf",
+      "operation": "add"
+    },
+    {
+      "path": "web/lib/NHL/statsPageFetch.ts",
+      "before_sha256": "fa6995792ee57154f3fa30245b3d7ac5d423ede0d9f0db632a4b90660ee0cee1",
+      "after_sha256": "1a58b8ed40a070905b3d180b8cfa1d3ae3ee6d2ecb25bff38ffa8b9834ff7f66",
+      "operation": "modify"
+    },
+    {
+      "path": "web/lib/NHL/statsPageFetch.test.ts",
+      "before_sha256": "a4c11fd00ffa628f19fbf5ce8978156107d576d2f66dc65c067430c6a09c6c19",
+      "after_sha256": "24433be6b0211c8d4bc923ee552964ec56f3cfa4108e2115561e6ed11ae1b4c4",
+      "operation": "modify"
+    },
+    {
+      "path": "web/lib/NHL/statsPageTypes.ts",
+      "before_sha256": "207bc7e50966ff9e54061a21f64cd2a8b76790099147d383274ca0f5a4a65d0f",
+      "after_sha256": "486e67073a7ffe6a5efc94174772da2d0df528d2be362c0eded7b747bd9b8d09",
+      "operation": "modify"
+    },
+    {
+      "path": "web/components/StatsPage/LeaderboardCategoryGoalie.tsx",
+      "before_sha256": "209fd7db5d42fbb52eded2b249dbad352a1b412040b1184d03408419bf57122c",
+      "after_sha256": "3a3dc4e7f5db7cdfafb7ccab1a3647ec893b6000fa330aaf4745d87dac433158",
+      "operation": "modify"
+    },
+    {
+      "path": "web/components/StatsPage/LeaderboardCategoryGoalie.test.tsx",
+      "before_sha256": null,
+      "after_sha256": "f2d614977a1e8a3fce96b1b29be7196f8bf106066b3c1669bcc92064d4e471cf",
+      "operation": "add"
+    }
+  ],
+  "a7_a9_fences": [
+    {
+      "path": "web/lib/stats/percentUnits.ts",
+      "sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/stats/percentUnits.test.ts",
+      "sha256": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+      "unchanged": true
+    },
+    {
+      "path": "web/components/GoalieShareChart/index.tsx",
+      "sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+      "unchanged": true
+    },
+    {
+      "path": "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+      "sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+      "unchanged": true
+    },
+    {
+      "path": "web/hooks/useShotData.ts",
+      "sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+      "unchanged": true
+    },
+    {
+      "path": "web/hooks/useShotData.test.tsx",
+      "sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+      "unchanged": true
+    },
+    {
+      "path": "web/components/GameStateAnalysis/GameStateAnalysis.tsx",
+      "sha256": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+      "unchanged": true
+    },
+    {
+      "path": "web/components/GameStateAnalysis/GameStateAnalysis.test.tsx",
+      "sha256": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+      "unchanged": true
+    },
+    {
+      "path": "web/components/TeamDashboard/AdvancedL10Metrics.tsx",
+      "sha256": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+      "unchanged": true
+    },
+    {
+      "path": "web/components/TeamDashboard/AdvancedL10Metrics.test.tsx",
+      "sha256": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+      "unchanged": true
+    },
+    {
+      "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+      "sha256": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+      "unchanged": true
+    },
+    {
+      "path": "web/components/TeamDashboard/TeamDashboard.test.tsx",
+      "sha256": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/stats/teamCountConsumers.test.tsx",
+      "sha256": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa",
+      "unchanged": true
+    }
+  ],
+  "overlap": false,
+  "checks": {
+    "imported_regressions_before": {
+      "exit_code": 1,
+      "failed": 38,
+      "passed": 41,
+      "receipt": "REGRESSIONS-RED.log"
+    },
+    "final_focused_tests": {
+      "exit_code": 0,
+      "passed": 96,
+      "files": 6,
+      "receipt": "FINAL-TESTS.log"
+    },
+    "scoped_typecheck": {
+      "exit_code": 0,
+      "receipt": "TYPECHECK.log",
+      "initial_test_fixture_type_error": "TYPECHECK-initial.log"
+    },
+    "changed_file_lint": {
+      "exit_code": 0,
+      "errors": 0,
+      "warnings": 0,
+      "receipt": "LINT.log"
+    },
+    "tracked_diff_check": {
+      "exit_code": 0
+    }
+  },
+  "patch_sha256": "f5f7e4ea308493e1c57dfa0cdbdc642996fc7376d3deaf63445d6d10c3908f98",
+  "constraints": {
+    "application_file_lease": 9,
+    "network_calls": 0,
+    "credential_reads": 0,
+    "migrations": 0,
+    "builds": 0,
+    "commits": 0,
+    "deployments": 0,
+    "formula_weight_changes": 0
+  }
+}

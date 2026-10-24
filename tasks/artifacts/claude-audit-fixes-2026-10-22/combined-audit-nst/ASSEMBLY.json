@@ -430,6 +430,7 @@
     "web/__tests__/utils/adminOnlyMiddleware.test.ts",
     "web/__tests__/vitest.setup.js",
     "web/audit-network-deny.cjs",
+    "web/audit.application-tsconfig.json",
     "web/audit.offline.setup.ts",
     "web/audit.vitest.config.mts",
     "web/components/Admin/CronRouteRunner.test.ts",
@@ -3528,7 +3529,8 @@
     "web/yahoo-fantasy.d.ts"
   ],
   "harness_only_changes": [
-    "web/audit.vitest.config.mts cache path"
+    "web/audit.vitest.config.mts cache path",
+    "web/audit.application-tsconfig.json excludes four external independent-review fixtures, not application files"
   ],
   "live_unreviewed_sources_copied": 0
 }

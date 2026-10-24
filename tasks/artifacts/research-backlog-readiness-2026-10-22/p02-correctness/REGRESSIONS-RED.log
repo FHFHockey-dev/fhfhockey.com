@@ -1,0 +1,1205 @@
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p02-check-OyrycW/isolation/snapshot/web
+
+(node:86978) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/PlayerStats/playerStatsContract.test.ts (52 tests | 17 failed) 20ms
+   ✓ league dates > uses the league-local (Eastern) calendar date, not UTC 9ms
+   ✓ league dates > parses YYYY-MM-DD as a local calendar day 0ms
+   ✓ league dates > assigns September openers and June playoffs to the right season 0ms
+   ✓ season date window > uses the seasons row dates when available 0ms
+   ✓ season date window > falls back to Sep 1 .. Aug 31 when the seasons row is missing 0ms
+   ✓ season date window > has no window for an invalid season id 0ms
+   ✓ season scope > keeps every row of the server-scoped season 0ms
+   ✓ season scope > filters by date only for a season other than the page season 0ms
+   ✓ game-log order and windows > sorts newest-first provider rows into ascending order 1ms
+   ✓ game-log order and windows > Last 10 means the latest ten games 0ms
+   ✓ game-log order and windows > counts appearances only for rows with games_played > 0 0ms
+   ✓ played / missed / future denominators > never counts future or same-day scheduled games as absences 0ms
+   ✓ played / missed / future denominators > a past game without a loaded box score is awaiting data, not an absence 0ms
+   ✓ played / missed / future denominators > limits absences to the selected game window 0ms
+   ✓ played / missed / future denominators > early season: 10 played with 74 future games is 10 of 10 0ms
+   ✓ played / missed / future denominators > counts elapsed regular-season absences only 0ms
+   ✓ played / missed / future denominators > reports unavailable rather than 100% when the schedule is unknown 0ms
+   ✓ played / missed / future denominators > no games and no absences has no percentage 0ms
+   ✓ summary aggregation > SH% is summed goals over summed shots, as a fraction 0ms
+   ✓ summary aggregation > zero shots makes SH% unavailable, not 0 0ms
+   ✓ summary aggregation > SV% is summed saves over summed shots against 0ms
+   × summary aggregation > P02: GAA pools goals against over numeric seconds, including relief exposure 3ms
+     → expected 4.5 to be close to 3.4285714285714284, received difference is 1.0714285714285716, but expected 0.005
+   × summary aggregation > P02: GAA is unavailable with unsupported exposure null 1ms
+     → expected 4.5 to be null
+   × summary aggregation > P02: GAA is unavailable with unsupported exposure undefined 0ms
+     → expected 4.5 to be null
+   × summary aggregation > P02: GAA is unavailable with unsupported exposure  0ms
+     → expected 4.5 to be null
+   × summary aggregation > P02: GAA is unavailable with unsupported exposure   0ms
+     → expected 4.5 to be null
+   × summary aggregation > P02: GAA is unavailable with unsupported exposure 60:00 0ms
+     → expected 4.5 to be null
+   × summary aggregation > P02: GAA is unavailable with unsupported exposure -1 0ms
+     → expected 4.5 to be null
+   × summary aggregation > P02: GAA is unavailable with unsupported exposure NaN 0ms
+     → expected 4.5 to be null
+   × summary aggregation > P02: GAA is unavailable with unsupported exposure Infinity 0ms
+     → expected 4.5 to be null
+   × summary aggregation > P02: GAA is unavailable with unsupported exposure false 0ms
+     → expected 4.5 to be null
+   × summary aggregation > P02: GAA preserves observed zero and withholds zero exposure 0ms
+     → expected null to be +0 // Object.is equality
+   × summary aggregation > P02: SV% withholds incomplete or invalid paired support {"saves":null,"shots_against":10} 0ms
+     → expected 0.9 to be null
+   × summary aggregation > P02: SV% withholds incomplete or invalid paired support {"saves":9,"shots_against":null} 0ms
+     → expected 0.9 to be null
+   × summary aggregation > P02: SV% withholds incomplete or invalid paired support {"saves":" ","shots_against":10} 0ms
+     → expected 0.675 to be null
+   × summary aggregation > P02: SV% withholds incomplete or invalid paired support {"saves":false,"shots_against":10} 0ms
+     → expected 0.675 to be null
+   × summary aggregation > P02: SV% withholds incomplete or invalid paired support {"saves":11,"shots_against":10} 0ms
+     → expected 0.95 to be null
+   × summary aggregation > P02: SV% withholds incomplete or invalid paired support {"saves":-1,"shots_against":10} 0ms
+     → expected 0.65 to be null
+   ✓ summary aggregation > P02: zero saves on observed shots is a valid zero SV% 0ms
+   ✓ summary aggregation > partial data: null rows are skipped, never treated as zero 0ms
+   ✓ unit-aware formatting > WGO fractions display as percentage points 0ms
+   ✓ unit-aware formatting > NST percentage points are not rescaled 0ms
+   ✓ unit-aware formatting > whole counts are integers; averages keep two decimals 0ms
+   ✓ unit-aware formatting > unavailable stays unavailable 0ms
+   ✓ chart units > splits selected stats into counts, rates, percentages and TOI 0ms
+   ✓ chart units > goalie SV% is a percentage; GAA and PDO are rates 0ms
+   ✓ chart units > plots percentages on a 0-100 scale and TOI in minutes 0ms
+   ✓ chart units > formats minutes as mm:ss 0ms
+   ✓ rolling average > averages the trailing window over present values; all-missing is a gap 0ms
+   ✓ relative to season average (5-game index) > indexes the 5-game rolling average to the season average (= 100), only after 5 games 0ms
+   ✓ relative to season average (5-game index) > missing values are gaps and never count as zero 0ms
+   ✓ relative to season average (5-game index) > a zero season average has no baseline 0ms
+(node:86978) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ lib/NHL/statsPageFetch.test.ts (13 tests | 9 failed) 52ms
+   × fetchStatsData > P02: missing goalie ratios never enter numerical rankings; observed zero remains 12ms
+     → expected [ 991, 993, 992 ] to deeply equal [ 993, 992 ]
+   × fetchStatsData > P02: invalid goalie ratio undefined is unavailable rather than zero 3ms
+     → expected [ { goalie_id: 991, …(10) } ] to deeply equal []
+   × fetchStatsData > P02: invalid goalie ratio  is unavailable rather than zero 3ms
+     → expected [ { goalie_id: 991, …(10) } ] to deeply equal []
+   × fetchStatsData > P02: invalid goalie ratio   is unavailable rather than zero 3ms
+     → expected [ { goalie_id: 991, …(10) } ] to deeply equal []
+   × fetchStatsData > P02: invalid goalie ratio false is unavailable rather than zero 3ms
+     → expected [ { goalie_id: 991, …(10) } ] to deeply equal []
+   × fetchStatsData > P02: invalid goalie ratio NaN is unavailable rather than zero 7ms
+     → expected [ { goalie_id: 991, …(10) } ] to deeply equal []
+   × fetchStatsData > P02: invalid goalie ratio Infinity is unavailable rather than zero 2ms
+     → expected [ { goalie_id: 991, …(10) } ] to deeply equal []
+   × fetchStatsData > P02: invalid goalie ratio -1 is unavailable rather than zero 1ms
+     → expected [ { goalie_id: 991, …(10) } ] to deeply equal []
+   × fetchStatsData > P02: ratio rankings require played games and fractions no larger than one 2ms
+     → expected [ 991, 992 ] to deeply equal [ 992 ]
+   ✓ fetchStatsData > ranks the full season within each position before taking five, including NHL wing codes 3ms
+   ✓ fetchStatsData > uses a season supplied by the caller instead of looking it up again 4ms
+   ✓ fetchStatsData > leaves missing positions empty instead of reusing the overall leaders 4ms
+   ✓ fetchStatsData > fully pages leaderboard inputs, chunks identities, and isolates the latest goalie season 4ms
+(node:86978) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/PlayerStats/PlayerContextualStats.test.tsx (10 tests | 9 failed) 42ms
+   × P02 goalie contextual support > uses classified starts, retaining relief as participation but outside QS 18ms
+     → Unable to find an element with the text: 50.0%. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _negative_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m33.3%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mInconsistent starts[0m
+  [36m</div>[39m
+[36m</div>[39m
+   × P02 goalie contextual support > withholds QS when starts or classification is unknown/invalid: {"games_started":null,"quality_start":1} 3ms
+     → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _positive_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m100.0%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mVery consistent[0m
+  [36m</div>[39m
+[36m</div>[39m
+   × P02 goalie contextual support > withholds QS when starts or classification is unknown/invalid: {"quality_start":1} 2ms
+     → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _positive_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m100.0%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mVery consistent[0m
+  [36m</div>[39m
+[36m</div>[39m
+   × P02 goalie contextual support > withholds QS when starts or classification is unknown/invalid: {"games_started":1,"quality_start":null} 2ms
+     → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _neutral_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m50.0%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mReasonably consistent[0m
+  [36m</div>[39m
+[36m</div>[39m
+   × P02 goalie contextual support > withholds QS when starts or classification is unknown/invalid: {"games_started":1} 3ms
+     → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _neutral_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m50.0%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mReasonably consistent[0m
+  [36m</div>[39m
+[36m</div>[39m
+   × P02 goalie contextual support > withholds QS when starts or classification is unknown/invalid: {"games_started":1,"quality_start":" "} 2ms
+     → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _neutral_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m50.0%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mReasonably consistent[0m
+  [36m</div>[39m
+[36m</div>[39m
+   × P02 goalie contextual support > withholds QS when starts or classification is unknown/invalid: {"games_started":1,"quality_start":2} 2ms
+     → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _positive_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m150.0%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mVery consistent[0m
+  [36m</div>[39m
+[36m</div>[39m
+   × P02 goalie contextual support > preserves a classified zero QS rate and withholds a relief-only rate 7ms
+     → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _negative_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m0.0%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mInconsistent starts[0m
+  [36m</div>[39m
+[36m</div>[39m
+   × P02 goalie contextual support > withholds SV when an appearance is missing one paired count 2ms
+     → Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _negative_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mSave Percentage[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m0.675[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mNeeds improvement[0m
+  [36m</div>[39m
+[36m</div>[39m
+   ✓ P02 goalie contextual support > pools valid SV counts and ignores a known nonappearance 2ms
+(node:86978) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/StatsPage/LeaderboardCategoryGoalie.test.tsx (4 tests | 3 failed) 24ms
+   × P02: renders observed zero save_pct instead of unavailable 18ms
+     → Unable to find an element with the text: .000. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_card_26ba3a"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"_cardTitle_26ba3a"[39m
+      [36m>[39m
+        [0mGoalies[0m
+      [36m</h2>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leaderRow_26ba3a _leaderRowExpanded_26ba3a"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_cardContainer_26ba3a"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_cardLeft_26ba3a"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mhref[39m=[32m"/stats/player/999001"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_cardRight_26ba3a"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_topRow_26ba3a"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_leaderMain_26ba3a"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"_nameValueRow_26ba3a"[39m
+                [36m>[39m
+                  [36m<div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"_leaderName_26ba3a"[39m
+                    [36m>[39m
+                      [0mSynthetic Goalie[0m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"_playerDetails_26ba3a"[39m
+                    [36m>[39m
+                      [0mSYN[0m
+                      [0m · #[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"_leaderValue_26ba3a"[39m
+                  [36m>[39m
+                    [0m-[0m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × P02: renders observed zero goals_against_avg instead of unavailable 2ms
+     → Unable to find an element with the text: 0.00. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_card_26ba3a"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"_cardTitle_26ba3a"[39m
+      [36m>[39m
+        [0mGoalies[0m
+      [36m</h2>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leaderRow_26ba3a _leaderRowExpanded_26ba3a"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_cardContainer_26ba3a"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_cardLeft_26ba3a"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mhref[39m=[32m"/stats/player/999001"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_cardRight_26ba3a"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_topRow_26ba3a"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_leaderMain_26ba3a"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"_nameValueRow_26ba3a"[39m
+                [36m>[39m
+                  [36m<div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"_leaderName_26ba3a"[39m
+                    [36m>[39m
+                      [0mSynthetic Goalie[0m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"_playerDetails_26ba3a"[39m
+                    [36m>[39m
+                      [0mSYN[0m
+                      [0m · #[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"_leaderValue_26ba3a"[39m
+                  [36m>[39m
+                    [0m-[0m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × P02: renders observed zero quality_starts_pct instead of unavailable 2ms
+     → Unable to find an element with the text: 0.0. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_card_26ba3a"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"_cardTitle_26ba3a"[39m
+      [36m>[39m
+        [0mGoalies[0m
+      [36m</h2>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leaderRow_26ba3a _leaderRowExpanded_26ba3a"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_cardContainer_26ba3a"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_cardLeft_26ba3a"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mhref[39m=[32m"/stats/player/999001"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_cardRight_26ba3a"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_topRow_26ba3a"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_leaderMain_26ba3a"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"_nameValueRow_26ba3a"[39m
+                [36m>[39m
+                  [36m<div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"_leaderName_26ba3a"[39m
+                    [36m>[39m
+                      [0mSynthetic Goalie[0m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"_playerDetails_26ba3a"[39m
+                    [36m>[39m
+                      [0mSYN[0m
+                      [0m · #[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"_leaderValue_26ba3a"[39m
+                  [36m>[39m
+                    [0m-[0m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   ✓ P02: empty qualified ranking has an unavailable state 1ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 38 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/PlayerStats/PlayerContextualStats.test.tsx > P02 goalie contextual support > uses classified starts, retaining relief as participation but outside QS
+TestingLibraryElementError: Unable to find an element with the text: 50.0%. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _negative_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m33.3%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mInconsistent starts[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/PlayerStats/PlayerContextualStats.test.tsx:23:39
+     21|   it("uses classified starts, retaining relief as participation but ou…
+     22|     renderGoalie([row({ quality_start: 1 }), row(), row({ games_starte…
+     23|     expect(card("Quality Start Rate").getByText("50.0%")).toBeTruthy();
+       |                                       ^
+     24|     expect(card("Quality Start Rate").getByText(/2 of 2 starts classif…
+     25|     expect(screen.getByText("3 games")).toBeTruthy();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/38]⎯
+
+ FAIL  components/PlayerStats/PlayerContextualStats.test.tsx > P02 goalie contextual support > withholds QS when starts or classification is unknown/invalid: {"games_started":null,"quality_start":1}
+ FAIL  components/PlayerStats/PlayerContextualStats.test.tsx > P02 goalie contextual support > withholds QS when starts or classification is unknown/invalid: {"quality_start":1}
+TestingLibraryElementError: Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _positive_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m100.0%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mVery consistent[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/PlayerStats/PlayerContextualStats.test.tsx:37:39
+     35|   ])("withholds QS when starts or classification is unknown/invalid: %…
+     36|     renderGoalie([row({ quality_start: 1 }), row(missing)]);
+     37|     expect(card("Quality Start Rate").getByText("-")).toBeTruthy();
+       |                                       ^
+     38|     expect(screen.queryByText("Inconsistent starts")).toBeNull();
+     39|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/38]⎯
+
+ FAIL  components/PlayerStats/PlayerContextualStats.test.tsx > P02 goalie contextual support > withholds QS when starts or classification is unknown/invalid: {"games_started":1,"quality_start":null}
+ FAIL  components/PlayerStats/PlayerContextualStats.test.tsx > P02 goalie contextual support > withholds QS when starts or classification is unknown/invalid: {"games_started":1}
+ FAIL  components/PlayerStats/PlayerContextualStats.test.tsx > P02 goalie contextual support > withholds QS when starts or classification is unknown/invalid: {"games_started":1,"quality_start":" "}
+TestingLibraryElementError: Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _neutral_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m50.0%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mReasonably consistent[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/PlayerStats/PlayerContextualStats.test.tsx:37:39
+     35|   ])("withholds QS when starts or classification is unknown/invalid: %…
+     36|     renderGoalie([row({ quality_start: 1 }), row(missing)]);
+     37|     expect(card("Quality Start Rate").getByText("-")).toBeTruthy();
+       |                                       ^
+     38|     expect(screen.queryByText("Inconsistent starts")).toBeNull();
+     39|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/38]⎯
+
+ FAIL  components/PlayerStats/PlayerContextualStats.test.tsx > P02 goalie contextual support > withholds QS when starts or classification is unknown/invalid: {"games_started":1,"quality_start":2}
+TestingLibraryElementError: Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _positive_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m150.0%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mVery consistent[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/PlayerStats/PlayerContextualStats.test.tsx:37:39
+     35|   ])("withholds QS when starts or classification is unknown/invalid: %…
+     36|     renderGoalie([row({ quality_start: 1 }), row(missing)]);
+     37|     expect(card("Quality Start Rate").getByText("-")).toBeTruthy();
+       |                                       ^
+     38|     expect(screen.queryByText("Inconsistent starts")).toBeNull();
+     39|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/38]⎯
+
+ FAIL  components/PlayerStats/PlayerContextualStats.test.tsx > P02 goalie contextual support > preserves a classified zero QS rate and withholds a relief-only rate
+TestingLibraryElementError: Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _negative_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mQuality Start Rate[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m0.0%[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mInconsistent starts[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/PlayerStats/PlayerContextualStats.test.tsx:46:39
+     44|     view.unmount();
+     45|     renderGoalie([row({ games_started: 0, quality_start: null })]);
+     46|     expect(card("Quality Start Rate").getByText("-")).toBeTruthy();
+       |                                       ^
+     47|   });
+     48| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/38]⎯
+
+ FAIL  components/PlayerStats/PlayerContextualStats.test.tsx > P02 goalie contextual support > withholds SV when an appearance is missing one paired count
+TestingLibraryElementError: Unable to find an element with the text: -. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<div[39m
+  [33mclass[39m=[32m"_insightCard_8ca369 _negative_8ca369"[39m
+[36m>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightLabel_8ca369"[39m
+  [36m>[39m
+    [0mSave Percentage[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightValue_8ca369"[39m
+  [36m>[39m
+    [0m0.675[0m
+  [36m</div>[39m
+  [36m<div[39m
+    [33mclass[39m=[32m"_insightDescription_8ca369"[39m
+  [36m>[39m
+    [0mNeeds improvement[0m
+  [36m</div>[39m
+[36m</div>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/PlayerStats/PlayerContextualStats.test.tsx:51:36
+     49|   it("withholds SV when an appearance is missing one paired count", ()…
+     50|     renderGoalie([row(), row({ saves: null, shots_against: 10 })]);
+     51|     expect(card("Save Percentage").getByText("-")).toBeTruthy();
+       |                                    ^
+     52|     expect(screen.queryByText("Needs improvement")).toBeNull();
+     53|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/38]⎯
+
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: GAA pools goals against over numeric seconds, including relief exposure
+AssertionError: expected 4.5 to be close to 3.4285714285714284, received difference is 1.0714285714285716, but expected 0.005
+ ❯ components/PlayerStats/playerStatsContract.test.ts:222:60
+    220|       { date: "2", games_played: 1, goals_against: 1, time_on_ice: 600…
+    221|     ];
+    222|     expect(aggregateSummaryStat(log, "goals_against_avg")).toBeCloseTo…
+       |                                                            ^
+    223|   });
+    224| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/38]⎯
+
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: GAA is unavailable with unsupported exposure null
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: GAA is unavailable with unsupported exposure undefined
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: GAA is unavailable with unsupported exposure 
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: GAA is unavailable with unsupported exposure  
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: GAA is unavailable with unsupported exposure 60:00
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: GAA is unavailable with unsupported exposure -1
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: GAA is unavailable with unsupported exposure NaN
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: GAA is unavailable with unsupported exposure Infinity
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: GAA is unavailable with unsupported exposure false
+AssertionError: expected 4.5 to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+4.5
+
+ ❯ components/PlayerStats/playerStatsContract.test.ts:231:32
+    229|         { date: "1", games_played: 1, goals_against: 3, time_on_ice: 3…
+    230|         { date: "2", games_played: 1, goals_against: 1, time_on_ice, g…
+    231|       ], "goals_against_avg")).toBeNull();
+       |                                ^
+    232|     }
+    233|   );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/38]⎯
+
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: GAA preserves observed zero and withholds zero exposure
+AssertionError: expected null to be +0 // Object.is equality
+
+[32m- Expected:[39m 
+0
+
+[31m+ Received:[39m 
+null
+
+ ❯ components/PlayerStats/playerStatsContract.test.ts:236:109
+    234| 
+    235|   it("P02: GAA preserves observed zero and withholds zero exposure", (…
+    236|     expect(aggregateSummaryStat([{ date: "1", goals_against: 0, time_o…
+       |                                                                                                             ^
+    237|     expect(aggregateSummaryStat([{ date: "1", goals_against: 0, time_o…
+    238|     expect(aggregateSummaryStat([{ date: "1", goals_against: null, tim…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/38]⎯
+
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: SV% withholds incomplete or invalid paired support {"saves":null,"shots_against":10}
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: SV% withholds incomplete or invalid paired support {"saves":9,"shots_against":null}
+AssertionError: expected 0.9 to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+0.9
+
+ ❯ components/PlayerStats/playerStatsContract.test.ts:252:21
+    250|       { date: "1", games_played: 1, saves: 27, shots_against: 30 },
+    251|       { date: "2", games_played: 1, ...partial }
+    252|     ], "save_pct")).toBeNull();
+       |                     ^
+    253|   });
+    254| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/38]⎯
+
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: SV% withholds incomplete or invalid paired support {"saves":" ","shots_against":10}
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: SV% withholds incomplete or invalid paired support {"saves":false,"shots_against":10}
+AssertionError: expected 0.675 to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+0.675
+
+ ❯ components/PlayerStats/playerStatsContract.test.ts:252:21
+    250|       { date: "1", games_played: 1, saves: 27, shots_against: 30 },
+    251|       { date: "2", games_played: 1, ...partial }
+    252|     ], "save_pct")).toBeNull();
+       |                     ^
+    253|   });
+    254| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/38]⎯
+
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: SV% withholds incomplete or invalid paired support {"saves":11,"shots_against":10}
+AssertionError: expected 0.95 to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+0.95
+
+ ❯ components/PlayerStats/playerStatsContract.test.ts:252:21
+    250|       { date: "1", games_played: 1, saves: 27, shots_against: 30 },
+    251|       { date: "2", games_played: 1, ...partial }
+    252|     ], "save_pct")).toBeNull();
+       |                     ^
+    253|   });
+    254| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/38]⎯
+
+ FAIL  components/PlayerStats/playerStatsContract.test.ts > summary aggregation > P02: SV% withholds incomplete or invalid paired support {"saves":-1,"shots_against":10}
+AssertionError: expected 0.65 to be null
+
+[32m- Expected:[39m 
+null
+
+[31m+ Received:[39m 
+0.65
+
+ ❯ components/PlayerStats/playerStatsContract.test.ts:252:21
+    250|       { date: "1", games_played: 1, saves: 27, shots_against: 30 },
+    251|       { date: "2", games_played: 1, ...partial }
+    252|     ], "save_pct")).toBeNull();
+       |                     ^
+    253|   });
+    254| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/38]⎯
+
+ FAIL  components/StatsPage/LeaderboardCategoryGoalie.test.tsx > P02: renders observed zero save_pct instead of unavailable
+TestingLibraryElementError: Unable to find an element with the text: .000. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_card_26ba3a"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"_cardTitle_26ba3a"[39m
+      [36m>[39m
+        [0mGoalies[0m
+      [36m</h2>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leaderRow_26ba3a _leaderRowExpanded_26ba3a"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_cardContainer_26ba3a"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_cardLeft_26ba3a"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mhref[39m=[32m"/stats/player/999001"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_cardRight_26ba3a"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_topRow_26ba3a"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_leaderMain_26ba3a"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"_nameValueRow_26ba3a"[39m
+                [36m>[39m
+                  [36m<div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"_leaderName_26ba3a"[39m
+                    [36m>[39m
+                      [0mSynthetic Goalie[0m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"_playerDetails_26ba3a"[39m
+                    [36m>[39m
+                      [0mSYN[0m
+                      [0m · #[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"_leaderValue_26ba3a"[39m
+                  [36m>[39m
+                    [0m-[0m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/StatsPage/LeaderboardCategoryGoalie.test.tsx:18:17
+     16| ] as const)("P02: renders observed zero %s instead of unavailable", (s…
+     17|   render(<LeaderboardCategoryGoalie title="Goalies" leaders={[goalie]}…
+     18|   expect(screen.getByText(displayed)).toBeTruthy();
+       |                 ^
+     19| });
+     20| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/38]⎯
+
+ FAIL  components/StatsPage/LeaderboardCategoryGoalie.test.tsx > P02: renders observed zero goals_against_avg instead of unavailable
+TestingLibraryElementError: Unable to find an element with the text: 0.00. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_card_26ba3a"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"_cardTitle_26ba3a"[39m
+      [36m>[39m
+        [0mGoalies[0m
+      [36m</h2>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leaderRow_26ba3a _leaderRowExpanded_26ba3a"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_cardContainer_26ba3a"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_cardLeft_26ba3a"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mhref[39m=[32m"/stats/player/999001"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_cardRight_26ba3a"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_topRow_26ba3a"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_leaderMain_26ba3a"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"_nameValueRow_26ba3a"[39m
+                [36m>[39m
+                  [36m<div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"_leaderName_26ba3a"[39m
+                    [36m>[39m
+                      [0mSynthetic Goalie[0m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"_playerDetails_26ba3a"[39m
+                    [36m>[39m
+                      [0mSYN[0m
+                      [0m · #[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"_leaderValue_26ba3a"[39m
+                  [36m>[39m
+                    [0m-[0m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/StatsPage/LeaderboardCategoryGoalie.test.tsx:18:17
+     16| ] as const)("P02: renders observed zero %s instead of unavailable", (s…
+     17|   render(<LeaderboardCategoryGoalie title="Goalies" leaders={[goalie]}…
+     18|   expect(screen.getByText(displayed)).toBeTruthy();
+       |                 ^
+     19| });
+     20| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/38]⎯
+
+ FAIL  components/StatsPage/LeaderboardCategoryGoalie.test.tsx > P02: renders observed zero quality_starts_pct instead of unavailable
+TestingLibraryElementError: Unable to find an element with the text: 0.0. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"_card_26ba3a"[39m
+    [36m>[39m
+      [36m<h2[39m
+        [33mclass[39m=[32m"_cardTitle_26ba3a"[39m
+      [36m>[39m
+        [0mGoalies[0m
+      [36m</h2>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_leaderRow_26ba3a _leaderRowExpanded_26ba3a"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_cardContainer_26ba3a"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_cardLeft_26ba3a"[39m
+          [36m>[39m
+            [36m<a[39m
+              [33mhref[39m=[32m"/stats/player/999001"[39m
+            [36m/>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"_cardRight_26ba3a"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"_topRow_26ba3a"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"_leaderMain_26ba3a"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"_nameValueRow_26ba3a"[39m
+                [36m>[39m
+                  [36m<div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"_leaderName_26ba3a"[39m
+                    [36m>[39m
+                      [0mSynthetic Goalie[0m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"_playerDetails_26ba3a"[39m
+                    [36m>[39m
+                      [0mSYN[0m
+                      [0m · #[0m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"_leaderValue_26ba3a"[39m
+                  [36m>[39m
+                    [0m-[0m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../../../../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/StatsPage/LeaderboardCategoryGoalie.test.tsx:18:17
+     16| ] as const)("P02: renders observed zero %s instead of unavailable", (s…
+     17|   render(<LeaderboardCategoryGoalie title="Goalies" leaders={[goalie]}…
+     18|   expect(screen.getByText(displayed)).toBeTruthy();
+       |                 ^
+     19| });
+     20| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/38]⎯
+
+ FAIL  lib/NHL/statsPageFetch.test.ts > fetchStatsData > P02: missing goalie ratios never enter numerical rankings; observed zero remains
+AssertionError: expected [ 991, 993, 992 ] to deeply equal [ 993, 992 ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[31m+   991,[39m
+[2m    993,[22m
+[2m    992,[22m
+[2m  ][22m
+
+ ❯ lib/NHL/statsPageFetch.test.ts:210:71
+    208|     ];
+    209|     const result = await fetchStatsData();
+    210|     expect(result.goalieLeadersGAA.map((goalie) => goalie.goalie_id)).…
+       |                                                                       ^
+    211|     expect(result.goalieLeadersSavePct.map((goalie) => goalie.goalie_i…
+    212|     expect(result.goalieLeadersQS.map((goalie) => goalie.goalie_id)).t…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[17/38]⎯
+
+ FAIL  lib/NHL/statsPageFetch.test.ts > fetchStatsData > P02: invalid goalie ratio undefined is unavailable rather than zero
+ FAIL  lib/NHL/statsPageFetch.test.ts > fetchStatsData > P02: invalid goalie ratio  is unavailable rather than zero
+ FAIL  lib/NHL/statsPageFetch.test.ts > fetchStatsData > P02: invalid goalie ratio   is unavailable rather than zero
+ FAIL  lib/NHL/statsPageFetch.test.ts > fetchStatsData > P02: invalid goalie ratio false is unavailable rather than zero
+ FAIL  lib/NHL/statsPageFetch.test.ts > fetchStatsData > P02: invalid goalie ratio NaN is unavailable rather than zero
+ FAIL  lib/NHL/statsPageFetch.test.ts > fetchStatsData > P02: invalid goalie ratio Infinity is unavailable rather than zero
+ FAIL  lib/NHL/statsPageFetch.test.ts > fetchStatsData > P02: invalid goalie ratio -1 is unavailable rather than zero
+AssertionError: expected [ { goalie_id: 991, …(10) } ] to deeply equal []
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- [][39m
+[31m+ [[39m
+[31m+   {[39m
+[31m+     "current_team_abbreviation": "",[39m
+[31m+     "fullName": "Invalid",[39m
+[31m+     "games_played": 10,[39m
+[31m+     "goalie_id": 991,[39m
+[31m+     "goals_against_avg": 0,[39m
+[31m+     "image_url": "/players/991.png",[39m
+[31m+     "quality_starts_pct": 0,[39m
+[31m+     "save_pct": 0,[39m
+[31m+     "season_id": "20252026",[39m
+[31m+     "sweater_number": 991,[39m
+[31m+     "wins": 1,[39m
+[31m+   },[39m
+[31m+ ][39m
+
+ ❯ lib/NHL/statsPageFetch.test.ts:226:39
+    224|       }];
+    225|       const result = await fetchStatsData();
+    226|       expect(result.goalieLeadersGAA).toEqual([]);
+       |                                       ^
+    227|       expect(result.goalieLeadersSavePct).toEqual([]);
+    228|       expect(result.goalieLeadersQS).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[18/38]⎯
+
+ FAIL  lib/NHL/statsPageFetch.test.ts > fetchStatsData > P02: ratio rankings require played games and fractions no larger than one
+AssertionError: expected [ 991, 992 ] to deeply equal [ 992 ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[31m+   991,[39m
+[2m    992,[22m
+[2m  ][22m
+
+ ❯ lib/NHL/statsPageFetch.test.ts:240:71
+    238|     ];
+    239|     const result = await fetchStatsData();
+    240|     expect(result.goalieLeadersGAA.map((goalie) => goalie.goalie_id)).…
+       |                                                                       ^
+    241|     expect(result.goalieLeadersSavePct).toEqual([]);
+    242|     expect(result.goalieLeadersQS).toEqual([]);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[19/38]⎯
+
+
+ Test Files  4 failed (4)
+      Tests  38 failed | 41 passed (79)
+   Start at  09:30:00
+   Duration  2.71s (transform 320ms, setup 53ms, collect 598ms, tests 138ms, environment 1.30s, prepare 276ms)
+

@@ -1,0 +1,2002 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c2-isolated/web
+
+(node:70062) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/NewsFeed/NewsCard.test.tsx (39 tests | 13 failed) 185ms
+   ✓ NewsCard > does not leak ingest source GameDayLines through labels, links, titles or accessibility text 16ms
+   ✓ NewsCard > does not leak ingest source GameDayGoalies through labels, links, titles or accessibility text 3ms
+   ✓ NewsCard > does not leak ingest source GameDayNewsNHL through labels, links, titles or accessibility text 2ms
+   ✓ NewsCard > does not leak ingest source CcCMiddleton through labels, links, titles or accessibility text 2ms
+   ✓ NewsCard > does not leak ingest source DFOFantasy through labels, links, titles or accessibility text 2ms
+   ✓ NewsCard > does not leak ingest source NHL_Rosters through labels, links, titles or accessibility text 2ms
+   ✓ NewsCard > keeps observation and publication independent of creation time 2ms
+   ✓ NewsCard > does not display malformed timestamps as dates 2ms
+   ✓ NewsCard > shows useful details and an accessible original-post icon in rail mode 16ms
+   ✓ NewsCard > renders team and category once while promoting authoritative detail 6ms
+   ✓ NewsCard > expands a single-field story without duplicating its full copy 9ms
+   ✓ NewsCard > supports one controlled expanded story at a time 10ms
+   ✓ NewsCard > keeps the external source link independent from disclosure 6ms
+   ✓ NewsCard > uses the league fallback without fabricating a team association 2ms
+   ✓ NewsCard > uses the neutral NHL logo when a team logo is unavailable 1ms
+   ✓ NewsCard > does not render a dead external-link action 2ms
+   × NewsCard > renders the captured Barzal passage without promoting its Kevin He join 7ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #041E42; --lineup-team-secondary: #c8102e; --news-accent: #041E42; --news-team-primary: #041E42; --news-team-secondary: #b9975B; --news-team-stripe: #c8102e; --news-team-surface: #041E42;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mFLA[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mMathew Barzal is with #Isles on trip, Pete DeBoer said he is attending all the meetings. Not on the ice yet but said to be "around the corner." So he won't play in the season opener tomorrow in Toronto.[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m7/24/2026, 4:30:49 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mJul 24, 4:30 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mUnavailable[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mOriginal source pending[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"FLA logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/FLA_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mPanthers[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   ✓ NewsCard > does not add disclosure controls to unrelated NewsCard variants 3ms
+   ✓ NewsCard > uses NYR's palette for the shared full and mini snapshot grids 13ms
+   ✓ NewsCard > uses TOR's palette for the shared full and mini snapshot grids 13ms
+   ✓ NewsCard > uses ZZZ's palette for the shared full and mini snapshot grids 10ms
+   ✓ NewsCard > normalizes the supplied canonical team abbreviation without changing player identities 2ms
+   ✓ NewsCard > shows all five supplied PP players and preserves source/time metadata 13ms
+   ✓ NewsCard > shows a missing PP snapshot honestly and leaves ordinary reports without a grid 3ms
+   ✓ NewsCard > preserves review-only editing of missing goalie slots without creating public goalie placeholders 5ms
+   × NewsCard > shows plain unverified-details copy for retained card 5503ce72-f550-4226-b094-dab6c866c34d 3ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #24292c; --lineup-team-secondary: #8d0519; --news-accent: #24292c; --news-team-primary: #24292c; --news-team-secondary: #B4975A; --news-team-stripe: #8d0519; --news-team-surface: #24292c;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mVGK[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mMitch Marner is out tonight. His wife is…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 8:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 8:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 7:33 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@DannyWebster21[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"VGK logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/VGK_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mKnights[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × NewsCard > shows plain unverified-details copy for retained card 027192e0-e45c-4427-b9a7-25a073587e8c 2ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #24292c; --lineup-team-secondary: #8d0519; --news-accent: #24292c; --news-team-primary: #24292c; --news-team-secondary: #B4975A; --news-team-stripe: #8d0519; --news-team-surface: #24292c;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mVGK[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mMitch Marner is out tonight. His wife is…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 8:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 8:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 7:39 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@DannyWebster21[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"VGK logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/VGK_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mKnights[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × NewsCard > shows plain unverified-details copy for retained card c441dd2d-4ab1-4973-99eb-9c6169ed6343 3ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #24292c; --lineup-team-secondary: #8d0519; --news-accent: #24292c; --news-team-primary: #24292c; --news-team-secondary: #B4975A; --news-team-stripe: #8d0519; --news-team-surface: #24292c;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mVGK[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mMitch Marner is out tonight. His wife is…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 8:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 8:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 7:33 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@DannyWebster21[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"VGK logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/VGK_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mKnights[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × NewsCard > shows plain unverified-details copy for retained card d9c5a5c7-ea2b-4fa0-9ef1-60f093169425 3ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #24292c; --lineup-team-secondary: #8d0519; --news-accent: #24292c; --news-team-primary: #24292c; --news-team-secondary: #B4975A; --news-team-stripe: #8d0519; --news-team-surface: #24292c;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mVGK[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mMitch Marner is out tonight. His wife is…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 8:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 8:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 7:39 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@DannyWebster21[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"VGK logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/VGK_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mKnights[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × NewsCard > shows plain unverified-details copy for retained card bc104992-f916-48eb-b523-5df8518118f1 2ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #000000; --lineup-team-secondary: #FFFFFF; --news-accent: #000000; --news-team-primary: #000000; --news-team-secondary: #FFB81C; --news-team-stripe: #FFFFFF; --news-team-surface: #000000;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mPIT[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mPenguins say Chinakhov is day to day with …[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 7:30:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 7:30 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 7:08 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@king_jemison[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"PIT logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/PIT_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mPenguins[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × NewsCard > shows plain unverified-details copy for retained card 529ce2fc-5cf3-4ce1-b287-26a1cf5177b3 4ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #041E42; --lineup-team-secondary: #FFFFFF; --news-accent: #041E42; --news-team-primary: #041E42; --news-team-secondary: #FC4C02; --news-team-stripe: #FFFFFF; --news-team-surface: #041E42;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mEDM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mLevi starts in net vs Carolina, RNH centre…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 1:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 1:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 12:57 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@EdmontonJack[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"EDM logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/EDM_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mOilers[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × NewsCard > shows plain unverified-details copy for retained card ee1bc90a-927f-48cc-9265-9bd3c3869624 2ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #041E42; --lineup-team-secondary: #FFFFFF; --news-accent: #041E42; --news-team-primary: #041E42; --news-team-secondary: #FC4C02; --news-team-stripe: #FFFFFF; --news-team-surface: #041E42;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mEDM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mLevi starts in net vs Carolina, RNH centre…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 1:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 1:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 12:57 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@EdmontonJack[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"EDM logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/EDM_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mOilers[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × NewsCard > shows plain unverified-details copy for retained card 8f8e78dd-64b5-400c-b3e2-2d8c1d011b49 2ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #041E42; --lineup-team-secondary: #FFFFFF; --news-accent: #041E42; --news-team-primary: #041E42; --news-team-secondary: #FC4C02; --news-team-stripe: #FFFFFF; --news-team-surface: #041E42;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mEDM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mLevi starts in net vs Carolina, RNH centre…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 1:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 1:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 12:57 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@EdmontonJack[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"EDM logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/EDM_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mOilers[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × NewsCard > shows plain unverified-details copy for retained card 6f0fccdb-0eed-48e2-ae0c-a6aca4bfdecc 3ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #000000; --lineup-team-secondary: #FFFFFF; --news-accent: #000000; --news-team-primary: #000000; --news-team-secondary: #FFB81C; --news-team-stripe: #FFFFFF; --news-team-surface: #000000;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mPIT[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mUpdates from Dan Muse: ▪️Bryan Rust’s i…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 12:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 12:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 11:53 AM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@PensInsideScoop[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"PIT logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/PIT_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mPenguins[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × NewsCard > shows plain unverified-details copy for retained card 22338dbf-9f85-43e3-bd7c-5bea679aa8a3 2ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #000000; --lineup-team-secondary: #FFFFFF; --news-accent: #000000; --news-team-primary: #000000; --news-team-secondary: #FFB81C; --news-team-stripe: #FFFFFF; --news-team-surface: #000000;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mPIT[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mUpdates from Dan Muse: ▪️Bryan Rust’s i…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 12:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 12:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 11:53 AM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@PensInsideScoop[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"PIT logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/PIT_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mPenguins[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × NewsCard > shows plain unverified-details copy for retained card 994e2726-bf46-4b15-b78c-2a6d3136aee4 2ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #000000; --lineup-team-secondary: #FFFFFF; --news-accent: #000000; --news-team-primary: #000000; --news-team-secondary: #FFB81C; --news-team-stripe: #FFFFFF; --news-team-surface: #000000;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mPIT[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mUpdates from Dan Muse: ▪️Bryan Rust’s i…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 12:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 12:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 11:53 AM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@PensInsideScoop[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"PIT logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/PIT_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mPenguins[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   × NewsCard > keeps a valid original-post link beside the unverified-details copy 2ms
+     → Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #041E42; --lineup-team-secondary: #c8102e; --news-accent: #041E42; --news-team-primary: #041E42; --news-team-secondary: #b9975B; --news-team-stripe: #c8102e; --news-team-surface: #041E42;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mFLA[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mFlorida and Akira Schmid reached agreement to avoid arbitration on a two-year, $2 million contract.[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m7/24/2026, 4:30:49 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mJul 24, 4:30 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mUnavailable[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mElliotte Friedman · @FriedgeHNIC[0m
+          [36m</span>[39m
+          [36m<a[39m
+            [33maria-label[39m=[32m"View original post for Source report"[39m
+            [33mclass[39m=[32m"_sourceLink_73850b"[39m
+            [33mhref[39m=[32m"https://x.com/FriedgeHNIC/status/2073877758803935434"[39m
+            [33mrel[39m=[32m"noreferrer"[39m
+            [33mtarget[39m=[32m"_blank"[39m
+            [33mtitle[39m=[32m"View original post for Source report"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mfocusable[39m=[32m"false"[39m
+              [33mheight[39m=[32m"1em"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"1em"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M15 3h6v6"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M10 14 21 3"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</a>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"FLA logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/FLA_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mPanthers[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+   ✓ NewsCard > shows no unverified-details copy when the reader verifies a claim 2ms
+   ✓ NewsCard > keeps lineup cards free of the unverified-details copy 2ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > renders the captured Barzal passage without promoting its Kevin He join
+TestingLibraryElementError: Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #041E42; --lineup-team-secondary: #c8102e; --news-accent: #041E42; --news-team-primary: #041E42; --news-team-secondary: #b9975B; --news-team-stripe: #c8102e; --news-team-surface: #041E42;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mFLA[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mMathew Barzal is with #Isles on trip, Pete DeBoer said he is attending all the meetings. Not on the ice yet but said to be "around the corner." So he won't play in the season opener tomorrow in Toronto.[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m7/24/2026, 4:30:49 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mJul 24, 4:30 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mUnavailable[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mOriginal source pending[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"FLA logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/FLA_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mPanthers[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/NewsFeed/NewsCard.test.tsx:346:19
+    344|     expect(screen.queryByText("Kevin He injury update")).toBeNull();
+    345|     expect(screen.getByText(/Mathew Barzal is with/)).toBeTruthy();
+    346|     expect(screen.getByText(UNVERIFIED)).toBeTruthy();
+       |                   ^
+    347|     expect(screen.queryByText(/subject-to-claim/i)).toBeNull();
+    348|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/13]⎯
+
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > shows plain unverified-details copy for retained card 5503ce72-f550-4226-b094-dab6c866c34d
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > shows plain unverified-details copy for retained card c441dd2d-4ab1-4973-99eb-9c6169ed6343
+TestingLibraryElementError: Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #24292c; --lineup-team-secondary: #8d0519; --news-accent: #24292c; --news-team-primary: #24292c; --news-team-secondary: #B4975A; --news-team-stripe: #8d0519; --news-team-surface: #24292c;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mVGK[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mMitch Marner is out tonight. His wife is…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 8:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 8:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 7:33 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@DannyWebster21[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"VGK logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/VGK_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mKnights[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:109:15
+ ❯ components/NewsFeed/NewsCard.test.tsx:432:19
+    430|     const { container } = render(<NewsCard item={item} />);
+    431|     expect(screen.getByRole("heading", { name: "Source report" })).toB…
+    432|     expect(screen.getAllByText(UNVERIFIED)).toHaveLength(1);
+       |                   ^
+    433|     expect(container.textContent).not.toMatch(/subject-to-claim|claim …
+    434|     expect(container.textContent).toContain(item.blurb.replace(/^RT @\…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/13]⎯
+
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > shows plain unverified-details copy for retained card 027192e0-e45c-4427-b9a7-25a073587e8c
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > shows plain unverified-details copy for retained card d9c5a5c7-ea2b-4fa0-9ef1-60f093169425
+TestingLibraryElementError: Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #24292c; --lineup-team-secondary: #8d0519; --news-accent: #24292c; --news-team-primary: #24292c; --news-team-secondary: #B4975A; --news-team-stripe: #8d0519; --news-team-surface: #24292c;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mVGK[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mMitch Marner is out tonight. His wife is…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 8:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 8:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 7:39 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@DannyWebster21[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"VGK logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/VGK_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mKnights[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:109:15
+ ❯ components/NewsFeed/NewsCard.test.tsx:432:19
+    430|     const { container } = render(<NewsCard item={item} />);
+    431|     expect(screen.getByRole("heading", { name: "Source report" })).toB…
+    432|     expect(screen.getAllByText(UNVERIFIED)).toHaveLength(1);
+       |                   ^
+    433|     expect(container.textContent).not.toMatch(/subject-to-claim|claim …
+    434|     expect(container.textContent).toContain(item.blurb.replace(/^RT @\…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/13]⎯
+
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > shows plain unverified-details copy for retained card bc104992-f916-48eb-b523-5df8518118f1
+TestingLibraryElementError: Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #000000; --lineup-team-secondary: #FFFFFF; --news-accent: #000000; --news-team-primary: #000000; --news-team-secondary: #FFB81C; --news-team-stripe: #FFFFFF; --news-team-surface: #000000;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mPIT[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mPenguins say Chinakhov is day to day with …[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 7:30:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 7:30 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 7:08 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@king_jemison[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"PIT logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/PIT_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mPenguins[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:109:15
+ ❯ components/NewsFeed/NewsCard.test.tsx:432:19
+    430|     const { container } = render(<NewsCard item={item} />);
+    431|     expect(screen.getByRole("heading", { name: "Source report" })).toB…
+    432|     expect(screen.getAllByText(UNVERIFIED)).toHaveLength(1);
+       |                   ^
+    433|     expect(container.textContent).not.toMatch(/subject-to-claim|claim …
+    434|     expect(container.textContent).toContain(item.blurb.replace(/^RT @\…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/13]⎯
+
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > shows plain unverified-details copy for retained card 529ce2fc-5cf3-4ce1-b287-26a1cf5177b3
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > shows plain unverified-details copy for retained card ee1bc90a-927f-48cc-9265-9bd3c3869624
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > shows plain unverified-details copy for retained card 8f8e78dd-64b5-400c-b3e2-2d8c1d011b49
+TestingLibraryElementError: Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #041E42; --lineup-team-secondary: #FFFFFF; --news-accent: #041E42; --news-team-primary: #041E42; --news-team-secondary: #FC4C02; --news-team-stripe: #FFFFFF; --news-team-surface: #041E42;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mEDM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mLevi starts in net vs Carolina, RNH centre…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 1:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 1:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 12:57 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@EdmontonJack[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"EDM logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/EDM_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mOilers[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:109:15
+ ❯ components/NewsFeed/NewsCard.test.tsx:432:19
+    430|     const { container } = render(<NewsCard item={item} />);
+    431|     expect(screen.getByRole("heading", { name: "Source report" })).toB…
+    432|     expect(screen.getAllByText(UNVERIFIED)).toHaveLength(1);
+       |                   ^
+    433|     expect(container.textContent).not.toMatch(/subject-to-claim|claim …
+    434|     expect(container.textContent).toContain(item.blurb.replace(/^RT @\…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/13]⎯
+
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > shows plain unverified-details copy for retained card 6f0fccdb-0eed-48e2-ae0c-a6aca4bfdecc
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > shows plain unverified-details copy for retained card 22338dbf-9f85-43e3-bd7c-5bea679aa8a3
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > shows plain unverified-details copy for retained card 994e2726-bf46-4b15-b78c-2a6d3136aee4
+TestingLibraryElementError: Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #000000; --lineup-team-secondary: #FFFFFF; --news-accent: #000000; --news-team-primary: #000000; --news-team-secondary: #FFB81C; --news-team-stripe: #FFFFFF; --news-team-surface: #000000;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mPIT[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mUpdates from Dan Muse: ▪️Bryan Rust’s i…[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m10/22/2026, 12:00:11 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mOct 22, 12:00 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mOct 22, 11:53 AM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0m@PensInsideScoop[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"PIT logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/PIT_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mPenguins[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:109:15
+ ❯ components/NewsFeed/NewsCard.test.tsx:432:19
+    430|     const { container } = render(<NewsCard item={item} />);
+    431|     expect(screen.getByRole("heading", { name: "Source report" })).toB…
+    432|     expect(screen.getAllByText(UNVERIFIED)).toHaveLength(1);
+       |                   ^
+    433|     expect(container.textContent).not.toMatch(/subject-to-claim|claim …
+    434|     expect(container.textContent).toContain(item.blurb.replace(/^RT @\…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/13]⎯
+
+ FAIL  components/NewsFeed/NewsCard.test.tsx > NewsCard > keeps a valid original-post link beside the unverified-details copy
+TestingLibraryElementError: Unable to find an element with the text: We couldn't verify the player details in this report.. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<article[39m
+      [33mclass[39m=[32m"_card_73850b"[39m
+      [33mstyle[39m=[32m"--lineup-team-primary: #041E42; --lineup-team-secondary: #c8102e; --news-accent: #041E42; --news-team-primary: #041E42; --news-team-secondary: #b9975B; --news-team-stripe: #c8102e; --news-team-surface: #041E42;"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"_content_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_meta_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_metaStrong_73850b"[39m
+          [36m>[39m
+            [0mFLA[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"_mobileMetaDivider_73850b"[39m
+          [36m>[39m
+            [0m·[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_categoryLabel_73850b"[39m
+          [36m>[39m
+            [0mSource report[0m
+          [36m</span>[39m
+        [36m</div>[39m
+        [36m<h2[39m
+          [33mclass[39m=[32m"_headline_73850b"[39m
+        [36m>[39m
+          [0mSource report[0m
+        [36m</h2>[39m
+        [36m<p[39m
+          [33mclass[39m=[32m"_blurb_73850b"[39m
+        [36m>[39m
+          [0mFlorida and Akira Schmid reached agreement to avoid arbitration on a two-year, $2 million contract.[0m
+        [36m</p>[39m
+        [36m<p>[39m
+          [0mSubject-to-claim evidence unavailable[0m
+        [36m</p>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_footer_73850b"[39m
+        [36m>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_desktopTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0m7/24/2026, 4:30:49 PM[0m
+          [36m</span>[39m
+          [36m<span[39m
+            [33mclass[39m=[32m"_mobileTimestamp_73850b"[39m
+          [36m>[39m
+            [0mPublished [0m
+            [0mJul 24, 4:30 PM[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mObserved [0m
+            [0mUnavailable[0m
+          [36m</span>[39m
+          [36m<span>[39m
+            [0mElliotte Friedman · @FriedgeHNIC[0m
+          [36m</span>[39m
+          [36m<a[39m
+            [33maria-label[39m=[32m"View original post for Source report"[39m
+            [33mclass[39m=[32m"_sourceLink_73850b"[39m
+            [33mhref[39m=[32m"https://x.com/FriedgeHNIC/status/2073877758803935434"[39m
+            [33mrel[39m=[32m"noreferrer"[39m
+            [33mtarget[39m=[32m"_blank"[39m
+            [33mtitle[39m=[32m"View original post for Source report"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mfocusable[39m=[32m"false"[39m
+              [33mheight[39m=[32m"1em"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"1em"[39m
+            [36m>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M15 3h6v6"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M10 14 21 3"[39m
+              [36m/>[39m
+              [36m<path[39m
+                [33md[39m=[32m"M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</a>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+      [36m<aside[39m
+        [33mclass[39m=[32m"_teamPane_73850b"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLogo_73850b"[39m
+        [36m>[39m
+          [36m<img[39m
+            [33malt[39m=[32m"FLA logo"[39m
+            [33msrc[39m=[32m"https://assets.nhle.com/logos/nhl/svg/FLA_light.svg"[39m
+          [36m/>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"_teamLabel_73850b"[39m
+        [36m>[39m
+          [0mPanthers[0m
+        [36m</div>[39m
+      [36m</aside>[39m
+    [36m</article>[39m
+  [36m</div>[39m
+[36m</body>[39m
+ ❯ Object.getElementError ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/config.js:37:19
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+ ❯ ../../../../Users/tim/Code/fhfhockey.com/web/node_modules/@testing-library/react/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ❯ components/NewsFeed/NewsCard.test.tsx:443:19
+    441|   it("keeps a valid original-post link beside the unverified-details c…
+    442|     render(<NewsCard item={makeItem()} />);
+    443|     expect(screen.getByText(UNVERIFIED)).toBeTruthy();
+       |                   ^
+    444|     expect(screen.getByRole("link", { name: /view original post/i }).g…
+    445|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/13]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  13 failed | 26 passed (39)
+   Start at  13:41:06
+   Duration  728ms (transform 181ms, setup 3ms, collect 264ms, tests 185ms, environment 150ms, prepare 31ms)
+

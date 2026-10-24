@@ -1,0 +1,12 @@
+[
+  {
+    "name": "types",
+    "exit_code": 2,
+    "ended_at": "2026-10-23T12:25:09.235391+00:00"
+  },
+  {
+    "name": "compatibility",
+    "exit_code": 1,
+    "ended_at": "2026-10-23T12:25:16.452019+00:00"
+  }
+]

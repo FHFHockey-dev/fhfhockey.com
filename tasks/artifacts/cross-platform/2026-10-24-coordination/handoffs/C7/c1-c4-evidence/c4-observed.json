@@ -1,0 +1,64 @@
+{
+  "W1": {
+    "teams": 32,
+    "mismatches": []
+  },
+  "W2": [
+    {
+      "href": "/stats/team/EDM",
+      "text": "Team HQOpen the selected player’s team schedule, form, and shot map."
+    },
+    {
+      "href": "/lines/EDM",
+      "text": "Team LinesConfirm the deployment and PP personnel behind the player read."
+    },
+    {
+      "href": "/trends",
+      "text": "Trends DashboardCompare the player and team explanation with recent-form movement."
+    },
+    {
+      "href": "/game-grid/7-Day-Forecast",
+      "text": "Game GridApply the team-driver read to weekly volume and opponent planning."
+    },
+    {
+      "href": "/start-chart",
+      "text": "Starter BoardCarry the player and team context into start-or-sit decisions."
+    }
+  ],
+  "W3": {
+    "text": "WiGO workflowTake the Synthetic Player read furtherSelect a player to add their team HQ and lines; these league-wide views open now.Trends DashboardCompare the player and team explanation with recent-form movement.Game GridApply the team-driver read to weekly volume and opponent planning.Starter BoardCarry the player and team context into start-or-sit decisions."
+  },
+  "W4": [
+    {
+      "href": "/stats/team/TOR",
+      "target": null,
+      "rel": null
+    },
+    {
+      "href": "/lines/TOR",
+      "target": null,
+      "rel": null
+    },
+    {
+      "href": "/trends",
+      "target": null,
+      "rel": null
+    },
+    {
+      "href": "/game-grid/7-Day-Forecast",
+      "target": null,
+      "rel": null
+    },
+    {
+      "href": "/start-chart",
+      "target": null,
+      "rel": null
+    }
+  ],
+  "W5": {
+    "375": 1,
+    "768": 1,
+    "769": 1,
+    "1280": 1
+  }
+}

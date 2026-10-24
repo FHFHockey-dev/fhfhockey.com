@@ -1,0 +1,286 @@
+{
+  "snapshot": {
+    "id": "synthetic-flow-v1-1001-2026-10-01-2026-10-01-pp-allow-known-short-proposed-complete",
+    "renderVersion": "player-card-v0",
+    "registryVersion": "proposed-nst-v0",
+    "source": "synthetic",
+    "capturedAt": "2026-10-24T02:00:00Z",
+    "settings": {
+      "season": 20262027,
+      "gameType": "regular",
+      "strength": "pp",
+      "cutoff": "2026-10-24T00:00:00Z",
+      "period": {
+        "mode": "calendar",
+        "start": "2026-10-01",
+        "end": "2026-10-01",
+        "timezone": "UTC"
+      },
+      "seasonPolicy": "season-only-proposed",
+      "shortSamplePolicy": "allow-known-short-proposed",
+      "rankPolicy": "competition-midrank-proposed"
+    },
+    "player": {
+      "id": "1001",
+      "name": "Alex Morgan",
+      "team": "Harbour · example",
+      "position": "RW"
+    },
+    "sample": {
+      "gp": 1,
+      "requested": 1,
+      "toiSeconds": 0,
+      "firstDate": "2026-10-01",
+      "lastDate": "2026-10-01",
+      "gameIds": [
+        "2026100101"
+      ]
+    },
+    "poolId": "synthetic-flow-v1-1001-2026-10-01-2026-10-01-pp-allow-known-short-proposed-complete:all-valid-by-metric",
+    "sourceVersion": "interaction-fixtures-v1",
+    "readings": [
+      {
+        "id": "atoi",
+        "value": 0,
+        "state": "valid",
+        "rank": {
+          "ordinal": 1,
+          "population": 14,
+          "percentile": 50,
+          "tied": true
+        }
+      },
+      {
+        "id": "sog60",
+        "value": null,
+        "state": "undefined",
+        "reason": "Zero denominator: metric undefined",
+        "rank": null,
+        "rankReason": "Metric value unavailable"
+      },
+      {
+        "id": "icf60",
+        "value": null,
+        "state": "undefined",
+        "reason": "Zero denominator: metric undefined",
+        "rank": null,
+        "rankReason": "Metric value unavailable"
+      },
+      {
+        "id": "iscf60",
+        "value": null,
+        "state": "undefined",
+        "reason": "Zero denominator: metric undefined",
+        "rank": null,
+        "rankReason": "Metric value unavailable"
+      },
+      {
+        "id": "ixg60",
+        "value": null,
+        "state": "undefined",
+        "reason": "Zero denominator: metric undefined",
+        "rank": null,
+        "rankReason": "Metric value unavailable"
+      },
+      {
+        "id": "cf60",
+        "value": null,
+        "state": "undefined",
+        "reason": "Zero denominator: metric undefined",
+        "rank": null,
+        "rankReason": "Metric value unavailable"
+      },
+      {
+        "id": "scf60",
+        "value": null,
+        "state": "undefined",
+        "reason": "Zero denominator: metric undefined",
+        "rank": null,
+        "rankReason": "Metric value unavailable"
+      },
+      {
+        "id": "xgf60",
+        "value": null,
+        "state": "undefined",
+        "reason": "Zero denominator: metric undefined",
+        "rank": null,
+        "rankReason": "Metric value unavailable"
+      },
+      {
+        "id": "xgPct",
+        "value": null,
+        "state": "undefined",
+        "reason": "Zero denominator: metric undefined",
+        "rank": null,
+        "rankReason": "Metric value unavailable"
+      },
+      {
+        "id": "ipp",
+        "value": null,
+        "state": "undefined",
+        "reason": "Zero denominator: metric undefined",
+        "rank": null,
+        "rankReason": "Metric value unavailable"
+      },
+      {
+        "id": "shPct",
+        "value": null,
+        "state": "undefined",
+        "reason": "Zero denominator: metric undefined",
+        "rank": null,
+        "rankReason": "Metric value unavailable"
+      },
+      {
+        "id": "oiShPct",
+        "value": null,
+        "state": "undefined",
+        "reason": "Zero denominator: metric undefined",
+        "rank": null,
+        "rankReason": "Metric value unavailable"
+      }
+    ]
+  },
+  "renderVariant": "interactive-v1",
+  "selectedMetrics": [
+    "atoi",
+    "sog60",
+    "iscf60",
+    "ixg60",
+    "xgf60",
+    "xgPct",
+    "shPct",
+    "ipp"
+  ],
+  "coverage": {
+    "atoi": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 14,
+      "knownUndefined": 4,
+      "missingIncomplete": 0,
+      "knownShort": 0,
+      "fullEligiblePopulationVerified": true
+    },
+    "sog60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 0,
+      "knownUndefined": 18,
+      "missingIncomplete": 0,
+      "knownShort": 0,
+      "fullEligiblePopulationVerified": true
+    },
+    "icf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 0,
+      "knownUndefined": 18,
+      "missingIncomplete": 0,
+      "knownShort": 0,
+      "fullEligiblePopulationVerified": true
+    },
+    "iscf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 0,
+      "knownUndefined": 18,
+      "missingIncomplete": 0,
+      "knownShort": 0,
+      "fullEligiblePopulationVerified": true
+    },
+    "ixg60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 0,
+      "knownUndefined": 18,
+      "missingIncomplete": 0,
+      "knownShort": 0,
+      "fullEligiblePopulationVerified": true
+    },
+    "cf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 0,
+      "knownUndefined": 18,
+      "missingIncomplete": 0,
+      "knownShort": 0,
+      "fullEligiblePopulationVerified": true
+    },
+    "scf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 0,
+      "knownUndefined": 18,
+      "missingIncomplete": 0,
+      "knownShort": 0,
+      "fullEligiblePopulationVerified": true
+    },
+    "xgf60": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 0,
+      "knownUndefined": 18,
+      "missingIncomplete": 0,
+      "knownShort": 0,
+      "fullEligiblePopulationVerified": true
+    },
+    "xgPct": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 0,
+      "knownUndefined": 18,
+      "missingIncomplete": 0,
+      "knownShort": 0,
+      "fullEligiblePopulationVerified": true
+    },
+    "ipp": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 0,
+      "knownUndefined": 18,
+      "missingIncomplete": 0,
+      "knownShort": 0,
+      "fullEligiblePopulationVerified": true
+    },
+    "shPct": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 0,
+      "knownUndefined": 18,
+      "missingIncomplete": 0,
+      "knownShort": 0,
+      "fullEligiblePopulationVerified": true
+    },
+    "oiShPct": {
+      "expectedPlayers": 18,
+      "suppliedPlayers": 18,
+      "valid": 0,
+      "knownUndefined": 18,
+      "missingIncomplete": 0,
+      "knownShort": 0,
+      "fullEligiblePopulationVerified": true
+    }
+  },
+  "source": {
+    "definition": "synthetic-nst-shaped-v1",
+    "version": "interaction-fixtures-v1",
+    "definitionReference": "fabricated-provider-and-model-definition",
+    "verifiedMetrics": [
+      "atoi",
+      "sog60",
+      "icf60",
+      "iscf60",
+      "ixg60",
+      "cf60",
+      "scf60",
+      "xgf60",
+      "xgPct",
+      "ipp",
+      "shPct",
+      "oiShPct"
+    ]
+  },
+  "retrospective": true,
+  "liveActivation": false,
+  "premiumActivation": false
+}

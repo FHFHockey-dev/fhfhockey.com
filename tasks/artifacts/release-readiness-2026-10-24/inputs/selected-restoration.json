@@ -1,0 +1,187 @@
+{
+  "status": "local-packet-ready-independent-review-pending",
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "releaseBaseline": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "selection": "TJ: revert active HOLD features, defer hybrid k re-fit, preserve experiments separately",
+  "files": {
+    "web/lib/projections/stages/skater-stage.ts": "6adc2f970899251775587c08c906a8121eb8f38ed3394549abf2bc9774086b56",
+    "web/lib/projections/run-forge-projections.ts": "cb4cdbc68045dba3521405c9a3f832f894420af94ddf7e60c4ae0548eb81416e",
+    "web/lib/projections/apiHelpers.ts": "b5ce713fac1e74cc64b8483ef9a9e21ba39cfa9e29dc50636c5a769b62ebcb41",
+    "web/pages/api/v1/forge/players.ts": "9cef7a65971bbc998c51f81f40646720c3a062004a9c25f709d080ca0adea26e",
+    "web/pages/api/v1/forge/goalies.ts": "b76b011e1308b6445280e42bde087e90cac6496bcbd61ab9b32605dbd47ca3e7",
+    "web/pages/api/v1/projections/players.ts": "e7fbac9f0984741b5452c88e801fdf2bf69876e3cb0cfdf95c3025831bda2725",
+    "web/pages/api/v1/projections/goalies.ts": "efd285f1d0f41b3b66e63ac2a1d78bb7067d9a0e9efa0e8811c3ef4f49ded00c",
+    "web/pages/api/v1/projections/teams.ts": "9bdc6e1d928a53be5bd42a50f1cf7003e52099ab5282c68af851fa3c41594a99",
+    "web/lib/projections/constants/projection-weights.ts": "e98611fbd96d10c248951f14be15d6dcf56272a72beb90b6112f3ac0d023d035",
+    "web/lib/projections/runProjectionV2.test.ts": "f830513e33e59517f92bd25dee7dfdc3a499fc355c33c0bd0f6037832494d880",
+    "web/lib/projections/apiHelpers.runAdmission.test.ts": "f1712eb9b7e12e2deb5e43f611c208d11e612f7102dc5dfdc9c4be765bec3663",
+    "web/lib/projections/nativeInputEligibility.test.ts": "03f09ffba40fe9b671a68a4158f8f347d10b6d125983dccbb9decf630766a1c8",
+    "web/__tests__/pages/api/v1/forge/players.test.ts": "8438435fdc3da9ea629e0c4a6bb8d4e93916a2d01e5aec04372e53102c58ccf8",
+    "web/__tests__/pages/api/v1/forge/goalies.test.ts": "3e57800d1ddfcc871b1fa2e2c4b364e55132c2bb35913da49a58b1f761994b55",
+    "web/scripts/qualify-native-players-offline.test.ts": "ec348709d65af2fe7487965656f107dfbb1e0d7b6104de52c8d100146f347194"
+  },
+  "patchSha256": "fe0347df83454378072103b669bfee9a594fb69138215e281b5e9fac14f54c2c",
+  "archiveSha256": "362c8020b99d5b7993d8c0028e6293ac588da1e62dfc76a4298dd28b75e41556",
+  "checks": {
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-q2mio4ku/snapshot/web/scripts/releaseLegacyProducerBoundary.test.ts": {
+      "receipt": "attempt-01/tests.json",
+      "passed": 1,
+      "failed": 0
+    },
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-q2mio4ku/snapshot/web/lib/player-forecasts/nativeContributionAdmission.test.ts": {
+      "receipt": "attempt-01/tests.json",
+      "passed": 26,
+      "failed": 0
+    },
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-q2mio4ku/snapshot/web/lib/projections/apiHelpers.test.ts": {
+      "receipt": "attempt-01/tests.json",
+      "passed": 11,
+      "failed": 0
+    },
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-q2mio4ku/snapshot/web/lib/projections/releasedRunFence.test.ts": {
+      "receipt": "attempt-01/tests.json",
+      "passed": 20,
+      "failed": 0
+    },
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-q2mio4ku/snapshot/web/lib/projections/runProjectionV2.alignedConversion.test.ts": {
+      "receipt": "attempt-01/tests.json",
+      "passed": 9,
+      "failed": 0
+    },
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-q2mio4ku/snapshot/web/lib/projections/runProjectionV2.test.ts": {
+      "receipt": "attempt-01/tests.json",
+      "passed": 122,
+      "failed": 0
+    },
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-q2mio4ku/snapshot/web/lib/rosterScheduleData/forgeDailyBridge.test.ts": {
+      "receipt": "attempt-01/tests.json",
+      "passed": 42,
+      "failed": 0
+    },
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-q2mio4ku/snapshot/web/lib/rosterScheduleData/planning.test.ts": {
+      "receipt": "attempt-01/tests.json",
+      "passed": 107,
+      "failed": 0
+    },
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-4n9ijevq/snapshot/web/scripts/qualify-native-players-offline.test.ts": {
+      "receipt": "tests.json",
+      "passed": 56,
+      "failed": 0
+    },
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-4n9ijevq/snapshot/web/lib/projections/apiHelpers.runAdmission.test.ts": {
+      "receipt": "tests.json",
+      "passed": 16,
+      "failed": 0
+    },
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-4n9ijevq/snapshot/web/lib/projections/nativeInputEligibility.test.ts": {
+      "receipt": "tests.json",
+      "passed": 6,
+      "failed": 0
+    },
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-4n9ijevq/snapshot/web/__tests__/pages/api/v1/forge/goalies.test.ts": {
+      "receipt": "tests.json",
+      "passed": 14,
+      "failed": 0
+    },
+    "/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-4n9ijevq/snapshot/web/__tests__/pages/api/v1/forge/players.test.ts": {
+      "receipt": "tests.json",
+      "passed": 16,
+      "failed": 0
+    },
+    "lib/projections/releaseModelParity.test.ts": {
+      "receipt": "attempt-01/parity.json",
+      "passed": 3,
+      "failed": 0
+    }
+  },
+  "distinctPassingCases": 449,
+  "static": {
+    "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-selected-baseline-4n9ijevq/snapshot/web",
+    "results": [
+      {
+        "name": "types",
+        "argv": [
+          "npm",
+          "exec",
+          "--offline",
+          "--no",
+          "--",
+          "tsc",
+          "--noEmit",
+          "--incremental",
+          "false",
+          "-p",
+          "audit.yahoo.tsconfig.json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "lint",
+        "argv": [
+          "npm",
+          "exec",
+          "--offline",
+          "--no",
+          "--",
+          "eslint",
+          "lib/projections/stages/skater-stage.ts",
+          "lib/projections/run-forge-projections.ts",
+          "lib/projections/apiHelpers.ts",
+          "pages/api/v1/forge/players.ts",
+          "pages/api/v1/forge/goalies.ts",
+          "pages/api/v1/projections/players.ts",
+          "pages/api/v1/projections/goalies.ts",
+          "pages/api/v1/projections/teams.ts",
+          "lib/projections/constants/projection-weights.ts",
+          "lib/projections/runProjectionV2.test.ts",
+          "lib/projections/apiHelpers.runAdmission.test.ts",
+          "lib/projections/nativeInputEligibility.test.ts",
+          "__tests__/pages/api/v1/forge/players.test.ts",
+          "__tests__/pages/api/v1/forge/goalies.test.ts",
+          "scripts/qualify-native-players-offline.test.ts"
+        ],
+        "exit_code": 0
+      }
+    ]
+  },
+  "protectedDependencies": {
+    "web/lib/rosterScheduleData/forgeDailyBridge.ts": {
+      "snapshot": "651eff511275b93f6f598181f3c5402c9b4d1b57d3959eb772528842910855f5",
+      "current": "651eff511275b93f6f598181f3c5402c9b4d1b57d3959eb772528842910855f5",
+      "matches": true
+    },
+    "web/lib/player-forecasts/rsoUsePolicy.ts": {
+      "snapshot": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215",
+      "current": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215",
+      "matches": true
+    },
+    "web/lib/player-forecasts/resolvedPlanningForecast.ts": {
+      "snapshot": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07",
+      "current": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07",
+      "matches": true
+    },
+    "web/lib/projections/calibrationEligibility.ts": {
+      "snapshot": "9b93cc5cf9a80b0c695bd54f6bd6a6e232bd90170b8efdedd1e7106e3aa6e852",
+      "current": "9b93cc5cf9a80b0c695bd54f6bd6a6e232bd90170b8efdedd1e7106e3aa6e852",
+      "matches": true
+    },
+    "web/lib/projections/calculators/skater-adjustments.ts": {
+      "snapshot": "258e9b4699d01ccdc89a30d746cc6332f3c708210c4598c69fe7c8f47f2ba9b6",
+      "current": "258e9b4699d01ccdc89a30d746cc6332f3c708210c4598c69fe7c8f47f2ba9b6",
+      "matches": true
+    },
+    "web/lib/projections/stages/goalie-stage.ts": {
+      "snapshot": "894f7169f383d1aeb3124c7d25b3934eb9ae3098088af7f054879b2bb873b154",
+      "current": "894f7169f383d1aeb3124c7d25b3934eb9ae3098088af7f054879b2bb873b154",
+      "matches": true
+    },
+    "web/lib/projections/goalieModel.ts": {
+      "snapshot": "1490db7e9df805d764ac5153c86d8a7feded8c6ab0b95bf13b6c6a5d58054672",
+      "current": "1490db7e9df805d764ac5153c86d8a7feded8c6ab0b95bf13b6c6a5d58054672",
+      "matches": true
+    }
+  },
+  "gitMutations": 0,
+  "productionCalls": 0,
+  "notAReleaseCommit": true
+}

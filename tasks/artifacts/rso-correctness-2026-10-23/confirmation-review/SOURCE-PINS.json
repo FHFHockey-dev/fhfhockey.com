@@ -1,0 +1,13 @@
+{
+  "web/lib/rosterScheduleData/forgeDailyBridge.ts": "651eff511275b93f6f598181f3c5402c9b4d1b57d3959eb772528842910855f5",
+  "web/lib/projections/dailyBoardEvidence.ts": "d1900dc7c322a74d2810ecfe8b36476f2d047d7d348d431ba888352f9cb54d16",
+  "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "9f2f29c50a6af4e7d6c12265e4ed1552ffa52e79b171f568cf7230aac046daab",
+  "web/lib/rosterScheduleOptimizer/executionAdapter.ts": "d1b25a62b72388a1b5f29310f2f175eac3c2716f20c67f4c056e7d9f228c3bb4",
+  "web/lib/integrations/yahoo/rosterPlanning.ts": "631ee6917cb67646695322d15ac280bf0b050e5a504e6cbb6d9dbf0d6e635e54",
+  "web/pages/api/v1/roster-schedule-optimizer/provider.ts": "7d2eaddedbf4ad6993cd41f451aaaa05a4a6fae45e80d844387ee84222bb571d",
+  "web/pages/api/v1/roster-schedule-optimizer/data.ts": "a8549dccf6bfda665576ae2d41df6e39db9ca09e2be11098a467e85a5b63e049",
+  "web/lib/rosterScheduleOptimizer/providerGoalieStarts.ts": "a5e86e0b12ef6ca3d056f9811e3de81b991130b0edee807181a44c745f33032b",
+  "web/lib/player-forecasts/resolvedPlanningForecast.ts": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07",
+  "web/lib/player-forecasts/rsoUsePolicy.ts": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215",
+  "web/lib/rosterScheduleOptimizer/planningReproducibility.test.ts": "dc4e9bcacd4e5ece49d8a26469b61af7c7005275a69a1b6f27e4ba8cd5fbf60c"
+}

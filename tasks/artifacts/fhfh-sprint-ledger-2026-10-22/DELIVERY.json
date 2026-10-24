@@ -1,13 +1,41 @@
 {
-  "checked_at": "2026-10-22T13:07:52+00:00",
-  "metadata_and_whitespace": "passed",
-  "tasks": 151,
-  "source_inspections": 11,
-  "source_pins_match": true,
-  "source_probe_observations": 6,
-  "application_tests_run": 0,
-  "remote_calls": 0,
+  "checked_at": "2026-10-22T14:01:48+00:00",
+  "metadata_references_links_whitespace": "passed",
+  "tasks": 170,
+  "historical_source_inspection_records": 11,
+  "historical_source_pin_note": "Not re-fenced; dated13:07:52flags retained because authorized owners now edit originals.",
+  "historical_source_probe_observations": 6,
+  "p07_checks": 7,
+  "p07_execution_source_files": 9,
+  "p07_unique_pinned_paths": 16,
+  "p07_source_pins_match": true,
+  "p07_decision_source_pins": 16,
+  "p07_decision_pins_match": true,
+  "decision_followup_behavior_tests": 0,
+  "application_suite_runs_by_auditor": 0,
+  "remote_calls_by_auditor": 0,
+  "limits": "Imported owner/reviewer checks not rerun; no entire-feature/production health claim.",
   "files": [
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/ACTIVE-CHECKPOINT-20261023.md",
+      "sha256": "9f1ddc70773f256872181da18add5136225b00c0a7991b6e906bb150dca55d71",
+      "bytes": 7429
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/BATCH-CHECKPOINT.md",
+      "sha256": "84db254c85f73edb514a13f56f7b053886ab27ae876a51aba4ac1d3a11a5fac7",
+      "bytes": 17894
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/BATCH-SOURCE-PINS.json",
+      "sha256": "71066b160b9362548d2596b5d911281c7dfff03f89a06b8924e3741d2b968475",
+      "bytes": 75873
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/CURRENT-OWNERSHIP.md",
+      "sha256": "2025f09a6dbc08907a753aa3be430ac82f0a893bd65ece301a3cd8117582d1ec",
+      "bytes": 3364
+    },
     {
       "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/DISPATCH.md",
       "sha256": "6c700cf46a4b6be5526f99568b36be1a3d87388a249dbb8500fb4dcddfaac621",
@@ -25,28 +53,108 @@
     },
     {
       "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/HEALTH.json",
-      "sha256": "74b17b21c9fed1c9c919a16a5199b04c875f5b762dba4530e57be1514d4f61dc",
-      "bytes": 11209
+      "sha256": "23e5397f23e10227d9bd004b053cd28af71ebc5ac313ad2b13425d7fd65b9d90",
+      "bytes": 92471
     },
     {
       "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/HEALTH.md",
-      "sha256": "e43b4415c681b5178ede2830ac6d4b75ff9310867b809c81c013f7615b46e95e",
-      "bytes": 11877
+      "sha256": "e4e956b2c3cee8c47d0e495bd47ae61f8d0e1a3cb17afcd2d6549f183f886d75",
+      "bytes": 17008
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEASE-TRANSITIONS.json",
+      "sha256": "414b624de8209382fd1278283259c3e1d2f4b5fe0e4e8749c2c70d82a5d02551",
+      "bytes": 37200
     },
     {
       "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json",
-      "sha256": "6831932b59e7bb230a47b00465624a369126602f029128007b40bda2c6805672",
-      "bytes": 266041
+      "sha256": "c968a5352f686f2f5b874d1d9d1f6a262d3b25a96fa72da212d080cb859ae51c",
+      "bytes": 444387
     },
     {
       "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
-      "sha256": "e46a47b17f1f855460974c3debdbf1d4102b0ae10822558ad61cbe5be364802a",
-      "bytes": 203087
+      "sha256": "23a3f1714474843568a3a35349b9435ec08178908d1ff4f5b864e554182907ad",
+      "bytes": 270587
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LIBRARY-DELIVERY.json",
+      "sha256": "c107aff8db441a9b7d7ce37834a8f8d3a01744bc54dc5ce06fb91df2ee1f7ba5",
+      "bytes": 1608
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-ACCEPTANCE-SOURCES.json",
+      "sha256": "9bb91db741b6db8c094cc50799ae40344c7476c9e66e5dca77dfa0d5dff4d6c4",
+      "bytes": 3298
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-APPROVAL-BOUNDARY.md",
+      "sha256": "2a5c2e7cc4279c909558472e40ed5f33412ea522c15f41ff1163a4b6c03ef758",
+      "bytes": 9891
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-CANDIDATE-STATUS.json",
+      "sha256": "609b2448ab23bf83f83e831e9900a7992e21b86e4eaabbf0c5b30aeb3824a08a",
+      "bytes": 26534
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-CONSUMER-ACCEPTANCE.md",
+      "sha256": "37e87ffb72cc3641ad4b2337b74959f7a676f804249f4e480e8af4051c1d8853",
+      "bytes": 13682
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-DECISION-SOURCES.json",
+      "sha256": "1be88e6749b706b6ab01717016e1beb59d936cc188e58f450b83a8d772716f73",
+      "bytes": 7562
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-DECISION.md",
+      "sha256": "ff479eef25ae3ea0614ea279891498b36e25e2d41d6946a7db60fdf8ae2905d1",
+      "bytes": 10943
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-PROBES.cjs",
+      "sha256": "af6e473137e31255aaaa68c549cf8b7e4d6e15c687e874839687b1f99b23b336",
+      "bytes": 10899
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-PROBES.json",
+      "sha256": "7301ac7ff3a285189d8ee8210dca57704c1c3af19be7f310c7fc16e13814f744",
+      "bytes": 7225
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-RETAINED-MATRIX.md",
+      "sha256": "68ffeb1061015f4059f87bdb517f573cbefbab1676a98ff66b6bf3a7453116f1",
+      "bytes": 6274
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-SELECTED-POLICY.md",
+      "sha256": "62ce6c17d28fc5d7a11eafc618f9dfb7bc0bdc7496c36181d710bdf8d5d2daee",
+      "bytes": 4831
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/P07-SOURCES.json",
+      "sha256": "c8402a916b9548048d43e707306c19b701bfed1a7382c87a8949a59796ff078a",
+      "bytes": 11783
     },
     {
       "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/README.md",
-      "sha256": "8586b3d34e07969f6911b042bcee7133379191616606bb137a4739839a2a9a8f",
-      "bytes": 5955
+      "sha256": "ca300958569c6f179a18b05042363a388f7196e21d2a96b3e338b255ed1f85e4",
+      "bytes": 11811
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/RECONCILIATION-20261023.json",
+      "sha256": "1eff339c799600a9d4b68afcffe915686fec4e43934d3236b4565ea4024278e1",
+      "bytes": 77760
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/RESUME-CHECKPOINT.md",
+      "sha256": "8066f1e348cd2a23e0fa37b39560c9c0603d0495323c0bcdb989b3cf2398ef28",
+      "bytes": 11985
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/RESUME-PINS.json",
+      "sha256": "86972e5166a3b63e67637c2391949b925d0c13e95d1989730afd1bd3f1e02409",
+      "bytes": 9800
     },
     {
       "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/SOURCE-PROBES.cjs",
@@ -59,9 +167,718 @@
       "bytes": 2698
     },
     {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/TASKLIST-20261022-SNAPSHOT.md",
+      "sha256": "6c08e45eb8f0549280f81be63e6d5b735bce7bb65370c6761d29613b9d6ae0c1",
+      "bytes": 12499
+    },
+    {
       "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/WORK-PACKETS.md",
-      "sha256": "05950c81b84ff823e3518d75d4ffa5fc6735224adc047b61d254085af569ca34",
-      "bytes": 10667
+      "sha256": "802bf2543ab8f1981767c354cc52080a51e3724b7a7b00f2683e624b8537187c",
+      "bytes": 11208
     }
-  ]
+  ],
+  "p07_acceptance_source_files": 7,
+  "p07_acceptance_source_pins_match_at": "2026-10-22T14:02:18+00:00",
+  "p07_selected_policy": "TJ option2 explicitly selected; FORGE implementation assigned; target reviews and independent implementation acceptance pending",
+  "latest_metadata_validation_at": "2026-10-23T12:12:51+00:00",
+  "artifact_manifest_generated_at": "2026-10-23T12:12:51+00:00",
+  "historical_pin_note": "P07 pin results retain their earlier checked_at timestamps; not rerun against concurrent implementation edits.",
+  "migration_relocation": {
+    "checked_at": "2026-10-22T14:12:08+00:00",
+    "draft_sql_hash_matches": true,
+    "former_active_path_absent": true,
+    "owner_tests": 84,
+    "owner_syntax_checks": 3,
+    "independent_review": "accepted locally inclrunnerR1",
+    "canonical_approval": false,
+    "SQL_executed": false
+  },
+  "p02_r1_receipt_imported_at": "2026-10-22T14:15:07+00:00",
+  "p05_acceptance_imported_at": "2026-10-22T14:16:11+00:00",
+  "batch_checkpoint": {
+    "recorded_at": "2026-10-22T14:39:42+00:00",
+    "report": "BATCH-CHECKPOINT.md",
+    "source_pins": "BATCH-SOURCE-PINS.json",
+    "hash_checked_at": "2026-10-22T14:35:51+00:00",
+    "manifest_packets": 12,
+    "meaning": "Acceptedlocal/pending/held separation; exactcurrent hashes are identity evidence only; no new tests; no new workers",
+    "P07": "running; no verified result",
+    "usage": "35%weeklyremaining14:27:04Z"
+  },
+  "continuation_dispatch": {
+    "as_of": "2026-10-22T14:42:08+00:00",
+    "source_thread_id": "01a15411-3560-7632-8d31-1dd2447ba00e",
+    "S08": {
+      "owner": "STATS",
+      "status": "assigned active; offline actual-path reproduction beforeminimalfix"
+    },
+    "calendar": {
+      "owner": "CALENDAR",
+      "status": "assigned active; preserve acceptedsummary; offline repro beforeminimalfix"
+    },
+    "goalie_hydration": "held for exact typedinputcontract; no implementation assigned",
+    "P07": "awaiting verified result",
+    "limits": "no broadredesign or production"
+  },
+  "p07_candidate_status": {
+    "state": "held",
+    "matching_sourcepins": 17,
+    "total_sourcepins": 17,
+    "verified_at": "2026-10-22T14:43:36+00:00",
+    "acceptance": false
+  },
+  "p01_date_candidate": {
+    "checked_at": "2026-10-22T14:54:32+00:00",
+    "matchingpins": 5,
+    "totalpins": 5,
+    "independentreview": "pending"
+  },
+  "p07_architecture_status": "Reviewcomplete/C08confirmed; parentauthorizedlocalcorrection, integrationheld",
+  "latest_calendar_s08_acceptance": {
+    "recorded_at": "2026-10-22T15:08:45+00:00",
+    "matchingcandidatepins": 4,
+    "candidatepins": 4,
+    "tests_rerun_by_auditor": 0
+  },
+  "p07_r1_review_status": "Independently held on two P2s; R2 correction active; C08 closed",
+  "homepage_status": "Locally implemented; release pending and exact production source unverified",
+  "projection_improvement_dispatch": {
+    "as_of": "2026-10-22T16:12:11+00:00",
+    "status": "Expanded implementation sprint active; historical P08 pins retained as baseline, not editing locks",
+    "ownership_map": "CURRENT-OWNERSHIP.md",
+    "leases": "LEASE-TRANSITIONS.json",
+    "tasklist_snapshot": "TASKLIST-20261022-SNAPSHOT.md",
+    "tasklist_sha256": "6c08e45eb8f0549280f81be63e6d5b735bce7bb65370c6761d29613b9d6ae0c1",
+    "named_new_threads": {
+      "FPI-LEDGER": "01a16459-e44c-7528-a602-b703dc9cb0f5",
+      "FPI-HYDRATION": "01a1645a-1237-713f-8590-9540223b40d2",
+      "FPI-MODEL": "01a1645a-3fe7-7289-8d44-11e216d6e0c5",
+      "FPI-DISPLAY": "01a1645a-6c9d-77ac-a105-0513908cb0fc"
+    },
+    "claude_tasks": [
+      6,
+      7,
+      8,
+      11
+    ],
+    "remaining_unassigned": "Task11.4 independent reviewer and other new-packet reviewers not confirmed here; implementation custodians remain named.",
+    "live_authority": "No new production reads, migrations, runtime, deployments or spending authority",
+    "p07_boundary": "Independently accepted pinned combined P07R2 + task10R1 local slice; T10-C1 closed; pinnedR2heavy checks passed; browser/whole-tree/release held",
+    "task11_4": {
+      "assigned_at": "2026-10-22T16:15:03+00:00",
+      "owner": "PIPELINE",
+      "thread": "01a16391-ed12-75cc-9dc8-e1c04ad170fa",
+      "exact_paths": "Nine-path isolated artifact overlay declared; no canonical application lease",
+      "scope": "Job79/399 docs and constant/test, advisory-burst helper/tests, rate policy and focused inventory/wrapper fixtures; narrower NST query evidence read-only",
+      "status": "Qualified independent local acceptance of nine-file overlay; release held",
+      "fixture_checkpoint": {
+        "recorded_at": "2026-10-22T16:24:48+00:00",
+        "source": "Direct PIPELINE owner update; raw fixture receipts not inspected or rerun by ledger auditor",
+        "status": "Rechecking after artifact-only ninth-path addition; no acceptance",
+        "negative_control": "Retirement-only fixture reproduced20URL pacing21seconds instead of intended0",
+        "initial_coupled_run": {
+          "passed": 100,
+          "total": 102,
+          "failed": 2,
+          "reported_cause": "Omitted existing e89 policy tests still expected4seconds for81URLs"
+        },
+        "correction": "Add web/lib/cron/nstRateLimitPolicy.test.ts from pinned current tests; preserve21second minimum",
+        "canonical_application_edits": false,
+        "next_action": "Await corrected coupled-run receipt and exact candidate pins; independent review/release remain separate"
+      },
+      "reviewer": "UNASSIGNED",
+      "local_completion": {
+        "recorded_at": "2026-10-22T16:32:36+00:00",
+        "status": "Local preparation complete; independent review and release pending",
+        "report": {
+          "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/HANDOFF.md",
+          "line": 1,
+          "sha256": "e04c2a66a4c5cd161fc119689189660065eadf0a82d3372fdf1490c8d3187012",
+          "observed_at": "2026-10-22T16:32:36+00:00"
+        },
+        "manifest": {
+          "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/MANIFEST.json",
+          "line": 1,
+          "sha256": "56623a29e21e24a3ca49b60aade8f511796fd8350a01054e6a7d2f443156f6ae",
+          "observed_at": "2026-10-22T16:32:36+00:00"
+        },
+        "patch_sha256": "4e0b4db7da44e883dd278f611c787db646b83874af8b9e7d624d4fd5c75389ec",
+        "base": "6d5664f761132ab479a7febec60548d0fa9ee6ff",
+        "overlay_paths": 9,
+        "tests_passed": 102,
+        "test_files": 7,
+        "scoped_types_lint": "Owner passed; patch apply/output hashes passed",
+        "progress_read_checks": 7,
+        "progress_read_limit": "Synthetic semantics only. Current query already filters job/exact scope; saved error lacks SQLSTATE/timing/plan, so no new route/index change justified. Bounded live diagnostic authority remains separate.",
+        "canonical_edits": false,
+        "inventory": "Base-relative56pg/86total, not broader canonical57/87",
+        "retained_negative_control": "Retirement alone reproduces20URL pacing21s instead0; advisory coupling required",
+        "auditor_execution": "Handoff imported; raw tests not rerun"
+      },
+      "independent_acceptance": {
+        "recorded_at": "2026-10-22T16:59:14+00:00",
+        "status": "Qualified independent local acceptance of nine-file overlay; release held",
+        "receipt": {
+          "path": "tasks/artifacts/fpi-11-4-job79-independent-review-2026-10-22/REVIEW.md",
+          "line": 1,
+          "sha256": "32e1e67b9f8f5feab536224cefc494ce72ebb80a8e6cf7f7905714e1273a02cb",
+          "observed_at": "2026-10-22T16:59:14+00:00"
+        },
+        "review_checks_passed": 36,
+        "overlay_paths": 9,
+        "fixture_hashes": 79,
+        "patch_sha256": "4e0b4db7da44e883dd278f611c787db646b83874af8b9e7d624d4fd5c75389ec",
+        "coupling": "Retirement-only20URL negative control fails as expected; complete advisory/retirement package passes. Preserve full-job counts, rolling windows,21s floor and master diagnostic return shape.",
+        "runtime_limit": "Dispatch coordination is same-user local filesystem; completion-spacing/concurrency metadata is not a global runtime job lock or cross-host guarantee.",
+        "held": "Exact release reconciliation/approval; current deployed replacement schedule/pipeline health not confirmed. Progress-read filter/index proposal lacks error/timing/plan evidence; no new route/index fix justified."
+      }
+    },
+    "task2_function_lease": {
+      "path": "web/lib/projections/calculators/skater-adjustments.ts",
+      "function": "computeSkaterPhysicalEventRates",
+      "scope": "Function-only correction and physical tests; no whole-file rewrite",
+      "other_functions_and_stage_owner": "FPI-MODEL",
+      "status": "Exact helper repair accepted; R2 packet assembly/reproducibility active, no expanded application lease"
+    }
+  },
+  "lease_transition_validation": {
+    "checked_at": "2026-10-22T16:12:54+00:00",
+    "original_accepted_pins_retained": 11,
+    "original_manifest_sha256": "c6511c243f6979781606b2484fa6383ab7a0735d5a2e69da99e3e93ceff936de",
+    "tasklist_exact_copy": true,
+    "current_application_pin_match_claimed": false,
+    "application_test_runs": 0,
+    "scope": "166-row metadata/owner/evidence bounds, JSON/Markdown parity, local links and whitespace; current source behavior not retested"
+  },
+  "p07_r2_review_pending": {
+    "recorded_at": "2026-10-22T16:22:27+00:00",
+    "status": "Owner-complete; independent review active on pinned R2; not accepted",
+    "owner": "FORGE",
+    "reviewer": "REVIEW",
+    "report": {
+      "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/REPORT.md",
+      "line": 1,
+      "sha256": "d181e798f9055c5820f853b79f9592d65504445501379580cfd224d9fd5f6743",
+      "observed_at": "2026-10-22T16:22:27+00:00"
+    },
+    "manifest": {
+      "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/CANDIDATE.json",
+      "line": 1,
+      "sha256": "45ee9b32b5b1ffff216b7c8e7a31d81febcd0483f233b3ae2f13f820e0062609",
+      "observed_at": "2026-10-22T16:22:27+00:00"
+    },
+    "changed_files": 8,
+    "pinned_candidate_files": 32,
+    "owner_tests": {
+      "passed": 294,
+      "test_files": 10,
+      "source": "Owner receipt, not rerun by ledger auditor"
+    },
+    "typecheck": "Pending shared heavy-lock coordination per owner receipt; not run/passed for R2",
+    "lint": "Pending shared heavy-lock coordination per owner receipt; not run/passed for R2",
+    "heavy_lock": "/private/tmp/fhfh-heavy.lock (documented location; availability/owner not inspected by ledger auditor)",
+    "original_oracles": "Owner reports original three failures corrected and unchanged C08 passing; independent R2 decision pending",
+    "source_overlay_sha256": "13c85ce88e9ec109791470315f724a61caafe324d6fcc9ea8a08197d83eec4b2",
+    "excluded_current_planner": {
+      "recorded_at": "2026-10-22T16:22:27+00:00",
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "owner": "FPI-DISPLAY",
+      "thread": "01a1645a-6c9d-77ac-a105-0513908cb0fc",
+      "sha256": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474",
+      "basis": "Task10 HANDOFF and diary explicitly name gameForecastPoints helper; task10 candidate SHA equals R2 excluded canonical SHA and the current observed file. Attribution is for task10 helper delta, not every historical line or model authorship.",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task10-display-2026-10-22/HANDOFF.md",
+          "line": 7,
+          "sha256": "683b12d5abfaf39957fdef2e18cc1c87a2ff96066f155bc9333f66169098364d",
+          "observed_at": "2026-10-22T16:22:27+00:00"
+        },
+        {
+          "path": "tasks/artifacts/task10-display-2026-10-22/candidate.json",
+          "line": 1,
+          "sha256": "61148a0455a6e908f3145911f1a03ced6e91793c119401b0537bb0df0b1ead9f",
+          "observed_at": "2026-10-22T16:22:27+00:00"
+        },
+        {
+          "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/CANONICAL-COMPARISON.json",
+          "line": 1,
+          "sha256": "e85252ff45f9be730fb9817f5b56fbc59d65812d44bc3883655a361044006363",
+          "observed_at": "2026-10-22T16:22:27+00:00"
+        }
+      ],
+      "current_tree_acceptance": false
+    },
+    "current_tree_acceptance": false,
+    "next_action": "Independent pinned R2 review and coordinated TS/lint, then explicit integration/review with separate task10 planner/display candidate; no silent overlay or production approval"
+  },
+  "task10_integration": {
+    "recorded_at": "2026-10-22T16:22:27+00:00",
+    "status": "Precise display lease granted; task10 integrating",
+    "owner": "FPI-DISPLAY",
+    "thread": "01a1645a-6c9d-77ac-a105-0513908cb0fc",
+    "release_receipt": {
+      "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/DISPLAY-LEASE-RELEASE.md",
+      "line": 1,
+      "sha256": "14df72ff73a4966968cb29fadcd06d4de78d11bb88102c83b6750e85693d4f51",
+      "observed_at": "2026-10-22T16:22:27+00:00"
+    },
+    "handoff": {
+      "path": "tasks/artifacts/task10-display-2026-10-22/HANDOFF.md",
+      "line": 1,
+      "sha256": "683b12d5abfaf39957fdef2e18cc1c87a2ff96066f155bc9333f66169098364d",
+      "observed_at": "2026-10-22T16:22:27+00:00"
+    },
+    "handoff_pins": {
+      "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "d7257a7a89e14af496b9c849473115b07bc95c65044c60bab17bca72246a3d30",
+      "web/components/RosterScheduleOptimizer/SlotWeekGrid.tsx": "b41a20e6dc7229ec015a66f1440faf788790bfaaaeae2ddc9a498e40011ccefd"
+    },
+    "scope": "RSO points callback/import/prop plus SlotWeekGrid render/tiers/legend and task-specific helpers/tests. Preserve P07 gate and compare handoff hashes before edits.",
+    "owner_tests_before_integration": 27,
+    "finding": "Owner executed actual current RSO pointsFor: GOALS1×3 plus missing weighted ASSISTS returned3; required unavailable. Not an integration acceptance pass.",
+    "planner_attribution": {
+      "recorded_at": "2026-10-22T16:22:27+00:00",
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "owner": "FPI-DISPLAY",
+      "thread": "01a1645a-6c9d-77ac-a105-0513908cb0fc",
+      "sha256": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474",
+      "basis": "Task10 HANDOFF and diary explicitly name gameForecastPoints helper; task10 candidate SHA equals R2 excluded canonical SHA and the current observed file. Attribution is for task10 helper delta, not every historical line or model authorship.",
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task10-display-2026-10-22/HANDOFF.md",
+          "line": 7,
+          "sha256": "683b12d5abfaf39957fdef2e18cc1c87a2ff96066f155bc9333f66169098364d",
+          "observed_at": "2026-10-22T16:22:27+00:00"
+        },
+        {
+          "path": "tasks/artifacts/task10-display-2026-10-22/candidate.json",
+          "line": 1,
+          "sha256": "61148a0455a6e908f3145911f1a03ced6e91793c119401b0537bb0df0b1ead9f",
+          "observed_at": "2026-10-22T16:22:27+00:00"
+        },
+        {
+          "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/CANONICAL-COMPARISON.json",
+          "line": 1,
+          "sha256": "e85252ff45f9be730fb9817f5b56fbc59d65812d44bc3883655a361044006363",
+          "observed_at": "2026-10-22T16:22:27+00:00"
+        }
+      ],
+      "current_tree_acceptance": false
+    },
+    "limits": "Separate candidate review/current-tree integration required. Handoff pins are dated; no assertion they remain unchanged during authorized task10 edits."
+  },
+  "task1_local_candidate": {
+    "recorded_at": "2026-10-22T16:22:27+00:00",
+    "status": "Local implementation ready for independent review; no further edits planned",
+    "owner": "FPI-LEDGER",
+    "report": {
+      "path": "tasks/artifacts/forge-task1-scoreboard-2026-10-22/HANDOFF.md",
+      "line": 1,
+      "sha256": "6cc6c752efcaac94ac2a2e957bf03884619a828948e23b3788049e9f38437b64",
+      "observed_at": "2026-10-22T16:22:27+00:00"
+    },
+    "manifest": {
+      "path": "tasks/artifacts/forge-task1-scoreboard-2026-10-22/SOURCE-PINS.json",
+      "line": 1,
+      "sha256": "0dec491d94c7a8f09e1ed6c83846eb0af27a97b556bcf730b5b06c78ee9f8976",
+      "observed_at": "2026-10-22T16:22:27+00:00"
+    },
+    "changed_file_pins": {
+      "web/lib/player-forecasts/servedForecastLedger.ts": "464c108f990e5e9e5cfdd2f618cf41d2771f5ae14eacd90223ad83e4f8727e80",
+      "web/lib/player-forecasts/servedForecastLedger.test.ts": "4e1d8198f86439e4aa9a26d2011f30da8513933cd8ec32fb22ba3bed83ccc22e",
+      "web/pages/api/v1/forge/scoreboard.ts": "126b8eeada95e8a497feb3a7567eb4a5af1fa46430052b88c226322c7b1961cc",
+      "web/tests/api/forge-scoreboard.test.ts": "2104bb8cb215b6752b9adc0925c5b1706dc718355693985a01e6abacf541e541"
+    },
+    "owner_verification": {
+      "focusedTests": {
+        "status": "passed",
+        "files": 4,
+        "tests": 32
+      },
+      "scopedTypes": {
+        "status": "passed",
+        "exitCode": 0
+      },
+      "scopedLint": {
+        "status": "passed",
+        "exitCode": 0
+      },
+      "diffCheck": "passed"
+    },
+    "auditor_tests_run": 0,
+    "task1_2_partial": "Historical F/D position and expected/actual TOI/PP-TOI absent; position slices/opportunity-rate decomposition explicitly unavailable",
+    "held": "Independent review; A3 authoritative completeness/A4 durable universe; Q3/Q4 production evidence and R23 qualification; no bridge/snapshot/settle changes or predictive acceptance",
+    "lease_state": "Ready for parent review/handoff; no automatic task6.3 shared editor"
+  },
+  "p07_r2_independent_acceptance": {
+    "recorded_at": "2026-10-22T16:32:36+00:00",
+    "status": "Independently accepted narrow R2 behavior on pinned snapshot; TS/lint and task10 combined integration held",
+    "report": {
+      "path": "tasks/artifacts/p07-r2-independent-review-2026-10-22/REPORT.md",
+      "line": 1,
+      "sha256": "5931677975f40f8a5b52f8bbf6a9144a39073aa4a9e7b29ff2924071c57295a7",
+      "observed_at": "2026-10-22T16:32:36+00:00"
+    },
+    "reviewer": "REVIEW",
+    "tests_passed": 63,
+    "failed": 0,
+    "verified_snapshot_files": 3375,
+    "candidate_pins": 32,
+    "delta_files": 8,
+    "original_findings": "R1 clock-skew and expiry-during-computation findings closed on reviewed R2 bytes; unchanged C08 passes",
+    "preservation": "Reviewer reports32pins unchanged after tests; no current-tree qualification",
+    "held": [
+      "R2 application-scoped TS/lint; owner requested actual shared-lock inspection and pinned checks",
+      "Task10/P07 combined fixed snapshot and actual admitted UI inputs",
+      "Real browser worker packaging/cross-realm lifecycle",
+      "Target-specific native and predictive/data/release gates"
+    ],
+    "auditor_execution": "Imported exact independent report; no tests or lock inspection by ledger owner"
+  },
+  "task1_independent_acceptance": {
+    "recorded_at": "2026-10-22T16:32:36+00:00",
+    "status": "Independently accepted tasks1.1/1.3 and supported1.2 only",
+    "report": {
+      "path": "tasks/artifacts/forge-task1-independent-review-2026-10-22/REVIEW.md",
+      "line": 1,
+      "sha256": "5f5fddf9d0f66232bd96e4e3416d1d0792c56469a225f0156953cc07ef6d04ea",
+      "observed_at": "2026-10-22T16:32:36+00:00"
+    },
+    "reviewer": "FPI-LEDGER-REVIEW",
+    "tests_passed": 35,
+    "independent_cases": 10,
+    "pins": "8owner pins and23-file frozen snapshot matched per reviewer",
+    "important_boundary": "Goalie known nonstarts remain in event/Brier population; count/FP metrics use dressed cohort",
+    "held": "Historical F/D and TOI/PP-TOI opportunity-rate decomposition, durable full-population coverage, Q3/Q4 and predictive/release qualification",
+    "auditor_execution": "Report imported; tests not rerun"
+  },
+  "task2_independent_hold": {
+    "recorded_at": "2026-10-22T16:32:36+00:00",
+    "status": "Held on one P2 in retained physical-rate helper; narrow R1 correction authorized",
+    "report": {
+      "path": "tasks/artifacts/forge-task2-independent-review-2026-10-22/REVIEW.md",
+      "line": 1,
+      "sha256": "3b172f07ad35c5bfeb4c055c3306ee450b5a4d04b78141dd69f6e3abe9dc0d62",
+      "observed_at": "2026-10-22T16:32:36+00:00"
+    },
+    "finding": "Missing current-season count with known positive exposure becomes observed zero; inverse partial pair also requires coverage. Predates eight-file query delta.",
+    "checks": "311 focused cases verified (receipt case rerun with two-query pinned Git metadata adapter);9/11 independent adversarial cases pass,2fail;13pins matched",
+    "owner": "FPI-HYDRATION",
+    "function_lease": {
+      "path": "web/lib/projections/calculators/skater-adjustments.ts",
+      "function": "computeSkaterPhysicalEventRates",
+      "scope": "Function-only correction and physical tests; no whole-file rewrite",
+      "other_functions_and_stage_owner": "FPI-MODEL"
+    },
+    "held": "R1 independent correction review; matched current-query/variant-c cohort, all-head calibration, real20×5 row identity, migration/production/release",
+    "auditor_execution": "Read-only receipt reconciliation; no counterexample rerun"
+  },
+  "task11_4_local_complete": {
+    "recorded_at": "2026-10-22T16:32:36+00:00",
+    "status": "Local preparation complete; independent review and release pending",
+    "report": {
+      "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/HANDOFF.md",
+      "line": 1,
+      "sha256": "e04c2a66a4c5cd161fc119689189660065eadf0a82d3372fdf1490c8d3187012",
+      "observed_at": "2026-10-22T16:32:36+00:00"
+    },
+    "manifest": {
+      "path": "tasks/artifacts/fpi-11-4-job79-2026-10-22/MANIFEST.json",
+      "line": 1,
+      "sha256": "56623a29e21e24a3ca49b60aade8f511796fd8350a01054e6a7d2f443156f6ae",
+      "observed_at": "2026-10-22T16:32:36+00:00"
+    },
+    "patch_sha256": "4e0b4db7da44e883dd278f611c787db646b83874af8b9e7d624d4fd5c75389ec",
+    "base": "6d5664f761132ab479a7febec60548d0fa9ee6ff",
+    "overlay_paths": 9,
+    "tests_passed": 102,
+    "test_files": 7,
+    "scoped_types_lint": "Owner passed; patch apply/output hashes passed",
+    "progress_read_checks": 7,
+    "progress_read_limit": "Synthetic semantics only. Current query already filters job/exact scope; saved error lacks SQLSTATE/timing/plan, so no new route/index change justified. Bounded live diagnostic authority remains separate.",
+    "canonical_edits": false,
+    "inventory": "Base-relative56pg/86total, not broader canonical57/87",
+    "retained_negative_control": "Retirement alone reproduces20URL pacing21s instead0; advisory coupling required",
+    "auditor_execution": "Handoff imported; raw tests not rerun"
+  },
+  "latest_coherent_checkpoint": {
+    "as_of": "2026-10-22T16:59:14+00:00",
+    "p07_heavy": {
+      "recorded_at": "2026-10-22T16:59:14+00:00",
+      "status": "Pinned R2 application-scoped TypeScript and eight-file lint passed exit0",
+      "receipt": {
+        "path": "tasks/artifacts/p07-rso-use-policy-2026-10-22/r2/heavy-verification/RECEIPT.md",
+        "line": 1,
+        "sha256": "9ef03483ec2026b6fcbdd3e7e538290e544b612c5765a535b5b32f70fa8032ff",
+        "observed_at": "2026-10-22T16:59:14+00:00"
+      },
+      "integrity": "3375source hashes/manifest/overlay unchanged before and after per owner receipt",
+      "scope": "R1 application tsconfig excludes four preserved unrelated reviewer fixtures/generated Next/node_modules; not full repository typing",
+      "lock": "Owner atomically acquired/released own shared heavy lock; ledger auditor did not inspect or mutate lock",
+      "tests_rerun_by_auditor": 0
+    },
+    "p07_task10_combined": {
+      "recorded_at": "2026-10-22T16:59:14+00:00",
+      "status": "Independently accepted pinned combined P07R2 + task10R1 local slice; T10-C1 closed",
+      "receipt": {
+        "path": "tasks/artifacts/p07-task10-r1-independent-review-2026-10-22/REPORT.md",
+        "line": 1,
+        "sha256": "02243124f495702bd35158dbc722e680c251c96dd2b57b79ee41b49d7ebd50f0",
+        "observed_at": "2026-10-22T16:59:14+00:00"
+      },
+      "tests_passed": 22,
+      "combined_pins": 39,
+      "snapshot_files": 3379,
+      "p07_r2_pins_preserved": 8,
+      "planner_sha256": "d1300a64ac98d97765b9daff8017f3fe8341aa8757984ff176a177fc3a2674f2",
+      "finding_closed": "Known goalie-only LOSSES_GOALIE/GAMES_STARTED weights excluded from skater totals; both prior mountedUI failures pass with assertions unchanged",
+      "held": "Independent browser/full application-worker runtime, whole FHFH tree, target/predictive qualification and release",
+      "browser": {
+        "status": "Blocked/denied by local runtime; no uncertain outcome",
+        "action": "One independent sandbox Chromium launch for offline static-grid inspection",
+        "target": "Installed headless shell; no page/context opened",
+        "reason": "bootstrap_check_in MachPortRendezvousServer permission denied1100; process exited SIGTRAP, cleanup completed",
+        "receipt": {
+          "path": "tasks/artifacts/p07-task10-independent-review-2026-10-22/REPORT.md",
+          "line": 50,
+          "sha256": "8a38ff1709353725a24c67dafc20efeb8ef7f28c750f44a3bc1444efcd5caacb",
+          "observed_at": "2026-10-22T16:59:14+00:00"
+        },
+        "retry": "None; no escalation/workaround. Existing owner screenshots remain historical, not independent browser acceptance."
+      },
+      "next_action": "Original FORGE lead pins coherent integration checkpoint excluding unreviewed Claude changes; preserve exact accepted bytes and explicit exceptions"
+    },
+    "task2_partial": {
+      "recorded_at": "2026-10-22T16:59:14+00:00",
+      "status": "Exact two-file physical helper repair independently accepted; advertised combined R1 manifest and working-tree reproducibility held",
+      "receipt": {
+        "path": "tasks/artifacts/forge-task2-independent-review-2026-10-22/r1/REVIEW.md",
+        "line": 1,
+        "sha256": "c7372af0d059ad5d57ccfdbd9d232d3750230f21219bbe1d1280e133fa604db5",
+        "observed_at": "2026-10-22T16:59:14+00:00"
+      },
+      "accepted_checks": 128,
+      "accepted_scope": "Only computeSkaterPhysicalEventRates and existing runProjectionV2 tests on original frozen candidate; outside-function bytes unchanged",
+      "accepted_calculator_sha256": "89cf0e544daac80c01f9af267a7774a31ce523d2e483fd87074d999c18fd119b",
+      "accepted_test_sha256": "b669fbeb639c733c27dfee2f27003c9ae0d7359c282e0ee495e45792663ca5d3",
+      "held_packet_finding": "Advertised skater-stage fe835739 differs from tested e0f760d1; two-file archive cannot produce third-file executable/dependency changes.12other combined pins match. Concurrent stage imports absent from tested market dependency.",
+      "reproducibility": "Frozen repair unchanged reproducibility oracle passes; earlier canonical working-tree result-hash mismatch unresolved. Proven stage drift does not establish cause of that failure.",
+      "owner": "FPI-HYDRATION",
+      "current_action": "R2 complete frozen manifest/snapshot and unchanged reproducibility work active per parent; no broader source edit authority",
+      "release": "Matched current-query physical/all-strength/variant-c cohort,20×5 writer identity,bias/RMSE/calibration and operational authorization held"
+    },
+    "job79_overlay": {
+      "recorded_at": "2026-10-22T16:59:14+00:00",
+      "status": "Qualified independent local acceptance of nine-file overlay; release held",
+      "receipt": {
+        "path": "tasks/artifacts/fpi-11-4-job79-independent-review-2026-10-22/REVIEW.md",
+        "line": 1,
+        "sha256": "32e1e67b9f8f5feab536224cefc494ce72ebb80a8e6cf7f7905714e1273a02cb",
+        "observed_at": "2026-10-22T16:59:14+00:00"
+      },
+      "review_checks_passed": 36,
+      "overlay_paths": 9,
+      "fixture_hashes": 79,
+      "patch_sha256": "4e0b4db7da44e883dd278f611c787db646b83874af8b9e7d624d4fd5c75389ec",
+      "coupling": "Retirement-only20URL negative control fails as expected; complete advisory/retirement package passes. Preserve full-job counts, rolling windows,21s floor and master diagnostic return shape.",
+      "runtime_limit": "Dispatch coordination is same-user local filesystem; completion-spacing/concurrency metadata is not a global runtime job lock or cross-host guarantee.",
+      "held": "Exact release reconciliation/approval; current deployed replacement schedule/pipeline health not confirmed. Progress-read filter/index proposal lacks error/timing/plan evidence; no new route/index fix justified."
+    },
+    "skater_candidates": {
+      "recorded_at": "2026-10-22T16:59:14+00:00",
+      "status": "Executable offline helper/scoring/validator candidates complete; empirical inputs, runtime integration and predictive acceptance held",
+      "receipt": {
+        "path": "tasks/artifacts/forge-skater-candidates-2026-10-22/HANDOFF.md",
+        "line": 1,
+        "sha256": "c8b3979f70d054c3130b947987a4bd7a4203e3c32bd9e107e29e58be969ea791",
+        "observed_at": "2026-10-22T16:59:14+00:00"
+      },
+      "pilot_request": {
+        "path": "tasks/artifacts/forge-skater-candidates-2026-10-22/TASK3-DATA-ASK.md",
+        "line": 1,
+        "sha256": "c2247356c14947d7af8195ff66de7cf5fb1e4527eab1d3530a0ab90c950fd6a1",
+        "observed_at": "2026-10-22T16:59:14+00:00"
+      },
+      "mechanical_tests": 24,
+      "receiver_validator_tests": 13,
+      "static_checks": "Owner scopedlint and current-tree fullTS pass at recorded checkpoint; no full-tree behavioral or release acceptance",
+      "historical_evidence": "2074dressed rows/62games are preR19 a/b/a0/b0 reconstruction, not current c or new helper predictions; no fitted production coefficients",
+      "data_gate": "Root awaiting TJ approval of exact task3 pilot export; no query/client execution. Pilot would be retrospective/descriptive, not historical as-of or full2023+ fit.",
+      "scope_boundary": "No stage/calculator edits by model worker; stage/calculator editing lease returned unused. Task2 retains physical repair custody; future runtime integration needs explicit coordinated lease and qualified inputs.",
+      "authority": "No production read/migration/deploy authorized by this checkpoint"
+    },
+    "coherent_integration": {
+      "owner": "FORGE",
+      "thread": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+      "status": "Active final coherent checkpoint per parent; result not yet verified",
+      "excludes": "Unreviewed Claude changes; no moving-tree or release acceptance inferred"
+    },
+    "draft_ranker": "Local guard remains implemented/release-pending; exact production alias confirmation still unverified"
+  },
+  "sprint_control": {
+    "recorded_at": "2026-10-22T17:15:04+00:00",
+    "state": "All active engineering turns completed naturally; final documentation checkpoint complete after upload",
+    "instruction": "Remain idle after this turn; no new fixes, tests, implementation, process interruption, repeat pilot query or automatic restart until TJ resumes.",
+    "owner": "PARENT",
+    "production_authority": "None added; no live writes/migrations/cron/index/NST/provider/build/deploy/paid actions"
+  },
+  "task3_pilot_export": {
+    "recorded_at": "2026-10-22T17:03:00+00:00",
+    "source": "Trusted parent execution/checkpoint report; ledger auditor did not query, retrieve or inspect export bytes",
+    "approval": {
+      "decision": "TJ Yes to exact pilot request",
+      "at_utc": "2026-10-22T16:55:58Z"
+    },
+    "execution": {
+      "executor": "ROOT",
+      "at_utc": "2026-10-22T16:56:40.473Z",
+      "status": "One read-only export succeeded",
+      "reported_rows": 5219,
+      "reported_bytes_before_newline": 3363724,
+      "truncated": false,
+      "retries": 0,
+      "writes": 0
+    },
+    "root_cloud_files": {
+      "json": "/workspace/scratch/28bd2529354b/task3-pilot-export.json",
+      "sql": "/workspace/scratch/28bd2529354b/task3-executed-query.sql"
+    },
+    "library": {
+      "json": {
+        "id": "libfile_bdb4847bbdbc8191b5a958bce4ab9fde",
+        "name": "task3-pilot-export.json",
+        "bytes_including_newline": 3363725
+      },
+      "executed_sql": {
+        "id": "libfile_abe8480e81248191989de2276fa092cd",
+        "name": "task3-executed-query.sql"
+      }
+    },
+    "local_mac_state": "Not materialized; deep local validation not run",
+    "next_after_TJ_resume": "Materialize the existing Library JSON and exact executed SQL on Mac, hash/verify identity and size, then run existing local validator into a fresh output. Never repeat the production query.",
+    "acceptance": "Successful export is not matched-input validity, fitted coefficients, predictive quality, historical as-of proof or release acceptance."
+  },
+  "task2_r2_checkpoint": {
+    "recorded_at": "2026-10-22T17:03:00+00:00",
+    "report": {
+      "path": "tasks/artifacts/forge-task2-2026-10-22/r2/HANDOFF.md",
+      "line": 1,
+      "sha256": "b68d86a69e7349adf2acba689fdaf6ef3c917991eb1f79a9f39d5fa2fed5ef0c",
+      "observed_at": "2026-10-22T17:03:00+00:00"
+    },
+    "status": "Coherent R2 packet complete; combined acceptance held by unchanged reproducibility failure",
+    "base": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+    "source_archive_sha256": "416c54bda8b28e48611fbdd3f9499d82b610aa6d1794d96b0283f89693eacd85",
+    "archived_files": 1975,
+    "owner_tests_passed": 393,
+    "owner_tests_failed": 1,
+    "test_files": 12,
+    "diagnostic_passed": 1,
+    "integrity": "All1975 archived/tested bytes match;54prior evidence files unchanged per owner receipt",
+    "cause": "Actual fixed-snapshot diagnostic isolates module-lifetime goalie leagueSavePct cache: first capture100reads, warm capture99, omitting forge_goalie_game query; forecasts/source hashes identical. Original reproducibility assertion remains red.",
+    "required_owner": "Claude task7 / parent coordination, not task2 helper lease",
+    "target": "web/lib/projections/goalie/leagueSavePct.ts:82",
+    "proposed_after_resume": "Owner-scoped cache lifetime/provenance correction, repeated same-input and different retained-input same-date regression, then independent combined review. Do not weaken hash/read-count oracle.",
+    "current_action": "Checkpoint only; no fix or new implementation launched",
+    "limits": "Earlier exact working-tree hashes cannot be reconstructed; this proves a fixed-snapshot mechanism, not historical production impact. Model/data/release gates remain held."
+  },
+  "resume_checkpoint": "RESUME-CHECKPOINT.md",
+  "resume_pins": "RESUME-PINS.json",
+  "final_integration_checkpoint": {
+    "recorded_at": "2026-10-22T17:15:04+00:00",
+    "status": "HELD — final fixed integration snapshot verified, combined acceptance blocked by13tests",
+    "report": {
+      "path": "tasks/artifacts/sprint-integration-checkpoint-2026-10-22/REPORT.md",
+      "line": 1,
+      "sha256": "5a924494242ea59c88f517a1fed8ff5fe3b1eb5d38b687eff1b4789e76ee75b6",
+      "observed_at": "2026-10-22T17:15:04+00:00"
+    },
+    "observed_head": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+    "archive": "tasks/artifacts/sprint-integration-checkpoint-2026-10-22/export-completion/fixed-source.tar.gz",
+    "archive_sha256": "09bd763bc9b740159f2d4aa5b0c97d19ce3839872b1ac27762b21cbd6596beff",
+    "verified_files": 3585,
+    "accepted_pins": 110,
+    "retained_dependencies": 244,
+    "verification": {
+      "selected_test_files": 67,
+      "latest_passed": 1928,
+      "latest_failed": 13,
+      "accounting": "Original1925pass/16fail;21-case migration file rerun after3export-only inputs supplied replaces original migration result, not added to total. Counts are test executions/selection results, not distinct semantic coverage.",
+      "application_types": "Passed application-only config, all production/application sources retained",
+      "exported_review_fixture_types": "Open TS2352 in artifact-only p07Task10Serialization.test.ts:34; fixture absent from canonicalweb; original bytes/diagnostic preserved",
+      "lint": "97acceptedTS/TSX paths;0errors,9warnings (3raw-image,6hook dependencies)",
+      "relocation_oracles": "14/14passed",
+      "relocation_preflight": "Passed actual runner with7pinned inputs, no DB/client/target load",
+      "integrity": "All3585files and110accepted pins match per final owner receipt; ledger auditor did not rerun tests/extract archive"
+    },
+    "open_followups": [
+      {
+        "taskID": "INTEGRATE-PLANNER-CONTRACT",
+        "owner": "UNASSIGNED",
+        "custodian": "PARENT",
+        "paths": [
+          "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts",
+          "web/lib/rosterScheduleData/forgeDailyBridge.test.ts:348"
+        ],
+        "failures": 13,
+        "scope": "12direct-native-fixture quantitative expectations and1directbridge/weightedunknown expectation. Require trusted target/current-read context and all nonzero weighted inputs; preserve original numerical assertions and denial controls.",
+        "gate": "New precise two-test-file lease and evidence before deciding test-contract versus actual runtime correction; no fix authorized by checkpoint."
+      },
+      {
+        "taskID": "INTEGRATE-REVIEW-FIXTURE-TYPES",
+        "owner": "REVIEW",
+        "path": "tasks/artifacts/p07-task10-independent-review-2026-10-22/p07Task10Serialization.test.ts:34",
+        "scope": "Versioned reviewer-owned typing correction; synthetic contribution record missing required ResolvedContribution fields (TS2352). Preserve historical fixture/receipt; no application error claim."
+      }
+    ],
+    "excluded": "Task2R2/newerClaude6/7/8/11 and unqualified skater changes; other canonical differences outside named accepted overlays. Two accepted query pins retain older A1 bytes, not held task2query.",
+    "task2_separate_hold": "1975matchingfiles/393pass1unchanged captured-input cache failure; Claude7leagueSavePct warmcache outside helper lease. Not part of1928/13selection.",
+    "next_after_resume": "Read final report and replay.py. Safe default replay only extracts/verifies archive; targeted --failed-planner requires resumed parent assignment. No new fix/test now.",
+    "release_ready": false
+  },
+  "library_delivery": {
+    "recorded_at": "2026-10-22T17:16:51+00:00",
+    "status": "blocked before upload; Library save pending",
+    "action": "Save ordered two-file local report batch to ChatGPT Library",
+    "target": "User Library; create new report items",
+    "attempts": [
+      {
+        "environment": "Default local sandbox",
+        "result": "Hosted apps tool inventory failed DNS before prepare/upload/finalize"
+      },
+      {
+        "environment": "Network-enabled local retry authorized by approval tool",
+        "result": "Hosted apps tool inventory failed TLS before prepare/upload/finalize"
+      }
+    ],
+    "files": [
+      {
+        "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/RESUME-CHECKPOINT.md",
+        "sha256": "0d7cf14514139dbad8e11befc2ed438edef5ebfba200e12c5ec84aa0cc4f0ad9",
+        "bytes": 11586,
+        "library_file_id": null
+      },
+      {
+        "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/sprint-integration-checkpoint-2026-10-22/REPORT.md",
+        "sha256": "5a924494242ea59c88f517a1fed8ff5fe3b1eb5d38b687eff1b4789e76ee75b6",
+        "bytes": 10236,
+        "library_file_id": null
+      }
+    ],
+    "completed": "Final integration HELD recorded,166-row ledger/resume/diary updated, reports validated; no new implementation/tests/query",
+    "denied": false,
+    "pending": "Library delivery from working connection",
+    "uncertain_outcome": false,
+    "library_items_created": 0,
+    "retry_note": "Do not automatically retry or switch upload paths in this checkpoint; parent can deliver the completed local reports from a working environment. No permission denial occurred."
+  },
+  "resumed_reconciliation": {
+    "at": "2026-10-23T12:12:51+00:00",
+    "metadata_validation": "passed",
+    "current_source_pins": 45,
+    "current_source_pin_drift": [],
+    "new_application_tests_by_auditor": 0,
+    "current_imported_tests": 340,
+    "report": "ACTIVE-CHECKPOINT-20261023.md",
+    "limits": "No fresh live deployment/current remote verification; prior hash flags remain timestamped historical results."
+  }
 }

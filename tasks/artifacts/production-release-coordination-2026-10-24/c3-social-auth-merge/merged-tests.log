@@ -1,0 +1,12 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-social-c3-auth-compose-v0a1u6ui/web
+
+(node:24248) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx (30 tests) 285ms
+
+ Test Files  1 passed (1)
+      Tests  30 passed (30)
+   Start at  17:16:08
+   Duration  1.28s (transform 178ms, setup 8ms, collect 705ms, tests 285ms, environment 155ms, prepare 32ms)
+

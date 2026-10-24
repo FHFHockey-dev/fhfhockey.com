@@ -1,0 +1,63 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c3-isolated/web
+
+(node:21991) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/account/InSeasonPanel.test.tsx (30 tests | 1 failed | 29 skipped) 66ms
+   ↓ shows the agreed price, Eastern cutoff and monthly unavailability without legacy checkout
+   ↓ offers no purchase while access is idle
+   ↓ offers no purchase while access is loading
+   ↓ offers no purchase while access is error
+   ↓ retains existing access without selling another purchase
+   ↓ sends only the plan to the new authenticated checkout and displays transient failure
+   ↓ routes shared premium upsells to in-season and anonymous sign-in separately
+   ↓ ignores an old account's checkout response after authentication changes
+   ↓ starts monthly only after availability and shows pending verification, never grants access locally
+   ↓ rejects incorrect monthly payment destination https://checkout.stripe.com/legacy
+   ↓ rejects incorrect monthly payment destination https://invoice.stripe.com.evil.example/path
+   ↓ rejects incorrect monthly payment destination https://user:pass@invoice.stripe.com/path
+   ↓ rejects incorrect monthly payment destination http://invoice.stripe.com/path
+   ↓ rejects incorrect monthly payment destination https://invoice.stripe.com:444/path
+   ↓ explains below-minimum unavailability without enabling monthly
+   ↓ allows owner cancellation independently of entitlement state ready and preserves manual plans
+   ↓ allows owner cancellation independently of entitlement state error and preserves manual plans
+   ↓ reuses the cancellation request ID after an uncertain response and never claims success
+   ↓ clears old billing details on account change and ignores delayed owner readback
+   ↓ does not call owner lookup until management is enabled
+   ↓ does not equate a billing stop request with completed provider cleanup or revoke unrelated access
+   ↓ opens the verified monthly invoice destination without redirecting to the legacy checkout
+   ↓ ignores an old account's accepted cancellation after sign-out
+   ↓ shows completed stop readback without claiming that an accepted cancellation is still pending
+   ↓ preserves an unresolved cancellation ID through same-owner TOKEN_REFRESHED
+   ↓ preserves an unresolved cancellation ID through same-owner SIGNED_IN
+   ↓ clears unresolved cancellation IDs on owner_change
+   ↓ clears unresolved cancellation IDs on owner_change_without_event
+   ↓ clears unresolved cancellation IDs on sign_out_then_same_owner
+   × reuses the same owner's unresolved cancellation ID after a browser reload 65ms
+     → expected '{"subscriptionId":"sub_fixture","requ…' to be '{"subscriptionId":"sub_fixture","requ…' // Object.is equality
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/account/InSeasonPanel.test.tsx > reuses the same owner's unresolved cancellation ID after a browser reload
+AssertionError: expected '{"subscriptionId":"sub_fixture","requ…' to be '{"subscriptionId":"sub_fixture","requ…' // Object.is equality
+
+Expected: [32m"{"subscriptionId":"sub_fixture","requestId":"[7maa282626-071b-4799-a53c-9a611fa0e[27mff[7m2[27m"}"[39m
+Received: [31m"{"subscriptionId":"sub_fixture","requestId":"[7m19c0c2c1-1139-4e12-a0a9-adac7121a[27mff[7ma[27m"}"[39m
+
+ ❯ components/account/InSeasonPanel.test.tsx:207:60
+    205|   fireEvent.click(screen.getByRole("button", { name: "Confirm cancella…
+    206|   const calls = vi.mocked(fetch).mock.calls.filter(([url]) => url === …
+    207|   expect(calls).toHaveLength(2); expect(calls[1][1]!.body).toBe(calls[…
+       |                                                            ^
+    208| });
+    209| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 29 skipped (30)
+   Start at  11:06:07
+   Duration  510ms (transform 54ms, setup 3ms, collect 113ms, tests 66ms, environment 147ms, prepare 36ms)
+
+JSON report written to /private/tmp/fhfh-c3-isolated/evidence/REPRODUCTION-BEFORE-FIX.json

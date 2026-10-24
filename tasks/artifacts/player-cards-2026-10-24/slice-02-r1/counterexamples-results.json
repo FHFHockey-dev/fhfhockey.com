@@ -1,0 +1,321 @@
+{
+  "at": "2026-10-24T17:19:02.970Z",
+  "node": "v22.11.0",
+  "total": 29,
+  "passed": 29,
+  "failed": 0,
+  "networkAttempts": 0,
+  "results": [
+    {
+      "id": "W01",
+      "purpose": "Cutoff is inclusive by exact final timestamp, including midnight crossover",
+      "passed": true,
+      "actual": [
+        2026020023,
+        2026020021
+      ]
+    },
+    {
+      "id": "W02",
+      "purpose": "Filter other player/season/game type and scratch before own N",
+      "passed": true,
+      "actual": 5
+    },
+    {
+      "id": "W03",
+      "purpose": "Independent 5/10/20 selection uses descending identities from shuffled input",
+      "passed": true,
+      "actual": [
+        5,
+        10,
+        20
+      ]
+    },
+    {
+      "id": "W04",
+      "purpose": "Calendar lower/upper bounds inclusive, common completion cutoff still applies",
+      "passed": true,
+      "actual": 4
+    },
+    {
+      "id": "W05",
+      "purpose": "Known short versus incomplete history and strict-full alternative",
+      "passed": true,
+      "actual": true
+    },
+    {
+      "id": "W06",
+      "purpose": "Invalid official identity/unknown participation/completion do not become known short",
+      "passed": true,
+      "actual": true
+    },
+    {
+      "id": "W07",
+      "purpose": "Conflicting duplicate game dates are rejected",
+      "passed": true,
+      "actual": {
+        "state": "missing",
+        "settings": {
+          "season": 20262027,
+          "gameType": "regular",
+          "strength": "all",
+          "cutoff": "2026-10-24T00:00:00Z",
+          "period": {
+            "mode": "appearances",
+            "count": 5
+          },
+          "seasonPolicy": "season-only-proposed",
+          "shortSamplePolicy": "allow-known-short-proposed",
+          "rankPolicy": "competition-midrank-proposed"
+        },
+        "playerId": 1,
+        "games": [],
+        "actualGp": 0,
+        "requestedN": 5,
+        "knownShort": false,
+        "firstDate": null,
+        "lastDate": null,
+        "reason": "Appearance has an invalid or duplicate game identity"
+      }
+    },
+    {
+      "id": "W08",
+      "purpose": "Invalid normalized dates, cutoffs, and unsupported policies rejected",
+      "passed": true,
+      "actual": true
+    },
+    {
+      "id": "W09",
+      "purpose": "Zero-strength exposure stays in official GP, no older replacement appearance",
+      "passed": true,
+      "actual": 5
+    },
+    {
+      "id": "A01",
+      "purpose": "Pooled numerator/exposure not mean game rates; fractional xG survives",
+      "passed": true,
+      "actual": true
+    },
+    {
+      "id": "A02",
+      "purpose": "Valid measured zero/zero exposure/missing/nonfinite stay distinct",
+      "passed": true,
+      "actual": true
+    },
+    {
+      "id": "A03",
+      "purpose": "Missing one selected game never shrinks official sample",
+      "passed": true,
+      "actual": 0
+    },
+    {
+      "id": "A04",
+      "purpose": "Missing one component affects only dependent metrics",
+      "passed": true,
+      "actual": true
+    },
+    {
+      "id": "A05",
+      "purpose": "Exact identity join rejects same-game wrong date/strength/season/version/timing",
+      "passed": true,
+      "actual": true
+    },
+    {
+      "id": "R01",
+      "purpose": "Competition raw ranks and midrank percentiles, all same full pool",
+      "passed": true,
+      "actual": [
+        {
+          "ordinal": 1,
+          "population": 4,
+          "percentile": 87.5,
+          "tied": false
+        },
+        {
+          "ordinal": 2,
+          "population": 4,
+          "percentile": 50,
+          "tied": true
+        },
+        {
+          "ordinal": 2,
+          "population": 4,
+          "percentile": 50,
+          "tied": true
+        },
+        {
+          "ordinal": 4,
+          "population": 4,
+          "percentile": 12.5,
+          "tied": false
+        }
+      ]
+    },
+    {
+      "id": "R02",
+      "purpose": "Rank canonical values before display rounding",
+      "passed": true,
+      "actual": {
+        "ordinal": 2,
+        "population": 2,
+        "percentile": 25,
+        "tied": false
+      }
+    },
+    {
+      "id": "R03",
+      "purpose": "Valid zero and one-second exposure remain in full pool",
+      "passed": true,
+      "actual": true
+    },
+    {
+      "id": "R04",
+      "purpose": "Unknown coverage and wrong population membership withhold ranks, preserve values",
+      "passed": true,
+      "actual": true
+    },
+    {
+      "id": "R05",
+      "purpose": "Metric-specific missing peer suppresses only affected ranks",
+      "passed": true,
+      "actual": {
+        "expectedPlayers": 2,
+        "suppliedPlayers": 2,
+        "valid": 1,
+        "knownUndefined": 0,
+        "missingIncomplete": 1,
+        "knownShort": 2,
+        "fullEligiblePopulationVerified": false
+      }
+    },
+    {
+      "id": "R06",
+      "purpose": "Known valid zero-denominator peer is excluded without inventing zero",
+      "passed": true,
+      "actual": {
+        "expectedPlayers": 2,
+        "suppliedPlayers": 2,
+        "valid": 1,
+        "knownUndefined": 1,
+        "missingIncomplete": 0,
+        "knownShort": 2,
+        "fullEligiblePopulationVerified": true
+      }
+    },
+    {
+      "id": "R07",
+      "purpose": "Complete-history failure remains missing and blocks full pool",
+      "passed": true,
+      "actual": true
+    },
+    {
+      "id": "R08",
+      "purpose": "All-tie and singleton populations use declared midrank 50",
+      "passed": true,
+      "actual": {
+        "ordinal": 1,
+        "population": 1,
+        "percentile": 50,
+        "tied": false
+      }
+    },
+    {
+      "id": "R09",
+      "purpose": "All-zero exposure pool is undefined, not zero-valued rank",
+      "passed": true,
+      "actual": {
+        "expectedPlayers": 2,
+        "suppliedPlayers": 2,
+        "valid": 0,
+        "knownUndefined": 2,
+        "missingIncomplete": 0,
+        "knownShort": 2,
+        "fullEligiblePopulationVerified": true
+      }
+    },
+    {
+      "id": "F01a",
+      "purpose": "Invalid game positive events with zero exposure must not borrow another game TOI",
+      "passed": true,
+      "actual": {
+        "value": null,
+        "state": "missing",
+        "reason": "Game events have zero compatible time exposure",
+        "numerator": null,
+        "denominator": null
+      }
+    },
+    {
+      "id": "F01b",
+      "purpose": "Invalid per-game goals > shots must not be concealed by later valid shots",
+      "passed": true,
+      "actual": {
+        "value": null,
+        "state": "missing",
+        "reason": "Game ratio numerator exceeds its compatible denominator",
+        "numerator": null,
+        "denominator": null
+      }
+    },
+    {
+      "id": "F01c",
+      "purpose": "Invalid on-ice game goals > shots must not be concealed by another game",
+      "passed": true,
+      "actual": {
+        "value": null,
+        "state": "missing",
+        "reason": "Game ratio numerator exceeds its compatible denominator",
+        "numerator": null,
+        "denominator": null
+      }
+    },
+    {
+      "id": "F02a",
+      "purpose": "Positive goals / zero shots is inconsistent source, not known undefined",
+      "passed": true,
+      "actual": {
+        "value": null,
+        "state": "missing",
+        "reason": "Game ratio numerator exceeds its compatible denominator",
+        "numerator": null,
+        "denominator": null
+      }
+    },
+    {
+      "id": "F02b",
+      "purpose": "An inconsistent peer must not leave full coverage and rank enabled",
+      "passed": true,
+      "actual": {
+        "reading": {
+          "id": "shPct",
+          "value": 50,
+          "state": "valid",
+          "rank": null,
+          "rankReason": "League rank unavailable: incomplete coverage"
+        },
+        "coverage": {
+          "expectedPlayers": 2,
+          "suppliedPlayers": 2,
+          "valid": 1,
+          "knownUndefined": 0,
+          "missingIncomplete": 1,
+          "knownShort": 2,
+          "fullEligiblePopulationVerified": false
+        }
+      }
+    },
+    {
+      "id": "F01d",
+      "purpose": "Invalid exposure peer must not change valid player raw rank",
+      "passed": true,
+      "actual": {
+        "id": "sog60",
+        "value": 6,
+        "state": "valid",
+        "rank": null,
+        "rankReason": "League rank unavailable: incomplete coverage"
+      }
+    }
+  ],
+  "claim": "Synthetic finite counterexamples against actual frozen source only, no live data or coverage proof"
+}

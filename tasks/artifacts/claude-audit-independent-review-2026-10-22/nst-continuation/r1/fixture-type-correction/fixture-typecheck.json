@@ -1,0 +1,16 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "tsc",
+    "--noEmit",
+    "--incremental",
+    "false",
+    "--project",
+    "audit.fixture-types-tsconfig.json"
+  ],
+  "exit_code": 0,
+  "duration_seconds": 3.16,
+  "fixture_sha256": "3ac4eb83022c96dcb1330eae4170068c4ad46b98129693d2493055cdb35e4347",
+  "scope": "Corrected review fixture and transitive imports, with unchanged ambient declarations; base strict compiler settings retained"
+}

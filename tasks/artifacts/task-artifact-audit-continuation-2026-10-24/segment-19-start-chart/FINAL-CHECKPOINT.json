@@ -1,0 +1,60 @@
+{
+  "at": "2026-10-24T19:55:41.141628+00:00",
+  "status": "Verified bounded StartChart/related decisions checkpoint; overall audit unfinished",
+  "canonical_ids": 214,
+  "canonical_evidence": 1233,
+  "readable_children": 56,
+  "added_parent_ids": [],
+  "changed_existing_ids": [
+    "SITE-START-CONTRACT",
+    "NATIVE-ISSUANCE",
+    "SITE-START-RECENTFORM",
+    "REPO-DOCUMENTATION"
+  ],
+  "readable_children_added": 8,
+  "evidence_added": 32,
+  "all_prior_214_ids_scopes_evidence_preserved": true,
+  "legacy_blocks_byte_identical": 32,
+  "unchanged_existing_rows_identical": 210,
+  "prior_children_preserved": true,
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "ea51204fb3651d0c843b16512ca28a1faa835c2f0d11b65ef7fa9db61cc5636d",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "e380c5e22aaa5a8dde99e85f263f524202a4101b2a9d0bf5ba800102d09869a1",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "851adc891422d9224d67e4e775c3bae644462e74b12fd793053bd368e84fe650"
+  },
+  "library": {
+    "at": "2026-10-24T19:55:41.141628+00:00",
+    "status": "succeeded",
+    "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "version_before": 17,
+    "version_after": 18,
+    "same_identity": true,
+    "replacement_attempts": 1,
+    "raw_response": "LIBRARY-REPLACE-RAW.json",
+    "parsed_receipt": "LIBRARY-REPLACE-RECEIPT.json",
+    "helper_exit_code": 0,
+    "native_returned_xattrs_matched": [
+      "user.library-file-version"
+    ],
+    "local_master_sha256": "ea51204fb3651d0c843b16512ca28a1faa835c2f0d11b65ef7fa9db61cc5636d",
+    "file_size_bytes": 699362,
+    "no_remote_download_checksum_claim": true,
+    "download_url": "https://chatgpt.com/api/library/files/libfile_9987e7d9d1b8819181b366a318cc9a9c/download",
+    "no_pending_or_uncertain_operation": true
+  },
+  "segment_coverage": {
+    "full_source_texts": 6,
+    "full_text_bytes": 132298,
+    "underlying_app_test_browser_data_provider_or_production_verified": false
+  },
+  "surviving_obligations_current_runtime_unverified": true,
+  "completed_board_performance_browser_and_inactive_candidate_credit_preserved": true,
+  "release_R7_and_21_run_quarantine_preserved": true,
+  "remaining_unique_text_candidates": 1630,
+  "not_all_candidates_deep_read_obligations": true,
+  "remaining_base_queue_items": 12056,
+  "next_cursor": "tasks/TASKS/three-pillars-analytics/prd-three-pillars-analytics.md",
+  "pending_or_uncertain_operations": [],
+  "audit_blockers": [],
+  "application_tests_git_production_provider_new_workers": 0
+}

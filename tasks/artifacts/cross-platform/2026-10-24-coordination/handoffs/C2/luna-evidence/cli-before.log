@@ -1,0 +1,10 @@
+before K1-default exit=0 stdout={"status":"disabled","attempts":0,"holds":[]} stderr=
+before K2-dispatch-killswitch exit=0 stdout={"status":"review_only","attempts":1,"holds":["decisions_unresolved","human_review_required","no_publication_authority"]} stderr=
+before K3-dispatch-enabled-no-ledger exit=0 stdout={"status":"review_only","attempts":1,"holds":["decisions_unresolved","human_review_required","no_publication_authority"]} stderr=
+k1 {'status': 'disabled', 'attempts': 0, 'holds': [], 'requestIds': [], 'canPublish': False, 'canWriteAliases': False, 'canChangeStatus': False, 'canExecuteReplacement': False} decisionReview= None None
+k2 {'status': 'review_only', 'attempts': 1, 'holds': ['decisions_unresolved', 'human_review_required', 'no_publication_authority'], 'requestIds': [], 'canPublish': False, 'canWriteAliases': False, 'canChangeStatus': False, 'canExecuteReplacement': False} decisionReview= unknown reference_transport_or_response_error
+k3 {'status': 'review_only', 'attempts': 1, 'holds': ['decisions_unresolved', 'human_review_required', 'no_publication_authority'], 'requestIds': [], 'canPublish': False, 'canWriteAliases': False, 'canChangeStatus': False, 'canExecuteReplacement': False} decisionReview= unknown reference_transport_or_response_error
+K3-dispatch-enabled-no-ledger.stderr
+K3-dispatch-enabled-no-ledger.stdout
+no sentinel leak
+K1 byte-identical to owner CLI-DISABLED-RESULT.json

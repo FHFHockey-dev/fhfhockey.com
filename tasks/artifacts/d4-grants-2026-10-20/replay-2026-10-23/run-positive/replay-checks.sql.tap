@@ -1,0 +1,288 @@
+ok 1 - default ACL: postgres in public grants nothing to anon, authenticated or service_role
+ok 2 - default ACL: postgres global function default exists without PUBLIC EXECUTE
+ok 3 - new public.d4r_probe_serial: anon denied SELECT
+ok 4 - new public.d4r_probe_serial: anon denied INSERT
+ok 5 - new public.d4r_probe_serial: anon denied UPDATE
+ok 6 - new public.d4r_probe_serial: anon denied DELETE
+ok 7 - new public.d4r_probe_serial: anon denied TRUNCATE
+ok 8 - new public.d4r_probe_serial: anon denied REFERENCES
+ok 9 - new public.d4r_probe_serial: anon denied TRIGGER
+ok 10 - new public.d4r_probe_serial: authenticated denied SELECT
+ok 11 - new public.d4r_probe_serial: authenticated denied INSERT
+ok 12 - new public.d4r_probe_serial: authenticated denied UPDATE
+ok 13 - new public.d4r_probe_serial: authenticated denied DELETE
+ok 14 - new public.d4r_probe_serial: authenticated denied TRUNCATE
+ok 15 - new public.d4r_probe_serial: authenticated denied REFERENCES
+ok 16 - new public.d4r_probe_serial: authenticated denied TRIGGER
+ok 17 - new public.d4r_probe_serial: service_role denied SELECT
+ok 18 - new public.d4r_probe_serial: service_role denied INSERT
+ok 19 - new public.d4r_probe_serial: service_role denied UPDATE
+ok 20 - new public.d4r_probe_serial: service_role denied DELETE
+ok 21 - new public.d4r_probe_serial: service_role denied TRUNCATE
+ok 22 - new public.d4r_probe_serial: service_role denied REFERENCES
+ok 23 - new public.d4r_probe_serial: service_role denied TRIGGER
+ok 24 - new public.d4r_probe_identity: anon denied SELECT
+ok 25 - new public.d4r_probe_identity: anon denied INSERT
+ok 26 - new public.d4r_probe_identity: anon denied UPDATE
+ok 27 - new public.d4r_probe_identity: anon denied DELETE
+ok 28 - new public.d4r_probe_identity: anon denied TRUNCATE
+ok 29 - new public.d4r_probe_identity: anon denied REFERENCES
+ok 30 - new public.d4r_probe_identity: anon denied TRIGGER
+ok 31 - new public.d4r_probe_identity: authenticated denied SELECT
+ok 32 - new public.d4r_probe_identity: authenticated denied INSERT
+ok 33 - new public.d4r_probe_identity: authenticated denied UPDATE
+ok 34 - new public.d4r_probe_identity: authenticated denied DELETE
+ok 35 - new public.d4r_probe_identity: authenticated denied TRUNCATE
+ok 36 - new public.d4r_probe_identity: authenticated denied REFERENCES
+ok 37 - new public.d4r_probe_identity: authenticated denied TRIGGER
+ok 38 - new public.d4r_probe_identity: service_role denied SELECT
+ok 39 - new public.d4r_probe_identity: service_role denied INSERT
+ok 40 - new public.d4r_probe_identity: service_role denied UPDATE
+ok 41 - new public.d4r_probe_identity: service_role denied DELETE
+ok 42 - new public.d4r_probe_identity: service_role denied TRUNCATE
+ok 43 - new public.d4r_probe_identity: service_role denied REFERENCES
+ok 44 - new public.d4r_probe_identity: service_role denied TRIGGER
+ok 45 - new public.d4r_probe_view: anon denied SELECT
+ok 46 - new public.d4r_probe_view: anon denied INSERT
+ok 47 - new public.d4r_probe_view: anon denied UPDATE
+ok 48 - new public.d4r_probe_view: anon denied DELETE
+ok 49 - new public.d4r_probe_view: anon denied TRUNCATE
+ok 50 - new public.d4r_probe_view: anon denied REFERENCES
+ok 51 - new public.d4r_probe_view: anon denied TRIGGER
+ok 52 - new public.d4r_probe_view: authenticated denied SELECT
+ok 53 - new public.d4r_probe_view: authenticated denied INSERT
+ok 54 - new public.d4r_probe_view: authenticated denied UPDATE
+ok 55 - new public.d4r_probe_view: authenticated denied DELETE
+ok 56 - new public.d4r_probe_view: authenticated denied TRUNCATE
+ok 57 - new public.d4r_probe_view: authenticated denied REFERENCES
+ok 58 - new public.d4r_probe_view: authenticated denied TRIGGER
+ok 59 - new public.d4r_probe_view: service_role denied SELECT
+ok 60 - new public.d4r_probe_view: service_role denied INSERT
+ok 61 - new public.d4r_probe_view: service_role denied UPDATE
+ok 62 - new public.d4r_probe_view: service_role denied DELETE
+ok 63 - new public.d4r_probe_view: service_role denied TRUNCATE
+ok 64 - new public.d4r_probe_view: service_role denied REFERENCES
+ok 65 - new public.d4r_probe_view: service_role denied TRIGGER
+ok 66 - new public.d4r_probe_mv: anon denied SELECT
+ok 67 - new public.d4r_probe_mv: anon denied INSERT
+ok 68 - new public.d4r_probe_mv: anon denied UPDATE
+ok 69 - new public.d4r_probe_mv: anon denied DELETE
+ok 70 - new public.d4r_probe_mv: anon denied TRUNCATE
+ok 71 - new public.d4r_probe_mv: anon denied REFERENCES
+ok 72 - new public.d4r_probe_mv: anon denied TRIGGER
+ok 73 - new public.d4r_probe_mv: authenticated denied SELECT
+ok 74 - new public.d4r_probe_mv: authenticated denied INSERT
+ok 75 - new public.d4r_probe_mv: authenticated denied UPDATE
+ok 76 - new public.d4r_probe_mv: authenticated denied DELETE
+ok 77 - new public.d4r_probe_mv: authenticated denied TRUNCATE
+ok 78 - new public.d4r_probe_mv: authenticated denied REFERENCES
+ok 79 - new public.d4r_probe_mv: authenticated denied TRIGGER
+ok 80 - new public.d4r_probe_mv: service_role denied SELECT
+ok 81 - new public.d4r_probe_mv: service_role denied INSERT
+ok 82 - new public.d4r_probe_mv: service_role denied UPDATE
+ok 83 - new public.d4r_probe_mv: service_role denied DELETE
+ok 84 - new public.d4r_probe_mv: service_role denied TRUNCATE
+ok 85 - new public.d4r_probe_mv: service_role denied REFERENCES
+ok 86 - new public.d4r_probe_mv: service_role denied TRIGGER
+ok 87 - new public.d4r_probe_serial_id_seq: anon denied USAGE
+ok 88 - new public.d4r_probe_serial_id_seq: anon denied SELECT
+ok 89 - new public.d4r_probe_serial_id_seq: anon denied UPDATE
+ok 90 - new public.d4r_probe_identity_id_seq: anon denied USAGE
+ok 91 - new public.d4r_probe_identity_id_seq: anon denied SELECT
+ok 92 - new public.d4r_probe_identity_id_seq: anon denied UPDATE
+ok 93 - new public.d4r_probe_seq: anon denied USAGE
+ok 94 - new public.d4r_probe_seq: anon denied SELECT
+ok 95 - new public.d4r_probe_seq: anon denied UPDATE
+ok 96 - new public.d4r_probe_serial_id_seq: authenticated denied USAGE
+ok 97 - new public.d4r_probe_serial_id_seq: authenticated denied SELECT
+ok 98 - new public.d4r_probe_serial_id_seq: authenticated denied UPDATE
+ok 99 - new public.d4r_probe_identity_id_seq: authenticated denied USAGE
+ok 100 - new public.d4r_probe_identity_id_seq: authenticated denied SELECT
+ok 101 - new public.d4r_probe_identity_id_seq: authenticated denied UPDATE
+ok 102 - new public.d4r_probe_seq: authenticated denied USAGE
+ok 103 - new public.d4r_probe_seq: authenticated denied SELECT
+ok 104 - new public.d4r_probe_seq: authenticated denied UPDATE
+ok 105 - new public.d4r_probe_serial_id_seq: service_role denied USAGE
+ok 106 - new public.d4r_probe_serial_id_seq: service_role denied SELECT
+ok 107 - new public.d4r_probe_serial_id_seq: service_role denied UPDATE
+ok 108 - new public.d4r_probe_identity_id_seq: service_role denied USAGE
+ok 109 - new public.d4r_probe_identity_id_seq: service_role denied SELECT
+ok 110 - new public.d4r_probe_identity_id_seq: service_role denied UPDATE
+ok 111 - new public.d4r_probe_seq: service_role denied USAGE
+ok 112 - new public.d4r_probe_seq: service_role denied SELECT
+ok 113 - new public.d4r_probe_seq: service_role denied UPDATE
+ok 114 - new public.d4r_probe_fn(): anon denied EXECUTE
+ok 115 - new d4r_probe_schema.fn(): anon denied EXECUTE
+ok 116 - new public.d4r_probe_fn(): authenticated denied EXECUTE
+ok 117 - new d4r_probe_schema.fn(): authenticated denied EXECUTE
+ok 118 - new public.d4r_probe_fn(): service_role denied EXECUTE
+ok 119 - new d4r_probe_schema.fn(): service_role denied EXECUTE
+ok 120 - new public.d4r_probe_fn(): no PUBLIC EXECUTE
+ok 121 - new d4r_probe_schema.fn(): no PUBLIC EXECUTE
+ok 122 - anon SELECT on a new table raises 42501
+ok 123 - anon EXECUTE on a new function raises 42501
+ok 124 - authenticated INSERT on a new table raises 42501
+ok 125 - service_role SELECT on a new view raises 42501
+ok 126 - service_role EXECUTE on a new function raises 42501
+ok 127 - explicit SELECT, INSERT and sequence USAGE let service_role insert into a new serial table
+ok 128 - explicit grant restores only what was granted (UPDATE still denied)
+ok 129 - explicit EXECUTE lets service_role call a new function
+ok 130 - explicit service_role grant leaves anon denied
+ok 131 - anon SELECT on public.in_season_grants is denied
+ok 132 - anon SELECT on public.in_season_workspaces is denied
+ok 133 - authenticated SELECT on public.in_season_grants is denied
+ok 134 - authenticated SELECT on public.in_season_workspaces is denied
+ok 135 - service_role SELECT on public.in_season_grants is granted
+ok 136 - service_role SELECT on public.in_season_workspaces is granted
+ok 137 - anon INSERT on public.in_season_grants is denied
+ok 138 - anon INSERT on public.in_season_workspaces is denied
+ok 139 - authenticated INSERT on public.in_season_grants is denied
+ok 140 - authenticated INSERT on public.in_season_workspaces is denied
+ok 141 - service_role INSERT on public.in_season_grants is denied
+ok 142 - service_role INSERT on public.in_season_workspaces is granted
+ok 143 - anon UPDATE on public.in_season_grants is denied
+ok 144 - anon UPDATE on public.in_season_workspaces is denied
+ok 145 - authenticated UPDATE on public.in_season_grants is denied
+ok 146 - authenticated UPDATE on public.in_season_workspaces is denied
+ok 147 - service_role UPDATE on public.in_season_grants is denied
+ok 148 - service_role UPDATE on public.in_season_workspaces is granted
+ok 149 - anon DELETE on public.in_season_grants is denied
+ok 150 - anon DELETE on public.in_season_workspaces is denied
+ok 151 - authenticated DELETE on public.in_season_grants is denied
+ok 152 - authenticated DELETE on public.in_season_workspaces is denied
+ok 153 - service_role DELETE on public.in_season_grants is denied
+ok 154 - service_role DELETE on public.in_season_workspaces is denied
+ok 155 - anon TRUNCATE on public.in_season_grants is denied
+ok 156 - anon TRUNCATE on public.in_season_workspaces is denied
+ok 157 - authenticated TRUNCATE on public.in_season_grants is denied
+ok 158 - authenticated TRUNCATE on public.in_season_workspaces is denied
+ok 159 - service_role TRUNCATE on public.in_season_grants is denied
+ok 160 - service_role TRUNCATE on public.in_season_workspaces is denied
+ok 161 - anon REFERENCES on public.in_season_grants is denied
+ok 162 - anon REFERENCES on public.in_season_workspaces is denied
+ok 163 - authenticated REFERENCES on public.in_season_grants is denied
+ok 164 - authenticated REFERENCES on public.in_season_workspaces is denied
+ok 165 - service_role REFERENCES on public.in_season_grants is denied
+ok 166 - service_role REFERENCES on public.in_season_workspaces is denied
+ok 167 - anon TRIGGER on public.in_season_grants is denied
+ok 168 - anon TRIGGER on public.in_season_workspaces is denied
+ok 169 - authenticated TRIGGER on public.in_season_grants is denied
+ok 170 - authenticated TRIGGER on public.in_season_workspaces is denied
+ok 171 - service_role TRIGGER on public.in_season_grants is denied
+ok 172 - service_role TRIGGER on public.in_season_workspaces is denied
+ok 173 - public.in_season_grants has no PUBLIC entry
+ok 174 - public.in_season_workspaces has no PUBLIC entry
+ok 175 - service_role can read in_season_grants
+ok 176 - service_role INSERT on in_season_grants raises 42501
+ok 177 - service_role UPDATE on in_season_grants raises 42501
+ok 178 - service_role DELETE on in_season_grants raises 42501
+ok 179 - service_role can insert a saved plan
+ok 180 - service_role can update a saved plan
+ok 181 - service_role DELETE on in_season_workspaces raises 42501
+ok 182 - service_role TRUNCATE on in_season_grants raises 42501
+ok 183 - anon SELECT on public.forge_served_forecast_ledger is denied
+ok 184 - anon INSERT on public.forge_served_forecast_ledger is denied
+ok 185 - anon UPDATE on public.forge_served_forecast_ledger is denied
+ok 186 - anon DELETE on public.forge_served_forecast_ledger is denied
+ok 187 - anon TRUNCATE on public.forge_served_forecast_ledger is denied
+ok 188 - anon REFERENCES on public.forge_served_forecast_ledger is denied
+ok 189 - anon TRIGGER on public.forge_served_forecast_ledger is denied
+ok 190 - authenticated SELECT on public.forge_served_forecast_ledger is denied
+ok 191 - authenticated INSERT on public.forge_served_forecast_ledger is denied
+ok 192 - authenticated UPDATE on public.forge_served_forecast_ledger is denied
+ok 193 - authenticated DELETE on public.forge_served_forecast_ledger is denied
+ok 194 - authenticated TRUNCATE on public.forge_served_forecast_ledger is denied
+ok 195 - authenticated REFERENCES on public.forge_served_forecast_ledger is denied
+ok 196 - authenticated TRIGGER on public.forge_served_forecast_ledger is denied
+ok 197 - service_role SELECT on public.forge_served_forecast_ledger is granted
+ok 198 - service_role INSERT on public.forge_served_forecast_ledger is granted
+ok 199 - service_role UPDATE on public.forge_served_forecast_ledger is granted
+ok 200 - service_role DELETE on public.forge_served_forecast_ledger is denied
+ok 201 - service_role TRUNCATE on public.forge_served_forecast_ledger is denied
+ok 202 - service_role REFERENCES on public.forge_served_forecast_ledger is denied
+ok 203 - service_role TRIGGER on public.forge_served_forecast_ledger is denied
+ok 204 - anon SELECT on public.forge_served_forecast_scoreboard_daily is denied
+ok 205 - anon INSERT on public.forge_served_forecast_scoreboard_daily is denied
+ok 206 - anon UPDATE on public.forge_served_forecast_scoreboard_daily is denied
+ok 207 - anon DELETE on public.forge_served_forecast_scoreboard_daily is denied
+ok 208 - anon TRUNCATE on public.forge_served_forecast_scoreboard_daily is denied
+ok 209 - anon REFERENCES on public.forge_served_forecast_scoreboard_daily is denied
+ok 210 - anon TRIGGER on public.forge_served_forecast_scoreboard_daily is denied
+ok 211 - authenticated SELECT on public.forge_served_forecast_scoreboard_daily is denied
+ok 212 - authenticated INSERT on public.forge_served_forecast_scoreboard_daily is denied
+ok 213 - authenticated UPDATE on public.forge_served_forecast_scoreboard_daily is denied
+ok 214 - authenticated DELETE on public.forge_served_forecast_scoreboard_daily is denied
+ok 215 - authenticated TRUNCATE on public.forge_served_forecast_scoreboard_daily is denied
+ok 216 - authenticated REFERENCES on public.forge_served_forecast_scoreboard_daily is denied
+ok 217 - authenticated TRIGGER on public.forge_served_forecast_scoreboard_daily is denied
+ok 218 - service_role SELECT on public.forge_served_forecast_scoreboard_daily is granted
+ok 219 - service_role INSERT on public.forge_served_forecast_scoreboard_daily is denied
+ok 220 - service_role UPDATE on public.forge_served_forecast_scoreboard_daily is denied
+ok 221 - service_role DELETE on public.forge_served_forecast_scoreboard_daily is denied
+ok 222 - service_role TRUNCATE on public.forge_served_forecast_scoreboard_daily is denied
+ok 223 - service_role REFERENCES on public.forge_served_forecast_scoreboard_daily is denied
+ok 224 - service_role TRIGGER on public.forge_served_forecast_scoreboard_daily is denied
+ok 225 - anon SELECT on public.route_runner_jobs is denied
+ok 226 - anon INSERT on public.route_runner_jobs is denied
+ok 227 - anon UPDATE on public.route_runner_jobs is denied
+ok 228 - anon DELETE on public.route_runner_jobs is denied
+ok 229 - anon TRUNCATE on public.route_runner_jobs is denied
+ok 230 - anon REFERENCES on public.route_runner_jobs is denied
+ok 231 - anon TRIGGER on public.route_runner_jobs is denied
+ok 232 - authenticated SELECT on public.route_runner_jobs is denied
+ok 233 - authenticated INSERT on public.route_runner_jobs is denied
+ok 234 - authenticated UPDATE on public.route_runner_jobs is denied
+ok 235 - authenticated DELETE on public.route_runner_jobs is denied
+ok 236 - authenticated TRUNCATE on public.route_runner_jobs is denied
+ok 237 - authenticated REFERENCES on public.route_runner_jobs is denied
+ok 238 - authenticated TRIGGER on public.route_runner_jobs is denied
+ok 239 - service_role SELECT on public.route_runner_jobs is granted
+ok 240 - service_role INSERT on public.route_runner_jobs is granted
+ok 241 - service_role UPDATE on public.route_runner_jobs is granted
+ok 242 - service_role DELETE on public.route_runner_jobs is denied
+ok 243 - service_role TRUNCATE on public.route_runner_jobs is denied
+ok 244 - service_role REFERENCES on public.route_runner_jobs is denied
+ok 245 - service_role TRIGGER on public.route_runner_jobs is denied
+ok 246 - anon SELECT on public.route_runner_events is denied
+ok 247 - anon INSERT on public.route_runner_events is denied
+ok 248 - anon UPDATE on public.route_runner_events is denied
+ok 249 - anon DELETE on public.route_runner_events is denied
+ok 250 - anon TRUNCATE on public.route_runner_events is denied
+ok 251 - anon REFERENCES on public.route_runner_events is denied
+ok 252 - anon TRIGGER on public.route_runner_events is denied
+ok 253 - authenticated SELECT on public.route_runner_events is denied
+ok 254 - authenticated INSERT on public.route_runner_events is denied
+ok 255 - authenticated UPDATE on public.route_runner_events is denied
+ok 256 - authenticated DELETE on public.route_runner_events is denied
+ok 257 - authenticated TRUNCATE on public.route_runner_events is denied
+ok 258 - authenticated REFERENCES on public.route_runner_events is denied
+ok 259 - authenticated TRIGGER on public.route_runner_events is denied
+ok 260 - service_role SELECT on public.route_runner_events is granted
+ok 261 - service_role INSERT on public.route_runner_events is granted
+ok 262 - service_role UPDATE on public.route_runner_events is granted
+ok 263 - service_role DELETE on public.route_runner_events is denied
+ok 264 - service_role TRUNCATE on public.route_runner_events is denied
+ok 265 - service_role REFERENCES on public.route_runner_events is denied
+ok 266 - service_role TRIGGER on public.route_runner_events is denied
+ok 267 - anon USAGE on public.route_runner_events_id_seq
+ok 268 - anon SELECT on public.route_runner_events_id_seq
+ok 269 - anon UPDATE on public.route_runner_events_id_seq
+ok 270 - authenticated USAGE on public.route_runner_events_id_seq
+ok 271 - authenticated SELECT on public.route_runner_events_id_seq
+ok 272 - authenticated UPDATE on public.route_runner_events_id_seq
+ok 273 - service_role USAGE on public.route_runner_events_id_seq
+ok 274 - service_role SELECT on public.route_runner_events_id_seq
+ok 275 - service_role UPDATE on public.route_runner_events_id_seq
+ok 276 - anon EXECUTE on public.forge_league_skater_physical_totals(integer, date) is denied
+ok 277 - authenticated EXECUTE on public.forge_league_skater_physical_totals(integer, date) is denied
+ok 278 - service_role EXECUTE on public.forge_league_skater_physical_totals(integer, date) is granted
+ok 279 - anon EXECUTE on public.forge_latest_rolling_rows(bigint[], text, date, text[]) is denied
+ok 280 - authenticated EXECUTE on public.forge_latest_rolling_rows(bigint[], text, date, text[]) is denied
+ok 281 - service_role EXECUTE on public.forge_latest_rolling_rows(bigint[], text, date, text[]) is granted
+ok 282 - anon EXECUTE on public.replace_forge_projection_results_atomic(date, date, uuid, jsonb) is denied
+ok 283 - authenticated EXECUTE on public.replace_forge_projection_results_atomic(date, date, uuid, jsonb) is denied
+ok 284 - service_role EXECUTE on public.replace_forge_projection_results_atomic(date, date, uuid, jsonb) is granted
+ok 285 - public.forge_league_skater_physical_totals(integer, date) has no PUBLIC EXECUTE
+ok 286 - public.forge_latest_rolling_rows(bigint[], text, date, text[]) has no PUBLIC EXECUTE
+ok 287 - public.replace_forge_projection_results_atomic(date, date, uuid, jsonb) has no PUBLIC EXECUTE
+1..287

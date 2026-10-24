@@ -1,0 +1,389 @@
+--- a/web/lib/socialShare/types.ts
++++ b/web/lib/socialShare/types.ts
+@@ -89,9 +89,9 @@
+   name: "Yahoo ownership + NHL.com season totals";
+   season: number;
+   fetchedAt: string | null;
+-  /** Latest Yahoo ownership observation date (YYYY-MM-DD). */
++  /** Oldest Yahoo ownership observation date (YYYY-MM-DD) among included players. */
+   ownershipAsOf: string | null;
+-  /** Latest WGO season-total update time. */
++  /** Oldest WGO season-total update time among included players. */
+   statsUpdatedAt: string | null;
+   state: ShareDataState;
+   reasons: string[];
+--- a/web/components/SocialShare/SocialShare.tsx
++++ b/web/components/SocialShare/SocialShare.tsx
+@@ -5,7 +5,7 @@
+ import { bounded, downloadSharePng, readyShareFonts, SHARE_SIZE, teamLogoDataUrl } from "lib/socialShare/export";
+ import { mondayGridRows } from "lib/socialShare/mondayGrid";
+ import { easiestSchedules, opponentsReady, SOFT_DEFENSE_MAX, STREAM_TEAM_RANK_MAX, streamingNights, type MatchupGame } from "lib/socialShare/matchups";
+-import { MIN_GOALIE_STARTS, MIN_SKATER_GAMES, PLAYER_TEAM_RANK_MAX, pickupTiers, playersReady, specialists, type RankedPlayer, type SpecialistCategory } from "lib/socialShare/players";
++import { MIN_GOALIE_STARTS, MIN_SKATER_GAMES, PICKUP_BANDS, PLAYER_TEAM_RANK_MAX, pickupTiers, playersReady, specialists, type RankedPlayer, type SpecialistCategory } from "lib/socialShare/players";
+ import styles from "./SocialShare.module.scss";
+ 
+ const labels: Record<SocialShareFormat, string> = {
+@@ -152,6 +152,9 @@
+ type PlayerCardKind = { kind: "pickups"; max: 50 | 30 | 20 } | { kind: "specialists" };
+ const parsePlayerCard = (graphic: string): PlayerCardKind | null => graphic === "specialists" ? { kind: "specialists" } : /^pickups-(50|30|20)$/.test(graphic) ? { kind: "pickups", max: Number(graphic.slice(8)) as 50 | 30 | 20 } : null;
+ const groupTitles = { F: "FORWARDS", D: "DEFENSE", G: "GOALIES" } as const;
++const bandLabel = (max: number) => PICKUP_BANDS.find(band => band.max === max)!.label;
++// Floor, so a 49.6% player never reads "50%" on the 30–49% card.
++const rosteredLabel = (ownership: number) => `${Math.floor(ownership)}%`;
+ const specialistTitles: Record<SpecialistCategory, [string, string]> = { hits: ["HITS", "HIT/GP"], shots: ["SHOTS ON GOAL", "SOG/GP"], blocks: ["BLOCKS", "BLK/GP"] };
+ const dayDate = (iso: string | null) => iso ? dateLabel(iso.slice(0, 10)) : "not available";
+ const pickupStat = (player: RankedPlayer): [string, string] => player.group === "G"
+@@ -165,13 +168,13 @@
+ }
+ 
+ function playerAltText(card: PlayerCardKind, snapshot: SocialShareSnapshot, trusted: boolean) {
+-  const head = `FHFH ${card.kind === "pickups" ? `Pickups under ${card.max}% rostered` : "Hits, shots and blocks specialists"}, ${yearDateLabel(snapshot.weekStart)} through ${yearDateLabel(snapshot.weekEnd)}.`;
++  const head = `FHFH ${card.kind === "pickups" ? `Pickups ${bandLabel(card.max).toLowerCase()} rostered` : "Hits, shots and blocks specialists"}, ${yearDateLabel(snapshot.weekStart)} through ${yearDateLabel(snapshot.weekEnd)}.`;
+   const tail = `Yahoo rostered percent as of ${dayDate(snapshot.players?.ownershipAsOf ?? null)}. NHL.com season totals updated ${timeLabel(snapshot.players?.statsUpdatedAt ?? null)}. Season rates, not projections.`;
+   if (!trusted || !playersReady(snapshot)) return `${head} Unranked preview; ranking unavailable because ${playerUnreadyReason(snapshot, trusted)}. ${tail}`;
+-  const describe = (player: RankedPlayer, stat: string) => `${player.name} (${player.team}, ${player.positions}), ${stat}, ${Math.round(player.ownership)}% rostered, number ${player.weekRank} Week Score team with ${player.remainingGames} games`;
++  const describe = (player: RankedPlayer, stat: string) => `${player.name} (${player.team}, ${player.positions}), ${stat}, ${rosteredLabel(player.ownership)} rostered, number ${player.weekRank} Week Score team with ${player.remainingGames} games`;
+   if (card.kind === "pickups") {
+     const tier = pickupTiers(snapshot, true).find(item => item.max === card.max)!;
+-    return `${head} Players on top-${PLAYER_TEAM_RANK_MAX} Week Score teams, ranked by points per game for skaters and quality-start percent for goalies, then team schedule rank; each player appears in one tier only, strictest tier first. ${(["F", "D", "G"] as const).map(group => `${groupTitles[group]}: ${tier.groups[group].map(player => describe(player, `${pickupStat(player)[0]} ${pickupStat(player)[1]}`)).join("; ") || "none qualify"}`).join(". ")}. ${tail}`;
++    return `${head} Players on top-${PLAYER_TEAM_RANK_MAX} Week Score teams, ranked by points per game for skaters and quality-start percent for goalies, then team schedule rank; separate bands of 30 to 49, 20 to 29 and under 20 percent rostered, each player in one band. ${(["F", "D", "G"] as const).map(group => `${groupTitles[group]}: ${tier.groups[group].map(player => describe(player, `${pickupStat(player)[0]} ${pickupStat(player)[1]}`)).join("; ") || "none qualify"}`).join(". ")}. ${tail}`;
+   }
+   const board = specialists(snapshot, true);
+   return `${head} Skaters under 50% rostered on top-${PLAYER_TEAM_RANK_MAX} Week Score teams, minimum ${MIN_SKATER_GAMES} games, by season total per game played. ${(Object.keys(specialistTitles) as SpecialistCategory[]).map(category => `${specialistTitles[category][0]}: ${board[category].map(player => describe(player, `${player.perGame.toFixed(1)} ${specialistTitles[category][1]}`)).join("; ") || "none qualify"}`).join(". ")}. ${tail}`;
+@@ -180,7 +183,7 @@
+ function PlayerTile({ player, stat, label, snapshot, logos }: { player: RankedPlayer; stat: string; label: string; snapshot: SocialShareSnapshot; logos: Record<string, string | null> }) {
+   const team = snapshot.teams.find(item => item.abbreviation === player.team)!;
+   return <div data-player={player.nhlId} data-team={player.team} className={styles.playerTile}>
+-    <div className={styles.playerTop}><TeamMark team={team} logo={logos[player.team]} size={44} /><span className={styles.playerOwn}><strong>{Math.round(player.ownership)}%</strong><small>ROSTERED</small></span></div>
++    <div className={styles.playerTop}><TeamMark team={team} logo={logos[player.team]} size={44} /><span className={styles.playerOwn}><strong>{rosteredLabel(player.ownership)}</strong><small>ROSTERED</small></span></div>
+     <strong className={styles.playerName}>{player.name}</strong>
+     <small className={styles.playerMeta}>{player.team} · {player.positions}</small>
+     <div className={styles.playerStat}><strong>{stat}</strong><small>{label}</small></div>
+@@ -194,7 +197,7 @@
+     ? (["F", "D", "G"] as const).map(group => ({ key: group, title: groupTitles[group], players: pickupTiers(snapshot, true).find(tier => tier.max === card.max)!.groups[group].map(player => { const [stat, label] = pickupStat(player); return { player, stat, label }; }) }))
+     : (Object.entries(specialists(snapshot, true)) as [SpecialistCategory, ReturnType<typeof specialists>["hits"]][]).map(([category, list]) => ({ key: category, title: specialistTitles[category][0], players: list.map(player => ({ player, stat: player.perGame.toFixed(1), label: specialistTitles[category][1] })) }));
+   return <>
+-    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? (card.kind === "pickups" ? `Monday · Pickups on top-${PLAYER_TEAM_RANK_MAX} schedules` : `Monday · Under 50% rostered`) : "Unranked preview"} title={card.kind === "pickups" ? `UNDER ${card.max}% ROSTERED` : "CATEGORY SPECIALISTS"} compact />
++    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? (card.kind === "pickups" ? `Monday · Pickups on top-${PLAYER_TEAM_RANK_MAX} schedules` : `Monday · Under 50% rostered`) : "Unranked preview"} title={card.kind === "pickups" ? `${bandLabel(card.max).toUpperCase()} ROSTERED` : "CATEGORY SPECIALISTS"} compact />
+     {!ready ? <div className={styles.matchupEmpty}><strong>Ranking unavailable</strong><p>Player cards need a ready schedule and current Yahoo ownership plus NHL.com season totals; {playerUnreadyReason(snapshot, trusted)}.</p></div>
+       : <div className={styles.playerColumns}>{columns.map(column => <div key={column.key} className={styles.playerColumn}>
+         <h3>{column.title}</h3>
+@@ -203,7 +206,7 @@
+       </div>)}</div>}
+     <footer className={styles.gridFooter}>
+       <div className={styles.legend}>{card.kind === "pickups"
+-        ? <><span><b>PTS/GP</b> skater season points per game (min {MIN_SKATER_GAMES} GP)</span><span><b>QS%</b> goalie quality-start % (min {MIN_GOALIE_STARTS} starts)</span><span>One tier per player, strictest first</span></>
++        ? <><span><b>PTS/GP</b> skater season points per game (min {MIN_SKATER_GAMES} GP)</span><span><b>QS%</b> goalie quality-start % (min {MIN_GOALIE_STARTS} starts)</span><span>Bands: 30–49% · 20–29% · under 20%</span></>
+         : <><span><b>Per GP</b> = season total ÷ games played</span><span>Skaters under 50% rostered · min {MIN_SKATER_GAMES} GP</span></>}</div>
+       <p><span>Top-{PLAYER_TEAM_RANK_MAX} Week Score teams · {card.kind === "pickups" ? "ranked by that rate, then team schedule rank" : "ranked by per-game rate, then team schedule rank"} · Season rates, not projections · Yahoo rostered % as of {dayDate(snapshot.players?.ownershipAsOf ?? null)} · NHL.com season totals updated {timeLabel(snapshot.players?.statsUpdatedAt ?? null)}</span><strong className={styles.gridWatermark}>{ready ? "SCHEDULE + PLAYER RATES" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
+     </footer>
+@@ -319,8 +322,8 @@
+             <option value="grid">{trusted ? "Best schedules grid (Monday default)" : "Known schedules grid (unranked)"}</option>
+             <option value="easiest">Easiest schedules (opponent defense)</option>
+             <option value="stream">Streaming matchups (soft defenses)</option>
+-            <option value="pickups-50">Pickups · under 50% rostered</option>
+-            <option value="pickups-30">Pickups · under 30% rostered</option>
++            <option value="pickups-50">Pickups · 30–49% rostered</option>
++            <option value="pickups-30">Pickups · 20–29% rostered</option>
+             <option value="pickups-20">Pickups · under 20% rostered</option>
+             <option value="specialists">Specialists · hits, shots, blocks</option>
+             <option value="leaders">{trusted ? "Top three schedule leaders" : "Known schedule context (unranked)"}</option>{snapshot?.teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+@@ -347,7 +350,7 @@
+       </div>
+       <div className={styles.workspace}>
+         <section className={styles.panel} aria-label="Graphic preview">
+-          <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{!trusted ? "Unranked context" : gridCard ? "Best schedules grid" : matchupKind === "easiest" ? "Easiest schedules" : matchupKind === "stream" ? "Streaming matchups" : playerCard ? (playerCard.kind === "pickups" ? `Pickups under ${playerCard.max}%` : "Category specialists") : focusTeam ? "Team focus" : "Schedule leaders"}</span></div>
++          <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{!trusted ? "Unranked context" : gridCard ? "Best schedules grid" : matchupKind === "easiest" ? "Easiest schedules" : matchupKind === "stream" ? "Streaming matchups" : playerCard ? (playerCard.kind === "pickups" ? `Pickups ${bandLabel(playerCard.max).toLowerCase()}` : "Category specialists") : focusTeam ? "Team focus" : "Schedule leaders"}</span></div>
+           <div className={styles.previewFrame} ref={frame} style={{ height: scale * SHARE_SIZE }}>
+             {snapshot && squareReady && <div ref={preview} className={cx(styles.square, (gridCard || matchupKind || playerCard) && styles.gridSquare)} style={{ transform: `scale(${scale})` }} data-testid="share-square" role="img" aria-label={squareAlt(snapshot)}>
+               {gridCard ? <MondayGrid snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : matchupKind ? <MatchupCard kind={matchupKind} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : playerCard ? <PlayerCard card={playerCard} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : <>
+--- a/web/e2e/social-share.spec.ts
++++ b/web/e2e/social-share.spec.ts
+@@ -17,7 +17,8 @@
+ 
+ // Fictional public schedule mechanics, deliberately separate from live NHL evidence.
+ type Rates = "ready" | "stale" | "missing";
+-function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinnedAt?: string, rates: Rates = "ready", players: Rates = "ready"): SocialShareSnapshot {
++type PlayerMode = Rates | "thin";
++function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinnedAt?: string, rates: Rates = "ready", players: PlayerMode = "ready"): SocialShareSnapshot {
+   const dates = weekDates(weekStart), generatedAt = pinnedAt ?? new Date().toISOString();
+   const year = Number(weekStart.slice(0, 4)) - (Number(weekStart.slice(5, 7)) < 8 ? 1 : 0);
+   const pairs = [[0, 1, 2], [0, 10, 8], [1, 3, 1], [2, 2, 4], [3, 1, 2], [4, 1, 3], [6, 2, 3]];
+@@ -31,6 +32,12 @@
+     const observedOn = new Date(Date.parse(generatedAt) - (players === "stale" ? 72 : 0) * 3600000).toISOString();
+     const sources = players === "missing" ? null : fictionalPlayerSources(season, localDate(observedOn, "America/New_York"), new Date(Date.parse(generatedAt) - 4 * 3600000).toISOString());
+     snapshot.players = buildPlayerLayer(sources, { season, teams: snapshot.teams.map(team => team.abbreviation), fetchedAt: generatedAt, generatedAt });
++    // "thin": one goalie under 20% rostered on a top-10 team, so the column renders "Only 1 qualifies".
++    if (players === "thin") {
++      const top = new Set(snapshot.rows.filter(row => row.rank <= 10).map(row => row.team.abbreviation));
++      const kept = snapshot.players.players.find(player => player.group === "G" && player.ownership < 20 && top.has(player.team));
++      snapshot.players.players = snapshot.players.players.filter(player => !(player.group === "G" && player.ownership < 20) || player === kept);
++    }
+     return structuredClone(snapshot);
+   }
+   const games: GameData[] = mode === "zero" ? [] : pairs.map(([day, home, away], i) => ({
+@@ -46,7 +53,7 @@
+ }
+ 
+ async function install(page: Page) {
+-  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as Rates, latest: null as SocialShareSnapshot | null };
++  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, latest: null as SocialShareSnapshot | null };
+   await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
+   await page.route("**/api/v1/social-share/**", async route => {
+     controller.requests++;
+@@ -460,9 +467,10 @@
+   const tiers = pickupTiers(source.latest!, true);
+   for (const tier of tiers) {
+     await graphic.selectOption(`pickups-${tier.max}`);
+-    await expect(square).toContainText(`UNDER ${tier.max}% ROSTERED`);
++    await expect(square).toContainText(`${tier.label.toUpperCase()} ROSTERED`);
++    await expect(square).toContainText("Bands: 30–49% · 20–29% · under 20%");
+     const expected = [...tier.groups.F, ...tier.groups.D, ...tier.groups.G].map(player => String(player.nhlId));
+-    expect(expected.length).toBeGreaterThanOrEqual(7);
++    expect(expected.length).toBeGreaterThanOrEqual(5);
+     await expect(square.locator("[data-player]")).toHaveCount(expected.length);
+     expect(await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-player")))).toEqual(expected);
+     await expect(square).toContainText("Yahoo rostered % as of");
+@@ -509,3 +517,24 @@
+   await expect(square).toContainText("schedule edition is not ready");
+   await expect(download).toBeDisabled();
+ });
++
++test("short pickup columns say how many qualify and the card still exports", async ({ page }) => {
++  const source = await install(page);
++  source.mode = "league"; source.players = "thin";
++  await open(page);
++  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
++  await expect(download).toBeEnabled();
++  await graphic.selectOption("pickups-20");
++  await expect(square).toContainText("UNDER 20% ROSTERED");
++  const tier = pickupTiers(source.latest!, true).find(item => item.max === 20)!;
++  expect(tier.groups.G).toHaveLength(1);
++  const notes = (["F", "D", "G"] as const).map(group => tier.groups[group].length).filter(count => count < 3)
++    .map(count => count === 0 ? "None qualify" : `Only ${count} qualif${count === 1 ? "ies" : "y"}`);
++  for (const note of notes) await expect(square).toContainText(note);
++  await expect(square).toContainText("Only 1 qualifies");
++  await expect(square.locator("[data-player]")).toHaveCount(tier.groups.F.length + tier.groups.D.length + 1);
++  expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
++  await expect(square).toHaveAttribute("aria-label", new RegExp(`GOALIES: ${tier.groups.G[0].name} \\(`));
++  await expect(download).toBeEnabled();
++  await downloadedPng(page, "monday-pickups-under-20-thin");
++});
+--- a/web/lib/socialShare/pickupsFixture.ts
++++ b/web/lib/socialShare/pickupsFixture.ts
+@@ -10,11 +10,13 @@
+  *   else `percent_ownership`; values outside 0–100 or non-numeric are unknown
+  *   (pages/api/v1/transactions/ownership-snapshots.ts `resolveOwnership`).
+  * - Positions: `eligible_positions` is an array of { position } objects
+- *   (lib/rosterScheduleOptimizer/yahooEligibilityCache.ts). F = C/LW/RW, D = D, G = G.
++ *   (lib/rosterScheduleOptimizer/yahooEligibilityCache.ts). F = C/LW/RW, D = D, G = G; a
++ *   dual-eligible player goes in the group of its primary (first-listed) position.
+  * - Team: `editorial_team_abbreviation` uses Yahoo aliases (LA, NJ, SJ, TB, WAS, MON) that map
+  *   to NHL abbreviations (lib/integrations/yahoo/planningConfirmations.ts).
+- * - Tiers: rostered under 50%, 30% and 20% (TJ, CLAUDE-20261024-010), top 3 per F/D/G,
+- *   drawn only from the top Week Score teams. Ownership older than 24 h blocks export.
++ * - Bands: rostered 30–49%, 20–29% and under 20% (TJ, CLAUDE-20261024-010 and SS1-4-O1),
++ *   each player in one band, top 3 per F/D/G, from the top Week Score teams only. Ownership older
++ *   than yesterday or totals older than 72 h drop that player.
+  */
+ export type YahooPlayerRow = Database["public"]["Tables"]["yahoo_players"]["Row"];
+ export const PICKUP_OWNERSHIP_COLUMNS = [
+--- a/web/lib/socialShare/players.ts
++++ b/web/lib/socialShare/players.ts
+@@ -1,6 +1,6 @@
+ import type { Database } from "lib/supabase/database-generated.types";
+ import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
+-import { PICKUP_TIERS, PICKUP_YAHOO_TEAM_ALIASES, type PickupOwnershipRow } from "./pickupsFixture";
++import { PICKUP_YAHOO_TEAM_ALIASES, type PickupOwnershipRow } from "./pickupsFixture";
+ import { SHARE_TIME_ZONE, type ShareDataState, type SharePlayer, type SharePlayerLayer, type SocialShareSnapshot } from "./types";
+ 
+ type Tables = Database["public"]["Tables"];
+@@ -40,12 +40,17 @@
+   return fallback === null ? null : { ownership: fallback, asOf: isDate(updated) ? updated : null };
+ }
+ 
+-function positionGroup(row: PickupOwnershipRow): { group: SharePlayer["group"]; positions: string } | null {
+-  const positions = Array.isArray(row.eligible_positions) ? (row.eligible_positions as { position?: unknown }[]).map(item => item?.position).filter((item): item is string => typeof item === "string") : [];
+-  if (!positions.length) return null;
+-  const skating = positions.filter(position => ["C", "LW", "RW", "D", "G"].includes(position));
+-  const group = skating.includes("G") ? "G" : skating.includes("D") ? "D" : skating.some(position => ["C", "LW", "RW"].includes(position)) ? "F" : null;
+-  return group ? { group, positions: skating.join(",") } : null;
++const PLAYING_POSITIONS = ["C", "LW", "RW", "D", "G"];
++/**
++ * One group per player, from the primary position: the first playing position in Yahoo's
++ * display_position (its primary-first order), else in eligible_positions. A C/D dual-eligible
++ * skater listed "C,D" is a forward and "D,C" a defenseman; the card still lists both positions.
++ */
++export function positionGroup(row: Pick<PickupOwnershipRow, "eligible_positions" | "display_position">): { group: SharePlayer["group"]; positions: string } | null {
++  const eligible = Array.isArray(row.eligible_positions) ? (row.eligible_positions as { position?: unknown }[]).map(item => item?.position).filter((item): item is string => typeof item === "string" && PLAYING_POSITIONS.includes(item)) : [];
++  if (!eligible.length) return null;
++  const primary = (row.display_position ?? "").split(",").map(item => item.trim()).find(item => eligible.includes(item)) ?? eligible[0];
++  return { group: primary === "G" ? "G" : primary === "D" ? "D" : "F", positions: eligible.join(",") };
+ }
+ 
+ /**
+@@ -65,8 +70,10 @@
+   const skaters = new Map(sources.skaters.filter(row => row.season === String(input.season)).map(row => [row.player_id, row]));
+   const goalies = new Map(sources.goalies.filter(row => row.season_id === input.season).map(row => [row.goalie_id, row]));
+   const players: SharePlayer[] = [];
+-  let ownershipAsOf: string | null = null, statsUpdatedAt: string | null = null;
++  let ownershipAsOf: string | null = null, statsUpdatedAt: string | null = null, droppedStale = 0, droppedFuture = 0;
+   const seen = new Set<number>();
++  const today = localDate(input.generatedAt, SHARE_TIME_ZONE), yesterday = new Date(Date.parse(`${today}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
++  const generated = Date.parse(input.generatedAt);
+   for (const row of sources.yahoo) {
+     if (row.season !== yahooSeason || !PLAYABLE_STATUSES.has(row.status ?? "")) continue;
+     const owned = resolveOwnership(row), position = positionGroup(row);
+@@ -91,17 +98,21 @@
+     }
+     // WGO's current team is authoritative; a Yahoo team that disagrees means a stale mapping.
+     if (!player || !input.teams.includes(player.team) || (yahooTeam && yahooTeam !== player.team)) continue;
++    // Freshness is gated per player: one fresh row never vouches for another player's old data.
++    const totalsAt = updated && Number.isFinite(Date.parse(updated)) ? Date.parse(updated) : NaN;
++    if ((owned.asOf && owned.asOf > today) || totalsAt > generated) { droppedFuture++; continue; }
++    if (!owned.asOf || owned.asOf < yesterday || !Number.isFinite(totalsAt) || generated - totalsAt > PLAYER_STATS_MAX_AGE_MS) { droppedStale++; continue; }
+     seen.add(nhlId); players.push(player);
+-    if (owned.asOf && (!ownershipAsOf || owned.asOf > ownershipAsOf)) ownershipAsOf = owned.asOf;
+-    if (updated && Number.isFinite(Date.parse(updated))) { const iso = new Date(Date.parse(updated)).toISOString(); if (!statsUpdatedAt || iso > statsUpdatedAt) statsUpdatedAt = iso; }
++    // The card shows the oldest included observation, so every as-of it prints covers every tile.
++    if (!ownershipAsOf || owned.asOf < ownershipAsOf) ownershipAsOf = owned.asOf;
++    const iso = new Date(totalsAt).toISOString();
++    if (!statsUpdatedAt || iso < statsUpdatedAt) statsUpdatedAt = iso;
+   }
+   let state: ShareDataState = "ready";
+-  const today = localDate(input.generatedAt, SHARE_TIME_ZONE), yesterday = new Date(Date.parse(`${today}T00:00:00Z`) - 86400000).toISOString().slice(0, 10);
+-  if (!players.length) { state = "partial"; reasons.push("No eligible players joined ownership and season totals."); }
+-  else if (!ownershipAsOf || !statsUpdatedAt) { state = "partial"; reasons.push("Player sources have no observation time."); }
+-  else if (ownershipAsOf > today || Date.parse(statsUpdatedAt) > Date.parse(input.generatedAt)) { state = "missing"; reasons.push("Player source time is in the future."); }
+-  else if (ownershipAsOf < yesterday) { state = "stale"; reasons.push("Yahoo ownership is older than a day."); }
+-  else if (Date.parse(input.generatedAt) - Date.parse(statsUpdatedAt) > PLAYER_STATS_MAX_AGE_MS) { state = "stale"; reasons.push("Season totals are older than 72 hours."); }
++  // More stale rows than current ones means the source refresh failed; rank nobody.
++  if (droppedStale > players.length) { state = "stale"; reasons.push(`Most player rows are stale (${droppedStale} of ${droppedStale + players.length}): Yahoo ownership older than a day or season totals older than 72 hours.`); }
++  else if (!players.length) { state = droppedFuture ? "missing" : "partial"; reasons.push(droppedFuture ? "Player source time is in the future." : "No eligible players joined ownership and season totals."); }
++  else if (droppedStale || droppedFuture) reasons.push(`Excluded ${droppedStale} stale and ${droppedFuture} future-dated player rows.`);
+   return { ...base, ownershipAsOf, statsUpdatedAt, state, reasons, players: players.sort((a, b) => a.nhlId - b.nhlId) };
+ }
+ 
+@@ -121,26 +132,23 @@
+   ? (b.qualityStartPct ?? -1) - (a.qualityStartPct ?? -1) || (b.savePct ?? -1) - (a.savePct ?? -1) || tieBreak(a, b)
+   : (b.pointsPerGame ?? -1) - (a.pointsPerGame ?? -1) || tieBreak(a, b);
+ 
+-export type PickupTier = { max: typeof PICKUP_TIERS[number]; groups: Record<SharePlayer["group"], RankedPlayer[]> };
++/** Separate rostered-% bands (TJ, SS1-4-O1): each player belongs to exactly one, min ≤ % < max. */
++export const PICKUP_BANDS = [
++  { max: 50, min: 30, label: "30–49%" },
++  { max: 30, min: 20, label: "20–29%" },
++  { max: 20, min: 0, label: "Under 20%" },
++] as const;
++export type PickupTier = (typeof PICKUP_BANDS)[number] & { groups: Record<SharePlayer["group"], RankedPlayer[]> };
+ /**
+  * Pickups: players on top-10 Week Score teams, ranked within F/D/G by an existing per-player rate,
+- * then team schedule rank. Tiers fill strictest first (under 20, 30, then 50%), and each player
+- * appears once, so deep-league tiers keep the best low-rostered players.
++ * then team schedule rank, listed in their own rostered band (30–49%, 20–29%, under 20%).
+  */
+ export function pickupTiers(snapshot: SocialShareSnapshot, trusted: boolean): PickupTier[] {
+   if (!trusted || !playersReady(snapshot)) return [];
+   // Sort within a position group only: skaters and goalies use different rates.
+   const pool = onTopTeams(snapshot), byGroup = Object.fromEntries((["F", "D", "G"] as const).map(group => [group, pool.filter(player => player.group === group).sort(pickupOrder)]));
+-  const used = new Set<number>();
+-  const tiers = [...PICKUP_TIERS].sort((a, b) => a - b).map(max => {
+-    const groups = Object.fromEntries((["F", "D", "G"] as const).map(group => {
+-      const picks = byGroup[group].filter(player => player.ownership < max && !used.has(player.nhlId)).slice(0, PLAYERS_PER_LIST);
+-      picks.forEach(player => used.add(player.nhlId));
+-      return [group, picks];
+-    })) as PickupTier["groups"];
+-    return { max, groups };
+-  });
+-  return tiers.sort((a, b) => b.max - a.max);
++  return PICKUP_BANDS.map(band => ({ ...band, groups: Object.fromEntries((["F", "D", "G"] as const).map(group =>
++    [group, byGroup[group].filter(player => player.ownership >= band.min && player.ownership < band.max).slice(0, PLAYERS_PER_LIST)])) as PickupTier["groups"] }));
+ }
+ 
+ export type SpecialistCategory = "hits" | "shots" | "blocks";
+--- a/web/lib/socialShare/players.test.ts
++++ b/web/lib/socialShare/players.test.ts
+@@ -2,7 +2,7 @@
+ import { buildScheduleSnapshot, selectScheduleDates, weekDates } from "./schedule";
+ import { fictionalLeagueWeek } from "./fixtures";
+ import { fictionalPlayerSources } from "./pickupsFixture";
+-import { buildPlayerLayer, MIN_GOALIE_STARTS, MIN_SKATER_GAMES, PLAYER_TEAM_RANK_MAX, pickupTiers, resolveOwnership, specialists, type RankedPlayer } from "./players";
++import { buildPlayerLayer, MIN_GOALIE_STARTS, MIN_SKATER_GAMES, PICKUP_BANDS, PLAYER_TEAM_RANK_MAX, pickupTiers, positionGroup, resolveOwnership, specialists, type RankedPlayer } from "./players";
+ import type { SocialShareSnapshot } from "./types";
+ 
+ const weekStart = "2026-10-26", now = "2026-10-26T12:00:00Z", season = 20262027;
+@@ -47,6 +47,42 @@
+     expect(edition(undefined, undefined, null).players).toMatchObject({ state: "missing", players: [] });
+   });
+ 
++  it("gates freshness per player: one fresh row never makes stale rows current (C7 SS1-4-F1)", () => {
++    const fresh = "2026-10-26", old = "2026-10-01";
++    const mixed = fictionalPlayerSources(season, old, "2026-10-26T08:00:00Z");
++    const keep = mixed.yahoo.find(row => row.status === null && row.position_type === "P")!;
++    keep.ownership_timeline = [{ date: fresh, value: keep.percent_ownership }];
++    const stale = edition(undefined, undefined, mixed).players!;
++    expect(stale.state).toBe("stale");
++    expect(stale.reasons[0]).toMatch(/^Most player rows are stale \(\d+ of \d+\)/);
++    expect(stale.players.map(player => player.nhlId)).toEqual([Number(mixed.map.find(item => item.yahoo_player_id === keep.player_key)!.nhl_player_id)]);
++    expect(pickupTiers({ ...edition(), players: stale }, true)).toEqual([]);
++
++    // A few stale rows are dropped individually; the card's as-of is the oldest included one.
++    const few = fictionalPlayerSources(season, fresh, "2026-10-26T08:00:00Z");
++    const oldOwnership = few.yahoo.slice(0, 5), oldTotals = few.skaters.slice(10, 13), yesterday = few.yahoo[40];
++    for (const row of oldOwnership) row.ownership_timeline = [{ date: old, value: row.percent_ownership }];
++    for (const row of oldTotals) row.updated_at = "2026-10-22T00:00:00Z";
++    yesterday.ownership_timeline = [{ date: "2026-10-25", value: yesterday.percent_ownership }];
++    const layer = edition(undefined, undefined, few).players!, ids = layer.players.map(player => player.nhlId);
++    expect(layer.state).toBe("ready");
++    for (const row of oldOwnership) expect(ids).not.toContain(Number(few.map.find(item => item.yahoo_player_id === row.player_key)!.nhl_player_id));
++    for (const row of oldTotals) expect(ids).not.toContain(row.player_id);
++    expect(ids).toContain(Number(few.map.find(item => item.yahoo_player_id === yesterday.player_key)!.nhl_player_id));
++    expect(layer.ownershipAsOf).toBe("2026-10-25");
++    expect(layer.reasons.some(reason => /^Excluded \d+ stale and 0 future-dated player rows\.$/.test(reason))).toBe(true);
++  });
++
++  it("places each skater in one group by primary position", () => {
++    const row = (display: string, eligible: string[]) => ({ display_position: display, eligible_positions: eligible.map(position => ({ position })) });
++    expect(positionGroup(row("C,D", ["C", "D"]))).toEqual({ group: "F", positions: "C,D" });
++    expect(positionGroup(row("D,C", ["C", "D", "Util"]))).toEqual({ group: "D", positions: "C,D" });
++    expect(positionGroup(row("", ["D", "LW"]))).toEqual({ group: "D", positions: "D,LW" });
++    expect(positionGroup(row("LW,RW", ["LW", "RW"]))).toEqual({ group: "F", positions: "LW,RW" });
++    expect(positionGroup(row("G", ["G"]))).toEqual({ group: "G", positions: "G" });
++    expect(positionGroup(row("Util", ["Util", "BN"]))).toBeNull();
++  });
++
+   it("resolves ownership from the latest valid timeline point, else percent_ownership", () => {
+     const [row] = fictionalPlayerSources(season, "2026-10-26", now).yahoo;
+     expect(resolveOwnership({ ...row, ownership_timeline: [{ date: "2026-10-25", value: 40 }, { date: "2026-10-26", value: 12.5 }, { date: "2026-10-27x", value: 9 }] })).toEqual({ ownership: 12.5, asOf: "2026-10-26" });
+@@ -68,21 +104,23 @@
+       for (const player of list) {
+         expect(player.group).toBe(group);
+         expect(player.ownership).toBeLessThan(tier.max);
++        expect(player.ownership).toBeGreaterThanOrEqual(tier.min);
+         expect(player.weekRank).toBeLessThanOrEqual(PLAYER_TEAM_RANK_MAX);
+         expect(seen.has(player.nhlId)).toBe(false); seen.add(player.nhlId);
+       }
+       for (let i = 1; i < list.length; i++) expect(rate(list[i - 1])).toBeGreaterThanOrEqual(rate(list[i]));
+     }
+-    expect(tiers.every(tier => tier.groups.F.length === 3 && tier.groups.D.length === 3)).toBe(true);
++    expect(tiers.every(tier => tier.groups.F.length === 3)).toBe(true);
+   });
+ 
+-  it("fills the strictest tier first so deep-league lists keep the best low-rostered players", () => {
+-    const tiers = pickupTiers(edition(), true), under20 = tiers.find(tier => tier.max === 20)!;
+-    for (const group of ["F", "D", "G"] as const) for (const looser of tiers.filter(tier => tier.max > 20)) {
+-      for (const player of looser.groups[group].filter(item => item.ownership < 20)) {
+-        expect(under20.groups[group]).toHaveLength(3);
+-        expect(rate(player)).toBeLessThanOrEqual(rate(under20.groups[group][2]));
+-      }
++  it("uses separate 30–49%, 20–29% and under-20% bands, so each label is literally true", () => {
++    expect(PICKUP_BANDS.map(band => [band.label, band.min, band.max])).toEqual([["30–49%", 30, 50], ["20–29%", 20, 30], ["Under 20%", 0, 20]]);
++    const tiers = pickupTiers(edition(), true);
++    // Within a band, the list is the band's top three: nobody better in the same band was skipped.
++    const pool = tiers.flatMap(tier => Object.values(tier.groups).flat());
++    for (const tier of tiers) for (const group of ["F", "D", "G"] as const) {
++      const list = tier.groups[group];
++      if (list.length === 3) for (const other of pool.filter(player => player.group === group && player.ownership >= tier.min && player.ownership < tier.max && !list.includes(player))) expect(rate(other)).toBeLessThanOrEqual(rate(list[2]));
+     }
+   });
+ 

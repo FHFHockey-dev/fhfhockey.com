@@ -1,0 +1,27 @@
+{
+  "changedFileCount": 9,
+  "checks": [
+    {
+      "argv": [
+        "git",
+        "apply",
+        "--check",
+        "--whitespace=error-all",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/fpi-11-4-job79-2026-10-22/candidate.patch"
+      ],
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "argv": [
+        "git",
+        "apply",
+        "/Users/tim/Code/fhfhockey.com/tasks/artifacts/fpi-11-4-job79-2026-10-22/candidate.patch"
+      ],
+      "exitCode": 0,
+      "output": ""
+    }
+  ],
+  "allOutputHashesMatch": true,
+  "temporaryNonGitFixture": "/tmp/fhfh-job79-patch-_xwneko4"
+}

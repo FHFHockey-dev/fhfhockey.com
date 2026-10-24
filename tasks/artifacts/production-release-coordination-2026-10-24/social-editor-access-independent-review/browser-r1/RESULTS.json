@@ -1,0 +1,270 @@
+{
+  "status": "failed",
+  "scope": "Actual pinned AuthProvider, gate, SocialShare and editionFetch; synthetic auth, stubbed ensureUserRecords; fictional route responses. No Next server or live handler/Supabase.",
+  "checks": [
+    {
+      "name": "Signed-out page denies actual workspace and makes no edition request",
+      "passed": true
+    },
+    {
+      "name": "Signed-in non-editor denies actual workspace and makes no edition request",
+      "passed": true
+    },
+    {
+      "name": "Editor mounts actual renderer and starts an allowlisted bearer edition read",
+      "passed": true
+    },
+    {
+      "name": "Concurrent exact-same-URL reads use separate account bearers; old account content never renders",
+      "passed": true
+    },
+    {
+      "name": "Actual pending old-token edition promise rejects after refresh; no stale renderer data",
+      "passed": true
+    },
+    {
+      "name": "Legitimate manual refresh obtains new-token edition and displays it",
+      "passed": true
+    },
+    {
+      "name": "Actual bearer helper rejects unallowlisted URLs before any page/network request",
+      "passed": true
+    },
+    {
+      "name": "Actual renderer handles a mocked edition failure and exposes retry",
+      "passed": true
+    },
+    {
+      "name": "Actual renderer retry recovers with the current bearer",
+      "passed": true
+    },
+    {
+      "name": "Revoked stored role closes actual protected workspace",
+      "passed": true
+    }
+  ],
+  "apiRequests": [
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26",
+      "authorization": "Bearer synthetic-A",
+      "number": 1,
+      "held": true,
+      "failedFixtureResponse": false,
+      "completed": true
+    },
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26",
+      "authorization": "Bearer synthetic-B",
+      "number": 2,
+      "held": false,
+      "failedFixtureResponse": false,
+      "completed": true
+    },
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26&selectedDates=2026-10-26%2C2026-10-27%2C2026-10-28%2C2026-10-29%2C2026-10-30%2C2026-10-31%2C2026-11-01",
+      "authorization": "Bearer synthetic-B",
+      "number": 3,
+      "held": true,
+      "failedFixtureResponse": false,
+      "completed": true
+    },
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26&selectedDates=2026-10-26%2C2026-10-27%2C2026-10-28%2C2026-10-29%2C2026-10-30%2C2026-10-31%2C2026-11-01",
+      "authorization": "Bearer synthetic-B2",
+      "number": 4,
+      "held": false,
+      "failedFixtureResponse": false,
+      "completed": true
+    },
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26&selectedDates=2026-10-26%2C2026-10-27%2C2026-10-28%2C2026-10-29%2C2026-10-30%2C2026-10-31%2C2026-11-01",
+      "authorization": "Bearer synthetic-B2",
+      "number": 5,
+      "held": false,
+      "failedFixtureResponse": true,
+      "completed": true
+    },
+    {
+      "url": "/api/v1/social-share/game-grid?weekStart=2026-10-26&selectedDates=2026-10-26%2C2026-10-27%2C2026-10-28%2C2026-10-29%2C2026-10-30%2C2026-10-31%2C2026-11-01",
+      "authorization": "Bearer synthetic-B2",
+      "number": 6,
+      "held": false,
+      "failedFixtureResponse": false,
+      "completed": true
+    }
+  ],
+  "assetRequests": [
+    {
+      "path": "/teamLogos/NJD.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/NYI.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/NYR.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/PHI.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/PIT.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/BOS.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/BUF.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/MTL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/OTT.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/TOR.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/CAR.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/FLA.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/TBL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/WSH.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/CHI.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/DET.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/NSH.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/STL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/CGY.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/COL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/EDM.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/VAN.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/ANA.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/DAL.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/LAK.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/SJS.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/CBJ.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/MIN.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/WPG.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/VGK.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/SEA.png",
+      "authorization": null
+    },
+    {
+      "path": "/teamLogos/UTA.png",
+      "authorization": null
+    }
+  ],
+  "aborted": [],
+  "pageErrors": [],
+  "launches": 1,
+  "invalidUrlDenials": [
+    {
+      "input": "https://other.invalid/api/v1/social-share/game-grid",
+      "rejected": true,
+      "message": "Invalid share studio request."
+    },
+    {
+      "input": "//other.invalid/api/v1/social-share/game-grid",
+      "rejected": true,
+      "message": "Invalid share studio request."
+    },
+    {
+      "input": "/api/v1/social-share/publish",
+      "rejected": true,
+      "message": "Invalid share studio request."
+    },
+    {
+      "input": "/api/v1/db/update-players",
+      "rejected": true,
+      "message": "Invalid share studio request."
+    },
+    {
+      "input": "/api/v1/social-share/game-grid#x",
+      "rejected": true,
+      "message": "Invalid share studio request."
+    },
+    {
+      "input": "/api/v1/social-share/game-grid?x=\\evil",
+      "rejected": true,
+      "message": "Invalid share studio request."
+    }
+  ],
+  "error": {
+    "name": "Error",
+    "message": "expect(locator).toHaveText(expected) failed\n\nLocator: getByRole('status')\nExpected: \"Checking share studio access…\"\nError: strict mode violation: getByRole('status') resolved to 2 elements:\n    1) <output id=\"fixture-auth\">old:none</output> aka getByText('old:none')\n    2) <p role=\"status\">Checking share studio access…</p> aka getByText('Checking share studio access…')\n\nCall log:\n  - Expect \"to.have.text\" with timeout 5000ms\n  - waiting for getByRole('status')\n",
+    "stack": "Error: expect(locator).toHaveText(expected) failed\n\nLocator: getByRole('status')\nExpected: \"Checking share studio access…\"\nError: strict mode violation: getByRole('status') resolved to 2 elements:\n    1) <output id=\"fixture-auth\">old:none</output> aka getByText('old:none')\n    2) <p role=\"status\">Checking share studio access…</p> aka getByText('Checking share studio access…')\n\nCall log:\n  - Expect \"to.have.text\" with timeout 5000ms\n  - waiting for getByRole('status')\n\n    at captureRawStack (/Users/tim/Code/fhfhockey.com/web/node_modules/playwright-core/lib/coreBundle.js:3130:17)\n    at callMatcherAsStep (/Users/tim/Code/fhfhockey.com/web/node_modules/playwright/lib/matchers/expect.js:12873:57)\n    at Object.toHaveText (/Users/tim/Code/fhfhockey.com/web/node_modules/playwright/lib/matchers/expect.js:12863:23)\n    at /Users/tim/Code/fhfhockey.com/tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser-r1/run.cjs:138:42"
+  },
+  "screenshots": {
+    "01-account-B.png": "bf5ac56310031349f7a1c6bd401eb587ea534c0cbc2497d71026155637044423",
+    "failure.png": "bdbf2c3a48dbe3f322fda76e1bf61186204b06c29a6d7406e9ee756cc3dd4f0c"
+  }
+}

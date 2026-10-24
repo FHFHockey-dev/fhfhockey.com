@@ -1,0 +1,16 @@
+Retained actual tool results, no reruns. Node 22.11.0; owning cwd /Users/tim/Code/fhfhockey.com/web. No GIT_DIR changes, server or heavy check.
+
+$ npm test -- --run lib/forge-testing-grounds/ownerPolicy.test.ts --maxWorkers=1 --no-file-parallelism
+RUN v3.2.7 /Users/tim/Code/fhfhockey.com/web
+ownerPolicy.test.ts: 10 tests passed (4ms)
+Test Files 1 passed (1); Tests 10 passed (10)
+Start at 10:48:29; Duration 157ms
+Exit 0.
+
+$ npx tsc --noEmit --strict --skipLibCheck --target es2015 --module esnext --moduleResolution bundler --esModuleInterop lib/forge-testing-grounds/ownerPolicy.ts lib/forge-testing-grounds/ownerPolicy.test.ts
+Exit 0; no output. Scoped strict compiler check, not full app typecheck.
+
+$ npx eslint --report-unused-disable-directives-severity warn lib/forge-testing-grounds/ownerPolicy.ts lib/forge-testing-grounds/ownerPolicy.test.ts
+Exit 0; no output.
+
+No tests failed, were weakened or were repeated. Shared model tests were inspected as source evidence, not rerun. Coordinator message delivery was not confirmed because its durable host was unavailable; not retried.

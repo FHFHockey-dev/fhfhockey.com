@@ -1,0 +1,546 @@
+<!doctype html><html><head><style>body{background:#16191f;color:#eee;margin:10px;font-family:Arial}/* https://docs.microsoft.com/en-us/windows/apps/design/layout/screen-sizes-and-breakpoints-for-responsive-design */
+/* handset */
+/* tablet */
+/* PC*/
+.scroller {
+  width: 100%;
+}
+
+.grid {
+  --band: 26px;
+  --cell-height: 40px;
+  display: block;
+  width: 100%;
+  border-collapse: separate;
+  font: 12px "Roboto Condensed", sans-serif;
+  color: #cccccc;
+}
+
+.grid [data-position=C] {
+  --position-color: #3b82f6;
+}
+.grid [data-position=LW] {
+  --position-color: #FF9F43;
+}
+.grid [data-position=RW] {
+  --position-color: #A78BFA;
+}
+.grid [data-position=D] {
+  --position-color: #07AAE2;
+}
+.grid [data-position=G] {
+  --position-color: #00C896;
+}
+.grid [data-position=UTIL] {
+  --position-color: #FFC857;
+}
+.grid [data-position=UTILITY] {
+  --position-color: #FFC857;
+}
+.grid [data-position=FWD] {
+  --position-color: #3b82f6;
+}
+.grid [data-position=BENCH] {
+  --position-color: #A7B4C0;
+}
+
+.grid thead, .grid tbody, .grid tfoot {
+  display: block;
+}
+
+.caption {
+  display: block;
+  padding: 4px 0;
+  color: #aaaaaa;
+  font-size: 11px;
+  text-align: left;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(var(--day-count), minmax(0, 1fr));
+  gap: 4px;
+  padding: 3px 4px;
+}
+
+.grid th, .grid td {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  text-align: left;
+  font-weight: 400;
+}
+
+.headRow, .footRow {
+  padding-left: calc(var(--band) + 5px);
+}
+
+.headRow .corner, .footRow .corner {
+  position: absolute;
+  inset-block: 0;
+  left: 0;
+  width: var(--band);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaaaaa;
+  font-size: 9px;
+  text-transform: uppercase;
+}
+
+.headRow th {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 4px;
+  padding: 2px 4px;
+  border-radius: 6px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.headRow th[data-focused] {
+  background: rgba(20, 162, 210, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(20, 162, 210, 0.45);
+}
+
+.weekday {
+  text-transform: uppercase;
+}
+
+.date {
+  color: #aaaaaa;
+  font-weight: 400;
+}
+
+.count {
+  flex-basis: 100%;
+  color: #aaaaaa;
+  font: 400 10px "Martian Mono", monospace;
+}
+
+.group {
+  --position-color: #A7B4C0;
+  position: relative;
+  display: block;
+  margin: 4px 0;
+  border: 1px solid var(--position-color);
+  border-left-width: var(--band);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--position-color) 12%, rgb(21, 23, 26.5));
+}
+
+.group .row + .row {
+  border-top: 1px solid color-mix(in srgb, var(--position-color) 22%, transparent);
+}
+
+.band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(-1 * var(--band));
+  width: var(--band);
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  color: rgb(21, 23, 26.5);
+  font: 700 12px "Roboto Condensed", sans-serif !important;
+  letter-spacing: 0.02em;
+}
+
+.group[data-position=UTIL] .band span, .bench .band span {
+  transform: rotate(-90deg);
+}
+
+.cellButton, .cellBody, .empty, .noGames {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--cell-height);
+  border-radius: 5px;
+}
+
+.cellButton, .cellBody {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 5px;
+  border: 1px solid color-mix(in srgb, var(--position-color) 30%, rgba(167, 180, 192, 0.25));
+  background: rgb(21, 23, 26.5);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+.cellButton {
+  cursor: pointer;
+}
+
+.cellButton:hover, .cellButton:focus-visible {
+  border-color: var(--position-color);
+  background: rgb(31.5, 35.5, 40.5);
+}
+
+td[data-focused] .cellButton, td[data-focused] .cellBody, td[data-focused] .empty {
+  box-shadow: inset 0 0 0 1px rgba(20, 162, 210, 0.55);
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed color-mix(in srgb, var(--position-color) 55%, transparent);
+  color: #aaaaaa;
+}
+
+.noGames {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #aaaaaa;
+}
+
+.nameLine {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.logo {
+  flex: none;
+}
+
+.name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.lock, .start {
+  flex: none;
+  font-size: 10px;
+}
+
+.start {
+  color: #00ff99;
+  font-weight: 700;
+}
+
+.points {
+  margin-left: auto;
+  padding: 0 4px;
+  border-radius: 3px;
+  color: #aaaaaa;
+  font: 600 10px "Martian Mono", monospace;
+}
+
+.points[data-tier=high] {
+  background: color-mix(in srgb, #00ff99 18%, transparent);
+  color: #00ff99;
+}
+
+.points[data-tier=mid] {
+  background: color-mix(in srgb, #ffcc33 14%, transparent);
+  color: #ffcc33;
+}
+
+.points[data-tier=low] {
+  background: color-mix(in srgb, #FF6B6B 18%, transparent);
+  color: #FF6B6B;
+}
+
+.points[data-actual] {
+  background: color-mix(in srgb, #ffffff 12%, transparent);
+  color: #ffffff;
+}
+
+.legend .points {
+  margin-left: 0;
+}
+
+.opp {
+  align-self: flex-start;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgb(17.6288135593, 19.7398305085, 22.2211864407);
+  color: #aaaaaa;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+.dust {
+  display: inline-block;
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #FF6B6B;
+}
+
+.reserve .row {
+  grid-template-columns: 1fr;
+}
+
+.reserveList {
+  padding: 6px 4px !important;
+  color: #aaaaaa;
+}
+
+.footer {
+  color: #aaaaaa;
+  font: 11px "Martian Mono", monospace;
+  text-align: center !important;
+}
+
+.legend {
+  margin: 4px 0 0;
+  color: #aaaaaa;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.legend b {
+  color: #00ff99;
+}
+
+@media (max-width: 760px) {
+  .scroller {
+    overflow-x: auto;
+  }
+  .grid {
+    min-width: 680px;
+  }
+}
+.status {
+  color: #14a2d2;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.grid td[data-pending] > *, .grid th[data-pending] {
+  opacity: 0.45;
+  filter: saturate(0.55);
+  transition: opacity 200ms ease, filter 200ms ease;
+}
+
+td[data-pulse] .cellButton, td[data-pulse] .cellBody, td[data-pulse] .empty {
+  animation: columnPulse 620ms ease-out;
+}
+
+.headRow th[data-pulse] {
+  animation: headPulse 620ms ease-out;
+}
+
+.grid [data-idle] {
+  border-style: dashed !important;
+  opacity: 0.75;
+}
+
+.noGameTag {
+  align-self: flex-start;
+  color: #FF6B6B;
+  font-size: 10px;
+  line-height: 14px;
+}
+
+@keyframes columnPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(20, 162, 210, 0);
+  }
+  35% {
+    box-shadow: 0 0 0 2px rgba(20, 162, 210, 0.7), 0 0 14px rgba(20, 162, 210, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(20, 162, 210, 0);
+  }
+}
+@keyframes headPulse {
+  0% {
+    background: transparent;
+  }
+  35% {
+    background: rgba(20, 162, 210, 0.28);
+  }
+  100% {
+    background: transparent;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  td[data-pulse] .cellButton, td[data-pulse] .cellBody, td[data-pulse] .empty, .headRow th[data-pulse] {
+    animation: none;
+  }
+}
+.frame {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.scroller {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.grid thead {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background: rgb(21, 23, 26.5);
+}
+
+.grid [data-bench=playing] {
+  border-color: #ffcc33;
+  background: color-mix(in srgb, #ffcc33 12%, rgb(21, 23, 26.5));
+}
+
+.grid [data-bench=idle] {
+  opacity: 0.5;
+  filter: grayscale(0.85);
+}
+
+.offChip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: var(--cell-height);
+  border: 1px dashed rgba(167, 180, 192, 0.25);
+  border-radius: 5px;
+  color: #aaaaaa;
+  font-size: 11px;
+}
+
+.noGameTag[data-quiet] {
+  color: #aaaaaa;
+}
+
+.cellButton, .cellBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  align-content: center;
+  column-gap: 5px;
+  row-gap: 2px;
+}
+
+.cellButton > .nameLine, .cellBody > .nameLine {
+  grid-column: 1;
+}
+
+.cellButton > .opp, .cellBody > .opp, .cellButton > .noGameTag, .cellBody > .noGameTag {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.cellButton > .points, .cellBody > .points {
+  grid-column: 2;
+  grid-row: 1/span 2;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  margin: 6px 0;
+  padding: 5px;
+  border-radius: 4px;
+  font-size: 15px;
+}
+
+.legend .points {
+  display: inline;
+  padding: 0 4px;
+  font-size: 10px;
+}
+
+.forecastPoints {
+  grid-column: 2;
+  grid-row: 1/span 2;
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.forecastPoints .points {
+  margin: 0;
+  padding: 3px 4px;
+  font-size: 15px;
+  white-space: nowrap;
+}
+
+.forecastPoints small {
+  font: 400 9px "Roboto Condensed", sans-serif;
+}
+
+.conditionalPoints {
+  color: #aaaaaa;
+  font: 600 11px "Martian Mono", monospace;
+  white-space: nowrap;
+}
+
+.group[data-position=G] {
+  --cell-height: 64px;
+}
+
+.forecastPoints[data-goalie] {
+  grid-column: 1/-1;
+  grid-row: 3;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.forecastPoints[data-goalie] .points {
+  padding: 2px 3px;
+  font-size: 13px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.forecastPoints[data-goalie] small {
+  display: block;
+  line-height: 10px;
+}
+
+.conditionalPoints {
+  text-align: center;
+}
+
+.injuryIcon {
+  flex: none;
+}
+
+.grid [data-injured] {
+  border-color: #FF6B6B;
+  background: color-mix(in srgb, #FF6B6B 16%, rgb(21, 23, 26.5));
+}
+
+.grid [data-injured][data-bench=idle] {
+  filter: none;
+  opacity: 0.8;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.headRow .corner {
+  overflow: visible;
+}</style></head><body><div class="frame"><div class="scroller"><table class="grid" aria-label="Lineup by position" style="--day-count:7"><thead role="rowgroup"><tr role="row" class="row headRow"><th scope="col" role="columnheader" class="corner"><button type="button" class="trigger" aria-label="About the lineup grid" aria-expanded="false"><span aria-hidden="true">ⓘ</span></button></th><th scope="col" role="columnheader" data-date="2026-10-19"><span class="weekday">Mon</span> <span class="date">Oct 19</span><span class="count">1 NHL</span></th><th scope="col" role="columnheader" data-date="2026-10-20"><span class="weekday">Tue</span> <span class="date">Oct 20</span><span class="count">1 NHL</span></th><th scope="col" role="columnheader" data-date="2026-10-21"><span class="weekday">Wed</span> <span class="date">Oct 21</span><span class="count">1 NHL</span></th><th scope="col" role="columnheader" data-date="2026-10-22"><span class="weekday">Thu</span> <span class="date">Oct 22</span><span class="count">1 NHL</span></th><th scope="col" role="columnheader" data-date="2026-10-23"><span class="weekday">Fri</span> <span class="date">Oct 23</span><span class="count">1 NHL</span></th><th scope="col" role="columnheader" data-date="2026-10-24"><span class="weekday">Sat</span> <span class="date">Oct 24</span><span class="count">1 NHL</span></th><th scope="col" role="columnheader" data-date="2026-10-25"><span class="weekday">Sun</span> <span class="date">Oct 25</span><span class="count">1 NHL</span></th></tr></thead><tbody role="rowgroup" class="group" data-position="G"><tr role="row" class="row"><th scope="rowgroup" role="rowheader" rowspan="1" class="band"><span>G</span></th><td role="cell" data-date="2026-10-19"><div class="cellBody" data-chip="g"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Goalie</span></span><span class="opp">vsTOR</span><span class="forecastPoints" data-goalie=""><span class="points" data-tier="mid" title="Expected fantasy points for this game, including participation probability." aria-label="Expected fantasy points: 2.3">2.3<small> expected</small></span><span class="conditionalPoints" title="Fantasy points conditional on starting. Assumes a start; not a second expected contribution to add." aria-label="Fantasy points if starts: 4.2">4.2<small> if starts</small></span></span></div></td><td role="cell" data-date="2026-10-20"><div class="cellBody" data-chip="g"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Goalie</span></span><span class="opp">vsTOR</span><span class="forecastPoints" data-goalie=""><span class="points" data-tier="mid" title="Expected fantasy points for this game, including participation probability." aria-label="Expected fantasy points: 2.3">2.3<small> expected</small></span><span class="conditionalPoints" title="Fantasy points conditional on starting. Assumes a start; not a second expected contribution to add." aria-label="Fantasy points if starts: 4.2">4.2<small> if starts</small></span></span></div></td><td role="cell" data-date="2026-10-21"><div class="cellBody" data-chip="g"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Goalie</span></span><span class="opp">vsTOR</span><span class="forecastPoints" data-goalie=""><span class="points" data-tier="mid" title="Expected fantasy points for this game, including participation probability." aria-label="Expected fantasy points: 2.3">2.3<small> expected</small></span><span class="conditionalPoints" title="Fantasy points conditional on starting. Assumes a start; not a second expected contribution to add." aria-label="Fantasy points if starts: 4.2">4.2<small> if starts</small></span></span></div></td><td role="cell" data-date="2026-10-22"><div class="cellBody" data-chip="g"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Goalie</span></span><span class="opp">vsTOR</span><span class="forecastPoints" data-goalie=""><span class="points" data-tier="mid" title="Expected fantasy points for this game, including participation probability." aria-label="Expected fantasy points: 2.3">2.3<small> expected</small></span><span class="conditionalPoints" title="Fantasy points conditional on starting. Assumes a start; not a second expected contribution to add." aria-label="Fantasy points if starts: 4.2">4.2<small> if starts</small></span></span></div></td><td role="cell" data-date="2026-10-23"><div class="cellBody" data-chip="g"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Goalie</span></span><span class="opp">vsTOR</span><span class="forecastPoints" data-goalie=""><span class="points" data-tier="mid" title="Expected fantasy points for this game, including participation probability." aria-label="Expected fantasy points: 2.3">2.3<small> expected</small></span><span class="conditionalPoints" title="Fantasy points conditional on starting. Assumes a start; not a second expected contribution to add." aria-label="Fantasy points if starts: 4.2">4.2<small> if starts</small></span></span></div></td><td role="cell" data-date="2026-10-24"><div class="cellBody" data-chip="g"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Goalie</span></span><span class="opp">vsTOR</span><span class="forecastPoints" data-goalie=""><span class="points" data-tier="mid" title="Expected fantasy points for this game, including participation probability." aria-label="Expected fantasy points: 2.3">2.3<small> expected</small></span><span class="conditionalPoints" title="Fantasy points conditional on starting. Assumes a start; not a second expected contribution to add." aria-label="Fantasy points if starts: 4.2">4.2<small> if starts</small></span></span></div></td><td role="cell" data-date="2026-10-25"><div class="cellBody" data-chip="g"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Goalie</span></span><span class="opp">vsTOR</span><span class="forecastPoints" data-goalie=""><span class="points" data-tier="mid" title="Expected fantasy points for this game, including participation probability." aria-label="Expected fantasy points: 2.3">2.3<small> expected</small></span><span class="conditionalPoints" title="Fantasy points conditional on starting. Assumes a start; not a second expected contribution to add." aria-label="Fantasy points if starts: 4.2">4.2<small> if starts</small></span></span></div></td></tr></tbody><tbody role="rowgroup" class="group" data-position="C"><tr role="row" class="row"><th scope="rowgroup" role="rowheader" rowspan="1" class="band"><span>C</span></th><td role="cell" data-date="2026-10-19"><div class="cellBody" data-chip="s"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Skater</span></span><span class="opp">vsTOR</span><span class="forecastPoints"><span class="points" data-tier="mid" title="Projected fantasy points for this game, using your league&#x27;s scoring." aria-label="Expected fantasy points: 2.3">2.3</span></span></div></td><td role="cell" data-date="2026-10-20"><div class="cellBody" data-chip="s"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Skater</span></span><span class="opp">vsTOR</span><span class="forecastPoints"><span class="points" data-tier="mid" title="Projected fantasy points for this game, using your league&#x27;s scoring." aria-label="Expected fantasy points: 2.3">2.3</span></span></div></td><td role="cell" data-date="2026-10-21"><div class="cellBody" data-chip="s"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Skater</span></span><span class="opp">vsTOR</span><span class="forecastPoints"><span class="points" data-tier="mid" title="Projected fantasy points for this game, using your league&#x27;s scoring." aria-label="Expected fantasy points: 2.3">2.3</span></span></div></td><td role="cell" data-date="2026-10-22"><div class="cellBody" data-chip="s"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Skater</span></span><span class="opp">vsTOR</span><span class="forecastPoints"><span class="points" data-tier="mid" title="Projected fantasy points for this game, using your league&#x27;s scoring." aria-label="Expected fantasy points: 2.3">2.3</span></span></div></td><td role="cell" data-date="2026-10-23"><div class="cellBody" data-chip="s"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Skater</span></span><span class="opp">vsTOR</span><span class="forecastPoints"><span class="points" data-tier="mid" title="Projected fantasy points for this game, using your league&#x27;s scoring." aria-label="Expected fantasy points: 2.3">2.3</span></span></div></td><td role="cell" data-date="2026-10-24"><div class="cellBody" data-chip="s"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Skater</span></span><span class="opp">vsTOR</span><span class="forecastPoints"><span class="points" data-tier="mid" title="Projected fantasy points for this game, using your league&#x27;s scoring." aria-label="Expected fantasy points: 2.3">2.3</span></span></div></td><td role="cell" data-date="2026-10-25"><div class="cellBody" data-chip="s"><span class="nameLine"><img alt="" loading="lazy" width="18" height="18" decoding="async" data-nimg="1" class="logo" style="color:transparent" srcSet="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=32&amp;q=75 1x, /_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75 2x" src="/_next/image?url=%2FteamLogos%2FMIN.png&amp;w=48&amp;q=75"/><span class="name">Skater</span></span><span class="opp">vsTOR</span><span class="forecastPoints"><span class="points" data-tier="mid" title="Projected fantasy points for this game, using your league&#x27;s scoring." aria-label="Expected fantasy points: 2.3">2.3</span></span></div></td></tr></tbody><tfoot role="rowgroup"><tr role="row" class="row footRow"><th scope="row" role="rowheader" class="corner">Filled</th><td role="cell" class="footer" data-date="2026-10-19">2/2</td><td role="cell" class="footer" data-date="2026-10-20">2/2</td><td role="cell" class="footer" data-date="2026-10-21">2/2</td><td role="cell" class="footer" data-date="2026-10-22">2/2</td><td role="cell" class="footer" data-date="2026-10-23">2/2</td><td role="cell" class="footer" data-date="2026-10-24">2/2</td><td role="cell" class="footer" data-date="2026-10-25">2/2</td></tr></tfoot></table></div><span class="srOnly" aria-live="polite"></span></div></body></html>

@@ -1,0 +1,22 @@
+Frozen offline execution: /tmp/fhfh-task1-review.18Gccp
+
+ RUN  v3.2.7 /private/tmp/fhfh-task1-review.18Gccp/web
+
+(node:56954) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/servedForecastLedger.test.ts (21 tests) 8ms
+(node:56954) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ review/independent-ledger.test.ts (7 tests) 8ms
+(node:56954) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tests/api/forge-scoreboard.test.ts (4 tests) 10ms
+(node:56954) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ review/independent-api.test.ts (3 tests) 7ms
+
+ Test Files  4 passed (4)
+      Tests  35 passed (35)
+   Start at  12:25:51
+   Duration  1.14s (transform 85ms, setup 7ms, collect 121ms, tests 32ms, environment 689ms, prepare 116ms)
+

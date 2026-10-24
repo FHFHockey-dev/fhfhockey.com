@@ -1,0 +1,52 @@
+--- a/web/lib/supabase/browser-auth.ts
++++ b/web/lib/supabase/browser-auth.ts
+@@ -5,6 +5,7 @@
+   /^sb-.*code-verifier/i,
+   /^fhfh-public-readonly-supabase$/i,
+   /^fhfh:post-password-reset-next$/i,
++  /^fhfh:in-season-cancellation:v1$/i,
+ ];
+ 
+ function clearMatchingStorage(storage: Storage | undefined) {
+--- a/web/__tests__/contexts/AuthProviderContext.test.tsx
++++ b/web/__tests__/contexts/AuthProviderContext.test.tsx
+@@ -231,7 +231,39 @@
+     expect(window.localStorage.getItem("unrelated-app-session")).toBe(
+       "preserve-me",
+     );
++  });
++  it.each(["resolves", "rejects", "times out"])("clears only the exact in-season cancellation key when sign-out %s with no billing panel mounted", async (outcome) => {
++    if (outcome === "resolves") authState.signOut.mockResolvedValue({ error: null });
++    if (outcome === "rejects") authState.signOut.mockRejectedValue(new Error("Invalid or expired session"));
++    if (outcome === "times out") authState.signOut.mockReturnValue(new Promise(() => undefined));
++    const pending = JSON.stringify({ ownerId: "user-1", requests: { sub_fixture: { requestId: "11111111-2222-4333-8444-555555555555", savedAt: Date.now() } } });
++    window.sessionStorage.setItem("fhfh:in-season-cancellation:v1", pending);
++    window.sessionStorage.setItem("FHFH:In-Season-Cancellation:V1", pending);
++    window.sessionStorage.setItem("fhfh:in-season-cancellation:v2", "preserve-me");
++    window.sessionStorage.setItem("fhfh:in-season-cancellation:v1:draft", "preserve-me");
++    window.sessionStorage.setItem("x-fhfh:in-season-cancellation:v1", "preserve-me");
++    window.localStorage.setItem("manual-plan-fixture", "preserve-me");
++    renderProvider();
++    await screen.findByText("tim@example.com");
++    if (outcome === "times out") vi.useFakeTimers();
++    try {
++      fireEvent.click(screen.getByRole("button", { name: "Sign Out" }));
++      if (outcome === "times out") {
++        await act(async () => { await vi.advanceTimersByTimeAsync(4999); });
++        expect(window.sessionStorage.getItem("fhfh:in-season-cancellation:v1")).toBe(pending);
++        await act(async () => { await vi.advanceTimersByTimeAsync(1); });
++      }
++    } finally { vi.useRealTimers(); }
++    await waitFor(() => expect(window.sessionStorage.getItem("fhfh:in-season-cancellation:v1")).toBeNull());
++    expect(window.sessionStorage.getItem("FHFH:In-Season-Cancellation:V1")).toBeNull();
++    expect(screen.getByText("signed-out")).toBeTruthy();
++    expect(authState.signOut).toHaveBeenCalledWith({ scope: "local" });
++    expect(window.sessionStorage.getItem("fhfh:in-season-cancellation:v2")).toBe("preserve-me");
++    expect(window.sessionStorage.getItem("fhfh:in-season-cancellation:v1:draft")).toBe("preserve-me");
++    expect(window.sessionStorage.getItem("x-fhfh:in-season-cancellation:v1")).toBe("preserve-me");
++    expect(window.localStorage.getItem("manual-plan-fixture")).toBe("preserve-me");
+   });
++
+   it("reviewer: ignores initial session resolving after account switch", async () => {
+     const oldSession = (await authState.getSession()).data.session;
+     let resolve!: (value: any) => void;

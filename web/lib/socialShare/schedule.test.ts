@@ -1,9 +1,30 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "./schedule";
 import { assertExportable } from "./export";
 import type { SocialScheduleGame as GameData, SocialScheduleData as ScheduleData } from "./types";
 const upstream = vi.hoisted(() => ({ getSchedule: vi.fn() }));
 vi.mock("lib/NHL/server", () => upstream);
+// The edition boundary is exercised with an authenticated editor; no Auth or DB calls leave this test.
+vi.mock("lib/supabase", () => ({ createClientWithToken: () => ({
+  auth: { getUser: async () => ({ data: { user: { id: "social-editor" } }, error: null }) },
+  from: () => ({ select: () => ({ eq: () => ({ maybeSingle: async () => ({ data: { role: "social_editor" }, error: null }) }) }) }),
+}) }));
+import { SOCIAL_SHARE_CACHE_CONTROL } from "./access";
+// Never a Supabase read in unit tests: opponent rates come only from this mock.
+const opponentSource = vi.hoisted(() => ({ loadShareTeamRates: vi.fn(() => Promise.reject(new Error("offline"))) }));
+vi.mock("lib/socialShare/teamRates", () => opponentSource);
+// Player sources come only from this mock (no Supabase read in unit tests).
+const playerSource = vi.hoisted(() => ({
+  loadSharePlayerSources: vi.fn((..._args: unknown[]) => Promise.reject(new Error("offline")) as Promise<unknown>),
+  loadSharePlayerRecent: vi.fn((..._args: unknown[]) => Promise.reject(new Error("offline")) as Promise<unknown>),
+  RECENT_LIMITS: { lookbackDays: 21, skaterRowsPerPlayer: 14, goalieRowsPerPlayer: 14 },
+}));
+vi.mock("lib/socialShare/playerSources", () => playerSource);
+import { fictionalLeagueWeek, fictionalTeamStats } from "./fixtures";
+import { fictionalPlayerSources } from "./pickupsFixture";
+import { buildPlayerLayer, pickupTiers, specialists } from "./players";
+import { RANK_POOL_MAX, streamingTiers, TRIMMED_PLAYERS_MAX } from "./tiers";
+import { shareCacheControl, SHARE_CACHE_EXPIRY_MARGIN_SECONDS } from "./server";
 import handler from "pages/api/v1/social-share/[format]";
 import type { NextApiRequest, NextApiResponse } from "next";
 const weekStart = "2026-01-05", now = "2026-01-05T12:00:00Z", dates = weekDates(weekStart);
@@ -185,10 +206,13 @@ describe("schedule-only edition", () => {
 });
 
 
-describe("public schedule API", () => {
+describe("social editor schedule API", () => {
+  // The supported-season window is relative to the request date, so pin it.
+  beforeEach(() => { vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date(now)); });
+  afterEach(() => { vi.useRealTimers(); });
   async function request(query: NextApiRequest["query"], method = "GET") {
     const response = { code: 0, body: null as any, headers: {} as Record<string, string>, setHeader(key: string, value: string) { this.headers[key] = value; }, status(code: number) { this.code = code; return this; }, json(body: any) { this.body = body; return this; } };
-    await handler({ method, query } as NextApiRequest, response as unknown as NextApiResponse);
+    await handler({ method, query, headers: { authorization: "Bearer synthetic-token" } } as NextApiRequest, response as unknown as NextApiResponse);
     return response;
   }
   it("allowlists formats, methods and exact query dates without upstream reads", async () => {
@@ -197,20 +221,21 @@ describe("public schedule API", () => {
     expect((await request({ format: "game-grid" }, "POST")).code).toBe(405);
     expect((await request({ format: "game-grid", weekStart: "2026-02-30" })).code).toBe(400);
     expect((await request({ format: "game-grid", weekStart, selectedDates: `${dates[0]},${dates[0]}` })).code).toBe(400);
-    const blocked = await request({ format: "tuesday-trends", weekStart });
+    const blocked = await request({ format: "player-spotlight", weekStart });
     expect(blocked.code).toBe(200); expect(blocked.body.state).toBe("blocked");
     expect(blocked.body.source).toMatchObject({ state: "blocked", fetchedAt: null, updatedAt: null, coveredDates: [] });
     expect(upstream.getSchedule).not.toHaveBeenCalled();
   });
-  it("returns public no-store snapshots including an explicit empty selection and honest source errors", async () => {
+  it("returns private snapshots including an explicit empty selection and honest source errors", async () => {
     upstream.getSchedule.mockResolvedValue({ data: {}, numGamesPerDay: [0, 0, 0, 0, 0, 0, 0], coveredDates: dates, fetchedAt: new Date().toISOString(), games: [] });
     const result = await request({ format: "game-grid", weekStart, selectedDates: "" });
     expect(result.code).toBe(200); expect(result.body.selectedDates).toEqual([]);
-    expect(result.headers["Cache-Control"]).toBe("no-store"); expect(result.headers["X-Robots-Tag"]).toContain("noindex");
+    expect(result.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL); expect(result.headers["X-Robots-Tag"]).toContain("noindex");
     expect(upstream.getSchedule).toHaveBeenLastCalledWith(weekStart, { includeOdds: false });
     upstream.getSchedule.mockRejectedValue(new Error("private dependency detail"));
     const failure = await request({ format: "game-grid", weekStart });
     expect(failure.code).toBe(503); expect(JSON.stringify(failure.body)).not.toContain("private dependency");
+    expect(failure.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
   });
   it("serves the October indexed contract without disclosing private fields or projecting players", async () => {
     vi.useFakeTimers();
@@ -227,11 +252,215 @@ describe("public schedule API", () => {
       expect(JSON.stringify(result.body)).not.toMatch(/private-account|private-capture|winOdds|apiWinOdds/);
     } finally { vi.useRealTimers(); }
   });
+  it("attaches a public opponent-rate layer without blocking the schedule when rates fail", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(now));
+    try {
+      upstream.getSchedule.mockResolvedValue({ data: {}, numGamesPerDay: [1, 0, 0, 0, 0, 0, 0], coveredDates: dates, fetchedAt: now, games: [game()] });
+      const offline = await request({ format: "game-grid", weekStart });
+      expect(offline.code).toBe(200); expect(offline.body.state).toBe("ready");
+      expect(offline.body.opponents).toMatchObject({ state: "missing", teams: {} });
+      expect(opponentSource.loadShareTeamRates).toHaveBeenLastCalledWith(20252026);
+      const rows = Object.fromEntries(["NJD", "NYI"].map(abbreviation => [abbreviation, { team_abbreviation: abbreviation, team_name: "private-name", gp: 40, sf: 1, sa: 1, gf: 1, ga: 1, xgf: 100, xga: 120, points: 50, season: 20252026, situation: "all", updated_at: "2026-01-05T08:00:00Z" }]));
+      opponentSource.loadShareTeamRates.mockResolvedValueOnce(rows as never);
+      const partial = await request({ format: "game-grid", weekStart });
+      expect(partial.body.opponents.state).toBe("partial");
+      expect(partial.body.opponents.teams.NJD).toEqual({ gp: 40, xgf: 100, xga: 120, gf: 1, ga: 1, sf: 1, sa: 1 });
+      expect(JSON.stringify(partial.body.opponents)).not.toContain("private-name");
+    } finally { vi.useRealTimers(); }
+  });
+  it("keeps Tuesday trends blocked with zero upstream reads until a live trend source is approved", async () => {
+    upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockClear(); playerSource.loadSharePlayerSources.mockClear();
+    for (const query of [{ format: "tuesday-trends", weekStart }, { format: "tuesday-trends" }, { format: "tuesday-trends", weekStart, selectedDates: dates.slice(1).join(",") }]) {
+      const result = await request(query);
+      expect(result.code).toBe(200);
+      expect(result.body).toMatchObject({ format: "tuesday-trends", state: "blocked", expiresAt: null, reasons: ["Rolling game metrics and ownership are not connected."] });
+      expect(result.body.source).toMatchObject({ state: "blocked", fetchedAt: null, coveredDates: [], reasons: ["No upstream read is made until a live trend source is approved."] });
+      expect(result.body.trends ?? null).toBeNull(); expect(result.body.opponents ?? null).toBeNull();
+      expect(result.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+    }
+    expect(upstream.getSchedule).not.toHaveBeenCalled();
+    expect(opponentSource.loadShareTeamRates).not.toHaveBeenCalled();
+    expect(playerSource.loadSharePlayerSources).not.toHaveBeenCalled();
+    expect((await request({ format: "tuesday-trends", weekStart: "2099-01-05" })).code).toBe(400);
+    expect(upstream.getSchedule).not.toHaveBeenCalled();
+  });
+  it("reads opponent rates only after the schedule read succeeds", async () => {
+    upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockClear();
+    upstream.getSchedule.mockRejectedValue(new Error("down"));
+    expect((await request({ format: "game-grid", weekStart })).code).toBe(503);
+    expect(opponentSource.loadShareTeamRates).not.toHaveBeenCalled();
+    upstream.getSchedule.mockResolvedValue({ data: {}, numGamesPerDay: [1, 0, 0, 0, 0, 0, 0], coveredDates: dates, fetchedAt: now, games: [game()] });
+    expect((await request({ format: "remaining-week", weekStart })).code).toBe(200);
+    expect(opponentSource.loadShareTeamRates).toHaveBeenCalledTimes(1);
+    expect(upstream.getSchedule.mock.invocationCallOrder[1]).toBeLessThan(opponentSource.loadShareTeamRates.mock.invocationCallOrder[0]);
+  });
+  it("accepts only the previous, current and next season and rejects other weeks with a clear 400 and no reads", async () => {
+    upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockClear();
+    upstream.getSchedule.mockResolvedValue({ data: {}, numGamesPerDay: [0, 0, 0, 0, 0, 0, 0], coveredDates: [], fetchedAt: now, games: [] });
+    for (const accepted of ["2024-08-05", weekStart, "2027-07-26"]) expect((await request({ format: "game-grid", weekStart: accepted })).code).toBe(200);
+    upstream.getSchedule.mockClear(); opponentSource.loadShareTeamRates.mockClear();
+    for (const [format, rejected] of [["game-grid", "2024-07-29"], ["game-grid", "2027-08-02"], ["remaining-week", "2099-01-05"], ["tuesday-trends", "2099-01-05"]]) {
+      const result = await request({ format, weekStart: rejected });
+      expect(result.code).toBe(400);
+      expect(result.body.error).toBe("weekStart must fall in the 2024–25, 2025–26 or 2026–27 NHL season.");
+      expect(result.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+    }
+    expect(upstream.getSchedule).not.toHaveBeenCalled();
+    expect(opponentSource.loadShareTeamRates).not.toHaveBeenCalled();
+  });
+  it("attaches a trimmed, read-only player layer after a ready schedule and handles stale, missing and unmapped sources", async () => {
+    upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockReset(); playerSource.loadSharePlayerSources.mockReset(); playerSource.loadSharePlayerRecent.mockReset();
+    playerSource.loadSharePlayerRecent.mockResolvedValue({ rolling: [], goalieGames: [] });
+    upstream.getSchedule.mockResolvedValue(fictionalLeagueWeek(weekStart, now));
+    opponentSource.loadShareTeamRates.mockResolvedValue(fictionalTeamStats(20252026, "2026-01-05T08:00:00Z") as never);
+    const sources = () => fictionalPlayerSources(20252026, "2026-01-05", "2026-01-05T08:00:00Z");
+    playerSource.loadSharePlayerSources.mockResolvedValue(sources());
+    const ok = await request({ format: "game-grid", weekStart });
+    expect(ok.body.state).toBe("ready");
+    // Every team with games is read (wider-pool fill); the recent-form read covers only the bounded ranking pool (ticket 15).
+    const teamsWithGames = ok.body.rows.filter((row: { remainingGames: number }) => row.remainingGames > 0).map((row: { team: { abbreviation: string } }) => row.team.abbreviation);
+    expect(playerSource.loadSharePlayerSources).toHaveBeenCalledWith(20252026, teamsWithGames);
+    const [, skaterIds, goalieIds, since] = playerSource.loadSharePlayerRecent.mock.calls[0] as [number, number[], number[], string];
+    const poolIds = new Set([...skaterIds, ...goalieIds]);
+    expect(poolIds.size).toBeLessThanOrEqual(RANK_POOL_MAX);
+    for (const player of ok.body.players.players as { nhlId: number }[]) expect(poolIds.has(player.nhlId)).toBe(true);
+    expect(since).toBe("2025-12-15");
+    expect(ok.body.players.players.every((player: { recent: unknown }) => player.recent === null)).toBe(true);
+    expect(upstream.getSchedule.mock.invocationCallOrder[0]).toBeLessThan(playerSource.loadSharePlayerSources.mock.invocationCallOrder[0]);
+    expect(ok.body.players).toMatchObject({ state: "ready", selectedDates: dates });
+    // Only the players the cards show leave the server: pickups, specialists and both tier-list modes (SS1-14).
+    const tierShown = (["strict", "widened"] as const).flatMap(mode => streamingTiers(ok.body, true, mode).flatMap(tier => tier.shown));
+    const shown = new Set([...pickupTiers(ok.body, true).flatMap(tier => Object.values(tier.groups).flat()), ...Object.values(specialists(ok.body, true)).flat(), ...tierShown].map(player => player.nhlId));
+    expect(new Set(ok.body.players.players.map((player: { nhlId: number }) => player.nhlId))).toEqual(shown);
+    expect(ok.body.players.players.length).toBeLessThanOrEqual(TRIMMED_PLAYERS_MAX);
+    // The live tier list matches the one built from the untrimmed layer, including "+N more".
+    const untrimmed = { ...ok.body, players: { ...buildPlayerLayer(sources(), { season: 20252026, teams: ok.body.teams.map((team: { abbreviation: string }) => team.abbreviation), fetchedAt: now, generatedAt: ok.body.generatedAt }), selectedDates: null } };
+    for (const mode of ["strict", "widened"] as const) {
+      const live = streamingTiers(ok.body, true, mode), reference = streamingTiers(untrimmed, true, mode);
+      expect(live.map(tier => [tier.shown.map(player => player.nhlId), tier.more])).toEqual(reference.map(tier => [tier.shown.map(player => player.nhlId), tier.more]));
+      expect(ok.body.players.tierCounts[mode]).toEqual(reference.map(tier => tier.players.length));
+      expect(live.some(tier => tier.shown.length > 0)).toBe(true);
+    }
+    const hidden = sources().skaters.find(row => !shown.has(row.player_id))!.player_name!;
+    expect(JSON.stringify(ok.body)).not.toContain(`"${hidden}"`);
+    expect(JSON.stringify(ok.body.players)).not.toMatch(/465\.p\.|player_key|editorial|last_updated/);
+    expect(ok.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+
+    // Id-mapping miss: the first shown skater loses its map row and simply drops out.
+    const missingId = ok.body.players.players.find((player: { group: string }) => player.group !== "G").nhlId;
+    const unmapped = sources(); unmapped.map = unmapped.map.filter(row => Number(row.nhl_player_id) !== missingId);
+    playerSource.loadSharePlayerSources.mockResolvedValueOnce(unmapped);
+    const miss = await request({ format: "game-grid", weekStart });
+    expect(miss.body.players.state).toBe("ready");
+    expect(miss.body.players.players.map((player: { nhlId: number }) => player.nhlId)).not.toContain(missingId);
+
+    // Stale ownership (two weeks old): no names leave the server and the response remains private.
+    playerSource.loadSharePlayerSources.mockResolvedValueOnce(fictionalPlayerSources(20252026, "2025-12-20", "2026-01-05T08:00:00Z"));
+    const stale = await request({ format: "remaining-week", weekStart });
+    expect(stale.body.players).toMatchObject({ state: "stale", players: [], selectedDates: dates.slice(3) });
+    expect(stale.body.players.tierCounts).toBeUndefined();
+    expect(streamingTiers(stale.body, true, "strict").every(tier => tier.shown.length === 0)).toBe(true);
+    expect(playerSource.loadSharePlayerRecent).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(stale.body)).not.toContain("Fixture ");
+    expect(stale.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+
+    // Missing: the loader fails (e.g. over a limit); the schedule edition still serves.
+    playerSource.loadSharePlayerSources.mockRejectedValueOnce(new Error("Yahoo ownership response was incomplete or over its 1000-row limit."));
+    const missing = await request({ format: "game-grid", weekStart });
+    expect(missing.body.state).toBe("ready");
+    expect(missing.body.players).toMatchObject({ state: "missing", players: [] });
+    expect(JSON.stringify(missing.body)).not.toContain("1000-row");
+  });
+  it("ranks the pool by L5 fantasy score × opportunity: a deeper pool player with the best L5 leads its list (ticket 15)", async () => {
+    upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockReset(); playerSource.loadSharePlayerSources.mockReset(); playerSource.loadSharePlayerRecent.mockReset();
+    upstream.getSchedule.mockResolvedValue(fictionalLeagueWeek(weekStart, now));
+    opponentSource.loadShareTeamRates.mockResolvedValue(fictionalTeamStats(20252026, "2026-01-05T08:00:00Z") as never);
+    playerSource.loadSharePlayerSources.mockResolvedValue(fictionalPlayerSources(20252026, "2026-01-05", "2026-01-05T08:00:00Z"));
+    // Season order (no L5) for one list, then give its fourth player the best last five games.
+    playerSource.loadSharePlayerRecent.mockResolvedValueOnce({ rolling: [], goalieGames: [] });
+    const seasonOnly = await request({ format: "game-grid", weekStart });
+    const fullLayer = buildPlayerLayer(fictionalPlayerSources(20252026, "2026-01-05", "2026-01-05T08:00:00Z"), { season: 20252026, teams: seasonOnly.body.teams.map((team: { abbreviation: string }) => team.abbreviation), fetchedAt: now, generatedAt: seasonOnly.body.generatedAt });
+    const untrimmed = { ...seasonOnly.body, players: { ...fullLayer, selectedDates: null } };
+    const list = pickupTiers(untrimmed, true, 6)[2].groups.F, [first, , , fourth] = list;
+    expect(pickupTiers(seasonOnly.body, true)[2].groups.F.map(player => player.nhlId)).not.toContain(fourth.nhlId);
+    const row = (id: number, goals: number) => ({ player_id: id, season: 20252026, game_date: "2026-01-04", strength_state: "all", season_games_played: 20, goals_total_last5: goals, assists_total_last5: 1, points_total_last5: goals + 1,
+      shots_total_last5: 10, hits_avg_last5: 1, blocks_avg_last5: 0.5, toi_seconds_avg_last5: 1000, pp_points_total_last5: 0, toi_seconds_avg_season: 1000, line_combo_slot: 2, line_combo_group: "forward", pp_unit: null });
+    const [, poolSkaters] = playerSource.loadSharePlayerRecent.mock.calls[0] as [number, number[]];
+    expect(poolSkaters).toContain(fourth.nhlId);
+    playerSource.loadSharePlayerRecent.mockResolvedValueOnce({ rolling: poolSkaters.map(id => row(id, id === fourth.nhlId ? 5 : 0)), goalieGames: [] });
+    const ranked = await request({ format: "game-grid", weekStart });
+    const shown = pickupTiers(ranked.body, true)[2].groups.F;
+    expect(shown[0].nhlId).toBe(fourth.nhlId);
+    expect(shown[0].recent).toMatchObject({ kind: "skater", line: "L2", ppUnit: null, toiSeasonSeconds: 1000 });
+    expect(shown).toHaveLength(3);
+    expect(first.nhlId).not.toBe(fourth.nhlId);
+    expect(ranked.body.players.players.length).toBeLessThanOrEqual(TRIMMED_PLAYERS_MAX);
+  });
+
+  it("tells a failed last-five-games read apart from an empty one, and keeps the cache short on failure (C7 SS1-10-F1)", async () => {
+    upstream.getSchedule.mockReset(); opponentSource.loadShareTeamRates.mockReset(); playerSource.loadSharePlayerSources.mockReset(); playerSource.loadSharePlayerRecent.mockReset();
+    upstream.getSchedule.mockResolvedValue(fictionalLeagueWeek(weekStart, now));
+    opponentSource.loadShareTeamRates.mockResolvedValue(fictionalTeamStats(20252026, "2026-01-05T08:00:00Z") as never);
+    playerSource.loadSharePlayerSources.mockResolvedValue(fictionalPlayerSources(20252026, "2026-01-05", "2026-01-05T08:00:00Z"));
+    // Empty but successful: the source answered with no rows, so "no recent game" is true.
+    playerSource.loadSharePlayerRecent.mockResolvedValueOnce({ rolling: [], goalieGames: [] });
+    const empty = await request({ format: "game-grid", weekStart });
+    expect(empty.body.players).toMatchObject({ state: "ready", recentState: "ready" });
+    expect(empty.body.players.players.every((player: { recent: unknown }) => player.recent === null)).toBe(true);
+    expect(empty.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+    // Rejected (network or dependency error) and over-limit reads are "unavailable", never "no game".
+    for (const failure of [new Error("offline"), new Error("Skater recent games response was incomplete or over its 420-row limit.")]) {
+      playerSource.loadSharePlayerRecent.mockRejectedValueOnce(failure);
+      const failed = await request({ format: "game-grid", weekStart });
+      expect(failed.body.state).toBe("ready");
+      expect(failed.body.players).toMatchObject({ state: "ready", recentState: "unavailable" });
+      expect(failed.body.players.players.length).toBeGreaterThan(0);
+      expect(failed.body.players.players.every((player: { recent: unknown }) => player.recent === null)).toBe(true);
+      expect(JSON.stringify(failed.body)).not.toMatch(/offline|420-row/);
+      expect(failed.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
+    }
+  });
+  it("never reads players after a failed or partial schedule", async () => {
+    upstream.getSchedule.mockReset(); playerSource.loadSharePlayerSources.mockReset();
+    upstream.getSchedule.mockRejectedValue(new Error("down"));
+    expect((await request({ format: "game-grid", weekStart })).code).toBe(503);
+    upstream.getSchedule.mockResolvedValue({ ...fictionalLeagueWeek(weekStart, now), coveredDates: dates.slice(1) });
+    const partial = await request({ format: "game-grid", weekStart });
+    expect(partial.body.state).toBe("partial");
+    expect(partial.body.players ?? null).toBeNull();
+    expect(playerSource.loadSharePlayerSources).not.toHaveBeenCalled();
+  });
   it("does not expose private source fields or activate export for the release reader shape", async () => {
     upstream.getSchedule.mockResolvedValue({ data: {}, numGamesPerDay: [0, 0, 0, 0, 0, 0, 0], coveredDates: dates, accountId: "private-account", capture: "private-capture", odds: "private-odds" });
     const result = await request({ format: "game-grid", weekStart });
     expect(result.code).toBe(200);
     expect(result.body.state).toBe("missing");
     expect(JSON.stringify(result.body)).not.toMatch(/private-account|private-capture|private-odds/);
+  });
+});
+
+describe("shared cache policy", () => {
+  const nowMs = Date.parse(now);
+  // A Wednesday game keeps the edition's natural expiry at fetched + 6 h.
+  const opponents = { name: "NST team stats" as const, season: 20252026, fetchedAt: now, updatedAt: now, state: "ready" as const, reasons: [], teams: {} };
+  const ready = (overrides: Partial<ReturnType<typeof snapshot>> = {}) => ({ ...snapshot([game(1, dates[2])]), opponents, ...overrides });
+  const expiringIn = (seconds: number) => ready({ expiresAt: new Date(nowMs + seconds * 1000).toISOString() });
+  it("shares a ready edition for at most five minutes plus five stale, never past expiry minus the margin", () => {
+    expect(ready().expiresAt).toBe("2026-01-05T18:00:00.000Z");
+    expect(shareCacheControl(ready(), nowMs)).toBe("public, max-age=0, s-maxage=300, stale-while-revalidate=300");
+    expect(SHARE_CACHE_EXPIRY_MARGIN_SECONDS).toBe(600);
+    // 15-minute near-puck-drop edition: 300 s usable, no stale window.
+    expect(shareCacheControl(expiringIn(900), nowMs)).toBe("public, max-age=0, s-maxage=300");
+    expect(shareCacheControl(expiringIn(1000), nowMs)).toBe("public, max-age=0, s-maxage=300, stale-while-revalidate=100");
+    expect(shareCacheControl(expiringIn(720), nowMs)).toBe("public, max-age=0, s-maxage=120");
+    expect(shareCacheControl(expiringIn(659), nowMs)).toBe("no-store");
+  });
+  it("never shares unready editions and shortens the ceiling while opponent rates are unready", () => {
+    expect(shareCacheControl(ready({ state: "partial" }), nowMs)).toBe("no-store");
+    expect(shareCacheControl(ready({ expiresAt: null }), nowMs)).toBe("no-store");
+    expect(shareCacheControl(ready({ source: { ...ready().source, state: "stale" } }), nowMs)).toBe("no-store");
+    expect(shareCacheControl(ready({ opponents: null }), nowMs)).toBe("public, max-age=0, s-maxage=60");
+    expect(shareCacheControl(ready({ opponents: { ...opponents, state: "stale" } }), nowMs)).toBe("public, max-age=0, s-maxage=60");
   });
 });

@@ -1,0 +1,28 @@
+{
+  "owner": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "scope": "Fresh authenticated Yahoo confirmations; existing shared authority and worker/fallback; offline tests only",
+  "before": {
+    "web/lib/integrations/yahoo/planningConfirmations.ts": null,
+    "web/lib/integrations/yahoo/planningConfirmations.test.ts": null,
+    "web/pages/api/v1/roster-schedule-optimizer/yahoo-current-data.ts": null,
+    "web/lib/integrations/yahoo/planningConfirmationRoute.test.ts": null,
+    "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": "9f2f29c50a6af4e7d6c12265e4ed1552ffa52e79b171f568cf7230aac046daab",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.ts": "d1b25a62b72388a1b5f29310f2f175eac3c2716f20c67f4c056e7d9f228c3bb4",
+    "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts": "9ef4199fb8dd678df9d8e152460790bcb0b3e467308e398aacb8e71116b5dd4d",
+    "web/lib/rosterScheduleOptimizer/privatePlanningRead.ts": null,
+    "web/hooks/yahooPlanningReadBroker.ts": null,
+    "web/hooks/yahooPlanningReadBroker.test.ts": null,
+    "web/hooks/rosterPlanningExecution.ts": "be2ad204061d7fe770f0c5be37b6df03ea2242a13fd4505973515ea21aed08cf",
+    "web/hooks/rosterPlanning.worker.ts": "d6c38e8966c2ef30b94960d1986c6fc691cd2618a86b96bf3c253b9edad564da",
+    "web/hooks/useRosterPlanning.ts": "2cda530940e9f8eb2a717aaefa9f68e7ed6758ffe319088f893b4af6b43195ed",
+    "web/hooks/useRosterPlanning.test.tsx": "eaf307542ca1ee463bdfe16d232eb04d561930395dba92b9fec10a03f083992c",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "e699974c923445dae29e54304413cc3213ff6219f98ad41fc039bfa7478bffc5"
+  },
+  "excluded": [
+    "Game Grid",
+    "billing features/access/checkout/promotions",
+    "model producers/native approvals",
+    "DB schema"
+  ]
+}

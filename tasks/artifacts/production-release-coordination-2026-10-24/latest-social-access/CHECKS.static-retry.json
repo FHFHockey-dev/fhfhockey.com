@@ -1,0 +1,68 @@
+{
+  "at": "2026-10-24T22:11:44.061057+00:00",
+  "reason": "Original app TypeScript aborted at default 4GB heap; one bounded 6GB retry",
+  "checks": [
+    {
+      "log": "app-types-6144.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-latest-social-access-zbjtop5e/web/node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "--incremental",
+        "false"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 54.427
+    },
+    {
+      "log": "scoped-lint.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-latest-social-access-zbjtop5e/web/node_modules/eslint/bin/eslint.js",
+        "__tests__/contexts/AuthProviderContext.test.tsx",
+        "components/SocialShare/SocialShare.test.tsx",
+        "components/SocialShare/SocialShare.tsx",
+        "components/SocialShare/SocialShareAccessGate.test.tsx",
+        "components/SocialShare/SocialShareAccessGate.tsx",
+        "components/SocialShare/TeamBanner.tsx",
+        "contexts/AuthProviderContext/index.tsx",
+        "e2e/social-share.spec.ts",
+        "lib/socialShare/access.test.ts",
+        "lib/socialShare/access.ts",
+        "lib/socialShare/edition.ts",
+        "lib/socialShare/editionFetch.test.ts",
+        "lib/socialShare/editionFetch.ts",
+        "lib/socialShare/export.ts",
+        "lib/socialShare/fixtures.ts",
+        "lib/socialShare/matchups.test.ts",
+        "lib/socialShare/matchups.ts",
+        "lib/socialShare/mondayGrid.test.ts",
+        "lib/socialShare/mondayGrid.ts",
+        "lib/socialShare/pickupsFixture.ts",
+        "lib/socialShare/playerSources.test.ts",
+        "lib/socialShare/playerSources.ts",
+        "lib/socialShare/players.test.ts",
+        "lib/socialShare/players.ts",
+        "lib/socialShare/schedule.test.ts",
+        "lib/socialShare/schedule.ts",
+        "lib/socialShare/server.ts",
+        "lib/socialShare/teamRates.test.ts",
+        "lib/socialShare/teamRates.ts",
+        "lib/socialShare/tiers.test.ts",
+        "lib/socialShare/tiers.ts",
+        "lib/socialShare/trends.test.ts",
+        "lib/socialShare/trends.ts",
+        "lib/socialShare/trendsFixture.ts",
+        "lib/socialShare/types.ts",
+        "pages/api/v1/social-share/[format].ts",
+        "pages/social-share/[format].tsx",
+        "components/GameGrid/utils/scheduleOpportunity.ts",
+        "e2e/fixtures/socialEditorSession.ts"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 1.799
+    }
+  ],
+  "canonical_edits": 0,
+  "hosted_requests": 0
+}

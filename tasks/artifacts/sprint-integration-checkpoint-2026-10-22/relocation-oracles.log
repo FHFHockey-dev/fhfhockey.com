@@ -1,0 +1,80 @@
+TAP version 13
+# Subtest: actual preflight resolves seven inputs before any target/client/write access
+ok 1 - actual preflight resolves seven inputs before any target/client/write access
+  ---
+  duration_ms: 2.504416
+  ...
+# Subtest: preflight rejects changed source: web/lib/in-season/monthlyExecutor.ts
+ok 2 - preflight rejects changed source: web/lib/in-season/monthlyExecutor.ts
+  ---
+  duration_ms: 1.134083
+  ...
+# Subtest: preflight rejects changed source: web/lib/in-season/monthlyLifecycle.ts
+ok 3 - preflight rejects changed source: web/lib/in-season/monthlyLifecycle.ts
+  ---
+  duration_ms: 0.677709
+  ...
+# Subtest: preflight rejects changed source: web/lib/in-season/monthlyStripe.ts
+ok 4 - preflight rejects changed source: web/lib/in-season/monthlyStripe.ts
+  ---
+  duration_ms: 0.828625
+  ...
+# Subtest: preflight rejects changed source: web/lib/in-season/monthlyLifecycle.test.ts
+ok 5 - preflight rejects changed source: web/lib/in-season/monthlyLifecycle.test.ts
+  ---
+  duration_ms: 0.733833
+  ...
+# Subtest: preflight rejects changed source: web/lib/in-season/monthlyStripe.test.ts
+ok 6 - preflight rejects changed source: web/lib/in-season/monthlyStripe.test.ts
+  ---
+  duration_ms: 0.745125
+  ...
+# Subtest: preflight rejects changed source: web/lib/in-season/monthlyIntegration.test.ts
+ok 7 - preflight rejects changed source: web/lib/in-season/monthlyIntegration.test.ts
+  ---
+  duration_ms: 0.751125
+  ...
+# Subtest: preflight rejects changed source: tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql
+ok 8 - preflight rejects changed source: tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql
+  ---
+  duration_ms: 0.604834
+  ...
+# Subtest: preflight rejects changed provenance: tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-RELOCATION.v1.json
+ok 9 - preflight rejects changed provenance: tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-RELOCATION.v1.json
+  ---
+  duration_ms: 0.660125
+  ...
+# Subtest: preflight rejects changed provenance: tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-HASHES-BEFORE.json
+ok 10 - preflight rejects changed provenance: tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-HASHES-BEFORE.json
+  ---
+  duration_ms: 0.595833
+  ...
+# Subtest: preflight rejects changed provenance: tasks/artifacts/billing-migration-authority-2026-10-22/CHANGED-FILES.json
+ok 11 - preflight rejects changed provenance: tasks/artifacts/billing-migration-authority-2026-10-22/CHANGED-FILES.json
+  ---
+  duration_ms: 0.631625
+  ...
+# Subtest: post-run guard still rejects changed source: tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql
+ok 12 - post-run guard still rejects changed source: tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql
+  ---
+  duration_ms: 0.878042
+  ...
+# Subtest: post-run guard still rejects changed source: web/lib/in-season/monthlyExecutor.ts
+ok 13 - post-run guard still rejects changed source: web/lib/in-season/monthlyExecutor.ts
+  ---
+  duration_ms: 0.680334
+  ...
+# Subtest: missing retained SQL fails instead of falling back to the historical path
+ok 14 - missing retained SQL fails instead of falling back to the historical path
+  ---
+  duration_ms: 0.546625
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 71.275

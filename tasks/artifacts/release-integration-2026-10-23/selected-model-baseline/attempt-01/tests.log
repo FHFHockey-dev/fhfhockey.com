@@ -1,0 +1,24 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/projections/runProjectionV2.test.ts lib/projections/runProjectionV2.alignedConversion.test.ts lib/projections/nativeInputEligibility.test.ts lib/projections/apiHelpers.test.ts lib/projections/apiHelpers.runAdmission.test.ts lib/projections/releasedRunFence.test.ts lib/player-forecasts/nativeContributionAdmission.test.ts lib/rosterScheduleData/forgeDailyBridge.test.ts lib/rosterScheduleData/planning.test.ts scripts/qualify-native-players-offline.test.ts scripts/releaseLegacyProducerBoundary.test.ts __tests__/pages/api/v1/forge/players.test.ts __tests__/pages/api/v1/forge/goalies.test.ts --reporter=json --outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/selected-model-baseline/tests.json
+
+(node:83416) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:83416) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:83416) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:83416) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:83416) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:83416) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:83416) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:83416) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:83416) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+fatal: not a git repository (or any of the parent directories): .git
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/selected-model-baseline/tests.json

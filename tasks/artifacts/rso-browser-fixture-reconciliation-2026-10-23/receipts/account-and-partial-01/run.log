@@ -1,0 +1,81 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:960:5 › connected refresh and account save preserve forecast permissions and exclusions
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:960:5 › connected refresh and account save preserve forecast permissions and exclusions 
+
+    [31mTest timeout of 60000ms exceeded.[39m
+
+    Error: locator.check: Test timeout of 60000ms exceeded.
+    Call log:
+    [2m  - waiting for locator('#rso-roster-edit').getByRole('checkbox', { name: 'Protect', exact: true }).first()[22m
+
+
+      1087 |   })).toEqual({ provider: "manual", intent: beforeSwitch.intent, roster: beforeSwitch.roster, lockedAssignments: beforeSwitch.lockedAssignments });
+      1088 |   await page.getByLabel(`Manage ${players[0].name}`, { exact: true }).click();
+    > 1089 |   await rosterPanel.getByRole("checkbox", { name: "Protect", exact: true }).first().check();
+           |                                                                                     ^
+      1090 |   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent.protectedPlayerIds)).toEqual([players[0].id]);
+      1091 |   expect(pageErrors).toEqual([]);
+      1092 |   await page.screenshot({ path: testInfo.outputPath("rso-manual-fork-editing.png") });
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1089:85
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../account-and-partial-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../account-and-partial-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../account-and-partial-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../account-and-partial-01/results/roster-schedule-optimizer--8809f--permissions-and-exclusions-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:2234:32 › compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile
+[1A[2K  2) [chromium] › e2e/roster-schedule-optimizer.spec.ts:2234:32 › compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator:  getByText(/Forecasts unavailable. Schedule planning remains usable/).first()
+    Expected: visible
+    Received: hidden
+    Timeout:  15000ms
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByText(/Forecasts unavailable. Schedule planning remains usable/).first()[22m
+    [2m    32 × locator resolved to <p class="RosterScheduleOptimizer_evidence___LRJ5">forecasts: unknown · Forecasts unavailable. Sched…</p>[22m
+    [2m       - unexpected value "hidden"[22m
+
+
+      2281 |   await openDisclosure(page, /^Shared schedule: partial/);
+      2282 |   await expect(page.getByText("Shared schedule: partial", { exact: true })).toBeVisible();
+    > 2283 |   await expect(page.getByText(/Forecasts unavailable. Schedule planning remains usable/).first()).toBeVisible();
+           |                                                                                                   ^
+      2284 |   await expect(summary.getByText("Roster games").locator("..")).toHaveText("Roster games19 known");
+      2285 |   await expect(summary.getByText("NHL games").locator("..")).toHaveText("NHL games1 known");
+      2286 |   await expect(summary.getByText("Open slots").locator("..")).toContainText("unresolved");
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2283:99
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../account-and-partial-01/results/roster-schedule-optimizer--9642a-tates-on-desktop-and-mobile-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../account-and-partial-01/results/roster-schedule-optimizer--9642a-tates-on-desktop-and-mobile-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../account-and-partial-01/results/roster-schedule-optimizer--9642a-tates-on-desktop-and-mobile-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../account-and-partial-01/results/roster-schedule-optimizer--9642a-tates-on-desktop-and-mobile-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  2 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:960:5 › connected refresh and account save preserve forecast permissions and exclusions 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:2234:32 › compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile 

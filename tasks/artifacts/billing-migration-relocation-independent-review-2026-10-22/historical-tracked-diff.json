@@ -1,0 +1,10 @@
+{
+  "tracked_changed_files": [
+    "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-AUTH-CHECK.cjs",
+    "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-SQL-CHECK.cjs",
+    "tasks/artifacts/in-season-billing-2026-10-21/REPORT.md",
+    "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs"
+  ],
+  "historical_receipts_changed": false,
+  "new_sql_draft": "tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql"
+}

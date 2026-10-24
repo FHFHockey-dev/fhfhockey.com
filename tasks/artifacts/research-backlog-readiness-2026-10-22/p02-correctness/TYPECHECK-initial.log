@@ -1,0 +1,2 @@
+components/PlayerStats/PlayerContextualStats.test.tsx(69,42): error TS2322: Type '{ date: string; games_played: number; games_started: number; wins: number; saves: number; shots_against: number; quality_start: number; }' is not assignable to type 'GameLogEntry'.
+  Type '{ date: string; games_played: number; games_started: number; wins: number; saves: number; shots_against: number; quality_start: number; }' is missing the following properties from type 'GoalieGameLogEntry': losses, ot_losses, save_pct, goals_against_avg, and 6 more.

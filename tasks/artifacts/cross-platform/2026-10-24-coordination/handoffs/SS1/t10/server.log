@@ -1,0 +1,121 @@
+
+> web@0.1.0 dev:stable
+> node scripts/dev-stable.mjs -p 3110
+
+   ▲ Next.js 15.5.22
+   - Local:        http://localhost:3110
+   - Network:      http://0.0.0.0:3110
+   - Environments: .env.development.local, .env.local, .env.development
+   - Experiments (use with caution):
+     ✓ externalDir
+
+ ✓ Starting...
+ ✓ Ready in 949ms
+ ○ Compiling /social-share/[format] ...
+ ✓ Compiled /social-share/[format] in 1250ms (983 modules)
+ GET /social-share/game-grid 200 in 1804ms
+ GET /social-share/game-grid 200 in 218ms
+ ⚠ Cross origin request detected from 127.0.0.1 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ GET /social-share/remaining-week 200 in 217ms
+ GET /social-share/game-grid 200 in 216ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/player-spotlight 200 in 214ms
+ GET /social-share/category-rescue 200 in 213ms
+ ✓ Compiled /404 in 264ms (990 modules)
+ GET /social-share/not-a-format 404 in 731ms
+ GET /social-share/game-grid 200 in 237ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 215ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/remaining-week 200 in 213ms
+ GET /social-share/tuesday-trends 200 in 213ms
+ GET /social-share/remaining-week 200 in 212ms
+ GET /social-share/tuesday-trends 200 in 211ms
+ GET /social-share/tuesday-trends 200 in 211ms
+ GET /social-share/tuesday-trends 200 in 212ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 214ms
+ ✓ Compiled in 233ms (723 modules)
+ ✓ Compiled in 172ms (260 modules)
+ GET /social-share/game-grid 200 in 284ms
+ ✓ Compiled in 160ms (723 modules)
+ ✓ Compiled in 148ms (260 modules)
+ GET /social-share/game-grid 200 in 270ms
+ GET /social-share/remaining-week 200 in 213ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 213ms
+ ✓ Compiled in 74ms (723 modules)
+ ✓ Compiled in 78ms (260 modules)
+ GET /_next/data/development/social-share/game-grid.json?format=game-grid 200 in 249ms
+ GET /social-share/remaining-week 200 in 219ms
+ GET /social-share/game-grid 200 in 215ms
+ GET /social-share/game-grid 200 in 216ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/remaining-week 200 in 213ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/player-spotlight 200 in 215ms
+ GET /social-share/category-rescue 200 in 211ms
+ ✓ Compiled /404 in 67ms (990 modules)
+ GET /social-share/not-a-format 404 in 533ms
+ GET /social-share/game-grid 200 in 236ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/remaining-week 200 in 213ms
+ GET /social-share/tuesday-trends 200 in 215ms
+ GET /social-share/remaining-week 200 in 213ms
+ GET /social-share/tuesday-trends 200 in 212ms
+ GET /social-share/tuesday-trends 200 in 212ms
+ GET /social-share/tuesday-trends 200 in 213ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/remaining-week 200 in 213ms
+ GET /social-share/tuesday-trends 200 in 214ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/remaining-week 200 in 212ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/player-spotlight 200 in 212ms
+ GET /social-share/category-rescue 200 in 211ms
+ GET /social-share/not-a-format 404 in 420ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/remaining-week 200 in 212ms
+ GET /social-share/tuesday-trends 200 in 213ms
+ GET /social-share/remaining-week 200 in 213ms
+ GET /social-share/tuesday-trends 200 in 213ms
+ GET /social-share/tuesday-trends 200 in 214ms
+ GET /social-share/tuesday-trends 200 in 213ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 210ms
+[?25h

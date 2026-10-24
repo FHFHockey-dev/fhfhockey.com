@@ -1,0 +1,10 @@
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ ../../../../../private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/controls/c7LunaAdversarial.test.ts (40 tests) 653ms
+
+ Test Files  1 passed (1)
+      Tests  40 passed (40)
+   Start at  10:45:48
+   Duration  1.03s (transform 151ms, setup 0ms, collect 249ms, tests 653ms, environment 0ms, prepare 30ms)
+

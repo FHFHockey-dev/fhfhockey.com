@@ -1,0 +1,11 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "compilerOptions": { "incremental": false },
+  "include": [
+    "../../../../web/next-bootstrap.d.ts",
+    "../../../../web/components/player-cards/EditorialPlayerCard.tsx",
+    "../../../../web/components/player-cards/EditorialPlayerCard.test.tsx",
+    "preview-entry.tsx"
+  ],
+  "exclude": ["../../../../web/node_modules"]
+}

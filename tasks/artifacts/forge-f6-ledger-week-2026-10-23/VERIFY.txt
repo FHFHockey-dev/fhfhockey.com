@@ -1,0 +1,36 @@
+test_after_puckdrop_snapshot (test_audit.AuditTests.test_after_puckdrop_snapshot) ... ok
+test_cli_missing_settlement_refuses_nonzero (test_audit.AuditTests.test_cli_missing_settlement_refuses_nonzero) ... ok
+test_denominator_participation_conflict (test_audit.AuditTests.test_denominator_participation_conflict) ... ok
+test_duplicate_rolling_not_silently_latest (test_audit.AuditTests.test_duplicate_rolling_not_silently_latest) ... ok
+test_duplicates_and_reissued_snapshot_not_deduped (test_audit.AuditTests.test_duplicates_and_reissued_snapshot_not_deduped) ... ok
+test_export_truncation (test_audit.AuditTests.test_export_truncation) ... ok
+test_finality_and_completeness_are_independent_of_settled_at (test_audit.AuditTests.test_finality_and_completeness_are_independent_of_settled_at) ... ok
+test_fingerprint_ignores_settlement_but_not_forecast (test_audit.AuditTests.test_fingerprint_ignores_settlement_but_not_forecast) ... ok
+test_h1_missing_and_duplicate (test_audit.AuditTests.test_h1_missing_and_duplicate) ... ok
+test_h1_mutated_after_serving (test_audit.AuditTests.test_h1_mutated_after_serving) ... ok
+test_independent_population_ids_required (test_audit.AuditTests.test_independent_population_ids_required) ... ok
+test_missing_universe_cannot_claim_full_coverage (test_audit.AuditTests.test_missing_universe_cannot_claim_full_coverage) ... ok
+test_mixed_full_sha_not_pooled (test_audit.AuditTests.test_mixed_full_sha_not_pooled) ... ok
+test_mixed_serving_method_refuses (test_audit.AuditTests.test_mixed_serving_method_refuses) ... ok
+test_nan_boolean_string_are_not_numbers (test_audit.AuditTests.test_nan_boolean_string_are_not_numbers) ... ok
+test_no_skipping_first_unsettled_day (test_audit.AuditTests.test_no_skipping_first_unsettled_day) ... ok
+test_ntile_remainder_stable_and_expected_sorted (test_audit.AuditTests.test_ntile_remainder_stable_and_expected_sorted) ... ok
+test_null_is_not_zero_even_when_fp_is_present (test_audit.AuditTests.test_null_is_not_zero_even_when_fp_is_present) ... ok
+test_only_six_days_cannot_qualify (test_audit.AuditTests.test_only_six_days_cannot_qualify) ... ok
+test_overwritten_forecast_receipt (test_audit.AuditTests.test_overwritten_forecast_receipt) ... ok
+test_paired_reaimed_versions_stay_separate (test_audit.AuditTests.test_paired_reaimed_versions_stay_separate) ... ok
+test_q5_missing_zero_distinction (test_audit.AuditTests.test_q5_missing_zero_distinction) ... ok
+test_ratio_of_sums_not_mean_of_ratios (test_audit.AuditTests.test_ratio_of_sums_not_mean_of_ratios) ... ok
+test_receipt_is_not_cron_time (test_audit.AuditTests.test_receipt_is_not_cron_time) ... ok
+test_reissue_history_required (test_audit.AuditTests.test_reissue_history_required) ... ok
+test_short_or_missing_sha (test_audit.AuditTests.test_short_or_missing_sha) ... ok
+test_unverified_receipt (test_audit.AuditTests.test_unverified_receipt) ... ok
+test_valid_synthetic_chronological_week (test_audit.AuditTests.test_valid_synthetic_chronological_week) ... ok
+test_wrong_fp_weights (test_audit.AuditTests.test_wrong_fp_weights) ... ok
+test_zero_expected_is_unavailable_ratio (test_audit.AuditTests.test_zero_expected_is_unavailable_ratio) ... ok
+test_zero_projection_gate_strict_at_ten_percent (test_audit.AuditTests.test_zero_projection_gate_strict_at_ten_percent) ... ok
+
+----------------------------------------------------------------------
+Ran 31 tests in 0.461s
+
+OK

@@ -1,0 +1,371 @@
+{
+  "packetPins": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/C3-CANCEL-RELOAD.patch",
+      "expected": "c500b580b79f2bd1ce3bc00e50630ea3ac1d47bd1985843c53121cb8a9b420ff",
+      "actual": "c500b580b79f2bd1ce3bc00e50630ea3ac1d47bd1985843c53121cb8a9b420ff",
+      "matches": true,
+      "endActual": "c500b580b79f2bd1ce3bc00e50630ea3ac1d47bd1985843c53121cb8a9b420ff",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/PROPOSED-BOUNDARY-browser-auth.patch",
+      "expected": "c0deaddc7e9421a13c3b944c37c54e1a4fb421d93452d1275eacac2538e40002",
+      "actual": "c0deaddc7e9421a13c3b944c37c54e1a4fb421d93452d1275eacac2538e40002",
+      "matches": true,
+      "endActual": "c0deaddc7e9421a13c3b944c37c54e1a4fb421d93452d1275eacac2538e40002",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/RECEIPT.md",
+      "expected": "7874011065c646ed9572056f3b50c58a22fd649c040ed4093b95f4df44c19dd2",
+      "actual": "7874011065c646ed9572056f3b50c58a22fd649c040ed4093b95f4df44c19dd2",
+      "matches": true,
+      "endActual": "7874011065c646ed9572056f3b50c58a22fd649c040ed4093b95f4df44c19dd2",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/candidate/InSeasonPanel.test.tsx",
+      "expected": "646b3379e105e0ae3777c196db148fcd9af1366faa757102ccb3ebeae4b3e535",
+      "actual": "646b3379e105e0ae3777c196db148fcd9af1366faa757102ccb3ebeae4b3e535",
+      "matches": true,
+      "endActual": "646b3379e105e0ae3777c196db148fcd9af1366faa757102ccb3ebeae4b3e535",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/candidate/InSeasonPanel.tsx",
+      "expected": "9987664256fd615d6b47cb41d019edd7c9515456e8c02808d42d741e239776ea",
+      "actual": "9987664256fd615d6b47cb41d019edd7c9515456e8c02808d42d741e239776ea",
+      "matches": true,
+      "endActual": "9987664256fd615d6b47cb41d019edd7c9515456e8c02808d42d741e239776ea",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/DEV-SERVER.log",
+      "expected": "a51ee5f7aea21401c8a04aadbcee0bb175d88c0f914cb27ecccbe3d9e2b431a2",
+      "actual": "a51ee5f7aea21401c8a04aadbcee0bb175d88c0f914cb27ecccbe3d9e2b431a2",
+      "matches": true,
+      "endActual": "a51ee5f7aea21401c8a04aadbcee0bb175d88c0f914cb27ecccbe3d9e2b431a2",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/ESLINT.log",
+      "expected": "19eaf43821a7660ec323a87c8457bf74823beb296c39f5e01aa8a683aa50f061",
+      "actual": "19eaf43821a7660ec323a87c8457bf74823beb296c39f5e01aa8a683aa50f061",
+      "matches": true,
+      "endActual": "19eaf43821a7660ec323a87c8457bf74823beb296c39f5e01aa8a683aa50f061",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/FINAL-TESTS.json",
+      "expected": "5b5e26da824daf1cc7c45fbf22c09f5bde70d9b3904e9063bf9bfd88fb62005c",
+      "actual": "5b5e26da824daf1cc7c45fbf22c09f5bde70d9b3904e9063bf9bfd88fb62005c",
+      "matches": true,
+      "endActual": "5b5e26da824daf1cc7c45fbf22c09f5bde70d9b3904e9063bf9bfd88fb62005c",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/FINAL-TESTS.log",
+      "expected": "a53559325b6829e521a2bb6e3f53f8ebe3b8a938306dae8d65625db40a18a117",
+      "actual": "a53559325b6829e521a2bb6e3f53f8ebe3b8a938306dae8d65625db40a18a117",
+      "matches": true,
+      "endActual": "a53559325b6829e521a2bb6e3f53f8ebe3b8a938306dae8d65625db40a18a117",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/MUTATION-CHECKS.log",
+      "expected": "565e6ec6ea3cb7bb4bb662b31bdb16aefe4ecb32b0242d2c7391b1934850645c",
+      "actual": "565e6ec6ea3cb7bb4bb662b31bdb16aefe4ecb32b0242d2c7391b1934850645c",
+      "matches": true,
+      "endActual": "565e6ec6ea3cb7bb4bb662b31bdb16aefe4ecb32b0242d2c7391b1934850645c",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/REPRODUCTION-BEFORE-FIX.json",
+      "expected": "dea1f3779bcb0d74887189b80cf1e6aeeda8e294c064f887e488881e1101e529",
+      "actual": "dea1f3779bcb0d74887189b80cf1e6aeeda8e294c064f887e488881e1101e529",
+      "matches": true,
+      "endActual": "dea1f3779bcb0d74887189b80cf1e6aeeda8e294c064f887e488881e1101e529",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/REPRODUCTION-BEFORE-FIX.log",
+      "expected": "df7db14fe77016f71d0ef8fc0aa299b4ffc465dc2c8ce52d6beb14b2df40a175",
+      "actual": "df7db14fe77016f71d0ef8fc0aa299b4ffc465dc2c8ce52d6beb14b2df40a175",
+      "matches": true,
+      "endActual": "df7db14fe77016f71d0ef8fc0aa299b4ffc465dc2c8ce52d6beb14b2df40a175",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/SNAPSHOT-AFTER.sha256",
+      "expected": "cda8683e968b668a677498f272482103e2fc56f2410143fc58d9860646ab9cf8",
+      "actual": "cda8683e968b668a677498f272482103e2fc56f2410143fc58d9860646ab9cf8",
+      "matches": true,
+      "endActual": "cda8683e968b668a677498f272482103e2fc56f2410143fc58d9860646ab9cf8",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/SNAPSHOT-MANIFEST.sha256",
+      "expected": "e69b61c1d5937be616de35262556b23dc6c56b75f3bd603910080e09ae4c35d6",
+      "actual": "e69b61c1d5937be616de35262556b23dc6c56b75f3bd603910080e09ae4c35d6",
+      "matches": true,
+      "endActual": "e69b61c1d5937be616de35262556b23dc6c56b75f3bd603910080e09ae4c35d6",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/SNAPSHOT.md",
+      "expected": "942e49fa7b66f499eaef2302e0e3186dd70bb2aec238e1a993d2a745c9920147",
+      "actual": "942e49fa7b66f499eaef2302e0e3186dd70bb2aec238e1a993d2a745c9920147",
+      "matches": true,
+      "endActual": "942e49fa7b66f499eaef2302e0e3186dd70bb2aec238e1a993d2a745c9920147",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/TYPESCRIPT.log",
+      "expected": "f0ec21336a8bab410f66c4aaee1655634c4a465842c5cee9abdb45561ba9e766",
+      "actual": "f0ec21336a8bab410f66c4aaee1655634c4a465842c5cee9abdb45561ba9e766",
+      "matches": true,
+      "endActual": "f0ec21336a8bab410f66c4aaee1655634c4a465842c5cee9abdb45561ba9e766",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-baseline/1-owner-a-lost-response.png",
+      "expected": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "actual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "matches": true,
+      "endActual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-baseline/2-owner-a-after-reload.png",
+      "expected": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "actual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "matches": true,
+      "endActual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-baseline/RESULTS.json",
+      "expected": "d3939dcc45af109e478a9b4be1460436db5cb9caaa9fe52e99c839f4dd18434e",
+      "actual": "d3939dcc45af109e478a9b4be1460436db5cb9caaa9fe52e99c839f4dd18434e",
+      "matches": true,
+      "endActual": "d3939dcc45af109e478a9b4be1460436db5cb9caaa9fe52e99c839f4dd18434e",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-fixed/1-owner-a-lost-response.png",
+      "expected": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "actual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "matches": true,
+      "endActual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-fixed/2-owner-a-after-reload.png",
+      "expected": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "actual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "matches": true,
+      "endActual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-fixed/3-owner-b-after-switch.png",
+      "expected": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "actual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "matches": true,
+      "endActual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-fixed/4-owner-b-same-tab-menu-signout.png",
+      "expected": "2f1f742de4140be92c5be826e90e9f810d81340c22ea84335f5563b934f7f965",
+      "actual": "2f1f742de4140be92c5be826e90e9f810d81340c22ea84335f5563b934f7f965",
+      "matches": true,
+      "endActual": "2f1f742de4140be92c5be826e90e9f810d81340c22ea84335f5563b934f7f965",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-fixed/5-owner-a-after-owner-b-signout.png",
+      "expected": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "actual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "matches": true,
+      "endActual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-fixed/6-owner-a-cross-tab-signout.png",
+      "expected": "2f1f742de4140be92c5be826e90e9f810d81340c22ea84335f5563b934f7f965",
+      "actual": "2f1f742de4140be92c5be826e90e9f810d81340c22ea84335f5563b934f7f965",
+      "matches": true,
+      "endActual": "2f1f742de4140be92c5be826e90e9f810d81340c22ea84335f5563b934f7f965",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-fixed/7-owner-a-after-cross-tab-signout.png",
+      "expected": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "actual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "matches": true,
+      "endActual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-fixed/8-anonymous-reload.png",
+      "expected": "2f1f742de4140be92c5be826e90e9f810d81340c22ea84335f5563b934f7f965",
+      "actual": "2f1f742de4140be92c5be826e90e9f810d81340c22ea84335f5563b934f7f965",
+      "matches": true,
+      "endActual": "2f1f742de4140be92c5be826e90e9f810d81340c22ea84335f5563b934f7f965",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-fixed/9-owner-a-after-corrupt-state.png",
+      "expected": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "actual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "matches": true,
+      "endActual": "9cf9ad3ea69ea63810a219e3fc33ab2dd06f86b8df58d0a7d46e6d28b0564dfe",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/browser-fixed/RESULTS.json",
+      "expected": "669638a266afda2f451e3b48ed218484c6748d0c813aea584a86d30ea5de49e9",
+      "actual": "669638a266afda2f451e3b48ed218484c6748d0c813aea584a86d30ea5de49e9",
+      "matches": true,
+      "endActual": "669638a266afda2f451e3b48ed218484c6748d0c813aea584a86d30ea5de49e9",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/evidence/reload-harness.cjs",
+      "expected": "d05bb2c8ca571916a6634086a6dfb0f47151f723e48ddd25584b790d7bb51e4f",
+      "actual": "d05bb2c8ca571916a6634086a6dfb0f47151f723e48ddd25584b790d7bb51e4f",
+      "matches": true,
+      "endActual": "d05bb2c8ca571916a6634086a6dfb0f47151f723e48ddd25584b790d7bb51e4f",
+      "unchangedSinceStart": true
+    }
+  ],
+  "canonicalBaselinePins": [
+    {
+      "path": "web/components/account/InSeasonPanel.tsx",
+      "expected": "e5cde3349ee10bd4d8c9623e8051eb56853c4f72d50f7a9657fef257d4c70352",
+      "actual": "e5cde3349ee10bd4d8c9623e8051eb56853c4f72d50f7a9657fef257d4c70352",
+      "matches": true,
+      "endActual": "e5cde3349ee10bd4d8c9623e8051eb56853c4f72d50f7a9657fef257d4c70352",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "web/components/account/InSeasonPanel.test.tsx",
+      "expected": "d21fd263ef203b557c3f34030205ff9a8fd9ce32d2fa040babb93c0f6eb8b76c",
+      "actual": "d21fd263ef203b557c3f34030205ff9a8fd9ce32d2fa040babb93c0f6eb8b76c",
+      "matches": true,
+      "endActual": "d21fd263ef203b557c3f34030205ff9a8fd9ce32d2fa040babb93c0f6eb8b76c",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "web/components/account/InSeasonPanel.rollout.test.tsx",
+      "expected": "b63510f723564a0707ed92f581f83f02a1f6db114550ff4415ab770db9d0e930",
+      "actual": "b63510f723564a0707ed92f581f83f02a1f6db114550ff4415ab770db9d0e930",
+      "matches": true,
+      "endActual": "b63510f723564a0707ed92f581f83f02a1f6db114550ff4415ab770db9d0e930",
+      "unchangedSinceStart": true
+    },
+    {
+      "path": "web/lib/supabase/browser-auth.ts",
+      "expected": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+      "actual": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+      "matches": true,
+      "endActual": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+      "unchangedSinceStart": true
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "web/contexts/AuthProviderContext/index.tsx",
+      "start": "ba911142eb7c7e52c880df27a4b7236e95dd2345012a32078df9671073ff4be8",
+      "end": "ba911142eb7c7e52c880df27a4b7236e95dd2345012a32078df9671073ff4be8",
+      "unchanged": true
+    },
+    {
+      "path": "web/__tests__/contexts/AuthProviderContext.test.tsx",
+      "start": "7e9bb5e5f6370b1e8ffb69eca11dbcc4385fab0aa441facceb62de66758d8074",
+      "end": "7e9bb5e5f6370b1e8ffb69eca11dbcc4385fab0aa441facceb62de66758d8074",
+      "unchanged": true
+    },
+    {
+      "path": "web/components/auth/AuthForm.tsx",
+      "start": "931f3af52f439af1f0f0c126a8bb5221216fefea6c1576cfb2a0ebd736b57e7c",
+      "end": "931f3af52f439af1f0f0c126a8bb5221216fefea6c1576cfb2a0ebd736b57e7c",
+      "unchanged": true
+    },
+    {
+      "path": "web/pages/account/index.tsx",
+      "start": "30c068bfd778d0cc50ff2526c6dbfd8aafd97fee24fa54b3bafc5635e25c3631",
+      "end": "30c068bfd778d0cc50ff2526c6dbfd8aafd97fee24fa54b3bafc5635e25c3631",
+      "unchanged": true
+    },
+    {
+      "path": "web/components/account/ProviderSyncNotice.tsx",
+      "start": "2cd73b22ab635a09fb75b4fca95e0113a2a14ae42b396a4ac29f46ddd592917f",
+      "end": "2cd73b22ab635a09fb75b4fca95e0113a2a14ae42b396a4ac29f46ddd592917f",
+      "unchanged": true
+    },
+    {
+      "path": "web/pages/api/v1/account/in-season/cancel.ts",
+      "start": "8da458c521e3a89c112b002eb3b3f664db14832e0a16c7a44575c6610c1b94e5",
+      "end": "8da458c521e3a89c112b002eb3b3f664db14832e0a16c7a44575c6610c1b94e5",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/in-season/monthlyWebhook.ts",
+      "start": "a0ade4afbca6a0ba9996f465de9ba2a87099373b31dbceee0a65cfb9f05c7cad",
+      "end": "a0ade4afbca6a0ba9996f465de9ba2a87099373b31dbceee0a65cfb9f05c7cad",
+      "unchanged": true
+    },
+    {
+      "path": "web/lib/in-season/monthlyLifecycle.ts",
+      "start": "27d93048119a08f88272bf000375026aa948cb476fd95561d53ffce2782c7489",
+      "end": "27d93048119a08f88272bf000375026aa948cb476fd95561d53ffce2782c7489",
+      "unchanged": true
+    },
+    {
+      "path": "web/package-lock.json",
+      "start": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+      "end": "fe7b9cac6900e841cd6c0fbad2a077ff04d611e99cc5a769409b23cd7c420378",
+      "unchanged": true
+    },
+    {
+      "path": "web/package.json",
+      "start": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "end": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+      "unchanged": true
+    },
+    {
+      "path": "web/vitest.config.mts",
+      "start": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+      "end": "567626533274d2161441206f5f616ecdc7f2212c0d2a2450816954d6aeb0af3b",
+      "unchanged": true
+    },
+    {
+      "path": "web/__tests__/vitest.setup.js",
+      "start": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+      "end": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+      "unchanged": true
+    },
+    {
+      "path": "AGENTS.md",
+      "start": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b",
+      "end": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b",
+      "unchanged": true
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+      "start": "e037db2b79ab7ebfedeb52483b2328c4c34cbbd63fb6ecf32cafa1a3a75f9ec2",
+      "end": "b80729d5af25ec48dbc427ff1ab5fc6ba2c5abf7fb1022e07abdd9d692f24204",
+      "unchanged": false
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-LEASES.json",
+      "start": "3c52f4eabc81f104d59c64214636c8d3c600e92b6f2ebafb9d98b2b31c2eb5c1",
+      "end": "3c52f4eabc81f104d59c64214636c8d3c600e92b6f2ebafb9d98b2b31c2eb5c1",
+      "unchanged": true
+    }
+  ],
+  "recordedAt": "2026-10-24T15:32:26.371380+00:00"
+}

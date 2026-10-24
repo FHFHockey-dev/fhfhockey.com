@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-24T23:41:46.323045+00:00",
+  "checks": [
+    {
+      "log": "grid-dependency-tests.log",
+      "exit_code": 1,
+      "seconds": 4.119,
+      "argv": [
+        "node",
+        "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf/web/node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf/grid-missing-deps.vitest.config.mts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ]
+    }
+  ],
+  "canonical_edits": 0,
+  "external_requests": 0
+}

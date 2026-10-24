@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-24T17:25:44.337568+00:00",
+  "target": "web/.env.development.local",
+  "key": "FORGE_TESTING_GROUNDS_OWNER_USER_ID",
+  "action": "append previously absent exact approved key",
+  "identity_provenance": "TJ supplied the UUID from requested Supabase Authentication \u2192 Users flow; not independently session-verified",
+  "checks": {
+    "original_bytes_preserved": true,
+    "permissions_preserved": true,
+    "single_owner_key": true,
+    "value_matches_supplied_uuid": true
+  },
+  "other_env_entries": "unchanged byte-for-byte",
+  "env_contents_or_hash_exported": false,
+  "hosted_auth_reads_performed_by_worker": 0,
+  "approved_auth_read_budget": 1,
+  "manual_server_reload_or_signal": false,
+  "browser_state_before_write": "only observed localhost:3000 tab navigated to about:blank; blank state observed",
+  "application_code_changed": false
+}

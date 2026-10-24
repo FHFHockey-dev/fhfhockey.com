@@ -1,0 +1,20 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "include": [
+    "../../../../web/next-bootstrap.d.ts",
+    "../../../../web/lib/forge-testing-grounds/serverOwnerBoundary.ts",
+    "../../../../web/lib/forge-testing-grounds/serverOwnerBoundary.test.ts",
+    "../../../../web/lib/forge-testing-grounds/ownerRoutes.ts",
+    "../../../../web/lib/forge-testing-grounds/ownerRoutes.test.ts",
+    "../../../../web/lib/forge-testing-grounds/TestingGroundsOwnerGate.tsx",
+    "../../../../web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx",
+    "../../../../web/pages/forge/testing-grounds.tsx",
+    "../../../../web/pages/api/v1/forge/testing-grounds/access.ts",
+    "../../../../web/pages/api/v1/forge/testing-grounds/runs/index.ts",
+    "../../../../web/pages/api/v1/forge/testing-grounds/runs/[runId]/[operation].ts"
+  ],
+  "exclude": [],
+  "compilerOptions": {
+    "incremental": false
+  }
+}

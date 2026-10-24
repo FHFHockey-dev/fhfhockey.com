@@ -1,0 +1,108 @@
+
+> web@0.1.0 test
+> vitest --run components/StatsPage/PlayerSearchBar.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:91273) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ❯ components/StatsPage/PlayerSearchBar.test.tsx (20 tests | 2 failed) 118ms
+   ✓ PlayerSearchBar > keeps the newer result when requests finish out of order 20ms
+   ✓ PlayerSearchBar > invalidates the old request as soon as input changes, before the new debounce 3ms
+   ✓ PlayerSearchBar > does not reopen results after input becomes "" 2ms
+   ✓ PlayerSearchBar > does not reopen results after input becomes "A" 2ms
+   ✓ PlayerSearchBar > cancels a pending debounce on unmount 2ms
+   ✓ PlayerSearchBar > debounces to one bounded query with a captured input value 2ms
+   ✓ PlayerSearchBar > handles a rejected request and ignores a rejection after unmount 9ms
+   ✓ PlayerSearchBar > clears already displayed results while a new query is pending 4ms
+   ✓ PlayerSearchBar > shows loading, empty, error and recovered results distinctly 10ms
+   ✓ PlayerSearchBar > ignores stale errors while a newer search is successful 3ms
+   ✓ PlayerSearchBar > lets keyboard users focus native result links and dismiss with Escape 19ms
+   ✓ PlayerSearchBar > keeps ctrlKey navigation native without clearing the current search 7ms
+   ✓ PlayerSearchBar > keeps metaKey navigation native without clearing the current search 5ms
+   ✓ PlayerSearchBar > keeps shiftKey navigation native without clearing the current search 5ms
+   ✓ PlayerSearchBar > keeps altKey navigation native without clearing the current search 5ms
+   × PlayerSearchBar > does not prefetch or navigate on mouseEnter 6ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      "/stats/player/1",
+      "/stats/player/1",
+      Object {
+        "bypassPrefetchedCheck": true,
+        "locale": undefined,
+        "priority": true,
+      },
+    ]
+
+
+Number of calls: 1
+
+   × PlayerSearchBar > does not prefetch or navigate on touchStart 4ms
+     → expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      "/stats/player/1",
+      "/stats/player/1",
+      Object {
+        "bypassPrefetchedCheck": true,
+        "locale": undefined,
+        "priority": true,
+      },
+    ]
+
+
+Number of calls: 1
+
+   ✓ PlayerSearchBar > navigates once for a keyboard-style link activation 6ms
+   ✓ PlayerSearchBar > does not reopen a dismissed search after blur 3ms
+   ✓ PlayerSearchBar > does not reopen a dismissed search after Escape 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  components/StatsPage/PlayerSearchBar.test.tsx > PlayerSearchBar > does not prefetch or navigate on mouseEnter
+ FAIL  components/StatsPage/PlayerSearchBar.test.tsx > PlayerSearchBar > does not prefetch or navigate on touchStart
+AssertionError: expected "spy" to not be called at all, but actually been called 1 times
+
+Received: 
+
+  1st spy call:
+
+    Array [
+      "/stats/player/1",
+      "/stats/player/1",
+      Object {
+        "bypassPrefetchedCheck": true,
+        "locale": undefined,
+        "priority": true,
+      },
+    ]
+
+
+Number of calls: 1
+
+ ❯ components/StatsPage/PlayerSearchBar.test.tsx:246:30
+    244|     expect(prefetchMock).not.toHaveBeenCalled();
+    245|     fireEvent[event](screen.getByRole("link", { name: alice.fullName }…
+    246|     expect(prefetchMock).not.toHaveBeenCalled();
+       |                              ^
+    247|     expect(pushMock).not.toHaveBeenCalled();
+    248|     expect((screen.getByLabelText("Search players") as HTMLInputElemen…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 18 passed (20)
+   Start at  09:36:48
+   Duration  524ms (transform 36ms, setup 2ms, collect 104ms, tests 118ms, environment 132ms, prepare 31ms)
+

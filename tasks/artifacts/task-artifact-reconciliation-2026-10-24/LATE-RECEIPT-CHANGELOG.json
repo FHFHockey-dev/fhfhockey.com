@@ -1,0 +1,139 @@
+{
+  "at": "2026-10-24T15:10:07.783055+00:00",
+  "changed_ids": [
+    "SITE-FORGE-TESTING-GROUNDS",
+    "STATS-S06",
+    "CRON-AUDIT-COVERAGE",
+    "LUNA-LOCAL",
+    "SITE-WIGO",
+    "BILLING-CANCEL-RELOAD"
+  ],
+  "changes": {
+    "SITE-FORGE-TESTING-GROUNDS": {
+      "fields": {
+        "dependencies": "Installed approved requirements and exact slice01 pins; TJ-only owner/session policy. Later reported \u201cyes A\u201d selects a dedicated bounded/checkpointed Testing Grounds worker using the existing lease/CAS pattern, beginning with inert local store/state-machine proof. Hosted bounds/costs/retention/provisioning, statistical/event/reveal choices and real pilot remain gated.",
+        "next_action": "Scout reviews slice01 and exact requirements/steers. Dedicated worker design is selected for the next isolated local proof; do not keep the runner design choice falsely pending. Hosted execution and model/pilot qualification require their separate evidence and bounds."
+      },
+      "new_evidence": [
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+          "line": 86,
+          "sha256": "d9551570f2862fb864df983677e850f98bed5abc5dd69524d6299b0152c97326",
+          "observed_at": "2026-10-24T15:10:07.783055+00:00",
+          "review_scope": "Full named receipt or bounded current coordination section/structured session allocation; no application execution."
+        }
+      ],
+      "notes": [
+        "Source is coordinator-recorded TJ steer14:59UTC; audit records it, grants no implementation/external authority."
+      ]
+    },
+    "STATS-S06": {
+      "fields": {
+        "implementation": "Claude C1 seven-file Season Stats lines/Shot Map implementation candidate delivered. Owner reports inactive-read/team-race/filter/reset/coordinate/shooting-percent/line-shape corrections; not independently accepted or integrated.",
+        "acceptance": "Owner39/39focused tests, scoped lint0errors/1existing image warning and full TypeScript exit0. Fixture screenshots at1440/390 reported; audit did not inspect pixels, exercise browser or rerun checks. Full S06 and broader stats acceptance remain open.",
+        "verification": "Audit fully read C1 receipt; baseline7/7, patch ecef9b66b9aa65eba5be10e8842c67b996bdb26e80d5744093f82ee8fd0ab7d4 and original18failed/17existing-passed reproduction are owner evidence. No independent exact patch/source review by audit.",
+        "next_action": "Parent independently reviews the exact C1 packet. Keep useTeamSchedule inactive-tab reads,390px rink clipping/hidden labels and array-valued tab routing as reported residual subscopes requiring actual reproduction/ownership; no new implementation dispatched.",
+        "dispatch_class": "Claude C1 local_bb5804ab-c83a-446e-8acc-6be5b5b2f828 (c1-team-tabs); local candidate delivered, independent acceptance pending"
+      },
+      "new_evidence": [
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C1/RECEIPT.md",
+          "line": 1,
+          "sha256": "34cc64cbeefa6656c41386a77c932c7c1cad28fe5b47da11947371e380296583",
+          "observed_at": "2026-10-24T15:10:07.783055+00:00",
+          "review_scope": "Full named receipt or bounded current coordination section/structured session allocation; no application execution."
+        }
+      ],
+      "notes": [
+        "Reported follow-ups reuse STATS-S06; no parallel task IDs or visual pass claim."
+      ]
+    },
+    "CRON-AUDIT-COVERAGE": {
+      "fields": {
+        "implementation": "Claude C5 five-file route-wrapper candidate delivered; prospects statically qualified, Yahoo runtime delegate remains explicitly unqualified by the unchanged classifier. Disabled/suspended Yahoo exits intentionally create no audit row in this candidate; owner decision is held.",
+        "acceptance": "Owner65/65focused tests and scoped TS/lint pass. Full TypeScript OOM exit134 is not a type result; not accepted, integrated, released or live verified.",
+        "verification": "Audit fully read C5 receipt; patch62faa9ce4657ceeb12ea645fcf907992500f2e72b3a5b6994f38f8951542a541 and original19failed/46passed control are owner evidence. Shared classifier/auth/helpers unchanged. Audit did not execute tests or inspect live audit rows.",
+        "next_action": "Parent reviews exact C5 candidate, static-classifier lease and disabled/suspended audit placement before any change. TJ hold reported in CLAUDE003: no lane changes this placement pending owner decision. Preserve essential audit evidence and no-op cost tradeoff.",
+        "dispatch_class": "Claude C5 local_ab65c5a7-3c1e-4bba-ac12-131d4ce62e10 (c5-route-audit); local candidate pending review and exact held decisions"
+      },
+      "new_evidence": [
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C5/RECEIPT.md",
+          "line": 1,
+          "sha256": "567279e8ec001e747e3f1de2b5d4b508e41cb040c912716accb3bca6b4b422c7",
+          "observed_at": "2026-10-24T15:10:07.783055+00:00",
+          "review_scope": "Full named receipt or bounded current coordination section/structured session allocation; no application execution."
+        },
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+          "line": 30,
+          "sha256": "af813e8c32ca47011020d2b8c19cadbf6690bc5925885b6a6e9cc76e1abf0bf1",
+          "observed_at": "2026-10-24T15:10:07.783055+00:00",
+          "review_scope": "Full named receipt or bounded current coordination section/structured session allocation; no application execution."
+        }
+      ],
+      "notes": []
+    },
+    "LUNA-LOCAL": {
+      "fields": {
+        "acceptance": "C7 independent reviewer reports default-off zero-attempt, admission/reservation/wire/uncertain-spend and hard time/goalie-binding controls accepted offline; any enabled/--dispatch use BLOCKED on F1/F2. Parent vetting and broader live/source/hosted qualification remain open.",
+        "verification": "Audit fully read C7 review: owner41cases reproduced, independent40controls plus7CLI runs kept separate. Original two reviewer fixture/expectation corrections retained. 6new+4protected pins reported matched; newsFeed test-only dependency drift explicitly recorded. No audit test run or paid request.",
+        "next_action": "TJ will inspect C7 F1/F2 before deciding repairs; no Claude lane repairs them under the reported hold. F1 Decisions-leg unknown/skipped stops can remain review_only with CLIexit0; F2 attempts counts transport invocations rather than admitted dispatches. Keep F3soft-status policy/F6closure-pin decision and hosted activation separate.",
+        "evidence_level": "independent reviewer-reported bounded offline acceptance; enabled dispatch blocked",
+        "evidence_scope": "Default-off and named synthetic controls only; no live model accuracy/provider behavior, durable hosted budget or whole Release C composition acceptance.",
+        "dispatch_class": "Claude C7 local_f9ee2dca-cbf5-4df7-9274-66687e6ea435 (c7-luna-review); bounded review delivered, dispatch findings held for TJ"
+      },
+      "new_evidence": [
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C7/REVIEW.md",
+          "line": 1,
+          "sha256": "24024990e5ef907a0a53315d997d822b1c6e857076dfc51864986004c05a4a28",
+          "observed_at": "2026-10-24T15:10:07.783055+00:00",
+          "review_scope": "Full named receipt or bounded current coordination section/structured session allocation; no application execution."
+        },
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+          "line": 30,
+          "sha256": "af813e8c32ca47011020d2b8c19cadbf6690bc5925885b6a6e9cc76e1abf0bf1",
+          "observed_at": "2026-10-24T15:10:07.783055+00:00",
+          "review_scope": "Full named receipt or bounded current coordination section/structured session allocation; no application execution."
+        }
+      ],
+      "notes": []
+    },
+    "SITE-WIGO": {
+      "fields": {
+        "dispatch_class": "Claude C4 local_2837d829-8bba-4240-9356-0d1bef41b5a2 (c4-wigo-links) dispatched; no completion receipt reviewed",
+        "next_action": "Reconcile the immutable C4 handoff when available against exact baseline hashes. Claude C4 allocated only existing workflow-link wiring; broader WiGO source/rating/performance acceptance remains unassigned. Preserve the older source/window/unit, rating/radar/cohort and measured-performance gates below; C4 links do not complete them. Later lease records actual C4 session; browser-slot ownership conflicts between mailbox and shared_resources need coordinator reconciliation, not an audit guess."
+      },
+      "new_evidence": [
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-LEASES.json",
+          "line": 1,
+          "sha256": "3c52f4eabc81f104d59c64214636c8d3c600e92b6f2ebafb9d98b2b31c2eb5c1",
+          "observed_at": "2026-10-24T15:10:07.783055+00:00",
+          "review_scope": "Full named receipt or bounded current coordination section/structured session allocation; no application execution."
+        }
+      ],
+      "notes": []
+    },
+    "BILLING-CANCEL-RELOAD": {
+      "fields": {
+        "implementation": "Claude C3 local_d400a595-ead2-4f50-80a6-862b4414be6e (c3-cancel-reload) dispatched15:03UTC to a new pinned isolated cancellation-reload candidate at /private/tmp/fhfh-c3-isolated/web. Canonical accepted InSeasonPanel trio remains read-only; no completed correction/acceptance receipt reviewed.",
+        "dispatch_class": "Active isolated Claude C3 candidate; canonical source/integration still protected"
+      },
+      "new_evidence": [
+        {
+          "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+          "line": 30,
+          "sha256": "af813e8c32ca47011020d2b8c19cadbf6690bc5925885b6a6e9cc76e1abf0bf1",
+          "observed_at": "2026-10-24T15:10:07.783055+00:00",
+          "review_scope": "Full named receipt or bounded current coordination section/structured session allocation; no application execution."
+        }
+      ],
+      "notes": []
+    }
+  },
+  "no_new_ids": true,
+  "evidence_entries": 828
+}

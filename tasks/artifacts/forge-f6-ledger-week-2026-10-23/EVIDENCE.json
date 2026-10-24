@@ -1,0 +1,180 @@
+{
+  "task": "F6 artifact-only Release C ledger-week audit",
+  "initial_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "observed_head_at_packaging": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "branch": "octoberBranch",
+  "tests": {
+    "command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s f6-packet -p 'test_*.py' -v",
+    "passed": 31,
+    "failed": 0,
+    "log": "VERIFY.txt",
+    "executed_cwd": "/Users/tim/Documents/Codex/2026-10-23/task-6",
+    "canonical_rerun_command": "PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tasks/artifacts/forge-f6-ledger-week-2026-10-23 -p 'test_*.py' -v"
+  },
+  "cli_fixtures": [
+    {
+      "fixture": "valid",
+      "exit_code": 0,
+      "qualification": "SYNTHETIC_TARGETS_PASS",
+      "issues": [],
+      "primary": {
+        "actual_over_expected": 1.0,
+        "actual_sum": 397.95000000000005,
+        "bias": 0.0,
+        "expected_sum": 397.95000000000005,
+        "mae": 0.0,
+        "median_actual": 5.6850000000000005,
+        "n": 70,
+        "rmse": 0.0,
+        "share_below_expected": 0.0
+      },
+      "denominator": {
+        "coverage": 1.0,
+        "eligible_dressed": 70,
+        "scored_dressed": 70
+      }
+    },
+    {
+      "fixture": "mixed",
+      "exit_code": 2,
+      "qualification": "REFUSED",
+      "issues": [
+        "incomplete_or_mixed_version_primary_cohort"
+      ],
+      "primary": {
+        "actual_over_expected": 1.0,
+        "actual_sum": 397.95000000000005,
+        "bias": 0.0,
+        "expected_sum": 397.95000000000005,
+        "mae": 0.0,
+        "median_actual": 5.6850000000000005,
+        "n": 70,
+        "rmse": 0.0,
+        "share_below_expected": 0.0
+      },
+      "denominator": {
+        "coverage": 1.0,
+        "eligible_dressed": 70,
+        "scored_dressed": 70
+      }
+    },
+    {
+      "fixture": "incomplete",
+      "exit_code": 2,
+      "qualification": "REFUSED",
+      "issues": [
+        "incomplete_settlement_scope:9000"
+      ],
+      "primary": {
+        "actual_over_expected": 1.0,
+        "actual_sum": 397.95000000000005,
+        "bias": 0.0,
+        "expected_sum": 397.95000000000005,
+        "mae": 0.0,
+        "median_actual": 5.6850000000000005,
+        "n": 70,
+        "rmse": 0.0,
+        "share_below_expected": 0.0
+      },
+      "denominator": {
+        "coverage": 1.0,
+        "eligible_dressed": 70,
+        "scored_dressed": 70
+      }
+    },
+    {
+      "fixture": "unverified-issuance",
+      "exit_code": 2,
+      "qualification": "REFUSED",
+      "issues": [
+        "unverified_first_issuance"
+      ],
+      "primary": {
+        "actual_over_expected": 1.0,
+        "actual_sum": 397.95000000000005,
+        "bias": 0.0,
+        "expected_sum": 397.95000000000005,
+        "mae": 0.0,
+        "median_actual": 5.6850000000000005,
+        "n": 70,
+        "rmse": 0.0,
+        "share_below_expected": 0.0
+      },
+      "denominator": {
+        "coverage": 1.0,
+        "eligible_dressed": 70,
+        "scored_dressed": 70
+      }
+    }
+  ],
+  "sql_static_column_checks": [
+    {
+      "table": "forge_runs",
+      "selected_columns": 6,
+      "missing_columns": []
+    },
+    {
+      "table": "forge_served_forecast_ledger",
+      "selected_columns": 50,
+      "missing_columns": []
+    },
+    {
+      "table": "forge_player_projections",
+      "selected_columns": 16,
+      "missing_columns": []
+    },
+    {
+      "table": "rolling_player_game_metrics",
+      "selected_columns": 9,
+      "missing_columns": []
+    },
+    {
+      "table": "games",
+      "selected_columns": 6,
+      "missing_columns": []
+    },
+    {
+      "table": "wgo_skater_stats",
+      "selected_columns": 14,
+      "missing_columns": []
+    },
+    {
+      "table": "wgo_goalie_stats",
+      "selected_columns": 10,
+      "missing_columns": []
+    }
+  ],
+  "sql_executed": false,
+  "sql_query_plan_verified": false,
+  "remote_actions": {
+    "production_requests": 0,
+    "model_captures": 0,
+    "database_writes": 0,
+    "migrations": 0,
+    "dependency_installs": 0,
+    "pushes": 0,
+    "deployments": 0,
+    "yahoo_reads": 0,
+    "schedules_created": 0
+  },
+  "remaining_evidence_gates": [
+    "actual first baseline issuance/served timestamp receipt",
+    "independent complete finality and dressed universe",
+    "complete immutable forecast revision history",
+    "separate TJ approval for exact bounded reads"
+  ],
+  "file_sha256": {
+    "BASELINE-RECEIPTS.json": "2ba6cffb2f949ccd8236ed68fd9e52c3b2daedefc5d89fd42e379717facb74d5",
+    "FUTURE-APPROVAL.md": "de4f3b0672741f062966ae2449dc36cb3513db0d4a356cfc6fd488a40a902ee9",
+    "INPUT-CONTRACT.md": "539a795cfac6be5835a17a6b0a8eb29eb6d1c832fdcb372a26c0a9401edcb2b1",
+    "README.md": "4946f76681e29687f77df7a6eff1fd7c6589434578bf28681305acead24e7128",
+    "SYNTHETIC-RESULT.json": "91264b7dae87fef4f9582036355ce0999b56654e39aa340a7231fc003344051b",
+    "VERIFY.txt": "373450464c5c2782b26f9fa09eebfeb0ce7b36b511ed9ed0dac5576c0782549f",
+    "audit.py": "01c1c608eb19e9a706618d6aa2025a7b0687cb71cfae0ce6d2a9b12134ccbe93",
+    "fixtures.py": "37765115ed538efad95f7410cd5da76deceb7499b9c3c277ad49bba4d712d676",
+    "queries.sql": "4d6cbeec1ed96bf9c7fc6dc15f175e182a1b1f05e0e27b0637355015a87a8767",
+    "test_audit.py": "4bd64685b4e5a9681ea6cb7588eff410f1e361aae73d510949401464ef1c9961"
+  },
+  "scope": "Only this artifact directory and tasks/diaries/2026-10-23-codex-f6-release-c-ledger-week.md. Register and application sources not edited.",
+  "artifact_file_count": 11
+}

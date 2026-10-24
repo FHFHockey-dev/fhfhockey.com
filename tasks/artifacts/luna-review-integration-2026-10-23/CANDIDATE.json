@@ -1,0 +1,29 @@
+{
+  "baseHead": "431ffcd673b42ad4a149dc3f9dfb03005dbec75a",
+  "handoffHead": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "newFiles": {
+    "web/lib/sources/tweetLunaReview.ts": "1dc24189c12333628eb536f37556fe7fc958c2cac16163d77fd80b0a2dba2b94",
+    "web/lib/sources/tweetLunaTransport.ts": "129dfdf337fee692fbf07959a5041651222108836631ecc192436edee988ada2",
+    "web/lib/sources/tweetLunaLocalStore.ts": "52977c7949d2f60ee4274da0c7d1e0583bc8c5c1324bb6ffb187a32037a2d543",
+    "web/lib/sources/tweetLunaReview.test.ts": "8a3e8adacd888215aa9ba4226331b3e3576c98e8d2fcc113e01a305a22074ce2",
+    "web/lib/sources/fixtures/tweetLunaAdjudicatedLibrary.json": "e787036b54c89f8fa06e4b28032c8895fbbed81feef1fa04e357435f3229726a",
+    "web/scripts/review-ifttt-luna.ts": "03d37708a0ed6902162459cd61e82f70a1828c581e806e30eef4854bf9fa532d"
+  },
+  "protectedPins": {
+    "web/lib/sources/decisionsReference/adapter.mjs": "055bc80ccf9874de8a976da6106bc34af15e424d6b905d39fccf57ecfd2b92a1",
+    "web/lib/sources/tweetIdentityReplacementReview.ts": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a",
+    "web/lib/sources/tweetIdentityReplacementReview.test.ts": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451",
+    "tasks/ifttt-integration-2026-10-16/comparison-retry-execution-2026-10-19/aggregate-budget.sqlite": "e8418735afaeff893177e550df6774600c6c6fec4f49c2b01c183712cdc064f2"
+  },
+  "patchSha256": "3a80fdab6f4920361d06eccba128adac2bbd98ec40032599e6e1195d6f67bd6a",
+  "tests": {
+    "newFinalPassed": 41,
+    "existingBoundaryPassed": 129,
+    "uniqueTotal": 170,
+    "coupledEarlierPassed": 169,
+    "fullTreeTypecheck": false,
+    "scopedTypecheckExit": 0,
+    "scopedLintExit": 0,
+    "paidRequests": 0
+  }
+}

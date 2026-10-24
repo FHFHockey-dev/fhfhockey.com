@@ -1,0 +1,74 @@
+// C:\Users\timbr\OneDrive\Desktop\fhfhockey.com-2\web\lib\supabase\index.ts
+
+import { IncomingMessage } from "http";
+import { SupabaseClient, createClient } from "@supabase/supabase-js";
+import type { Database } from "./database-generated.types";
+import browserSupabase from "./client";
+
+const supabaseUrl =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://fyhftlxokyjtpndbkfse.supabase.co";
+// CHANGED SUPABASE THING
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLIC_KEY || "";
+// Re-export the shared browser auth client so client-side imports of `lib/supabase`
+// do not create a second GoTrue instance with the same storage key.
+const supabase = browserSupabase;
+
+export function createClientWithToken(access_token: string): typeof supabase;
+export function createClientWithToken(req: IncomingMessage): typeof supabase;
+export function createClientWithToken(...args: any) {
+  let access_token = "";
+  if (typeof args[0] === "string") {
+    access_token = args[0];
+  } else if (args[0] instanceof IncomingMessage) {
+    const req = args[0] as IncomingMessage;
+    access_token = req.headers["authorization"]?.split(" ")[1] ?? "";
+  }
+
+  const client = createClient<Database>(supabaseUrl, supabaseKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false
+    },
+    global: {
+      headers: {
+        Authorization: `Bearer ${access_token}`
+      }
+    }
+  });
+
+  return client;
+}
+
+/**
+ * Make a post request with supabase access token in Authorization header.
+ * @param url
+ * @param body
+ * @returns
+ */
+export async function doPOST(url: string, body?: any, init?: RequestInit) {
+  const { data } = await supabase.auth.getSession();
+  const session = data.session;
+  if (!session) throw new Error("Failed to authenticate.");
+
+  console.log("send post request to", url);
+  const result = await fetch(url, {
+    ...init,
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.access_token}`,
+      ...(init?.headers ?? {})
+    },
+    body: JSON.stringify(body),
+    signal: init?.signal
+  }).then((res) => res.json());
+
+  return result;
+}
+
+export async function getRole(client: SupabaseClient) {
+  const { data } = await client.from("users").select("role").single();
+  return data?.role ?? "";
+}
+
+export default supabase;

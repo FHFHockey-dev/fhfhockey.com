@@ -1,0 +1,833 @@
+--- before/tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md
++++ after/tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md
+@@ -1,8 +1,8 @@
+ # FHFH master task list — reconciled 2026-10-24
+ 
+-As of `2026-10-24T18:49:59.291059+00:00`. Canonical checkout `octoberBranch`; observed HEAD `2a5092d37cb863ec92a2a4e609999cf226bfa4a5`. This replaces the old master view using the existing sprint ledger IDs. Implementation, independent acceptance and release are separate. FA Portal is excluded.
+-
+-All **32 original master IDs** and **211 current ledger rows** are preserved. The exact prior master is retained in [the archival snapshot](../../tasks/artifacts/fhfh-sprint-ledger-2026-10-22/archive/MASTER-TASKLIST-2026-10-20.before-2026-10-23.md) (SHA256 `5d0126088c72f2216b6c6a89381798156a387a26cb85891cbfc2d4c750924b2a`). Older source findings and scopes remain available there; absence of a fresh review is not completion. Rows marked inventoried only have not received a file-health audit.
++As of `2026-10-24T19:15:27.950610+00:00`. Canonical checkout `octoberBranch`; observed HEAD `2a5092d37cb863ec92a2a4e609999cf226bfa4a5`. This replaces the old master view using the existing sprint ledger IDs. Implementation, independent acceptance and release are separate. FA Portal is excluded.
++
++All **32 original master IDs** and **213 current ledger rows** are preserved. The exact prior master is retained in [the archival snapshot](../../tasks/artifacts/fhfh-sprint-ledger-2026-10-22/archive/MASTER-TASKLIST-2026-10-20.before-2026-10-23.md) (SHA256 `5d0126088c72f2216b6c6a89381798156a387a26cb85891cbfc2d4c750924b2a`). Older source findings and scopes remain available there; absence of a fresh review is not completion. Rows marked inventoried only have not received a file-health audit.
+ 
+ **HISTORICAL CHECKPOINT AGGREGATION (earlier205-ID phase):** all 19 lane handoffs are accounted for and current turns ended at natural checkpoints. All original 188 task IDs and 32 original scopes remain preserved; Testing Grounds is now a locally implemented bounded slice, and16audit carry-forwards give205 IDs. Coherent release assembly and broader release acceptance are unfinished; this is not deployment approval.
+ 
+@@ -13,6 +13,15 @@
+ 
+ 
+ 
++
++
++## Forge program and presentation reconciliation — 2026-10-24T19:15:27.950610+00:00
++
++213 stable parent IDs preserve every prior scope and evidence entry. Two proposed reconciliation entries make the ongoing OCT14-COMP program and forecast-range presentation disposition explicit. Nine source-stable OCT14 child IDs retain staged requirements; one existing-parent child exposes the historical PP-ACC-001 disposition. F00–F22 are aliases of the same program. Existing Testing Grounds, issuance, consumer, scoring and ledger work keeps its own acceptance and ownership.
++
++Later source records settle the fresh identity-only planning review, baseline-plus-at-most-two first-wave menu, positive-TOI conditional PIM scope and exact 28,509,016-byte A cap. Do not reopen those decisions. Later reader/runtime and terminal A receipts remain unverified here; this audit neither claims A never ran nor authorizes a new operation. B fitting/scoring, sealed evaluation and release stay separate. Completed modularization, approved scalar epsilon 0.005 parity, Release B and narrower later closures retain credit.
++
++Five unique documents were fully read (145,928 bytes); the sixth PRD's requirements prose was read and its historical commented cron appendix received bounded structural disposition, not full semantic review. Private evidence bodies and current application/runtime were not inspected. Original duplicate/exclusion maps remain intact; the whole content audit is unfinished. See [segment15 report](/Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/REPORT.md). No application code/tests, Git, production or additional workers.
+ 
+ ## Living-audit and current Forge obligations — 2026-10-24T18:49:59.291059+00:00
+ 
+@@ -2376,6 +2385,12 @@
+ - **Status evidence date:** `2026-10-23T13:00:20+00:00`.
+ - **Pinned references:** [tasks/artifacts/forge-k-refit-gate-2026-10-22/VERDICT.md:1](../../tasks/artifacts/forge-k-refit-gate-2026-10-22/VERDICT.md) SHA256 `ed4226f66748c30b796a8dd07752741b4828b7403fe4840e3faafe608126e4c1`; [web/lib/projections/reconcile.ts:1](../../web/lib/projections/reconcile.ts) SHA256 `05fc69f92a5999c435b1a8341803423a698216d2aa7a0657b7e36cdcf3ec4822`; [tasks/artifacts/forge-task3-gate-2026-10-22/run-captures-v.sh:1](../../tasks/artifacts/forge-task3-gate-2026-10-22/run-captures-v.sh) SHA256 `156c633f234f24857635d223dfd6fe1b2ae42313cc8e0b89106d33a7a7f96cd3`.
+ 
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **FPI-03/PP-ACC-001-disposition — Reconcile the tracked post-parity assist-recency counter proposal.** Proposed/unverified disposition; no current bug reproduced. Next: Determine from later exact receipts whether the assistRecent/goalsRecent counter proposal was fixed, removed or superseded by accepted model changes. Retain only a demonstrated surviving diagnostic issue before any implementation; do not reopen Release C fitting. Owner: UNASSIGNED. Dependencies: existing parent contracts and receipt reconciliation. Gate: No app repair, model tuning or source/test execution by audit. Reconcile current ownership and evidence first; the parity refactor approved tracking only. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md:128>). Credit retained: Modularization/parity complete; Release C assist/PPP implementation and existing calibration holds remain.
++- **Segment15 reconciliation date:** `2026-10-24T19:15:27.950610+00:00`.
++- **Segment15 evidence:** [tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md:128](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/b177dc88ceaf-prd-run-forge-projections-modularization.md:128>) SHA256 `b177dc88ceaf19310c46246aff5c8cdbc70023d93b6b81914660c64b21a25c37`.
++
+ ### FPI-04 — Position-specific season-current priors, tasks4.1–4.3
+ 
+ - **Owner:** FPI-MODEL (`01a1645a-3fe7-7289-8d44-11e216d6e0c5`); reviewer GATE-REVIEW (`01a168ee-3844-74ba-ad3c-dcbb8a958010`).
+@@ -2587,7 +2602,7 @@
+ - **Acceptance:** Not yet accepted
+ - **Release:** Not released by this task
+ - **Evidence level / limits:** source inspected. Only the named functions/files in the source-input reconciliation below; no whole-area health claim
+-- **Verification:** Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority.
++- **Verification:** Current source and retained receipts inspected; no application tests rerun. Segment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority. Segment15 distinguishes completed 36/36 modularization and approved scalar epsilon 0.005 from still-tracked PP-ACC-001–005 accuracy proposals. Meta A–K checkmarks do not close granular Sustainability or OCT14 requirements. Latest V1 tail supersedes earlier missing-identity, unresolved 73-slot and exact-cap-blocker statements; do not repeat those resolved decisions. Current canonical admission/reconciliation test packets remain authoritative over old NEW6/NEW7 issue wording.
+ - **Dependencies / gate:** Parent dispatch and exact file lease; preserve release and Game Grid work Exact scoped tests and independent review before integration; no production calls, schema, credentials or deployment authority
+ - **Next:** Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The now fully read debug checklist closes SHA under July13 NEW7 and performance NEW8/9, with September4 official-provider SHA precedence including zero; only actual/custom-unmapped SHA retains nonnegative null-safe derivation. Preserve the owner-approved missing-relative-baseline exception and optional/evaluated virtualization, hashing, chunking and worker proposals; no false30%gain or mandatory performance rewrite. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules. Four historical requested resolver follow-ups and the name-keyed assignment/provenance risk are retained once under proposed SITE-DRAFT-CSV-RESOLVER; the existing summary is not wholly absent. Draft Ranker July17 personal authenticated rollout and July30 Phase8 retirement retain closure, while older July15 staff-only manifest paragraphs are historical. No secondary/public rollout, model change, old migration/security replay or new worktree from source runbooks. The remaining Ranker package is now content-covered. Correct only documentary precedence: early technical-contract authenticated RPC/write language yields to later service-only mutation/API and owner-read-only receipts; per-ranking/player placement language yields to20260715034601 single-active-per-ranking hardening. Preserve pre-baseline archive references. Keep repository-record.md as a noncanonical historical variant, not an exact-hash duplicate or current usable-ADP/source-path authority. Product blueprint direct-edit community-weight, mature confidence/XLSX/segmentation and broad-source ideas are narrowed by approved pinned launch decisions and explicit Phase8 retirement; do not revive them. No old CLI/review/traffic/audit blocker, deprecated source count or early roadmap heading is a fresh open task.
+ - **Status evidence date:** `2026-10-24T15:51:04.684507+00:00`.
+@@ -2624,6 +2639,8 @@
+ - [ ] **REPO-DOCUMENTATION/forge-refresh-itinerary — Reconcile the old full-refresh itinerary against approved bounded operating contracts.** Open documentary follow-up; no endpoint execution. Next: Correct or clearly mark the obsolete all-date/fullRefresh RPC-truncate itinerary, old page/schema authority and unqualified fallback guidance. Link current bounded README/runner/admission contracts without weakening existing full-refresh protections. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: Documentation-only under current exact file custody; no cron, SQL, refresh, truncate, provider call, or new remote verification.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md:210>). Credit retained: Existing full-refresh safety and writer fixes remain completed; stored instructions are not new authority.
+ - **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
+ - **Segment14 evidence:** [tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md:210](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/4f015e185732-FORGE_EXPLAINED.md:210>) SHA256 `4f015e18573239112cfe2e7ef3be6539adeb6aff8915d0a1d2d231121f55031c`; [tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md:106](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md:106>) SHA256 `cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4`; [tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:56](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md:56>) SHA256 `1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be`; [tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:196](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md:196>) SHA256 `1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be`; [tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md:92](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1c5b086e4ade-FORGE_ECOSYSTEM_ELI5_AUDIT.md:92>) SHA256 `1c5b086e4ade172656c0aa9eb301f319188fec725193d168f2ad7855e8cf979d`.
++- **Segment15 reconciliation date:** `2026-10-24T19:15:27.950610+00:00`.
++- **Segment15 evidence:** [tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md:131](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/9f445b650d17-tasks-prd-run-forge-projections-modularization.md:131>) SHA256 `9f445b650d174be733e048c722a86b2fd864cbce16cd583985f15f7bee1f18b9`; [tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md:43](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/b4dcc5799054-tasks-prd-forge-prediction-engine-super-task-list.md:43>) SHA256 `b4dcc57990546a990aef1cad73fa962caf5dea744fdf833c177f7d364d5e0a6c`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:267](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:267>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:275](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:275>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:281](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:281>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:287](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:287>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`.
+ 
+ ### REPO-GENERATED-TRACKING — Remove generated audit cache/output/temp files from tracking without deleting local work or rewriting history
+ 
+@@ -2885,7 +2902,7 @@
+ - **Implementation:** Preserve earlier accepted bounded slices including S05-R1 lifecycle repair. Owner local configuration is completed: exact supplied owner key appended under recorded permission; credential-free local access changed from 503 owner_not_configured to 401 unauthenticated. This establishes loaded configuration and absent-credential denial, not authenticated access or launch readiness.
+ - **Acceptance:** S05-R1 locally accepted only: unchanged original reproducer passes; independent11focused passes/eight intentional skips, scoped TypeScript/lint and148owner pins plus receipt matched. Native BFCache/browser, live session/server authorization, trusted payload/sealing/runner and scientific/model gates are not closed.
+ - **Release:** Bounded local implementation was explicitly requested. Real capture, paid/remote runtime, production writes, provisioning and deployment remain separately gated.
+-- **Verification:** Full local-owner-configuration HANDOFF read and declared hash matched. Worker reports private readback, ten unchanged source pins, one credential-free local GET at 17:25:58 UTC and hot reload without restart. No env contents, UUID, token, local request or app-source check by audit; 0 of 1 approved hosted Auth reads used per receipt.
++- **Verification:** Full local-owner-configuration HANDOFF read and declared hash matched. Worker reports private readback, ten unchanged source pins, one credential-free local GET at 17:25:58 UTC and hot reload without restart. No env contents, UUID, token, local request or app-source check by audit; 0 of 1 approved hosted Auth reads used per receipt. The newly cross-mapped OCT14-COMP6 accountability requirements need report/evidence-stage alignment with this existing UI/runner scope. An operational preview or configured owner gate does not establish matched numeric target support, proper-score reporting or full comparison-program acceptance. No new implementation, auth/runtime observation or second dashboard owner is inferred.
+ - **Dependencies:** Dedicated runner A remains selected; durability, actual trusted request/session/worker integration, safe read-adapter projections/sealing, scientific/model/pilot and approved hosted runtime/storage/retention/cost remain open. Local owner activation is separately approved but blocked with0of1approved auth reads used: private verification transport, inherited AuthProvider profile/settings-write containment and existing-server ownership unresolved. Missing owner configuration is not rejection of TJ identity.
+ - **Acceptance/release gate:** Reconcile the original PRD/task list plus appended steers as satisfied, incomplete, intentionally superseded or blocked with evidence. Real captures, runtime costs, production writes and deployment require separate bounded authority.
+ - **Next action:** Retain accepted slices and completed owner configuration; do not request the same UUID or reload again. Authenticated viewing remains pending safe private verification transport, single-read bounding and inherited profile/settings-write containment outside frozen shared auth custody. No app rehydration/restart or real launch from audit; runner/resource/retention/statistical/model gates remain distinct.
+@@ -2906,6 +2923,8 @@
+ - **Segment09 evidence:** [tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/55a86abc97bb-REVIEW.md:3>) SHA256 `55a86abc97bbd42f2ee736efbd6b4aafe77b6a4a0b4ddc64b09a19a638b8abb7`; [tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW.md:53](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/55a86abc97bb-REVIEW.md:53>) SHA256 `55a86abc97bbd42f2ee736efbd6b4aafe77b6a4a0b4ddc64b09a19a638b8abb7`; [tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW-EVIDENCE.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/2a74da8b7492-REVIEW-EVIDENCE.json:1>) SHA256 `2a74da8b7492a506504202db7b1fab71a1f080d657f34405ff3d034be251a8df`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/STATUS-SOURCE-EXTRACT.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/f6700b4da87e-STATUS-SOURCE-EXTRACT.json:1>) SHA256 `f6700b4da87eb74693d7e3359b891e29c990e9b167ed5c103fd1365c82902fd6`.
+ - **Segment13 reconciliation date:** `2026-10-24T18:33:56.621280+00:00`.
+ - **Segment13 evidence:** [tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/HANDOFF.md:5](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5a28ac3a1541-HANDOFF.md:5>) SHA256 `5a28ac3a15416a071174b6f8fd299e01193ac5b9818bb1df2733f8f21cb7b151`; [tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/HANDOFF.md:11](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5a28ac3a1541-HANDOFF.md:11>) SHA256 `5a28ac3a15416a071174b6f8fd299e01193ac5b9818bb1df2733f8f21cb7b151`; [tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/HANDOFF.md:15](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5a28ac3a1541-HANDOFF.md:15>) SHA256 `5a28ac3a15416a071174b6f8fd299e01193ac5b9818bb1df2733f8f21cb7b151`.
++- **Segment15 reconciliation date:** `2026-10-24T19:15:27.950610+00:00`.
++- **Segment15 evidence:** [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:161](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:161>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:199](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:199>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`.
+ 
+ ## October24 artifact audit carry-forwards
+ 
+@@ -3347,3 +3366,53 @@
+ - **Source aliases:** A-FORGE-DASH remediation13.2–13.3 / NEW13; component backlog Track2/P0; observability follow-ups54
+ - **Segment13 reconciliation date:** `2026-10-24T18:33:56.621280+00:00`.
+ - **Segment13 evidence:** [tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md:163](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/401ac54a9bd9-tasks-forge-dashboard-component-remediation.md:163>) SHA256 `401ac54a9bd9213099efd9e8e6eba45bb115c0a156fe9d557a34c976b6052493`; [tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md:32](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/644fe30a5cd1-forge-dashboard-component-health-remediation-backlog.md:32>) SHA256 `644fe30a5cd1e7b0d5479afa04d62a7079341f5b0e4d026f5f439c4ff8834a65`; [tasks/artifacts/forge-dashboard-observability-followups.md:54](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5941db83cadb-forge-dashboard-observability-followups.md:54>) SHA256 `5941db83cadb439b7ea265f1fc12cc2a7c1cd1142bb219e2c3b77a6f31323875`; [tasks/TASKS/super-goal/super-goal-final-summary.md:606](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/b99e7bfde3fd-super-goal-final-summary.md:606>) SHA256 `b99e7bfde3fd4579acf9ae870b85a855b79deb1ee8a072da9978a2d2278acf82`.
++
++### FORGE-COMPARISON-PROGRAM — Reconcile the ongoing native candidate-comparison program and its staged evidence gates
++
++- **User impact:** A running experiment UI or a conditional pilot cannot establish full native forecast quality, target coverage or legal decision value. The requested program needs transparent versions, losses, cohorts, uncertainty and promotion decisions.
++- **Implementation:** OCT14-COMP-0 through 9 remain open in the owning V1 ledger; F00–F22 are aliases, not another task system. Existing code, accepted private engineering and historical experiments retain credit. F02 mapping is complete within its tranche; F03 metadata and fresh identity-only planning review are recorded accepted, not numeric-target or original-as-of admission.
++- **Acceptance:** Source records fresh identity-only planning acceptance and later exact A cap/positive-TOI conditional PIM approval. Actual independent reader/runtime gate and terminal A outcome were not established in this repo-only audit. Do not request the same identity/cap decision again or claim A never ran. B fitting/scoring and broader qualification remain separate.
++- **Release:** No full-program, dashboard or model release follows. Original BLK operation, accepted experiments and version-specific live guards remain independently owned. January 14 onward/reserved-label and blend holds are retained as recorded for this program, subject to legitimate later authority.
++- **Owner:** UNASSIGNED
++- **Reviewer:** UNASSIGNED
++- **Dependencies:** Current sole executor/evaluator custody; NATIVE-ISSUANCE and RSO-REAL-ACCEPTANCE; FPI-01, FORGE-GATE-HARNESS and FORGE-LEDGER-WEEK reusable evidence; SITE-FORGE-TESTING-GROUNDS for UI/runner integration. These narrower slices do not substitute for the full program.
++- **Verification:** Full V1 checklist and super-list read; PRD requirements prose reviewed. Latest checklist resolves older missing-identity, unresolved 73-slot and cap-blocker statements: fresh planning review accepted; baseline plus at most two complete challengers selected; exact 28,509,016-byte cap approved for 829 spans. External receipts/raw spans were not accessed, so statuses/hashes remain attributed to the dated source.
++- **Acceptance/release gate:** No second executor, new A/B operation, private-source access, label allocation, fitting, capture, scheduling, publication or deployment is authorized by audit. Preserve existing exact A authority under its legitimate owner and required prior gate. New stages require their own scope; recorded metadata/current identity is not historical eligibility or numeric support.
++- **Next:** Through current coordination, reconcile later existing-owner reader/runtime/synthetic and terminal A receipts before new work. Preserve resolved identity/cap decisions and approved conditional-PIM exclusions. Reuse accepted contracts, then retain only surviving staged requirements below; no cap-only review, lookup retry, passed-window retry or automatic benchmark.
++- **Evidence level:** Proposed/held program reconciliation; component approvals retained, full evidence/release unverified
++- **Evidence scope:** OCT14-COMP0–9 owning requirements; F00–F22 aliases; component implementation, data support, evaluation, UI and release are distinct
++- **Dispatch class:** Reconciliation-first; no new model owner, implementation or external dispatch
++- **Source aliases:** OCT14-COMP meta mapping and 0–9; October 15 F00–F22 amendment under the same owning ledger; Latest fresh identity review and exact-cap A decision, not new audit authority
++
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-1 — Freeze target/population protocol after the bounded support stage.** A cap and conditional-PIM scope resolved; gate/result unverified. Next: Reconcile existing A gate/result first; retain positive-TOI PIM and explicit missing/penalty-only exclusions. Then pin estimands, anchors, cohorts, clocks, allocations and budgets before B. Owner: UNASSIGNED. Dependencies: NATIVE-ISSUANCE. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:156>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-2 — Retain immutable complete trial and issuance history.** Partial reusable infrastructure; broader coverage unverified. Next: Link all candidate/feature versions, parameters, source/cohort manifests, actual clocks, failures, exposures, missingness and selections. Show requested and paired populations; reconstruction cannot become original issuance. Owner: UNASSIGNED. Dependencies: FPI-01, FORGE-LEDGER-WEEK. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:157>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-3 — Preserve the selected finite first-wave comparison scope.** Menu decision resolved; no experiment authorization. Next: Use baseline plus at most two complete challengers for one support-qualified head/component; do not reopen the old 73-slot choice or run Cartesian sweeps. Separate mean-fixed diagnostics need their own declared inclusion; Elo/Glicko is optional context only. Owner: UNASSIGNED. Dependencies: FORGE-ISOLATED-VARIANT. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:158>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-4 — Version target-appropriate expected-mean/distribution scoring.** Requirements open; old experiment scores unchanged. Next: Freeze MSE/proper-score selection and report bias, RMSE, calibration, intervals and coverage by units/conditioning. Zero-baseline skill stays undefined; do not retrofit new selection onto the old MAE-selected pilot. Owner: UNASSIGNED. Dependencies: FORGE-GATE-HARNESS. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:159>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-5 — Qualify paired coverage and dependence-aware comparisons.** Metadata/current identities accepted only within planning scope. Next: Match baseline-covered target/horizon/evidence cohorts with chronological stability and justified game/slate uncertainty. Numeric target, participation and historical as-of support remain distinct from 927 identities / 829 spans. Owner: UNASSIGNED. Dependencies: NATIVE-ISSUANCE. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:160>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-6 — Align the accountability report and existing dashboard work.** Existing UI remains separately owned; full report contract open. Next: Reuse SITE-FORGE-TESTING-GROUNDS and existing accountability/ledger surfaces for signed-error histograms, loss/coverage trends, version/target tables and supported segments. Keep research, shadow and deployed evidence stages explicit; do not create a second dashboard stack. Owner: UNASSIGNED. Dependencies: SITE-FORGE-TESTING-GROUNDS, FPI-01. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:161>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-7 — Qualify complete-vector legal lineup and drop/add comparisons.** Authentic replay/consumer evidence unverified. Next: Use existing RSO/Start Chart owners and matching original scoring, roster, eligibility, locks, waivers, costs and issued inputs. Retain unchanged decisions as zero gain; conditional proxies/simulations are not realized roster utility. Owner: UNASSIGNED. Dependencies: RSO-REAL-ACCEPTANCE, NATIVE-ISSUANCE. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:162>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-8 — Retain per-head promotion, sealed evaluation and rollback gates.** Held; implementation contracts do not establish predictive release. Next: Predeclare coverage/skill/coherence/subgroup/operating bounds, independent final-feedback custody and a pinned fallback. Preserve original version-specific gates, including older skater 14-matched-date/default-switch hold; they are not universal new research thresholds. Owner: UNASSIGNED. Dependencies: NATIVE-ISSUANCE. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:163>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-9 — Reconcile reusable contracts and future runner ownership.** F02 mapping complete within tranche; implementation/cloud qualification open. Next: Inventory actual accepted storage/evaluation/UI gaps before migrations or duplicate code. Future nonsecret runner packaging, clock/owner/duplicate controls and prospective capture remain separately scoped; preserve existing missed-window handling. Owner: UNASSIGNED. Dependencies: SITE-FORGE-TESTING-GROUNDS, FORGE-GATE-HARNESS. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:164>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- **Segment15 reconciliation date:** `2026-10-24T19:15:27.950610+00:00`.
++- **Segment15 evidence:** [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:155](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:155>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:172](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:172>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:219](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:219>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:246](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:246>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:271](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:271>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:277](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:277>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:287](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:287>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md:213](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/42b41559b156-prd-projection-model.md:213>) SHA256 `42b41559b1561854dc410fe7222433a3c2135498a6eb7ef583cb694839f5b5e6`; [tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md:273](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/42b41559b156-prd-projection-model.md:273>) SHA256 `42b41559b1561854dc410fe7222433a3c2135498a6eb7ef583cb694839f5b5e6`.
++
++### SITE-FORGE-RANGE-PRESENTATION — Reconcile the retained plain-language forecast-range presentation requirement
++
++- **User impact:** Users need a clear distinction between a point forecast and its supported low/typical/high range; API disclosure alone does not settle the requested UI presentation. Current runtime was not inspected.
++- **Implementation:** V1 NEW8 reopens embedded presentation rows after the old FORGE rewrite removed low/typical/high blocks. Older skater 6.4 checks retain their dated scope. No later owner supersession/restoration was established by this documentary pass; this is not a reproduced current UI failure.
++- **Acceptance:** Proposed P3/unassigned reconciliation and product-disposition follow-up, not an active repair claim.
++- **Release:** No UI change or release by audit. Preserve the canonical Command Center/preview route decision and existing model/distribution work.
++- **Owner:** UNASSIGNED
++- **Reviewer:** UNASSIGNED
++- **Dependencies:** FPI-08 supported quantile contracts; current canonical frontend custody; REPO-DOCUMENTATION and source NEW8/C0002/C0003. Different from descriptive player-card percentiles and SITE-START-CONTRACT paging.
++- **Verification:** Full V1 task list, shared PRD requirements/embedded presentation rows and skater checklist read. Later NEW8 source explicitly supersedes older completed presentation boxes. No application/browser/pixel or current API check performed.
++- **Acceptance/release gate:** First reconcile a later exact owner supersession or UI acceptance receipt. If still requested, scoped owner verifies supported quantiles, honest unavailable states and wording before any presentation change. No model recalibration or unsupported ranges.
++- **Next:** Locate current owner disposition of the low/typical/high requirement. Record intentional supersession if applicable; otherwise propose the smallest canonical-surface presentation contract using actual supported outputs. Do not restore the retired dashboard or reimplement distributions from an old checklist.
++- **Evidence level:** Proposed P3; source requirement/disposition unverified in current runtime
++- **Evidence scope:** Forecast-range presentation/supersession only; no model-quality, interval-calibration or full UI acceptance
++- **Dispatch class:** Reconciliation-first; no new model owner, implementation or external dispatch
++- **Source aliases:** Projection V1 NEW8 / embedded C0002,C0003; skater 6.4 and older completed presentation evidence
++- **Segment15 reconciliation date:** `2026-10-24T19:15:27.950610+00:00`.
++- **Segment15 evidence:** [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:168](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:168>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md:568](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/42b41559b156-prd-projection-model.md:568>) SHA256 `42b41559b1561854dc410fe7222433a3c2135498a6eb7ef583cb694839f5b5e6`; [tasks/TASKS/forge-projections/v1/tasks-skater-forge.md:88](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/1f799bd7fded-tasks-skater-forge.md:88>) SHA256 `1f799bd7fded25035dfb0c55226c60c8d3e3161903292621d9d5bbdf70cbbcd4`.
+--- before/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md
++++ after/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md
+@@ -11,6 +11,15 @@
+ 
+ 
+ 
++
++
++## Forge program and presentation reconciliation — 2026-10-24T19:15:27.950610+00:00
++
++213 stable parent IDs preserve every prior scope and evidence entry. Two proposed reconciliation entries make the ongoing OCT14-COMP program and forecast-range presentation disposition explicit. Nine source-stable OCT14 child IDs retain staged requirements; one existing-parent child exposes the historical PP-ACC-001 disposition. F00–F22 are aliases of the same program. Existing Testing Grounds, issuance, consumer, scoring and ledger work keeps its own acceptance and ownership.
++
++Later source records settle the fresh identity-only planning review, baseline-plus-at-most-two first-wave menu, positive-TOI conditional PIM scope and exact 28,509,016-byte A cap. Do not reopen those decisions. Later reader/runtime and terminal A receipts remain unverified here; this audit neither claims A never ran nor authorizes a new operation. B fitting/scoring, sealed evaluation and release stay separate. Completed modularization, approved scalar epsilon 0.005 parity, Release B and narrower later closures retain credit.
++
++Five unique documents were fully read (145,928 bytes); the sixth PRD's requirements prose was read and its historical commented cron appendix received bounded structural disposition, not full semantic review. Private evidence bodies and current application/runtime were not inspected. Original duplicate/exclusion maps remain intact; the whole content audit is unfinished. See [segment15 report](/Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/REPORT.md). No application code/tests, Git, production or additional workers.
+ 
+ ## Living-audit and current Forge obligations — 2026-10-24T18:49:59.291059+00:00
+ 
+@@ -210,7 +219,7 @@
+ 
+ ## Latest scoped acceptance checkpoint
+ 
+-As of `2026-10-24T18:49:59.291059+00:00`, **gate-kit R1 is independently ACCEPTED and the prior variant-name collision BLOCK is cleared**. Reviewer receipt:26suite tests plus8independent naming probes, exact8-file reverse reconstruction and preserved arithmetic/inputs. Ledger verified19/19current kit pins. This accepts offline tooling only; actual model qualification remains **UNRUN**. Earlier pending/BLOCK observations below are historical.
++As of `2026-10-24T19:15:27.950610+00:00`, **gate-kit R1 is independently ACCEPTED and the prior variant-name collision BLOCK is cleared**. Reviewer receipt:26suite tests plus8independent naming probes, exact8-file reverse reconstruction and preserved arithmetic/inputs. Ledger verified19/19current kit pins. This accepts offline tooling only; actual model qualification remains **UNRUN**. Earlier pending/BLOCK observations below are historical.
+ 
+ **Billing:** parent reports local packet acceptance except one account-panel purchase-pitch defect; existing BILLING owner has the minimal correction. **Game Grid:** visual-v2 is locally complete and independent review is active with `01a168ae-fd25-7463-86cc-9bf261dbb031`. Neither status establishes deployment; production refresh latency remains unmeasured. No register commit in this update.
+ 
+@@ -2358,6 +2367,12 @@
+ - **Assigned slice:** Prior editing lease is historical. No new exclusive source lease inferred from October22 assignment; parent coordinates current owner before writes.
+ - **Evidence:** [TASKLIST-20261022-SNAPSHOT.md:68](</Users/tim/Code/fhfhockey.com/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/TASKLIST-20261022-SNAPSHOT.md:68>); [CURRENT-OWNERSHIP.md:5](</Users/tim/Code/fhfhockey.com/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/CURRENT-OWNERSHIP.md:5>); [HANDOFF.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-skater-candidates-2026-10-22/HANDOFF.md:1>); [TASK3-DATA-ASK.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-skater-candidates-2026-10-22/TASK3-DATA-ASK.md:1>); [tasks-forge-projection-improvements-2026-10-22.md:84](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:84>); [2026-10-22-claude-forge-model-lane-handover.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-22-claude-forge-model-lane-handover.md:1>); [CURRENT-RESULT.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/CURRENT-RESULT.json:1>); [tasks-forge-projection-audit-streamlining-2026-10-21.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:1>); [run-captures.sh:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task2-gate-2026-10-22/run-captures.sh:1>); [VERDICT.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task9-gate-2026-10-22/VERDICT.md:1>); [VERDICT.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-k-refit-gate-2026-10-22/VERDICT.md:1>); [reconcile.ts:1](</Users/tim/Code/fhfhockey.com/web/lib/projections/reconcile.ts:1>); [run-captures-v.sh:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-task3-gate-2026-10-22/run-captures-v.sh:1>)
+ 
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **FPI-03/PP-ACC-001-disposition — Reconcile the tracked post-parity assist-recency counter proposal.** Proposed/unverified disposition; no current bug reproduced. Next: Determine from later exact receipts whether the assistRecent/goalsRecent counter proposal was fixed, removed or superseded by accepted model changes. Retain only a demonstrated surviving diagnostic issue before any implementation; do not reopen Release C fitting. Owner: UNASSIGNED. Dependencies: existing parent contracts and receipt reconciliation. Gate: No app repair, model tuning or source/test execution by audit. Reconcile current ownership and evidence first; the parity refactor approved tracking only. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md:128>). Credit retained: Modularization/parity complete; Release C assist/PPP implementation and existing calibration holds remain.
++- **Segment15 reconciliation date:** `2026-10-24T19:15:27.950610+00:00`.
++- **Segment15 evidence:** [tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md:128](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/b177dc88ceaf-prd-run-forge-projections-modularization.md:128>) SHA256 `b177dc88ceaf19310c46246aff5c8cdbc70023d93b6b81914660c64b21a25c37`.
++
+ ### FPI-04 — Position-specific season-current priors, tasks4.1–4.3
+ 
+ - **Implementation:** Release C F/D priors and restored conversion/assist constants independently accepted as selected restoration; not yet a released commit.
+@@ -2646,7 +2661,7 @@
+ - **Implementation:** Open narrow follow-up; no new implementation by ledger owner. **Acceptance:** Not yet accepted. **Release:** Not released by this task.
+ - **Owner:** LEDGER; **reviewer:** UNASSIGNED. **Dependencies:** Parent dispatch and exact file lease; preserve release and Game Grid work.
+ - **Evidence level:** source inspected. **Scope:** Only the named functions/files in the source-input reconciliation below; no whole-area health claim **Provenance:** Current local files and dated review receipts.
+-- **Verification:** Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority.
++- **Verification:** Current source and retained receipts inspected; no application tests rerun. Segment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority. Segment15 distinguishes completed 36/36 modularization and approved scalar epsilon 0.005 from still-tracked PP-ACC-001–005 accuracy proposals. Meta A–K checkmarks do not close granular Sustainability or OCT14 requirements. Latest V1 tail supersedes earlier missing-identity, unresolved 73-slot and exact-cap-blocker statements; do not repeat those resolved decisions. Current canonical admission/reconciliation test packets remain authoritative over old NEW6/NEW7 issue wording.
+ - **Acceptance/release gate:** Exact scoped tests and independent review before integration; no production calls, schema, credentials or deployment authority
+ - **Next:** Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The now fully read debug checklist closes SHA under July13 NEW7 and performance NEW8/9, with September4 official-provider SHA precedence including zero; only actual/custom-unmapped SHA retains nonnegative null-safe derivation. Preserve the owner-approved missing-relative-baseline exception and optional/evaluated virtualization, hashing, chunking and worker proposals; no false30%gain or mandatory performance rewrite. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules. Four historical requested resolver follow-ups and the name-keyed assignment/provenance risk are retained once under proposed SITE-DRAFT-CSV-RESOLVER; the existing summary is not wholly absent. Draft Ranker July17 personal authenticated rollout and July30 Phase8 retirement retain closure, while older July15 staff-only manifest paragraphs are historical. No secondary/public rollout, model change, old migration/security replay or new worktree from source runbooks. The remaining Ranker package is now content-covered. Correct only documentary precedence: early technical-contract authenticated RPC/write language yields to later service-only mutation/API and owner-read-only receipts; per-ranking/player placement language yields to20260715034601 single-active-per-ranking hardening. Preserve pre-baseline archive references. Keep repository-record.md as a noncanonical historical variant, not an exact-hash duplicate or current usable-ADP/source-path authority. Product blueprint direct-edit community-weight, mature confidence/XLSX/segmentation and broad-source ideas are narrowed by approved pinned launch decisions and explicit Phase8 retirement; do not revive them. No old CLI/review/traffic/audit blocker, deprecated source count or early roadmap heading is a fresh open task.
+ - **Evidence:** [2026-10-23-claude-to-codex-unfinished-work-review.md:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md:1>); [AGENTS.md:1](</Users/tim/Code/fhfhockey.com/AGENTS.md:1>); [tasks-forge-projection-audit-streamlining-2026-10-21.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:1>); [tasks-forge-projection-improvements-2026-10-22.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/tasks-forge-projection-improvements-2026-10-22.md:1>); [tasks-prd-rso.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-rso.md:1>); [tasks-prd-roster-schedule-optimizer.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-roster-schedule-optimizer.md:1>); [tasks-prd-game-grid-refactor.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-game-grid-refactor.md:1>); [tasks-prd-fhfh-comprehensive-completion-audit-optimization.md:1](</Users/tim/Code/fhfhockey.com/tasks/TASKS/super-goal/tasks-prd-fhfh-comprehensive-completion-audit-optimization.md:1>); [cron-report.ts:1](</Users/tim/Code/fhfhockey.com/web/pages/api/v1/db/cron-report.ts:1>); [tasks-README.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-README.md:1>); [tasks-prd-in-season-trust-clarity-decision-workflow.md:1](</Users/tim/Code/fhfhockey.com/tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md:1>)
+@@ -2682,6 +2697,8 @@
+ - [ ] **REPO-DOCUMENTATION/forge-refresh-itinerary — Reconcile the old full-refresh itinerary against approved bounded operating contracts.** Open documentary follow-up; no endpoint execution. Next: Correct or clearly mark the obsolete all-date/fullRefresh RPC-truncate itinerary, old page/schema authority and unqualified fallback guidance. Link current bounded README/runner/admission contracts without weakening existing full-refresh protections. Owner: UNASSIGNED. Dependencies: current parent contracts and receipt reconciliation. Gate: Documentation-only under current exact file custody; no cron, SQL, refresh, truncate, provider call, or new remote verification.. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md:210>). Credit retained: Existing full-refresh safety and writer fixes remain completed; stored instructions are not new authority.
+ - **Segment14 reconciliation date:** `2026-10-24T18:49:59.291059+00:00`.
+ - **Segment14 evidence:** [tasks/TASKS/forge-projections/docs/FORGE_EXPLAINED.md:210](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/4f015e185732-FORGE_EXPLAINED.md:210>) SHA256 `4f015e18573239112cfe2e7ef3be6539adeb6aff8915d0a1d2d231121f55031c`; [tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-pass-4-living-audit-remediation.md:106](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/cf55e795365d-tasks-prd-forge-pass-4-living-audit-remediation.md:106>) SHA256 `cf55e795365d1fd5d6a877f62e31614a78b8df868ed5cbb06474bc3ffd4084e4`; [tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:56](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md:56>) SHA256 `1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be`; [tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md:196](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md:196>) SHA256 `1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be`; [tasks/TASKS/forge-projections/docs/FORGE_ECOSYSTEM_ELI5_AUDIT.md:92](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/source-snapshots/1c5b086e4ade-FORGE_ECOSYSTEM_ELI5_AUDIT.md:92>) SHA256 `1c5b086e4ade172656c0aa9eb301f319188fec725193d168f2ad7855e8cf979d`.
++- **Segment15 reconciliation date:** `2026-10-24T19:15:27.950610+00:00`.
++- **Segment15 evidence:** [tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md:131](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/9f445b650d17-tasks-prd-run-forge-projections-modularization.md:131>) SHA256 `9f445b650d174be733e048c722a86b2fd864cbce16cd583985f15f7bee1f18b9`; [tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md:43](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/b4dcc5799054-tasks-prd-forge-prediction-engine-super-task-list.md:43>) SHA256 `b4dcc57990546a990aef1cad73fa962caf5dea744fdf833c177f7d364d5e0a6c`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:267](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:267>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:275](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:275>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:281](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:281>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:287](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:287>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`.
+ 
+ ### REPO-GENERATED-TRACKING — Remove generated audit cache/output/temp files from tracking without deleting local work or rewriting history
+ 
+@@ -2986,7 +3003,7 @@
+ - **Implementation:** Preserve earlier accepted bounded slices including S05-R1 lifecycle repair. Owner local configuration is completed: exact supplied owner key appended under recorded permission; credential-free local access changed from 503 owner_not_configured to 401 unauthenticated. This establishes loaded configuration and absent-credential denial, not authenticated access or launch readiness.
+ - **Acceptance:** S05-R1 locally accepted only: unchanged original reproducer passes; independent11focused passes/eight intentional skips, scoped TypeScript/lint and148owner pins plus receipt matched. Native BFCache/browser, live session/server authorization, trusted payload/sealing/runner and scientific/model gates are not closed.
+ - **Release:** Bounded local implementation was explicitly requested. Real capture, paid/remote runtime, production writes, provisioning and deployment remain separately gated.
+-- **Verification:** Full local-owner-configuration HANDOFF read and declared hash matched. Worker reports private readback, ten unchanged source pins, one credential-free local GET at 17:25:58 UTC and hot reload without restart. No env contents, UUID, token, local request or app-source check by audit; 0 of 1 approved hosted Auth reads used per receipt.
++- **Verification:** Full local-owner-configuration HANDOFF read and declared hash matched. Worker reports private readback, ten unchanged source pins, one credential-free local GET at 17:25:58 UTC and hot reload without restart. No env contents, UUID, token, local request or app-source check by audit; 0 of 1 approved hosted Auth reads used per receipt. The newly cross-mapped OCT14-COMP6 accountability requirements need report/evidence-stage alignment with this existing UI/runner scope. An operational preview or configured owner gate does not establish matched numeric target support, proper-score reporting or full comparison-program acceptance. No new implementation, auth/runtime observation or second dashboard owner is inferred.
+ - **Dependencies:** Dedicated runner A remains selected; durability, actual trusted request/session/worker integration, safe read-adapter projections/sealing, scientific/model/pilot and approved hosted runtime/storage/retention/cost remain open. Local owner activation is separately approved but blocked with0of1approved auth reads used: private verification transport, inherited AuthProvider profile/settings-write containment and existing-server ownership unresolved. Missing owner configuration is not rejection of TJ identity.
+ - **Acceptance/release gate:** Reconcile the original PRD/task list plus appended steers as satisfied, incomplete, intentionally superseded or blocked with evidence. Real captures, runtime costs, production writes and deployment require separate bounded authority.
+ - **Next action:** Retain accepted slices and completed owner configuration; do not request the same UUID or reload again. Authenticated viewing remains pending safe private verification transport, single-read bounding and inherited profile/settings-write containment outside frozen shared auth custody. No app rehydration/restart or real launch from audit; runner/resource/retention/statistical/model gates remain distinct.
+@@ -3007,6 +3024,8 @@
+ - **Segment09 evidence:** [tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW.md:3](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/55a86abc97bb-REVIEW.md:3>) SHA256 `55a86abc97bbd42f2ee736efbd6b4aafe77b6a4a0b4ddc64b09a19a638b8abb7`; [tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW.md:53](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/55a86abc97bb-REVIEW.md:53>) SHA256 `55a86abc97bbd42f2ee736efbd6b4aafe77b6a4a0b4ddc64b09a19a638b8abb7`; [tasks/artifacts/forge-testing-grounds-2026-10-24/slice-05-r1-review/REVIEW-EVIDENCE.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/2a74da8b7492-REVIEW-EVIDENCE.json:1>) SHA256 `2a74da8b7492a506504202db7b1fab71a1f080d657f34405ff3d034be251a8df`; [tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/STATUS-SOURCE-EXTRACT.json:1](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-09-draft-yahoo-audit/source-snapshots/f6700b4da87e-STATUS-SOURCE-EXTRACT.json:1>) SHA256 `f6700b4da87eb74693d7e3359b891e29c990e9b167ed5c103fd1365c82902fd6`.
+ - **Segment13 reconciliation date:** `2026-10-24T18:33:56.621280+00:00`.
+ - **Segment13 evidence:** [tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/HANDOFF.md:5](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5a28ac3a1541-HANDOFF.md:5>) SHA256 `5a28ac3a15416a071174b6f8fd299e01193ac5b9818bb1df2733f8f21cb7b151`; [tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/HANDOFF.md:11](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5a28ac3a1541-HANDOFF.md:11>) SHA256 `5a28ac3a15416a071174b6f8fd299e01193ac5b9818bb1df2733f8f21cb7b151`; [tasks/artifacts/forge-testing-grounds-2026-10-24/local-owner-configuration/HANDOFF.md:15](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5a28ac3a1541-HANDOFF.md:15>) SHA256 `5a28ac3a15416a071174b6f8fd299e01193ac5b9818bb1df2733f8f21cb7b151`.
++- **Segment15 reconciliation date:** `2026-10-24T19:15:27.950610+00:00`.
++- **Segment15 evidence:** [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:161](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:161>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:199](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:199>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`.
+ 
+ ## October24 artifact audit carry-forwards
+ 
+@@ -3448,3 +3467,53 @@
+ - **Source aliases:** A-FORGE-DASH remediation13.2–13.3 / NEW13; component backlog Track2/P0; observability follow-ups54
+ - **Segment13 reconciliation date:** `2026-10-24T18:33:56.621280+00:00`.
+ - **Segment13 evidence:** [tasks/TASKS/forge-projections/dashboard-health/tasks-forge-dashboard-component-remediation.md:163](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/401ac54a9bd9-tasks-forge-dashboard-component-remediation.md:163>) SHA256 `401ac54a9bd9213099efd9e8e6eba45bb115c0a156fe9d557a34c976b6052493`; [tasks/artifacts/forge-dashboard-component-health-remediation-backlog.md:32](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/644fe30a5cd1-forge-dashboard-component-health-remediation-backlog.md:32>) SHA256 `644fe30a5cd1e7b0d5479afa04d62a7079341f5b0e4d026f5f439c4ff8834a65`; [tasks/artifacts/forge-dashboard-observability-followups.md:54](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/5941db83cadb-forge-dashboard-observability-followups.md:54>) SHA256 `5941db83cadb439b7ea265f1fc12cc2a7c1cd1142bb219e2c3b77a6f31323875`; [tasks/TASKS/super-goal/super-goal-final-summary.md:606](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-13-forge-contracts/source-snapshots/b99e7bfde3fd-super-goal-final-summary.md:606>) SHA256 `b99e7bfde3fd4579acf9ae870b85a855b79deb1ee8a072da9978a2d2278acf82`.
++
++### FORGE-COMPARISON-PROGRAM — Reconcile the ongoing native candidate-comparison program and its staged evidence gates
++
++- **User impact:** A running experiment UI or a conditional pilot cannot establish full native forecast quality, target coverage or legal decision value. The requested program needs transparent versions, losses, cohorts, uncertainty and promotion decisions.
++- **Implementation:** OCT14-COMP-0 through 9 remain open in the owning V1 ledger; F00–F22 are aliases, not another task system. Existing code, accepted private engineering and historical experiments retain credit. F02 mapping is complete within its tranche; F03 metadata and fresh identity-only planning review are recorded accepted, not numeric-target or original-as-of admission.
++- **Acceptance:** Source records fresh identity-only planning acceptance and later exact A cap/positive-TOI conditional PIM approval. Actual independent reader/runtime gate and terminal A outcome were not established in this repo-only audit. Do not request the same identity/cap decision again or claim A never ran. B fitting/scoring and broader qualification remain separate.
++- **Release:** No full-program, dashboard or model release follows. Original BLK operation, accepted experiments and version-specific live guards remain independently owned. January 14 onward/reserved-label and blend holds are retained as recorded for this program, subject to legitimate later authority.
++- **Owner:** UNASSIGNED
++- **Reviewer:** UNASSIGNED
++- **Dependencies:** Current sole executor/evaluator custody; NATIVE-ISSUANCE and RSO-REAL-ACCEPTANCE; FPI-01, FORGE-GATE-HARNESS and FORGE-LEDGER-WEEK reusable evidence; SITE-FORGE-TESTING-GROUNDS for UI/runner integration. These narrower slices do not substitute for the full program.
++- **Verification:** Full V1 checklist and super-list read; PRD requirements prose reviewed. Latest checklist resolves older missing-identity, unresolved 73-slot and cap-blocker statements: fresh planning review accepted; baseline plus at most two complete challengers selected; exact 28,509,016-byte cap approved for 829 spans. External receipts/raw spans were not accessed, so statuses/hashes remain attributed to the dated source.
++- **Acceptance/release gate:** No second executor, new A/B operation, private-source access, label allocation, fitting, capture, scheduling, publication or deployment is authorized by audit. Preserve existing exact A authority under its legitimate owner and required prior gate. New stages require their own scope; recorded metadata/current identity is not historical eligibility or numeric support.
++- **Next:** Through current coordination, reconcile later existing-owner reader/runtime/synthetic and terminal A receipts before new work. Preserve resolved identity/cap decisions and approved conditional-PIM exclusions. Reuse accepted contracts, then retain only surviving staged requirements below; no cap-only review, lookup retry, passed-window retry or automatic benchmark.
++- **Evidence level:** Proposed/held program reconciliation; component approvals retained, full evidence/release unverified
++- **Evidence scope:** OCT14-COMP0–9 owning requirements; F00–F22 aliases; component implementation, data support, evaluation, UI and release are distinct
++- **Dispatch class:** Reconciliation-first; no new model owner, implementation or external dispatch
++- **Source aliases:** OCT14-COMP meta mapping and 0–9; October 15 F00–F22 amendment under the same owning ledger; Latest fresh identity review and exact-cap A decision, not new audit authority
++
++**Readable task children (source obligations; no new parent IDs):**
++
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-1 — Freeze target/population protocol after the bounded support stage.** A cap and conditional-PIM scope resolved; gate/result unverified. Next: Reconcile existing A gate/result first; retain positive-TOI PIM and explicit missing/penalty-only exclusions. Then pin estimands, anchors, cohorts, clocks, allocations and budgets before B. Owner: UNASSIGNED. Dependencies: NATIVE-ISSUANCE. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:156>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-2 — Retain immutable complete trial and issuance history.** Partial reusable infrastructure; broader coverage unverified. Next: Link all candidate/feature versions, parameters, source/cohort manifests, actual clocks, failures, exposures, missingness and selections. Show requested and paired populations; reconstruction cannot become original issuance. Owner: UNASSIGNED. Dependencies: FPI-01, FORGE-LEDGER-WEEK. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:157>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-3 — Preserve the selected finite first-wave comparison scope.** Menu decision resolved; no experiment authorization. Next: Use baseline plus at most two complete challengers for one support-qualified head/component; do not reopen the old 73-slot choice or run Cartesian sweeps. Separate mean-fixed diagnostics need their own declared inclusion; Elo/Glicko is optional context only. Owner: UNASSIGNED. Dependencies: FORGE-ISOLATED-VARIANT. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:158>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-4 — Version target-appropriate expected-mean/distribution scoring.** Requirements open; old experiment scores unchanged. Next: Freeze MSE/proper-score selection and report bias, RMSE, calibration, intervals and coverage by units/conditioning. Zero-baseline skill stays undefined; do not retrofit new selection onto the old MAE-selected pilot. Owner: UNASSIGNED. Dependencies: FORGE-GATE-HARNESS. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:159>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-5 — Qualify paired coverage and dependence-aware comparisons.** Metadata/current identities accepted only within planning scope. Next: Match baseline-covered target/horizon/evidence cohorts with chronological stability and justified game/slate uncertainty. Numeric target, participation and historical as-of support remain distinct from 927 identities / 829 spans. Owner: UNASSIGNED. Dependencies: NATIVE-ISSUANCE. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:160>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-6 — Align the accountability report and existing dashboard work.** Existing UI remains separately owned; full report contract open. Next: Reuse SITE-FORGE-TESTING-GROUNDS and existing accountability/ledger surfaces for signed-error histograms, loss/coverage trends, version/target tables and supported segments. Keep research, shadow and deployed evidence stages explicit; do not create a second dashboard stack. Owner: UNASSIGNED. Dependencies: SITE-FORGE-TESTING-GROUNDS, FPI-01. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:161>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-7 — Qualify complete-vector legal lineup and drop/add comparisons.** Authentic replay/consumer evidence unverified. Next: Use existing RSO/Start Chart owners and matching original scoring, roster, eligibility, locks, waivers, costs and issued inputs. Retain unchanged decisions as zero gain; conditional proxies/simulations are not realized roster utility. Owner: UNASSIGNED. Dependencies: RSO-REAL-ACCEPTANCE, NATIVE-ISSUANCE. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:162>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-8 — Retain per-head promotion, sealed evaluation and rollback gates.** Held; implementation contracts do not establish predictive release. Next: Predeclare coverage/skill/coherence/subgroup/operating bounds, independent final-feedback custody and a pinned fallback. Preserve original version-specific gates, including older skater 14-matched-date/default-switch hold; they are not universal new research thresholds. Owner: UNASSIGNED. Dependencies: NATIVE-ISSUANCE. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:163>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- [ ] **FORGE-COMPARISON-PROGRAM/OCT14-COMP-9 — Reconcile reusable contracts and future runner ownership.** F02 mapping complete within tranche; implementation/cloud qualification open. Next: Inventory actual accepted storage/evaluation/UI gaps before migrations or duplicate code. Future nonsecret runner packaging, clock/owner/duplicate controls and prospective capture remain separately scoped; preserve existing missed-window handling. Owner: UNASSIGNED. Dependencies: SITE-FORGE-TESTING-GROUNDS, FORGE-GATE-HARNESS. Gate: No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates. Source: [clause](</Users/tim/Code/fhfhockey.com/tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:164>). Credit retained: Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog.
++- **Segment15 reconciliation date:** `2026-10-24T19:15:27.950610+00:00`.
++- **Segment15 evidence:** [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:155](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:155>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:172](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:172>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:219](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:219>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:246](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:246>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:271](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:271>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:277](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:277>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:287](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:287>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md:213](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/42b41559b156-prd-projection-model.md:213>) SHA256 `42b41559b1561854dc410fe7222433a3c2135498a6eb7ef583cb694839f5b5e6`; [tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md:273](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/42b41559b156-prd-projection-model.md:273>) SHA256 `42b41559b1561854dc410fe7222433a3c2135498a6eb7ef583cb694839f5b5e6`.
++
++### SITE-FORGE-RANGE-PRESENTATION — Reconcile the retained plain-language forecast-range presentation requirement
++
++- **User impact:** Users need a clear distinction between a point forecast and its supported low/typical/high range; API disclosure alone does not settle the requested UI presentation. Current runtime was not inspected.
++- **Implementation:** V1 NEW8 reopens embedded presentation rows after the old FORGE rewrite removed low/typical/high blocks. Older skater 6.4 checks retain their dated scope. No later owner supersession/restoration was established by this documentary pass; this is not a reproduced current UI failure.
++- **Acceptance:** Proposed P3/unassigned reconciliation and product-disposition follow-up, not an active repair claim.
++- **Release:** No UI change or release by audit. Preserve the canonical Command Center/preview route decision and existing model/distribution work.
++- **Owner:** UNASSIGNED
++- **Reviewer:** UNASSIGNED
++- **Dependencies:** FPI-08 supported quantile contracts; current canonical frontend custody; REPO-DOCUMENTATION and source NEW8/C0002/C0003. Different from descriptive player-card percentiles and SITE-START-CONTRACT paging.
++- **Verification:** Full V1 task list, shared PRD requirements/embedded presentation rows and skater checklist read. Later NEW8 source explicitly supersedes older completed presentation boxes. No application/browser/pixel or current API check performed.
++- **Acceptance/release gate:** First reconcile a later exact owner supersession or UI acceptance receipt. If still requested, scoped owner verifies supported quantiles, honest unavailable states and wording before any presentation change. No model recalibration or unsupported ranges.
++- **Next:** Locate current owner disposition of the low/typical/high requirement. Record intentional supersession if applicable; otherwise propose the smallest canonical-surface presentation contract using actual supported outputs. Do not restore the retired dashboard or reimplement distributions from an old checklist.
++- **Evidence level:** Proposed P3; source requirement/disposition unverified in current runtime
++- **Evidence scope:** Forecast-range presentation/supersession only; no model-quality, interval-calibration or full UI acceptance
++- **Dispatch class:** Reconciliation-first; no new model owner, implementation or external dispatch
++- **Source aliases:** Projection V1 NEW8 / embedded C0002,C0003; skater 6.4 and older completed presentation evidence
++- **Segment15 reconciliation date:** `2026-10-24T19:15:27.950610+00:00`.
++- **Segment15 evidence:** [tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md:168](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md:168>) SHA256 `e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211`; [tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md:568](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/42b41559b156-prd-projection-model.md:568>) SHA256 `42b41559b1561854dc410fe7222433a3c2135498a6eb7ef583cb694839f5b5e6`; [tasks/TASKS/forge-projections/v1/tasks-skater-forge.md:88](</Users/tim/Code/fhfhockey.com/tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/1f799bd7fded-tasks-skater-forge.md:88>) SHA256 `1f799bd7fded25035dfb0c55226c60c8d3e3161903292621d9d5bbdf70cbbcd4`.
+--- before/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json
++++ after/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json
+@@ -1,5 +1,5 @@
+ {
+-  "as_of": "2026-10-24T18:49:59.291059+00:00",
++  "as_of": "2026-10-24T19:15:27.950610+00:00",
+   "scope": "Evidence/status audit and durable sprint ledger; FA Portal excluded. No current-model/author inference. All implementation acceptance and release are separate.",
+   "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+   "branch": "octoberBranch",
+@@ -7887,9 +7887,17 @@
+           "line": 1,
+           "sha256": "156c633f234f24857635d223dfd6fe1b2ae42313cc8e0b89106d33a7a7f96cd3",
+           "observed_at": "2026-10-23T13:00:20+00:00"
+-        }
+-      ],
+-      "as_of": "2026-10-23T13:00:20+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/b177dc88ceaf-prd-run-forge-projections-modularization.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md",
++          "line": 128,
++          "sha256": "b177dc88ceaf19310c46246aff5c8cdbc70023d93b6b81914660c64b21a25c37",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        }
++      ],
++      "as_of": "2026-10-24T19:15:27.950610+00:00",
+       "evidence_level": "inventoried only",
+       "evidence_scope": "Current status/receipt reconciliation; earlier scoped acceptance remains attached to its historical bytes.",
+       "evidence_provenance": "Current task list, Git objects and cited local receipts; no fresh production observation.",
+@@ -7903,6 +7911,31 @@
+         "RSO/FORGE handover F1",
+         "RSO/FORGE handover F2",
+         "RSO/FORGE handover F10"
++      ],
++      "artifact_audit_segment15": [
++        {
++          "at": "2026-10-24T19:15:27.950610+00:00",
++          "before_fields": {
++            "children": null
++          },
++          "note": "Documentary reconciliation only; prior scope, evidence and narrower closures retained. No new authority."
++        }
++      ],
++      "children": [
++        {
++          "child_id": "FPI-03/PP-ACC-001-disposition",
++          "title": "Reconcile the tracked post-parity assist-recency counter proposal",
++          "status": "Proposed/unverified disposition; no current bug reproduced",
++          "owner": "UNASSIGNED",
++          "depends_on": [],
++          "next_action": "Determine from later exact receipts whether the assistRecent/goalsRecent counter proposal was fixed, removed or superseded by accepted model changes. Retain only a demonstrated surviving diagnostic issue before any implementation; do not reopen Release C fitting.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/v1/prd/prd-run-forge-projections-modularization.md",
++            "line": 128
++          },
++          "approval_gate": "No app repair, model tuning or source/test execution by audit. Reconcile current ownership and evidence first; the parity refactor approved tracking only.",
++          "existing_work_credit": "Modularization/parity complete; Release C assist/PPP implementation and existing calibration holds remain."
++        }
+       ]
+     },
+     {
+@@ -9072,7 +9105,7 @@
+       "owner": "LEDGER",
+       "reviewer": "UNASSIGNED",
+       "dependencies": "Parent dispatch and exact file lease; preserve release and Game Grid work",
+-      "verification": "Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority.",
++      "verification": "Current source and retained receipts inspected; no application tests rerun. Segment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority. Segment15 distinguishes completed 36/36 modularization and approved scalar epsilon 0.005 from still-tracked PP-ACC-001–005 accuracy proposals. Meta A–K checkmarks do not close granular Sustainability or OCT14 requirements. Latest V1 tail supersedes earlier missing-identity, unresolved 73-slot and exact-cap-blocker statements; do not repeat those resolved decisions. Current canonical admission/reconciliation test packets remain authoritative over old NEW6/NEW7 issue wording.",
+       "acceptance_release_gate": "Exact scoped tests and independent review before integration; no production calls, schema, credentials or deployment authority",
+       "next_action": "Retain C6 allocation and all earlier auth/Rankings/Underlying scopes. Full paired CLEAN/DRM lists confirm completed image/hook/dependency/route and reader/UI/runtime closures, with later NEW127/NEW86 already mapped to existing IDs. Do not reopen rejected major dependency changes or quarantined wrappers. Reconcile Yahoo static old atomic-history/cutover gap text against same-document later receipts and parked live-draft NO-GO; retain September4 interface-polish closure and the explicitly deferred real-provider/two-view-settings work as parked. The historical generated file index receives bounded structural disposition, not full source or current-tree coverage; no document/diary deletion. Full Draft Dashboard task history now preserves completed A-DRAFT CSV/weighting/grouping/keeper/trade/recommendation/prior-season/comparison/summary/shortcut work and July13 option A retaining inline settings. Early scaffold/per-row-query/integer-weight/all-settings-modal recommendations are not new dispatches. The now fully read debug checklist closes SHA under July13 NEW7 and performance NEW8/9, with September4 official-provider SHA precedence including zero; only actual/custom-unmapped SHA retains nonnegative null-safe derivation. Preserve the owner-approved missing-relative-baseline exception and optional/evaluated virtualization, hashing, chunking and worker proposals; no false30%gain or mandatory performance rewrite. Reconcile style PRD stale36/53/Phase5 headers against later populated completion, while retaining only the distinct October17 NEW15/C0057 raw-color recurrence under SITE-PICKUP-TOKENS. No broad restyle or restoration of superseded landing modules. Four historical requested resolver follow-ups and the name-keyed assignment/provenance risk are retained once under proposed SITE-DRAFT-CSV-RESOLVER; the existing summary is not wholly absent. Draft Ranker July17 personal authenticated rollout and July30 Phase8 retirement retain closure, while older July15 staff-only manifest paragraphs are historical. No secondary/public rollout, model change, old migration/security replay or new worktree from source runbooks. The remaining Ranker package is now content-covered. Correct only documentary precedence: early technical-contract authenticated RPC/write language yields to later service-only mutation/API and owner-read-only receipts; per-ranking/player placement language yields to20260715034601 single-active-per-ranking hardening. Preserve pre-baseline archive references. Keep repository-record.md as a noncanonical historical variant, not an exact-hash duplicate or current usable-ADP/source-path authority. Product blueprint direct-edit community-weight, mature confidence/XLSX/segmentation and broad-source ideas are narrowed by approved pinned launch decisions and explicit Phase8 retirement; do not revive them. No old CLI/review/traffic/audit blocker, deprecated source count or early roadmap heading is a fresh open task.",
+       "evidence": [
+@@ -9663,9 +9696,57 @@
+           "sha256": "1c5b086e4ade172656c0aa9eb301f319188fec725193d168f2ad7855e8cf979d",
+           "observed_at": "2026-10-24T18:49:59.291059+00:00",
+           "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+-        }
+-      ],
+-      "as_of": "2026-10-24T18:49:59.291059+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/9f445b650d17-tasks-prd-run-forge-projections-modularization.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-run-forge-projections-modularization.md",
++          "line": 131,
++          "sha256": "9f445b650d174be733e048c722a86b2fd864cbce16cd583985f15f7bee1f18b9",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/b4dcc5799054-tasks-prd-forge-prediction-engine-super-task-list.md",
++          "original_path": "tasks/TASKS/forge-projections/prediction-engine/tasks-prd-forge-prediction-engine-super-task-list.md",
++          "line": 43,
++          "sha256": "b4dcc57990546a990aef1cad73fa962caf5dea744fdf833c177f7d364d5e0a6c",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 267,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 275,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 281,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 287,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        }
++      ],
++      "as_of": "2026-10-24T19:15:27.950610+00:00",
+       "evidence_level": "source inspected",
+       "evidence_scope": "Only the named functions/files in the source-input reconciliation below; no whole-area health claim",
+       "evidence_provenance": "Current local files and dated review receipts",
+@@ -9804,6 +9885,15 @@
+           },
+           "approval_gate": "Documentation-only under current exact file custody; no cron, SQL, refresh, truncate, provider call, or new remote verification.",
+           "existing_work_credit": "Existing full-refresh safety and writer fixes remain completed; stored instructions are not new authority."
++        }
++      ],
++      "artifact_audit_segment15": [
++        {
++          "at": "2026-10-24T19:15:27.950610+00:00",
++          "before_fields": {
++            "verification": "Current source and retained receipts inspected; no application tests rerunSegment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority."
++          },
++          "note": "Documentary reconciliation only; prior scope, evidence and narrower closures retained. No new authority."
+         }
+       ]
+     },
+@@ -11630,7 +11720,7 @@
+       "owner": "CODEX-SCOUT",
+       "reviewer": "UNASSIGNED",
+       "dependencies": "Dedicated runner A remains selected; durability, actual trusted request/session/worker integration, safe read-adapter projections/sealing, scientific/model/pilot and approved hosted runtime/storage/retention/cost remain open. Local owner activation is separately approved but blocked with0of1approved auth reads used: private verification transport, inherited AuthProvider profile/settings-write containment and existing-server ownership unresolved. Missing owner configuration is not rejection of TJ identity.",
+-      "verification": "Full local-owner-configuration HANDOFF read and declared hash matched. Worker reports private readback, ten unchanged source pins, one credential-free local GET at 17:25:58 UTC and hot reload without restart. No env contents, UUID, token, local request or app-source check by audit; 0 of 1 approved hosted Auth reads used per receipt.",
++      "verification": "Full local-owner-configuration HANDOFF read and declared hash matched. Worker reports private readback, ten unchanged source pins, one credential-free local GET at 17:25:58 UTC and hot reload without restart. No env contents, UUID, token, local request or app-source check by audit; 0 of 1 approved hosted Auth reads used per receipt. The newly cross-mapped OCT14-COMP6 accountability requirements need report/evidence-stage alignment with this existing UI/runner scope. An operational preview or configured owner gate does not establish matched numeric target support, proper-score reporting or full comparison-program acceptance. No new implementation, auth/runtime observation or second dashboard owner is inferred.",
+       "acceptance_release_gate": "Reconcile the original PRD/task list plus appended steers as satisfied, incomplete, intentionally superseded or blocked with evidence. Real captures, runtime costs, production writes and deployment require separate bounded authority.",
+       "next_action": "Retain accepted slices and completed owner configuration; do not request the same UUID or reload again. Authenticated viewing remains pending safe private verification transport, single-read bounding and inherited profile/settings-write containment outside frozen shared auth custody. No app rehydration/restart or real launch from audit; runner/resource/retention/statistical/model gates remain distinct.",
+       "evidence": [
+@@ -11928,9 +12018,25 @@
+           "sha256": "5a28ac3a15416a071174b6f8fd299e01193ac5b9818bb1df2733f8f21cb7b151",
+           "observed_at": "2026-10-24T18:33:56.621280+00:00",
+           "review_scope": "Full named documentary source or explicitly bounded clause reviewed. Copied remainder is not blanket content acceptance. Underlying application/pixel/hosted claims keep their reviewer/owner provenance; no command executed."
+-        }
+-      ],
+-      "as_of": "2026-10-24T18:33:56.621280+00:00",
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 161,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 199,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        }
++      ],
++      "as_of": "2026-10-24T19:15:27.950610+00:00",
+       "evidence_level": "S03-R1 independently ACCEPT WITH LIMITS on revised pins; full workflow and hosted/scientific qualification open",
+       "evidence_scope": "Operational precision and injected trusted-policy interfaces only have bounded reviewer verdicts. Memory-runner synthetic fixtures are owner evidence. No real session/auth/storage/sealing/metrics/model pilot or full workflow acceptance.",
+       "evidence_provenance": "TJ direction and accepted coordination steer relayed by parent 01a15411-3560-7632-8d31-1dd2447ba00e in this delegated task",
+@@ -12047,6 +12153,15 @@
+             "next_action": "Retain the accepted exact two-file lifecycle candidate for parent integration; do not repeat unchanged completed re-review. Resolve safe private verification transport/budget, inherited profile/settings-write containment and existing-server ownership before already-approved owner activation. Preserve inactive default actions and the unchanged owner/API/resource/sealing/read-adapter/scientific gates; no activation or new approval request by audit."
+           },
+           "note": "Documentary reconciliation; prior scopes/evidence and narrower closures retained. No dispatch/external authority."
++        }
++      ],
++      "artifact_audit_segment15": [
++        {
++          "at": "2026-10-24T19:15:27.950610+00:00",
++          "before_fields": {
++            "verification": "Full local-owner-configuration HANDOFF read and declared hash matched. Worker reports private readback, ten unchanged source pins, one credential-free local GET at 17:25:58 UTC and hot reload without restart. No env contents, UUID, token, local request or app-source check by audit; 0 of 1 approved hosted Auth reads used per receipt."
++          },
++          "note": "Documentary reconciliation only; prior scope, evidence and narrower closures retained. No new authority."
+         }
+       ]
+     },
+@@ -14148,6 +14263,321 @@
+           "at": "2026-10-24T18:33:56.621280+00:00",
+           "before_fields": {},
+           "note": "Documentary reconciliation; prior scopes/evidence and narrower closures retained. No dispatch/external authority."
++        }
++      ]
++    },
++    {
++      "group": "Task-artifact audit proposed carry-forward",
++      "owner": "UNASSIGNED",
++      "reviewer": "UNASSIGNED",
++      "evidence": [
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 155,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 172,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 219,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 246,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 271,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 277,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 287,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/42b41559b156-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md",
++          "line": 213,
++          "sha256": "42b41559b1561854dc410fe7222433a3c2135498a6eb7ef583cb694839f5b5e6",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "All substantive prose 1–610 read. Commented SQL appendix 614–1257 bounded by complete comment/fence/job-label/path/placeholder checks; individual statement semantics unreviewed. No full-file content credit."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/42b41559b156-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md",
++          "line": 273,
++          "sha256": "42b41559b1561854dc410fe7222433a3c2135498a6eb7ef583cb694839f5b5e6",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "All substantive prose 1–610 read. Commented SQL appendix 614–1257 bounded by complete comment/fence/job-label/path/placeholder checks; individual statement semantics unreviewed. No full-file content credit."
++        }
++      ],
++      "as_of": "2026-10-24T19:15:27.950610+00:00",
++      "dispatch_class": "Reconciliation-first; no new model owner, implementation or external dispatch",
++      "evidence_provenance": "Complete named task sources plus requirements prose and bounded historical appendix. External private receipts/hashes are source-attributed only and were not opened.",
++      "taskID": "FORGE-COMPARISON-PROGRAM",
++      "scope": "Reconcile the ongoing native candidate-comparison program and its staged evidence gates",
++      "user_impact": "A running experiment UI or a conditional pilot cannot establish full native forecast quality, target coverage or legal decision value. The requested program needs transparent versions, losses, cohorts, uncertainty and promotion decisions.",
++      "implementation": "OCT14-COMP-0 through 9 remain open in the owning V1 ledger; F00–F22 are aliases, not another task system. Existing code, accepted private engineering and historical experiments retain credit. F02 mapping is complete within its tranche; F03 metadata and fresh identity-only planning review are recorded accepted, not numeric-target or original-as-of admission.",
++      "acceptance": "Source records fresh identity-only planning acceptance and later exact A cap/positive-TOI conditional PIM approval. Actual independent reader/runtime gate and terminal A outcome were not established in this repo-only audit. Do not request the same identity/cap decision again or claim A never ran. B fitting/scoring and broader qualification remain separate.",
++      "release": "No full-program, dashboard or model release follows. Original BLK operation, accepted experiments and version-specific live guards remain independently owned. January 14 onward/reserved-label and blend holds are retained as recorded for this program, subject to legitimate later authority.",
++      "dependencies": "Current sole executor/evaluator custody; NATIVE-ISSUANCE and RSO-REAL-ACCEPTANCE; FPI-01, FORGE-GATE-HARNESS and FORGE-LEDGER-WEEK reusable evidence; SITE-FORGE-TESTING-GROUNDS for UI/runner integration. These narrower slices do not substitute for the full program.",
++      "verification": "Full V1 checklist and super-list read; PRD requirements prose reviewed. Latest checklist resolves older missing-identity, unresolved 73-slot and cap-blocker statements: fresh planning review accepted; baseline plus at most two complete challengers selected; exact 28,509,016-byte cap approved for 829 spans. External receipts/raw spans were not accessed, so statuses/hashes remain attributed to the dated source.",
++      "acceptance_release_gate": "No second executor, new A/B operation, private-source access, label allocation, fitting, capture, scheduling, publication or deployment is authorized by audit. Preserve existing exact A authority under its legitimate owner and required prior gate. New stages require their own scope; recorded metadata/current identity is not historical eligibility or numeric support.",
++      "next_action": "Through current coordination, reconcile later existing-owner reader/runtime/synthetic and terminal A receipts before new work. Preserve resolved identity/cap decisions and approved conditional-PIM exclusions. Reuse accepted contracts, then retain only surviving staged requirements below; no cap-only review, lookup retry, passed-window retry or automatic benchmark.",
++      "evidence_level": "Proposed/held program reconciliation; component approvals retained, full evidence/release unverified",
++      "evidence_scope": "OCT14-COMP0–9 owning requirements; F00–F22 aliases; component implementation, data support, evaluation, UI and release are distinct",
++      "source_inputs": [
++        "OCT14-COMP meta mapping and 0–9",
++        "October 15 F00–F22 amendment under the same owning ledger",
++        "Latest fresh identity review and exact-cap A decision, not new audit authority"
++      ],
++      "artifact_audit_segment15": [
++        {
++          "at": "2026-10-24T19:15:27.950610+00:00",
++          "before_fields": {
++            "children": null
++          },
++          "note": "Documentary reconciliation only; prior scope, evidence and narrower closures retained. No new authority."
++        }
++      ],
++      "children": [
++        {
++          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-1",
++          "title": "Freeze target/population protocol after the bounded support stage",
++          "status": "A cap and conditional-PIM scope resolved; gate/result unverified",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "NATIVE-ISSUANCE"
++          ],
++          "next_action": "Reconcile existing A gate/result first; retain positive-TOI PIM and explicit missing/penalty-only exclusions. Then pin estimands, anchors, cohorts, clocks, allocations and budgets before B.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++            "line": 156
++          },
++          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
++          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
++        },
++        {
++          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-2",
++          "title": "Retain immutable complete trial and issuance history",
++          "status": "Partial reusable infrastructure; broader coverage unverified",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "FPI-01",
++            "FORGE-LEDGER-WEEK"
++          ],
++          "next_action": "Link all candidate/feature versions, parameters, source/cohort manifests, actual clocks, failures, exposures, missingness and selections. Show requested and paired populations; reconstruction cannot become original issuance.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++            "line": 157
++          },
++          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
++          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
++        },
++        {
++          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-3",
++          "title": "Preserve the selected finite first-wave comparison scope",
++          "status": "Menu decision resolved; no experiment authorization",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "FORGE-ISOLATED-VARIANT"
++          ],
++          "next_action": "Use baseline plus at most two complete challengers for one support-qualified head/component; do not reopen the old 73-slot choice or run Cartesian sweeps. Separate mean-fixed diagnostics need their own declared inclusion; Elo/Glicko is optional context only.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++            "line": 158
++          },
++          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
++          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
++        },
++        {
++          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-4",
++          "title": "Version target-appropriate expected-mean/distribution scoring",
++          "status": "Requirements open; old experiment scores unchanged",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "FORGE-GATE-HARNESS"
++          ],
++          "next_action": "Freeze MSE/proper-score selection and report bias, RMSE, calibration, intervals and coverage by units/conditioning. Zero-baseline skill stays undefined; do not retrofit new selection onto the old MAE-selected pilot.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++            "line": 159
++          },
++          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
++          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
++        },
++        {
++          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-5",
++          "title": "Qualify paired coverage and dependence-aware comparisons",
++          "status": "Metadata/current identities accepted only within planning scope",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "NATIVE-ISSUANCE"
++          ],
++          "next_action": "Match baseline-covered target/horizon/evidence cohorts with chronological stability and justified game/slate uncertainty. Numeric target, participation and historical as-of support remain distinct from 927 identities / 829 spans.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++            "line": 160
++          },
++          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
++          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
++        },
++        {
++          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-6",
++          "title": "Align the accountability report and existing dashboard work",
++          "status": "Existing UI remains separately owned; full report contract open",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "SITE-FORGE-TESTING-GROUNDS",
++            "FPI-01"
++          ],
++          "next_action": "Reuse SITE-FORGE-TESTING-GROUNDS and existing accountability/ledger surfaces for signed-error histograms, loss/coverage trends, version/target tables and supported segments. Keep research, shadow and deployed evidence stages explicit; do not create a second dashboard stack.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++            "line": 161
++          },
++          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
++          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
++        },
++        {
++          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-7",
++          "title": "Qualify complete-vector legal lineup and drop/add comparisons",
++          "status": "Authentic replay/consumer evidence unverified",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "RSO-REAL-ACCEPTANCE",
++            "NATIVE-ISSUANCE"
++          ],
++          "next_action": "Use existing RSO/Start Chart owners and matching original scoring, roster, eligibility, locks, waivers, costs and issued inputs. Retain unchanged decisions as zero gain; conditional proxies/simulations are not realized roster utility.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++            "line": 162
++          },
++          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
++          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
++        },
++        {
++          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-8",
++          "title": "Retain per-head promotion, sealed evaluation and rollback gates",
++          "status": "Held; implementation contracts do not establish predictive release",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "NATIVE-ISSUANCE"
++          ],
++          "next_action": "Predeclare coverage/skill/coherence/subgroup/operating bounds, independent final-feedback custody and a pinned fallback. Preserve original version-specific gates, including older skater 14-matched-date/default-switch hold; they are not universal new research thresholds.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++            "line": 163
++          },
++          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
++          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
++        },
++        {
++          "child_id": "FORGE-COMPARISON-PROGRAM/OCT14-COMP-9",
++          "title": "Reconcile reusable contracts and future runner ownership",
++          "status": "F02 mapping complete within tranche; implementation/cloud qualification open",
++          "owner": "UNASSIGNED",
++          "depends_on": [
++            "SITE-FORGE-TESTING-GROUNDS",
++            "FORGE-GATE-HARNESS"
++          ],
++          "next_action": "Inventory actual accepted storage/evaluation/UI gaps before migrations or duplicate code. Future nonsecret runner packaging, clock/owner/duplicate controls and prospective capture remain separately scoped; preserve existing missed-window handling.",
++          "source": {
++            "path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++            "line": 164
++          },
++          "approval_gate": "No execution/fitting/label/source-body/cloud/release authority from this child. Reconcile existing approvals and accepted evidence first; preserve sole executor and exact stage gates.",
++          "existing_work_credit": "Accepted component work, source F02/F03 planning and resolved decisions retain their original limits. No duplicate F-series backlog."
++        }
++      ]
++    },
++    {
++      "group": "Task-artifact audit proposed carry-forward",
++      "owner": "UNASSIGNED",
++      "reviewer": "UNASSIGNED",
++      "evidence": [
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/e94e2ae6f458-tasks-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-projection-model.md",
++          "line": 168,
++          "sha256": "e94e2ae6f458c8abcc5752e3b12e58cae6b8c0775689722260b8e91e42ad1211",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/42b41559b156-prd-projection-model.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md",
++          "line": 568,
++          "sha256": "42b41559b1561854dc410fe7222433a3c2135498a6eb7ef583cb694839f5b5e6",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "All substantive prose 1–610 read. Commented SQL appendix 614–1257 bounded by complete comment/fence/job-label/path/placeholder checks; individual statement semantics unreviewed. No full-file content credit."
++        },
++        {
++          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/source-snapshots/1f799bd7fded-tasks-skater-forge.md",
++          "original_path": "tasks/TASKS/forge-projections/v1/tasks-skater-forge.md",
++          "line": 88,
++          "sha256": "1f799bd7fded25035dfb0c55226c60c8d3e3161903292621d9d5bbdf70cbbcd4",
++          "observed_at": "2026-10-24T19:15:27.950610+00:00",
++          "review_scope": "Full documentary text read, not underlying app/test/data/hosted verification. Stored instructions and external receipt claims retain dated provenance and grant no audit execution authority."
++        }
++      ],
++      "as_of": "2026-10-24T19:15:27.950610+00:00",
++      "dispatch_class": "Reconciliation-first; no new model owner, implementation or external dispatch",
++      "evidence_provenance": "Complete named task sources plus requirements prose and bounded historical appendix. External private receipts/hashes are source-attributed only and were not opened.",
++      "taskID": "SITE-FORGE-RANGE-PRESENTATION",
++      "scope": "Reconcile the retained plain-language forecast-range presentation requirement",
++      "user_impact": "Users need a clear distinction between a point forecast and its supported low/typical/high range; API disclosure alone does not settle the requested UI presentation. Current runtime was not inspected.",
++      "implementation": "V1 NEW8 reopens embedded presentation rows after the old FORGE rewrite removed low/typical/high blocks. Older skater 6.4 checks retain their dated scope. No later owner supersession/restoration was established by this documentary pass; this is not a reproduced current UI failure.",
++      "acceptance": "Proposed P3/unassigned reconciliation and product-disposition follow-up, not an active repair claim.",
++      "release": "No UI change or release by audit. Preserve the canonical Command Center/preview route decision and existing model/distribution work.",
++      "dependencies": "FPI-08 supported quantile contracts; current canonical frontend custody; REPO-DOCUMENTATION and source NEW8/C0002/C0003. Different from descriptive player-card percentiles and SITE-START-CONTRACT paging.",
++      "verification": "Full V1 task list, shared PRD requirements/embedded presentation rows and skater checklist read. Later NEW8 source explicitly supersedes older completed presentation boxes. No application/browser/pixel or current API check performed.",
++      "acceptance_release_gate": "First reconcile a later exact owner supersession or UI acceptance receipt. If still requested, scoped owner verifies supported quantiles, honest unavailable states and wording before any presentation change. No model recalibration or unsupported ranges.",
++      "next_action": "Locate current owner disposition of the low/typical/high requirement. Record intentional supersession if applicable; otherwise propose the smallest canonical-surface presentation contract using actual supported outputs. Do not restore the retired dashboard or reimplement distributions from an old checklist.",
++      "evidence_level": "Proposed P3; source requirement/disposition unverified in current runtime",
++      "evidence_scope": "Forecast-range presentation/supersession only; no model-quality, interval-calibration or full UI acceptance",
++      "source_inputs": [
++        "Projection V1 NEW8 / embedded C0002,C0003",
++        "skater 6.4 and older completed presentation evidence"
++      ],
++      "artifact_audit_segment15": [
++        {
++          "at": "2026-10-24T19:15:27.950610+00:00",
++          "before_fields": {},
++          "note": "Documentary reconciliation only; prior scope, evidence and narrower closures retained. No new authority."
+         }
+       ]
+     }
+@@ -19174,12 +19604,12 @@
+     ],
+     "all_legacy_ids_mapped": true,
+     "task_rows_before": 188,
+-    "status": "Segment14:211 IDs;20 readable children; current Forge residuals and narrower closures reconciled. Whole content audit unfinished.",
++    "status": "Segment15:213 IDs;30 readable children; full content audit unfinished.",
+     "archive": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/archive/MASTER-TASKLIST-2026-10-20.before-2026-10-23.md",
+     "index_owner": "Parent retains Git/index/release; no Git mutation authorized by this update",
+     "roster": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/CHECKPOINT-INVENTORY.json",
+-    "after_sha256": "d6b5da4dc78ba3cf83c088603cfb796cb565bcdf44e1e187c1ba30de8410bac1",
+-    "completed_at": "2026-10-24T18:49:59.291059+00:00",
++    "after_sha256": "288b318523c21dc69946b5e3e58a2ee49733e3d147f7e8f3a5167b1cec806fc4",
++    "completed_at": "2026-10-24T19:15:27.950610+00:00",
+     "git_status": "Local documentation only; release owner holds index, no ledger commit/push",
+     "reconciliation_history": {
+       "as_of": "2026-10-24T13:54:28.119238+00:00",
+@@ -19189,7 +19619,7 @@
+       "legacy_scopes_preserved": 32,
+       "new_task_id": "SITE-FORGE-TESTING-GROUNDS"
+     },
+-    "task_rows_after": 211
++    "task_rows_after": 213
+   },
+   "sos_unsaved_prerequisite_handoff": {
+     "as_of": "2026-10-23T15:58:32+00:00",
+@@ -19680,5 +20110,20 @@
+     "visible_children_added": 8,
+     "coverage": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-14-forge-living-audit/COVERAGE.json",
+     "whole_tree_content_complete": false
++  },
++  "artifact_audit_segment15_20261024": {
++    "at": "2026-10-24T19:15:27.950610+00:00",
++    "added_ids": [
++      "FORGE-COMPARISON-PROGRAM",
++      "SITE-FORGE-RANGE-PRESENTATION"
++    ],
++    "changed_existing_ids": [
++      "REPO-DOCUMENTATION",
++      "SITE-FORGE-TESTING-GROUNDS",
++      "FPI-03"
++    ],
++    "visible_children_added": 10,
++    "coverage": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/COVERAGE.json",
++    "whole_tree_content_complete": false
+   }
+ }

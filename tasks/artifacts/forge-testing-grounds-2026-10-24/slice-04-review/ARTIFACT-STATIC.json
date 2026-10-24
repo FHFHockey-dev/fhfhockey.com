@@ -1,0 +1,13 @@
+{
+  "scope": "Static HTML/CSP/resource inspection only; no script execution, browser or visual validation.",
+  "bytes": 236107,
+  "sha256": "cfe211db8833cbd2b566c9c1b43a0bf8da7abd21b7df63b1756ca2bbdebea15c",
+  "inlineScriptCount": 1,
+  "csp": [
+    "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src data:; base-uri 'none'; form-action 'none'"
+  ],
+  "externalResourceAttributes": [],
+  "cssUrlReferences": [],
+  "connectBlocked": true,
+  "formsBlocked": true
+}

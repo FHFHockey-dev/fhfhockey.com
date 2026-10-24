@@ -1,0 +1,821 @@
+--- /dev/null
++++ b/web/lib/player-forecasts/rsoUsePolicy.ts
+@@ -0,0 +1,133 @@
++import type { ContributionAllowedUses } from "./contributions";
++import type { ForecastManifest, GameForecast } from "../rosterScheduleOptimizer/planningTypes";
++
++export const RSO_USE_POLICY_VERSION = "rso-target-use-v1" as const;
++export type RsoTargetUseBinding = {
++  component: string;
++  modelMode: string;
++  codeVersion: string;
++  configurationHash: string | null;
++  artifactHash: string | null;
++  targetKey: string;
++  horizonGames: number;
++  conditioning: string;
++  participationLineage: string | null;
++  cutoffAt: string;
++};
++export type RsoTargetUseReview = {
++  id: string;
++  binding: Omit<RsoTargetUseBinding, "cutoffAt">;
++  reviewedAt: string;
++  inputCutoffFrom: string;
++  inputCutoffUntil: string;
++  expiresAt: string;
++  allowedUses: ContributionAllowedUses;
++};
++export type RsoUsePolicy = {
++  version: typeof RSO_USE_POLICY_VERSION;
++  revision: string;
++  reviews: readonly RsoTargetUseReview[];
++  revokedReviewIds: readonly string[];
++};
++export type RsoTargetUseDecision = {
++  policyRevision: string;
++  reviewId: string | null;
++  allowedUses: ContributionAllowedUses;
++};
++
++/** TJ selected review-before-use, not a target approval. Add only independently
++ * reviewed exact scopes here; serialized forecasts cannot add to this catalog. */
++export const RSO_USE_POLICY: RsoUsePolicy = Object.freeze({
++  version: RSO_USE_POLICY_VERSION,
++  revision: "rso-review-before-use-2026-10-22-v1",
++  reviews: Object.freeze([]),
++  revokedReviewIds: Object.freeze([]),
++});
++export const currentRsoUsePolicy = (): RsoUsePolicy => RSO_USE_POLICY;
++
++export const deniedRsoUses = (): ContributionAllowedUses => ({
++  assignment: false, totals: false, comparison: false, conditionalTieBreak: false,
++});
++
++/** `policy` is a trusted code/loader dependency, never a field from saved or
++ * provider inputs. A binding or a previous decision is not an approval. */
++export function resolveRsoTargetUse(binding: RsoTargetUseBinding | undefined, now: string,
++  policy: RsoUsePolicy = RSO_USE_POLICY): RsoTargetUseDecision {
++  const denied = { policyRevision: policy.revision, reviewId: null, allowedUses: deniedRsoUses() };
++  const clock = Date.parse(now), cutoff = Date.parse(binding?.cutoffAt ?? "");
++  if (policy.version !== RSO_USE_POLICY_VERSION || !policy.revision || !binding
++    || !Number.isFinite(clock) || !Number.isFinite(cutoff) || cutoff > clock
++    || !binding.component || !binding.modelMode || !binding.codeVersion || !binding.targetKey
++    || !binding.conditioning || !binding.participationLineage
++    || !/^[a-f0-9]{64}$/.test(binding.configurationHash ?? "")
++    || !/^[a-f0-9]{64}$/.test(binding.artifactHash ?? "")
++    || !Number.isSafeInteger(binding.horizonGames) || binding.horizonGames < 1) return denied;
++  const { cutoffAt: _, ...scope } = binding;
++  const candidates = policy.reviews.filter(review => review.id && !policy.revokedReviewIds.includes(review.id)
++    && Object.keys(scope).every(key => scope[key as keyof typeof scope] === review.binding[key as keyof typeof scope])
++    && Number.isFinite(Date.parse(review.reviewedAt)) && Date.parse(review.reviewedAt) <= clock
++    && Number.isFinite(Date.parse(review.expiresAt)) && Date.parse(review.expiresAt) > clock
++    && Number.isFinite(Date.parse(review.inputCutoffFrom)) && Date.parse(review.inputCutoffFrom) <= cutoff
++    && Number.isFinite(Date.parse(review.inputCutoffUntil)) && cutoff < Date.parse(review.inputCutoffUntil));
++  if (candidates.length !== 1) return denied;
++  const review = candidates[0];
++  return { policyRevision: policy.revision, reviewId: review.id, allowedUses: {
++    assignment: review.allowedUses.assignment === true, totals: review.allowedUses.totals === true,
++    comparison: review.allowedUses.comparison === true, conditionalTieBreak: review.allowedUses.conditionalTieBreak === true,
++  } };
++}
++
++export function intersectRsoUses(left: ContributionAllowedUses | undefined,
++  right: ContributionAllowedUses): ContributionAllowedUses {
++  return { assignment: left?.assignment === true && right.assignment, totals: left?.totals === true && right.totals,
++    comparison: left?.comparison === true && right.comparison, conditionalTieBreak: left?.conditionalTieBreak === true && right.conditionalTieBreak };
++}
++
++/** Shared data readers assign this only after selecting the separately approved
++ * bridge. A detailed row's source label/revision prefix never selects a branch. */
++export type RsoUsePolicyManifest = { version: typeof RSO_USE_POLICY_VERSION; revision: string;
++  bridgeRevisionIds: string[] };
++
++/** Recompute permissions from the current trusted catalog, including retained
++ * resolver inputs. Serialized allowedUses/decision IDs cannot grant a review. */
++export function restrictRsoForecast(forecast: GameForecast, manifest: Pick<ForecastManifest, "rsoUsePolicy"> | undefined, now: string,
++  policy = currentRsoUsePolicy()): GameForecast {
++  const current = manifest?.rsoUsePolicy;
++  const compatible = !current || current.version === RSO_USE_POLICY_VERSION && current.revision === policy.revision;
++  if (current && compatible && !forecast.rsoTargetBindings && current.bridgeRevisionIds.includes(forecast.revisionId)) return forecast;
++  const targets = new Set([...Object.keys(forecast.stats), ...Object.keys(forecast.conditionalStats ?? {}),
++    ...Object.keys(forecast.contributions ?? {})]);
++  const targetUses: Record<string, ContributionAllowedUses> = {};
++  const contributions = forecast.contributions && { ...forecast.contributions };
++  for (const target of targets) {
++    const binding = forecast.rsoTargetBindings?.[target];
++    const source = forecast.contributions?.[target]?.inputs?.detailed;
++    const bound = binding?.targetKey === target && binding.codeVersion === (source?.policyVersion ?? forecast.modelVersion)
++      && binding.cutoffAt === (source?.cutoffAt ?? forecast.cutoffAt);
++    const decision = resolveRsoTargetUse(compatible && bound ? binding : undefined, now, policy);
++    targetUses[target] = intersectRsoUses(forecast.targetAllowedUses?.[target] ?? forecast.allowedUses, decision.allowedUses);
++    const row = contributions?.[target];
++    if (!row) continue;
++    if (current && compatible && !binding && row.inputs?.detailed
++      && current.bridgeRevisionIds.includes(row.inputs.detailed.sourceId)) continue;
++    // Qualified native rates and modeled participation keep their own admission.
++    // A detailed participation receipt cannot borrow a rate's approval.
++    const detailUsed = row.sourceKind === "detailed" || row.sourceKind === "blended";
++    const detailedParticipation = row.inputs?.participation && !row.inputs.participation.model;
++    const dependent = detailUsed || detailedParticipation;
++    contributions![target] = { ...row,
++      ...(row.inputs ? { inputs: { ...row.inputs,
++        ...(row.inputs.detailed ? { detailed: { ...row.inputs.detailed,
++          allowedUses: intersectRsoUses(row.inputs.detailed.allowedUses, decision.allowedUses) } } : {}),
++        ...(detailedParticipation ? { participation: { ...row.inputs.participation!,
++          allowedUses: intersectRsoUses(row.inputs.participation!.allowedUses, decision.allowedUses) } } : {}),
++      } } : {}),
++      ...(dependent ? { allowedUses: intersectRsoUses(row.allowedUses, decision.allowedUses),
++        exclusionReasons: [...new Set([...row.exclusionReasons,
++          ...(!decision.allowedUses.assignment || !decision.allowedUses.totals || !decision.allowedUses.comparison
++            ? ["use_not_approved" as const] : [])])] } : {}),
++    };
++  }
++  return { ...forecast, allowedUses: deniedRsoUses(), targetAllowedUses: targetUses,
++    ...(contributions ? { contributions } : {}) };
++}
+--- /dev/null
++++ b/web/lib/player-forecasts/rsoUsePolicy.test.ts
+@@ -0,0 +1,43 @@
++import { describe, expect, it } from "vitest";
++import { deniedRsoUses, resolveRsoTargetUse, type RsoTargetUseBinding, type RsoUsePolicy } from "./rsoUsePolicy";
++
++const now = "2026-10-22T12:00:00Z";
++const binding: RsoTargetUseBinding = { component: "fictional-skater", modelMode: "baseline", codeVersion: "synthetic-code",
++  configurationHash: "a".repeat(64), artifactHash: "b".repeat(64), targetKey: "HITS", horizonGames: 1,
++  conditioning: "conditional_playing", participationLineage: "fictional-confirmed-appearance-v1", cutoffAt: "2026-10-22T10:00:00Z" };
++const { cutoffAt: _, ...scope } = binding;
++const policy: RsoUsePolicy = { version: "rso-target-use-v1", revision: "synthetic-review-only", revokedReviewIds: [], reviews: [{
++  id: "fictional-review", binding: scope, reviewedAt: "2026-10-21T00:00:00Z", expiresAt: "2026-10-23T00:00:00Z",
++  inputCutoffFrom: "2026-10-22T00:00:00Z", inputCutoffUntil: "2026-10-23T00:00:00Z",
++  allowedUses: { assignment: true, totals: false, comparison: false, conditionalTieBreak: false },
++}] };
++
++describe("RSO target/use reviews", () => {
++  it("does not invent production approvals from valid-looking inputs", () => {
++    expect(resolveRsoTargetUse(binding, now).allowedUses).toEqual(deniedRsoUses());
++    expect(resolveRsoTargetUse(undefined, now, policy).allowedUses).toEqual(deniedRsoUses());
++  });
++  it("keeps assignment, totals, comparison and tie-breaking independent", () => {
++    for (const use of ["assignment", "totals", "comparison", "conditionalTieBreak"] as const) {
++      const allowedUses = { ...deniedRsoUses(), [use]: true };
++      expect(resolveRsoTargetUse(binding, now, { ...policy, reviews: [{ ...policy.reviews[0], allowedUses }] }))
++        .toEqual({ policyRevision: policy.revision, reviewId: "fictional-review", allowedUses });
++    }
++  });
++  it.each(["component", "modelMode", "codeVersion", "configurationHash", "artifactHash", "targetKey", "horizonGames", "conditioning", "participationLineage"] as const)
++  ("rejects a different %s without broadening the reviewed scope", key => {
++    const changed = { ...binding, [key]: key === "horizonGames" ? 2 : key.endsWith("Hash") ? "c".repeat(64) : "different" };
++    expect(resolveRsoTargetUse(changed, now, policy).allowedUses).toEqual(deniedRsoUses());
++  });
++  it.each(["revoked", "expired", "future_review", "old_cutoff", "late_cutoff", "duplicate"])
++  ("denies %s review evidence", kind => {
++    const candidate = structuredClone(policy), review = candidate.reviews[0];
++    if (kind === "revoked") candidate.revokedReviewIds = [review.id];
++    if (kind === "expired") review.expiresAt = now;
++    if (kind === "future_review") review.reviewedAt = "2026-10-23T00:00:00Z";
++    if (kind === "old_cutoff") review.inputCutoffFrom = now;
++    if (kind === "late_cutoff") review.inputCutoffUntil = binding.cutoffAt;
++    if (kind === "duplicate") candidate.reviews = [review, { ...review, id: "another-review" }];
++    expect(resolveRsoTargetUse(binding, now, candidate).allowedUses).toEqual(deniedRsoUses());
++  });
++});
+--- a/web/lib/rosterScheduleData/planning.ts
++++ b/web/lib/rosterScheduleData/planning.ts
+@@ -1,5 +1,6 @@
+ import { loadPlanningInputs, pages, withinDeadline, PlanningReadDeadlineError, type PlanningDataQuery } from "./planningInputs";
+ import { admitConsumerGameRevisions } from "lib/projections/consumerRevisionAdmission";
++import { currentRsoUsePolicy, restrictRsoForecast, type RsoUsePolicyManifest } from "lib/player-forecasts/rsoUsePolicy";
+ import { loadForgeDailyBridgeForecasts } from "./forgeDailyBridge";
+ export { normalizePlanningGames } from "./planningInputs";
+ export { publicPlanningForecasts } from "lib/projections/consumerRevisionAdmission";
+@@ -47,6 +48,7 @@
+ }
+ 
+ export async function loadPlanningData(db: SupabaseClient<any>, query: PlanningDataQuery, options: { now?: Date; forecastsEnabled?: boolean; deadlineMs?: number; skipOwnership?: boolean; skipRecentForm?: boolean;
++  consumer?: "rso" | "start_chart";
+   /** A source the caller already selected for this request; otherwise it is selected here. */
+   source?: ForecastServingSource;
+   /** RSO only: serve interim FORGE daily projections while native forecasts are not activated. */
+@@ -173,7 +175,7 @@
+     forecastProblems.push("Shared game-forecast serving is not enabled; schedule planning remains available.");
+     for (const id of scheduledGameIds) recordGameExclusion(id, "serving_disabled");
+   }
+-  const { forecasts: admitted, acceptedNewsRevision, limitations: admissionProblems } = await admitConsumerGameRevisions(
++  const { forecasts: admitted, admittedSources, acceptedNewsRevision, limitations: admissionProblems } = await admitConsumerGameRevisions(
+     db, revisions, players, games, now, query.seasonId, exclusionCounts, exclusionRows, deadline, calendarPolicy);
+   forecastProblems.push(...admissionProblems);
+   let forecasts = admitted, bridged = false;
+@@ -194,6 +196,35 @@
+       }
+     } catch { forecastProblems.push("Interim FORGE projections could not be read; schedule planning remains available."); }
+   }
++  // Permission denial is downstream of selection: it must never empty admission
++  // and thereby invoke the separately approved interim bridge.
++  let rsoUsePolicy: RsoUsePolicyManifest | undefined;
++  if (options.consumer === "rso") {
++    const policy = currentRsoUsePolicy();
++    rsoUsePolicy = { version: policy.version, revision: policy.revision,
++      bridgeRevisionIds: bridged ? [...new Set(forecasts.map(row => row.revisionId))].sort() : [] };
++    if (!bridged) forecasts = forecasts.map(forecast => {
++      const admitted = admittedSources.find(row => row.forecast === forecast);
++      const rsoTargetBindings = Object.fromEntries(Object.keys(forecast.stats).map(targetKey => [targetKey, {
++        component: `forge-detailed-${admitted?.source.kind ?? "unknown"}`,
++        modelMode: admitted?.revision.payload.modelMode ?? "unknown", codeVersion: forecast.modelVersion ?? "unknown",
++        // Issuance/captured-read hashes do not establish reviewed configuration
++        // or model artifact identity. Missing producer evidence stays unknown.
++        configurationHash: null, artifactHash: null, targetKey, horizonGames: 1,
++        conditioning: admitted?.source.kind === "goalie" ? "start_only_zero_relief" : "conditional_playing",
++        participationLineage: `${forecast.revisionId}:participation`, cutoffAt: forecast.cutoffAt ?? "",
++      }]));
++      const restricted = restrictRsoForecast({ ...forecast, rsoTargetBindings }, { rsoUsePolicy }, now.toISOString(), policy);
++      for (const [targetKey, uses] of Object.entries(restricted.targetAllowedUses ?? {})) {
++        if (uses.assignment && uses.totals && uses.comparison) continue;
++        exclusionCounts.use_not_approved = (exclusionCounts.use_not_approved ?? 0) + 1;
++        if (exclusionRows.length < 15000) exclusionRows.push({ gameId: forecast.gameId, playerId: forecast.playerId,
++          targetKey, reasons: ["use_not_approved"] });
++      }
++      return restricted;
++    });
++    if (!bridged && forecasts.length) forecastProblems.push("Detailed target uses require an applicable reviewed scope; unapproved quality remains unavailable.");
++  }
+   if (rolloutValid && (options.forecastsEnabled ?? starterBoardFlags().serving)) {
+     const issued = new Set(revisions.map(revision => String(revision.game_id)));
+     for (const id of selectedGameIds) if (!issued.has(id) && !discoveryUnavailable.has(id)) recordGameExclusion(id, "no_issued_revision");
+@@ -204,6 +235,7 @@
+   const scheduleRevision = playerForecastSourcePayloadHash(games.map(game => game.scheduleRevision).sort());
+   const rosterRevision = playerForecastSourcePayloadHash(players.map(player => [player.id, player.rosterRevision]).sort());
+   const manifestContent = { seasonId: query.seasonId, calendarPolicy, acceptedNewsRevision, scheduleRevision, rosterRevision,
++    ...(rsoUsePolicy ? { rsoUsePolicy } : {}),
+     issuedRevisionIds: [...new Set(forecasts.map(row => row.revisionId))].sort(), baselineChecksum: baseline.checksum,
+     participationRevisionIds: participation.sources.map(source => source.revisionId).sort(), participationChecksum: participation.checksum,
+     exclusions: exclusionRows };
+--- a/web/lib/rosterScheduleData/planning.test.ts
++++ b/web/lib/rosterScheduleData/planning.test.ts
+@@ -8,6 +8,7 @@
+ import { loadPlanningData, normalizePlanningGames, parsePlanningDataQuery, publicPlanningForecasts } from "./planning";
+ import type { ContributionPlanningSnapshot, ForecastDiscoveryExclusion, PlanningPlayer } from "lib/rosterScheduleOptimizer/planningTypes";
+ import { resolvePlanningContributions } from "lib/player-forecasts/planningContributions";
++import { forecastAllows } from "lib/rosterScheduleOptimizer/planning";
+ import { buildGoalieParticipationReceipt, buildFrozenWindowGoalieParticipationReceipt, buildFrozenWindowGoalieStartReceipt, type GoalieParticipationInput, buildRosterObservationGoalieParticipationReceipt, buildRosterObservationGoalieStartReceipt } from "lib/player-forecasts/modeledGoalieParticipation";
+ import { GOALIE_PARTICIPATION_DATASET, FROZEN_WINDOW_GOALIE_PARTICIPATION_DATASET, FROZEN_WINDOW_GOALIE_START_DATASET, type GoalieParticipationBundle, ROSTER_OBSERVATION_GOALIE_PARTICIPATION_DATASET, ROSTER_OBSERVATION_GOALIE_START_DATASET } from "lib/player-forecasts/modeledGoalieParticipationStore";
+ import { buildSkaterParticipationReceipt, buildFrozenWindowSkaterParticipationReceipt, type SkaterParticipationInput, buildRosterObservationSkaterParticipationReceipt } from "lib/player-forecasts/modeledSkaterParticipation";
+@@ -153,6 +154,38 @@
+   const publicQuery = { seasonId: 20262027, startDate: "2026-10-10", endDate: "2026-10-11" };
+   const publicOptions = { now: new Date("2026-10-10T12:00:00Z"), forecastsEnabled: false };
+ 
++  it.each(["goalie", "skater"] as const)("P07 denies unreviewed %s quality after selection without bridge fallback or Start Chart changes", async kind => {
++    const { db, tables, calls } = newsDb([]);
++    const issued = revision([{ playerId: 847001, startingProbability: 0.5, conditional: { SAVES_GOALIE: 30 } }]);
++    let target = "SAVES_GOALIE", expected = 15;
++    if (kind === "skater") {
++      tables.fhfh_player_identities = [{ id: 7, nhl_player_id: 847001, canonical_name: "Skater", canonical_position: "L" }];
++      issued.payload.goalies = []; issued.payload.modelMode = "candidate"; issued.payload.codeVersion = "synthetic-unreviewed-candidate";
++      issued.payload.players = [{ game_id: 2026020001, team_id: 1, player_id: 847001, horizon_games: 1,
++        as_of_date: "2026-10-10", run_id: "run-1", proj_hits: 3,
++        uncertainty: { model: { skater_selection: scopedSkaterSelection(issued) } } }];
++      target = "HITS"; expected = 3;
++    }
++    db.rpc.mockReturnValue(rpcResponse({ data: [issued], error: null }));
++    const options = { ...publicOptions, forecastsEnabled: true, forgeDailyBridge: true,
++      source: { kind: "legacy" as const, reason: "native_not_activated" as const, environment: {} } };
++    const shared = await loadPlanningData(db as never, publicQuery, { ...options, consumer: "start_chart" });
++    expect(shared.forecasts[0].stats[target]).toBe(expected);
++    expect(forecastAllows(shared.forecasts[0], target, "totals")).toBe(true);
++    calls.length = 0;
++    const restricted = await loadPlanningData(db as never, publicQuery, { ...options, consumer: "rso" });
++    expect(restricted.forecasts).toHaveLength(1);
++    expect(restricted.forecasts[0].revisionId).toBe("issued-1");
++    for (const use of ["assignment", "totals", "comparison", "conditionalTieBreak"] as const)
++      expect(forecastAllows(restricted.forecasts[0], target, use)).toBe(false);
++    expect(restricted.forecastManifest?.exclusions).toContainEqual({ gameId: "2026020001", playerId: "7", targetKey: target, reasons: ["use_not_approved"] });
++    expect(calls.some(call => call.table === "forge_runs")).toBe(false);
++    const roundTrip = decodePlanningDataTransport(JSON.parse(JSON.stringify(encodePlanningDataTransport(restricted))));
++    expect(roundTrip.forecastManifest).toEqual(restricted.forecastManifest);
++    expect(roundTrip.forecasts).toEqual(restricted.forecasts);
++    expect((await loadPlanningData(db as never, publicQuery, { ...options, consumer: "start_chart" })).forecasts).toEqual(shared.forecasts);
++  });
++
+   it("keeps fresh ownership (0% included) as the value and a stale reading only as labelled last-known evidence (R7 W2)", async () => {
+     const { db, tables } = formDb([], []);
+     tables.yahoo_nhl_player_map_read = [{ nhl_player_id: 847001, yahoo_player_id: 55 }];
+@@ -181,12 +214,15 @@
+         proj_goals_es: 0.3, proj_goals_pp: 0.1, proj_assists_es: 0.4, proj_assists_pp: 0.1, proj_shots_es: 2, proj_shots_pp: 0.5,
+         proj_toi_es_seconds: 900, proj_toi_pp_seconds: 120, proj_hits: 1, proj_blocks: 0.4 }],
+       forge_goalie_projections: [], goalie_start_projections: [] });
+-    const bridged = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true });
++    const bridged = await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true, consumer: "rso" });
+     expect(bridged.forecasts).toEqual([expect.objectContaining({ playerId: "7", gameId: "2026020001",
+       revisionId: "forge-daily-bridge-v1:run-b", stats: expect.objectContaining({ GOALS: 0.4, POINTS: 0.9 }) })]);
+     expect(bridged.evidence.forecasts.source).toBe("Interim FORGE daily projections");
+     expect(bridged.forecastManifest).toMatchObject({ issuedRevisionIds: ["forge-daily-bridge-v1:run-b"], forecastedOpportunities: 1 });
+     expect(bridged.forecastManifest?.exclusionCounts.serving_disabled).toBeUndefined();
++    expect(bridged.forecastManifest?.rsoUsePolicy?.bridgeRevisionIds).toEqual(["forge-daily-bridge-v1:run-b"]);
++    const resolved = resolvePlanningContributions({ ...bridged, context: { ...publicQuery, asOf: publicOptions.now.toISOString() } }, { consumer: "rso" });
++    expect(forecastAllows(resolved.forecasts[0], "GOALS", "totals")).toBe(true);
+     expect((await loadPlanningData(db as never, publicQuery, publicOptions)).forecasts).toEqual([]);
+     expect((await loadPlanningData(db as never, publicQuery, { ...publicOptions, forgeDailyBridge: true,
+       source: { kind: "empty", reason: "native_catalog_expired", environment: {} } })).forecasts).toEqual([]);
+--- a/web/lib/rosterScheduleOptimizer/planningTypes.ts
++++ b/web/lib/rosterScheduleOptimizer/planningTypes.ts
+@@ -1,4 +1,5 @@
+ import type { ContributionAllowedUses, ContributionExclusion, ContributionParticipation, ContributionSource, ForecastCalendarPolicy, ResolvedContribution } from "../player-forecasts/contributions";
++import type { RsoTargetUseBinding, RsoUsePolicyManifest } from "../player-forecasts/rsoUsePolicy";
+ import type { GameExpectationPowerPlayRole } from "../player-forecasts/gameExpectations";
+ export type ForecastExclusionReason = ContributionExclusion | "canary_excluded" | "discovery_timeout"
+   | "discovery_failed" | "incomplete_refresh" | "eligibility_unverified" | "game_mismatch"
+@@ -84,6 +85,8 @@
+   /** Opaque fingerprint of retained source reads; not a substitute for their cutoff timestamps. */
+   sourceWatermark?: string;
+   allowedUses?: ContributionAllowedUses;
++  targetAllowedUses?: Record<string, ContributionAllowedUses>;
++  rsoTargetBindings?: Record<string, RsoTargetUseBinding>;
+   assignmentStats?: StatLine;
+   sourceKind?: "detailed" | "baseline" | "blended";
+   conditionalStats?: StatLine;
+@@ -326,6 +329,7 @@
+ };
+ export type ForecastManifest = {
+   version: "planning-forecasts-v1";
++  rsoUsePolicy?: RsoUsePolicyManifest;
+   /** Omitted only for retained legacy snapshots. */
+   calendarPolicy?: ForecastCalendarPolicy;
+   /** Opaque accepted-event receipt hash; null means no verified receipt set. */
+--- a/web/lib/player-forecasts/planningContributions.ts
++++ b/web/lib/player-forecasts/planningContributions.ts
+@@ -1,4 +1,5 @@
+ import { calendarLeadDay, catalogParticipation, forecastCalendarPolicy, validForecastCalendarPolicy, resolveContribution, type ContributionGame, type ContributionParticipation, type ContributionSource } from "./contributions";
++import { currentRsoUsePolicy, restrictRsoForecast, type RsoUsePolicy } from "./rsoUsePolicy";
+ import { applyModeledStartMetadata, forecastFromContributions, revalidateResolvedForecast } from "./resolvedPlanningForecast";
+ import type { ContributionPlanningSnapshot, ForecastExclusionReason, GameForecast, PlanningSnapshot, StatLine } from "../rosterScheduleOptimizer/planningTypes";
+ 
+@@ -34,11 +35,18 @@
+ /** Apply immutable shared rates only to actual requested schedule opportunities.
+  * No model generation, database reads, league scoring, or cache writes occur here. */
+ export function resolvePlanningContributions(snapshot: PlanningSnapshot,
+-  options?: { playerIds?: ReadonlySet<string> }): PlanningSnapshot;
++  options?: { playerIds?: ReadonlySet<string>; consumer?: "rso" | "start_chart"; usePolicy?: RsoUsePolicy }): PlanningSnapshot;
+ export function resolvePlanningContributions(snapshot: ContributionPlanningSnapshot,
+-  options?: { playerIds?: ReadonlySet<string> }): ContributionPlanningSnapshot;
++  options?: { playerIds?: ReadonlySet<string>; consumer?: "rso" | "start_chart"; usePolicy?: RsoUsePolicy }): ContributionPlanningSnapshot;
+ export function resolvePlanningContributions(snapshot: ContributionPlanningSnapshot,
+-  options: { playerIds?: ReadonlySet<string> } = {}): ContributionPlanningSnapshot {
++  options: { playerIds?: ReadonlySet<string>; consumer?: "rso" | "start_chart"; usePolicy?: RsoUsePolicy } = {}): ContributionPlanningSnapshot {
++  if (options.consumer === "rso") {
++    const policy = options.usePolicy ?? currentRsoUsePolicy();
++    // Review expiry is current permission, not the historical valuation clock.
++    const policyNow = new Date().toISOString();
++    snapshot = { ...snapshot, forecasts: snapshot.forecasts.map(row => restrictRsoForecast(
++      row, snapshot.forecastManifest, policyNow, policy)) };
++  }
+   const calendarPolicy = snapshot.forecastManifest?.calendarPolicy ?? forecastCalendarPolicy();
+   const exclusions = [...(snapshot.forecastInputExclusions ?? [])];
+   const exclude = (gameId: string, playerId: string, reason: ForecastExclusionReason) => {
+@@ -184,7 +192,7 @@
+           && (original.stats[targetKey] != null || original.conditionalStats?.[targetKey] != null)) {
+           const conditional = original.conditionalStats?.[targetKey];
+           detailed = { ...issuedIdentity, kind: "detailed", sourceId: original.revisionId, policyVersion: original.modelVersion ?? "FORGE",
+-            released: true, allowedUses: original.allowedUses,
++            released: true, allowedUses: original.targetAllowedUses?.[targetKey] ?? original.allowedUses,
+             targetKey, unit: targetKey.includes("MINUTES") || targetKey === "TIME_ON_ICE_PER_GAME" ? "minutes" : "count",
+             basis: conditional != null ? player.playerClass === "goalie" ? "per_start" : "per_appearance" : "unconditional_game",
+             mean: conditional ?? original.stats[targetKey]!, participationIntegrated: conditional == null,
+@@ -192,25 +200,25 @@
+             sourceWatermark: original.sourceWatermark!, limitations: original.limitations };
+           const probability = player.playerClass === "goalie" ? effectiveStartProbability : original.appearanceProbability;
+           if (probability != null) participation = { ...issuedIdentity, released: true,
+-            allowedUses: original.allowedUses, issuedAt: original.issuedAt,
++            allowedUses: original.targetAllowedUses?.[targetKey] ?? original.allowedUses, issuedAt: original.issuedAt,
+             basis: player.playerClass === "goalie" ? "start" : "appearance", probability,
+             revisionId: `${original.revisionId}:participation`, cutoffAt: original.cutoffAt, expiresAt: original.expiresAt };
+         }
+         if (!participation && originalFresh && player.playerClass === "skater"
+           && baseline?.basis === "per_appearance" && original?.appearanceProbability != null) {
+-          participation = { ...identity, released: true, basis: "appearance", allowedUses: original.allowedUses, issuedAt: original.issuedAt,
++          participation = { ...identity, released: true, basis: "appearance", allowedUses: original.targetAllowedUses?.[targetKey] ?? original.allowedUses, issuedAt: original.issuedAt,
+             probability: original.appearanceProbability,
+             revisionId: `${original.revisionId}:appearance`, cutoffAt: original.cutoffAt!, expiresAt: original.expiresAt! };
+         }
+         if (!participation && originalFresh && player.playerClass === "goalie"
+           && baseline?.basis === "per_appearance" && original?.appearanceProbability != null) {
+-          participation = { ...identity, released: true, basis: "appearance", allowedUses: original.allowedUses, issuedAt: original.issuedAt,
++          participation = { ...identity, released: true, basis: "appearance", allowedUses: original.targetAllowedUses?.[targetKey] ?? original.allowedUses, issuedAt: original.issuedAt,
+             probability: original.appearanceProbability,
+             revisionId: `${original.revisionId}:appearance`, cutoffAt: original.cutoffAt!, expiresAt: original.expiresAt! };
+         }
+         if (!participation && goalieStartUsable && baseline?.basis === "per_start"
+           && effectiveStartProbability != null) {
+-          participation = { ...identity, released: true, basis: "start", allowedUses: original!.allowedUses, issuedAt: original!.issuedAt,
++          participation = { ...identity, released: true, basis: "start", allowedUses: original!.targetAllowedUses?.[targetKey] ?? original!.allowedUses, issuedAt: original!.issuedAt,
+             probability: effectiveStartProbability,
+             revisionId: `${original.revisionId}:start`, cutoffAt: original.cutoffAt!, expiresAt: original.expiresAt! };
+         }
+--- a/web/lib/player-forecasts/planningContributions.test.ts
++++ b/web/lib/player-forecasts/planningContributions.test.ts
+@@ -1,5 +1,7 @@
+-import { afterEach, describe, expect, it, vi } from "vitest";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import { resolvePlanningContributions } from "./planningContributions";
++import { deniedRsoUses, type RsoUsePolicy, type RsoTargetUseBinding } from "./rsoUsePolicy";
++import { forecastAllows } from "../rosterScheduleOptimizer/planning";
+ import { inspectCalendarConsumerCoverage, parseCalendarCoverageProfile, summarizeCalendarConsumerCoverage } from "./calendarCoverage";
+ import * as publicPlanning from "../rosterScheduleData/planning";
+ import type { PlayerForecastCalendarScope } from "./schedule";
+@@ -858,3 +860,83 @@
+       { ...receipts, gameIds: [30] })).rejects.toThrow("empty calendar");
+   });
+ });
++
++
++describe("P07 detailed target permissions through retained resolution", () => {
++  beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date(now)); });
++  afterEach(() => vi.useRealTimers());
++  function reviewed() {
++    const bindings: Record<string, RsoTargetUseBinding> = Object.fromEntries(["GOALS", "ASSISTS"].map(targetKey => [targetKey, {
++      component: "synthetic-detailed", modelMode: "synthetic", codeVersion: "forge-v1",
++      configurationHash: "a".repeat(64), artifactHash: "b".repeat(64), targetKey, horizonGames: 1,
++      conditioning: "conditional_playing", participationLineage: "detail-1:participation", cutoffAt: "2026-09-28T11:00:00Z",
++    }]));
++    const policy: RsoUsePolicy = { version: "rso-target-use-v1", revision: "synthetic-use-review", revokedReviewIds: [],
++      reviews: Object.values(bindings).map(binding => ({ id: `review-${binding.targetKey}`, binding,
++        reviewedAt: "2026-09-27T00:00:00Z", expiresAt: "2026-09-30T00:00:00Z",
++        inputCutoffFrom: "2026-09-27T00:00:00Z", inputCutoffUntil: "2026-09-30T00:00:00Z",
++        allowedUses: { ...deniedRsoUses(), [binding.targetKey === "GOALS" ? "assignment" : "totals"]: true },
++      })) };
++    const data = fixture([{ ...rate, mean: 2 }, { ...rate, targetKey: "ASSISTS", mean: 0 }], [detailed({
++      stats: { GOALS: 1, ASSISTS: 0 }, conditionalStats: { GOALS: 2, ASSISTS: 0 }, rsoTargetBindings: bindings,
++    })]);
++    return { data, policy };
++  }
++  it("keeps target/use permissions independent, retains a true zero and weights participation once", () => {
++    const { data, policy } = reviewed();
++    const resolved = resolvePlanningContributions(data, { consumer: "rso", usePolicy: policy });
++    const row = resolved.forecasts[0];
++    expect(row.stats).toMatchObject({ GOALS: null, ASSISTS: 0 });
++    expect(row.assignmentStats).toMatchObject({ GOALS: 1, ASSISTS: null });
++    expect(forecastAllows(row, "GOALS", "comparison")).toBe(false);
++    expect(forecastAllows(row, "ASSISTS", "comparison")).toBe(false);
++    expect(row.contributions?.GOALS.inputs?.participation?.probability).toBe(0.5);
++    const retained = resolvePlanningContributions(JSON.parse(JSON.stringify(resolved)), { consumer: "rso", usePolicy: policy });
++    expect(retained.forecasts).toEqual(resolved.forecasts);
++  });
++  it.each(["missing", "revoked", "expired_now", "changed_policy", "changed_binding", "invented_flags"])
++  ("does not retain or manufacture approval after %s", kind => {
++    const { data, policy } = reviewed();
++    const saved = JSON.parse(JSON.stringify(resolvePlanningContributions(data, { consumer: "rso", usePolicy: policy }))) as PlanningSnapshot;
++    const current = structuredClone(policy);
++    if (kind === "missing") current.reviews = [];
++    if (kind === "revoked") current.revokedReviewIds = policy.reviews.map(row => row.id);
++    if (kind === "expired_now") vi.setSystemTime(new Date("2026-09-30T00:00:00Z"));
++    if (kind === "changed_policy") {
++      saved.forecastManifest = { version: "planning-forecasts-v1", id: "old", seasonId: 20262027, asOf: now,
++        scheduleRevision: "s", rosterRevision: "r", issuedRevisionIds: ["detail-1"], baselineChecksum: null,
++        requiredOpportunities: 1, forecastedOpportunities: 1, exclusionCounts: {},
++        rsoUsePolicy: { version: "rso-target-use-v1", revision: policy.revision, bridgeRevisionIds: [] } };
++      current.revision = "new-revision-same-counts";
++    }
++    if (kind === "changed_binding") for (const binding of Object.values(saved.forecasts[0].rsoTargetBindings!)) binding.artifactHash = "c".repeat(64);
++    if (kind === "invented_flags") {
++      current.reviews = [];
++      saved.forecasts[0].allowedUses = { assignment: true, totals: true, comparison: true, conditionalTieBreak: true };
++      for (const row of Object.values(saved.forecasts[0].contributions!)) {
++        row.allowedUses = saved.forecasts[0].allowedUses;
++        row.inputs!.detailed!.released = true;
++        row.inputs!.detailed!.allowedUses = saved.forecasts[0].allowedUses;
++      }
++    }
++    const row = resolvePlanningContributions(saved, { consumer: "rso", usePolicy: current }).forecasts[0];
++    expect(row.stats).toMatchObject({ GOALS: null, ASSISTS: null });
++    expect(row.assignmentStats).toMatchObject({ GOALS: null, ASSISTS: null });
++    expect(row.contributions?.GOALS.exclusionReasons).toContain("use_not_approved");
++  });
++  it("does not choose a permissive baseline because a present detailed target lacks permission", () => {
++    const { data } = reviewed();
++    data.participationSources = [modeledParticipation()];
++    const row = resolvePlanningContributions(data, { consumer: "rso" }).forecasts[0];
++    expect(row.contributions?.GOALS.sourceIds).toContain("detail-1");
++    expect(row.stats.GOALS).toBeNull();
++    expect(row.assignmentStats?.GOALS).toBeNull();
++  });
++  it("preserves the separately qualified native rate and modeled-participation path", () => {
++    const data = fixture([{ ...rate, policyVersion: "skater-baseline-rates-v1" }]);
++    data.participationSources = [modeledParticipation()];
++    const resolved = resolvePlanningContributions(data, { consumer: "rso" });
++    expect(resolved.forecasts[0].stats.GOALS).toBe(0.5);
++    expect(resolvePlanningContributions(JSON.parse(JSON.stringify(resolved)), { consumer: "rso" }).forecasts[0].stats.GOALS).toBe(0.5);
++  });
++});
+--- a/web/lib/rosterScheduleOptimizer/planning.ts
++++ b/web/lib/rosterScheduleOptimizer/planning.ts
+@@ -98,7 +98,7 @@
+ }
+ export function forecastAllows(forecast: GameForecast | null, key: string, use: "assignment" | "totals" | "comparison" | "conditionalTieBreak"): boolean {
+   if (use !== "conditionalTieBreak" && forecast?.conditioning !== "unconditional") return false;
+-  return (forecast?.contributions ? forecast.contributions[key]?.allowedUses[use] : forecast?.allowedUses?.[use]) === true;
++  return (forecast?.contributions ? forecast.contributions[key]?.allowedUses[use] : (forecast?.targetAllowedUses?.[key] ?? forecast?.allowedUses)?.[use]) === true;
+ }
+ export function assignmentStats(forecast: GameForecast): StatLine {
+   return forecast.assignmentStats ?? forecast.stats;
+@@ -194,7 +194,7 @@
+ /** Candidate horizon totals are separate from incremental active-game capacity.
+  * Use the same source validation, stat applicability and permissions as plans. */
+ export function candidateHorizonPoints(input: PlanningSnapshot): Map<string, number | null> {
+-  const snapshot = sanitizeForecastInputs(resolvePlanningContributions(sanitizeForecastInputs(input)));
++  const snapshot = sanitizeForecastInputs(resolvePlanningContributions(sanitizeForecastInputs(input), { consumer: "rso" }));
+   const applicability = statApplicability(snapshot);
+   const forecasts = new Map(snapshot.forecasts.map(row => [`${row.playerId}:${row.gameId}`, row]));
+   const points = new Map<string, number | null>();
+@@ -578,7 +578,7 @@
+   return `Schedule evidence observed ${iso(observed)} expired ${iso(observed + SCHEDULE_WITNESS_TTL_MS)}; planning time is ${iso(planning)}. Reload the schedule; a forecast refresh does not renew it.`;
+ }
+ function prepareEvaluation(snapshot: PlanningSnapshot, playerIds?: ReadonlySet<string>) {
+-  snapshot = resolvePlanningContributions(sanitizeForecastInputs(snapshot), playerIds ? { playerIds } : undefined);
++  snapshot = resolvePlanningContributions(sanitizeForecastInputs(snapshot), { consumer: "rso", playerIds });
+   const players = new Map(snapshot.players.map(player => [player.id, player]));
+   const forecasts = new Map(snapshot.forecasts.filter(forecast => !forecast.expiresAt || Date.parse(forecast.expiresAt) > time(snapshot.context.asOf)).map(forecast => [`${forecast.playerId}:${forecast.gameId}`, forecast]));
+   const applicability = statApplicability({ ...snapshot, forecasts: [...forecasts.values()] });
+@@ -1219,7 +1219,7 @@
+   snapshot = sanitizeForecastInputs(snapshot);
+   const sourceSnapshot = snapshot;
+   const relevantPlayerIds = new Set([...snapshot.roster.map(row => row.playerId), ...intent.steps.flatMap(step => [step.playerId, ...(step.dropPlayerId ? [step.dropPlayerId] : [])])]);
+-  snapshot = resolvePlanningContributions(snapshot, { playerIds: relevantPlayerIds });
++  snapshot = resolvePlanningContributions(snapshot, { playerIds: relevantPlayerIds, consumer: "rso" });
+   const maxEvaluations = Math.max(3, options.maxEvaluations ?? defaultWorkQuotas(snapshot).evaluations);
+   const beamWidth = Math.max(2, options.beamWidth ?? 8);
+   const maxCandidates = Math.max(1, options.maxCandidates ?? 40);
+@@ -1259,7 +1259,7 @@
+     // No-move starts counted so far, a known lower bound even while the lineup is not yet legal.
+     player => noMoveAgp.assignments.filter(row => row.playerId === player.id).length);
+   candidates.forEach(player => relevantPlayerIds.add(player.id));
+-  snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds });
++  snapshot = resolvePlanningContributions(sourceSnapshot, { playerIds: relevantPlayerIds, consumer: "rso" });
+   const limitations = new Set<string>();
+   if (intent.objective === "outcome" && !outcomeEligible) limitations.add("Best projected points needs projections for your whole lineup; planning for most starts until then.");
+   if (fitResult.timeLimitReached) limitations.add("Schedule-fit analysis reached its time budget; additional team/position targets remain unevaluated.");
+--- a/web/lib/rosterScheduleOptimizer/planning.test.ts
++++ b/web/lib/rosterScheduleOptimizer/planning.test.ts
+@@ -1,4 +1,5 @@
+-import { describe, expect, it } from "vitest";
++import { beforeEach, describe, expect, it, vi } from "vitest";
++import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
+ import { candidateAcquisitionSteps, candidateMetrics, candidateActivePoints, candidateHorizonPoints, evaluatePlan, planRoster, scheduleFits, swapCategoryBreakdown } from "./planning";
+ import { comparePlanSensitivity } from "../player-forecasts/planComparison";
+ import { snapshotSchema } from "../in-season/workspaceSchema";
+@@ -8,6 +9,24 @@
+ import { lineupGapReport } from "./lineupGaps";
+ import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
+ import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
++
++// Algorithm fixtures have explicit fictional reviews. Production catalog stays empty;
++// the policy-denial cases below remove these bindings and use the real resolver.
++const reviewedTargets = ["pts", "made", "attempts", "GOALS", "ASSISTS", "SHOTS", "HITS", "BLOCKS", "PENALTY_MINUTES",
++  "SAVES_GOALIE", "SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE", "GOALIE_MINUTES", "WINS_GOALIE", "SHUTOUTS_GOALIE",
++  "saves", "shotsAgainst", "goalsAgainst", "minutes", "g", "h", "unused"];
++const fixtureBindings = Object.fromEntries(reviewedTargets.map(targetKey => [targetKey, {
++  component: "fictional-planner", modelMode: "synthetic", codeVersion: "fixture-v1",
++  configurationHash: "a".repeat(64), artifactHash: "b".repeat(64), targetKey, horizonGames: 1,
++  conditioning: "synthetic-unconditional", participationLineage: "synthetic-only", cutoffAt: "2026-10-04T00:00:00Z",
++}]));
++const fixturePolicy: rsoPolicy.RsoUsePolicy = { version: "rso-target-use-v1", revision: "fictional-planner-reviews",
++  revokedReviewIds: [], reviews: reviewedTargets.map(targetKey => ({ id: `fictional-${targetKey}`,
++    binding: fixtureBindings[targetKey], reviewedAt: "2026-09-01T00:00:00Z", expiresAt: "2026-11-01T00:00:00Z",
++    inputCutoffFrom: "2026-09-01T00:00:00Z", inputCutoffUntil: "2026-11-01T00:00:00Z",
++    allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: true },
++  })) };
++beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixturePolicy));
+ 
+ const fixtureId = (value: string) => [...value].reduce((id, char) => (id * 31 + char.charCodeAt(0)) % 100000000, 1) + 1;
+ const player = (id: string, team: string, availability: PlanningPlayer["availability"] = "rostered"): PlanningPlayer => ({
+@@ -19,7 +38,7 @@
+ function issuedForecast(data: PlanningSnapshot, playerId: string, gameId: string, overrides: Partial<GameForecast> = {}): GameForecast {
+   const member = data.players.find(row => row.id === playerId)!;
+   const game = data.games.find(row => row.id === gameId && row.teamAbbreviation === member.teamAbbreviation)!;
+-  return { playerId, gameId, stats: { pts: playerId === "a" ? 1 : 2 }, conditioning: "unconditional",
++  return { playerId, gameId, rsoTargetBindings: structuredClone(fixtureBindings), stats: { pts: playerId === "a" ? 1 : 2 }, conditioning: "unconditional",
+     sourceKind: "detailed", sourceWatermark: "fixture-inputs", cutoffAt: "2026-10-04T00:00:00Z",
+     issuedAt: "2026-10-04T00:00:00Z", expiresAt: game.startsAt!, modelVersion: "fixture-v1", revisionId: "r",
+     issuedContext: { version: "forge-issued-context-v1", playerId, gameId, nhlPlayerId: member.nhlId!,
+@@ -1935,3 +1954,31 @@
+     expect(snapshotSchema.parse(JSON.parse(JSON.stringify(legacy))).players[0].ownershipEvidence).toBeUndefined();
+   });
+ });
++
++
++describe("P07 planner denial", () => {
++  it("retains legal capacity, manager locks and realized results without inventing zero quality", () => {
++    const data = snapshot();
++    data.forecasts = data.forecasts.map(({ rsoTargetBindings: _binding, ...row }) => row);
++    data.realized = { pts: 7 };
++    data.lockedAssignments = [{ date: "2026-10-05", playerId: "a", slotId: "C#1", source: "manager" }];
++    const before = JSON.stringify(data), result = evaluatePlan(data, intent, "outcome");
++    expect(result.legal).toBe(true);
++    expect(result.activeGames).toBe(2);
++    expect(result.assignments).toContainEqual(expect.objectContaining({ playerId: "a", locked: true }));
++    expect(result.projectedValue).toBeNull();
++    expect(result.projectedStats.pts).toBeNull();
++    expect(result.comparisonEligible).toBe(false);
++    expect(result.recommendation).toMatchObject({ eligible: false, mode: "schedule_capacity" });
++    expect(JSON.stringify(data)).toBe(before);
++    expect(data.realized.pts).toBe(7);
++  });
++  it("cannot turn one unreviewed required competitor into a complete recommendation", () => {
++    const data = snapshot();
++    data.forecasts = data.forecasts.map(row => row.playerId === "b" ? { ...row, rsoTargetBindings: undefined } : row);
++    const result = evaluatePlan(data, intent, "outcome");
++    expect(result.legal).toBe(true);
++    expect(result.comparisonEligible).toBe(false);
++    expect(result.recommendation?.eligible).toBe(false);
++  });
++});
+--- a/web/lib/rosterScheduleData/planningDataTransport.ts
++++ b/web/lib/rosterScheduleData/planningDataTransport.ts
+@@ -16,6 +16,9 @@
+ const finite = z.number().finite(), index = finite.int().nonnegative(), positive = index.positive();
+ const clock = z.string().refine(value => Number.isFinite(Date.parse(value))), strings = z.array(z.string());
+ const uses = z.object({ assignment: z.boolean(), totals: z.boolean(), comparison: z.boolean(), conditionalTieBreak: z.boolean() }).strict();
++const rsoTargetBinding = z.object({ component: z.string().min(1), modelMode: z.string().min(1), codeVersion: z.string().min(1),
++  configurationHash: z.string().regex(/^[a-f0-9]{64}$/).nullable(), artifactHash: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
++  targetKey: z.string().min(1), horizonGames: positive, conditioning: z.string().min(1), participationLineage: z.string().min(1).nullable(), cutoffAt: clock }).strict();
+ const powerPlayRole = z.discriminatedUnion("status", [
+   z.object({ value: z.null(), source: z.null(), status: z.literal("unavailable"), reason: z.literal("current_role_evidence_unavailable") }).strict(),
+   z.object({ value: z.null(), source: z.null(), status: z.literal("not_applicable"), reason: z.literal("not_applicable") }).strict(),
+@@ -50,13 +53,16 @@
+     home: z.boolean(), status: z.enum(["scheduled", "live", "final", "postponed", "cancelled"]) }).passthrough()),
+   forecasts: rows(z.object({ playerId: z.string(), gameId: z.string(), revisionId: z.string(), stats: z.record(finite.nullable()),
+     allowedUses: uses.optional(), appearanceProbability: finite.min(0).max(1).nullable().optional(),
++    targetAllowedUses: z.record(uses).optional(), rsoTargetBindings: z.record(rsoTargetBinding).optional(),
+     powerPlayRole: powerPlayRole.optional(),
+     startProbability: finite.min(0).max(1).nullable(), confirmedStart: z.boolean(), conditioning: z.literal("unconditional"),
+     issuedAt: clock, cutoffAt: clock.optional(), expiresAt: clock.optional(), modelVersion: z.string().nullable(), limitations: strings,
+     startParticipation: participant.optional() }).passthrough()),
+   baselineSources: rows(source).optional(),
+   participationSources: rows(z.unknown()).optional(), forecastManifest: z.object({ version: z.literal("planning-forecasts-v1"), id: z.string(),
+-    seasonId: positive, asOf: clock }).passthrough().optional(),
++    seasonId: positive, asOf: clock,
++    rsoUsePolicy: z.object({ version: z.literal("rso-target-use-v1"), revision: z.string().min(1), bridgeRevisionIds: strings }).strict().optional(),
++  }).passthrough().optional(),
+   evidence: z.record(z.object({ source: z.string(), asOf: clock.nullable(), seasonId: positive.nullable(),
+     completeness: z.enum(["complete", "partial", "unknown"]), limitations: strings }).strict()),
+   matchupWeeks: rows(z.object({ gameKey: z.string(), week: positive, startDate: z.string(), endDate: z.string() }).strict()).optional() }).strict();
+--- a/web/lib/in-season/workspaceSchema.ts
++++ b/web/lib/in-season/workspaceSchema.ts
+@@ -44,6 +44,9 @@
+   scheduledAt: instant, scheduleRevision: id, rosterRevision: id,
+   playerId: positiveInteger, nhlPlayerId: positiveInteger }).strict();
+ const allowedUses = z.object({ assignment: z.boolean(), totals: z.boolean(), comparison: z.boolean(), conditionalTieBreak: z.boolean() }).strict();
++const rsoTargetBinding = z.object({ component: id, modelMode: id, codeVersion: id,
++  configurationHash: z.string().regex(/^[a-f0-9]{64}$/).nullable(), artifactHash: z.string().regex(/^[a-f0-9]{64}$/).nullable(),
++  targetKey: id, horizonGames: positiveInteger, conditioning: id, participationLineage: id.nullable(), cutoffAt: instant }).strict();
+ const calendarPolicy = z.object({ version: z.literal("forecast-calendar-v1"),
+   calendarDays: z.number().int().min(1).max(21), overlapDays: z.literal(7), timeZone: z.literal("UTC") }).strict();
+ const contributionSource = z.object({ kind: z.enum(["detailed", "baseline"]), sourceId: id,
+@@ -89,6 +92,8 @@
+     scheduleSourceUpdatedAt: instant.nullable(), scheduleFetchedAt: instant.nullable(),
+     identityUpdatedAt: instant.nullable(), membershipCreatedAt: z.array(instant).max(100) }).strict().optional(),
+   allowedUses: allowedUses.optional(), assignmentStats: statLine.optional(),
++  targetAllowedUses: z.record(z.string().min(1).max(50), allowedUses).optional(),
++  rsoTargetBindings: z.record(z.string().min(1).max(50), rsoTargetBinding).optional(),
+   sourceKind: z.enum(["detailed", "baseline", "blended"]).optional(),
+   conditionalStats: statLine.optional(), tieBreakStats: statLine.optional(),
+   appearanceProbability: z.number().finite().min(0).max(1).nullable().optional(),
+@@ -107,6 +112,7 @@
+   "use_not_approved", "canary_excluded", "discovery_timeout", "discovery_failed", "incomplete_refresh", "eligibility_unverified",
+   "game_mismatch", "invalid_cutoff", "no_usable_target", "conflicting_forecast"]);
+ const forecastManifest = z.object({ version: z.literal("planning-forecasts-v1"), id,
++  rsoUsePolicy: z.object({ version: z.literal("rso-target-use-v1"), revision: id, bridgeRevisionIds: stringArray }).strict().optional(),
+   calendarPolicy: calendarPolicy.optional(),
+   acceptedNewsRevision: id.nullable().optional(),
+   seasonId, asOf: instant, scheduleRevision: id, rosterRevision: id, issuedRevisionIds: stringArray,
+--- a/web/lib/in-season/workspaceSchema.test.ts
++++ b/web/lib/in-season/workspaceSchema.test.ts
+@@ -1,5 +1,6 @@
+ import { describe, expect, it } from "vitest";
+ import { saveWorkspaceSchema, workspaceQuerySchema } from "./workspaceSchema";
++import { deniedRsoUses, restrictRsoForecast } from "../player-forecasts/rsoUsePolicy";
+ 
+ const context = { provider: "manual", seasonId: 20262027, leagueId: "league", teamId: "team", startDate: "2026-10-01", endDate: "2026-10-07", timeZone: "America/New_York", asOf: "2026-10-01T12:00:00Z" };
+ const rules = { lineupMode: "daily", rosterSlots: { C: 1 }, lineupPeriods: [{ id: "week", start: "2026-10-01T00:00:00Z", end: "2026-10-08T00:00:00Z", lockAt: null }], acquisitionTiming: "unknown", acquisitionCost: null, periods: [], scoring: { mode: "points", weights: {}, categories: [] }, goalieMinimum: { required: null, credited: null, periodStart: "2026-10-01", periodEnd: "2026-10-07", counts: "unknown", penalty: "unknown" }, unsupported: [] };
+@@ -294,3 +295,25 @@
+     expect(saveWorkspaceSchema.safeParse({ workspace: badOwnership, snapshot, expectedVersion: null }).success).toBe(false);
+   });
+ });
++
++
++it("retains P07 scope through saved JSON without treating valid claims as approval", () => {
++  const uses = { assignment: true, totals: true, comparison: true, conditionalTieBreak: true };
++  const forecast = { playerId: "7", gameId: "31", stats: { HITS: 0 }, conditioning: "unconditional",
++    startProbability: null, confirmedStart: false, revisionId: "synthetic-unreviewed", issuedAt: context.asOf,
++    cutoffAt: context.asOf, expiresAt: "2026-10-08T00:00:00Z", modelVersion: "synthetic-code", limitations: [],
++    allowedUses: uses, targetAllowedUses: { HITS: uses }, rsoTargetBindings: { HITS: {
++      component: "fictional", modelMode: "candidate", codeVersion: "synthetic-code", configurationHash: "a".repeat(64),
++      artifactHash: "b".repeat(64), targetKey: "HITS", horizonGames: 1, conditioning: "conditional_playing",
++      participationLineage: "synthetic-participation", cutoffAt: context.asOf,
++    } } };
++  const original = { ...snapshot, forecasts: [forecast] };
++  const parsed = saveWorkspaceSchema.parse(JSON.parse(JSON.stringify({ workspace, snapshot: original, expectedVersion: null })));
++  expect(parsed.snapshot?.forecasts).toEqual([forecast]);
++  const row = restrictRsoForecast(parsed.snapshot!.forecasts[0], undefined, context.asOf);
++  expect(row.targetAllowedUses?.HITS).toEqual(deniedRsoUses());
++  expect(row.stats.HITS).toBe(0); // retained evidence is not permission or a missing value
++  const claimed = structuredClone(original);
++  Object.assign(claimed.forecasts[0].rsoTargetBindings.HITS, { approved: true });
++  expect(saveWorkspaceSchema.safeParse({ workspace, snapshot: claimed, expectedVersion: null }).success).toBe(false);
++});
+--- a/web/pages/api/v1/roster-schedule-optimizer/data.ts
++++ b/web/pages/api/v1/roster-schedule-optimizer/data.ts
+@@ -15,10 +15,11 @@
+     const now = new Date();
+     // One server-side source per request; RSO has no legacy forecasts, so every fallback serves none.
+     const source = await selectForecastServingSource(serviceRoleClient, query.seasonId, now);
+-    const data = await loadPlanningData(serviceRoleClient, query, { now, source, forgeDailyBridge: true });
++    const data = await loadPlanningData(serviceRoleClient, query, { now, source, forgeDailyBridge: true, consumer: "rso" });
+     // A shared copy of native forecasts never outlives the selected catalog.
+     const nativeMaxAge = source.kind === "native" ? Math.max(0, Math.min(300, Math.floor((Date.parse(source.expiresAt) - Date.now()) / 1000))) : null;
+-    res.setHeader("Cache-Control", nativeMaxAge === null ? "public, s-maxage=300, stale-while-revalidate=300" : `public, s-maxage=${nativeMaxAge}, stale-while-revalidate=0`);
++    res.setHeader("Cache-Control", data.forecastManifest?.rsoUsePolicy ? "private, no-store"
++      : nativeMaxAge === null ? "public, s-maxage=300, stale-while-revalidate=300" : `public, s-maxage=${nativeMaxAge}, stale-while-revalidate=0`);
+     // Interim bridge projections travel compactly beside `data`; clients rebuild them, so the strict transport is unchanged.
+     const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId);
+     const transport = encodePlanningDataTransport({ ...data, forecasts: bridge.forecasts }), forecastSource = forecastSourceSummary(source);
+--- a/web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
++++ b/web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
+@@ -40,7 +40,7 @@
+     const source = await mocks.select.mock.results[0].value;
+     expect(source).toMatchObject({ kind: "legacy", reason: "native_not_activated" });
+     expect(mocks.load).toHaveBeenCalledExactlyOnceWith(mocks.db, { seasonId: 20262027, startDate: query.startDate, endDate: query.endDate },
+-      { now: new Date(), source, forgeDailyBridge: true });
++      { now: new Date(), source, forgeDailyBridge: true, consumer: "rso" });
+     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=300, stale-while-revalidate=300");
+     expect(res.body.forecastSource).toEqual({ kind: "legacy", headRevision: null, expiresAt: null, reason: "native_not_activated" });
+     expect(decodePlanningDataTransport(res.body.data)).toEqual(data);
+@@ -50,7 +50,7 @@
+     mocks.select.mockResolvedValue(native);
+     const res = await request();
+     expect(mocks.select).toHaveBeenCalledTimes(1);
+-    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source: native, forgeDailyBridge: true });
++    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source: native, forgeDailyBridge: true, consumer: "rso" });
+     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=60, stale-while-revalidate=0");
+     expect(res.body.forecastSource).toEqual({ kind: "native", headRevision: 3, expiresAt: native.expiresAt, reason: null });
+     expect(decodePlanningDataTransport(res.body.data)).toEqual(data);
+@@ -60,7 +60,7 @@
+     const source = { kind, reason: "native_catalog_expired", environment: { PLAYER_FORECAST_BASELINE_RELEASE_IDS: "" } };
+     mocks.select.mockResolvedValue(source);
+     const res = await request();
+-    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source, forgeDailyBridge: true });
++    expect(mocks.load.mock.calls[0][2]).toEqual({ now: new Date(), source, forgeDailyBridge: true, consumer: "rso" });
+     expect(res.headers["Cache-Control"]).toBe("public, s-maxage=300, stale-while-revalidate=300");
+     expect(res.body.forecastSource).toEqual({ kind, headRevision: null, expiresAt: null, reason: "native_catalog_expired" });
+   });
+@@ -72,6 +72,20 @@
+     mocks.load.mockRejectedValue(new Error("fixture-secret-database-url"));
+     const failed = await request();
+     expect(failed.code).toBe(503); expect(JSON.stringify(failed.body)).not.toContain("fixture-secret");
++  });
++
++  it("does not cache permission-bearing responses across policy revocation", async () => {
++    mocks.select.mockResolvedValue(native);
++    mocks.load.mockResolvedValue({ ...data, forecastManifest: { version: "planning-forecasts-v1", id: "synthetic-policy-1",
++      seasonId: 20262027, asOf: new Date().toISOString(), rsoUsePolicy: { version: "rso-target-use-v1", revision: "synthetic-policy-1", bridgeRevisionIds: [] } } });
++    const first = await request();
++    expect(first.headers["Cache-Control"]).toBe("private, no-store");
++    mocks.load.mockResolvedValue({ ...data, forecastManifest: { ...first.body.data.data.forecastManifest, id: "synthetic-policy-2",
++      rsoUsePolicy: { version: "rso-target-use-v1", revision: "synthetic-policy-2", bridgeRevisionIds: [] } } });
++    const revoked = await request();
++    expect(revoked.headers["Cache-Control"]).toBe("private, no-store");
++    expect(revoked.body.data.data.forecastManifest.id).toBe("synthetic-policy-2");
++    expect(mocks.load).toHaveBeenCalledTimes(2);
+   });
+ 
+   it("sends interim bridge projections compactly beside the strict transport, rebuilt exactly by the client", async () => {
+--- a/web/lib/integrations/yahoo/rosterPlanning.ts
++++ b/web/lib/integrations/yahoo/rosterPlanning.ts
+@@ -319,7 +319,7 @@
+     } catch (error) { optionalFailure(error); return { date, rows: null }; }
+   }));
+   const [data, rosterResponse, scoreboardResult, leagueRosterResult, leagueResult, teamResult] = await Promise.all([
+-    loadPlanningData(db, { ...query, timeZone }, { now, forgeDailyBridge: true }),
++    loadPlanningData(db, { ...query, timeZone }, { now, forgeDailyBridge: true, consumer: "rso" }),
+     readRequiredPlanningResource(() => fetchYahooBoardResource({ ...provider, resource: { type: "roster", teamKey: team.external_team_key, date: today } })),
+     fetchYahooPlanningResource({ ...provider, resource: { type: "scoreboard" } }).then(value => value, optionalFailure),
+     fetchYahooBoardResource({ ...provider, resource: { type: "league_rosters" } }).then(value => value, optionalFailure),
+--- a/web/lib/integrations/yahoo/rosterPlanning.test.ts
++++ b/web/lib/integrations/yahoo/rosterPlanning.test.ts
+@@ -420,7 +420,7 @@
+     const normalized = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a",
+       startDate: "2026-10-01", endDate: "2026-10-03", timeZone: "UTC", now });
+     expect(normalized.snapshot.context.timeZone).toBe("America/New_York");
+-    expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now, forgeDailyBridge: true });
++    expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now, forgeDailyBridge: true, consumer: "rso" });
+     mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC", draft_status: "postdraft" }, transport });
+ 
+     for (const mode of ["repeated", "oversized", "stale", "wrong-scope", "failed", "rate-limited", "optional-limited", "deadline", "bounded", "ownership-only"]) {
+--- a/web/lib/player-forecasts/gameExpectationReader.ts
++++ b/web/lib/player-forecasts/gameExpectationReader.ts
+@@ -28,6 +28,6 @@
+ /** Shared server entry point for FORGE/consumer adapters. No generation, writes or private artifact reads. */
+ export async function loadGameExpectations(db: SupabaseClient<any>, scope: GameExpectationScope, now = new Date(),
+   options: { source?: ForecastServingSource } = {}) {
+-  const data = await loadPlanningData(db, scope, { now, skipOwnership: true, skipRecentForm: true, source: options.source });
++  const data = await loadPlanningData(db, scope, { now, skipOwnership: true, skipRecentForm: true, source: options.source, consumer: "start_chart" });
+   return buildGameExpectations(data, scope, now);
+ }

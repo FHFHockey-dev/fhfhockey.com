@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-24T21:18:02.742605+00:00",
+  "checks": [
+    {
+      "log": "c2-news-tests.log",
+      "argv": [
+        "node",
+        "/tmp/fhfh-c2-news-release-erhwh3yx/web/node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "/tmp/fhfh-c2-news-release-erhwh3yx/composition.vitest.config.mts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "exit_code": 1,
+      "elapsed_seconds": 1.951
+    }
+  ],
+  "source_integrity_matches": true,
+  "canonical_edits": 0,
+  "hosted_requests": 0
+}

@@ -1,0 +1,45 @@
+{
+  "at": "2026-10-23T12:50:23.114458+00:00",
+  "head": "431ffcd673b42ad4a149dc3f9dfb03005dbec75a",
+  "branch": "octoberBranch",
+  "status_entries": 205,
+  "tracked_modified": 65,
+  "untracked_entries": 140,
+  "staged_paths": [],
+  "owned_packet_mismatches": [],
+  "draft_archive_unchanged": true,
+  "parent_review_sha256": "7275fa81ef768114643b56c3d514b14fb5eb1ff9031b76aa3266ee8e71232c40",
+  "confirmation_types": {
+    "argv": [
+      "npm",
+      "exec",
+      "--offline",
+      "--no",
+      "--",
+      "tsc",
+      "--noEmit",
+      "--project",
+      "audit.confirmation-tsconfig.json"
+    ],
+    "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-confirmed-news-p9p6anwp/snapshot/web",
+    "exit_code": 0
+  },
+  "heavy_lock_present": false,
+  "owned_processes_running": false,
+  "git_mutations_by_this_task": 0,
+  "pushes": 0,
+  "deployments": 0,
+  "production_application_requests": 0,
+  "goalie_policy_decision": {
+    "at": "2026-10-23T12:51:20.693237+00:00",
+    "source_thread": "01a15411-3560-7632-8d31-1dd2447ba00e",
+    "user_quote": "80/65% based on likely or projected yes.",
+    "semantics": "Retain likely0.8/projected0.65 floors; verified confirmed1/ruled_out0; unknown no override; policy selection, not empirical calibration",
+    "source_changes": 0,
+    "tests_repeated": 0
+  },
+  "optional_rso_optimization": "Not integrated; separate pending review. Competing Grid helper excluded.",
+  "packet_updated_at": "2026-10-23T12:57:23.821755+00:00",
+  "game_grid": "Prior 13-file packet independently accepted; new loading-shell/link-removal follow-up actively owned separately, not covered.",
+  "ledger_index_window": "Expanded docs scope reserved; no release task staging"
+}

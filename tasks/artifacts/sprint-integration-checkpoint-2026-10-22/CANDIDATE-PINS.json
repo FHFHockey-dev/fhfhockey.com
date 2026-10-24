@@ -1,0 +1,442 @@
+{
+  "web/lib/projections/queries/skater-queries.ts": {
+    "sha256": "9dfcff408d4cd5f9bdb266a3380a8beacc557a584002e44d5b75e0639d74606a",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/lib/projections/queries/skater-queries.test.ts": {
+    "sha256": "a417087529e6ed4319769699bb4f443c1873263fbdb738624c817c1861c732e2",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/lib/rosterScheduleData/forgeDailyBridge.ts": {
+    "sha256": "57f21bc5214a37d3ef5aff985ba62f0c5d30ae5f3925693f7d61f55a240abc6a",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/lib/rosterScheduleData/forgeDailyBridge.test.ts": {
+    "sha256": "d3f65f3b3c63b631799cd6ccd41b6e1031ea1d1a7dbd6bc3f7506028702cea24",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/lib/player-forecasts/servedForecastLedger.ts": {
+    "sha256": "464c108f990e5e9e5cfdd2f618cf41d2771f5ae14eacd90223ad83e4f8727e80",
+    "packet": "task1 supported scoreboard"
+  },
+  "web/lib/player-forecasts/servedForecastLedger.test.ts": {
+    "sha256": "4e1d8198f86439e4aa9a26d2011f30da8513933cd8ec32fb22ba3bed83ccc22e",
+    "packet": "task1 supported scoreboard"
+  },
+  "web/pages/api/v1/db/forge-served-forecast-settle.ts": {
+    "sha256": "699cb851dc0bd7b8635ce8f61c156fbf30f5451241e24720f3c9623a0e76db22",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/pages/api/v1/db/forge-served-forecast-snapshot.ts": {
+    "sha256": "f77f22aabf9cfe3d5246354e5d0dd068a3286fb15e1d55c570a3b58e1f76a275",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/pages/api/v1/forge/scoreboard.ts": {
+    "sha256": "126b8eeada95e8a497feb3a7567eb4a5af1fa46430052b88c226322c7b1961cc",
+    "packet": "task1 supported scoreboard"
+  },
+  "web/__tests__/pages/api/v1/db/forge-served-forecast-settle.test.ts": {
+    "sha256": "6885092c259430091efa2e07ce8aa3afc0cf03b747f137a69e2940c7b80f0d81",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/tests/api/forge-scoreboard.test.ts": {
+    "sha256": "2104bb8cb215b6752b9adc0925c5b1706dc718355693985a01e6abacf541e541",
+    "packet": "task1 supported scoreboard"
+  },
+  "web/lib/rollingForgePipelineRunState.ts": {
+    "sha256": "6ce1bab745bb6fa870b7aeb717c61b2470072db3645047e48006ea53304d2d38",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/pages/api/v1/db/run-rolling-forge-pipeline.ts": {
+    "sha256": "ffe7e16c782987fdfec19f8b1e787a89a76aed0a2739994ec5f80eb9488f97b1",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts": {
+    "sha256": "1137a449405ec993cb8440395311cc199251fd6da87508469390ffc0ff8f8227",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/lib/integrations/yahoo/rosterPlanning.ts": {
+    "sha256": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/integrations/yahoo/rosterPlanning.test.ts": {
+    "sha256": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/stats/percentUnits.ts": {
+    "sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/lib/stats/percentUnits.test.ts": {
+    "sha256": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/components/GoalieShareChart/index.tsx": {
+    "sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx": {
+    "sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/hooks/useShotData.ts": {
+    "sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/hooks/useShotData.test.tsx": {
+    "sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/components/GameStateAnalysis/GameStateAnalysis.tsx": {
+    "sha256": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/components/GameStateAnalysis/GameStateAnalysis.test.tsx": {
+    "sha256": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/components/TeamDashboard/AdvancedL10Metrics.tsx": {
+    "sha256": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/components/TeamDashboard/AdvancedL10Metrics.test.tsx": {
+    "sha256": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/components/TeamDashboard/TeamDashboard.tsx": {
+    "sha256": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/components/TeamDashboard/TeamDashboard.test.tsx": {
+    "sha256": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/lib/stats/teamCountConsumers.test.tsx": {
+    "sha256": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/lib/projections/projectionPipelineState.ts": {
+    "sha256": "288eaf8e8add181cf23290fda001409d001980aec53f49d96d4164b49e716b8f",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/lib/projections/projectionPipelineState.test.ts": {
+    "sha256": "bcfe0ea75668c7cca0d40346d8f901d123d5e7f190c2392bd4b2a5ed79e9b124",
+    "packet": "A1-A10 and NST R1"
+  },
+  "web/__tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx": {
+    "sha256": "4970f2c79e66483aa9c341468ba38fdfaa8ab25e9007cf2aef9b0a753b4c48a4",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts": {
+    "sha256": "c105df6d6a5002ae60d1fa675fc7da783578f33f70ad2ef77c406ad24903ea6d",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx": {
+    "sha256": "eb2381452a65065250b699f38883c5d9f15f4d1bda560d96698bb9fe05dc6be9",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx": {
+    "sha256": "c3ff6cb96ea340c40ccd0719109fcdb0e09c1eb8e54518cd3d8eb0a6785611a7",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/components/RosterScheduleOptimizer/CompactSchedule.tsx": {
+    "sha256": "e203017397116abb2a0cf1b3e98b41cff44f01cd6fad916c1ed96e6b5e8f1ec9",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": {
+    "sha256": "1c4d9ae48dabb34327a9e40f428f7c410b63e14fb397570e21f4f78e7c63742c",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/hooks/candidateMetrics.worker.ts": {
+    "sha256": "25287ecadbb95d208de5609e421bd7c2a154552a93018cc202d09bec85aba87b",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/hooks/rosterPlanning.worker.ts": {
+    "sha256": "d6c38e8966c2ef30b94960d1986c6fc691cd2618a86b96bf3c253b9edad564da",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/hooks/rosterPlanningExecution.ts": {
+    "sha256": "be2ad204061d7fe770f0c5be37b6df03ea2242a13fd4505973515ea21aed08cf",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/hooks/useCandidateMetrics.test.tsx": {
+    "sha256": "c0469023262a528eb2026bc9be1ef8cbc3c94f408216f4c7b59bc86172108ff8",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/hooks/useCandidateMetrics.ts": {
+    "sha256": "cd29f4777000e43bd9383f04306ba77a2b180ce3fd678a5e788252860dccd2d5",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/hooks/useRosterPlanning.test.tsx": {
+    "sha256": "eaf307542ca1ee463bdfe16d232eb04d561930395dba92b9fec10a03f083992c",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/hooks/useRosterPlanning.ts": {
+    "sha256": "02719383dea7964f1f1efd67263e08a1bb39bcb808da585d75e932e700219f5e",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/in-season/workspaceSchema.test.ts": {
+    "sha256": "8d4f2908b418bbcf889f02ba0480ef1c977518027b911b6cc3db1607e9f8ff20",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/in-season/workspaceSchema.ts": {
+    "sha256": "e1f4718cb7f529495acc591fe0e4886e3854282cd156560a57b293f375045cd5",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/player-forecasts/gameExpectationReader.ts": {
+    "sha256": "440843c4f17bd18c91ddd2e3674827cbef8dce0e31b20053af318dd6db94b922",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/player-forecasts/planningContributions.test.ts": {
+    "sha256": "e69a921f9503504da870bc0a3f61d65043c4604042dd42fe95cb841850d69f01",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/player-forecasts/planningContributions.ts": {
+    "sha256": "37c472d95769790bc1c20535165f64486eabc4d0bcc825b18b821002aa42ad09",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/player-forecasts/rsoUsePolicy.test.ts": {
+    "sha256": "234ae88abcae41182a9673aa31e99aeea0db50bd39de4c4b1002de596e643e07",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/player-forecasts/rsoUsePolicy.ts": {
+    "sha256": "712730f58ba95e2890daab74b31c68e7a3f8840b9b2c1e66fe4ceae3a921455c",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/rosterScheduleData/planning.test.ts": {
+    "sha256": "4ac0ced587c384e74068a712d9d0d9e13b7cdd12dd3e6d52ce42013d37963a3b",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/rosterScheduleData/planning.ts": {
+    "sha256": "e945135114e21ff631a1f23b486490323e569db0c30d67b6c565deb2a87f5306",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/rosterScheduleData/planningDataTransport.ts": {
+    "sha256": "933d564db9996a5deb16e508a4224f06da890a1bf5f8e2c94fdfc4e0ad72d870",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts": {
+    "sha256": "bc3a9974663939132c977ae695164365f1a0448937b1098d496082b30d5370c2",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/rosterScheduleOptimizer/executionAdapter.test.ts": {
+    "sha256": "7711471fc260851c9e3da56a72dec5e1aa9d843846a9ce6019dafb4bb569f042",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/rosterScheduleOptimizer/executionAdapter.ts": {
+    "sha256": "e685dfdb937dc95f6cf8a3339e797002b686a0e76bab780f9cae77c7d68c03b8",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/rosterScheduleOptimizer/planning.test.ts": {
+    "sha256": "a2f4767c5e9b764b0d422cb86d042d33353d8bf16092e50793942fd16192a666",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/rosterScheduleOptimizer/planning.ts": {
+    "sha256": "d1300a64ac98d97765b9daff8017f3fe8341aa8757984ff176a177fc3a2674f2",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/rosterScheduleOptimizer/planningTypes.ts": {
+    "sha256": "0e45829a1aa0eaad17140668f01e63e0c0dfe63cc47b89e903a6be1847872e0c",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/pages/api/v1/roster-schedule-optimizer/data.ts": {
+    "sha256": "a8549dccf6bfda665576ae2d41df6e39db9ca09e2be11098a467e85a5b63e049",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/lib/rosterScheduleOptimizer/gameForecastPoints.test.ts": {
+    "sha256": "932bae6895f65b1a83b5eea20fca7bcebdf5136c719108bf16d6cc27246cbfb6",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/components/RosterScheduleOptimizer/SlotWeekGrid.tsx": {
+    "sha256": "1a77273e69b141745e722c26baade1d1ac39c42d423a66137fcd680f468cb92b",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx": {
+    "sha256": "cea48f7218c4d7e6369e7013e4143625f01c1b4d1bf1a6715284a13ece058af8",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/components/RosterScheduleOptimizer/SlotWeekGrid.module.scss": {
+    "sha256": "be0abf3dd8c96b7f4a10376e011d29971aae922379e4c0b94ba09e2c74a82b45",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/components/RosterScheduleOptimizer/ForecastPoints.tsx": {
+    "sha256": "38ba29a3e5c2c85f7229568b3395a500c409ab0257403a1fb4930d7f3c98b9bf",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/components/RosterScheduleOptimizer/ForecastPoints.test.tsx": {
+    "sha256": "ab1476e402f23dd6b4978d5ce383824849a05b8298866c52d4991e741a92cf91",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx": {
+    "sha256": "914a1f665db2d3e5a28f9b172cc1bb5e02f1648ce9143e289a8fee2e1d624539",
+    "packet": "P07 R2 plus task10 R1"
+  },
+  "web/pages/api/v1/transactions/ownership-snapshots.ts": {
+    "sha256": "543b02e64075715fd619faddf3223f38828cbae214f35cf7ca44ae7159cdb5c7",
+    "packet": "P05 r1"
+  },
+  "web/lib/dashboard/playerOwnership.ts": {
+    "sha256": "d0070eabdfd00edf91dfc7bb810747a7c30855acf9cf4b3b935b443ae79238de",
+    "packet": "P05 r1"
+  },
+  "web/lib/dashboard/playerOwnership.test.ts": {
+    "sha256": "407d0b90451d67200c6c112d7f4a5ed493da6a807439b82832dcf90e276a501c",
+    "packet": "P05 r1"
+  },
+  "web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts": {
+    "sha256": "99b2541690ca89c7fed2b9718ac04aa2b745a6c8121b436983ff98d313cc9c70",
+    "packet": "P05 r1"
+  },
+  "web/components/PlayerPickupTable/PlayerPickupTable.tsx": {
+    "sha256": "169e2d681069599a9980337d8888583fcc3072932288430e6dac6ba3b1d75b77",
+    "packet": "P05 pickup-expiry"
+  },
+  "web/components/PlayerPickupTable/PlayerPickupTable.test.ts": {
+    "sha256": "bb80fb4e1642307a8c852362f71262e2a35af9cda39778b9751d4a222b0f234e",
+    "packet": "P05 pickup-expiry"
+  },
+  "web/components/PlayerStats/playerStatsContract.ts": {
+    "sha256": "d9453373cc4b774ac61e458e616091440559399bcb1358f704c4c90abffdf242",
+    "packet": "P02"
+  },
+  "web/components/PlayerStats/playerStatsContract.test.ts": {
+    "sha256": "bf22582beb95ada6aa25daaa32c5e98a2f4a5160f99ed02e358dce8de34663d4",
+    "packet": "P02"
+  },
+  "web/components/PlayerStats/PlayerContextualStats.tsx": {
+    "sha256": "7872aa27fe8c421a5e3d17be898a6ece641589e3fa2cdfb1d4a3087c57c557b9",
+    "packet": "P02"
+  },
+  "web/components/PlayerStats/PlayerContextualStats.test.tsx": {
+    "sha256": "30c95ab42a569c8eb1fd973d390a62fb3d7728db22e85f5aef04cd5dc6988adf",
+    "packet": "P02"
+  },
+  "web/lib/NHL/statsPageFetch.ts": {
+    "sha256": "1a58b8ed40a070905b3d180b8cfa1d3ae3ee6d2ecb25bff38ffa8b9834ff7f66",
+    "packet": "P02"
+  },
+  "web/lib/NHL/statsPageFetch.test.ts": {
+    "sha256": "24433be6b0211c8d4bc923ee552964ec56f3cfa4108e2115561e6ed11ae1b4c4",
+    "packet": "P02"
+  },
+  "web/lib/NHL/statsPageTypes.ts": {
+    "sha256": "486e67073a7ffe6a5efc94174772da2d0df528d2be362c0eded7b747bd9b8d09",
+    "packet": "P02"
+  },
+  "web/components/StatsPage/LeaderboardCategoryGoalie.tsx": {
+    "sha256": "3a3dc4e7f5db7cdfafb7ccab1a3647ec893b6000fa330aaf4745d87dac433158",
+    "packet": "P02"
+  },
+  "web/components/StatsPage/LeaderboardCategoryGoalie.test.tsx": {
+    "sha256": "f2d614977a1e8a3fce96b1b29be7196f8bf106066b3c1669bcc92064d4e471cf",
+    "packet": "P02"
+  },
+  "web/components/PlayerStats/PlayerSummaryStrip.tsx": {
+    "sha256": "3956e59250acfa65c7d855b512268da1416825319953fda71778e0a773385b84",
+    "packet": "P02/r1-extension"
+  },
+  "web/components/PlayerStats/PlayerStatsSummary.tsx": {
+    "sha256": "7dbddd62b5d1b8469b96daa2652b96d8649362d517db77ec0aec1dd65a8687d3",
+    "packet": "P02/r1-extension"
+  },
+  "web/components/PlayerStats/PlayerGoalieSummaries.test.tsx": {
+    "sha256": "97422008b0835ac6aa8e33e9223aa42a594df8e1d461fad0ec74152aa0f97e10",
+    "packet": "P02/r1-extension"
+  },
+  "web/pages/stats/game/[gameId].tsx": {
+    "sha256": "dc4f19d8ee1b688a34a816a562fc5e4c01d4bac0e862cd91f272b06b2fa6156f",
+    "packet": "S08 game route"
+  },
+  "web/__tests__/pages/statsGame.test.tsx": {
+    "sha256": "09807279a24a8fe98bd57e802103e894e21411fa1896b2d437fad7ba4d36b88a",
+    "packet": "S08 game route"
+  },
+  "web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx": {
+    "sha256": "a8514752a748ff9cd39e18037a2a2648e4290e684c96e3398901aac3cc8e85a3",
+    "packet": "calendar"
+  },
+  "web/components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx": {
+    "sha256": "ee6424542b502ec0448eb70f7bf21e590d91837b56d2adb1bad5ace2cb2ae124",
+    "packet": "calendar"
+  },
+  "web/components/StatsPage/PlayerSearchBar.tsx": {
+    "sha256": "ddd48a75a636aeba2721adf79f50bd44561c35d8399cc9e48e1b822c69bcc33f",
+    "packet": "search"
+  },
+  "web/components/StatsPage/PlayerSearchBar.test.tsx": {
+    "sha256": "33edc3fecc41818280146ed2cc6f3bec9172630418f31b3b1258a0f5366ce6e1",
+    "packet": "search"
+  },
+  "web/lib/sources/playerIdentitySnapshotEvidence.ts": {
+    "sha256": "390ed603af2cf2ca742ac36ec81c4973d2543684dfb42efbc9c9afeed84c7d4b",
+    "packet": "Luna contracts"
+  },
+  "web/lib/sources/playerIdentitySnapshotEvidence.test.ts": {
+    "sha256": "77b834b8c011222d60360c5b8ab111bed4b1dfe8e44eb3cbd238f6c322bbaaaf",
+    "packet": "Luna contracts"
+  },
+  "web/lib/sources/tweetIdentityReplacementReview.ts": {
+    "sha256": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a",
+    "packet": "Luna correction-r1"
+  },
+  "web/lib/sources/tweetIdentityReplacementReview.test.ts": {
+    "sha256": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451",
+    "packet": "Luna correction-r1"
+  },
+  "web/lib/sources/fixtures/tweetIdentitySavedEvidence.json": {
+    "sha256": "a6ed14b24e05ffdadd0d0de9593c12e5c8aad92bd8a8168d0cf91532598f0a2d",
+    "packet": "Luna contracts"
+  },
+  "tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql": {
+    "sha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12",
+    "packet": "billing relocation R1"
+  },
+  "web/lib/in-season/monthlyIntegration.test.ts": {
+    "sha256": "778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025",
+    "packet": "billing relocation R1"
+  },
+  "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-SQL-CHECK.cjs": {
+    "sha256": "2236b42e5f0fde9ac4ef184831638502bca58a160c0b5185c6e094b73ac5b454",
+    "packet": "billing relocation R1"
+  },
+  "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs": {
+    "sha256": "fe5e21a26ce2ac31a3bee44eb5ca45a408cca1e4b1ed3b1d72620ad58ae4bbe1",
+    "packet": "billing relocation R1"
+  },
+  "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-AUTH-CHECK.cjs": {
+    "sha256": "a786b95ff5aee13a77e682d0edfbbffe71a26ef9a5aa18f566d68dccb664c7d9",
+    "packet": "billing relocation R1"
+  },
+  "tasks/artifacts/in-season-billing-2026-10-21/REPORT.md": {
+    "sha256": "4402a394a5df14dd4519f55311b7e48f083a3877eaeccc99521cbade3d6568c3",
+    "packet": "billing relocation R1"
+  },
+  "tasks/TASKS/repository-audit-remediation/migration-authority.json": {
+    "sha256": "1918938309958c4cae037b83cd5a877d6fb7b4bcb972df9c74f9960969a3081d",
+    "packet": "billing relocation R1"
+  },
+  "web/lib/supabase/supportedBaselineMigration.test.ts": {
+    "sha256": "3747a2ab91813cc3cacdb10db02ba6bd25fc6e61fef6113b9f969b1cc36ebfc1",
+    "packet": "billing relocation R1"
+  },
+  "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-HASHES-BEFORE.json": {
+    "sha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659",
+    "packet": "billing relocation R1"
+  },
+  "tasks/artifacts/billing-migration-authority-2026-10-22/PROPOSED-RELOCATION.patch": {
+    "sha256": "d990b7f1c8e977c05232a8bf0e01a301eee061130abc79bee6958bb82a5b34b2",
+    "packet": "billing relocation R1"
+  },
+  "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-RELOCATION.v1.json": {
+    "sha256": "54b33decfb7dbf1173bb67c154665ff9c154982961be754c0eb7000b0e96efb2",
+    "packet": "billing relocation R1"
+  },
+  "tasks/artifacts/billing-migration-authority-2026-10-22/queue-preflight-fix/VERIFY-QUEUE-PREFLIGHT.test.cjs": {
+    "sha256": "fbe30bcb953eb18f2cb3a6d698904393c30821da045db914f5de83d705a87aad",
+    "packet": "billing relocation R1"
+  },
+  "tasks/artifacts/billing-migration-authority-2026-10-22/CHANGED-FILES.json": {
+    "sha256": "df600ab1c920958a8c869978cd3ed1cd1aedf1744aae399b39e400ddd23b7ef1",
+    "packet": "billing relocation R1"
+  }
+}

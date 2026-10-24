@@ -1,0 +1,20 @@
+TAP version 13
+# Subtest: allows sequential requests up to the cap
+ok 1 - allows sequential requests up to the cap
+  ---
+  duration_ms: 0.607541
+  ...
+# Subtest: rejects a second request while one is in flight (strict-mode double fetch)
+ok 2 - rejects a second request while one is in flight (strict-mode double fetch)
+  ---
+  duration_ms: 0.212625
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 2
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 55.765875

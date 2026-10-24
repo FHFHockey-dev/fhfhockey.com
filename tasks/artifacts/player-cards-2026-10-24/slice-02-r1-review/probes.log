@@ -1,0 +1,30 @@
+PASS W01: Cutoff is inclusive by exact final timestamp, including midnight crossover
+PASS W02: Filter other player/season/game type and scratch before own N
+PASS W03: Independent 5/10/20 selection uses descending identities from shuffled input
+PASS W04: Calendar lower/upper bounds inclusive, common completion cutoff still applies
+PASS W05: Known short versus incomplete history and strict-full alternative
+PASS W06: Invalid official identity/unknown participation/completion do not become known short
+PASS W07: Conflicting duplicate game dates are rejected
+PASS W08: Invalid normalized dates, cutoffs, and unsupported policies rejected
+PASS W09: Zero-strength exposure stays in official GP, no older replacement appearance
+PASS A01: Pooled numerator/exposure not mean game rates; fractional xG survives
+PASS A02: Valid measured zero/zero exposure/missing/nonfinite stay distinct
+PASS A03: Missing one selected game never shrinks official sample
+PASS A04: Missing one component affects only dependent metrics
+PASS A05: Exact identity join rejects same-game wrong date/strength/season/version/timing
+PASS R01: Competition raw ranks and midrank percentiles, all same full pool
+PASS R02: Rank canonical values before display rounding
+PASS R03: Valid zero and one-second exposure remain in full pool
+PASS R04: Unknown coverage and wrong population membership withhold ranks, preserve values
+PASS R05: Metric-specific missing peer suppresses only affected ranks
+PASS R06: Known valid zero-denominator peer is excluded without inventing zero
+PASS R07: Complete-history failure remains missing and blocks full pool
+PASS R08: All-tie and singleton populations use declared midrank 50
+PASS R09: All-zero exposure pool is undefined, not zero-valued rank
+PASS F01a: Invalid game positive events with zero exposure must not borrow another game TOI
+PASS F01b: Invalid per-game goals > shots must not be concealed by later valid shots
+PASS F01c: Invalid on-ice game goals > shots must not be concealed by another game
+PASS F02a: Positive goals / zero shots is inconsistent source, not known undefined
+PASS F02b: An inconsistent peer must not leave full coverage and rank enabled
+PASS F01d: Invalid exposure peer must not change valid player raw rank
+{"total":29,"passed":29,"failed":0,"networkAttempts":0}

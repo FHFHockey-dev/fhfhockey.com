@@ -1,0 +1,72 @@
+{
+  "status": "APPLIED LOCALLY \u2014 byte-preserving relocation, no canonical admission",
+  "head": "a565238f670edc4cf65da79ad52ba82ec41f3b71",
+  "reportedCommit": "fd58ba2452c0175b201e50285df156cb7f91b4f4",
+  "migrationSha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12",
+  "baselineSha256": {
+    "tasks/TASKS/repository-audit-remediation/migration-authority.json": "1918938309958c4cae037b83cd5a877d6fb7b4bcb972df9c74f9960969a3081d",
+    "web/lib/supabase/supportedBaselineMigration.test.ts": "3747a2ab91813cc3cacdb10db02ba6bd25fc6e61fef6113b9f969b1cc36ebfc1",
+    "tasks/TASKS/super-goal/super-goal-final-summary.md": "8ac0643823ed6e7ad334bc1e772ac0b5a80173e773b5ac7961713c06ba650925"
+  },
+  "reproduction": {
+    "command": "npm test -- lib/supabase/supportedBaselineMigration.test.ts --run --reporter=default",
+    "cwd": "web",
+    "exitCode": 1,
+    "passed": 20,
+    "failed": 1,
+    "failure": "99 active SQL files versus 98 authority rows; only sandbox billing file is undeclared"
+  },
+  "recommendedCorrection": {
+    "oldPath": "supabase/migrations/20261021210000_in_season_sandbox_billing.sql",
+    "newPath": "tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql",
+    "sha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12",
+    "executableReferences": [
+      "web/lib/in-season/monthlyIntegration.test.ts",
+      "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-SQL-CHECK.cjs",
+      "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs",
+      "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-AUTH-CHECK.cjs"
+    ],
+    "documentation": [
+      "tasks/artifacts/in-season-billing-2026-10-21/REPORT.md"
+    ],
+    "authorityChanges": 0,
+    "supportedBaselineTestChanges": 0,
+    "sqlByteChanges": 0,
+    "historicalReceiptChanges": 0,
+    "postRelocationCounts": {
+      "activeFiles": 98,
+      "authorityRecords": 98,
+      "applied": 65,
+      "pending": 5,
+      "unknown": 28
+    }
+  },
+  "proposalBaselineSha256": {
+    "web/lib/in-season/monthlyIntegration.test.ts": "cb87e47d4d2b1050577a62cba6bebccb12101df57709dbcb6773d95abb3594b5",
+    "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-SQL-CHECK.cjs": "2e89dd7ddaf85d79e8822090054fcbcf8b8d7320bde5e540e5ddd69aad344ee2",
+    "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs": "6cedacc45f213afa38744d89a0b87776b9db4387832a56a3418a15e2b4a347e5",
+    "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-AUTH-CHECK.cjs": "c7962a345551cd65cb52acb171fff8672e55182fc883678302c947fcf01f8465",
+    "tasks/artifacts/in-season-billing-2026-10-21/REPORT.md": "a219ae7a41e0ad5759ab7a65147e88b90bfce01ffd6ed416334e7029b8742a53"
+  },
+  "relocationStaticValidation": "Excluding only the misplaced draft restores exact active-file/authority equality; all existing order/hash/state records preserved. Actual focused test still fails until correction is authorized and applied.",
+  "patchApplyCheck": "passed; git apply --check only, no patch application",
+  "proposalPatchSha256": "d990b7f1c8e977c05232a8bf0e01a301eee061130abc79bee6958bb82a5b34b2",
+  "appliedVerification": {
+    "tests": {
+      "passed": 84,
+      "failed": 0,
+      "baselineTests": 21,
+      "monthlyIntegrationTests": 63,
+      "receipt": "FINAL-TEST-RESULTS.json"
+    },
+    "threeArtifactSyntaxChecks": "passed; node --check only",
+    "gitDiffCheck": "passed",
+    "exactPatchReverseCheck": "passed; no reverse application",
+    "scopeMatchesPreparedPatch": true,
+    "canonicalAuthorityTestSummaryHashesPreserved": true,
+    "historicalReceiptDiffs": 0,
+    "sqlExecuted": false,
+    "serviceCalls": 0,
+    "committed": false
+  }
+}

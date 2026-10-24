@@ -1,0 +1,1162 @@
+diff --git a/web/lib/projections/research/skater-candidates/accounting.test.ts b/web/lib/projections/research/skater-candidates/accounting.test.ts
+new file mode 100644
+index 000000000..db4c98f02
+--- /dev/null
++++ b/web/lib/projections/research/skater-candidates/accounting.test.ts
+@@ -0,0 +1,86 @@
++// @vitest-environment node
++import { describe, expect, it } from "vitest";
++import { allocatePkMinutes, combineStrengthHeads, projectAssists, projectShorthanded, reconcileTeamAssists, shrinkRate } from "./accounting";
++
++describe("offline assist/PPP accounting candidates", () => {
++  it("uses on-ice goals and direct assist share without an own-goal or per-two-goal scale", () => {
++    const result = projectAssists({ expectedOnIceGoals: 2, history: { assists: 3, onIceGoals: 10 }, prior: { mean: 0.5, exposure: 10 } });
++    expect(result).toEqual({ share: 0.4, assists: 0.8 });
++    expect(projectAssists({ expectedOnIceGoals: 2, history: { assists: 0, onIceGoals: 10 }, prior: null }).assists).toBe(0);
++  });
++
++  it("distinguishes absent support, observed zero and no future opportunity", () => {
++    expect(shrinkRate(null, null)).toBeNull();
++    expect(projectAssists({ expectedOnIceGoals: 1, history: { assists: 0, onIceGoals: 0 }, prior: null }).assists).toBeNull();
++    expect(projectAssists({ expectedOnIceGoals: 0, history: null, prior: null }).assists).toBe(0);
++    expect(() => projectAssists({ expectedOnIceGoals: 1, history: { assists: 2, onIceGoals: 1 }, prior: null })).toThrow();
++    expect(() => shrinkRate({ events: 1, exposure: 0 }, null)).toThrow();
++    expect(() => shrinkRate(null, { mean: NaN, exposure: 10 })).toThrow();
++  });
++
++  const players = [
++    { id: 1, goals: 0.8, onIceGoals: 1, assists: 3 },
++    { id: 2, goals: 0.1, onIceGoals: 1, assists: 1 },
++    { id: 3, goals: 0.1, onIceGoals: 1, assists: 1 },
++  ];
++  it("reconciles to an explicit observed team A/G while respecting own-goal exclusion", () => {
++    const result = reconcileTeamAssists({ completeRoster: true, teamGoals: 1, observedTeamAssistsPerGoal: 1.8, players });
++    expect(result.status).toBe("ok");
++    expect(result.players!.map((p) => p.assists)).toEqual([expect.closeTo(0.2), expect.closeTo(0.8), expect.closeTo(0.8)]);
++    expect(result.players!.reduce((s, p) => s + p.assists, 0)).toBeCloseTo(1.8);
++    for (const player of result.players!) expect(player.goals + player.assists).toBeLessThanOrEqual(player.onIceGoals);
++  });
++
++  it("does not normalize a partial roster or invent weights to meet an impossible target", () => {
++    const base = { completeRoster: true, teamGoals: 1, observedTeamAssistsPerGoal: 1.8, players };
++    expect(reconcileTeamAssists({ ...base, completeRoster: false })).toMatchObject({ status: "blocked", reason: "incomplete_roster" });
++    expect(reconcileTeamAssists({ ...base, players: players.slice(0, 1) })).toMatchObject({ reason: "player_goals_do_not_reconcile" });
++    expect(reconcileTeamAssists({ ...base, players: players.map((p) => ({ ...p, assists: null })) })).toMatchObject({ reason: "missing_assist_support" });
++    expect(reconcileTeamAssists({ ...base, players: players.map((p) => ({ ...p, assists: 0 })) })).toMatchObject({ reason: "insufficient_supported_assist_capacity" });
++    expect(() => reconcileTeamAssists({ ...base, observedTeamAssistsPerGoal: 2.1 })).toThrow();
++  });
++});
++
++describe("offline PK/SH contribution candidate", () => {
++  it("allocates an exact skater-seconds budget and removes PK from total before ES", () => {
++    const result = allocatePkMinutes({ teamPkSkaterSeconds: 300, players: [
++      { id: 1, totalSeconds: 1000, ppSeconds: 100, pkWeight: 1 },
++      { id: 2, totalSeconds: 1200, ppSeconds: 0, pkWeight: 2 },
++      { id: 3, totalSeconds: 900, ppSeconds: 200, pkWeight: 0 },
++    ] })!;
++    expect(result).toEqual([
++      { id: 1, esSeconds: 800, ppSeconds: 100, shSeconds: 100 },
++      { id: 2, esSeconds: 1000, ppSeconds: 0, shSeconds: 200 },
++      { id: 3, esSeconds: 700, ppSeconds: 200, shSeconds: 0 },
++    ]);
++    expect(result.reduce((sum, p) => sum + p.esSeconds + p.ppSeconds + p.shSeconds, 0)).toBe(3100);
++  });
++
++  it("redistributes after capacity binding and blocks insufficient deployment support", () => {
++    const players = [{ id: 1, totalSeconds: 60, ppSeconds: 0, pkWeight: 100 }, { id: 2, totalSeconds: 240, ppSeconds: 0, pkWeight: 1 }];
++    expect(allocatePkMinutes({ teamPkSkaterSeconds: 200, players })!.map((p) => p.shSeconds)).toEqual([60, 140]);
++    expect(allocatePkMinutes({ teamPkSkaterSeconds: 301, players })).toBeNull();
++    expect(allocatePkMinutes({ teamPkSkaterSeconds: 1, players: [{ ...players[0], pkWeight: 0 }] })).toBeNull();
++    expect(() => allocatePkMinutes({ teamPkSkaterSeconds: 1, players: [players[0], players[0]] })).toThrow("duplicate");
++  });
++
++  it("adds SH counts using minutes and leaves PPP exclusively power play", () => {
++    const sh = projectShorthanded({ pkSeconds: 120, history: { toiSeconds: 3600, goals: 2, assists: 4, shots: 20 },
++      priors: { goals: { per60: 1, minutes: 60 }, assists: { per60: 2, minutes: 60 }, shots: { per60: 10, minutes: 60 } } });
++    expect(sh).toEqual({ goals: 0.05, assists: 0.1, shots: 0.5 });
++    const total = combineStrengthHeads({ ES: { goals: 0.2, assists: 0.3, shots: 2 }, PP: { goals: 0.1, assists: 0.2, shots: 1 }, SH: sh });
++    expect(total.G).toBeCloseTo(0.35); expect(total.A).toBeCloseTo(0.6);
++    expect(total.PPP).toBeCloseTo(0.3); expect(total.SHP).toBeCloseTo(0.15); expect(total.SOG).toBe(3.5);
++  });
++
++  it("preserves missing SH heads and permits structural zero only for zero PK exposure", () => {
++    const priors = { goals: null, assists: null, shots: null };
++    const unknown = projectShorthanded({ pkSeconds: 60, history: null, priors });
++    expect(unknown).toEqual({ goals: null, assists: null, shots: null });
++    expect(projectShorthanded({ pkSeconds: 60, history: { toiSeconds: 3600, goals: null, assists: 0, shots: null }, priors }))
++      .toEqual({ goals: null, assists: 0, shots: null });
++    expect(projectShorthanded({ pkSeconds: 0, history: null, priors })).toEqual({ goals: 0, assists: 0, shots: 0 });
++    const totals = combineStrengthHeads({ ES: { goals: 1, assists: 1, shots: 2 }, PP: { goals: 0, assists: 0, shots: 0 }, SH: unknown });
++    expect(totals).toEqual({ G: null, A: null, PPP: 0, SOG: null, SHP: null });
++  });
++});
+diff --git a/web/lib/projections/research/skater-candidates/accounting.ts b/web/lib/projections/research/skater-candidates/accounting.ts
+new file mode 100644
+index 000000000..dc57c92ea
+--- /dev/null
++++ b/web/lib/projections/research/skater-candidates/accounting.ts
+@@ -0,0 +1,144 @@
++/** Offline candidates only. No production imports or default fitted coefficients. */
++export type Position = "F" | "D";
++export type Strength = "ES" | "PP" | "SH";
++export type CountExposure = { events: number; exposure: number };
++export type RatePrior = { mean: number; exposure: number };
++
++export function nonNegative(value: number, name: string): number {
++  if (!Number.isFinite(value) || value < 0) throw new Error(`Invalid ${name}`);
++  return value;
++}
++
++/** Exposure and prior exposure must have the same units; absent evidence is not a zero. */
++export function shrinkRate(observed: CountExposure | null, prior: RatePrior | null): number | null {
++  if (observed) {
++    nonNegative(observed.events, "events");
++    nonNegative(observed.exposure, "exposure");
++    if (observed.exposure === 0 && observed.events > 0) throw new Error("Events without exposure");
++  }
++  if (prior) {
++    nonNegative(prior.mean, "prior mean");
++    nonNegative(prior.exposure, "prior exposure");
++  }
++  const exposure = (observed?.exposure ?? 0) + (prior?.exposure ?? 0);
++  return exposure > 0 ? ((observed?.events ?? 0) + (prior?.mean ?? 0) * (prior?.exposure ?? 0)) / exposure : null;
++}
++
++/** Assists / on-ice goals, not assists / the player's goals. k is in on-ice goals. */
++export function projectAssists(args: {
++  expectedOnIceGoals: number;
++  history: { assists: number; onIceGoals: number } | null;
++  prior: RatePrior | null;
++}) {
++  nonNegative(args.expectedOnIceGoals, "expected on-ice goals");
++  if (args.history && args.history.assists > args.history.onIceGoals) throw new Error("Assists exceed on-ice goals");
++  if (args.prior && args.prior.mean > 1) throw new Error("Assist share exceeds one");
++  const share = shrinkRate(args.history ? { events: args.history.assists, exposure: args.history.onIceGoals } : null, args.prior);
++  return { share, assists: args.expectedOnIceGoals === 0 ? 0 : share === null ? null : args.expectedOnIceGoals * share };
++}
++
++/** Proportional allocation with hard capacities. Never invent weights for unsupported players. */
++function allocate(total: number, rows: { id: number; weight: number; capacity: number }[]): number[] | null {
++  nonNegative(total, "allocation total");
++  const ids = new Set<number>();
++  for (const row of rows) {
++    if (!Number.isSafeInteger(row.id) || ids.has(row.id)) throw new Error("Invalid or duplicate player identity");
++    ids.add(row.id);
++    nonNegative(row.weight, "allocation weight");
++    nonNegative(row.capacity, "allocation capacity");
++  }
++  if (total === 0) return rows.map(() => 0);
++  if (rows.reduce((sum, row) => sum + (row.weight > 0 ? row.capacity : 0), 0) + 1e-9 < total) return null;
++  const values = rows.map(() => 0);
++  let active = rows.map((_, i) => i).filter((i) => rows[i].weight > 0 && rows[i].capacity > 0);
++  let remaining = total;
++  while (active.length > 0 && remaining > 0) {
++    const weights = active.reduce((sum, i) => sum + rows[i].weight, 0);
++    const capped = active.filter((i) => remaining * rows[i].weight / weights > rows[i].capacity);
++    if (capped.length === 0) {
++      for (const i of active) values[i] = remaining * rows[i].weight / weights;
++      break;
++    }
++    for (const i of capped) { values[i] = rows[i].capacity; remaining -= values[i]; }
++    active = active.filter((i) => !capped.includes(i));
++  }
++  return values;
++}
++
++/**
++ * A complete team-strength roster is required. The observed team A/G ratio is a
++ * separate input; summing player on-ice goals would count each goal several times.
++ * A player cannot assist their own goal. Infeasible targets remain unresolved.
++ */
++export function reconcileTeamAssists(args: {
++  completeRoster: boolean;
++  teamGoals: number;
++  observedTeamAssistsPerGoal: number;
++  players: { id: number; goals: number; onIceGoals: number; assists: number | null }[];
++}) {
++  nonNegative(args.teamGoals, "team goals");
++  nonNegative(args.observedTeamAssistsPerGoal, "team assists per goal");
++  if (args.observedTeamAssistsPerGoal > 2) throw new Error("At most two assists per goal");
++  const target = args.teamGoals * args.observedTeamAssistsPerGoal;
++  const blocked = (reason: string) => ({ status: "blocked" as const, reason, target, players: null });
++  if (!args.completeRoster) return blocked("incomplete_roster");
++  for (const p of args.players) {
++    nonNegative(p.goals, "player goals");
++    nonNegative(p.onIceGoals, "player on-ice goals");
++    if (p.goals > p.onIceGoals + 1e-9 || p.onIceGoals > args.teamGoals + 1e-9) throw new Error("Inconsistent goal accounting");
++    if (p.assists === null) return blocked("missing_assist_support");
++  }
++  if (Math.abs(args.players.reduce((sum, p) => sum + p.goals, 0) - args.teamGoals) > 1e-8) return blocked("player_goals_do_not_reconcile");
++  const values = allocate(target, args.players.map((p) => ({ id: p.id, weight: p.assists!, capacity: Math.max(0, p.onIceGoals - p.goals) })));
++  if (!values) return blocked("insufficient_supported_assist_capacity");
++  return { status: "ok" as const, reason: null, target, players: args.players.map((p, i) => ({ ...p, assists: values[i] })) };
++}
++
++/** Explicit skater-seconds budget supports 4v5/3v5 mixtures; no assumed PK manpower. */
++export function allocatePkMinutes(args: {
++  teamPkSkaterSeconds: number;
++  players: { id: number; totalSeconds: number; ppSeconds: number; pkWeight: number }[];
++}) {
++  for (const p of args.players) {
++    nonNegative(p.totalSeconds, "total seconds");
++    nonNegative(p.ppSeconds, "PP seconds");
++    if (p.ppSeconds > p.totalSeconds) throw new Error("PP exceeds total exposure");
++  }
++  const values = allocate(args.teamPkSkaterSeconds, args.players.map((p) => ({ id: p.id, weight: p.pkWeight, capacity: p.totalSeconds - p.ppSeconds })));
++  return values === null ? null : args.players.map((p, i) => ({
++    id: p.id, esSeconds: p.totalSeconds - p.ppSeconds - values[i], ppSeconds: p.ppSeconds, shSeconds: values[i],
++  }));
++}
++
++/** SH rates are per 60 minutes; shrinkage exposure is minutes, not games or shots. */
++export function projectShorthanded(args: {
++  pkSeconds: number;
++  history: { toiSeconds: number; goals: number | null; assists: number | null; shots: number | null } | null;
++  priors: Record<"goals" | "assists" | "shots", { per60: number; minutes: number } | null>;
++}) {
++  nonNegative(args.pkSeconds, "PK seconds");
++  if (args.history) nonNegative(args.history.toiSeconds, "SH history seconds");
++  const head = (key: "goals" | "assists" | "shots") => {
++    const events = args.history?.[key];
++    const prior = args.priors[key];
++    const ratePerMinute = shrinkRate(events == null ? null : { events, exposure: args.history!.toiSeconds / 60 },
++      prior ? { mean: prior.per60 / 60, exposure: prior.minutes } : null);
++    return args.pkSeconds === 0 ? 0 : ratePerMinute === null ? null : args.pkSeconds / 60 * ratePerMinute;
++  };
++  return { goals: head("goals"), assists: head("assists"), shots: head("shots") };
++}
++
++export type StrengthHeads = { goals: number | null; assists: number | null; shots: number | null };
++/** Missing positive-exposure SH heads cannot silently produce complete G/A/SOG totals. */
++export function combineStrengthHeads(heads: Record<Strength, StrengthHeads>) {
++  const sum = (values: (number | null)[]) => {
++    for (const value of values) if (value !== null) nonNegative(value, "projected count");
++    return values.some((value) => value === null) ? null : (values as number[]).reduce((a, b) => a + b, 0);
++  };
++  return {
++    G: sum([heads.ES.goals, heads.PP.goals, heads.SH.goals]),
++    A: sum([heads.ES.assists, heads.PP.assists, heads.SH.assists]),
++    SOG: sum([heads.ES.shots, heads.PP.shots, heads.SH.shots]),
++    PPP: sum([heads.PP.goals, heads.PP.assists]), SHP: sum([heads.SH.goals, heads.SH.assists]),
++  };
++}
+diff --git a/web/lib/projections/research/skater-candidates/context.test.ts b/web/lib/projections/research/skater-candidates/context.test.ts
+new file mode 100644
+index 000000000..8db9c9dd4
+--- /dev/null
++++ b/web/lib/projections/research/skater-candidates/context.test.ts
+@@ -0,0 +1,40 @@
++// @vitest-environment node
++import { describe, expect, it } from "vitest";
++import { ablateContexts, opportunityCountMoments, projectContext, type ContextEffect } from "./context";
++
++const base = { seconds: 1200, shotsPer60: 6, goalsPerShot: 0.1, onIceGoalsPer60: 3, assistShare: 0.5 };
++describe("single-owned context candidates", () => {
++  it("keeps shot danger out of shot volume and assist share", () => {
++    const adjusted = projectContext(base, [{ effect: "shotDanger", owner: "skater", channel: "finishing", multiplier: 1.2, evidence: "synthetic only" }]);
++    expect(adjusted.shots).toBe(2); expect(adjusted.goals).toBeCloseTo(0.24); expect(adjusted.assists).toBe(0.5);
++  });
++
++  it("applies a goalie effect once to goal environments without squaring its assist effect", () => {
++    const effect: ContextEffect = { effect: "opponentGoalie", owner: "team", channel: "goalEnvironment", multiplier: 0.9, evidence: "synthetic only" };
++    const result = projectContext(base, [effect]);
++    expect(result.goals).toBeCloseTo(0.18); expect(result.assists).toBeCloseTo(0.45); expect(result.shots).toBe(2);
++    expect(() => projectContext(base, [effect, effect])).toThrow("Duplicate context");
++  });
++
++  it("provides independently toggled effects on the identical neutral opportunity", () => {
++    const effects: ContextEffect[] = [
++      { effect: "rest", owner: "team", channel: "opportunity", multiplier: 0.9, evidence: "synthetic only" },
++      { effect: "home", owner: "team", channel: "shotVolume", multiplier: 1.04, evidence: "synthetic only" },
++    ];
++    const result = ablateContexts(base, effects);
++    expect(result.all.shots).toBeCloseTo(2 * 0.9 * 1.04);
++    expect(result.omitted.rest.shots).toBeCloseTo(2 * 1.04);
++    expect(result.omitted.home.shots).toBeCloseTo(2 * 0.9);
++    expect(result.neutral.seconds).toBe(1200);
++    expect(() => projectContext(base, [{ ...effects[0], evidence: "" }])).toThrow("evidence");
++    expect(() => projectContext(base, [{ ...effects[1], owner: "skater" } as unknown as ContextEffect])).toThrow("owner");
++  });
++
++  it("increases count variance from opportunity uncertainty without a mean haircut", () => {
++    const stable = opportunityCountMoments({ expectedSeconds: 1200, varianceSeconds: 0, ratePer60: 6 });
++    const unstable = opportunityCountMoments({ expectedSeconds: 1200, varianceSeconds: 90000, ratePer60: 6 });
++    expect(stable).toEqual({ mean: 2, variance: 2, opportunityVariance: 0 });
++    expect(unstable.mean).toBe(stable.mean); expect(unstable.variance).toBeCloseTo(2.25);
++    expect(() => opportunityCountMoments({ expectedSeconds: 0, varianceSeconds: 1, ratePer60: 6 })).toThrow();
++  });
++});
+diff --git a/web/lib/projections/research/skater-candidates/context.ts b/web/lib/projections/research/skater-candidates/context.ts
+new file mode 100644
+index 000000000..1b76e8332
+--- /dev/null
++++ b/web/lib/projections/research/skater-candidates/context.ts
+@@ -0,0 +1,50 @@
++import { nonNegative } from "./accounting";
++
++/** One causal effect, one owner and one channel. Magnitudes need separate qualification. */
++export type ContextEffect =
++  | { effect: "home"; owner: "team"; channel: "shotVolume" | "goalEnvironment"; multiplier: number; evidence: string }
++  | { effect: "rest"; owner: "team"; channel: "opportunity" | "shotVolume" | "goalEnvironment"; multiplier: number; evidence: string }
++  | { effect: "opponentGoalie"; owner: "team"; channel: "goalEnvironment"; multiplier: number; evidence: string }
++  | { effect: "shotDanger"; owner: "skater"; channel: "finishing"; multiplier: number; evidence: string };
++export type ContextBase = { seconds: number; shotsPer60: number; goalsPerShot: number; onIceGoalsPer60: number; assistShare: number };
++
++/** Call on neutral inputs once; never feed previously context-adjusted counts back in. */
++export function projectContext(base: ContextBase, effects: ContextEffect[]) {
++  Object.entries(base).forEach(([name, value]) => nonNegative(value, name));
++  if (base.goalsPerShot > 1 || base.assistShare > 1) throw new Error("Base share exceeds one");
++  const factors = { opportunity: 1, shotVolume: 1, goalEnvironment: 1, finishing: 1 };
++  const seen = new Set<string>();
++  for (const effect of effects) {
++    if (seen.has(effect.effect)) throw new Error(`Duplicate context ownership: ${effect.effect}`);
++    seen.add(effect.effect);
++    nonNegative(effect.multiplier, "context multiplier");
++    if (!effect.evidence.trim()) throw new Error("Context evidence reference required");
++    const valid = effect.effect === "home" ? effect.owner === "team" && ["shotVolume", "goalEnvironment"].includes(effect.channel)
++      : effect.effect === "rest" ? effect.owner === "team" && ["opportunity", "shotVolume", "goalEnvironment"].includes(effect.channel)
++        : effect.effect === "opponentGoalie" ? effect.owner === "team" && effect.channel === "goalEnvironment"
++          : effect.effect === "shotDanger" && effect.owner === "skater" && effect.channel === "finishing";
++    if (!valid) throw new Error("Invalid context owner or channel");
++    factors[effect.channel] *= effect.multiplier;
++  }
++  const seconds = base.seconds * factors.opportunity;
++  const shots = seconds / 3600 * base.shotsPer60 * factors.shotVolume;
++  const conversion = base.goalsPerShot * factors.finishing * factors.goalEnvironment;
++  if (conversion > 1) throw new Error("Context conversion exceeds one");
++  const onIceGoals = seconds / 3600 * base.onIceGoalsPer60 * factors.goalEnvironment;
++  return { seconds, shots, goals: shots * conversion, onIceGoals, assists: onIceGoals * base.assistShare, factors };
++}
++
++export function ablateContexts(base: ContextBase, effects: ContextEffect[]) {
++  return { all: projectContext(base, effects), neutral: projectContext(base, []),
++    omitted: Object.fromEntries(effects.map((effect) => [effect.effect, projectContext(base, effects.filter((entry) => entry.effect !== effect.effect))])) };
++}
++
++/** Law of total variance for a Poisson rate with random exposure, holding its mean fixed. */
++export function opportunityCountMoments(args: { expectedSeconds: number; varianceSeconds: number; ratePer60: number }) {
++  Object.entries(args).forEach(([name, value]) => nonNegative(value, name));
++  if (args.expectedSeconds === 0 && args.varianceSeconds > 0) throw new Error("Nonnegative exposure with zero mean has zero variance");
++  const ratePerSecond = args.ratePer60 / 3600;
++  const mean = args.expectedSeconds * ratePerSecond;
++  return { mean, variance: mean + ratePerSecond ** 2 * args.varianceSeconds,
++    opportunityVariance: ratePerSecond ** 2 * args.varianceSeconds };
++}
+diff --git a/web/lib/projections/research/skater-candidates/priors.test.ts b/web/lib/projections/research/skater-candidates/priors.test.ts
+new file mode 100644
+index 000000000..f5d0ef6e8
+--- /dev/null
++++ b/web/lib/projections/research/skater-candidates/priors.test.ts
+@@ -0,0 +1,50 @@
++// @vitest-environment node
++import { describe, expect, it } from "vitest";
++import { estimatePositionPrior, fitSplitHalfK, type HistoricalCounts, type PriorScope } from "./priors";
++
++const scope: PriorScope = { season: "20262027", before: "2026-10-20T00:00:00Z", position: "F", strength: "ES", metric: "shotsPer60" };
++function row(change: Partial<HistoricalCounts> = {}): HistoricalCounts {
++  return { playerId: 1, gameId: 1, season: scope.season, position: "F", strength: "ES", playedAt: "2026-10-10T00:00:00Z",
++    availableAt: "2026-10-11T00:00:00Z", toiSeconds: 1200, shots: 4, goals: 1, assists: 1, onIceGoals: 2, ...change };
++}
++
++describe("position-specific historical priors", () => {
++  it("pools counts over exposure rather than averaging per-game rates", () => {
++    const result = estimatePositionPrior([row(), row({ gameId: 2, shots: 2, toiSeconds: 600 })], scope);
++    expect(result).toMatchObject({ events: 6, exposure: 0.5, mean: 12, unit: "hours", rows: 2 });
++    expect(estimatePositionPrior([row()], { ...scope, metric: "goalsPerShot" })).toMatchObject({ mean: 0.25, exposure: 4, unit: "shots" });
++    expect(estimatePositionPrior([row()], { ...scope, metric: "assistsPerOnIceGoal" })).toMatchObject({ mean: 0.5, unit: "onIceGoals" });
++    expect(estimatePositionPrior([row()], { ...scope, metric: "pointsPerOnIceGoal" })).toMatchObject({ mean: 1, unit: "onIceGoals" });
++  });
++
++  it("does not mix positions, strengths, seasons or future availability", () => {
++    const rows = [row(), row({ position: "D" }), row({ strength: "PP" }), row({ season: "20252026" }),
++      row({ gameId: 2, availableAt: scope.before }), row({ gameId: 3, playedAt: scope.before, availableAt: scope.before }), row({ gameId: 4, toiSeconds: null })];
++    expect(estimatePositionPrior(rows, scope)).toMatchObject({ rows: 1, mean: 12, excluded: { outsideScope: 3, notAvailableBeforeCutoff: 2, missingExposure: 1 } });
++  });
++
++  it("blocks malformed frames and duplicates without manufacturing priors", () => {
++    expect(estimatePositionPrior([row({ shots: null })], scope).mean).toBeNull();
++    expect(() => estimatePositionPrior([row(), row()], scope)).toThrow("Duplicate");
++    expect(() => estimatePositionPrior([row({ shots: 0, goals: 1 })], { ...scope, metric: "goalsPerShot" })).toThrow();
++    expect(() => estimatePositionPrior([row({ goals: 2, assists: 1, onIceGoals: 2 })], { ...scope, metric: "pointsPerOnIceGoal" })).toThrow();
++    expect(() => estimatePositionPrior([row({ availableAt: "2026-10-09T00:00:00Z" })], scope)).toThrow("vintage");
++  });
++
++  it("fits a reproducible stat-specific k grid using held-out halves and peer training priors", () => {
++    const rows = [row({ playerId: 1, gameId: 1, shots: 6, toiSeconds: 3600 }), row({ playerId: 1, gameId: 2, shots: 12, toiSeconds: 3600 }),
++      row({ playerId: 2, gameId: 1, shots: 12, toiSeconds: 3600 }), row({ playerId: 2, gameId: 2, shots: 6, toiSeconds: 3600 })];
++    const fit = fitSplitHalfK(rows, scope, [0, 1, 10]);
++    expect(fit).toMatchObject({ status: "candidate", k: 10, boundary: true, unit: "hours", players: 2, evidence: "historical_split_half_tuning_only" });
++    if (fit.status !== "candidate") throw new Error("Expected candidate");
++    expect(fit.trials.find((trial) => trial.k === 0)?.rmse).toBe(6);
++    expect(fit.trials.find((trial) => trial.k === 1)?.rmse).toBe(3);
++    expect(fit).toEqual(fitSplitHalfK([...rows].reverse(), scope, [0, 1, 10]));
++  });
++
++  it("returns an explicit data blocker instead of a research-suggested k", () => {
++    expect(fitSplitHalfK([row()], scope, [0, 1])).toMatchObject({ status: "blocked", reason: "need_two_players_with_two_supported_games" });
++    expect(() => fitSplitHalfK([], scope, [1, 1])).toThrow();
++    expect(() => fitSplitHalfK([], scope, [0, NaN])).toThrow();
++  });
++});
+diff --git a/web/lib/projections/research/skater-candidates/priors.ts b/web/lib/projections/research/skater-candidates/priors.ts
+new file mode 100644
+index 000000000..7e052aee7
+--- /dev/null
++++ b/web/lib/projections/research/skater-candidates/priors.ts
+@@ -0,0 +1,95 @@
++import { nonNegative, shrinkRate, type Position, type Strength, type CountExposure } from "./accounting";
++
++export type PriorMetric = "shotsPer60" | "goalsPerShot" | "assistsPerOnIceGoal" | "pointsPerOnIceGoal" | "goalsPer60" | "assistsPer60";
++export type HistoricalCounts = {
++  playerId: number; gameId: number; season: string; position: Position; strength: Strength;
++  playedAt: string; availableAt: string;
++  toiSeconds: number | null; shots: number | null; goals: number | null;
++  assists: number | null; onIceGoals: number | null;
++};
++export type PriorScope = { season: string; before: string; position: Position; strength: Strength; metric: PriorMetric };
++
++/** Returns paired raw counts only. Per-game averages cannot stand in for exposures. */
++function pair(row: HistoricalCounts, metric: PriorMetric): CountExposure | null {
++  const onIceShare = metric === "assistsPerOnIceGoal" || metric === "pointsPerOnIceGoal";
++  const events = metric === "pointsPerOnIceGoal" ? row.goals === null || row.assists === null ? null : row.goals + row.assists
++    : metric === "shotsPer60" ? row.shots : metric.startsWith("goals") ? row.goals : row.assists;
++  const exposure = metric === "goalsPerShot" ? row.shots : onIceShare ? row.onIceGoals
++    : row.toiSeconds === null ? null : row.toiSeconds / 3600;
++  if (events === null || exposure === null) return null;
++  nonNegative(events, "historical events"); nonNegative(exposure, "historical exposure");
++  if (events > 0 && exposure === 0) throw new Error("Historical events without exposure");
++  if ((metric === "goalsPerShot" || onIceShare) && events > exposure) throw new Error("Historical share exceeds one");
++  return exposure > 0 ? { events, exposure } : null;
++}
++
++function select(rows: HistoricalCounts[], scope: PriorScope) {
++  const cutoff = Date.parse(scope.before);
++  if (!Number.isFinite(cutoff)) throw new Error("Invalid prior cutoff");
++  const ids = new Set<string>();
++  const selected: { row: HistoricalCounts; pair: CountExposure }[] = [];
++  const excluded = { outsideScope: 0, notAvailableBeforeCutoff: 0, missingExposure: 0 };
++  for (const row of rows) {
++    if (row.season !== scope.season || row.position !== scope.position || row.strength !== scope.strength) { excluded.outsideScope++; continue; }
++    const played = Date.parse(row.playedAt), available = Date.parse(row.availableAt);
++    if (!Number.isFinite(played) || !Number.isFinite(available) || available < played) throw new Error("Invalid historical vintage");
++    if (played >= cutoff || available >= cutoff) { excluded.notAvailableBeforeCutoff++; continue; }
++    if (!Number.isSafeInteger(row.playerId) || !Number.isSafeInteger(row.gameId)) throw new Error("Invalid historical identity");
++    const key = `${row.playerId}:${row.gameId}`;
++    if (ids.has(key)) throw new Error("Duplicate historical player-game-strength");
++    ids.add(key);
++    const counts = pair(row, scope.metric);
++    if (!counts) { excluded.missingExposure++; continue; }
++    selected.push({ row, pair: counts });
++  }
++  selected.sort((a, b) => a.row.playerId - b.row.playerId || Date.parse(a.row.playedAt) - Date.parse(b.row.playedAt) || a.row.gameId - b.row.gameId);
++  return { selected, excluded };
++}
++
++const total = (pairs: CountExposure[]): CountExposure => pairs.reduce((a, b) => ({ events: a.events + b.events, exposure: a.exposure + b.exposure }), { events: 0, exposure: 0 });
++export const priorExposureUnit = (metric: PriorMetric) => metric === "goalsPerShot" ? "shots"
++  : metric === "assistsPerOnIceGoal" || metric === "pointsPerOnIceGoal" ? "onIceGoals" : "hours";
++
++/** Season-current, strength- and position-specific empirical mean. No fallback constants. */
++export function estimatePositionPrior(rows: HistoricalCounts[], scope: PriorScope) {
++  const { selected, excluded } = select(rows, scope);
++  const counts = total(selected.map((entry) => entry.pair));
++  return { scope, unit: priorExposureUnit(scope.metric), ...counts, mean: counts.exposure > 0 ? counts.events / counts.exposure : null,
++    players: new Set(selected.map((entry) => entry.row.playerId)).size, rows: selected.length, excluded };
++}
++
++/**
++ * Deterministic alternating-game halves within the requested historical scope.
++ * Each direction's prior uses only OTHER players' training halves. The peer's
++ * held-out counts never enter the prior. k candidates are supplied, in named
++ * exposure units. This is tuning evidence, not independent predictive evidence.
++ */
++export function fitSplitHalfK(rows: HistoricalCounts[], scope: PriorScope, candidates: number[]) {
++  if (candidates.length < 2 || new Set(candidates).size !== candidates.length) throw new Error("Supply distinct k candidates");
++  candidates.forEach((k) => nonNegative(k, "k"));
++  const { selected, excluded } = select(rows, scope);
++  const players = new Map<number, CountExposure[]>();
++  for (const entry of selected) players.set(entry.row.playerId, [...(players.get(entry.row.playerId) ?? []), entry.pair]);
++  const halves = [...players.entries()].filter(([, entries]) => entries.length >= 2).map(([playerId, entries]) => ({
++    playerId, parts: [total(entries.filter((_, i) => i % 2 === 0)), total(entries.filter((_, i) => i % 2 === 1))],
++  }));
++  if (halves.length < 2) return { status: "blocked" as const, reason: "need_two_players_with_two_supported_games", excluded, unit: priorExposureUnit(scope.metric) };
++  const totals = [0, 1].map((i) => total(halves.map((player) => player.parts[i])));
++  const trials = candidates.map((k) => {
++    let squaredError = 0, error = 0, n = 0;
++    for (const player of halves) for (const direction of [0, 1]) {
++      const train = player.parts[direction], test = player.parts[1 - direction];
++      const peerExposure = totals[direction].exposure - train.exposure;
++      if (peerExposure <= 0) throw new Error("Missing peer training exposure");
++      const mean = (totals[direction].events - train.events) / peerExposure;
++      const predicted = shrinkRate(train, { mean, exposure: k })! * test.exposure;
++      const residual = predicted - test.events;
++      squaredError += residual ** 2; error += residual; n++;
++    }
++    return { k, n, bias: error / n, rmse: Math.sqrt(squaredError / n) };
++  }).sort((a, b) => a.rmse - b.rmse || a.k - b.k);
++  const k = trials[0].k;
++  return { status: "candidate" as const, scope, unit: priorExposureUnit(scope.metric), k, trials,
++    boundary: k === Math.min(...candidates) || k === Math.max(...candidates), players: halves.length, excluded,
++    evidence: "historical_split_half_tuning_only" as const };
++}
+diff --git a/web/scripts/forge-skater-candidate-ablation.ts b/web/scripts/forge-skater-candidate-ablation.ts
+new file mode 100644
+index 000000000..7cf2ef94b
+--- /dev/null
++++ b/web/scripts/forge-skater-candidate-ablation.ts
+@@ -0,0 +1,146 @@
++import { readFileSync, statSync, writeFileSync } from "node:fs";
++import { createHash } from "node:crypto";
++import { resolve } from "node:path";
++import { clusterBootstrap, summarize, type ScoredRow } from "./forge-counterfactual-backtest";
++
++export type CandidateRow = {
++  gameId: number; playerId: number; position: "F" | "D"; dressed: boolean;
++  actual: Record<string, number | null>;
++  predictions: Record<string, Record<string, number | null>>;
++};
++export type CandidateCohort = {
++  evidence: "synthetic" | "historical_reconstruction" | "frozen_holdout";
++  provenance: string;
++  baseline: string; variants: string[]; heads: string[];
++  fpWeights: Record<string, number>;
++  rows: CandidateRow[];
++};
++type PairedRow = ScoredRow & { position: "F" | "D" };
++const supported = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n >= 0;
++
++function fp(line: Record<string, number | null>, weights: Record<string, number>): number | null {
++  let result = 0;
++  for (const [head, weight] of Object.entries(weights)) {
++    if (weight === 0) continue;
++    if (!supported(line[head])) return null;
++    result += line[head]! * weight;
++  }
++  return result;
++}
++
++/** Paired support per head across ALL variants, with explicit missingness counts. */
++export function pairCandidateCohort(input: CandidateCohort) {
++  if (!input.provenance?.trim() || !["synthetic", "historical_reconstruction", "frozen_holdout"].includes(input.evidence)) throw new Error("Missing cohort provenance");
++  if (input.variants.length < 2 || new Set(input.variants).size !== input.variants.length || !input.variants.includes(input.baseline)) throw new Error("Invalid candidate variants");
++  if (!input.heads.length || input.heads.includes("FP") || new Set(input.heads).size !== input.heads.length) throw new Error("Invalid candidate heads");
++  if (!Object.keys(input.fpWeights).length || !Object.values(input.fpWeights).some((weight) => weight > 0)
++    || Object.entries(input.fpWeights).some(([head, weight]) => !input.heads.includes(head) || !supported(weight))) throw new Error("Invalid FP weights");
++  const heads = [...input.heads, "FP"];
++  const excluded: Record<string, number> = { notDressed: 0 };
++  const rows: PairedRow[] = [];
++  const keys = new Set<string>();
++  for (const source of input.rows) {
++    if (!Number.isSafeInteger(source.gameId) || !Number.isSafeInteger(source.playerId) || !["F", "D"].includes(source.position)) throw new Error("Invalid candidate identity or position");
++    const key = `${source.gameId}:${source.playerId}`;
++    if (keys.has(key)) throw new Error("Duplicate candidate player-game");
++    keys.add(key);
++    if (source.dressed !== true) { excluded.notDressed++; continue; }
++    const actual: Record<string, number | null> = { ...source.actual, FP: fp(source.actual, input.fpWeights) };
++    const predictions: Record<string, Record<string, number | null>> = Object.fromEntries(input.variants.map((variant) => {
++      const line = source.predictions[variant] ?? {};
++      return [variant, { ...line, FP: fp(line, input.fpWeights) }];
++    }));
++    const eligible = heads.filter((head) => {
++      const ok = supported(actual[head]) && input.variants.every((variant) => supported(predictions[variant][head]));
++      if (!ok) excluded[head] = (excluded[head] ?? 0) + 1;
++      return ok;
++    });
++    rows.push({ gameId: source.gameId, playerId: source.playerId, position: source.position, heads: eligible,
++      actual: actual as Record<string, number>, preds: predictions as Record<string, Record<string, number>> });
++  }
++  return { rows, heads, excluded };
++}
++
++function metrics(rows: PairedRow[], variant: string, head: string) {
++  const use = rows.filter((row) => row.heads.includes(head));
++  const summary = summarize(use, variant, head);
++  const xMean = summary.n ? summary.sumPred / summary.n : 0;
++  const yMean = summary.n ? summary.sumActual / summary.n : 0;
++  const variance = use.reduce((sum, row) => sum + (row.preds[variant][head] - xMean) ** 2, 0);
++  const covariance = use.reduce((sum, row) => sum + (row.preds[variant][head] - xMean) * (row.actual[head] - yMean), 0);
++  const slope = use.length >= 2 && variance > 0 ? covariance / variance : null;
++  return { n: summary.n, bias: summary.n ? summary.bias : null, rmse: summary.n ? summary.rmse : null,
++    sumActual: summary.sumActual, sumPredicted: summary.sumPred,
++    actualOverPredicted: summary.sumPred > 0 ? summary.sumActual / summary.sumPred : null,
++    mzSlope: slope, mzIntercept: slope === null ? null : yMean - slope * xMean };
++}
++
++/** Forecast-only ranks, fixed across variants; ID tie-break makes file order irrelevant. */
++function deciles(rows: PairedRow[], baseline: string, rankHead: string) {
++  const sorted = rows.filter((row) => row.heads.includes(rankHead)).sort((a, b) =>
++    a.preds[baseline][rankHead] - b.preds[baseline][rankHead] || a.gameId - b.gameId || a.playerId - b.playerId);
++  return Array.from({ length: 10 }, (_, bin) => sorted.filter((_, i) => Math.ceil((i + 1) * 10 / sorted.length) === bin + 1));
++}
++
++export function scoreCandidateCohort(input: CandidateCohort, reps = 2000) {
++  if (!Number.isSafeInteger(reps) || reps < 1 || reps > 10000) throw new Error("Invalid bootstrap repetitions");
++  const { rows, heads, excluded } = pairCandidateCohort(input);
++  const groups = (["all", "F", "D"] as const).map((position) => {
++    const group = rows.filter((row) => position === "all" || row.position === position);
++    const stats = heads.map((head) => {
++      const use = group.filter((row) => row.heads.includes(head));
++      const headBins = deciles(use, input.baseline, head), fpBins = deciles(group, input.baseline, "FP");
++      return { head, variants: input.variants.map((variant) => ({ variant, ...metrics(use, variant, head),
++        byOwnHeadDecile: deciles(use, variant, head).map((bin, i) => ({ decile: i + 1, ...metrics(bin, variant, head) })),
++        byBaselineHeadDecile: headBins.map((bin, i) => ({ decile: i + 1, ...metrics(bin, variant, head) })),
++        byBaselineFpDecile: fpBins.map((bin, i) => ({ decile: i + 1, ...metrics(bin, variant, head) })),
++        deltaVsBaseline: variant === input.baseline || !use.length ? null : clusterBootstrap(
++          use.map((row) => ({ ...row, preds: { baseline: row.preds[input.baseline], candidate: row.preds[variant] } })), "candidate", head, 1, reps),
++      })) };
++    });
++    return { position, rows: group.length, games: new Set(group.map((row) => row.gameId)).size, stats };
++  });
++  return { evidence: input.evidence, provenance: input.provenance, baseline: input.baseline, variants: input.variants,
++    fpWeights: input.fpWeights, excluded, groups, bootstrap: { seed: 1, reps, unit: "game" },
++    deciles: "Ascending forecast ranks within each position group; fixed baseline head/FP ranks for paired comparisons plus own-head ranks for calibration. Never outcome ranks.",
++    qualification: "Unqualified candidate diagnostics; no automatic release or predictive-skill acceptance. MZ is descriptive without standard errors." };
++}
++
++type AuditRow = {
++  game_id: number; player_id: number; pos: string; actual: Record<string, number | null>;
++  proj: Record<string, Record<string, number | boolean | null>>;
++};
++const AUDIT_SHA256 = "f315992bd0e789b1a6da6e315e3031ef164248a13d2b290e287cb10940a6303b";
++
++/** Adapter for the exact recorded dressed-only audit extract; never fit on these actuals. */
++export function fromHistoricalAudit(bytes: Buffer): CandidateCohort {
++  if (createHash("sha256").update(new Uint8Array(bytes)).digest("hex") !== AUDIT_SHA256) throw new Error("Historical audit hash mismatch");
++  const source = JSON.parse(bytes.toString("utf8")) as AuditRow[];
++  return { evidence: "historical_reconstruction", provenance: `2026-10-21 pre-R19 a/b/a0/b0, reconstructed later; sha256:${AUDIT_SHA256}`,
++    baseline: "a", variants: ["a", "b", "a0", "b0"], heads: ["G", "A", "PPP", "SOG", "HIT", "BLK"],
++    fpWeights: { G: 3, A: 2, PPP: 1, SOG: 0.2, HIT: 0.2, BLK: 0.25 },
++    rows: source.map((row) => ({ gameId: row.game_id, playerId: row.player_id,
++      position: row.pos === "D" ? "D" : ["F", "C", "L", "R", "LW", "RW"].includes(row.pos) ? "F" : (() => { throw new Error("Unknown audit position"); })(),
++      dressed: true, actual: row.actual, predictions: Object.fromEntries(Object.entries(row.proj).map(([variant, line]) => {
++        const sum = (...keys: string[]) => keys.every((key) => supported(line[key])) ? keys.reduce((s, key) => s + (line[key] as number), 0) : null;
++        return [variant, { G: sum("proj_goals_es", "proj_goals_pp"), A: sum("proj_assists_es", "proj_assists_pp"),
++          PPP: sum("proj_goals_pp", "proj_assists_pp"), SOG: sum("proj_shots_es", "proj_shots_pp"), HIT: sum("proj_hits"), BLK: sum("proj_blocks") }];
++      })) })) };
++}
++
++export function runCandidateAblation(argv: string[]) {
++  if (argv.length !== 4 || !["--historical-audit", "--cohort"].includes(argv[0]) || argv[2] !== "--output") throw new Error("Usage: --historical-audit|--cohort INPUT --output OUTPUT");
++  const path = resolve(argv[1]), output = resolve(argv[3]);
++  if (path === output) throw new Error("Refusing to overwrite input");
++  if (statSync(path).size > 64 * 1024 * 1024) throw new Error("Input exceeds 64 MiB");
++  const bytes = readFileSync(path);
++  const cohort = argv[0] === "--historical-audit" ? fromHistoricalAudit(bytes) : JSON.parse(bytes.toString("utf8")) as CandidateCohort;
++  const result = { inputSha256: createHash("sha256").update(new Uint8Array(bytes)).digest("hex"), ...scoreCandidateCohort(cohort) };
++  writeFileSync(output, `${JSON.stringify(result, null, 2)}\n`, { flag: "wx" });
++  return result;
++}
++
++if (require.main === module) {
++  try { const result = runCandidateAblation(process.argv.slice(2)); console.log(JSON.stringify({ evidence: result.evidence, groups: result.groups.map(({ position, rows, games }) => ({ position, rows, games })) })); }
++  catch (error) { console.error(error instanceof Error ? error.message : String(error)); process.exitCode = 1; }
++}
+diff --git a/web/scripts/forge-skater-candidate-ablation.test.ts b/web/scripts/forge-skater-candidate-ablation.test.ts
+new file mode 100644
+index 000000000..43eefdada
+--- /dev/null
++++ b/web/scripts/forge-skater-candidate-ablation.test.ts
+@@ -0,0 +1,91 @@
++// @vitest-environment node
++import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import { afterEach, describe, expect, it } from "vitest";
++import { fromHistoricalAudit, pairCandidateCohort, runCandidateAblation, scoreCandidateCohort, type CandidateCohort } from "./forge-skater-candidate-ablation";
++
++const dirs: string[] = [];
++afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
++function cohort(): CandidateCohort {
++  return { evidence: "synthetic", provenance: "hand-computed mechanical fixture; no predictive evidence", baseline: "base", variants: ["base", "candidate"],
++    heads: ["G", "A"], fpWeights: { G: 3, A: 2 }, rows: Array.from({ length: 20 }, (_, i) => ({
++      gameId: i + 1, playerId: i + 1, dressed: true, position: i < 10 ? "F" : "D",
++      actual: { G: 2 * (i + 1) + 1, A: 1 },
++      predictions: { base: { G: i + 1, A: 1 }, candidate: { G: 2 * (i + 1) + 1, A: 1 } },
++    })) };
++}
++
++describe("offline skater ablation scorer", () => {
++  it("reports paired bias/RMSE, ratio, descriptive MZ and fixed forecast deciles by F/D/head", () => {
++    const report = scoreCandidateCohort(cohort(), 40);
++    const g = report.groups[0].stats.find((stat) => stat.head === "G")!;
++    expect(g.variants[0]).toMatchObject({ n: 20, bias: -11.5, mzSlope: 2, mzIntercept: 1, sumActual: 440, sumPredicted: 210 });
++    expect(g.variants[1]).toMatchObject({ n: 20, rmse: 0, bias: 0, actualOverPredicted: 1 });
++    expect(g.variants[0].byBaselineHeadDecile[9]).toMatchObject({ n: 2, sumPredicted: 39, sumActual: 80 });
++    expect(g.variants[1].byBaselineHeadDecile[9]).toMatchObject({ n: 2, sumPredicted: 80, sumActual: 80 });
++    expect(report.groups.map((group) => [group.position, group.rows])).toEqual([["all", 20], ["F", 10], ["D", 10]]);
++    expect(g.variants[1].deltaVsBaseline?.dRmse).toBeLessThan(0);
++  });
++
++  it("withholds a missing head from all variants and withholds partial FP", () => {
++    const input = cohort();
++    input.rows[0].predictions.candidate.A = null;
++    input.rows[1].dressed = false;
++    const paired = pairCandidateCohort(input);
++    expect(paired.excluded).toEqual({ notDressed: 1, A: 1, FP: 1 });
++    expect(paired.rows[0].heads).toEqual(["G"]);
++    const a = scoreCandidateCohort(input, 2).groups[0].stats.find((stat) => stat.head === "A")!;
++    expect(a.variants.map((variant) => variant.n)).toEqual([18, 18]);
++  });
++
++  it("bins on predictions rather than observed outcomes and ignores input ordering", () => {
++    const first = cohort(), changed = cohort();
++    changed.rows.forEach((row, i) => { row.actual.G = 40 - i; });
++    changed.rows.reverse();
++    const bins = (input: CandidateCohort) => scoreCandidateCohort(input, 2).groups[0].stats[0].variants[0].byBaselineHeadDecile;
++    expect(bins(first).map((bin) => bin.sumPredicted)).toEqual(bins(changed).map((bin) => bin.sumPredicted));
++    expect(scoreCandidateCohort(first, 2)).toEqual(scoreCandidateCohort({ ...first, rows: [...first.rows].reverse() }, 2));
++  });
++
++  it("also exposes each candidate's own top forecast decile instead of hiding rank changes", () => {
++    const input = cohort();
++    input.rows.forEach((row, i) => { row.predictions.candidate.G = 20 - i; });
++    const candidate = scoreCandidateCohort(input, 2).groups[0].stats[0].variants[1];
++    expect(candidate.byOwnHeadDecile[9]).toMatchObject({ n: 2, sumPredicted: 39, sumActual: 8 });
++    expect(candidate.byBaselineHeadDecile[9]).toMatchObject({ n: 2, sumPredicted: 3, sumActual: 80 });
++  });
++
++  it("keeps FP ranks common across heads and does not treat a zero denominator as calibration", () => {
++    const input = cohort();
++    input.fpWeights = { G: 3, A: 0 };
++    input.rows[19].predictions.candidate.A = null;
++    const report = scoreCandidateCohort(input, 2);
++    const a = report.groups[0].stats.find((stat) => stat.head === "A")!.variants[0];
++    expect(a.byBaselineFpDecile[9].n).toBe(1);
++    const zeros = cohort();
++    zeros.rows.forEach((row) => { row.predictions.base.A = 0; });
++    const zeroA = scoreCandidateCohort(zeros, 2).groups[0].stats.find((stat) => stat.head === "A")!.variants[0];
++    expect(zeroA.actualOverPredicted).toBeNull(); expect(zeroA.mzSlope).toBeNull();
++  });
++
++  it("rejects duplicate identities, incomplete metadata and wrong frozen-extract hashes", () => {
++    const input = cohort();
++    input.rows.push(input.rows[0]);
++    expect(() => pairCandidateCohort(input)).toThrow("Duplicate");
++    expect(() => pairCandidateCohort({ ...cohort(), baseline: "absent" })).toThrow();
++    expect(() => pairCandidateCohort({ ...cohort(), provenance: "" })).toThrow();
++    expect(() => fromHistoricalAudit(Buffer.from("[]"))).toThrow("hash mismatch");
++  });
++
++  it("executes a local-only CLI with hashed inputs and refuses input/output replacement", () => {
++    const dir = mkdtempSync(join(tmpdir(), "forge-skater-candidate-")); dirs.push(dir);
++    const input = join(dir, "cohort.json"), output = join(dir, "report.json");
++    writeFileSync(input, JSON.stringify(cohort()));
++    const result = runCandidateAblation(["--cohort", input, "--output", output]);
++    expect(result.inputSha256).toMatch(/^[a-f0-9]{64}$/);
++    expect(JSON.parse(readFileSync(output, "utf8"))).toMatchObject({ evidence: "synthetic" });
++    expect(() => runCandidateAblation(["--cohort", input, "--output", input])).toThrow("overwrite");
++    expect(() => runCandidateAblation(["--cohort", input, "--output", output])).toThrow("EEXIST");
++  });
++});
+diff --git a/web/scripts/forge-assist-export.ts b/web/scripts/forge-assist-export.ts
+new file mode 100644
+index 000000000..499300a26
+--- /dev/null
++++ b/web/scripts/forge-assist-export.ts
+@@ -0,0 +1,112 @@
++import { createHash } from "node:crypto";
++import { readFileSync, statSync, writeFileSync } from "node:fs";
++import { resolve } from "node:path";
++import { estimatePositionPrior, type HistoricalCounts } from "../lib/projections/research/skater-candidates/priors";
++
++export const ASSIST_EXPORT_SCOPE = {
++  schema: "forge-assist-pilot-v1", projectRef: "fyhftlxokyjtpndbkfse", season: 20262027,
++  fromInclusive: "2026-10-01", toExclusive: "2026-10-22", rowLimit: 10000, maxBytes: 16 * 1024 * 1024,
++} as const;
++
++type Json = Record<string, unknown>;
++function object(value: unknown, fields: string[], label: string): Json {
++  if (typeof value !== "object" || value === null || Array.isArray(value)) throw new Error(`Invalid ${label}`);
++  const row = value as Json;
++  if (Object.keys(row).some((key) => !fields.includes(key)) || fields.some((key) => !(key in row))) throw new Error(`Unexpected or missing ${label} fields`);
++  return row;
++}
++const count = (value: unknown): value is number => typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
++const id = (value: unknown): value is number => count(value) && value > 0;
++function date(value: unknown): value is string {
++  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
++    && Number.isFinite(Date.parse(value)) && new Date(value).toISOString().slice(0, 10) === value;
++}
++function timestamp(value: unknown): value is string {
++  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}T.+(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value));
++}
++const individualFields = ["id", "playerId", "season", "date", "gp", "toiSeconds", "goals", "assists", "points"];
++const onIceFields = ["id", "playerId", "season", "date", "gp", "toiSeconds", "goalsFor"];
++
++/** Current exports are known available at acquisition, never at their historical game time. */
++export function validateAssistExport(input: unknown) {
++  const envelope = object(input, ["schema", "projectRef", "season", "fromInclusive", "toExclusive", "rowLimit", "exportedAt", "evidence", "canonicalRowCount", "truncated", "rows"], "envelope");
++  for (const key of ["schema", "season", "fromInclusive", "toExclusive", "rowLimit"] as const) {
++    if (envelope[key] !== ASSIST_EXPORT_SCOPE[key]) throw new Error(`Export scope mismatch: ${key}`);
++  }
++  if (!["synthetic", "current_snapshot_not_historical_asof"].includes(String(envelope.evidence))) throw new Error("Unsupported export evidence");
++  if (envelope.projectRef !== (envelope.evidence === "synthetic" ? "synthetic" : ASSIST_EXPORT_SCOPE.projectRef)) throw new Error("Export target mismatch");
++  if (!timestamp(envelope.exportedAt) || envelope.exportedAt.slice(0, 10) < ASSIST_EXPORT_SCOPE.toExclusive) throw new Error("Invalid acquisition timestamp");
++  if (envelope.truncated !== false) throw new Error("Truncated export cannot be fitted");
++  if (!Array.isArray(envelope.rows) || envelope.rows.length > ASSIST_EXPORT_SCOPE.rowLimit || envelope.canonicalRowCount !== envelope.rows.length) throw new Error("Export row count/cap mismatch");
++  const acquiredAt = new Date(envelope.exportedAt).toISOString();
++  const normalized: HistoricalCounts[] = [];
++  const excluded: Record<string, number> = {};
++  const seenWgo = new Set<number>(), seenEvents = new Set<string>(), seenSources = new Set<string>();
++  const reject = (reason: string, by = 1) => { excluded[reason] = (excluded[reason] ?? 0) + by; };
++  let zeroOnIceGoals = 0;
++  for (const value of envelope.rows) {
++    const row = object(value, ["wgoId", "playerId", "gameId", "date", "season", "position", "gamesPlayed", "canonicalDate", "canonicalSeason", "gameType", "gameStart", "ES", "PP"], "player-game");
++    if (!id(row.wgoId) || seenWgo.has(row.wgoId)) throw new Error("Invalid/duplicate WGO identity");
++    seenWgo.add(row.wgoId);
++    if (!id(row.playerId) || !date(row.date) || row.date < ASSIST_EXPORT_SCOPE.fromInclusive || row.date >= ASSIST_EXPORT_SCOPE.toExclusive || row.season !== ASSIST_EXPORT_SCOPE.season || row.gamesPlayed !== 1) throw new Error("Out-of-scope WGO row");
++    if (!id(row.gameId) || row.canonicalDate !== row.date || row.canonicalSeason !== row.season || !timestamp(row.gameStart)
++      || Date.parse(row.gameStart) >= Date.parse(acquiredAt)) { reject("unmatched_canonical_game", 2); continue; }
++    if (row.gameType !== 2) { reject("not_regular_season", 2); continue; }
++    const event = `${row.playerId}:${row.gameId}`;
++    if (seenEvents.has(event)) throw new Error("Duplicate player-game; no arbitrary row selection");
++    seenEvents.add(event);
++    const position = row.position === "D" ? "D" : ["C", "L", "R", "F", "LW", "RW"].includes(String(row.position)) ? "F" : null;
++    if (!position) { reject("unknown_position", 2); continue; }
++    for (const strength of ["ES", "PP"] as const) {
++      const sources = object(row[strength], ["individual", "onIce"], "strength sources");
++      if (!Array.isArray(sources.individual) || !Array.isArray(sources.onIce) || sources.individual.length > 2 || sources.onIce.length > 2) throw new Error("Source sentinel/cap mismatch");
++      // Validate allowlists even for duplicate-source sentinels; don't echo private fields.
++      const individuals = sources.individual.map((source) => object(source, individualFields, "individual source"));
++      const onIce = sources.onIce.map((source) => object(source, onIceFields, "on-ice source"));
++      if (individuals.length !== 1 || onIce.length !== 1) { reject(individuals.length > 1 || onIce.length > 1 ? "ambiguous_source_pair" : "missing_source_pair"); continue; }
++      const individual = individuals[0], oi = onIce[0];
++      if (![individual, oi].every((source) => id(source.id) && source.playerId === row.playerId && source.season === row.season && source.date === row.date)) { reject("mismatched_source_identity"); continue; }
++      for (const [kind, source] of [["individual", individual], ["onIce", oi]] as const) {
++        const key = `${strength}:${kind}:${source.id}`;
++        if (seenSources.has(key)) throw new Error("Reused source identity");
++        seenSources.add(key);
++      }
++      if (individual.gp !== 1 || oi.gp !== 1) { reject("non_single_game_source"); continue; }
++      if (![individual.toiSeconds, oi.toiSeconds, individual.goals, individual.assists, individual.points, oi.goalsFor].every(count)) { reject("missing_or_invalid_count_exposure"); continue; }
++      const goals = individual.goals as number, assists = individual.assists as number, points = individual.points as number;
++      const onIceGoals = oi.goalsFor as number, toiSeconds = individual.toiSeconds as number;
++      if (individual.toiSeconds !== oi.toiSeconds) { reject("strength_exposure_mismatch"); continue; }
++      if (goals + assists !== points || points > onIceGoals || (toiSeconds === 0 && (points > 0 || onIceGoals > 0))) { reject("inconsistent_point_accounting"); continue; }
++      if (onIceGoals === 0) zeroOnIceGoals++;
++      normalized.push({ playerId: row.playerId, gameId: row.gameId, season: String(row.season), position, strength,
++        playedAt: row.gameStart, availableAt: acquiredAt, toiSeconds, goals, assists, onIceGoals, shots: null });
++    }
++  }
++  // An explicit current-acquisition cutoff for descriptive pilot fitting only.
++  const before = new Date(Date.parse(acquiredAt) + 1).toISOString();
++  const priors = (["F", "D"] as const).flatMap((position) => (["ES", "PP"] as const).flatMap((strength) =>
++    (["assistsPerOnIceGoal", "pointsPerOnIceGoal"] as const).map((metric) => estimatePositionPrior(normalized,
++      { season: String(ASSIST_EXPORT_SCOPE.season), position, strength, metric, before }))));
++  return { schema: "forge-assist-validated-v1", evidence: envelope.evidence, acquiredAt,
++    availabilityPolicy: "Conservative acquisition timestamp; source created_at is not historical value availability.",
++    eventBinding: "NST player/date/season joined to canonical WGO game; not independent NST event identity or finality proof.",
++    canonicalRows: envelope.rows.length, expectedStrengthRows: envelope.rows.length * 2, acceptedStrengthRows: normalized.length,
++    excluded, zeroOnIceGoals, normalized, descriptivePriors: priors,
++    historicalAsOfQualified: false, coefficientsFitted: false, releaseQualified: false };
++}
++
++/** No network, environment, Supabase client, automatic fitting or database access. */
++export function runAssistExportValidation(argv: string[]) {
++  if (argv.length !== 4 || argv[0] !== "--input" || argv[2] !== "--output") throw new Error("Usage: --input EXPORT.json --output VALIDATED.json");
++  const input = resolve(argv[1]), output = resolve(argv[3]);
++  if (input === output) throw new Error("Refusing to overwrite input");
++  if (statSync(input).size > ASSIST_EXPORT_SCOPE.maxBytes) throw new Error("Export exceeds 16 MiB");
++  const bytes = readFileSync(input);
++  const result = { inputSha256: createHash("sha256").update(new Uint8Array(bytes)).digest("hex"), ...validateAssistExport(JSON.parse(bytes.toString("utf8"))) };
++  writeFileSync(output, JSON.stringify(result, null, 2) + "\n", { flag: "wx" });
++  return result;
++}
++if (require.main === module) {
++  try { const result = runAssistExportValidation(process.argv.slice(2)); console.log(JSON.stringify({ accepted: result.acceptedStrengthRows, excluded: result.excluded, evidence: result.evidence })); }
++  catch (error) { console.error(error instanceof Error ? error.message : String(error)); process.exitCode = 1; }
++}
+diff --git a/web/scripts/forge-assist-export.test.ts b/web/scripts/forge-assist-export.test.ts
+new file mode 100644
+index 000000000..8585d2777
+--- /dev/null
++++ b/web/scripts/forge-assist-export.test.ts
+@@ -0,0 +1,91 @@
++// @vitest-environment node
++import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
++import { tmpdir } from "node:os";
++import { join } from "node:path";
++import { afterEach, describe, expect, it } from "vitest";
++import { ASSIST_EXPORT_SCOPE, runAssistExportValidation, validateAssistExport } from "./forge-assist-export";
++
++const dirs: string[] = [];
++afterEach(() => { for (const dir of dirs.splice(0)) rmSync(dir, { recursive: true, force: true }); });
++function fixture() {
++  const source = { id: 1, playerId: 10, season: 20262027, date: "2026-10-10", gp: 1, toiSeconds: 600 };
++  const individual = { ...source, goals: 1 as number | null, assists: 1 as number | null, points: 2 as number | null };
++  const onIce = { ...source, goalsFor: 3 as number | null };
++  return {
++    schema: ASSIST_EXPORT_SCOPE.schema, projectRef: "synthetic", season: ASSIST_EXPORT_SCOPE.season,
++    fromInclusive: ASSIST_EXPORT_SCOPE.fromInclusive, toExclusive: ASSIST_EXPORT_SCOPE.toExclusive,
++    rowLimit: ASSIST_EXPORT_SCOPE.rowLimit, exportedAt: "2026-10-22T12:00:00+00:00", evidence: "synthetic",
++    canonicalRowCount: 1, truncated: false,
++    rows: [{ wgoId: 1, playerId: 10, gameId: 2026020001, date: "2026-10-10", season: 20262027,
++      position: "D", gamesPlayed: 1, canonicalDate: "2026-10-10", canonicalSeason: 20262027, gameType: 2,
++      gameStart: "2026-10-10T23:00:00Z", ES: { individual: [{ ...individual }], onIce: [{ ...onIce }] },
++      PP: { individual: [{ ...individual, toiSeconds: 60 }], onIce: [{ ...onIce, toiSeconds: 60 }] } }],
++  };
++}
++
++describe("bounded task3 local export validator", () => {
++  it("extracts paired ES/PP histories with conservative acquisition availability and descriptive IPP", () => {
++    const result = validateAssistExport(fixture());
++    expect(result).toMatchObject({ canonicalRows: 1, expectedStrengthRows: 2, acceptedStrengthRows: 2, excluded: {},
++      historicalAsOfQualified: false, coefficientsFitted: false, releaseQualified: false, evidence: "synthetic" });
++    expect(result.normalized[0]).toMatchObject({ goals: 1, assists: 1, onIceGoals: 3, toiSeconds: 600, shots: null,
++      availableAt: "2026-10-22T12:00:00.000Z", playedAt: "2026-10-10T23:00:00Z", position: "D", strength: "ES" });
++    const ipp = result.descriptivePriors.find((prior) => prior.scope.position === "D" && prior.scope.strength === "ES" && prior.scope.metric === "pointsPerOnIceGoal")!;
++    expect(ipp.mean).toBeCloseTo(2 / 3);
++    expect(result.descriptivePriors.find((prior) => prior.scope.position === "F")!.mean).toBeNull();
++  });
++
++  it("distinguishes missing counts with positive exposure from an observed zero", () => {
++    const missing = fixture(); missing.rows[0].ES.individual[0].assists = null;
++    expect(validateAssistExport(missing)).toMatchObject({ acceptedStrengthRows: 1, excluded: { missing_or_invalid_count_exposure: 1 } });
++    const zero = fixture(); Object.assign(zero.rows[0].ES.individual[0], { assists: 0, points: 1 });
++    expect(validateAssistExport(zero).normalized[0].assists).toBe(0);
++  });
++
++  it.each([
++    ["strength_exposure_mismatch", (f: ReturnType<typeof fixture>) => { f.rows[0].ES.onIce[0].toiSeconds = 601; }],
++    ["inconsistent_point_accounting", (f: ReturnType<typeof fixture>) => { f.rows[0].ES.onIce[0].goalsFor = 1; }],
++    ["missing_or_invalid_count_exposure", (f: ReturnType<typeof fixture>) => { f.rows[0].ES.onIce[0].goalsFor = 2.5; }],
++    ["non_single_game_source", (f: ReturnType<typeof fixture>) => { f.rows[0].ES.individual[0].gp = 3; }],
++    ["mismatched_source_identity", (f: ReturnType<typeof fixture>) => { f.rows[0].ES.onIce[0].date = "2026-10-09"; }],
++  ] as const)("excludes %s without correcting or fabricating source counts", (reason, change) => {
++    const input = fixture(); change(input);
++    expect(validateAssistExport(input)).toMatchObject({ acceptedStrengthRows: 1, excluded: { [reason]: 1 } });
++  });
++
++  it("reports absent/ambiguous source pairs and rejects duplicated canonical identities", () => {
++    const input = fixture(); input.rows[0].ES.individual.push({ ...input.rows[0].ES.individual[0], id: 2 });
++    input.rows[0].PP.onIce = [];
++    expect(validateAssistExport(input)).toMatchObject({ acceptedStrengthRows: 0, excluded: { ambiguous_source_pair: 1, missing_source_pair: 1 } });
++    const duplicate = fixture(); duplicate.rows.push({ ...duplicate.rows[0], wgoId: 2 }); duplicate.canonicalRowCount = 2;
++    expect(() => validateAssistExport(duplicate)).toThrow("Duplicate player-game");
++  });
++
++  it("fails closed on a truncated/mis-scoped/mislabeled export or extra private fields", () => {
++    expect(() => validateAssistExport({ ...fixture(), truncated: true })).toThrow("Truncated");
++    expect(() => validateAssistExport({ ...fixture(), canonicalRowCount: 2 })).toThrow("row count");
++    expect(() => validateAssistExport({ ...fixture(), fromInclusive: "2023-10-10" })).toThrow("scope");
++    expect(() => validateAssistExport({ ...fixture(), evidence: "historical_asof" })).toThrow("evidence");
++    expect(() => validateAssistExport({ ...fixture(), projectRef: ASSIST_EXPORT_SCOPE.projectRef })).toThrow("target");
++    const privateField = fixture(); Object.assign(privateField.rows[0].ES.individual[0], { email: "excluded@example.invalid" });
++    expect(() => validateAssistExport(privateField)).toThrow("fields");
++  });
++
++  it("excludes noncanonical and nonregular events rather than forcing a source-date join", () => {
++    const input = fixture(); input.rows[0].canonicalDate = "2026-10-11";
++    expect(validateAssistExport(input)).toMatchObject({ acceptedStrengthRows: 0, excluded: { unmatched_canonical_game: 2 } });
++    const playoff = fixture(); playoff.rows[0].gameType = 3;
++    expect(validateAssistExport(playoff)).toMatchObject({ acceptedStrengthRows: 0, excluded: { not_regular_season: 2 } });
++  });
++
++  it("runs from a local JSON file, hashes exact bytes and refuses evidence replacement", () => {
++    const directory = mkdtempSync(join(tmpdir(), "forge-assist-export-")); dirs.push(directory);
++    const input = join(directory, "synthetic.json"), output = join(directory, "validated.json");
++    writeFileSync(input, JSON.stringify(fixture()));
++    const result = runAssistExportValidation(["--input", input, "--output", output]);
++    expect(result.inputSha256).toMatch(/^[a-f0-9]{64}$/);
++    expect(JSON.parse(readFileSync(output, "utf8")).acceptedStrengthRows).toBe(2);
++    expect(() => runAssistExportValidation(["--input", input, "--output", output])).toThrow("EEXIST");
++    expect(() => runAssistExportValidation(["--input", input, "--output", input])).toThrow("overwrite");
++  });
++});
+diff --git a/tasks/artifacts/forge-skater-candidates-2026-10-22/task3-pilot-export.sql b/tasks/artifacts/forge-skater-candidates-2026-10-22/task3-pilot-export.sql
+new file mode 100644
+index 000000000..cbba10828
+--- /dev/null
++++ b/tasks/artifacts/forge-skater-candidates-2026-10-22/task3-pilot-export.sql
+@@ -0,0 +1,86 @@
++-- PROPOSAL ONLY. Do not execute without TJ's separate approval for this exact pilot.
++-- Target: FHFH production project fyhftlxokyjtpndbkfse, public schema.
++-- One read-only snapshot, one SELECT, one attempt, no automatic retry/pagination.
++-- Dates [2026-10-01, 2026-10-22); season 20262027; <=10000 WGO identities.
++-- No names, birthdays, accounts, credentials, league/roster data or write endpoints.
++BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY;
++SET LOCAL statement_timeout = '15s';
++SET LOCAL lock_timeout = '1s';
++SET LOCAL idle_in_transaction_session_timeout = '20s';
++SET LOCAL max_parallel_workers_per_gather = 0;
++
++WITH canonical AS MATERIALIZED (
++  SELECT w.id AS wgo_id, w.player_id, w.game_id, w.date, w.season_id,
++    w.position_code, w.games_played, g.date AS canonical_date,
++    g."seasonId" AS canonical_season, g.type AS game_type, g."startTime" AS game_start
++  FROM public.wgo_skater_stats w
++  LEFT JOIN public.games g ON g.id = w.game_id
++  WHERE w.date >= DATE '2026-10-01' AND w.date < DATE '2026-10-22'
++    AND w.season_id = 20262027 AND w.games_played = 1
++  ORDER BY w.date, w.game_id, w.player_id, w.id
++  LIMIT 10001 -- sentinel: do not silently fit a truncated universe
++), exported_rows AS (
++  SELECT c.*, es_ind.rows AS es_ind, es_oi.rows AS es_oi,
++    pp_ind.rows AS pp_ind, pp_oi.rows AS pp_oi
++  FROM canonical c
++  LEFT JOIN LATERAL (
++    SELECT COALESCE(jsonb_agg(jsonb_build_object('id', s.id, 'playerId', s.player_id,
++      'season', s.season, 'date', s.date_scraped, 'gp', s.gp, 'toiSeconds', s.toi,
++      'goals', s.goals, 'assists', s.total_assists, 'points', s.total_points) ORDER BY s.id), '[]'::jsonb) AS rows
++    FROM (SELECT id, player_id, season, date_scraped, gp, toi, goals, total_assists, total_points
++      FROM public.nst_gamelog_es_counts
++      WHERE player_id = c.player_id AND date_scraped = c.date AND season = c.season_id
++      ORDER BY id LIMIT 2) s
++  ) es_ind ON true
++  LEFT JOIN LATERAL (
++    SELECT COALESCE(jsonb_agg(jsonb_build_object('id', s.id, 'playerId', s.player_id,
++      'season', s.season, 'date', s.date_scraped, 'gp', s.gp, 'toiSeconds', s.toi,
++      'goalsFor', s.gf) ORDER BY s.id), '[]'::jsonb) AS rows
++    FROM (SELECT id, player_id, season, date_scraped, gp, toi, gf
++      FROM public.nst_gamelog_es_counts_oi
++      WHERE player_id = c.player_id AND date_scraped = c.date AND season = c.season_id
++      ORDER BY id LIMIT 2) s
++  ) es_oi ON true
++  LEFT JOIN LATERAL (
++    SELECT COALESCE(jsonb_agg(jsonb_build_object('id', s.id, 'playerId', s.player_id,
++      'season', s.season, 'date', s.date_scraped, 'gp', s.gp, 'toiSeconds', s.toi,
++      'goals', s.goals, 'assists', s.total_assists, 'points', s.total_points) ORDER BY s.id), '[]'::jsonb) AS rows
++    FROM (SELECT id, player_id, season, date_scraped, gp, toi, goals, total_assists, total_points
++      FROM public.nst_gamelog_pp_counts
++      WHERE player_id = c.player_id AND date_scraped = c.date AND season = c.season_id
++      ORDER BY id LIMIT 2) s
++  ) pp_ind ON true
++  LEFT JOIN LATERAL (
++    SELECT COALESCE(jsonb_agg(jsonb_build_object('id', s.id, 'playerId', s.player_id,
++      'season', s.season, 'date', s.date_scraped, 'gp', s.gp, 'toiSeconds', s.toi,
++      'goalsFor', s.gf) ORDER BY s.id), '[]'::jsonb) AS rows
++    FROM (SELECT id, player_id, season, date_scraped, gp, toi, gf
++      FROM public.nst_gamelog_pp_counts_oi
++      WHERE player_id = c.player_id AND date_scraped = c.date AND season = c.season_id
++      ORDER BY id LIMIT 2) s
++  ) pp_oi ON true
++  WHERE (SELECT count(*) FROM canonical) <= 10000
++), payload AS (
++  SELECT jsonb_build_object(
++    'schema', 'forge-assist-pilot-v1', 'projectRef', 'fyhftlxokyjtpndbkfse',
++    'season', 20262027, 'fromInclusive', '2026-10-01', 'toExclusive', '2026-10-22',
++    'rowLimit', 10000, 'exportedAt', transaction_timestamp(),
++    'evidence', 'current_snapshot_not_historical_asof',
++    'canonicalRowCount', (SELECT count(*) FROM canonical),
++    'truncated', (SELECT count(*) > 10000 FROM canonical),
++    'rows', COALESCE(jsonb_agg(jsonb_build_object(
++      'wgoId', c.wgo_id, 'playerId', c.player_id, 'gameId', c.game_id,
++      'date', c.date, 'season', c.season_id, 'position', c.position_code,
++      'gamesPlayed', c.games_played, 'canonicalDate', c.canonical_date,
++      'canonicalSeason', c.canonical_season, 'gameType', c.game_type, 'gameStart', c.game_start,
++      'ES', jsonb_build_object('individual', c.es_ind, 'onIce', c.es_oi),
++      'PP', jsonb_build_object('individual', c.pp_ind, 'onIce', c.pp_oi)
++    ) ORDER BY c.date, c.game_id, c.player_id, c.wgo_id), '[]'::jsonb)
++  ) AS export
++  FROM exported_rows c
++)
++SELECT CASE WHEN octet_length(export::text) > 16777216
++  THEN jsonb_build_object('error', 'export_exceeds_16MiB')
++  ELSE export END AS export
++FROM payload;
++ROLLBACK;
+diff --git a/tasks/artifacts/forge-skater-candidates-2026-10-22/inspect-task3-local.cjs b/tasks/artifacts/forge-skater-candidates-2026-10-22/inspect-task3-local.cjs
+new file mode 100644
+index 000000000..81ecdafa9
+--- /dev/null
++++ b/tasks/artifacts/forge-skater-candidates-2026-10-22/inspect-task3-local.cjs
+@@ -0,0 +1,49 @@
++// Local metadata-only inspection. No environment, database, network or subprocess calls.
++const fs = require('node:fs');
++const path = require('node:path');
++const crypto = require('node:crypto');
++const root = path.resolve(__dirname, '../../..');
++const retained = '/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/0ab9b1ac-962e-4536-a8bc-32510240d760/scratchpad/recon/out';
++const audit = '/private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/36e743be-fccb-484b-8982-5ef9e7a9ba43/scratchpad/fp-audit/rows.json';
++const required = ['nst_gamelog_es_counts','nst_gamelog_es_counts_oi','nst_gamelog_pp_counts','nst_gamelog_pp_counts_oi'];
++const sha = bytes => crypto.createHash('sha256').update(bytes).digest('hex');
++function keysOf(value, keys = new Set()) {
++  if (value && typeof value === 'object') for (const [key, child] of Object.entries(value)) {
++    if (/ipp|on_ice.*(goals|gf)/i.test(key)) keys.add(key);
++    keysOf(child, keys);
++  }
++  return [...keys].sort();
++}
++const groups = ['a','b','a0','b0','c'].map(variant => {
++  const dir = path.join(retained,variant);
++  const files = fs.existsSync(dir) ? fs.readdirSync(dir).filter(name => /^\d{4}-\d{2}-\d{2}-\d+\.json$/.test(name)).sort() : [];
++  const rawReads = Object.fromEntries(required.map(table => [table,0]));
++  const summaryKeys = new Set(), capturedDates = new Set();
++  const captures = files.map(name => {
++    const file = path.join(dir,name), bytes = fs.readFileSync(file), data = JSON.parse(bytes);
++    capturedDates.add(data.payload.capturedAt.slice(0,10));
++    for (const read of data.payload.reads) {
++      const first = read.request[0];
++      if (first.method !== 'from') continue;
++      const table = first.args[0];
++      if (required.includes(table)) rawReads[table]++;
++      if (/rolling_player/.test(table)) keysOf(read.result.data).forEach(key => summaryKeys.add(key));
++    }
++    return {path:file,sha256:sha(bytes)};
++  });
++  return {variant,captures,captureCount:captures.length,capturedDates:[...capturedDates].sort(),rawReads,rollingSummaryKeys:[...summaryKeys].sort()};
++});
++const auditBytes=fs.readFileSync(audit), auditRows=JSON.parse(auditBytes);
++const syntheticPath=path.join(root,'web/scripts/fixtures/native-player-offline-synthetic.json');
++const syntheticBytes=fs.readFileSync(syntheticPath), synthetic=JSON.parse(syntheticBytes);
++const result = {
++  purpose:'Exact local task3 source search; metadata only, no observed data invented.',
++  groups,
++  audit:{path:audit,sha256:sha(auditBytes),rows:auditRows.length,keys:Object.keys(auditRows[0]),classification:'historical_reconstruction_not_training_frames'},
++  nativeFixture:{path:syntheticPath,sha256:sha(syntheticBytes),classification:synthetic.classification,
++    requiredTableRows:Object.fromEntries(required.map(table=>[table,synthetic.tables[table]?.rows?.length??0]))},
++  outcome:'No raw aligned individual+on-ice count pairs in retained real captures. Synthetic fixtures cannot fit empirical priors. Cumulative rolling summaries cannot recover independent split halves or value availability.',
++};
++const output=path.join(__dirname,'task3-local-search.json');
++fs.writeFileSync(output,JSON.stringify(result,null,2)+'\n',{flag:'wx'});
++console.log(JSON.stringify({captures:groups.map(({variant,captureCount,rawReads,rollingSummaryKeys})=>({variant,captureCount,rawReads,rollingSummaryKeys})),auditRows:auditRows.length,nativeClassification:synthetic.classification}));
+diff --git a/tasks/artifacts/forge-skater-candidates-2026-10-22/TASK3-DATA-ASK.md b/tasks/artifacts/forge-skater-candidates-2026-10-22/TASK3-DATA-ASK.md
+new file mode 100644
+index 000000000..9b4ab3e84
+--- /dev/null
++++ b/tasks/artifacts/forge-skater-candidates-2026-10-22/TASK3-DATA-ASK.md
+@@ -0,0 +1,44 @@
++# Task 3: bounded pilot export ready for approval
++
++**Approval-ready request:** Approve one read-only snapshot export from FHFH's linked Supabase project **`fyhftlxokyjtpndbkfse`**, `public` schema, using `task3-pilot-export.sql` exactly once: **2026-10-01 inclusive through 2026-10-22 exclusive**, season **20262027**, at most **10,000 played WGO player-game identities / 20,000 ES+PP observations**, **15-second statement timeout**, **1-second lock timeout**, no parallel query workers, **16 MiB maximum output**. Stop on timeout, schema error, truncation or excess output; no retry, pagination, broader dates, new credential handling or NST/application calls. Save the single `export` result as bare JSON for local validation. No database writes, migrations or deployments.
++
++The target ref was read from the repository's `supabase/.temp/project-ref`; its hosted state was not queried. The SQL is a proposal, **not executed or hosted-plan validated**. Exact CPU/I/O cost is unknown; the statement timeout bounds execution and the output limit bounds returned data, but neither promises a free query or bounds scanned pages. Existing checked-in indexes cover WGO dates and NST player/date/season. The SQL permits at most two source matches per table/identity so duplicates remain visible without unbounded join multiplication. It reads at most 10,001 canonical candidates (one truncation sentinel) and returns up to 80,000 source matches under a valid 10,000-row export. Actual tables/pages scanned depend on the planner.
++
++## Exact read surface
++
++| Table | Columns used |
++|---|---|
++| `wgo_skater_stats` | `id, player_id, game_id, date, season_id, position_code, games_played` |
++| `games` | `id, date, seasonId, type, startTime` |
++| `nst_gamelog_es_counts`, `nst_gamelog_pp_counts` | `id, player_id, season, date_scraped, gp, toi, goals, total_assists, total_points` |
++| `nst_gamelog_es_counts_oi`, `nst_gamelog_pp_counts_oi` | `id, player_id, season, date_scraped, gp, toi, gf` |
++
++No `SELECT *`, names, birth information, account/user identifiers, league settings, roster records, emails, prices, credentials or environment values. Only public NHL source identities and numeric hockey observations are exported. Source `created_at` is deliberately excluded: rows are upserted, so insert time cannot prove when the current values became available. Position comes from the game-level WGO row, not today's player metadata. Canonical game date/season/type and source duplicate sentinels are retained for local exclusion checks. Source TOI is seconds according to `update-nst-gamelog.ts`'s MM:SS/decimal-minutes conversion.
++
++The proposal uses a `REPEATABLE READ READ ONLY` transaction and ends with rollback. PostgreSQL documents that read-only mode disallows normal table-changing commands, while still permitting physical I/O; this is not a zero-cost guarantee. [PostgreSQL 15 transaction documentation](https://www.postgresql.org/docs/15/sql-set-transaction.html). Supabase's [current changelog](https://supabase.com/changelog) was checked; the listed HTTP TLS change does not affect the direct PostgreSQL query proposal.
++
++## What the pilot unblocks
++
++The first dependency is **an observed matched assist/IPP denominator**, not a three-season parameter search. This pilot provides raw individual G/A/points and on-ice GF with equal strength-specific exposure, canonical identities and explicit coverage diagnostics. It can immediately produce descriptive F/D × ES/PP assist-share and IPP means and supply normalized raw rows to the existing split-half fitter. Small-sample or missing-cohort failures remain visible; no default k is chosen.
++
++This pilot **does not complete task 3.1's 2023-24-onward fit**, team A/G reconciliation, current-c reconstruction or predictive qualification. Expansion to 2023-10-10 onward would be a separately bounded export after the schema/alignment pilot succeeds. Historical values in a new export are retrospective snapshots, not proof of what was known before historical forecasts.
++
++## Runnable validator/extractor
++
++From `web/`, using existing Node 22.11/npm tooling:
++
++```sh
++NODE_PATH=. npx --no-install ts-node --transpile-only --compiler-options '{"module":"commonjs","moduleResolution":"node"}' scripts/forge-assist-export.ts --input /tmp/forge-assist-pilot.json --output /tmp/forge-assist-pilot-validated.json
++```
++
++The validator makes **no network/database/environment calls**. It enforces the exact project/scope, row/byte limits, no silent truncation, allowlisted fields, unique player-games, single-game source rows, matched dates/seasons/TOI, integer nonnegative counts and `G+A=points<=on-ice GF`. Missing counts with positive exposure remain unknown and are excluded with reasons; numeric zero remains observed zero. Duplicates are never resolved by arbitrarily selecting a row. The output contains normalized `HistoricalCounts[]`, coverage/exclusion counts, descriptive priors and the input SHA256; it does not fit or publish coefficients. A currently exported row receives `availableAt=exportedAt`, never a fabricated historical availability time. Output files use exclusive creation.
++
++Eleven new offline test cases exercise valid extraction, missing versus zero, frame/exposure mismatches, single-game semantics, duplicate/truncated scope, extra fields, canonical binding and the actual local CLI. They establish mechanics only. No real pilot export has been supplied or queried.
++
++## Exact local search and integration state
++
++`task3-local-search.json` lists every retained capture path and SHA256 searched: **62 each in a/b/a0/b0 (248 total), zero c**. It also identifies the exact 2,074-row historical audit extract and synthetic native fixture. All four variants have **zero reads of the four required raw count tables**. Hydrated b/b0 do contain cumulative `ipp_points_all`, `ipp_on_ice_goals_for_all`, `ipp_*_3ya` and related rolling keys; these are available aggregate summaries, not independent aligned individual-assist/on-ice-GF game frames, split halves or value-vintage evidence. The historical audit extract contains only heads, reconstructed projections and a limited rolling EV view. The native fixture is explicitly `synthetic_fixture`.
++
++Reproduce the metadata-only inventory with `node tasks/artifacts/forge-skater-candidates-2026-10-22/inspect-task3-local.cjs` after choosing a fresh output path in the script; it refuses to overwrite existing evidence. The four real variants were captured October 21 after their target games; they cannot be relabeled as historical as-of input. `task3-sql-contract-check.json` verifies every selected column against the checked-in schema, the six-table allowlist, read-only commands and numeric bounds. It is a static check, not hosted SQL execution/plan validation.
++
++**Default-off is safe:** the candidate helpers and validator have no production stage call sites and perform no automatic reads. This disconnected structure can remain in place without estimates and cannot alter served means. Enabling a useful stage path still needs matched on-ice opportunity, qualified priors and source/coverage contracts; an unused runtime flag would not supply those inputs, so none was added. **Stage/calculator editing lease is released.** Task2 retains exclusive ownership of its physical-rate helper repair; no calculator code was edited here.

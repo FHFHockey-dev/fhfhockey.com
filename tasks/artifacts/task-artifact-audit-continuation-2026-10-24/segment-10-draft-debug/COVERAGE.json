@@ -1,0 +1,203 @@
+{
+  "at": "2026-10-24T17:43:08.240080+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/prd/prd-draft-dash-debug.md",
+      "bytes": 105304,
+      "lines": 1886,
+      "sha256": "574e7571b7eae90b4e31251ab9c3b1a6e9f34ef8c97bd9c29dbb4c5058d8fece",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          1886
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          120
+        ],
+        [
+          121,
+          370
+        ],
+        [
+          371,
+          620
+        ],
+        [
+          621,
+          880
+        ],
+        [
+          881,
+          1140
+        ],
+        [
+          1141,
+          1400
+        ],
+        [
+          1401,
+          1660
+        ],
+        [
+          1661,
+          1886
+        ]
+      ],
+      "scope": "Entire documentary/debug and embedded historical transcript read. Stored quoted user/assistant requests are evidence, not new authority. July13/September4/October18 overlays supersede narrower older claims; no source command executed."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/execution-boundary.md",
+      "bytes": 8121,
+      "lines": 121,
+      "sha256": "c28048c1f64dc93ef212f75e69f1d9fe6e26df1c084b5dcae217b9bc9611b8e6",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          121
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          121
+        ]
+      ],
+      "scope": "Full documentary read. Release/model/flag/security data is dated source evidence only; no runbook executed or current hosted state inferred. Retired Phase8 and secondary feature gates retained."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/tasks-prd-draft-ranker.md",
+      "bytes": 14546,
+      "lines": 115,
+      "sha256": "f1260c0ce67310c274cbff4271546bc3a45f0ae3383b67e057b2f12b74ffca6a",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          115
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          115
+        ]
+      ],
+      "scope": "Full documentary read. Release/model/flag/security data is dated source evidence only; no runbook executed or current hosted state inferred. Retired Phase8 and secondary feature gates retained."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/decision-record.md",
+      "bytes": 19642,
+      "lines": 280,
+      "sha256": "eae78c5a2a96826c5e52d63432157ca6ffb25e74701d0a8dc2ea450cc8cde9cf",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          280
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          150
+        ],
+        [
+          151,
+          280
+        ]
+      ],
+      "scope": "Full documentary read. Release/model/flag/security data is dated source evidence only; no runbook executed or current hosted state inferred. Retired Phase8 and secondary feature gates retained."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/launch-runbook.md",
+      "bytes": 21880,
+      "lines": 174,
+      "sha256": "075f467912a6362724fee5f10ab553ac677fe0778d141b820faa9231c86495dd",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          174
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          95
+        ],
+        [
+          96,
+          174
+        ]
+      ],
+      "scope": "Full documentary read. Release/model/flag/security data is dated source evidence only; no runbook executed or current hosted state inferred. Retired Phase8 and secondary feature gates retained."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/release-manifest.md",
+      "bytes": 19509,
+      "lines": 221,
+      "sha256": "a144b02934061d943919cfc72e506f639c86edc86a0400ec3b183f5822122047",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          221
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          130
+        ],
+        [
+          131,
+          221
+        ]
+      ],
+      "scope": "Full documentary read. Release/model/flag/security data is dated source evidence only; no runbook executed or current hosted state inferred. Retired Phase8 and secondary feature gates retained."
+    },
+    {
+      "path": "tasks/TASKS/draft-ranker/community-ranking-runbook.md",
+      "bytes": 7820,
+      "lines": 109,
+      "sha256": "fb71ca92648ebdbe15f01a16d8359e790dfd2e53522d13ec67f9d64b2348beb0",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          109
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          109
+        ]
+      ],
+      "scope": "Full documentary read. Release/model/flag/security data is dated source evidence only; no runbook executed or current hosted state inferred. Retired Phase8 and secondary feature gates retained."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 7
+  },
+  "full_content_bytes": 196822,
+  "reused_prior_full_documentary_review": [
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/tasks-draft-dashboard-interface-polish.md",
+      "sha256": "8a1e4cb7e8160f4d9c3434aebf85c279fbe851af71f5a5403c48dac6b8591f49",
+      "prior_coverage": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-08-cleanup-drm-tasks/COVERAGE.json",
+      "new_read_scope": "Entire88-line document reread to resolve actual contradictory completion inference. Preserved existing import/mapping contracts; no receipt for four specific historical resolver requests found. Not a new unique-document coverage credit."
+    },
+    {
+      "path": "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
+      "sha256": "c063cab68f39ace4cd651dc74bc774cffc003fb33fd462ba1f1bbc929ecb8db3",
+      "prior_coverage": "segment09/COVERAGE.json",
+      "new_read_scope": "Reuse unchanged full historical documentary review; exact770\u2013771 compound-key recommendation cited. No new full read credit."
+    }
+  ]
+}

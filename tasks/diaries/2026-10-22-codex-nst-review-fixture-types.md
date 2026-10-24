@@ -1,0 +1,10 @@
+# NST review fixture type correction
+
+- Scope: fix only the review artifact fixture's two TypeScript errors around the original RPC success/failure union. Preserve assertions, historical review pins and combined archive; no application edits or production.
+- Where: `tasks/artifacts/claude-audit-independent-review-2026-10-22/nst-continuation/r1/auditNstR1Additional.test.ts`; canonical `octoberBranch`.
+- Start: parent reports TS2345 at line 355 and TS18047 at line 359 in combined verification. Inspecting actual inferred type and locating `combined-audit-nst/FIXTURE-TYPES-FOLLOWUP.md`.
+- Next: minimal error-result early return, isolated eight-case run and scoped typecheck; append before/after fixture hashes and correction receipt.
+- Blockers: none; first assumed handoff directory was absent, locating the named file.
+- Checkpoint: confirmed the inferred RPC result is success (`data` array, `error: null`) or failure (`data: null`, error object). Added only `if (result.error !== null) return result;` to the artifact callback. Original fixture copied into `fixture-type-correction/original-fixture.test.ts`; historical review/combined pins untouched. All eight cases pass unchanged on a fresh verified 3,365-file combined extraction.
+- Typecheck setup: first scoped include omitted the existing `types/nhlRawGamecenter.d.ts`, causing three transitive missing-export errors. Retained that failed log/config, then added the unchanged declaration to scoped roots and retried only the typecheck. No application/source/configuration files in canonical were edited.
+- Complete: eight cases pass and corrected scoped TypeScript passes (exit 0). Corrected fixture hash `3ac4eb83022c96dcb1330eae4170068c4ad46b98129693d2493055cdb35e4347`; original hash `18a2f3296c422478cc74c14f7f2571ba16a40337531426d11c7230b5c3013c0b` preserved. Receipt/diff/logs appended in `r1/fixture-type-correction/`; historical pins/combined archive and all 31 accepted app files unchanged. No blockers or pending actions. Parent can overlay the corrected artifact explicitly in later isolated verification; full combined checks were not repeated.

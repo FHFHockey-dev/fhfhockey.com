@@ -1,0 +1,19 @@
+
+> web@0.1.0 test
+> vitest --run --config review-vitest.config.mts adversarial.test.ts lib/projections/runProjectionV2.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-r1-independent-ksvb02so/web
+
+(node:73617) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/projections/runProjectionV2.test.ts (112 tests) 26ms
+(node:73621) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ adversarial.test.ts (11 tests) 5ms
+
+ Test Files  2 passed (2)
+      Tests  123 passed (123)
+   Start at  12:41:43
+   Duration  1.01s (transform 231ms, setup 4ms, collect 386ms, tests 31ms, environment 366ms, prepare 58ms)
+

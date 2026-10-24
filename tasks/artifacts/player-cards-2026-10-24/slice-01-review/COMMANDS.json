@@ -1,0 +1,63 @@
+{
+  "recordedAt": "2026-10-24T17:02:47.089718+00:00",
+  "environmentOverrides": {
+    "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-01-review/.npm-cache",
+    "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-01-review/.npm-logs",
+    "NO_UPDATE_NOTIFIER": "1",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "checks": [
+    {
+      "label": "offline-tests",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-24/slice-01-review/review.vitest.config.mts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "cwd": "web",
+      "exitCode": 1,
+      "elapsedSeconds": 1.535,
+      "log": "offline-tests.log"
+    },
+    {
+      "label": "scoped-types",
+      "command": [
+        "npx",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "../tasks/artifacts/player-cards-2026-10-24/slice-01-review/tsconfig.json"
+      ],
+      "cwd": "web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.1,
+      "log": "scoped-types.log"
+    },
+    {
+      "label": "scoped-lint",
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "lib/player-cards/contracts.ts",
+        "lib/player-cards/registry.ts",
+        "lib/player-cards/ranking.ts",
+        "lib/player-cards/ranking.test.ts",
+        "lib/player-cards/fixtures.ts",
+        "components/player-cards/PlayerCard.tsx",
+        "components/player-cards/PlayerCardPreview.tsx",
+        "components/player-cards/PlayerCardPreview.test.tsx"
+      ],
+      "cwd": "web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.767,
+      "log": "scoped-lint.log"
+    }
+  ]
+}

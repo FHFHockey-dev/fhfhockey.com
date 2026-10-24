@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "/usr/local/bin/npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "review-vitest.config.mts",
+    "adversarial.test.ts",
+    "lib/projections/runProjectionV2.test.ts"
+  ],
+  "cwd": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-task2-r1-independent-ksvb02so/web",
+  "exitCode": 0,
+  "seconds": 1.41,
+  "node": "v22.11.0",
+  "environment": "clean synthetic credentials, transport denial, one worker, two-command pinned Git metadata adapter"
+}

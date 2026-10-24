@@ -1,0 +1,9 @@
+
+Running 1 test using 1 worker
+
+tier_geometry_measurements {"mode":"strict","offsetWidth":1080,"offsetHeight":1080,"scrollWidth":1078,"scrollHeight":1078,"frameWidth":540,"frameHeight":540,"playerRows":15,"maxPlayerRightBeyondFrame":-18.5,"maxPlayerBottomBeyondFooter":-27.625,"logoWidths":[17,17,17,17,17,17,17,17]}
+tier_geometry_measurements {"mode":"widened","offsetWidth":1080,"offsetHeight":1080,"scrollWidth":1078,"scrollHeight":1078,"frameWidth":540,"frameHeight":540,"playerRows":15,"maxPlayerRightBeyondFrame":-18.5,"maxPlayerBottomBeyondFooter":-15,"logoWidths":[17,17,17,17,17,17,17,17,12.0625,12.0546875,12.0625,12.0546875,12.0625,12.0546875,12.0625,12.0625,12.0625,12.0625,12.0625,12.0625,12.0625,12.0625,12.0625,12.0625]}
+social_editor_fixture_summary {"role":"social_editor","roleReads":2,"profileReads":3,"settingsReads":1,"blockedLocalApis":[],"abortedExternal":["https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://img.buymeacoffee.com/button-api/","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://fonts.googleapis.com/css2","https://cdn.vercel-insights.com/v1/script.debug.js","https://va.vercel-scripts.com/v1/speed-insights/script.debug.js"],"rejectedBootstrap":[],"syntheticWriteAttempts":[]}
+  ✓  1 e2e/social-share.spec.ts:823:5 › schedule-aware tier list shows only tier teams' players as list rows, strict and widened (2.1s)
+
+  1 passed (2.7s)

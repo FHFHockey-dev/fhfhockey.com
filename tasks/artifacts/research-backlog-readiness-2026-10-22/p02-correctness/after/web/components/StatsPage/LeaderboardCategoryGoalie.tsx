@@ -1,0 +1,86 @@
+// /components/StatsPage/LeaderboardCategoryGoalie.tsx
+
+import React from "react";
+import Link from "next/link";
+import styles from "styles/Stats.module.scss";
+import { GoalieStat } from "lib/NHL/statsPageTypes";
+import LeaderboardHeadshot from "./LeaderboardHeadshot";
+
+interface LeaderboardCategoryGoalieProps {
+  title: string;
+  leaders?: GoalieStat[];
+  statKey: keyof GoalieStat;
+}
+
+const LeaderboardCategoryGoalie: React.FC<LeaderboardCategoryGoalieProps> = ({
+  title,
+  leaders = [],
+  statKey
+}) => {
+  return (
+    <div className={styles.card}>
+      <h2 className={styles.cardTitle}>{title}</h2>
+      {leaders.length === 0 && (
+        <div className={styles.leaderRow}>
+          <div className={styles.playerDetails}>No goalie data available.</div>
+        </div>
+      )}
+      {leaders.map((goalie, index) => {
+        const rowClasses =
+          index === 0
+            ? `${styles.leaderRow} ${styles.leaderRowExpanded}`
+            : styles.leaderRow;
+        let statValue = goalie[statKey];
+        if (statKey === "save_pct") {
+          statValue = goalie.save_pct != null
+            ? goalie.save_pct.toFixed(3).replace(/^0/, "")
+            : "-";
+        } else if (statKey === "goals_against_avg") {
+          statValue = goalie.goals_against_avg != null
+            ? goalie.goals_against_avg.toFixed(2)
+            : "-";
+        } else if (statKey === "quality_starts_pct") {
+          statValue = goalie.quality_starts_pct != null
+            ? (goalie.quality_starts_pct * 100).toFixed(1)
+            : "-";
+        }
+        return (
+          <div key={`${statKey}-${goalie.goalie_id}-${index}`} className={rowClasses}>
+            <div className={styles.cardContainer}>
+              <div className={styles.cardLeft}>
+                <Link href={`/stats/player/${goalie.goalie_id}`}>
+                  <LeaderboardHeadshot
+                    imageUrl={goalie.image_url}
+                    playerId={goalie.goalie_id}
+                    playerName={goalie.fullName}
+                    className={styles.playerHeadshot}
+                  />
+                </Link>
+              </div>
+              <div className={styles.cardRight}>
+                <div className={styles.topRow}>
+                  <div className={styles.leaderMain}>
+                    <div className={styles.nameValueRow}>
+                      <div>
+                        <div className={styles.leaderName}>
+                          {goalie.fullName}
+                        </div>
+                        <div className={styles.playerDetails}>
+                          {goalie.current_team_abbreviation} &middot; #
+                          {goalie.sweater_number}
+                        </div>
+                      </div>
+                      <div className={styles.leaderValue}>{statValue}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+export default LeaderboardCategoryGoalie;

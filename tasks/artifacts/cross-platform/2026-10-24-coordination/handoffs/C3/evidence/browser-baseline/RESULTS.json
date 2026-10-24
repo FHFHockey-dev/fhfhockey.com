@@ -1,0 +1,31 @@
+{
+  "mode": "baseline",
+  "at": "2026-10-24T15:10:45.617Z",
+  "results": [
+    {
+      "name": "same-owner reload reuses request ID",
+      "pass": false,
+      "first": "2f240ee4-017e-4178-a20e-a020e2030345",
+      "second": "e9c4ecf2-fef5-4fe3-9e30-62b7a0755ad5",
+      "storedAfterFirst": null
+    }
+  ],
+  "cancelBodies": [
+    {
+      "subscriptionId": "sub_fixture",
+      "requestId": "2f240ee4-017e-4178-a20e-a020e2030345",
+      "authorization": "Bearer eyJhb…"
+    },
+    {
+      "subscriptionId": "sub_fixture",
+      "requestId": "e9c4ecf2-fef5-4fe3-9e30-62b7a0755ad5",
+      "authorization": "Bearer eyJhb…"
+    }
+  ],
+  "blockedHosts": [
+    "fonts.googleapis.com",
+    "img.buymeacoffee.com",
+    "cdn.vercel-insights.com",
+    "va.vercel-scripts.com"
+  ]
+}

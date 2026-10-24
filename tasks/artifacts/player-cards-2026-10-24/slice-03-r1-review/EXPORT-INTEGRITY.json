@@ -1,0 +1,10 @@
+{
+  "manifest_bytes_unchanged": {
+    "partial": true,
+    "zero-pp": true
+  },
+  "new_png_bytes_equal_owner": {
+    "partial": true,
+    "zero-pp": true
+  }
+}

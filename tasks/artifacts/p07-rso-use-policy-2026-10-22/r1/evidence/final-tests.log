@@ -1,0 +1,225 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/player-forecasts/rsoUsePolicy.test.ts lib/rosterScheduleData/planning.test.ts lib/player-forecasts/planningContributions.test.ts lib/in-season/workspaceSchema.test.ts lib/integrations/yahoo/rosterPlanning.test.ts __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts lib/rosterScheduleOptimizer/planning.test.ts lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts lib/rosterScheduleOptimizer/executionAdapter.test.ts hooks/useRosterPlanning.test.tsx hooks/useCandidateMetrics.test.tsx lib/player-forecasts/p07BridgeClaimOracle.test.ts __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx components/RosterScheduleOptimizer/CompactSchedule.test.ts lib/in-season/workspaceRoutes.test.ts lib/rosterScheduleData/planningDataTransport.test.ts lib/rosterScheduleData/bridgeForecastWire.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web
+
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/in-season/workspaceRoutes.test.ts (22 tests) 171ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/executionAdapter.test.ts (23 tests) 56ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/rosterScheduleOptimizer/planning.test.ts > planning engine > evaluates the entire 1000-player population across 2 days with exact full-plan gains
+{"candidateBenchmark":"1000 players","days":2,"forecasts":2000,"evaluated":998,"elapsedMs":206.88675000000012}
+
+stdout | lib/rosterScheduleOptimizer/planning.test.ts > planning engine > evaluates the entire 1000-player population across 13 days with exact full-plan gains
+{"candidateBenchmark":"1000 players","days":13,"forecasts":13000,"evaluated":998,"elapsedMs":826.7061250000002}
+
+ ✓ lib/rosterScheduleOptimizer/planning.test.ts (145 tests) 10223ms
+   ✓ planning engine > evaluates the entire 1000-player population across 2 days with exact full-plan gains  379ms
+   ✓ planning engine > evaluates the entire 1000-player population across 13 days with exact full-plan gains  1923ms
+   ✓ planning engine > reaches multiple acquisitions within the bounded 25/300/7/4 workload  7571ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:137:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:137:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:137:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:137:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:137:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:137:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for yahoo without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:137:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for yahoo without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:137:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for yahoo without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:137:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for yahoo without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:137:71)
+
+ ✓ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (209 tests) 22567ms
+   ✓ active provider refresh scheduling > applies actual GOALS inputs to connected category results without changing provider evidence  305ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different owner or rewriting the plan  615ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different league or rewriting the plan  578ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different team or rewriting the plan  582ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different horizon or rewriting the plan  606ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different timezone or rewriting the plan  606ms
+   ✓ RosterScheduleOptimizer workspace > keeps display-preference write-failure separate from the working plan  332ms
+   ✓ RosterScheduleOptimizer workspace > reviews manual candidate positions explicitly without replacing selected moves or leaking another candidate's positions  527ms
+   ✓ RosterScheduleOptimizer workspace > requires input review and renews it after rule changes without certifying unknown scoring  428ms
+   ✓ RosterScheduleOptimizer workspace > reads back legal crowded-day assignments through nonzero plan refresh, Undo and reopen  693ms
+   ✓ RosterScheduleOptimizer workspace > keeps refreshed provider authority through undo and reopen without replacing selected moves  352ms
+   ✓ RosterScheduleOptimizer workspace > explains disabled manual controls and invalid rule-window dates using visible descriptions  397ms
+   ✓ owner plan preservation > drains a dispatched account save before capturing the actual remote state  364ms
+   ✓ owner plan preservation > keeps nonzero intent/Undo, restores after reopen, and verifies original local and remote payloads  497ms
+   ✓ owner plan preservation > restores original provider authority including absence without remount (absent=false)  429ms
+   ✓ owner plan preservation > restores original provider authority including absence without remount (absent=true)  446ms
+   ✓ owner plan preservation > serializes a protected account acknowledgement before persisting and acknowledging a local edit  524ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts (8 tests) 199ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx (3 tests) 137ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/integrations/yahoo/rosterPlanning.test.ts (75 tests) 53ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/planningContributions.test.ts (110 tests) 40ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts (28 tests) 39ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/in-season/workspaceSchema.test.ts (51 tests) 25ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ hooks/useRosterPlanning.test.tsx (3 tests) 16ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ hooks/useCandidateMetrics.test.tsx (3 tests) 14ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/rsoUsePolicy.test.ts (17 tests) 2ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/CompactSchedule.test.ts (2 tests) 2ms
+(node:35295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/player-forecasts/p07BridgeClaimOracle.test.ts (1 test) 1ms
+ ✓ lib/rosterScheduleData/planning.test.ts (107 tests) 114ms
+
+ Test Files  16 passed (16)
+      Tests  807 passed (807)
+   Start at  11:34:35
+   Duration  39.41s (transform 1.30s, setup 59ms, collect 2.17s, tests 33.66s, environment 2.23s, prepare 468ms)
+

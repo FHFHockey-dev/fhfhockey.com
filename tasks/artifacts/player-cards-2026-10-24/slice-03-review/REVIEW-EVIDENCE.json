@@ -1,0 +1,83 @@
+{
+  "at": "2026-10-24T17:52:07.763882+00:00",
+  "verdict": "CHANGES REQUIRED",
+  "scope": "Frozen player-card slice03 functional/export correctness only; no design acceptance",
+  "findings": [
+    {
+      "id": "PC-S03-02",
+      "severity": "P2",
+      "title": "Preserve missing versus known-undefined metric reasons in card/export",
+      "source_paths": [
+        "web/components/player-cards/InteractiveCard.tsx:23",
+        "web/components/player-cards/InteractiveCard.tsx:29",
+        "web/components/player-cards/PlayerCardFlow.tsx:62"
+      ],
+      "counterexamples": [
+        "Jamie1004 ownL10 all metric-gap: manifest reason retained but SVG/PNG only generic unavailable; short warning masks source gap",
+        "ID1001 Oct1-only PP complete:1GP/0TOI, ratio18knownUndefined/0missingIncomplete but banner says Partial source"
+      ],
+      "unit_failures": [
+        "PC-S03-02",
+        "PC-S03-02-zero"
+      ]
+    },
+    {
+      "id": "PC-S03-01",
+      "severity": "P3",
+      "title": "Accessible SVG name interpolates null GP",
+      "source_paths": [
+        "web/components/player-cards/InteractiveCard.tsx:12"
+      ],
+      "counterexample": "history-gap yields visual GP unverified but aria-label null actual appearances",
+      "unit_failure": "PC-S03-01"
+    }
+  ],
+  "pin_summary": {
+    "explicit_owner_entries": 59,
+    "extra_inputs": 6,
+    "unchanged": 65,
+    "source_patch_reconstructed_files": 6
+  },
+  "checks": {
+    "unique_UI_passed": 9,
+    "unique_UI_failed": 3,
+    "owner_UI_passed": 7,
+    "independent_positive_UI_passed": 2,
+    "scoped_types": "passed",
+    "scoped_lint": "passed",
+    "raw_browser_passed": 5,
+    "raw_browser_failed": 2,
+    "excluded_timing_invalid_browser_group": 1,
+    "usable_browser_passed": 4,
+    "usable_browser_failed": 2,
+    "PNGexports": 2,
+    "page_HTTP_attempts": 0,
+    "page_errors": 0,
+    "remaining_blocked_checks": []
+  },
+  "browser_assessment": "BROWSER-ASSESSMENT.json",
+  "commands": "ALL-COMMANDS.json",
+  "original_evidence_preserved": [
+    "focused-ui.log",
+    "zero-state-banner.log",
+    "browser-sandbox.log",
+    "browser-failure.sandbox.json",
+    "browser-offline.first.log",
+    "browser-failure.first-offline.json",
+    "browser-controls.initial.mjs",
+    "browser-results.json",
+    "COMMANDS.browser-lock-refusal.json",
+    "COMMANDS.browser-lock-refusal-2.json"
+  ],
+  "partial_PNG_byte_equal_frozen_owner": true,
+  "partial_png_sha256": "2803b585f3ae61e0b431cbd5d7e5d2fb1cfb2e14e6a753055c6bd0caa5919c84",
+  "accepted_calculation_R1": "unchanged, not re-reviewed",
+  "application_edits": 0,
+  "production_or_auth_calls": 0,
+  "Library_actions": 0,
+  "server_actions": 0,
+  "port3125_requests": 0,
+  "git_operations": 0,
+  "new_workers": 0,
+  "next": "Bounded owner presentation correction, new frozen receipt, then unchanged counterexamples plus adjacent controls only. Scout retains acceptance."
+}

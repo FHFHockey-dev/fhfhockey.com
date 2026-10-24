@@ -1,0 +1,21 @@
+{
+  "viewport": {
+    "width": 1180,
+    "height": 757
+  },
+  "accountReads": [
+    "00000000-0000-4000-8000-000000000001",
+    "00000000-0000-4000-8000-000000000002",
+    "00000000-0000-4000-8000-000000000002"
+  ],
+  "providerCanceled": true,
+  "staleSaveHidden": true,
+  "staleProviderHidden": true,
+  "localIntentPreserved": true,
+  "retainedInputsReadOnly": true,
+  "manualForkPreserved": true,
+  "manualEditingAvailable": true,
+  "pageErrors": [],
+  "inputs": "Fictional sessions and intercepted provider/workspace/access responses; SDK BroadcastChannel session switch",
+  "liveAccountParity": "not verified"
+}

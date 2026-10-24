@@ -1,0 +1,454 @@
+{
+  "at": "2026-10-24T19:52:54.099295+00:00",
+  "changes": {
+    "SITE-START-CONTRACT": {
+      "fields": {
+        "implementation": "Retain completed local shared contract, dated/source-safe selection, deterministic row identity, responsive Starter Board, local 900ms API budget and Chrome workflow. Later NEW19 partial-line and NEW20 paging/category/response metadata parity remain source-reported open pending newer exact closure evidence.",
+        "acceptance": "Historical local rank/scoring, responsive/Chrome and performance receipts retain dated scope. Current NEW19/20 survival and trust-qualified end-to-end/release acceptance remain unverified in this documentary audit.",
+        "release": "Historical July30 canonical-wrapper release retained. It does not close the reopened August tranche or later October drift/data/rollout/release gates; no current deployment inspected.",
+        "verification": "Six complete named sources read. Older 55/55 and duplicate model/schema proposals yield to the reopened Daily Starter Board contract. NEW19/20 are mapped to readable reconciliation children; no current app/browser/failure reproduced. Source-scoped passing tests/Chrome/latency are not a whole-project or current production claim.",
+        "next_action": "Reconcile newer exact NEW19/20 receipts and each child contract first. Preserve closed board/performance/browser work and reuse existing upstream/provider/model gates; propose only genuinely surviving bounded acceptance work.",
+        "children": [
+          {
+            "child_id": "SITE-START-CONTRACT/NEW19-partial-score-line",
+            "title": "Reconcile partial G/A/PPP support and score/rank completeness",
+            "status": "Source P2/NEW19; surviving current defect unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "NATIVE-ISSUANCE"
+            ],
+            "next_action": "Locate later exact partial-head regressions and accepted API/Dashboard consumer receipts. Ensure a missing supported ES/PP component cannot become a complete zero-valued scoring line; distinguish partial from all-null and valid-zero values before treating the old finding as current.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+              "line": 215
+            },
+            "approval_gate": "Reconciliation-first; no repair or admission relaxation. Synthetic passing counts alone do not establish this exact regression or production behavior.",
+            "existing_work_credit": "Versioned scoring, deterministic row ranks, valid-zero/null and narrower accepted fixture/RSO work retain their original limits."
+          },
+          {
+            "child_id": "SITE-START-CONTRACT/NEW20-paging-disclosure",
+            "title": "Reconcile five-row/View-all versus older 25-more expectations",
+            "status": "Proposed source/receipt parity decision; current rendering unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Match the later shipped five-row/View-all behavior to exact owner/UI receipts and update the source acceptance contract or record an intentional restoration decision. Do not rerun or erase the completed earlier25-more Chrome receipt as if it described current behavior.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+              "line": 216
+            },
+            "approval_gate": "Reconcile later exact receipts before any implementation. No app/test/browser/provider/production call, repair, backfill, model/reader activation, publication or release by audit; preserve current ownership and gates.",
+            "existing_work_credit": "Completed responsive board, URL/history state, keyboard ARIA tabs, filters and earlier browser proof remain dated closure."
+          },
+          {
+            "child_id": "SITE-START-CONTRACT/NEW20-category-contract",
+            "title": "Reconcile category/control and ranking availability disclosure",
+            "status": "Proposed current contract reconciliation; no new scoring feature",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile live-category/comparison-basis source claims with unavailable.categoryMode metadata and removed tau/P75/category copy. Pin supported mode/profile/ranking semantics and honest unavailable controls; do not resurrect custom profiles/tau/risk or the superseded second engine.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+              "line": 216
+            },
+            "approval_gate": "Reconcile later exact receipts before any implementation. No app/test/browser/provider/production call, repair, backfill, model/reader activation, publication or release by audit; preserve current ownership and gates.",
+            "existing_work_credit": "Canonical FORGE one-game stat line, read-time default scoring, structured 400/422 validation and ranking-independent ownership remain."
+          },
+          {
+            "child_id": "SITE-START-CONTRACT/NEW20-response-envelope",
+            "title": "Reconcile response-envelope metadata with the accepted reader budget",
+            "status": "900ms local gate complete; later byte-envelope contract unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Locate later approved response-size policy and exact envelope fixture, then reconcile the 300,000-byte perf metadata with the reported 4,000,000-byte candidate envelope. Preserve uncached/warm latency scope and do not infer a need for new production benchmarking or the optional Yahoo RPC.",
+            "source": {
+              "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md",
+              "line": 81
+            },
+            "approval_gate": "Reconcile later exact receipts before any implementation. No app/test/browser/provider/production call, repair, backfill, model/reader activation, publication or release by audit; preserve current ownership and gates.",
+            "existing_work_credit": "Recorded 630.9/770.4ms cold and 0.3ms warm P95 close the old 900ms local budget; optional overlay RPC was not required."
+          },
+          {
+            "child_id": "SITE-START-CONTRACT/eligible-slate-acceptance",
+            "title": "Reconcile trusted current and historical slate acceptance",
+            "status": "Historical rank/API/browser evidence complete; eligible end-to-end proof open",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "NATIVE-ISSUANCE",
+              "TRENDS-HISTORICAL-REPAIRS",
+              "PIPE-ROLLING-HISTORY-REPAIR",
+              "FORGE-RESULTS-COVERAGE"
+            ],
+            "next_action": "After retained upstream gate closure, reconcile one genuinely eligible current slate and one eligible historical slate through raw/rolling/FORGE/API rank/source/goalie coverage and visible values. Keep the exact 138-row quarantined trace and zero-goalie-team coverage as degraded evidence, not trusted qualification.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+              "line": 185
+            },
+            "approval_gate": "Reconcile later exact receipts before any implementation. No app/test/browser/provider/production call, repair, backfill, model/reader activation, publication or release by audit; preserve current ownership and gates.",
+            "existing_work_credit": "Historical 138-row scoring/rank parity and Chrome workflow are retained; 14-date model rollout and provider/history/release authority remain separately owned."
+          }
+        ]
+      },
+      "before_fields": {
+        "implementation": "Current task-list NEW20 remains unchecked",
+        "acceptance": "unverified",
+        "release": "existing UI shipped; documentation/contract closure open",
+        "verification": "Task-source only; no new browser inspection",
+        "next_action": "Assign bounded current source/contract audit",
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 140,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 148,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 151,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 159,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 175,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 185,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 187,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 214,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 215,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 216,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 222,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 224,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        }
+      ]
+    },
+    "NATIVE-ISSUANCE": {
+      "fields": {
+        "verification": "Retained code/task receipts only Segment19 maps old StartChart NEW18/source-label incompatibility to this qualified-writer/reader custody. No old unlabelled-run fallback proposal overrides current admission, review, target/scope or empty-catalog denial controls. Current surviving behavior unverified; later local/frozen-candidate tests are not live issuance proof.",
+        "children": [
+          {
+            "child_id": "NATIVE-ISSUANCE/start-chart-serving-compatibility",
+            "title": "Reconcile StartChart reader/writer/source compatibility",
+            "status": "Source NEW18 under existing qualified-writer gate; current survival unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Locate newer accepted writer/reader/three-path contracts and exact receipt for legacy versus game_expectations/native serving. Preserve qualified native admission and explicit unavailable/degraded states; no old checklist wording authorizes serving an unreviewed or mislabeled run.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+              "line": 214
+            },
+            "approval_gate": "No label synthesis, provenance retrofit, fail-open legacy fallback, qualification bypass, current production query or new writer by audit. Retain current empty-catalog/revocation and target/scope controls.",
+            "existing_work_credit": "Later local native mechanics/admission and frozen r1 fixtures keep bounded credit; neither fixtures nor older 55/55 release prove live qualified issuance."
+          }
+        ]
+      },
+      "before_fields": {
+        "verification": "Retained code/task receipts only",
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 214,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/1446518d759a-G5a-forge-model-startchart.md",
+          "original_path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md",
+          "line": 100,
+          "sha256": "1446518d759a0976159dd1da6030e000f1a86198b2d2a9e445e523c855dff49b",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/1446518d759a-G5a-forge-model-startchart.md",
+          "original_path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md",
+          "line": 111,
+          "sha256": "1446518d759a0976159dd1da6030e000f1a86198b2d2a9e445e523c855dff49b",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 226,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        }
+      ]
+    },
+    "SITE-START-RECENTFORM": {
+      "fields": {
+        "implementation": "Completed read-only formula audit, inactive v2 candidate, strict-pregame provenance/replay planner, non-writing nullable-component materializer and approved-only public/v6 trust guards retained. Candidate publication/writer/reader/schema and database replay remain separately gated.",
+        "acceptance": "Source reports descriptive multi-season validation and completed local guards/materialization only. PDO/product approval, promoted version, persisted/API trace and bounded replay/chart restoration remain unverified/held. Failed seven-distinct-game v6 diagnostic retains no-Production disposition.",
+        "verification": "Full StartChart and owning CTPI task/decision report read. Later completed 7.7.4 forward v6-reader repair and failed seven-game diagnostic supersede stale generic reader-repair-open wording. Candidate has no activation proof here; PIPE-CTPI279 accepted payload correction remains narrower than formula publication.",
+        "next_action": "Reconcile later explicit product/publication and persisted/replay/API/browser receipts for the two child gates. Preserve descriptive/ranking-independent semantics, approved-only trust and rejected legacy immutability; do not refit/reactivate from a staged version or old snapshot count.",
+        "children": [
+          {
+            "child_id": "SITE-START-RECENTFORM/formula-publication-decision",
+            "title": "Reconcile approved RecentTeamForm formula/publication contract",
+            "status": "Inactive candidate/descriptive audit complete; product/promotion proof held",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "PIPE-CTPI279"
+            ],
+            "next_action": "Locate later explicit PDO-as-separate-context and version/publication decision. Reuse the completed inactive candidate, materializer, strict-pregame provenance and approved-only trust predicate; reconcile writer/reader/schema and raw→persisted→API evidence before treating any score as approved.",
+            "source": {
+              "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-ctpi-formula-audit.md",
+              "line": 84
+            },
+            "approval_gate": "No formula promotion, schema application, model/reader switch or weights decision by audit. Current unapproved legacy/candidate scores remain hidden; the smaller job279 payload fix is not full formula approval.",
+            "existing_work_credit": "Controlled 6,910/6,912 descriptive validation, sparse unavailable cases, pure candidate/materializer/provenance and fail-closed public/v6 readers retain closure."
+          },
+          {
+            "child_id": "SITE-START-RECENTFORM/bounded-persistence-replay",
+            "title": "Reconcile bounded persistence/replay before restoring TeamForm chart",
+            "status": "Held separate database gate after formula/contract approval",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "SITE-START-RECENTFORM/formula-publication-decision"
+            ],
+            "next_action": "Locate later exact authorized dry-run/delta, persisted/replayed and API/browser/source receipts, preserving strict cutoff/fingerprint/watermark and quarantined legacy immutability. In-memory 32-team materialized parity is not a database/API trace or backfill authority.",
+            "source": {
+              "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+              "line": 212
+            },
+            "approval_gate": "No DB access, writer, replay/backfill, chart restoration, forecast/model activation or unapproved data reuse by audit. Each later action needs exact scope and authority.",
+            "existing_work_credit": "Non-writing 32/32 compatibility materialization and nullable-component staging remain complete; rejected legacy formula is not restored by version fields."
+          }
+        ]
+      },
+      "before_fields": {
+        "implementation": "Current NEW17 open",
+        "acceptance": "held",
+        "verification": "Current task source; no promotion evidence inferred",
+        "next_action": "Readiness owner identifies superseding implementation/evidence",
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 197,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 204,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 211,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 212,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/e409808d5004-tasks-prd-ctpi-formula-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-ctpi-formula-audit.md",
+          "line": 84,
+          "sha256": "e409808d50047a1f548b70391b7980929bbb932542beb36fb3660e52580e1cdd",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/e409808d5004-tasks-prd-ctpi-formula-audit.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-ctpi-formula-audit.md",
+          "line": 91,
+          "sha256": "e409808d50047a1f548b70391b7980929bbb932542beb36fb3660e52580e1cdd",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/11e9b55fca23-ctpi-formula-audit-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/trends/ctpi-formula-audit-report.md",
+          "line": 207,
+          "sha256": "11e9b55fca23fc6a8f52883dd287dbddba20a65992fff81334c726d464552703",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/11e9b55fca23-ctpi-formula-audit-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/trends/ctpi-formula-audit-report.md",
+          "line": 233,
+          "sha256": "11e9b55fca23fc6a8f52883dd287dbddba20a65992fff81334c726d464552703",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/11e9b55fca23-ctpi-formula-audit-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/trends/ctpi-formula-audit-report.md",
+          "line": 235,
+          "sha256": "11e9b55fca23fc6a8f52883dd287dbddba20a65992fff81334c726d464552703",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        }
+      ]
+    },
+    "REPO-DOCUMENTATION": {
+      "fields": {
+        "verification": "Current source and retained receipts inspected; no application tests rerun. Segment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority. Segment15 distinguishes completed 36/36 modularization and approved scalar epsilon 0.005 from still-tracked PP-ACC-001–005 accuracy proposals. Meta A–K checkmarks do not close granular Sustainability or OCT14 requirements. Latest V1 tail supersedes earlier missing-identity, unresolved 73-slot and exact-cap-blocker statements; do not repeat those resolved decisions. Current canonical admission/reconciliation test packets remain authoritative over old NEW6/NEW7 issue wording. Segment16 full Sustainability sources retain later Option A, score-v2, canonical windows, applied provenance migration, local route/health acceptance and named-player UI closure over old draft/step4 instructions. The broad checked stat/probability rows need a documented scope disposition against the runbook; no current API defect was reproduced. NEW17/18 supersede old all-complete orchestration/drift language, not accepted unrelated fixes. Segment17 finishes Sustainability documentary sources at captured hashes. July/August inline pre-repair and unapplied-migration sections yield to later exact NEW15, provenance and ownership receipts; source recommendation does not revive consolidation/deletion authority. The volatility/elasticity plan is completed 19/19, so its older incomplete progress/suggested-next-steps paragraphs are not new work. Research citations remain opaque/unverified and age/goalie/context ideas do not dispatch parked modeling. Generated inventory/map summaries are structurally coherent historical snapshots, not current app existence, ownership or all-row semantic acceptance. Segment18 retains completed Goalie implementation/error containment and R7 null-win closure over older unchecked/handoff text. Historical cron catalog and manual bypass/refresh prompts are documentary records, not current schedules or authority. NEW11 reports stale test paths; the retired process rule is not restored. Existing version-specific rollout/rollback clauses do not override current model, source, no-backfill, production or owner gates. Segment19 full StartChart/CTPI sources preserve wrapper/schema/math/board/cache/browser/performance closure and explicit supersession of second-engine/roster/scoring proposals. Older 55/55, UI 25-more/category-unavailable and 300KB metadata cannot stand as current contract without later parity. Source October failure/fixture counts remain dated; accepted newer R7/null-win/reconcile/native controls are not reopened. RecentTeamForm descriptive candidate and failed predictive rollout are separate; opaque staged migration descriptions are not current hosted evidence."
+      },
+      "before_fields": {
+        "verification": "Current source and retained receipts inspected; no application tests rerun. Segment13 Forge contracts confirm further historical authority drift: July31 Command Center route/latency closure supersedes the older pending checklist; the 4/3/3 matrix and legacy-consumer assertions describe retired components. Early latest-date/legacy-fallback sketches and the six-feed freshness table do not override later source-cutoff, hard-block, expanded-feed or current admission rules. Original observability work is explicitly completed. Segment14 full living/streamlining sources resolve additional stale boxes: completed FUT/PRE skips, partial schedule handling, selected-game optimization and latest-run redaction are not active defects. Streamlining3.2 says the 365-day window is removed while results say it is retained; later implementation/contract evidence must govern the documentation. Old ELI5 maps and their destructive full-refresh itinerary are historical references, not canonical schema or operating authority. Segment15 distinguishes completed 36/36 modularization and approved scalar epsilon 0.005 from still-tracked PP-ACC-001–005 accuracy proposals. Meta A–K checkmarks do not close granular Sustainability or OCT14 requirements. Latest V1 tail supersedes earlier missing-identity, unresolved 73-slot and exact-cap-blocker statements; do not repeat those resolved decisions. Current canonical admission/reconciliation test packets remain authoritative over old NEW6/NEW7 issue wording. Segment16 full Sustainability sources retain later Option A, score-v2, canonical windows, applied provenance migration, local route/health acceptance and named-player UI closure over old draft/step4 instructions. The broad checked stat/probability rows need a documented scope disposition against the runbook; no current API defect was reproduced. NEW17/18 supersede old all-complete orchestration/drift language, not accepted unrelated fixes. Segment17 finishes Sustainability documentary sources at captured hashes. July/August inline pre-repair and unapplied-migration sections yield to later exact NEW15, provenance and ownership receipts; source recommendation does not revive consolidation/deletion authority. The volatility/elasticity plan is completed 19/19, so its older incomplete progress/suggested-next-steps paragraphs are not new work. Research citations remain opaque/unverified and age/goalie/context ideas do not dispatch parked modeling. Generated inventory/map summaries are structurally coherent historical snapshots, not current app existence, ownership or all-row semantic acceptance. Segment18 retains completed Goalie implementation/error containment and R7 null-win closure over older unchecked/handoff text. Historical cron catalog and manual bypass/refresh prompts are documentary records, not current schedules or authority. NEW11 reports stale test paths; the retired process rule is not restored. Existing version-specific rollout/rollback clauses do not override current model, source, no-backfill, production or owner gates."
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/3417e05f47f6-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md",
+          "line": 3,
+          "sha256": "3417e05f47f627991a2e8ca06aeecbadad107a7bc42e51ee4c5af4d0405f1f24",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/3417e05f47f6-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md",
+          "line": 5,
+          "sha256": "3417e05f47f627991a2e8ca06aeecbadad107a7bc42e51ee4c5af4d0405f1f24",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/cf3ee0fd3cf0-prd-start-chart-model.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md",
+          "line": 3,
+          "sha256": "cf3ee0fd3cf0a7033dc77689170dec171f46212c96f99723ef3f7f5ae98a3044",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/91fb7960dc81-tasks-prd-start-chart.md",
+          "original_path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+          "line": 47,
+          "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/1446518d759a-G5a-forge-model-startchart.md",
+          "original_path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md",
+          "line": 28,
+          "sha256": "1446518d759a0976159dd1da6030e000f1a86198b2d2a9e445e523c855dff49b",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/1446518d759a-G5a-forge-model-startchart.md",
+          "original_path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md",
+          "line": 81,
+          "sha256": "1446518d759a0976159dd1da6030e000f1a86198b2d2a9e445e523c855dff49b",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/source-snapshots/11e9b55fca23-ctpi-formula-audit-report.md",
+          "original_path": "tasks/TASKS/three-pillars-analytics/trends/ctpi-formula-audit-report.md",
+          "line": 261,
+          "sha256": "11e9b55fca23fc6a8f52883dd287dbddba20a65992fff81334c726d464552703",
+          "observed_at": "2026-10-24T19:52:54.099295+00:00",
+          "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+        }
+      ]
+    }
+  },
+  "added_ids": [],
+  "deduplication": {
+    "existing_parents": "Five StartChart contract children, one native compatibility child and two RecentTeamForm publication/replay children; no new parent ID.",
+    "upstream": "Trends historical/rolling/result repair, Yahoo equivalence, model14-date gate and release remain their existing scopes, not duplicate repair tasks.",
+    "closure": "Historicalwrapper/schema/math/board/performance/Chrome and forward CTPI/v6 guards retain closure. Second engine/custommodel/roster controls are explicitly superseded.",
+    "current": "NEW18/19/20 and staged/publication descriptions are documentary source claims. Current survival/application requires later exact evidence; no new runtime diagnosis, fail-open proposal or candidate activation."
+  }
+}

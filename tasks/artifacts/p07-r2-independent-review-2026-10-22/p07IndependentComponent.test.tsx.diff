@@ -1,0 +1,16 @@
+--- independent-r1/p07IndependentComponent.test.tsx
++++ r2-adapted/p07IndependentComponent.test.tsx
+@@ -18,11 +18,11 @@
+     manualPlayers: snapshot.players, rules: snapshot.rules, lockedAssignments: snapshot.lockedAssignments,
+     realized: snapshot.realized, opponent: snapshot.opponent, intent };
+   writeWorkspace(localStorage, workspace);
+-  const fetcher = vi.fn(async (url: string) => {
++  const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
+     if (url.endsWith("/access")) return { ok: true, json: async () => ({ data: { eligible: false, capabilities: [] } }) } as Response;
+     if (url.includes("/workspace?")) return { ok: true, json: async () => ({ data: null }) } as Response;
+     if (!url.startsWith("/api/v1/roster-schedule-optimizer/data?")) throw new Error("Unexpected path " + url);
+-    return { ok: true, json: async () => structuredClone(body) } as Response;
++    return { ok: true, json: async () => ({ ...structuredClone(body), read: { nonce: (init?.headers as Record<string, string>)["X-RSO-Read-Nonce"], evaluatedAt: now } }) } as Response;
+   });
+   vi.stubGlobal("fetch", fetcher);
+   const originalExecution = executionModule.executeRosterPlanning;

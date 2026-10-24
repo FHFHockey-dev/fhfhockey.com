@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-24T14:34:34.900998+00:00",
+  "status": "Test-only correction proposal; NOT applied to canonical or frozen candidate; not accepted as a passing rerun",
+  "path": "web/__tests__/pages/api/v1/start-chart.test.ts",
+  "beforeSha256": "9f70e810de91003b78d4b64d3e8a06c6740493d1902a99331f94e41405664504",
+  "proposedSha256": "eebd86016d6cc3809ab15b2e936b884464d41666519d689ce26112a967d203c7",
+  "patchSha256": "a8a2f2bf20949e303b550383047d38daa13eae2d6d4d169511ce6a5a694aa0cf",
+  "cause": "Cross-consumer positive fixture does not supply fictional RSO target review/bindings after P07 review-before-use policy; production denial is intentional.",
+  "controls": "Two independent artifact tests passed: production empty-catalog denial; exact fictional positive GOALS/SOG selection and revocation.",
+  "preserved": "Original Start Chart API/rank/numeric/assignment assertions and mutation check, production empty catalog, no model or public contract change",
+  "leaseNeeded": "Parent-reviewed test-only correction lease for this one path before canonical write; then rerun only affected crowded-day case and relevant negative controls on a versioned candidate."
+}

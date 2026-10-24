@@ -1,0 +1,28 @@
+{
+  "pid": 67888,
+  "execSession": 57709,
+  "bind": "127.0.0.1:3125",
+  "url": "http://127.0.0.1:3125/player-cards",
+  "script": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03/serve-preview.mjs",
+  "htmlSha256": "c50ecfbe2fc56955c085c5ff1adfadef9d5a393c39f2a2ad1fb4b6aebe854357",
+  "htmlBytes": 317312,
+  "handoffs": [
+    {
+      "from": 54140,
+      "to": 67382,
+      "reason": "S03 interactive candidate after acceptedR1/offlineQA"
+    },
+    {
+      "from": 67382,
+      "to": 67734,
+      "reason": "Calendar-mode explanation made explicit"
+    },
+    {
+      "from": 67734,
+      "to": 67888,
+      "reason": "Touch-sized retry and invalid-date recovery verified"
+    }
+  ],
+  "guards": "Every handoff verified sole listener PID/exact owned command, stopped only that process, rechecked free port, then loopback static start; no other server touched",
+  "status": "Running frozen S03 artifact; final static GET byte equality verified"
+}

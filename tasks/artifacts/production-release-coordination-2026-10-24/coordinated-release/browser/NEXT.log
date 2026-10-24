@@ -1,0 +1,50 @@
+   ▲ Next.js 15.5.22
+   - Local:        http://127.0.0.1:3140
+   - Network:      http://127.0.0.1:3140
+   - Experiments (use with caution):
+     ✓ externalDir
+
+ ✓ Starting...
+ ✓ Ready in 837ms
+ ○ Compiling /social-share/[format] ...
+ ✓ Compiled /social-share/[format] in 3.2s (1341 modules)
+An error occurred! For more details, see the full error text at https://go.apollo.dev/c/err#%7B%22version%22%3A%223.14.0%22%2C%22message%22%3A17%2C%22args%22%3A%5B%5D%7D
+ GET /social-share/game-grid 200 in 4020ms
+ GET /social-share/game-grid 200 in 220ms
+ GET /social-share/remaining-week 200 in 217ms
+ GET /social-share/game-grid 200 in 215ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 218ms
+ GET /social-share/player-spotlight 200 in 217ms
+ GET /social-share/category-rescue 200 in 212ms
+ ✓ Compiled /404 in 218ms (1348 modules)
+An error occurred! For more details, see the full error text at https://go.apollo.dev/c/err#%7B%22version%22%3A%223.14.0%22%2C%22message%22%3A17%2C%22args%22%3A%5B%5D%7D
+ GET /social-share/not-a-format 404 in 704ms
+ GET /social-share/game-grid 200 in 243ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 215ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 216ms
+ GET /social-share/remaining-week 200 in 218ms
+ GET /social-share/tuesday-trends 200 in 216ms
+ GET /social-share/remaining-week 200 in 215ms
+ GET /social-share/tuesday-trends 200 in 211ms
+ GET /social-share/tuesday-trends 200 in 213ms
+ GET /social-share/tuesday-trends 200 in 213ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 211ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/remaining-week 200 in 216ms
+ GET /social-share/game-grid 200 in 214ms
+ GET /social-share/game-grid 200 in 213ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid 200 in 212ms
+ GET /social-share/game-grid?week=2026-10-26&card=tiers&dates=2026-10-26%2C2026-10-28%2C2026-10-29%2C2026-10-30%2C2026-10-31%2C2026-11-01 200 in 211ms
+[?25h

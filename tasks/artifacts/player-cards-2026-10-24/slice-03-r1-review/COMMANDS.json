@@ -1,0 +1,58 @@
+{
+  "recordedAt": "2026-10-24T18:08:18.671593+00:00",
+  "environmentOverrides": {
+    "npm_config_cache": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-r1-review/.npm-cache",
+    "npm_config_logs_dir": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03-r1-review/.npm-logs",
+    "NO_UPDATE_NOTIFIER": "1",
+    "NEXT_TELEMETRY_DISABLED": "1"
+  },
+  "checks": [
+    {
+      "label": "focused-correction",
+      "command": [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "../tasks/artifacts/player-cards-2026-10-24/slice-03-r1-review/review.vitest.config.mts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "cwd": "web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.779,
+      "log": "focused-correction.log"
+    },
+    {
+      "label": "scoped-types",
+      "command": [
+        "npx",
+        "--no-install",
+        "tsc",
+        "--noEmit",
+        "--project",
+        "../tasks/artifacts/player-cards-2026-10-24/slice-03-r1/tsconfig.json"
+      ],
+      "cwd": "web",
+      "exitCode": 0,
+      "elapsedSeconds": 1.046,
+      "log": "scoped-types.log"
+    },
+    {
+      "label": "scoped-lint",
+      "command": [
+        "npx",
+        "--no-install",
+        "eslint",
+        "components/player-cards/InteractiveCard.tsx",
+        "components/player-cards/PlayerCardFlow.tsx",
+        "components/player-cards/PlayerCardFlow.test.tsx"
+      ],
+      "cwd": "web",
+      "exitCode": 0,
+      "elapsedSeconds": 0.736,
+      "log": "scoped-lint.log"
+    }
+  ]
+}

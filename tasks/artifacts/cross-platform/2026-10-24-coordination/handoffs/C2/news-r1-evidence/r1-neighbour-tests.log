@@ -1,0 +1,22 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c2-isolated/web
+
+ ✓ lib/sources/tweetLunaReview.test.ts (46 tests) 764ms
+(node:54677) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/homepageNewsCompatibility.test.tsx (51 tests) 85ms
+(node:54684) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/tweetNewsAutomation.test.ts (29 tests) 54ms
+(node:54686) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/newsFeed.test.ts (30 tests) 9ms
+(node:54688) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/tweetPatternReview.test.ts (2 tests) 7ms
+
+ Test Files  5 passed (5)
+      Tests  158 passed (158)
+   Start at  12:47:34
+   Duration  2.94s (transform 382ms, setup 13ms, collect 777ms, tests 919ms, environment 613ms, prepare 159ms)
+

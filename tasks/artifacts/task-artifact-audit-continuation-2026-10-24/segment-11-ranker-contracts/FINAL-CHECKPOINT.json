@@ -1,0 +1,56 @@
+{
+  "at": "2026-10-24T18:05:19.695673+00:00",
+  "checkpoint": "Segment11 complete; overall audit unfinished",
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "493e31e256b456e724ce5e76600c3132f874a44bf879528ba967be5aa3fd9925",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "6758a380de00ec854622e2769b9a97cb32b347c4b1e3a5bd0f29a16fb491b7ba",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "2b4265ce9f77f1eff4f59df1737474ea244b22c916e3cf51635de67dc174fe75"
+  },
+  "ids_before": 209,
+  "ids_after": 209,
+  "evidence_before": 1030,
+  "evidence_after": 1058,
+  "added_ids": [],
+  "changed_existing_ids": [
+    "REPO-DOCUMENTATION",
+    "SECURITY-RESIDUAL-ACL",
+    "YAHOO-HISTORY-RETIREMENT",
+    "SITE-DRAFTRANKER-HOMEPAGE",
+    "SITE-DRAFT-CSV-RESOLVER"
+  ],
+  "readable_children": 10,
+  "all_209_prior_ids_scopes_evidence_prefixes_preserved": true,
+  "legacy_blocks_each_markdown_byte_identical": 32,
+  "unchanged_existing_rows_identical": 204,
+  "new_evidence_references_verified": 28,
+  "frozen_source_pins_verified": 13,
+  "coverage_counts": {
+    "content-reviewed": 11,
+    "content-reviewed-via-common-text-and-delta": 1
+  },
+  "full_document_bytes": 251521,
+  "prior_full_reviews_reused_without_new_unique_credit": 3,
+  "current_selected_source_drift": [],
+  "historical_unique_text_candidates_remaining": 1694,
+  "historical_raw_queue_records_remaining_not_deep_document_obligations": 12124,
+  "known_support_metadata_dispositions_carried": 39,
+  "selected_unique_reports_pending": 8,
+  "library": {
+    "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "current_version": 11,
+    "status": "succeeded",
+    "native_download": "https://chatgpt.com/api/library/files/libfile_9987e7d9d1b8819181b366a318cc9a9c/download",
+    "native_xattr_readback": [
+      {
+        "name": "user.library-file-version",
+        "matches_returned_value": true,
+        "exit_code": 0
+      }
+    ],
+    "local_bytes_unchanged_after_xattrs": true
+  },
+  "next_cursor": "tasks/TASKS/forge-projections/command-center/prd-forge-command-center-rebuild.md",
+  "whole_tree_full_content_review_complete": false,
+  "application_reads_edits_tests_git_or_production_operations": 0,
+  "pending_mutation": false
+}

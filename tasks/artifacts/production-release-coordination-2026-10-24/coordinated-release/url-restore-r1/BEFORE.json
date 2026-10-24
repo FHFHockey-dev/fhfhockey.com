@@ -1,0 +1,7 @@
+{
+  "at": "2026-10-24T23:36:58.925227+00:00",
+  "source_sha256": "b0ac1fe9c30a6ceb89accb13b721885d57f141929a4d95ee29decbbb754273db",
+  "regression_test_sha256": "bdfc9066d8b7d9d29d72509ae3727ee4840fd302789275dd8bcce2d7e98a7c03",
+  "baseline_regression_exit": 1,
+  "canonical_edits": 0
+}

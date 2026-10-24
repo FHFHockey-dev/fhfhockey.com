@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/reviewTimelineAdmission.test.tsx
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-queue-check-vq86bjk4/isolation/snapshot/web
+
+(node:88538) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/reviewTimelineAdmission.test.tsx (5 tests) 86ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  09:31:54
+   Duration  576ms (transform 154ms, setup 10ms, collect 207ms, tests 86ms, environment 161ms, prepare 33ms)
+

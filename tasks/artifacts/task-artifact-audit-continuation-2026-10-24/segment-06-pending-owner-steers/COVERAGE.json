@@ -1,0 +1,38 @@
+{
+  "at": "2026-10-24T16:29:27.331501+00:00",
+  "entries": [
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/REPORT.md",
+      "bytes": 30530,
+      "lines": 148,
+      "sha256": "e8e2db19ab5e7243f3bd2cf7049cbc1c33c3b6d1f5e495968d3b13b99a063ab9",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          148
+        ]
+      ],
+      "scope": "Full documentary read; ten actual-source synthetic cases are owner evidence, not auditor rerun. Report predates parent-approved diagnostic; its no-production-authorization statement is historical and superseded only for the separate assigned diagnostic owner."
+    },
+    {
+      "library_file_id": "libfile_c30125d0825481919d792fe441de993c",
+      "version": 0,
+      "name": "prd-shareable-player-cards.md",
+      "status": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          80
+        ],
+        [
+          81,
+          176
+        ]
+      ],
+      "declared_bytes": 24662,
+      "scope": "Complete supported Library text read; draft unapproved, no canonical installation, task generation or implementation. Exact raw download hash not established."
+    }
+  ],
+  "canonical_and_library_writes": 0
+}

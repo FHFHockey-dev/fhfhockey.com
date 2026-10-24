@@ -1,0 +1,77 @@
+--- a/web/e2e/social-share.spec.ts
++++ b/web/e2e/social-share.spec.ts
+@@ -14,6 +14,7 @@
+ import { editionLabel } from "../lib/socialShare/edition";
+ import { countTiers } from "../lib/socialShare/mondayGrid";
+ import { streamingTiers } from "../lib/socialShare/tiers";
++import { installSocialEditorSession } from "./fixtures/socialEditorSession";
+ 
+ const evidence = process.env.SOCIAL_SHARE_EVIDENCE_DIR || "/tmp/fhf-social-card-readiness-evidence-20261008";
+ const upcomingWeek = calendarWeekStart(new Date(Date.now() + 7 * 86400000).toISOString());
+@@ -67,9 +68,10 @@
+ 
+ async function install(page: Page) {
+   const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTuesday: false, latest: null as SocialShareSnapshot | null };
+-  await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
++  const session = await installSocialEditorSession(page);
+   await page.route("**/api/v1/social-share/**", async route => {
+     controller.requests++;
++    expect(route.request().headers().authorization).toBe(session.authorization);
+     if (controller.fail) return route.fulfill({ status: 503, json: { error: "NHL schedule is unavailable. Refresh to retry." } });
+     const url = new URL(route.request().url());
+     // liveTuesday replays exactly what the real API returns for Tuesday today: blocked, no read.
+@@ -87,7 +89,7 @@
+     controller.latest = next;
+     return route.fulfill({ json: next, headers: { "Cache-Control": "no-store" } });
+   });
+-  return controller;
++  return Object.assign(controller, { sessionFixture: session });
+ }
+ 
+ async function open(page: Page, format = "game-grid") {
+@@ -113,6 +115,7 @@
+ 
+ test("default summary, recalculated dates and actual PNG match one frozen edition", async ({ page }) => {
+   const source = await install(page), errors: string[] = [];
++  expect(source.sessionFixture.syntheticWriteAttempts).toEqual([]);
+   page.on("pageerror", error => errors.push(error.message));
+   await open(page);
+   const square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
+@@ -840,4 +843,36 @@
+     await expect(download).toBeEnabled();
+     await downloadedPng(page, `streaming-tiers-${mode}`);
+   }
+-});
++  expect(source.sessionFixture.roleReads).toBeGreaterThan(0);
++  expect(source.sessionFixture.syntheticWriteAttempts).toEqual([]);
++});
++
++
++test("social access fixture denies a signed-out page without workspace or edition reads", async ({ page }) => {
++  const auth = await installSocialEditorSession(page, "signed-out");
++  const response = await page.goto("/social-share/game-grid");
++  expect(response?.headers()["cache-control"]).toContain("no-store");
++  await expect(page.getByRole("alert").filter({ hasText: "Sign in with your FHFH social editor account" })).toBeVisible();
++  await expect(page.getByRole("button", { name: "Refresh schedule", exact: true })).toHaveCount(0);
++  expect(auth.editionRequests).toEqual([]);
++  expect(auth.syntheticWriteAttempts).toEqual([]);
++});
++
++test("social access fixture denies a basic role without workspace or edition reads", async ({ page }) => {
++  const auth = await installSocialEditorSession(page, "basic");
++  await page.goto("/social-share/game-grid");
++  await expect(page.getByRole("alert").filter({ hasText: "Social editor access is required" })).toBeVisible();
++  expect(auth.roleReads).toBeGreaterThan(0);
++  await expect(page.getByRole("button", { name: "Refresh schedule", exact: true })).toHaveCount(0);
++  expect(auth.editionRequests).toEqual([]);
++  expect(auth.syntheticWriteAttempts).toEqual([]);
++});
++
++test("actual credential-free edition API denies before source work and stays private no-store", async ({ request }) => {
++  expect(process.env.PLAYWRIGHT_BASE_URL).toBe("http://127.0.0.1:3140");
++  const response = await request.get("/api/v1/social-share/game-grid");
++  expect(response.status()).toBe(401);
++  expect(response.headers()["cache-control"]).toBe("private, no-store, max-age=0");
++  expect(response.headers().vary).toContain("Authorization");
++  expect(await response.json()).toEqual({ error: "Sign in to use the share studio." });
++});

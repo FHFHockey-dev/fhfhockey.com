@@ -1,0 +1,69 @@
+{
+  "verdict": "accepted_copy_only_semantics_with_runtime_checks_owned_by_coordinator",
+  "base": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "snapshot": "/tmp/fhfh-c2-copy-only-release-ts8y0cz3",
+  "inputs": {
+    "candidate_json_sha256": "8f8ec37211b036aababbaf5d790aa19442c6ae94d8ad3f4d9d47758b332c3ace",
+    "original_COPY_patch_sha256": "ded81fc5afb8ba7d7e935b51ad98539b45bc008d68e16b315256e7506e2e86a3",
+    "C7_receipt_sha256": "f813964bbc538a759edcfc437869ce788b6a91400bba3dcd9b09af3c2f3ea8de"
+  },
+  "selected": {
+    "web/components/NewsFeed/NewsCard.tsx": {
+      "actual_sha256": "ab46854d98aa3ee4f2ae1e433dfb4f38b55af2c875d5c88fa58e47f72a3a928a",
+      "pin_sha256": "ab46854d98aa3ee4f2ae1e433dfb4f38b55af2c875d5c88fa58e47f72a3a928a",
+      "matches_pin": true,
+      "production_sha256": "ac72e4488fc527da59a4f67519e50816b448c53a5d8459da268b12018b6ad143"
+    },
+    "web/components/NewsFeed/NewsCard.test.tsx": {
+      "actual_sha256": "a9e031dac51da085f7d9ec14ce08ec62049e6fde50d4259e4243eb63a9aa52af",
+      "pin_sha256": "a9e031dac51da085f7d9ec14ce08ec62049e6fde50d4259e4243eb63a9aa52af",
+      "matches_pin": true,
+      "production_sha256": "40de86d6f8c91f50a18c88dbb193a6aeac5ba0b25f49fcbb1f8e9b88d82f10cd"
+    },
+    "web/lib/sources/fixtures/homepageNewsReceipt.json": {
+      "actual_sha256": "ac3e9711a02275749990f9020611e560ae8c07b6f06daa476f587bb14467a0a1",
+      "pin_sha256": "ac3e9711a02275749990f9020611e560ae8c07b6f06daa476f587bb14467a0a1",
+      "matches_pin": true
+    }
+  },
+  "actual_card_diff_restores_exact_production_after_reverting_only_constant_and_paragraph_text": true,
+  "original_C2_exact_appended_regression_block_present": true,
+  "unchanged_production_dependencies": {
+    "web/components/NewsFeed/NewsCard.module.scss": {
+      "snapshot_sha256": "de133dc94f76d9e6a835d313d0cd46ea6e94c2766e02542588405b9458339a9e",
+      "production_sha256": "de133dc94f76d9e6a835d313d0cd46ea6e94c2766e02542588405b9458339a9e",
+      "equals_production": true
+    },
+    "web/lib/newsFeed.ts": {
+      "snapshot_sha256": "65af8649df0602dc083202faca8b4978c01d6aaf9d83f66dc1971e86871418be",
+      "production_sha256": "65af8649df0602dc083202faca8b4978c01d6aaf9d83f66dc1971e86871418be",
+      "equals_production": true
+    },
+    "web/lib/newsLineupCard.ts": {
+      "snapshot_sha256": "fdf52b8171c89475d997f30b8f42ab0cab40ca3ef971bc1986accd1e95146124",
+      "production_sha256": "fdf52b8171c89475d997f30b8f42ab0cab40ca3ef971bc1986accd1e95146124",
+      "equals_production": true
+    },
+    "web/components/common/ExternalNewsLink.tsx": {
+      "snapshot_sha256": "563f401be017b19239bba0f2b847a7b316fdde08590e51e9f114165c5cf96338",
+      "production_sha256": "563f401be017b19239bba0f2b847a7b316fdde08590e51e9f114165c5cf96338",
+      "equals_production": true
+    },
+    "web/pages/index.tsx": {
+      "snapshot_sha256": "693b28a378935426864a01af658b306902b79bfd66d5cd7e96af2e34240dd4ef",
+      "production_sha256": "693b28a378935426864a01af658b306902b79bfd66d5cd7e96af2e34240dd4ef",
+      "equals_production": true
+    },
+    "web/pages/api/v1/db/tweet-pattern-review.ts": {
+      "snapshot_sha256": "ce35679d3a1b66a58a93bc8e7eac048242d271da55610f1fb522ced3a949b74f",
+      "production_sha256": "ce35679d3a1b66a58a93bc8e7eac048242d271da55610f1fb522ced3a949b74f",
+      "equals_production": true
+    }
+  },
+  "fresh_tests_or_browser_run": false,
+  "limits": [
+    "semantic/byte review only; focused execution owned by root",
+    "does not accept metadata writer, duplicate identity proposal, or modern layout",
+    "sanitized fixture only; no private identifier lookup or service requests"
+  ]
+}

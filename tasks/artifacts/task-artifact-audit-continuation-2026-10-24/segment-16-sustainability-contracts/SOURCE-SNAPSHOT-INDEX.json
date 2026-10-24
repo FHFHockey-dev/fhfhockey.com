@@ -1,0 +1,61 @@
+{
+  "cutoff": "2026-10-24T19:24:17.455705+00:00",
+  "sources": {
+    "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/672025f32a41-tasks-prd-sustainability-barometer.md",
+      "sha256": "672025f32a41613265f97ff57683e49725fd00121b9de3ecf8ed07ccf633cc5e",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+      "observed_at": "2026-10-24T19:24:17.455705+00:00",
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    "tasks/codex-sprint-2026-10-19/continuation-review/R-SCORE-HANDOFF.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/a249f36f38f1-R-SCORE-HANDOFF.md",
+      "sha256": "a249f36f38f1ac469e8dce2d78673eeab8a93d000c12865c672bbe4f0108f067",
+      "original_path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SCORE-HANDOFF.md",
+      "observed_at": "2026-10-24T19:24:17.455705+00:00",
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    "tasks/codex-sprint-2026-10-19/continuation-review/R-HEALTH-HANDOFF.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/4009ae136811-R-HEALTH-HANDOFF.md",
+      "sha256": "4009ae136811288947089ea320075054e16d7190cac50b169fabcb845b684acd",
+      "original_path": "tasks/codex-sprint-2026-10-19/continuation-review/R-HEALTH-HANDOFF.md",
+      "observed_at": "2026-10-24T19:24:17.455705+00:00",
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    "tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/d597e9096b20-SUSTAINABILITY-RUNBOOK.md",
+      "sha256": "d597e9096b20a8e96312dfb41a022182f4db6645985c6f66388bf7aa26c2c923",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md",
+      "observed_at": "2026-10-24T19:24:17.455705+00:00",
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/62e0adf2c393-tasks-prd-sustainability-model.md",
+      "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+      "observed_at": "2026-10-24T19:24:17.455705+00:00",
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-model.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/5d2cf40da1c4-prd-sustainability-model.md",
+      "sha256": "5d2cf40da1c43791450d28cb0b0064a07b6452bd9b9fa8a3fb27a44647cb66c7",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-model.md",
+      "observed_at": "2026-10-24T19:24:17.455705+00:00",
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-barometer.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/1718ff3d93f1-prd-sustainability-barometer.md",
+      "sha256": "1718ff3d93f1206c8b4bc288a34ed70f30e94b0d12b78c644258b343e31e3afc",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-barometer.md",
+      "observed_at": "2026-10-24T19:24:17.455705+00:00",
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-step4.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-16-sustainability-contracts/source-snapshots/0a0f26cc0914-prd-sustainability-step4.md",
+      "sha256": "0a0f26cc091418420f0b0beb2c8fe6380f81446ff62442679d4421698b80c8fa",
+      "original_path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-step4.md",
+      "observed_at": "2026-10-24T19:24:17.455705+00:00",
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    }
+  }
+}

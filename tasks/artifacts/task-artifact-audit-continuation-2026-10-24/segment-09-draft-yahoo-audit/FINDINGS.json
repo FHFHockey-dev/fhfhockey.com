@@ -1,0 +1,67 @@
+{
+  "at": "2026-10-24T17:35:17.562637+00:00",
+  "findings": [
+    {
+      "id": "S09-F01",
+      "register": "SITE-PICKUP-TOKENS",
+      "severity": "P3 proposed",
+      "finding": "Narrow current-local Yahoo-context raw-color recurrence; July scan-clean clause superseded only for this block.",
+      "source": "tasks/TASKS/draft-dashboard-yahoo/tasks-prd-gamegrid-draft-dashboard-style-overhaul.md:109; G4:97; SOURCE-NARROW.md; SUPER-ALIAS-EXTRACT.json",
+      "evidence": "Full paired docs and G4; actual local1744–1766 read only; no current production proof.",
+      "next_action": "Existing lease/owner reconciliation then separately assigned focused correction; no audit implementation"
+    },
+    {
+      "id": "S09-F02",
+      "register": "SITE-PRIVACY-POLICY",
+      "finding": "October18 explicitly saved Draft Pro private imports are an exception to blanket session-only free-dashboard wording.",
+      "source": "tasks-prd-draft-dashboard.md:84–85,155",
+      "next_action": "Owner facts before policy copy; no storage/erasure guarantee from document"
+    },
+    {
+      "id": "S09-F03",
+      "register": "REPO-DOCUMENTATION",
+      "finding": "Later A-DRAFT114-test/local workflow and option-A receipts supersede older scaffold/per-row-query/modal/weight recommendations; retain completed scopes.",
+      "source": "tasks-prd-draft-dashboard.md:99–196; DraftDashboard_Audit.md; prd-draft-dashboard.md:29",
+      "next_action": "Reconcile stale summaries without broad presentation/performance rewrite; debug SHA remains pending source review"
+    },
+    {
+      "id": "S09-F04",
+      "register": "YAHOO-HISTORY-RETIREMENT",
+      "finding": "Canonical cutover/writer/guard closures and measured no-pruning policy supersede old RPC/direct fallback/full-ingest/prune/duplicate-nightly prompts. Seven dated Yahoo source gates remain.",
+      "source": "tasks-prd-yahoo-ingestion-mapping-audit.md:84,105,126–128,139–142; prd-yahoo-audit.md:7,197,663–669",
+      "next_action": "Retain controlled provider/equivalence/retirement/history/end-to-end gates; no invocation"
+    },
+    {
+      "id": "S09-F05",
+      "register": "SITE-FORGE-TESTING-GROUNDS",
+      "finding": "Independent and recorded parent limited S05-R1 local acceptance supersedes pending correction verdict; activation remains independently blocked.",
+      "source": "slice-05-r1-review/REVIEW.md:3,53; STATUS-SOURCE-EXTRACT.json",
+      "evidence": "11focused passes/eight intentional skips,148pins+receipt; no audit rerun"
+    },
+    {
+      "id": "S09-F06",
+      "register": "SITE-PLAYER-CARDS",
+      "finding": "S01 and S02-R1 locally accepted within synthetic/domain limits; original twoP2failures preserved, S03 and product/live gates remain open.",
+      "source": "slice-01-review/REVIEW.md:3,5; slice-02-review/HANDOFF.md:7; slice-02-r1-review/HANDOFF.md:3; STATUS-SOURCE-EXTRACT.json",
+      "evidence": "S01:43pins15unique cases. S02R1:29probes26units58pins; counts not combined with raw capture controls."
+    },
+    {
+      "id": "S09-F07",
+      "register": "Existing STATS-S01/S02/S07/S12, SITE-WIGO and REPO-DOCUMENTATION candidates; no new dispatch",
+      "finding": "G4 other pagination/freshness/popover/workflow-link claims are dated; later owner receipts and explicit landing supersession must be reconciled before any reopening.",
+      "source": "G4-underlying-site-ux.md:93–109",
+      "next_action": "Queued evidence reconciliation; no assumption current defect or completed repair. Do not restore owner-superseded landing modules."
+    }
+  ],
+  "changed_existing_ids": [
+    "REPO-DOCUMENTATION",
+    "SITE-PRIVACY-POLICY",
+    "YAHOO-HISTORY-RETIREMENT",
+    "SITE-FORGE-TESTING-GROUNDS",
+    "SITE-PLAYER-CARDS"
+  ],
+  "added_ids": [
+    "SITE-PICKUP-TOKENS"
+  ],
+  "scope": "No implementation/dispatch/external permission granted by audit."
+}

@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-24T18:22:30.843453+00:00",
+  "scope": "Documentary resolution of segment12 candidates, then next unique task-bearing Forge contracts. No app code/tests/Git/production/workers.",
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "493e31e256b456e724ce5e76600c3132f874a44bf879528ba967be5aa3fd9925",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "6758a380de00ec854622e2769b9a97cb32b347c4b1e3a5bd0f29a16fb491b7ba",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "2b4265ce9f77f1eff4f59df1737474ea244b22c916e3cf51635de67dc174fe75"
+  },
+  "baseline_ids": 209,
+  "baseline_evidence": 1058,
+  "library_version": 11,
+  "previous_continuation": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-12-forge-command-center/CONTINUATION.json",
+  "next_cursor": "tasks/TASKS/forge-projections/dashboard-health/prd/prd-forge-dashboard.md"
+}

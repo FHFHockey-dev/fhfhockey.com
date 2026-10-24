@@ -1,0 +1,149 @@
+{
+  "R2-L 12F/6D": {
+    "forwardSectionHasD": [],
+    "defenseSectionHasF": [],
+    "dropped": [],
+    "extras": []
+  },
+  "R2-L 11F/7D": {
+    "forwardSectionHasD": [],
+    "defenseSectionHasF": [],
+    "dropped": [],
+    "extras": [
+      {
+        "label": "Extra D · 11F/7D",
+        "ids": [
+          "507"
+        ],
+        "title": "Dressed beyond the regular lines; no line or pair in the source"
+      }
+    ]
+  },
+  "R2-L 13F/5D": {
+    "forwardSectionHasD": [],
+    "defenseSectionHasF": [],
+    "dropped": [],
+    "extras": [
+      {
+        "label": "Extra F · 13F/5D",
+        "ids": [
+          "113"
+        ],
+        "title": "Dressed beyond the regular lines; no line or pair in the source"
+      }
+    ]
+  },
+  "R2-L 14F/4D": {
+    "forwardSectionHasD": [],
+    "defenseSectionHasF": [],
+    "dropped": [],
+    "extras": [
+      {
+        "label": "Extra F · 14F/4D",
+        "ids": [
+          "113",
+          "114"
+        ],
+        "title": "Dressed beyond the regular lines; no line or pair in the source"
+      }
+    ]
+  },
+  "R2-L 10F/8D": {
+    "forwardSectionHasD": [],
+    "defenseSectionHasF": [],
+    "dropped": [],
+    "extras": [
+      {
+        "label": "Extra D · 10F/8D",
+        "ids": [
+          "507",
+          "508"
+        ],
+        "title": "Dressed beyond the regular lines; no line or pair in the source"
+      }
+    ]
+  },
+  "R2-L 13F/6D": {
+    "forwardSectionHasD": [],
+    "defenseSectionHasF": [],
+    "dropped": [],
+    "extras": [
+      {
+        "label": "Extra F · 13F/6D",
+        "ids": [
+          "113"
+        ],
+        "title": "Dressed beyond the regular lines; no line or pair in the source"
+      }
+    ]
+  },
+  "R2-L 12F/7D": {
+    "forwardSectionHasD": [],
+    "defenseSectionHasF": [],
+    "dropped": [],
+    "extras": [
+      {
+        "label": "Extra D · 12F/7D",
+        "ids": [
+          "507"
+        ],
+        "title": "Dressed beyond the regular lines; no line or pair in the source"
+      }
+    ]
+  },
+  "R2-L 12F/6D+3G": {
+    "forwardSectionHasD": [],
+    "defenseSectionHasF": [],
+    "dropped": [],
+    "extras": [
+      {
+        "label": "Extra G",
+        "ids": [
+          "903"
+        ],
+        "title": "Dressed beyond the regular lines; no line or pair in the source"
+      }
+    ]
+  },
+  "R2-L 9F/9D": {
+    "forwardSectionHasD": [],
+    "defenseSectionHasF": [],
+    "dropped": [],
+    "extras": [
+      {
+        "label": "Extra D · 9F/9D",
+        "ids": [
+          "507",
+          "508",
+          "509"
+        ],
+        "title": "Dressed beyond the regular lines; no line or pair in the source"
+      }
+    ]
+  },
+  "R2-L 0F/0D": {
+    "forwardSectionHasD": [],
+    "defenseSectionHasF": [],
+    "dropped": [],
+    "extras": []
+  },
+  "R2-S1": {
+    "alert1": "Goalie data is unavailable because the complete season could not be loaded.Try again",
+    "firstRunCalls": 4,
+    "secondFailedRunCalls": 4,
+    "charts": 2,
+    "alertAfter": null
+  },
+  "R2-S2": {
+    "selectValue": "BOS",
+    "options": [
+      "BOS",
+      "PHI"
+    ],
+    "charts": 1
+  },
+  "R2-S3": {
+    "selector": false,
+    "alert": true
+  }
+}

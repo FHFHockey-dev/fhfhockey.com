@@ -1,0 +1,372 @@
+--- a/web/components/SocialShare/SocialShare.tsx
++++ b/web/components/SocialShare/SocialShare.tsx
+@@ -10,7 +10,8 @@
+ import { deploymentChanges, hotCold, MIN_RATE_TOI_SECONDS_LAST5, MIN_TREND_SEASON_GAMES, moversReady, ownershipMovers, rateStandouts, TREND_WINDOW_GAMES, trendsReady, type RateMetric, type TrendPick } from "lib/socialShare/trends";
+ import { MIN_GOALIE_STARTS, MIN_SKATER_GAMES, PICKUP_BANDS, PLAYER_TEAM_RANK_MAX, pickupTiers, playersMatchSelection, playersReady, specialists, type RankedPlayer, type SpecialistCategory } from "lib/socialShare/players";
+ import styles from "./SocialShare.module.scss";
+-import { TeamBanner } from "./TeamBanner";
++import { TeamBanner, teamBannerStyle } from "./TeamBanner";
++import { streamingTiers, tierPlayersAvailable, type TierMode } from "lib/socialShare/tiers";
+ 
+ const labels: Record<SocialShareFormat, string> = {
+   "game-grid": "Weekly schedule", "remaining-week": "Remaining week",
+@@ -393,8 +394,53 @@
+       <p><span>{kind === "movers" ? `Source: Yahoo ownership timelines · as of ${dayDate(trends?.ownershipAsOf ?? null)} · this card shows rostered-% movers, not adds or drops` : `Source: FHFH rolling game metrics (all situations) through ${dayDate(trends?.metricsThrough ?? null)} · updated ${timeLabel(trends?.metricsUpdatedAt ?? null)} · Observed rates, not projections`}</span><strong className={styles.gridWatermark}>{ready ? (kind === "movers" ? "YAHOO OWNERSHIP" : "LAST 5 VS SEASON") : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
+     </footer>
+   </>;
++}
++
++const tierModeOf = (graphic: string): TierMode | null => graphic === "tiers" ? "strict" : graphic === "tiers-wide" ? "widened" : null;
++const bandChip = (ownership: number) => ownership < 20 ? "<20%" : ownership < 30 ? "20–29%" : "30–49%";
++const tierRate = (player: RankedPlayer) => player.group === "G" ? `${player.qualityStartPct === null ? "—" : Math.round(player.qualityStartPct * 100)}% QS` : `${player.pointsPerGame!.toFixed(2)} PTS/GP`;
++
++function tierUnreadyReason(snapshot: SocialShareSnapshot, trusted: boolean) {
++  if (!trusted) return scheduleReason(snapshot);
++  if (snapshot.players?.state === "ready" && snapshot.players.selectedDates) return "the live edition does not carry tier-list players yet (pending server support)";
++  return playerUnreadyReason(snapshot, trusted);
++}
++
++function tierAltText(mode: TierMode, snapshot: SocialShareSnapshot, trusted: boolean) {
++  const head = `FHFH Schedule-aware streaming options, ${mode === "widened" ? "widened " : ""}tier list, ${yearDateLabel(snapshot.weekStart)} through ${yearDateLabel(snapshot.weekEnd)}${snapshot.selectedDates.length === 7 ? "" : `, covering ${coveredDays(snapshot)}`}.`;
++  if (!trusted || !tierPlayersAvailable(snapshot)) return `${head} Unavailable because ${tierUnreadyReason(snapshot, trusted)}.`;
++  return `${head} Tiers group teams by exact games and off-nights, best Week Score first${mode === "widened" ? "; tiers 2 and 3 fold in the next pair" : ""}. Players under 50% rostered on tier teams only, ranked by points per game, goalies by quality-start percent. ${streamingTiers(snapshot, true, mode).map(tier =>
++    `Tier ${tier.index}, ${tier.pairs.map(pair => `${pair.gp} games and ${pair.off} off-nights`).join(" or ")}, ${tier.teams.map(team => team.abbreviation).join(", ")}: ${tier.shown.map(player => `${player.name} (${player.team}, ${player.positions}), ${Math.floor(player.ownership)}% rostered, ${tierRate(player)}`).join("; ") || "no players under 50% rostered"}${tier.more ? `; plus ${tier.more} more` : ""}`).join(". ")}. Yahoo rostered percent as of ${dayDate(snapshot.players?.ownershipAsOf ?? null)}; season rates, not projections.`;
+ }
+ 
++/** Schedule-aware streaming tier list (TJ, ticket 13): tier bars with team logos, then list rows. */
++function TierListCard({ mode, snapshot, trusted, logos, brandLogo }: { mode: TierMode; snapshot: SocialShareSnapshot; trusted: boolean; logos: Record<string, string | null>; brandLogo: string | null }) {
++  const ready = trusted && tierPlayersAvailable(snapshot), tiers = ready ? streamingTiers(snapshot, true, mode) : [];
++  return <>
++    <CardHeader snapshot={snapshot} brandLogo={brandLogo} compact eyebrow={ready ? `${editionDay(snapshot)} · Schedule-aware tier list${mode === "widened" ? " · widened" : ""}` : "Unranked preview"} title="STREAMING OPTIONS" />
++    {!ready ? <div className={styles.matchupEmpty}><strong>Ranking unavailable</strong><p>The tier list needs a ready schedule and current player data; {tierUnreadyReason(snapshot, trusted)}.</p></div>
++      : <div className={styles.tierList}>{tiers.map(tier => <section key={tier.index} data-tier-index={tier.index} className={styles.tierBlock}>
++        <div className={styles.tierBar}>
++          <strong>TIER {tier.index}</strong>
++          <span className={styles.tierLogos}>{tier.teams.map(team => <TeamMark key={team.id} team={team} logo={logos[team.abbreviation]} size={34} />)}</span>
++          <span className={styles.tierPair}>{tier.pairs.map(pair => `${pair.gp} GP · ${pair.off} OFF`).join(" / ")}{tier.more > 0 && <i>+{tier.more} more</i>}</span>
++        </div>
++        {tier.shown.length ? tier.shown.map((player, index) => <div key={player.nhlId} data-player={player.nhlId} data-team={player.team} className={styles.tierRow} style={teamBannerStyle(player.team)}>
++          <span className={styles.tierRank}>{index + 1}</span>
++          <span className={styles.tierWho}><TeamMark team={{ id: 0, abbreviation: player.team, name: player.team }} logo={logos[player.team]} size={28} /><span><strong>{player.name}</strong><small>{player.team} · {player.positions}</small></span></span>
++          <span className={styles.tierOwn}><strong>{rosteredLabel(player.ownership)}</strong><small>{bandChip(player.ownership)}</small></span>
++          <span className={styles.tierRecent}><b>L5 GP</b>{recentLine(player, "pickup", snapshot.players?.recentState)}</span>
++          <span className={styles.tierRate}>{tierRate(player)}</span>
++        </div>) : <p className={styles.tierEmpty}>No players under 50% rostered on these teams</p>}
++      </section>)}</div>}
++    <footer className={styles.gridFooter}>
++      <div className={styles.legend}><span><b>Tier</b> = exact GP · off-night pair, best Week Score first</span>{mode === "widened" && <span>Widened: tiers 2–3 fold in the next pair</span>}<span><b>L5 GP</b> last 5 games played</span><span>Under 50% rostered · PTS/GP, goalies QS%</span></div>
++      <p><span>Strictly tier teams only · {TIER_ROWS_NOTE} · Yahoo rostered % as of {dayDate(snapshot.players?.ownershipAsOf ?? null)} · NHL.com season totals updated {timeLabel(snapshot.players?.statsUpdatedAt ?? null)}</span><strong className={styles.gridWatermark}>{ready ? "SCHEDULE + PLAYER RATES" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
++    </footer>
++  </>;
++}
++const TIER_ROWS_NOTE = "+N more = rows that did not fit";
++
+ export default function SocialShare({ format, asOf }: { format: SocialShareFormat; asOf: string }) {
+   const supported = SCHEDULE_FORMATS.includes(format);
+   const [weekStart, setWeekStart] = useState(() => calendarWeekStart(asOf));
+@@ -420,6 +466,7 @@
+   const matchupKind: MatchupKind | null = graphic === "easiest" || graphic === "stream" ? graphic : null;
+   const playerCard = parsePlayerCard(graphic);
+   const trendKind = (TREND_KINDS as readonly string[]).includes(graphic) ? graphic as TrendKind : null;
++  const tierMode = tierModeOf(graphic);
+ 
+   const prepareAssets = useCallback(async () => {
+     setAssetsReady(false); setAssetError("");
+@@ -486,11 +533,11 @@
+   const logosReady = !!snapshot && snapshot.teams.every(team => team.abbreviation in teamLogos);
+   // Every card shows team logos now (the leaders card gained banners and week rows).
+   const squareReady = assetsReady && logosReady;
+-  const squareAlt = (current: SocialShareSnapshot) => gridCard ? gridAltText(current, trusted) : matchupKind ? matchupAltText(matchupKind, current, trusted) : playerCard ? playerAltText(playerCard, current, trusted) : trendKind ? trendAltText(trendKind, current, trusted) : altText(current, rows, trusted, !!focusTeam);
++  const squareAlt = (current: SocialShareSnapshot) => gridCard ? gridAltText(current, trusted) : matchupKind ? matchupAltText(matchupKind, current, trusted) : playerCard ? playerAltText(playerCard, current, trusted) : trendKind ? trendAltText(trendKind, current, trusted) : tierMode ? tierAltText(tierMode, current, trusted) : altText(current, rows, trusted, !!focusTeam);
+   const trendHasRows = !trendKind || !snapshot ? true : trendReady(trendKind, snapshot, trusted) && trendColumns(trendKind, snapshot).some(column => column.rows.length > 0);
+   const playerHasRows = !playerCard || !snapshot ? true : playerCard.kind === "pickups" ? Object.values(pickupTiers(snapshot, trusted).find(tier => tier.max === playerCard.max)?.groups ?? {}).some(list => list.length > 0) : Object.values(specialists(snapshot, trusted)).some(list => list.length > 0);
+   const matchupHasRows = !matchupKind || !snapshot ? true : matchupKind === "easiest" ? easiestSchedules(snapshot, trusted).rows.length > 0 : streamingNights(snapshot, trusted).length > 0;
+-  const canExport = trusted && squareReady && !loading && !!snapshot?.selectedDates.length && rows.some(row => row.remainingGames > 0) && (!matchupKind || (opponentsReady(snapshot!) && matchupHasRows)) && (!playerCard || (playersReady(snapshot!) && playerHasRows)) && (!trendKind || trendHasRows);
++  const canExport = trusted && squareReady && !loading && !!snapshot?.selectedDates.length && rows.some(row => row.remainingGames > 0) && (!matchupKind || (opponentsReady(snapshot!) && matchupHasRows)) && (!playerCard || (playersReady(snapshot!) && playerHasRows)) && (!trendKind || trendHasRows) && (!tierMode || (tierPlayersAvailable(snapshot!) && streamingTiers(snapshot!, true, tierMode).some(tier => tier.shown.length > 0)));
+   const changeWeek = (value: string) => {
+     if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
+     const monday = calendarWeekStart(`${value}T16:00:00Z`);
+@@ -518,6 +565,8 @@
+             <option value="pickups-30">Pickups · 20–29% rostered</option>
+             <option value="pickups-20">Pickups · under 20% rostered</option>
+             <option value="specialists">Specialists · hits, shots, blocks</option>
++            <option value="tiers">Streaming options · tier list</option>
++            <option value="tiers-wide">Streaming options · widened tiers</option>
+             <option value="leaders">{trusted ? "Top three schedule leaders" : "Known schedule context (unranked)"}</option>{snapshot?.teams.map(team => <option key={team.id} value={team.id}>{team.name}</option>)}
+             </>}
+           </select></label>
+@@ -543,10 +592,10 @@
+       </div>
+       <div className={styles.workspace}>
+         <section className={styles.panel} aria-label="Graphic preview">
+-          <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{!trusted ? "Unranked context" : gridCard ? "Best schedules grid" : matchupKind === "easiest" ? "Easiest schedules" : matchupKind === "stream" ? "Streaming matchups" : playerCard ? (playerCard.kind === "pickups" ? `Pickups ${bandLabel(playerCard.max).toLowerCase()}` : "Category specialists") : trendKind ? trendTitles[trendKind].toLowerCase() : focusTeam ? "Team focus" : "Schedule leaders"}</span></div>
++          <div className={styles.panelHeader}><h2>1080 × 1080 preview</h2><span>{!trusted ? "Unranked context" : gridCard ? "Best schedules grid" : matchupKind === "easiest" ? "Easiest schedules" : matchupKind === "stream" ? "Streaming matchups" : playerCard ? (playerCard.kind === "pickups" ? `Pickups ${bandLabel(playerCard.max).toLowerCase()}` : "Category specialists") : trendKind ? trendTitles[trendKind].toLowerCase() : tierMode ? `Streaming options (${tierMode})` : focusTeam ? "Team focus" : "Schedule leaders"}</span></div>
+           <div className={styles.previewFrame} ref={frame} style={{ height: scale * SHARE_SIZE }}>
+             {snapshot && squareReady && <div ref={preview} className={cx(styles.square, styles.gridSquare)} style={{ transform: `scale(${scale})` }} data-testid="share-square" role="img" aria-label={squareAlt(snapshot)}>
+-              {gridCard ? <MondayGrid snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : matchupKind ? <MatchupCard kind={matchupKind} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : playerCard ? <PlayerCard card={playerCard} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : trendKind ? <TrendCard kind={trendKind} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : <>
++              {gridCard ? <MondayGrid snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : matchupKind ? <MatchupCard kind={matchupKind} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : playerCard ? <PlayerCard card={playerCard} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : trendKind ? <TrendCard kind={trendKind} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : tierMode ? <TierListCard mode={tierMode} snapshot={snapshot} trusted={trusted} logos={teamLogos} brandLogo={logo} /> : <>
+               <CardHeader snapshot={snapshot} brandLogo={logo} compact eyebrow={trusted ? `${editionDay(snapshot)} · ${focusTeam ? "Team schedule" : "Schedule leaders"}` : "Unranked preview · Ranking unavailable"} title={!trusted ? "KNOWN SCHEDULES" : focusTeam ? "YOUR TEAM’S WEEK" : "TOP 3 SCHEDULES"} />
+               <div className={styles.leaders}>{rows.length ? rows.map(row => {
+                 const week = mondayGridRows(snapshot, trusted).find(item => item.team.id === row.team.id)!;
+@@ -579,7 +628,7 @@
+           </div>
+           <div className={styles.actions}><button type="button" disabled={!canExport || exporting} onClick={async () => {
+             if (!preview.current || !snapshot) return; setExporting(true); setFeedback("");
+-            try { await downloadSharePng(preview.current, snapshot, matchupKind ? { opponents: true, card: matchupKind } : playerCard ? { players: true, card: graphic } : trendKind ? { [trendKind === "movers" ? "movers" : "trends"]: true, card: trendKind } : {}); setFeedback("PNG downloaded: 1080 × 1080."); }
++            try { await downloadSharePng(preview.current, snapshot, matchupKind ? { opponents: true, card: matchupKind } : playerCard || tierMode ? { players: true, card: graphic } : trendKind ? { [trendKind === "movers" ? "movers" : "trends"]: true, card: trendKind } : {}); setFeedback("PNG downloaded: 1080 × 1080."); }
+             catch (cause) { setFeedback(cause instanceof Error ? cause.message : "Download failed. Retry the same edition."); }
+             finally { setExporting(false); }
+           }}>{exporting ? "Creating PNG…" : "Download PNG"}</button>
+--- a/web/components/SocialShare/SocialShare.module.scss
++++ b/web/components/SocialShare/SocialShare.module.scss
+@@ -330,7 +330,41 @@
+   .panel { padding: v.$space-sm; }
+   .controls { label { width: 100%; } input, select { width: 100%; } }
+   .teamList { max-height: none; }
++}
++
++// Schedule-aware tier list (TJ ticket 13): tier bars, then team-coloured list rows.
++.tierList { flex: 1; display: grid; align-content: start; gap: 12px; min-height: 0; }
++.tierBlock { display: grid; gap: 3px; }
++.tierBar { position: relative; display: grid; grid-template-columns: auto auto 1fr; align-items: center; column-gap: 14px; height: 54px; padding: 0 16px 8px;
++  border-radius: 10px 10px 0 0; background: v.$primary-color; color: v.$color-white;
++  &::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: linear-gradient(to bottom, #0b0d10 0 3px, #ffffff 3px 5px, #0b0d10 5px 8px); }
++  > strong { font-size: 30px; font-weight: 900; letter-spacing: 0.02em; }
++}
++.tierLogos { display: flex; gap: 8px; align-items: center; filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
++  img, > b { display: block; }
++  > b { width: auto !important; padding: 0 4px; font-size: 13px; }
++}
++.tierPair { justify-self: end; display: flex; gap: 10px; align-items: center; font: 600 15px "Share Martian Mono", monospace; white-space: nowrap;
++  i { font-style: normal; font-family: "Share Roboto Condensed", sans-serif; font-size: 12px; font-weight: 800; letter-spacing: 0.05em; padding: 2px 7px; border-radius: 4px; background: rgba(#0b0d10, 0.35); }
++}
++.tierRow { display: grid; grid-template-columns: 26px 250px 70px minmax(0, 1fr) 118px; align-items: center; column-gap: 10px; height: 36px; padding-right: 12px;
++  background: var(--team-bg); color: var(--team-ink); border-bottom: 2px solid var(--team-dark); }
++.tierRank { align-self: stretch; display: grid; place-items: center; background: #14171b; color: v.$color-blue-300; font: 600 15px "Share Martian Mono", monospace; }
++.tierWho { display: flex; align-items: center; gap: 8px; min-width: 0;
++  img, > b { flex: none; display: block; width: 28px; height: 28px; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.4)); }
++  > span { display: grid; min-width: 0; line-height: 1.05; }
++  strong { font-size: 16px; font-weight: 900; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
++  small { font-size: 10.5px; font-weight: 700; opacity: 0.85; }
+ }
++.tierOwn { display: grid; justify-items: end; line-height: 1;
++  strong { font: 700 17px "Share Martian Mono", monospace; }
++  small { font-size: 9.5px; font-weight: 800; letter-spacing: 0.04em; opacity: 0.85; margin-top: 2px; }
++}
++.tierRecent { display: flex; gap: 7px; align-items: center; min-width: 0; padding: 4px 8px; border-radius: 5px; background: rgba(#0b0d10, 0.55); color: #ffffff; font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden;
++  b { flex: none; font-size: 10px; font-weight: 800; letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px; background: rgba(v.$color-blue-300, 0.22); color: v.$color-blue-300; }
++}
++.tierRate { justify-self: end; font: 700 14px "Share Martian Mono", monospace; white-space: nowrap; }
++.tierEmpty { margin: 0; padding: 9px 14px; font-size: 15px; color: v.$text-secondary; background: rgba(v.$color-white, 0.04); }
+ 
+ // Team banner: primary band over sporty stripes (dark / light / mid / dark), logo over the stripes.
+ .teamBanner { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; column-gap: 10px;
+--- a/web/e2e/social-share.spec.ts
++++ b/web/e2e/social-share.spec.ts
+@@ -13,6 +13,7 @@
+ import { fictionalTrendSources } from "../lib/socialShare/trendsFixture";
+ import { editionLabel } from "../lib/socialShare/edition";
+ import { countTiers } from "../lib/socialShare/mondayGrid";
++import { streamingTiers } from "../lib/socialShare/tiers";
+ 
+ const evidence = process.env.SOCIAL_SHARE_EVIDENCE_DIR || "/tmp/fhf-social-card-readiness-evidence-20261008";
+ const upcomingWeek = calendarWeekStart(new Date(Date.now() + 7 * 86400000).toISOString());
+@@ -812,6 +813,31 @@
+       const counts = await square.locator("[data-count-tier]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-count-tier")));
+       expect(counts.length).toBeGreaterThan(0);
+       expect(counts.every(tier => ["high", "second", "between", "low"].includes(tier!))).toBe(true);
++    }
++  }
++});
++
++test("schedule-aware tier list shows only tier teams' players as list rows, strict and widened", async ({ page }) => {
++  const source = await install(page);
++  source.mode = "league";
++  await open(page);
++  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
++  await expect(square.locator("[data-team][data-tier]")).toHaveCount(32);
++  for (const [card, mode] of [["tiers", "strict"], ["tiers-wide", "widened"]] as const) {
++    await graphic.selectOption(card);
++    await expect(square).toContainText("STREAMING OPTIONS");
++    const tiers = streamingTiers(source.latest!, true, mode);
++    expect(tiers).toHaveLength(3);
++    await expect(square.locator("[data-tier-index]")).toHaveCount(3);
++    expect(await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-player")))).toEqual(tiers.flatMap(tier => tier.shown.map(player => String(player.nhlId))));
++    for (const tier of tiers) {
++      const block = square.locator(`[data-tier-index="${tier.index}"]`);
++      for (const player of tier.shown) expect(tier.teams.map(team => team.abbreviation)).toContain(player.team);
++      if (tier.more) await expect(block).toContainText(`+${tier.more} more`);
++      await expect(block.locator("[data-player]").first()).toContainText("L5 GP");
+     }
++    expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
++    await expect(download).toBeEnabled();
++    await downloadedPng(page, `streaming-tiers-${mode}`);
+   }
+ });
+--- /dev/null
++++ b/web/lib/socialShare/tiers.ts
+@@ -0,0 +1,83 @@
++import { playersReady, type RankedPlayer } from "./players";
++import type { ShareTeam, ShareTeamRow, SocialShareSnapshot } from "./types";
++
++/**
++ * Schedule-aware streaming tiers (TJ, ticket 13). Teams with games are grouped by their exact
++ * (GP, off-nights) pair; pairs are ordered by Game Grid Week Score (the best team's score in the pair,
++ * TJ's pop-up choice), so the order matches the Best Schedules grid. Only the top three tiers show.
++ * Strict: one pair per tier. Widen: from Tier 2 down, each tier also takes the next pair, so on TJ's
++ * Oct 26 week Tier 2 = 4/2 + 4/1 (WPG, LAK, OTT) and Tier 3 = 3/2 (+ the next pair).
++ */
++export const TIER_COUNT = 3;
++/** Player rows across all three tiers; a tier that runs out says "+N more" instead of shrinking text. */
++export const TIER_LIST_ROWS = 15;
++
++export type TierMode = "strict" | "widened";
++export type SchedulePair = { gp: number; off: number; teams: ShareTeamRow[]; bestScore: number };
++export type StreamingTier = { index: number; pairs: SchedulePair[]; teams: ShareTeam[]; players: RankedPlayer[]; shown: RankedPlayer[]; more: number };
++
++/** Distinct (GP, off-nights) pairs of teams with games, best Week Score first; teams inside by rank. */
++export function schedulePairs(snapshot: Pick<SocialShareSnapshot, "rows">): SchedulePair[] {
++  const groups = new Map<string, ShareTeamRow[]>();
++  for (const row of snapshot.rows.filter(item => item.remainingGames > 0)) {
++    const key = `${row.remainingGames}/${row.offNightGames}`;
++    groups.set(key, [...(groups.get(key) ?? []), row]);
++  }
++  return [...groups.values()].map(teams => {
++    const sorted = [...teams].sort((a, b) => a.rank - b.rank || a.team.abbreviation.localeCompare(b.team.abbreviation));
++    return { gp: sorted[0].remainingGames, off: sorted[0].offNightGames, teams: sorted, bestScore: Math.max(...sorted.map(team => team.score)) };
++  }).sort((a, b) => b.bestScore - a.bestScore || b.gp - a.gp || b.off - a.off);
++}
++
++/** The pairs in each shown tier for the mode. */
++export function tierPairs(pairs: SchedulePair[], mode: TierMode): SchedulePair[][] {
++  if (mode === "strict") return pairs.slice(0, TIER_COUNT).map(pair => [pair]);
++  // Widen: Tier 1 keeps the best pair alone; Tiers 2 and 3 each fold in the next pair.
++  return [pairs.slice(0, 1), pairs.slice(1, 3), pairs.slice(3, 5)].filter(tier => tier.length > 0);
++}
++
++/** Split the row budget: an equal share each (capped by its players), leftovers to earlier tiers first; an empty tier keeps one row for its note. */
++export function allocateRows(counts: number[], capacity = TIER_LIST_ROWS): number[] {
++  const reserved = counts.filter(count => count === 0).length, budget = Math.max(0, capacity - reserved);
++  const active = counts.filter(count => count > 0).length;
++  const share = active ? Math.floor(budget / active) : 0;
++  const rows = counts.map(count => Math.min(count, share));
++  let left = budget - rows.reduce((sum, value) => sum + value, 0);
++  for (let i = 0; i < counts.length && left > 0; i++) {
++    const add = Math.min(left, counts[i] - rows[i]);
++    rows[i] += add; left -= add;
++  }
++  return rows;
++}
++
++/** Existing per-player rate: skaters by points per game first, then goalies by quality-start %, then save %. */
++const listOrder = (a: RankedPlayer, b: RankedPlayer) => Number(a.group === "G") - Number(b.group === "G")
++  || (a.group === "G" ? (b.qualityStartPct ?? -1) - (a.qualityStartPct ?? -1) || (b.savePct ?? -1) - (a.savePct ?? -1) : (b.pointsPerGame ?? -1) - (a.pointsPerGame ?? -1))
++  || a.weekRank - b.weekRank || a.ownership - b.ownership || a.name.localeCompare(b.name) || a.nhlId - b.nhlId;
++
++/**
++ * The tier list needs every under-50% player on the tier teams. A live layer is trimmed server-side to
++ * the pickup and specialist cards' players (it carries `selectedDates`), so until the server also keeps
++ * tier rows, the card reports itself unavailable instead of listing an incomplete set.
++ */
++export const tierPlayersAvailable = (snapshot: SocialShareSnapshot) => playersReady(snapshot) && !snapshot.players?.selectedDates;
++
++/**
++ * Players under 50% rostered on each tier's teams only, tier order before rate. `shown` fits the row
++ * budget; `more` counts the rest.
++ */
++export function streamingTiers(snapshot: SocialShareSnapshot, trusted: boolean, mode: TierMode): StreamingTier[] {
++  if (!trusted) return [];
++  const ready = tierPlayersAvailable(snapshot), rows = new Map(snapshot.rows.map(row => [row.team.abbreviation, row]));
++  const tiers = tierPairs(schedulePairs(snapshot), mode).map((pairs, index) => {
++    const teams = pairs.flatMap(pair => pair.teams);
++    const names = new Set(teams.map(row => row.team.abbreviation));
++    const players = !ready ? [] : (snapshot.players?.players ?? []).filter(player => names.has(player.team) && player.ownership < 50).map(player => {
++      const row = rows.get(player.team)!;
++      return { ...player, weekRank: row.rank, remainingGames: row.remainingGames, offNightGames: row.offNightGames, widened: false };
++    }).sort(listOrder);
++    return { index: index + 1, pairs, teams: teams.map(row => row.team), players };
++  });
++  const allocation = allocateRows(tiers.map(tier => tier.players.length));
++  return tiers.map((tier, i) => ({ ...tier, shown: tier.players.slice(0, allocation[i]), more: tier.players.length - allocation[i] }));
++}
+--- /dev/null
++++ b/web/lib/socialShare/tiers.test.ts
+@@ -0,0 +1,78 @@
++import { describe, expect, it } from "vitest";
++import { buildScheduleSnapshot } from "./schedule";
++import { fictionalLeagueWeek } from "./fixtures";
++import { fictionalPlayerSources } from "./pickupsFixture";
++import { buildPlayerLayer, trimPlayerLayer } from "./players";
++import { allocateRows, schedulePairs, streamingTiers, tierPairs, TIER_LIST_ROWS } from "./tiers";
++import type { ShareTeamRow, SocialShareSnapshot } from "./types";
++
++const weekStart = "2026-10-26", now = "2026-10-26T12:00:00Z", season = 20262027;
++function edition(): SocialShareSnapshot {
++  const snapshot = buildScheduleSnapshot({ format: "game-grid", weekStart, generatedAt: now, schedule: fictionalLeagueWeek(weekStart, now) });
++  return { ...snapshot, players: buildPlayerLayer(fictionalPlayerSources(season, "2026-10-26", "2026-10-26T08:00:00Z"), { season, teams: snapshot.teams.map(team => team.abbreviation), fetchedAt: now, generatedAt: now }) };
++}
++// TJ's Oct 26 – Nov 1 example as synthetic rows, with Week Scores in Game Grid's order (4/1 above 3/2 by design).
++const row = (abbreviation: string, rank: number, score: number, remainingGames: number, offNightGames: number) =>
++  ({ team: { id: rank, abbreviation, name: abbreviation }, rank, score, remainingGames, offNightGames, weightedOffNights: 0, games: [] }) as ShareTeamRow;
++const example = [row("CGY", 1, 20, 4, 3), row("EDM", 2, 19.5, 4, 3), row("WPG", 3, 15, 4, 2), row("LAK", 4, 12, 4, 1), row("OTT", 5, 11.8, 4, 1),
++  row("TOR", 6, 10, 3, 2), row("NJD", 7, 9.9, 3, 2), row("PHI", 8, 9.8, 3, 2), row("WSH", 9, 9.5, 3, 2), row("BOS", 10, 7, 3, 1), row("SEA", 11, 0, 0, 0)];
++const names = (tiers: { teams: ShareTeamRow[] }[][]) => tiers.map(tier => tier.flatMap(pair => pair.teams.map(team => team.team.abbreviation)));
++
++describe("schedule pairs and tiers", () => {
++  it("groups teams by exact (GP, off-nights), ties together, best Week Score first, teams by rank", () => {
++    const pairs = schedulePairs({ rows: example });
++    expect(pairs.map(pair => `${pair.gp}/${pair.off}`)).toEqual(["4/3", "4/2", "4/1", "3/2", "3/1"]);
++    expect(pairs[0].teams.map(team => team.team.abbreviation)).toEqual(["CGY", "EDM"]);
++    expect(pairs.flatMap(pair => pair.teams).some(team => team.remainingGames === 0)).toBe(false);
++  });
++
++  it("reproduces TJ's example week: strict T1 4/3, T2 4/2, T3 4/1; widen folds 4/1 into T2 and makes T3 = 3/2", () => {
++    const pairs = schedulePairs({ rows: example });
++    expect(names(tierPairs(pairs, "strict"))).toEqual([["CGY", "EDM"], ["WPG"], ["LAK", "OTT"]]);
++    expect(names(tierPairs(pairs, "widened"))).toEqual([["CGY", "EDM"], ["WPG", "LAK", "OTT"], ["TOR", "NJD", "PHI", "WSH", "BOS"]]);
++    expect(tierPairs(pairs.slice(0, 2), "strict")).toHaveLength(2);
++    expect(tierPairs([], "widened")).toEqual([]);
++  });
++
++  it("allocates the row budget fairly, leftovers to earlier tiers, one note row for an empty tier", () => {
++    expect(allocateRows([10, 10, 10])).toEqual([5, 5, 5]);
++    expect(allocateRows([2, 10, 10])).toEqual([2, 8, 5]);
++    expect(allocateRows([0, 10, 10])).toEqual([0, 7, 7]);
++    expect(allocateRows([3, 2, 1])).toEqual([3, 2, 1]);
++    expect(allocateRows([40, 40, 40]).reduce((sum, value) => sum + value, 0)).toBe(TIER_LIST_ROWS);
++  });
++});
++
++describe("streaming tier players", () => {
++  it("lists only under-50% players from tier teams, tier order before rate, within budget with +N more", () => {
++    const snapshot = edition();
++    for (const mode of ["strict", "widened"] as const) {
++      const tiers = streamingTiers(snapshot, true, mode);
++      expect(tiers.length).toBe(3);
++      for (const tier of tiers) {
++        const teams = new Set(tier.teams.map(team => team.abbreviation));
++        for (const player of tier.players) { expect(teams.has(player.team)).toBe(true); expect(player.ownership).toBeLessThan(50); }
++        const skaters = tier.players.filter(player => player.group !== "G"), goalies = tier.players.filter(player => player.group === "G");
++        expect(tier.players).toEqual([...skaters, ...goalies]);
++        for (let i = 1; i < skaters.length; i++) expect(skaters[i - 1].pointsPerGame!).toBeGreaterThanOrEqual(skaters[i].pointsPerGame!);
++        expect(tier.shown).toEqual(tier.players.slice(0, tier.shown.length));
++        expect(tier.more).toBe(tier.players.length - tier.shown.length);
++      }
++      expect(tiers.reduce((sum, tier) => sum + tier.shown.length, 0)).toBeLessThanOrEqual(TIER_LIST_ROWS);
++      // No team appears in two tiers, so tier order always takes precedence over rate.
++      const all = tiers.flatMap(tier => tier.teams.map(team => team.abbreviation));
++      expect(new Set(all).size).toBe(all.length);
++    }
++  });
++
++  it("keeps an empty tier, and lists nothing when untrusted or when a live layer was trimmed", () => {
++    const snapshot = edition(), [first] = streamingTiers(snapshot, true, "strict");
++    const emptied = { ...snapshot, players: { ...snapshot.players!, players: snapshot.players!.players.filter(player => !first.teams.some(team => team.abbreviation === player.team)) } };
++    const tiers = streamingTiers(emptied, true, "strict");
++    expect(tiers[0]).toMatchObject({ players: [], shown: [], more: 0 });
++    expect(tiers[1].shown.length).toBeGreaterThan(0);
++    expect(streamingTiers(snapshot, false, "strict")).toEqual([]);
++    const trimmed = { ...snapshot, players: trimPlayerLayer(snapshot, snapshot.players!) };
++    expect(streamingTiers(trimmed, true, "strict").every(tier => tier.players.length === 0)).toBe(true);
++  });
++});

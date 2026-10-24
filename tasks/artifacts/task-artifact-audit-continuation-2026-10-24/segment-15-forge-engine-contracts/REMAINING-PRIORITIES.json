@@ -1,0 +1,41 @@
+{
+  "at": "2026-10-24T19:18:03.122169+00:00",
+  "source": "Existing immutable inventory and exact review/role overlays only; no new inventory.",
+  "unique_text_candidates": 1654,
+  "family_counts": {
+    "Other named planning/checklist families — title classification only": 196,
+    "Forge remaining primary/secondary documentary family": 13,
+    "Sustainability source/task family — next priority": 12,
+    "Artifact text candidates — inspect task/decision-bearing representatives first": 948,
+    "Other task-root text candidates — role disposition needed": 360,
+    "Historical diaries — only contradictions or missing follow-up evidence": 125
+  },
+  "not_all_candidates_need_deep_read": true,
+  "classification_is_path_based_not_content_acceptance": true,
+  "next_batch": [
+    "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+    "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+    "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-barometer.md",
+    "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-model.md"
+  ],
+  "deferred_older_ecosystem_prds": [
+    "tasks/TASKS/forge-projections/ecosystem-audits/prd/prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md",
+    "tasks/TASKS/forge-projections/ecosystem-audits/tasks-prd-forge-ecosystem-pass-3-stabilization-quarantine-dashboard.md"
+  ],
+  "supporting_entries_not_deep_documents": {
+    "structured-evidence": 2526,
+    "binary-or-supporting-snapshot": 3814,
+    "duplicate-scope-check": 4088
+  },
+  "new_role_dispositions": [
+    {
+      "path": "tasks/TASKS/forge-projections/v1/prd/prd-projection-model.md",
+      "sha256": "42b41559b1561854dc410fe7222433a3c2135498a6eb7ef583cb694839f5b5e6",
+      "coverage": "partially-inspected",
+      "disposition": "Requirements reviewed; historical commented cron appendix bounded and role-disposed",
+      "deep_read_required": false,
+      "scope": "All substantive prose 1–610 read. Commented SQL appendix 614–1257 bounded by complete comment/fence/job-label/path/placeholder checks; individual statement semantics unreviewed. No full-file content credit.",
+      "receipt": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-15-forge-engine-contracts/PRD-CRON-APPENDIX-DISPOSITION.json"
+    }
+  ]
+}

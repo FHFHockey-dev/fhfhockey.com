@@ -1,0 +1,24 @@
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p02-check-1q9Oyu/isolation/snapshot/web
+
+(node:89004) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/PlayerStats/playerStatsContract.test.ts (52 tests) 12ms
+(node:89004) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/NHL/statsPageFetch.test.ts (13 tests) 23ms
+(node:89004) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/StatsPage/MobileTabInterface.test.tsx (3 tests) 87ms
+(node:89004) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/PlayerStats/PlayerContextualStats.test.tsx (10 tests) 34ms
+(node:89004) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/StatsPage/LeaderboardCategoryGoalie.test.tsx (4 tests) 15ms
+
+ Test Files  5 passed (5)
+      Tests  82 passed (82)
+   Start at  09:33:28
+   Duration  1.66s (transform 179ms, setup 20ms, collect 381ms, tests 171ms, environment 759ms, prepare 129ms)
+

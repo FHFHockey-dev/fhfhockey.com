@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-23T16:33:45.310616+00:00",
+  "owner": "01a1637a-4222-70c0-8439-cb3cc46b20c4",
+  "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss",
+  "beforeSha256": "ee4dcb45b83366ad35ed2a34a5165ae059790ff232d02af6f9482297c3f7d75d",
+  "scope": "One existing scheduleLegend inlinepadding rule5px to3px, matching adjacent compactScroll; no DOM/logic changes; prior commandbar patch preserved",
+  "originalGeometryPath": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/adjudicated-controls-01/results/roster-schedule-optimizer--94789--preserves-clipped-horizons-chromium/slider-alignment-failure.json",
+  "originalGeometrySha256": "b6fd7eb4ae6b3b33f7970a9f1f056d046f35e28ccd172569905af05964b63cae",
+  "testOwner": "01a168af-30c9-71b7-af0a-f25a9d90a02a",
+  "testLease": "No edits by release owner to active E2E spec/helper"
+}

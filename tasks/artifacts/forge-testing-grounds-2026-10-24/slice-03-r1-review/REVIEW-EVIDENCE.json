@@ -1,0 +1,34 @@
+{
+  "verdict": "ACCEPT WITH LIMITS",
+  "resolvedFinding": "S03-R1/P2 on new three-file pins only",
+  "pinChecks": 88,
+  "pinMatches": 88,
+  "receiptHashesMatched": true,
+  "pinDrift": 0,
+  "independentExecution": {
+    "originalControlsPassed": 2,
+    "newOwnerRegressionGroupsPassed": 3,
+    "newIndependentControlsPassed": 6,
+    "totalPassed": 11,
+    "unrelatedSkipped": 24,
+    "failed": 0,
+    "runs": 1
+  },
+  "scopedTypeScript": "passed",
+  "scopedESLint": "passed",
+  "originalFailedEvidence": "unchanged",
+  "resourceQualification": "Conservative E+W total claims; legacy omitted W=E permits up to2E. Serialized hash compatibility is not identical runtime allowance. No hosted budget approved.",
+  "remainingGates": [
+    "memory-only durability",
+    "actual auth/worker/storage integration",
+    "executor availability-only waiting semantics and scientific finality",
+    "approved hosted resource/data/model/pilot plan"
+  ],
+  "blockedChecks": [],
+  "runningOperations": [],
+  "sourceRepairs": 0,
+  "sharedWrites": 0,
+  "gitMutations": 0,
+  "externalRequests": 0,
+  "subagents": 0
+}

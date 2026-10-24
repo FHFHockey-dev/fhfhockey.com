@@ -1,0 +1,6 @@
+Initial read-only scope parser failure (before tests):
+Traceback (most recent call last):
+  File "<stdin>", line 12, in <module>
+AssertionError: []
+Cause: reviewer regex assumed +++ b/<path>; owner source.patch uses +++ <path>.
+Correction: parse actual patch header convention and reconstruct additions; no owner file changed.

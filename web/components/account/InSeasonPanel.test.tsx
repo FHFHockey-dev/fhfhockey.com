@@ -17,6 +17,8 @@ beforeEach(() => {
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 it("shows the agreed price, Eastern cutoff and monthly unavailability without legacy checkout", () => {
   render(<InSeasonPanel />);
+  expect(mocks.access).toHaveBeenCalledWith({ entitlementOnly: true });
+  expect(mocks.access).toHaveBeenCalledWith();
   expect(screen.getByRole("heading", { name: "Season pass · $24.99" })).toBeTruthy();
   expect(screen.getByText(/midnight New York time/)).toBeTruthy();
   expect(screen.getByRole("button", { name: /Buy season pass/ }).hasAttribute("disabled")).toBe(true);

@@ -289,11 +289,11 @@ const GoalieShareChart: React.FC = () => {
     setSelectedSpan(span);
   };
 
-  useEffect(() => {
-    if (hasInitialized.current) return;
-    hasInitialized.current = true;
-
-    const loadGoalieGames = async () => {
+  // Each run (initial or "Try again") keeps the same bounded per-request
+  // attempts and withholds every window unless the season is complete.
+  const loadGoalieGames = useCallback(async () => {
+      setLoading(true);
+      setLoadError(null);
       let seasonId = inferCurrentSeasonId();
       try {
         const seasonParams = new URLSearchParams({
@@ -325,15 +325,22 @@ const GoalieShareChart: React.FC = () => {
       } finally {
         setLoading(false);
       }
-    };
-
-    loadGoalieGames();
   }, [fetchGoalieGames, fetchJsonWithRetry]);
+
+  useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+    loadGoalieGames();
+  }, [loadGoalieGames]);
 
   const goalieStats = useMemo(
     () => buildGoalieShareByTeam(goalieGames, selectedSpan),
     [goalieGames, selectedSpan]
   );
+  const teamsWithData = Object.keys(goalieStats);
+  // The narrow view shows one team; fall back to the first team with data
+  // when the chosen (or default) team has no appearances in this window.
+  const shownTeam = goalieStats[selectedTeam] ? selectedTeam : teamsWithData[0];
 
   const generateChartData = (teamAbbrev: string) => {
     const teamStats = goalieStats[teamAbbrev];
@@ -429,7 +436,7 @@ const GoalieShareChart: React.FC = () => {
 
     // For mobile, show only selected team
     if (isMobile) {
-      const teamsToShow = teams.filter((team) => team === selectedTeam);
+      const teamsToShow = teams.filter((team) => team === shownTeam);
       if (teamsToShow.length === 0) return null;
 
       return (
@@ -611,14 +618,15 @@ const GoalieShareChart: React.FC = () => {
       </div>
 
       {/* Team selector dropdown for mobile view */}
-      {isMobile && (
+      {isMobile && !loading && !loadError && shownTeam && (
         <div className={styles.teamSelectorContainer}>
           <select
-            value={selectedTeam}
+            value={shownTeam}
             onChange={handleTeamChange}
             className={styles.teamSelector}
+            aria-label="Team"
           >
-            {Object.keys(goalieStats).map((teamAbbrev) => (
+            {teamsWithData.map((teamAbbrev) => (
               <option key={teamAbbrev} value={teamAbbrev}>
                 {teamsInfo[teamAbbrev as keyof typeof teamsInfo]?.shortName ||
                   teamAbbrev}
@@ -631,7 +639,16 @@ const GoalieShareChart: React.FC = () => {
       {loading ? (
         <div className={styles.loadingMessage}>Loading goalie data...</div>
       ) : loadError ? (
-        <div className={styles.noDataMessage} role="alert">{loadError}</div>
+        <div className={styles.noDataMessage} role="alert">
+          {loadError}
+          <button
+            type="button"
+            className={styles.retryButton}
+            onClick={() => loadGoalieGames()}
+          >
+            Try again
+          </button>
+        </div>
       ) : (
         <>
           {Object.keys(goalieStats).length > 0 ? (

@@ -1,0 +1,56 @@
+[
+  {
+    "path": "web/pages/api/v1/roster-schedule-optimizer/workspace.ts",
+    "current": "0848b58b2f38d52d38c17a8ba1ce611f0baddacecfb4f7a39ab08832f10c5721",
+    "tested": "0848b58b2f38d52d38c17a8ba1ce611f0baddacecfb4f7a39ab08832f10c5721",
+    "match": true
+  },
+  {
+    "path": "web/pages/api/v1/roster-schedule-optimizer/access.ts",
+    "current": "e65e0f5c316424c6d28eebe9cf292257deb3e2c669621edeeb0890f6f83b9842",
+    "tested": "e65e0f5c316424c6d28eebe9cf292257deb3e2c669621edeeb0890f6f83b9842",
+    "match": true
+  },
+  {
+    "path": "web/lib/api/requireApiUser.ts",
+    "current": "9dcc841a77859d2c07a9919756bb5980081120ca61be2af3b7ebb7cb7b150ff2",
+    "tested": "9dcc841a77859d2c07a9919756bb5980081120ca61be2af3b7ebb7cb7b150ff2",
+    "match": true
+  },
+  {
+    "path": "web/lib/in-season/server.ts",
+    "current": "8a7c10f5d18f10f1cc94f4836fd7b43f2338af6fe3824be6c03ccf1cdd5b828d",
+    "tested": "8a7c10f5d18f10f1cc94f4836fd7b43f2338af6fe3824be6c03ccf1cdd5b828d",
+    "match": true
+  },
+  {
+    "path": "web/lib/integrations/providerSyncAccess.ts",
+    "current": "5e34f581be828b4f0b45cbfbb0e0851b65567f81fc35795000af4e79f7483ae5",
+    "tested": "5e34f581be828b4f0b45cbfbb0e0851b65567f81fc35795000af4e79f7483ae5",
+    "match": true
+  },
+  {
+    "path": "web/lib/integrations/providerSyncAccessServer.ts",
+    "current": "6feba64d25aad65ae6322fcc812be8ad202c18545ba38eaaf4566f3379dd0bf1",
+    "tested": "6feba64d25aad65ae6322fcc812be8ad202c18545ba38eaaf4566f3379dd0bf1",
+    "match": true
+  },
+  {
+    "path": "web/lib/rosterScheduleData/bridgeForecastWire.ts",
+    "current": "d5e4aa7b51cdc6d5362ebfe5b70f163701764b80d9db14feae35beef53959b27",
+    "tested": "d5e4aa7b51cdc6d5362ebfe5b70f163701764b80d9db14feae35beef53959b27",
+    "match": true
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.ts",
+    "current": "30acc638e6019650dbe7c53b7a443c9670be8fdea54b38e7e56027e9e4883b90",
+    "tested": "30acc638e6019650dbe7c53b7a443c9670be8fdea54b38e7e56027e9e4883b90",
+    "match": true
+  },
+  {
+    "path": "web/lib/rosterScheduleOptimizer/refreshForecastInputs.ts",
+    "current": "a77283cfdced008068f95cebb0dcc40315c70595cd28f8e55a0577d06384a594",
+    "tested": "a77283cfdced008068f95cebb0dcc40315c70595cd28f8e55a0577d06384a594",
+    "match": true
+  }
+]

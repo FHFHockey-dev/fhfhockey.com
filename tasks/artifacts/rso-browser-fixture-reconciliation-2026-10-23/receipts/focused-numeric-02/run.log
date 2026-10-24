@@ -1,0 +1,95 @@
+
+Running 4 tests using 1 worker
+
+[1A[2K[1/4] [chromium] › e2e/roster-schedule-optimizer.spec.ts:913:7 › assignment-only forecasts preserve their allowed uses in the browser
+[1A[2K[2/4] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1151:5 › unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (manual)
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1151:5 › unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (manual) 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoContainText[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Locator: getByRole('region', { name: 'Matchup' }).locator('details').filter({ has: getByText('Selected lineup · estimate sources', { exact: true }) }).getByRole('article', { name: 'Alpha Center game 30 GOALS evidence' }).getByText(/^Baseline rate input/)
+    Expected substring: [32m"issued Sep 27, 1:00 AM UTC"[39m
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toContainText" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('region', { name: 'Matchup' }).locator('details').filter({ has: getByText('Selected lineup · estimate sources', { exact: true }) }).getByRole('article', { name: 'Alpha Center game 30 GOALS evidence' }).getByText(/^Baseline rate input/)[22m
+
+
+      1256 |     await expect(goals).not.toContainText("Sep 29");
+      1257 |     if (goalsBlended) {
+    > 1258 |       await expect(goals.getByText(/^Baseline rate input/)).toContainText("issued Sep 27, 1:00 AM UTC");
+           |                                                             ^
+      1259 |       await expect(goals.getByText(/^Baseline rate input/)).toContainText("expires Oct 9");
+      1260 |     } else await expect(goals.getByText(/^Baseline rate input/)).toHaveCount(0);
+      1261 |     if (withAssists) {
+        at expectSourceTimes (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1258:61)
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1272:3
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../focused-numeric-02/results/roster-schedule-optimizer--b41eb-articipation-expiry-manual--chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../focused-numeric-02/results/roster-schedule-optimizer--b41eb-articipation-expiry-manual--chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../focused-numeric-02/results/roster-schedule-optimizer--b41eb-articipation-expiry-manual--chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../focused-numeric-02/results/roster-schedule-optimizer--b41eb-articipation-expiry-manual--chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[3/4] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1151:5 › unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (connected)
+[1A[2K  2) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1151:5 › unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (connected) 
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoMatchObject[2m([22m[32mexpected[39m[2m)[22m
+
+    [32m- Expected  - 1[39m
+    [31m+ Received  + 1[39m
+
+    [33m@@ -7,11 +7,11 @@[39m
+    [2m              "inputs": Object {[22m
+    [2m                "detailed": Object {[22m
+    [2m                  "sourceWatermark": "captured-reads",[22m
+    [2m                },[22m
+    [2m              },[22m
+    [32m-             "sourceKind": "blended",[39m
+    [31m+             "sourceKind": "detailed",[39m
+    [2m            },[22m
+    [2m          },[22m
+    [2m          "sourceWatermark": "captured-reads",[22m
+    [2m        },[22m
+    [2m        Object {},[22m
+
+      1232 |     await page.getByRole("button", { name: "Save to account" }).click();
+      1233 |     await expect(page.getByText("Saved to account.")).toBeVisible();
+    > 1234 |     expect(saved).toMatchObject({ snapshot: { forecasts: [{ sourceWatermark: "captured-reads",
+           |                   ^
+      1235 |       contributions: { GOALS: { sourceKind: "blended", inputs: { detailed: { sourceWatermark: "captured-reads" } } } } }, {}] } });
+      1236 |     await page.getByRole("button", { name: "View account save" }).click();
+      1237 |     await expect(projected).toContainText("—");
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1234:19
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../focused-numeric-02/results/roster-schedule-optimizer--60f1d-icipation-expiry-connected--chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../focused-numeric-02/results/roster-schedule-optimizer--60f1d-icipation-expiry-connected--chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../focused-numeric-02/results/roster-schedule-optimizer--60f1d-icipation-expiry-connected--chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../focused-numeric-02/results/roster-schedule-optimizer--60f1d-icipation-expiry-connected--chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[4/4] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1581:5 › Audit1 native candidate Worker finds complete swaps before any plan is selected
+[1A[2K  2 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1151:5 › unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (manual) 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1151:5 › unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (connected) 
+  2 passed (23.2s)

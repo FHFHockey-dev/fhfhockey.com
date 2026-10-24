@@ -1,0 +1,138 @@
+[
+  {
+    "label": "dashboard EDM (fresh load)",
+    "reads": [
+      "games",
+      "lineCombinations",
+      "nhl_standings_details",
+      "nst_team_5v5",
+      "seasons",
+      "team_summary_years",
+      "teams",
+      "wgo_team_stats",
+      "yahoo_nhl_player_map"
+    ],
+    "count": 20
+  },
+  {
+    "label": "click Season Stats EDM",
+    "reads": [],
+    "count": 0
+  },
+  {
+    "label": "click Shot Map EDM",
+    "reads": [
+      "pbp_games",
+      "pbp_plays"
+    ],
+    "count": 2
+  },
+  {
+    "label": "Shot Map EDM playoffs only",
+    "reads": [
+      "pbp_games",
+      "pbp_plays"
+    ],
+    "count": 2
+  },
+  {
+    "label": "playoff-only body excerpt",
+    "text": [
+      "Goals\nHits",
+      "Total Events: 146\n",
+      "Goals: 73\n",
+      "Total Events: 146\n",
+      "Goals: 73\n",
+      "Total Events: 147\n"
+    ]
+  },
+  {
+    "label": "Shot Map EDM no game types",
+    "reads": [
+      "pbp_games",
+      "pbp_plays"
+    ],
+    "count": 2
+  },
+  {
+    "label": "filters visible in empty state",
+    "visible": true,
+    "reset": 0
+  },
+  {
+    "label": "TOR 13F/5D lines (fresh load)",
+    "reads": [
+      "games",
+      "lineCombinations",
+      "nhl_standings_details",
+      "nst_team_5v5",
+      "seasons",
+      "team_summary_years",
+      "teams",
+      "wgo_team_stats",
+      "yahoo_nhl_player_map"
+    ],
+    "count": 20
+  },
+  {
+    "label": "TOR forward 13 shown",
+    "shown": 0
+  },
+  {
+    "label": "narrow EDM stats",
+    "reads": [
+      "games",
+      "lineCombinations",
+      "nhl_standings_details",
+      "nst_team_5v5",
+      "seasons",
+      "team_summary_years",
+      "teams",
+      "wgo_team_stats",
+      "yahoo_nhl_player_map"
+    ],
+    "count": 20
+  },
+  {
+    "label": "narrow EDM shot map",
+    "reads": [
+      "games",
+      "lineCombinations",
+      "nhl_standings_details",
+      "nst_team_5v5",
+      "pbp_games",
+      "pbp_plays",
+      "seasons",
+      "team_summary_years",
+      "teams",
+      "wgo_team_stats",
+      "yahoo_nhl_player_map"
+    ],
+    "count": 23
+  },
+  {
+    "label": "narrow horizontal overflow px",
+    "overflow": 0
+  },
+  {
+    "label": "console errors (deduped)",
+    "errors": [
+      "Failed to load resource: net::ERR_FAILED",
+      "/api/v1/season TypeError: Failed to fetch\n    at get (webpack-internal:///(pages-dir-browser)/./lib/NHL/client/index.ts:43:20)\n    at getCurrentSeason (webpack-",
+      "useCurrentSeason failed to load season TypeError: Failed to fetch\n    at get (webpack-internal:///(pages-dir-browser)/./lib/NHL/client/index.ts:43:20)\n    at ge",
+      "Failed to load resource: the server responded with a status of 406 (Not Acceptable)",
+      "Error fetching team dashboard data: {code: PGRST116, message: fixture: no single row}",
+      "Unable to load team standings header."
+    ]
+  },
+  {
+    "label": "blocked non-local hosts",
+    "hosts": [
+      "127.0.0.1/api/v1/season",
+      "cdn.vercel-insights.com",
+      "fonts.googleapis.com",
+      "img.buymeacoffee.com",
+      "va.vercel-scripts.com"
+    ]
+  }
+]

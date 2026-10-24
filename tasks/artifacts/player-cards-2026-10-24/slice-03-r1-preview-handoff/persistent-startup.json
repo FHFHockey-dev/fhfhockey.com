@@ -1,0 +1,15 @@
+{
+  "previousListener": "81671",
+  "stoppedOwnPid": 81671,
+  "htmlSha256": "6c29f6eb3dc6ffc9a6a8a546423f78ac3e6e5e1e7265129475724422d3aad9b5",
+  "bytes": 318626,
+  "bind": "127.0.0.1:3125",
+  "automaticRestart": false,
+  "systemStartupChanges": false,
+  "pid": 81978,
+  "launcherPid": 81962,
+  "startNewSession": true,
+  "stdin": "DEVNULL",
+  "stdoutStderr": "server.log",
+  "lifecycle": "Independent of launcher shell/session; no automatic restart. Host/environment shutdown or explicit process termination stops it. Post-turn survival still needs later observation."
+}

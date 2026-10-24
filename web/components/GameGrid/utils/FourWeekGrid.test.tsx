@@ -91,7 +91,7 @@ describe("FourWeekGrid", () => {
     expect(screen.getByRole("link", { name: "Open Alpha Team HQ" }).getAttribute("href")).toBe("/stats/team/ALP");
     const info = container.querySelector("details")!;
     expect(info.hasAttribute("open")).toBe(false);
-    expect(info.textContent).toContain("remaining games + 0.25 × off-night games");
+    expect(info.textContent).toContain("remaining team games + 0.25 × off-night games");
     expect(info.textContent).toContain("shared scale");
   });
   it("treats absent coverage and score as unavailable, and shows four weekly slots", () => {

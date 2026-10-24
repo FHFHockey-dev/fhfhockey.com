@@ -1,0 +1,17 @@
+{
+  "argv": [
+    "/usr/local/bin/npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "vitest.offline.config.mts",
+    "lib/cron/nstCoordination.test.ts",
+    "-t",
+    "keeps retired job79 clearance advisory"
+  ],
+  "cwd": "/tmp/fhfh-job79-retirement-only-gfcnvgz1/fixture/web",
+  "exitCode": 1,
+  "expectedFailure": true,
+  "onlyAlteration": "Base nstBurstPlans.ts replaces candidate planner in separate disposable copy"
+}

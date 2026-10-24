@@ -40,9 +40,9 @@ export type GoalieStat = {
   fullName: string;
   current_team_abbreviation: string;
   wins: number;
-  save_pct: number;
-  goals_against_avg: number;
-  quality_starts_pct: number;
+  save_pct: number | null;
+  goals_against_avg: number | null;
+  quality_starts_pct: number | null;
   games_played: number;
   image_url: string;
   sweater_number?: number | null;

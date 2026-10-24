@@ -1,0 +1,115 @@
+{
+  "O1a": {
+    "real": {
+      "state": "ready",
+      "opponents": "ready",
+      "expiresAt": "2026-10-26T17:00:00.000Z",
+      "cc": "public, max-age=0, s-maxage=300, stale-while-revalidate=300"
+    },
+    "violations": [],
+    "violationCount": 0
+  },
+  "O1c": {
+    "ok": [
+      200,
+      "public, max-age=0, s-maxage=300, stale-while-revalidate=300"
+    ],
+    "bad": [
+      400,
+      "no-store",
+      {
+        "error": "weekStart must fall in the 2025–26, 2026–27 or 2027–28 NHL season."
+      }
+    ],
+    "down": [
+      503,
+      "no-store"
+    ],
+    "post": [
+      405,
+      "no-store"
+    ]
+  },
+  "O2": {
+    "readsAfterFailure": 0,
+    "readsAfterSuccess": 1
+  },
+  "O3": {
+    "2025-08-04": {
+      "code": 200,
+      "cc": "no-store",
+      "error": null,
+      "scheduleCalls": 1,
+      "rateReads": 1
+    },
+    "2028-07-31": {
+      "code": 200,
+      "cc": "no-store",
+      "error": null,
+      "scheduleCalls": 1,
+      "rateReads": 1
+    },
+    "2025-07-28": {
+      "code": 400,
+      "cc": "no-store",
+      "error": "weekStart must fall in the 2025–26, 2026–27 or 2027–28 NHL season.",
+      "scheduleCalls": 0,
+      "rateReads": 0
+    },
+    "2028-08-07": {
+      "code": 400,
+      "cc": "no-store",
+      "error": "weekStart must fall in the 2025–26, 2026–27 or 2027–28 NHL season.",
+      "scheduleCalls": 0,
+      "rateReads": 0
+    },
+    "2099-01-05": {
+      "code": 400,
+      "cc": "no-store",
+      "error": "weekStart must fall in the 2025–26, 2026–27 or 2027–28 NHL season.",
+      "scheduleCalls": 0,
+      "rateReads": 0
+    },
+    "1990-01-01": {
+      "code": 400,
+      "cc": "no-store",
+      "error": "weekStart must fall in the 2025–26, 2026–27 or 2027–28 NHL season.",
+      "scheduleCalls": 0,
+      "rateReads": 0
+    }
+  },
+  "O4": {
+    "limit": 64,
+    "over": "Team rate response was incomplete or over the row limit.",
+    "overCalls": [
+      [
+        0,
+        63
+      ]
+    ],
+    "okCalls": [
+      [
+        0,
+        63
+      ]
+    ],
+    "select": "team_abbreviation,gp,xgf,xga,season,situation,updated_at",
+    "okKeys": [
+      "gp",
+      "xgf",
+      "xga",
+      "season",
+      "situation",
+      "updated_at"
+    ]
+  },
+  "L1": {
+    "keys": [
+      "gp",
+      "xgf",
+      "xga"
+    ],
+    "leak": false,
+    "opponents": "ready"
+  }
+}

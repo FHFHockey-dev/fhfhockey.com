@@ -1,0 +1,27 @@
+# Trusted confirmation checkpoint
+
+The local current-read correction rejects serialized Yahoo start labels as quantitative authority. It does **not** remove genuine confirmations already supplied by the current server's accepted DailyBoardEvidence pipeline. No bridge implementation change was made in this follow-up.
+
+The existing bridge test file now includes 11 source-to-forecast controls. Accepted `confirmed` yields probability 1; accepted `ruled_out` yields 0. Saves and goals allowed retain their conditional per-start values and only the unconditional totals scale with participation. Unaccepted, expired, future-available and wrong-game/team/player observations cannot change the probability. Unknown status leaves it unchanged. The pre-existing likely/projected floors remain 0.8/0.65 and do not set `confirmedStart`; their modeling policy is separate from confirmation authority.
+
+TJ subsequently explicitly selected retention of the likely 80% / projected 65% floors. These are user-selected policy values, not empirically calibrated probabilities. The current code and passing tests already implement those floor semantics; no rerun or source change was needed for the decision. The independent review's earlier unchanged-prior failures are historical scope evidence, not current acceptance requirements.
+
+42 tests in `forgeDailyBridge.test.ts` pass, including those 11 new cases. ESLint and scoped TypeScript pass. The command also named a nonexistent `dailyBoardEvidence.test.ts`, so this receipt claims no second test file; actual executed paths and counts are in `tests.json`. The imported real resolver is exercised through the bridge tests. `TYPES.json` records the subsequent scoped type check. All execution used Node 22.11.0, npm, synthetic import configuration, a pinned ordinary source copy and denied network access. `INTEGRITY.json` reports no drift across 3,447 pinned files. The original Yahoo two-file and three-file receipts remain preserved separately.
+
+`CANDIDATE.json` pins the complete current three-file Yahoo correction/test packet; `packet.patch` is relative to the recorded HEAD. The implementation change is only in `currentPlanningRead.ts`; the other two files contain regression tests. There are no catalog approvals, forecast-policy weakening, provider calls or database changes.
+
+## Positive Yahoo source gap
+
+`loadYahooPlanningSnapshot` verifies the authenticated owner's team and league, connected-account match, provider game context, roster response ownership/date and freshness before parsing Yahoo's Starting/Not Starting mark. But the resulting player metadata crosses saved/browser transport. The P07 current read is an independent public GET; it has no authenticated current Yahoo receipt. Reusing the saved mark there would restore the demonstrated spoofing flaw.
+
+The existing trusted positive source is `loadDailyBoardEvidence` → `buildForgeDailyBridgeForecasts`, with accepted observations, timestamp/expiry checks, exact game/team/player scope and conflicts. `ruled_out` deliberately has `confirmed:false` in this evidence type; a blanket boolean gate would wrongly discard valid negative confirmation. The independent investigator reports genuine server-confirmed values survive both the actual worker and shared fallback despite contradictory saved Yahoo labels.
+
+## Smallest proposed Yahoo extension — not implemented
+
+Use a private current-planning read with the same nonce, generation deadline and runtime-only authority constructor. Authenticate the current session and enforce the existing provider-sync access and team/league ownership checks. The server obtains current public forecast inputs plus **one bounded current roster resource** for that verified Yahoo team, checks provider date/time, exact NHL player/team/game applicability and rejects contradictory or unknown marks. Apply verified 1/0 participation only to eligible bridge rows before compact transport; preserve conditional rates, native target permissions, manual intent and realized inputs. A failed or unavailable provider confirmation cannot reuse saved marks.
+
+Do not call the full `loadYahooPlanningSnapshot` per planning generation: it fans out to settings, scoreboard, rosters, historical lineups and availability pages. Reuse only the narrow ownership/parser/provider primitives, with a declared timeout/retry budget and no per-candidate read, new cache, schema, secret or durable receipt storage. Native rows retain their own target-use contract.
+
+There is an additional integration constraint: `requireApiUser` requires a Bearer header, whereas the current worker GET only sends same-origin credentials. Authentication must stay in the existing trusted session transport; do not serialize tokens into saved snapshots or claim cookies alone satisfy this handler. A main-thread authenticated fetch broker for the worker, or the existing session-aware request abstraction if suitable, needs scoped architecture review before implementation. No new permissions or production/provider calls are needed to test this entirely with mocks.
+
+This is a reviewable proposal, not implemented Yahoo confirmation support or release acceptance. The independent reviewer owns source-to-worker review fixtures; the release owner owns only the pinned three-file correction. Existing browser assertions expecting saved Yahoo labels to change probabilities remain a release acceptance dependency until the final product/source decision is implemented and reviewed.

@@ -1,0 +1,130 @@
+{
+  "at": "2026-10-24T19:23:43.730086+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+      "sha256": "672025f32a41613265f97ff57683e49725fd00121b9de3ecf8ed07ccf633cc5e",
+      "bytes": 35737,
+      "lines": 185,
+      "mtime_ns": 1792454788451608281,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          185
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-model.md",
+      "sha256": "62e0adf2c39319111a3fe1fa09d4de76d9d8f516821dcc23af45cddd0db12a29",
+      "bytes": 27233,
+      "lines": 201,
+      "mtime_ns": 1785977520216390767,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          201
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-barometer.md",
+      "sha256": "1718ff3d93f1206c8b4bc288a34ed70f30e94b0d12b78c644258b343e31e3afc",
+      "bytes": 34742,
+      "lines": 487,
+      "mtime_ns": 1785977520214905931,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          487
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-model.md",
+      "sha256": "5d2cf40da1c43791450d28cb0b0064a07b6452bd9b9fa8a3fb27a44647cb66c7",
+      "bytes": 13169,
+      "lines": 218,
+      "mtime_ns": 1785977520215226881,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          218
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-SCORE-HANDOFF.md",
+      "sha256": "a249f36f38f1ac469e8dce2d78673eeab8a93d000c12865c672bbe4f0108f067",
+      "bytes": 4895,
+      "lines": 39,
+      "mtime_ns": 1792453498649537301,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          39
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-HEALTH-HANDOFF.md",
+      "sha256": "4009ae136811288947089ea320075054e16d7190cac50b169fabcb845b684acd",
+      "bytes": 5689,
+      "lines": 56,
+      "mtime_ns": 1792454946969417903,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          56
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/SUSTAINABILITY-RUNBOOK.md",
+      "sha256": "d597e9096b20a8e96312dfb41a022182f4db6645985c6f66388bf7aa26c2c923",
+      "bytes": 11225,
+      "lines": 124,
+      "mtime_ns": 1785977520214620522,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          124
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/sustainability/prd/prd-sustainability-step4.md",
+      "sha256": "0a0f26cc091418420f0b0beb2c8fe6380f81446ff62442679d4421698b80c8fa",
+      "bytes": 7722,
+      "lines": 131,
+      "mtime_ns": 1785197963747802717,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          131
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical schemas/examples. Underlying app, test execution, current production/data and cited external receipts were not reverified. Stored instructions grant no authority."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 8
+  },
+  "full_text_bytes": 140412,
+  "method": "Eight full unique documentary reads within Sustainability and two directly cited local receipts. Source chronology and explicit local/natural/empirical distinctions checked. No app/tests/Git/production/new workers, new inventory or unchanged log-body review."
+}

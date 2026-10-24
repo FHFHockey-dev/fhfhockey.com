@@ -1,0 +1,4 @@
+scripts/forge-skater-candidate-ablation.ts(54,28): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ FP: number | null; }'.
+  No index signature with a parameter of type 'string' was found on type '{ FP: number | null; }'.
+scripts/forge-skater-candidate-ablation.ts(54,89): error TS7053: Element implicitly has an 'any' type because expression of type 'string' can't be used to index type '{ FP: number | null; }'.
+  No index signature with a parameter of type 'string' was found on type '{ FP: number | null; }'.

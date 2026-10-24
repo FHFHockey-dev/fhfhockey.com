@@ -1,0 +1,68 @@
+{
+  "cutoff": "2026-10-24T20:30:45.375060+00:00",
+  "sources": {
+    "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/e3b6adf794d1-tasks-prd-gdl-suite-ingestion.md",
+      "sha256": "e3b6adf794d175771bfa12bdc5b5f968a10281a192fcf246bba1532d129b15a6",
+      "original_path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+      "observed_at": "2026-10-24T20:30:45.375060+00:00",
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    "tasks/TASKS/lines-gdl-ingestion/TWEET-PIPELINE-RELEASE.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/1a7d90a9ce42-TWEET-PIPELINE-RELEASE.md",
+      "sha256": "1a7d90a9ce427ad4df93acf9b6f4520e12ba75e17078c6c7a6f11aa0f1c7360f",
+      "original_path": "tasks/TASKS/lines-gdl-ingestion/TWEET-PIPELINE-RELEASE.md",
+      "observed_at": "2026-10-24T20:30:45.375060+00:00",
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-implementation.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/b93b9c3677e3-2026-10-01-classification-implementation.md",
+      "sha256": "b93b9c3677e3e81e134dffc014bd39c2c9f326c8d9fc1af3fe70e251c6fbd30f",
+      "original_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-implementation.md",
+      "observed_at": "2026-10-24T20:30:45.375060+00:00",
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    "tasks/TASKS/lines-gdl-ingestion/game-line-snapshots-local-handoff.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/e22fda98d7fd-game-line-snapshots-local-handoff.md",
+      "sha256": "e22fda98d7fd7f7b378ee23f63ef7f3420ff61bb427d52f62ec8b9f67c57e3ce",
+      "original_path": "tasks/TASKS/lines-gdl-ingestion/game-line-snapshots-local-handoff.md",
+      "observed_at": "2026-10-24T20:30:45.375060+00:00",
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    "tasks/ifttt-integration-2026-10-16/review-v4/REVIEW.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/34549a83ee97-REVIEW.md",
+      "sha256": "34549a83ee97ff2d4a49504aa987dd252883f9d5ea9539b6c53311928be8663d",
+      "original_path": "tasks/ifttt-integration-2026-10-16/review-v4/REVIEW.md",
+      "observed_at": "2026-10-24T20:30:45.375060+00:00",
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    "tasks/ifttt-integration-2026-10-16/rollout-approval-2026-10-17/ROLLOUT-APPROVAL.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/f2949718515c-ROLLOUT-APPROVAL.md",
+      "sha256": "f2949718515c7d053eac239cd9b47f1d0bc44fe31df92fd889f517bd44201e6d",
+      "original_path": "tasks/ifttt-integration-2026-10-16/rollout-approval-2026-10-17/ROLLOUT-APPROVAL.md",
+      "observed_at": "2026-10-24T20:30:45.375060+00:00",
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    "tasks/artifacts/codex-2026-10-20/I1.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/a8efd469ab98-I1.md",
+      "sha256": "a8efd469ab98dbfb127c1f1679c52ba123a9ae17512abb97cf364f580254917b",
+      "original_path": "tasks/artifacts/codex-2026-10-20/I1.md",
+      "observed_at": "2026-10-24T20:30:45.375060+00:00",
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    "tasks/ifttt-integration-2026-10-16/comparison-content-continuation-v1-2026-10-19/FOCUSED-HUMAN-QUEUE.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/49a7b14c5959-FOCUSED-HUMAN-QUEUE.md",
+      "sha256": "49a7b14c595900d28952f44abea7c6f9d20062727ff81a664e843cc87c2c363a",
+      "original_path": "tasks/ifttt-integration-2026-10-16/comparison-content-continuation-v1-2026-10-19/FOCUSED-HUMAN-QUEUE.md",
+      "observed_at": "2026-10-24T20:30:45.375060+00:00",
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    },
+    "tasks/ifttt-integration-2026-10-16/review-sidecar-recovery-2026-10-19/CHECKPOINT.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/5f410a7bf851-CHECKPOINT.md",
+      "sha256": "5f410a7bf8515f4c8515bcab79e3fa4fbe519bb2ebad27869c5c2acfa88619be",
+      "original_path": "tasks/ifttt-integration-2026-10-16/review-sidecar-recovery-2026-10-19/CHECKPOINT.md",
+      "observed_at": "2026-10-24T20:30:45.375060+00:00",
+      "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+    }
+  }
+}

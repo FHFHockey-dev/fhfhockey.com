@@ -1,0 +1,66 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c2-isolated/web
+
+ ✓ lib/sources/linesCccIngestion.test.ts (56 tests) 252ms
+ ✓ lib/sources/tweetClaimRegistry.test.ts (17 tests | 15 skipped) 7ms
+ ✓ lib/sources/tweetLunaReview.test.ts (46 tests) 746ms
+(node:73228) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/HomepageGamesSection.test.tsx (29 tests) 761ms
+(node:73242) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/homepageNewsCompatibility.test.tsx (56 tests) 83ms
+(node:73246) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/HomepageStandingsInjuriesSection.test.tsx (14 tests) 436ms
+(node:73255) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/NewsFeed/NewsCard.test.tsx (39 tests) 183ms
+(node:73257) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/tweetNewsAutomation.test.ts (29 tests) 49ms
+(node:73259) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > does not fall back to the lossy upsert after an uncertain receipt RPC
+Line source IFTTT tweet ingest failed: {"code":"IFTTT_OUTCOME_UNKNOWN","message":"IFTTT retention outcome is unknown; read-only reconciliation is required"}
+
+stderr | lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > preserves pending work when production has no trusted processor origin
+Line source IFTTT processor follow-up failed: { success: [33mfalse[39m, status: [1mnull[22m, error: [32m'Processor request failed'[39m }
+
+stderr | lib/sources/lineSourceIftttReceiver.test.ts > createLineSourceIftttReceiver > keeps the raw event stored and retryable when process=true follow-up fails
+Line source IFTTT processor follow-up failed: { success: [33mfalse[39m, status: [33m503[39m, error: [32m'Processor request failed'[39m }
+
+ ✓ lib/sources/lineSourceIftttReceiver.test.ts (14 tests) 81ms
+(node:73261) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/lineSourceProcessing.test.ts (15 tests) 38ms
+(node:73265) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/newsFeed.test.ts (30 tests) 9ms
+(node:73267) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/HomepagePlayoffBracket.test.tsx (4 tests) 99ms
+(node:73269) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/lineSourceLineCombinations.test.ts (5 tests) 4ms
+(node:73273) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/HomepageDraftRanker.test.tsx (4 tests) 86ms
+(node:73278) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/tweetPatternReview.test.ts (2 tests) 7ms
+(node:73280) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/sources/lineSourceFirstArrival.test.ts (4 tests) 7ms
+(node:73282) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/HomepagePulse.test.tsx (2 tests) 18ms
+(node:73286) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/HomePage/useHomepageGames.test.tsx (1 test) 60ms
+
+ Test Files  18 passed (18)
+      Tests  352 passed | 15 skipped (367)
+   Start at  13:45:53
+   Duration  9.51s (transform 767ms, setup 31ms, collect 2.15s, tests 2.93s, environment 2.27s, prepare 564ms)
+

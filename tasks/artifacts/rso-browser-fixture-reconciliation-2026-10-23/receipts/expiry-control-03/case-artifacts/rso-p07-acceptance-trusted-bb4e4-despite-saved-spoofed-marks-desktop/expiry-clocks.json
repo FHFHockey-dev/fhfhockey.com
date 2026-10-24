@@ -1,0 +1,12 @@
+{
+  "receipts": [
+    {
+      "expiresAt": 1792770895201.7,
+      "expiresAtMonotonic": 1792770895201.9,
+      "windowWall": 1791223200000,
+      "windowMono": 1792770885216.5
+    }
+  ],
+  "wall": 1791223200000,
+  "mono": 1792770885372.5
+}

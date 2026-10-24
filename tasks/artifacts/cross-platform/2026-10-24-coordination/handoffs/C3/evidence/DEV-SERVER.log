@@ -1,0 +1,29 @@
+   ▲ Next.js 15.5.22
+   - Local:        http://127.0.0.1:3120
+   - Network:      http://127.0.0.1:3120
+   - Experiments (use with caution):
+     ✓ externalDir
+
+ ✓ Starting...
+ ✓ Ready in 1058ms
+ ○ Compiling /account ...
+ ✓ Compiled /account in 2.9s (977 modules)
+ GET /account?section=in-season 200 in 3567ms
+ GET /account?section=in-season 200 in 214ms
+ ✓ Compiled in 39ms (260 modules)
+ ✓ Compiled in 50ms (717 modules)
+ GET /account?section=in-season 200 in 289ms
+ GET /account?section=in-season 200 in 214ms
+ GET /account?section=in-season 200 in 212ms
+ GET /account?section=in-season 200 in 213ms
+ GET /account?section=in-season 200 in 219ms
+ GET /account?section=in-season 200 in 214ms
+ GET /account?section=in-season 200 in 222ms
+ GET /account?section=in-season 200 in 218ms
+ GET /account?section=in-season 200 in 215ms
+ GET /account?section=in-season 200 in 220ms
+ GET /account?section=in-season 200 in 215ms
+ GET /account?section=in-season 200 in 215ms
+ GET /account?section=in-season 200 in 216ms
+ GET /account?section=in-season 200 in 215ms
+[?25h

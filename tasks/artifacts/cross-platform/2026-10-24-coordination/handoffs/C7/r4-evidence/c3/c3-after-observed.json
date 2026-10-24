@@ -1,0 +1,43 @@
+{
+  "X1": [
+    "sub_a:74b26222",
+    "sub_b:79e695ba",
+    "sub_a:74b26222",
+    "sub_b:79e695ba"
+  ],
+  "X1stored": [
+    "sub_b"
+  ],
+  "X2": {
+    "same": true
+  },
+  "X3": {
+    "keys": [
+      "sub_a"
+    ],
+    "sent": [
+      "sub_a"
+    ]
+  },
+  "X4": {
+    "sentRequestId": "------------------------------------"
+  },
+  "X5": {
+    "before": null,
+    "raw": "{\"ownerId\":\"owner-a\",\"requests\":{\"sub_a\":{\"requestId\":\"2bd2f070-9ecf-4ccc-ba4a-085fb99838bf\",\"savedAt\":1792860632518}}}"
+  },
+  "X6 resolves": {
+    "session": null,
+    "upper": null,
+    "old": "keep",
+    "v10": "keep",
+    "local": null
+  },
+  "X6 rejects": {
+    "session": null,
+    "upper": null,
+    "old": "keep",
+    "v10": "keep",
+    "local": null
+  }
+}

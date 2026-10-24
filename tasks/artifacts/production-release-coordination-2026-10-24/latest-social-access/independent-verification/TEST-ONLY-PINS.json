@@ -1,0 +1,7 @@
+{
+  "isolated_test_files": {
+    "web/e2e/social-share.spec.ts": "a3da9fa1ef2170d11fe6a75f6bd9ec244f534b872709e86362de3d21e67955ae",
+    "web/e2e/fixtures/socialEditorSession.ts": "ad3992ece8525016566a9e6ab3b889993a316b541305efc457abe814c96e91fa"
+  },
+  "canonical_helper_absent": true
+}

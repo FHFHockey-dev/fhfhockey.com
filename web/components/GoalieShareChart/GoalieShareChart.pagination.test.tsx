@@ -160,3 +160,53 @@ describe("GoalieShareChart complete page sets", () => {
     expect(screen.getAllByTestId("chart")).toHaveLength(1);
   });
 });
+
+describe("GoalieShareChart recovery and selected team", () => {
+  it("retries a withheld season on request and stays withheld until complete", async () => {
+    let failing = true;
+    mockPages((start) => failing && start === 100 ? response({}, 429) : completePage(start));
+    render(<GoalieShareChart />);
+    await finishRequests();
+    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
+    const firstRunCalls = mocks.fetch.mock.calls.length;
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(screen.getByText("Loading goalie data...")).toBeTruthy();
+    await finishRequests();
+    expect(screen.getByRole("alert")).toBeTruthy();
+    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
+    // Each retry keeps the two-attempt budget for the failing page.
+    const retryCalls = mocks.fetch.mock.calls.slice(firstRunCalls);
+    expect(retryCalls.filter(([url]) => new URL(url).searchParams.get("start") === "100")).toHaveLength(2);
+
+    failing = false;
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await finishRequests();
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(JSON.parse(screen.getByTestId("chart").textContent!).datasets[0].data).toEqual([200, 50]);
+  });
+
+  describe("on a narrow screen", () => {
+    const desktopWidth = window.innerWidth;
+    beforeEach(() => { window.innerWidth = 390; });
+    afterEach(() => { window.innerWidth = desktopWidth; });
+
+    it("shows the first team with data when the default team has none", async () => {
+      mockPages(completePage); // PHI only; the alphabetical default is ANA.
+      render(<GoalieShareChart />);
+      expect(screen.queryByRole("combobox")).toBeNull();
+      await finishRequests();
+      const select = screen.getByRole("combobox") as HTMLSelectElement;
+      expect(select.value).toBe("PHI");
+      expect(screen.getAllByTestId("chart")).toHaveLength(1);
+    });
+
+    it("hides the team selector when the season is withheld", async () => {
+      mockPages((start) => start === 0 ? response({}, 429) : completePage(start));
+      render(<GoalieShareChart />);
+      await finishRequests();
+      expect(screen.getByRole("alert")).toBeTruthy();
+      expect(screen.queryByRole("combobox")).toBeNull();
+    });
+  });
+});

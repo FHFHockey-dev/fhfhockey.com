@@ -1,0 +1,17 @@
+Retained tool results, not reruns. All application commands ran from /Users/tim/Code/fhfhockey.com/web with Node v22.11.0; GIT_DIR was not set.
+
+$ npm test -- --run lib/forge-testing-grounds/operationalProgress.test.ts lib/forge-testing-grounds/dataHealth.test.ts --maxWorkers=1 --no-file-parallelism
+RUN v3.2.7 /Users/tim/Code/fhfhockey.com/web
+dataHealth.test.ts: 10 tests passed (8ms)
+operationalProgress.test.ts: 10 tests passed (7ms)
+Test Files 2 passed (2); Tests 20 passed (20)
+Start at 10:32:38; Duration 721ms
+Exit 0. Both workers emitted Node DEP0040 punycode deprecation warning.
+
+$ npx tsc --noEmit --strict --skipLibCheck --target es2015 --module esnext --moduleResolution bundler --esModuleInterop lib/forge-testing-grounds/operationalProgress.ts lib/forge-testing-grounds/operationalProgress.test.ts lib/forge-testing-grounds/dataHealth.ts lib/forge-testing-grounds/dataHealth.test.ts
+Exit 0, no output. Scoped strict compiler check, not full application typecheck.
+
+$ npx eslint --report-unused-disable-directives-severity warn lib/forge-testing-grounds/operationalProgress.ts lib/forge-testing-grounds/operationalProgress.test.ts lib/forge-testing-grounds/dataHealth.ts lib/forge-testing-grounds/dataHealth.test.ts
+Exit 0, no output.
+
+Original discovery failures retained in EVIDENCE.json. No test failed and no test was weakened or rerun.

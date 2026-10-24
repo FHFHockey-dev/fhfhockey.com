@@ -1,0 +1,13 @@
+{
+  "html_bytes": 290437,
+  "external_attribute_references": [],
+  "content_security_policy": [
+    "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; object-src 'none'; base-uri 'none'"
+  ],
+  "retained_browser_checks": 10,
+  "retained_all_passed": true,
+  "retained_network_attempts": 0,
+  "retained_errors": 0,
+  "browser_rerun_by_reviewer": false,
+  "http_requests_by_reviewer": 0
+}

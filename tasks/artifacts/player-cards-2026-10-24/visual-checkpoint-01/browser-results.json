@@ -1,0 +1,33 @@
+{
+  "checks": [
+    {
+      "name": "all nine actuals, raw rank/N, percentiles and bar lengths reconcile to the same manifest snapshot",
+      "passed": true
+    },
+    {
+      "name": "actual native-canvas landscape PNG and unchanged displayed snapshot",
+      "passed": true,
+      "pngBytes": 220317,
+      "pngSha256": "0375d72fb9c35331d37077757b9e5ff1cd145abb9b8731a90b392fe4b65ca262"
+    },
+    {
+      "name": "synthetic/actual-ratio labels, accessible snapshot description, right-edge bounds and keyboard focus",
+      "passed": true,
+      "focus": {
+        "tag": "A",
+        "outline": "solid"
+      }
+    },
+    {
+      "name": "390px phone layout has no page overflow and export controls have 44px touch targets",
+      "passed": true,
+      "hitTargets": [
+        44,
+        44
+      ]
+    }
+  ],
+  "externalAttempts": [],
+  "pageErrors": [],
+  "snapshotId": "synthetic-flow-v1-1001-L10-all-allow-known-short-proposed-complete"
+}

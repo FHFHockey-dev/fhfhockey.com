@@ -1,0 +1,93 @@
+
+Running 2 tests using 1 worker
+
+[1A[2K[1/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:104:5 › manual workspace retains reviewed intent, protections and locks through recalculation and reload
+[1A[2K  1) [chromium] › e2e/roster-schedule-optimizer.spec.ts:104:5 › manual workspace retains reviewed intent, protections and locks through recalculation and reload 
+
+    Error: page.evaluate: Execution context was destroyed, most likely because of a navigation
+
+       at roster-schedule-optimizer-fixtures.ts:26
+
+      24 |           expect(JSON.parse(Buffer.from(bearer!.split(".")[1], "base64url").toString()).sub).toBe(RSO_FIXTURE_PRINCIPAL);
+      25 |         }
+    > 26 |         const evaluatedAt = body.read?.evaluatedAt ?? await page.evaluate(() => new Date().toISOString());
+         |                                                                  ^
+      27 |         const nonce = privateRead ? scope.nonce : request.headers()["x-rso-read-nonce"];
+      28 |         const data = body.data, existing = data.forecastManifest;
+      29 |         const forecasts = data.forecasts ?? [];
+        at Proxy.fulfill (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer-fixtures.ts:26:66)
+        at handler (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:99:53)
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer-fixtures.ts:45:12
+
+    Error: page.reload: Test ended.
+    Call log:
+    [2m  - waiting for navigation until "load"[22m
+    [2m    - navigated to "http://127.0.0.1:3139/roster-schedule-optimizer"[22m
+
+
+      140 |     });
+      141 |     await expectDesktopFrameVisible(page);
+    > 142 |     await page.reload();
+          |                ^
+      143 |     await page.getByLabel("Manage Alpha Center", { exact: true }).click();
+      144 |     await expect(page.getByRole("button", { name: "Remove Alpha Center" })).toBeVisible();
+      145 |     await page.getByLabel("Manage Alpha Center", { exact: true }).click();
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:142:16
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../focus-02/results/roster-schedule-optimizer--c3669-gh-recalculation-and-reload-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../focus-02/results/roster-schedule-optimizer--c3669-gh-recalculation-and-reload-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../focus-02/results/roster-schedule-optimizer--c3669-gh-recalculation-and-reload-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../focus-02/results/roster-schedule-optimizer--c3669-gh-recalculation-and-reload-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K[2/2] [chromium] › e2e/roster-schedule-optimizer.spec.ts:1666:39 › compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels
+[1A[2K  2) [chromium] › e2e/roster-schedule-optimizer.spec.ts:1666:39 › compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels 
+
+    Error: [2mexpect([22m[31mlocator[39m[2m).[22mtoBeVisible[2m([22m[2m)[22m failed
+
+    Locator: getByRole('heading', { name: 'Available Players' })
+    Expected: visible
+    Timeout: 15000ms
+    Error: element(s) not found
+
+    Call log:
+    [2m  - Expect "toBeVisible" with timeout 15000ms[22m
+    [2m  - waiting for getByRole('heading', { name: 'Available Players' })[22m
+
+
+      1672 |   await expect(table.locator('tr[data-compact-row]')).toHaveCount(count);
+      1673 |   await expect(page.getByRole("heading", { name: "Current Roster" })).toBeVisible();
+    > 1674 |   await expect(page.getByRole("heading", { name: "Available Players" })).toBeVisible();
+           |                                                                          ^
+      1675 |   const metrics = await table.evaluate(node => {
+      1676 |     const viewport = node.parentElement!.getBoundingClientRect();
+      1677 |     const bodyTop = Math.max(viewport.top, node.querySelector("thead")!.getBoundingClientRect().bottom);
+        at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1674:74
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    ../../focus-02/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: ../../focus-02/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    ../../focus-02/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/trace.zip
+    Usage:
+
+        npx playwright show-trace ../../focus-02/results/roster-schedule-optimizer--22c4c-ot-rows-and-internal-labels-chromium/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+
+[1A[2K  2 failed
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:104:5 › manual workspace retains reviewed intent, protections and locks through recalculation and reload 
+    [chromium] › e2e/roster-schedule-optimizer.spec.ts:1666:39 › compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels 

@@ -1,0 +1,384 @@
+--- a/web/lib/rosterScheduleOptimizer/currentPlanningRead.ts
++++ b/web/lib/rosterScheduleOptimizer/currentPlanningRead.ts
+@@ -7,6 +7,11 @@
+   yahooEligibility?: YahooEligibilityReceipt | null };
+ type BridgeScope = { rows: ReadonlyMap<StatLine, string>; policyRevision: string; expiresAt: number };
+ let activeBridgeScope: BridgeScope | null = null;
++let activeClock: (() => number) | null = null;
++/** Comparable across a window and its workers, unaffected by wall-clock edits. */
++export const planningMonotonicNow = () => performance.timeOrigin + performance.now();
++/** Only a current GET can establish the runtime server clock; never serialized. */
++export const currentPlanningTime = () => activeClock?.() ?? Date.now();
+ const fingerprint = (row: GameForecast) => JSON.stringify(row, (key, value) => key === "powerPlayRole" ? undefined
+   : value && typeof value === "object" && !Array.isArray(value)
+     ? Object.fromEntries(Object.entries(value).sort(([a], [b]) => a.localeCompare(b))) : value);
+@@ -15,7 +20,7 @@
+  * can mint it. Copies must retain the immutable current stats object and lineage. */
+ export function currentBridgeIsAuthorized(row: GameForecast, policyRevision: string): boolean {
+   return activeBridgeScope !== null && activeBridgeScope.policyRevision === policyRevision
+-    && Date.now() < activeBridgeScope.expiresAt
++    && currentPlanningTime() < activeBridgeScope.expiresAt
+     && activeBridgeScope.rows.get(row.stats) === fingerprint(row);
+ }
+ 
+@@ -51,6 +56,7 @@
+   let data: PlanningData | null = null;
+   let readError: string | null = null;
+   let input = capacityPlanningSnapshot(snapshot);
++  let serverClock: (() => number) | null = null;
+   const controller = new AbortController();
+   const abort = () => controller.abort();
+   signal.addEventListener("abort", abort, { once: true });
+@@ -62,9 +68,14 @@
+     if (!Number.isSafeInteger(seasonId) || !Number.isInteger(days) || days < 0 || days > 366) throw new Error("Invalid planning range.");
+     new Intl.DateTimeFormat("en", { timeZone });
+     const params = new URLSearchParams({ seasonId: String(seasonId), startDate, endDate, timeZone });
+-    const startedAt = Date.now();
++    const nonce = crypto.randomUUID();
++    const startedAt = planningMonotonicNow(), startedWall = Date.now();
++    // A forward wall jump is conservatively elapsed time (including sleep on
++    // platforms whose performance clock pauses). A backward jump cannot extend authority.
++    const elapsed = () => Math.max(0, planningMonotonicNow() - startedAt, Date.now() - startedWall);
+     const response = await fetch(`/api/v1/roster-schedule-optimizer/data?${params}`, {
+       method: "GET", cache: "no-store", credentials: "same-origin", signal: controller.signal,
++      headers: { "X-RSO-Read-Nonce": nonce },
+     });
+     const body = await response.json();
+     if (controller.signal.aborted || jsonUtf8Bytes(body) > PLANNING_RESPONSE_BYTE_BUDGET) throw new Error("Current read unavailable.");
+@@ -72,11 +83,14 @@
+       : typeof body.error?.message === "string" ? body.error.message : "Current read unavailable.");
+     const decoded = decodePlanningDataTransport(body.data);
+     const manifest = decoded.forecastManifest, policy = manifest?.rsoUsePolicy;
+-    const receivedAt = Date.now(), observedAt = Date.parse(manifest?.asOf ?? "");
++    const observedAt = Date.parse(manifest?.asOf ?? ""), evaluatedAt = Date.parse(body.read?.evaluatedAt ?? "");
+     if (!manifest || manifest.seasonId !== seasonId || !Number.isFinite(observedAt)
+-      || observedAt < startedAt || observedAt > receivedAt || observedAt < Date.parse(snapshot.context.asOf)
++      || body.read?.nonce !== nonce || observedAt !== evaluatedAt || elapsed() > 20000
+       || policy?.version !== "rso-target-use-v1" || policy.revision !== expectedPolicyRevision
+       || decoded.games.some(game => game.date < startDate || game.date > endDate)) throw new Error("Current read does not match this planning generation.");
++    // The full request round trip is a conservative upper bound on time since
++    // server evaluation. Device/server clock offsets never enter the comparison.
++    serverClock = () => evaluatedAt + elapsed();
+     data = { ...decoded, forecasts: [...decoded.forecasts, ...expandBridgeForecasts(body.bridgeForecasts, decoded)] };
+     // Private/provider identities and schedule are never restamped to match a
+     // forecast. Only an explicit current public workspace bootstraps those inputs.
+@@ -91,9 +105,9 @@
+         return snapshot.context.provider === "manual"
+           ? snapshot.roster.some(entry => entry.playerId === row.id) ? { ...current, availability: "rostered" as const } : current
+           : cachedYahooPlayer({ ...current, availability: "unknown", canDrop: null, reserveEligibility: [] },
+-            options.yahooEligibility ?? null, seasonId);
++            options.yahooEligibility ?? null, seasonId, new Date(serverClock!()));
+       }) : snapshot.players;
+-    input = { ...input, context: { ...snapshot.context, asOf: new Date(receivedAt).toISOString() },
++    input = { ...input, context: { ...snapshot.context, asOf: new Date(evaluatedAt).toISOString() },
+       players, games: options.publicContext ? data.games : snapshot.games,
+       forecasts: data.forecasts, baselineSources: data.baselineSources ?? [], participationSources: data.participationSources ?? [],
+       forecastManifest: manifest, forecastInputExclusions: undefined,
+@@ -104,17 +118,19 @@
+     freeze(data);
+   } catch (error) {
+     readError = error instanceof Error ? error.message : "Current read unavailable.";
+-    data = null; input = capacityPlanningSnapshot(snapshot, readError);
++    data = null; serverClock = null; input = capacityPlanningSnapshot(snapshot, readError);
+   } finally {
+     clearTimeout(timer); signal.removeEventListener("abort", abort);
+   }
+   if (signal.aborted) throw new DOMException("Obsolete planning generation", "AbortError");
+   const previous = activeBridgeScope;
++  const previousClock = activeClock;
++  activeClock = serverClock;
+   const bridgeIds = new Set(data?.forecastManifest?.rsoUsePolicy?.bridgeRevisionIds ?? []);
+   activeBridgeScope = data ? { policyRevision: expectedPolicyRevision,
+-    expiresAt: forecastInputExpiry(input) ?? Date.now(),
++    expiresAt: forecastInputExpiry(input) ?? currentPlanningTime(),
+     rows: new Map(data.forecasts.filter(row => !row.rsoTargetBindings && bridgeIds.has(row.revisionId))
+       .map(row => [row.stats, fingerprint(row)])) } : null;
+   try { return run(input, data, readError); }
+-  finally { activeBridgeScope = previous; }
++  finally { activeBridgeScope = previous; activeClock = previousClock; }
+ }
+--- a/web/lib/rosterScheduleOptimizer/executionAdapter.ts
++++ b/web/lib/rosterScheduleOptimizer/executionAdapter.ts
+@@ -1,14 +1,22 @@
+-import { currentRsoUsePolicy } from "../player-forecasts/rsoUsePolicy";
++import { currentRsoUsePolicy, resolveRsoTargetUse } from "../player-forecasts/rsoUsePolicy";
+ import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
+ import { candidatePlanMetrics, type CandidatePlanOptions } from "./candidatePlanMetrics";
+ import { forecastAllows, planRoster, sanitizeForecastInputs } from "./planning";
+-import { capacityPlanningSnapshot, forecastInputExpiry, withCurrentPlanningRead, type CurrentPlanningOptions } from "./currentPlanningRead";
++import { capacityPlanningSnapshot, currentPlanningTime, forecastInputExpiry, planningMonotonicNow, withCurrentPlanningRead, type CurrentPlanningOptions } from "./currentPlanningRead";
+ import type { PlanIntent, PlanningSnapshot } from "./planningTypes";
+ 
+ /** One current read feeds the plan, bounded candidate search and display view. */
+ export async function executeRosterPlanning(snapshot: PlanningSnapshot, intent: PlanIntent,
+   options: CurrentPlanningOptions = {}, candidateOptions: CandidatePlanOptions = {}, signal = new AbortController().signal) {
+   return withCurrentPlanningRead(snapshot, options, currentRsoUsePolicy().revision, signal, (input, data, readError) => {
++    const policy = currentRsoUsePolicy(), startedAt = new Date(currentPlanningTime()).toISOString();
++    const reviewIds = new Set(input.forecasts.flatMap(row => Object.values(row.rsoTargetBindings ?? {})
++      .map(binding => resolveRsoTargetUse(binding, startedAt, policy).reviewId)).filter(Boolean));
++    // Capture applicable deadlines before computation. An expired deadline must
++    // invalidate the result, not disappear from a future-only list afterward.
++    const deadlines = [forecastInputExpiry(input), ...policy.reviews.filter(review => reviewIds.has(review.id))
++      .map(review => Date.parse(review.expiresAt))].filter((value): value is number => value !== null && Number.isFinite(value));
++    const deadline = deadlines.length ? Math.min(...deadlines) : null;
+     const evaluate = (current: PlanningSnapshot) => {
+       const resolved = resolvePlanningContributions(sanitizeForecastInputs(current), { consumer: "rso" });
+       const displaySnapshot = { ...resolved, forecasts: resolved.forecasts.map(row => {
+@@ -24,11 +32,14 @@
+       return { result: planRoster(current, intent), metrics: candidatePlanMetrics(current, intent, candidateOptions), displaySnapshot };
+     };
+     let evaluated = evaluate(input);
+-    const expiry = forecastInputExpiry(input);
+-    if (expiry !== null && expiry <= Date.now()) evaluated = evaluate(capacityPlanningSnapshot(input));
+-    const reviews = currentRsoUsePolicy().reviews.map(review => Date.parse(review.expiresAt)).filter(value => value > Date.now());
+-    const expiresAt = [expiry, ...reviews].filter((value): value is number => value !== null && value > Date.now());
+-    return { ...evaluated, data, readError, expiresAt: expiresAt.length ? Math.min(...expiresAt) : null };
++    const publishedMonotonic = planningMonotonicNow(), publishedServer = currentPlanningTime();
++    let remaining = deadline === null ? null : deadline - publishedServer;
++    if (remaining !== null && remaining <= 0) {
++      evaluated = evaluate(capacityPlanningSnapshot(input)); remaining = null;
++    }
++    return { ...evaluated, data, readError,
++      expiresAt: remaining === null ? null : Date.now() + remaining,
++      expiresAtMonotonic: remaining === null ? null : publishedMonotonic + remaining };
+   });
+ }
+ export type RosterPlanningExecution = Awaited<ReturnType<typeof executeRosterPlanning>>;
+--- a/web/lib/rosterScheduleOptimizer/executionAdapter.test.ts
++++ b/web/lib/rosterScheduleOptimizer/executionAdapter.test.ts
+@@ -1,6 +1,9 @@
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ import { requestRosterPlanning } from "../../hooks/rosterPlanningExecution";
+ import { executeRosterPlanning } from "./executionAdapter";
++import { currentPlanningTime, planningMonotonicNow, withCurrentPlanningRead } from "./currentPlanningRead";
++import * as policyModule from "../player-forecasts/rsoUsePolicy";
++import * as candidates from "./candidatePlanMetrics";
+ import { defaultWorkspace } from "./workspace";
+ import { currentRsoUsePolicy, restrictRsoForecast } from "../player-forecasts/rsoUsePolicy";
+ import { expandBridgeForecasts, packPlanningSnapshots, unpackPlanningSnapshots } from "../rosterScheduleData/bridgeForecastWire";
+@@ -37,9 +40,13 @@
+   const body = { success: true, data, bridgeForecasts: wire };
+   return { snapshot: structuredClone(snapshot), body, intent: workspace.intent };
+ }
+-function respond(body: unknown) { return { ok: true, json: async () => structuredClone(body) } as Response; }
++function respond(body: unknown, readOverride?: unknown) {
++  return { ok: true, json: async () => ({ ...structuredClone(body as object), read: readOverride === undefined ? {
++    nonce: (vi.mocked(fetch).mock.lastCall?.[1]?.headers as Record<string, string>)["X-RSO-Read-Nonce"], evaluatedAt: now,
++  } : readOverride }) } as Response;
++}
+ beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(new Date(now)); });
+-afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
++afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+ 
+ describe("fresh RSO execution authority", () => {
+   it("uses one current GET for planning, candidates and display, and ends authority before serialization", async () => {
+@@ -174,4 +181,85 @@
+     expect(snapshot.players[0].rosterRevision).toBeUndefined();
+   });
+ 
++  it.each([-5000, 5000])("uses the server evaluation clock despite %sms browser skew", async skew => {
++    const { snapshot, body, intent } = fixture();
++    vi.setSystemTime(new Date(Date.parse(now) + skew)); snapshot.context.asOf = new Date().toISOString();
++    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respond(body)));
++    const result = await executeRosterPlanning(snapshot, intent);
++    expect(result.readError).toBeNull(); expect(result.result.selected.projectedValue).toBe(7);
++    expect(result.displaySnapshot.context.asOf).toBe(now);
++    expect(snapshot.context.asOf).toBe(new Date(Date.parse(now) + skew).toISOString());
++    const remaining = Date.parse("2026-10-24T00:00:00Z") - Date.parse(now);
++    expect(result.expiresAt! - Date.now()).toBe(remaining);
++    expect(result.expiresAtMonotonic! - planningMonotonicNow()).toBe(remaining);
++  });
++  it.each([null, { nonce: "old-generation", evaluatedAt: now }, { nonce: "missing-clock" }])("rejects an absent or mismatched current-read receipt %j", async read => {
++    const { snapshot, body, intent } = fixture(); vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respond(body, read)));
++    expect((await executeRosterPlanning(snapshot, intent)).result.selected.projectedValue).toBeNull();
++  });
++  it("does not let a backward device-clock correction extend server authority", async () => {
++    const { snapshot, body } = fixture();
++    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respond(body)));
++    await withCurrentPlanningRead(snapshot, {}, currentRsoUsePolicy().revision, new AbortController().signal, () => {
++      expect(currentPlanningTime()).toBe(Date.parse(now));
++      vi.setSystemTime(new Date(Date.parse(now) - 60_000));
++      vi.spyOn(performance, "now").mockReturnValue(2000);
++      expect(currentPlanningTime()).toBe(Date.parse(now) + 2000);
++    });
++  });
++  it("rejects a response that arrives after the bounded current-read deadline", async () => {
++    const { snapshot, body, intent } = fixture();
++    vi.stubGlobal("fetch", vi.fn(async () => { vi.spyOn(performance, "now").mockReturnValue(20001); return respond(body); }));
++    expect((await executeRosterPlanning(snapshot, intent)).result.selected.projectedValue).toBeNull();
++  });
++  it.each([-5000, 5000])("uses server time for positive review admission and clears all output when it expires during compute (skew %s)", async skew => {
++    const { snapshot, body, intent } = fixture();
++    vi.setSystemTime(new Date(Date.parse(now) + skew)); snapshot.context.asOf = new Date().toISOString();
++    const binding = { component: "synthetic-only", modelMode: "baseline", codeVersion: "reviewed-test",
++      configurationHash: "a".repeat(64), artifactHash: "b".repeat(64), targetKey: "GOALS", horizonGames: 1,
++      conditioning: "conditional_playing", participationLineage: "fixture", cutoffAt: now };
++    const { cutoffAt: _, ...scope } = binding;
++    const policy = { ...currentRsoUsePolicy(), reviews: [{ id: "synthetic-positive", binding: scope,
++      reviewedAt: "2026-10-21T00:00:00Z", expiresAt: "2026-10-22T12:00:01Z", inputCutoffFrom: now,
++      inputCutoffUntil: "2026-10-23T00:00:00Z", allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false } }] };
++    vi.spyOn(policyModule, "currentRsoUsePolicy").mockReturnValue(policy);
++    body.data.forecasts = [{ ...snapshot.forecasts[0], revisionId: "native", modelVersion: binding.codeVersion,
++      rsoTargetBindings: { GOALS: binding } }];
++    body.data.forecastManifest!.issuedRevisionIds = ["native"]; body.data.forecastManifest!.rsoUsePolicy!.bridgeRevisionIds = [];
++    body.bridgeForecasts.rows = [];
++    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(respond(body)));
++    const before = await executeRosterPlanning(snapshot, intent);
++    expect(before.result.selected.projectedValue).toBe(7);
++    expect(before.expiresAtMonotonic! - planningMonotonicNow()).toBe(1000);
++    const original = candidates.candidatePlanMetrics;
++    vi.spyOn(candidates, "candidatePlanMetrics").mockImplementation((...args) => {
++      const result = original(...args); vi.spyOn(performance, "now").mockReturnValue(2000); return result;
++    });
++    const expired = await executeRosterPlanning(snapshot, intent);
++    expect(expired.result.selected.projectedValue).toBeNull();
++    expect(expired.result.selected.forecastInputs).toEqual([]); expect(expired.displaySnapshot.forecasts).toEqual([]);
++    expect(expired.expiresAt).toBeNull(); expect(expired.expiresAtMonotonic).toBeNull();
++  });
++
++  it("uses the server evaluation cutoff even when delivery takes longer than a future source timestamp", async () => {
++    const { snapshot, body, intent } = fixture();
++    body.bridgeForecasts.runs[0][3] = "2026-10-22T12:00:00.001Z";
++    body.bridgeForecasts.runs[0][4] = "2026-10-22T12:00:00.001Z";
++    vi.stubGlobal("fetch", vi.fn(async () => { vi.spyOn(performance, "now").mockReturnValue(2); return respond(body); }));
++    const result = await executeRosterPlanning(snapshot, intent);
++    expect(result.displaySnapshot.context.asOf).toBe(now);
++    expect(result.result.selected.projectedValue).toBeNull();
++  });
++  it("counts delivery time toward source expiry and creates a new nonce for each generation", async () => {
++    const { snapshot, body, intent } = fixture();
++    body.bridgeForecasts.rows[0][3] = "2026-10-22T12:00:01Z";
++    const fetcher = vi.fn(async (_url: string, _init: RequestInit) => { vi.spyOn(performance, "now").mockReturnValue(2000); return respond(body); });
++    vi.stubGlobal("fetch", fetcher);
++    const result = await executeRosterPlanning(snapshot, intent);
++    expect(result.result.selected.projectedValue).toBeNull(); expect(result.displaySnapshot.forecasts).toEqual([]);
++    await executeRosterPlanning(snapshot, intent);
++    const nonces = fetcher.mock.calls.map(args => (args[1] as RequestInit).headers as Record<string, string>);
++    expect(nonces[0]["X-RSO-Read-Nonce"]).not.toBe(nonces[1]["X-RSO-Read-Nonce"]);
++  });
++
+ });
+--- a/web/lib/player-forecasts/planningContributions.ts
++++ b/web/lib/player-forecasts/planningContributions.ts
+@@ -1,5 +1,6 @@
+ import { calendarLeadDay, catalogParticipation, forecastCalendarPolicy, validForecastCalendarPolicy, resolveContribution, type ContributionGame, type ContributionParticipation, type ContributionSource } from "./contributions";
+ import { currentRsoUsePolicy, restrictRsoForecast, type RsoUsePolicy } from "./rsoUsePolicy";
++import { currentPlanningTime } from "../rosterScheduleOptimizer/currentPlanningRead";
+ import { applyModeledStartMetadata, forecastFromContributions, revalidateResolvedForecast } from "./resolvedPlanningForecast";
+ import type { ContributionPlanningSnapshot, ForecastExclusionReason, GameForecast, PlanningSnapshot, StatLine } from "../rosterScheduleOptimizer/planningTypes";
+ 
+@@ -43,7 +44,7 @@
+   if (options.consumer === "rso") {
+     const policy = options.usePolicy ?? currentRsoUsePolicy();
+     // Review expiry is current permission, not the historical valuation clock.
+-    const policyNow = new Date().toISOString();
++    const policyNow = new Date(currentPlanningTime()).toISOString();
+     snapshot = { ...snapshot, forecasts: snapshot.forecasts.map(row => restrictRsoForecast(
+       row, snapshot.forecastManifest, policyNow, policy)) };
+   }
+--- a/web/pages/api/v1/roster-schedule-optimizer/data.ts
++++ b/web/pages/api/v1/roster-schedule-optimizer/data.ts
+@@ -11,6 +11,10 @@
+   let query;
+   try { query = parsePlanningDataQuery(req.query); }
+   catch (error) { return res.status(400).json({ success: false, error: error instanceof Error ? error.message : "Invalid planning range." }); }
++  const nonce = req.headers?.["x-rso-read-nonce"];
++  if (nonce !== undefined && (typeof nonce !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(nonce))) {
++    return res.status(400).json({ success: false, error: "Invalid planning read nonce." });
++  }
+   try {
+     const now = new Date();
+     // One server-side source per request; RSO has no legacy forecasts, so every fallback serves none.
+@@ -18,13 +22,14 @@
+     const data = await loadPlanningData(serviceRoleClient, query, { now, source, forgeDailyBridge: true, consumer: "rso" });
+     // A shared copy of native forecasts never outlives the selected catalog.
+     const nativeMaxAge = source.kind === "native" ? Math.max(0, Math.min(300, Math.floor((Date.parse(source.expiresAt) - Date.now()) / 1000))) : null;
+-    res.setHeader("Cache-Control", data.forecastManifest?.rsoUsePolicy ? "private, no-store"
++    res.setHeader("Cache-Control", nonce || data.forecastManifest?.rsoUsePolicy ? "private, no-store"
+       : nativeMaxAge === null ? "public, s-maxage=300, stale-while-revalidate=300" : `public, s-maxage=${nativeMaxAge}, stale-while-revalidate=0`);
+     // Interim bridge projections travel compactly beside `data`; clients rebuild them, so the strict transport is unchanged.
+     const bridge = compactBridgeForecasts(data.forecasts, data, query.seasonId);
+     const transport = encodePlanningDataTransport({ ...data, forecasts: bridge.forecasts }), forecastSource = forecastSourceSummary(source);
+     // The whole body, bridge wire included, must fit the platform response limit; the latest bridge rows give way first.
+-    const body = fitBridgeWire(bridge.wire, wire => ({ success: true, data: transport, ...(wire ? { bridgeForecasts: wire } : {}), forecastSource }),
++    const body = fitBridgeWire(bridge.wire, wire => ({ success: true, data: transport, ...(wire ? { bridgeForecasts: wire } : {}), forecastSource,
++      ...(nonce ? { read: { nonce, evaluatedAt: now.toISOString() } } : {}) }),
+       PLANNING_RESPONSE_BYTE_BUDGET);
+     if (!body) throw new PlanningDataTransportLimitError();
+     return res.json(body);
+--- a/web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
++++ b/web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
+@@ -136,4 +136,19 @@
+     expect(rebuilt).toHaveLength(kept);
+     expect(rebuilt[0].limitations.at(-1)).toBe(`Interim projections were trimmed to the first ${kept} of 7200 player-games to fit the planning response; later games stay schedule-only.`);
+   });
++  it("echoes the exact current generation and server evaluation instant without shared caching", async () => {
++    const firstNonce = "00000000-0000-4000-8000-000000000001", secondNonce = "00000000-0000-4000-8000-000000000002";
++    const first = await request({ headers: { "x-rso-read-nonce": firstNonce } });
++    expect(first.body.read).toEqual({ nonce: firstNonce, evaluatedAt: "2026-10-15T12:00:00.000Z" });
++    expect(first.headers["Cache-Control"]).toBe("private, no-store");
++    vi.setSystemTime(new Date("2026-10-15T12:00:05Z"));
++    const second = await request({ headers: { "x-rso-read-nonce": secondNonce } });
++    expect(second.body.read).toEqual({ nonce: secondNonce, evaluatedAt: "2026-10-15T12:00:05.000Z" });
++    expect(mocks.load).toHaveBeenCalledTimes(2);
++  });
++  it.each(["bad", ["00000000-0000-4000-8000-000000000001"]])("rejects malformed read correlation before selecting sources: %j", async nonce => {
++    const res = await request({ headers: { "x-rso-read-nonce": nonce } });
++    expect(res.code).toBe(400); expect(mocks.select).not.toHaveBeenCalled();
++  });
++
+ });
+--- a/web/hooks/useRosterPlanning.ts
++++ b/web/hooks/useRosterPlanning.ts
+@@ -1,6 +1,6 @@
+ import { useEffect, useRef, useState } from "react";
+ import type { PlanIntent, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+-import type { CurrentPlanningOptions } from "lib/rosterScheduleOptimizer/currentPlanningRead";
++import { planningMonotonicNow, type CurrentPlanningOptions } from "lib/rosterScheduleOptimizer/currentPlanningRead";
+ import type { RosterPlanningExecution } from "lib/rosterScheduleOptimizer/executionAdapter";
+ import { requestRosterPlanning } from "./rosterPlanningExecution";
+ 
+@@ -27,12 +27,15 @@
+   }, [snapshot, intent, key]);
+   const current = state?.snapshot === snapshot && state?.intent === intent && state?.key === key ? state : null;
+   const expiresAt = current?.execution?.expiresAt;
++  const monotonicExpiry = current?.execution?.expiresAtMonotonic;
+   useEffect(() => {
+     if (expiresAt == null) return;
+-    const timer = setTimeout(() => setEpoch(value => value + 1), Math.min(Math.max(0, expiresAt - Date.now()), 2_147_483_647));
++    const remaining = monotonicExpiry == null ? expiresAt - Date.now() : monotonicExpiry - planningMonotonicNow();
++    const timer = setTimeout(() => setEpoch(value => value + 1), Math.min(Math.max(0, remaining), 2_147_483_647));
+     return () => clearTimeout(timer);
+-  }, [expiresAt]);
+-  const execution = expiresAt != null && expiresAt <= Date.now() ? undefined : current?.execution;
++  }, [expiresAt, monotonicExpiry]);
++  const expired = monotonicExpiry != null ? monotonicExpiry <= planningMonotonicNow() : expiresAt != null && expiresAt <= Date.now();
++  const execution = expired ? undefined : current?.execution;
+   return { result: execution?.result ?? null, metrics: execution?.metrics,
+     displaySnapshot: execution?.displaySnapshot ?? null, data: execution?.data ?? null,
+     error: current?.error ?? execution?.readError ?? null, loading: Boolean(snapshot && !current) };
+--- a/web/hooks/useRosterPlanning.test.tsx
++++ b/web/hooks/useRosterPlanning.test.tsx
+@@ -3,6 +3,7 @@
+ import type { PlanIntent, PlanningResult, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+ import { defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
+ import { useRosterPlanning } from "./useRosterPlanning";
++import { planningMonotonicNow } from "lib/rosterScheduleOptimizer/currentPlanningRead";
+ 
+ class MockWorker {
+   static instances: MockWorker[] = [];
+@@ -81,3 +82,14 @@
+   await act(async () => MockWorker.instances[0].finish(plan));
+   expect(result.current.result).toBeNull();
+ });
++
++
++it("uses the monotonic publication deadline when the device wall clock moves backward", async () => {
++  vi.useFakeTimers(); vi.setSystemTime(new Date("2026-10-22T12:00:00Z")); vi.stubGlobal("Worker", MockWorker);
++  const { result } = renderHook(() => useRosterPlanning(snapshot, intent));
++  await act(async () => MockWorker.instances[0].onmessage?.({ data: { result: plan,
++    expiresAt: Date.now() + 1000, expiresAtMonotonic: planningMonotonicNow() + 1000 } }));
++  vi.setSystemTime(new Date("2026-10-22T11:00:00Z"));
++  await act(async () => { await vi.advanceTimersByTimeAsync(1000); });
++  expect(result.current.result).toBeNull(); expect(MockWorker.instances).toHaveLength(2);
++});

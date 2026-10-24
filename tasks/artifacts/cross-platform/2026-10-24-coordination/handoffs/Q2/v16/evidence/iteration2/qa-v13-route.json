@@ -1,0 +1,1552 @@
+{
+    "runId": "deb81deea0e14e8299212e2993e0a05a",
+    "scene": "Assets/MapPrototype/Scenes/VesperBasin_v16_PlayerHud.unity",
+    "utc": "2026-10-24T16:22:08.0021540Z",
+    "failure": "",
+    "passed": true,
+    "realPlayMode": true,
+    "cleanupComplete": true,
+    "checks": [
+        {
+            "name": "saved pilot is armed from virtual tracked and neutral input",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "route center and capsule width margins have continuous climbable support",
+            "passed": true,
+            "measured": 129.0
+        },
+        {
+            "name": "full saved capsule fits route center and width-margin samples",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "retained north bridge still has continuous support beneath crossing",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "north bridge undercross has at least 4.2 metre headroom and capsule clearance",
+            "passed": true,
+            "measured": 5.171934127807617
+        },
+        {
+            "name": "single setup settles on saved route start",
+            "passed": true,
+            "measured": 0.471649706363678
+        },
+        {
+            "name": "ascent 1 reaches waypoint on saved surface through actual input",
+            "passed": true,
+            "measured": 0.24525117874145508
+        },
+        {
+            "name": "ascent 2 reaches waypoint on saved surface through actual input",
+            "passed": true,
+            "measured": 0.20833058655261993
+        },
+        {
+            "name": "ascent 3 reaches waypoint on saved surface through actual input",
+            "passed": true,
+            "measured": 0.242370143532753
+        },
+        {
+            "name": "ascent 4 reaches waypoint on saved surface through actual input",
+            "passed": true,
+            "measured": 0.24504542350769043
+        },
+        {
+            "name": "arrival deck reached with approximately fourteen metre height gain",
+            "passed": true,
+            "measured": 13.958348274230957
+        },
+        {
+            "name": "arrival remains grounded at planned deck height",
+            "passed": true,
+            "measured": 14.429998397827148
+        },
+        {
+            "name": "descent 3 reaches waypoint on saved surface through actual input",
+            "passed": true,
+            "measured": 0.205232173204422
+        },
+        {
+            "name": "descent 2 reaches waypoint on saved surface through actual input",
+            "passed": true,
+            "measured": 0.2393130511045456
+        },
+        {
+            "name": "descent 1 reaches waypoint on saved surface through actual input",
+            "passed": true,
+            "measured": 0.2129354476928711
+        },
+        {
+            "name": "descent 0 reaches waypoint on saved surface through actual input",
+            "passed": true,
+            "measured": 0.2724761366844177
+        },
+        {
+            "name": "continuous descent returns to route start",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "original pilot remains alive with no fall recovery or scene change",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "all sampled movement positions are finite",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "full CharacterController has no penetration beyond contact skin tolerance",
+            "passed": true,
+            "measured": 0.0
+        },
+        {
+            "name": "route movement remains supported without sustained airborne gaps",
+            "passed": true,
+            "measured": 8.0
+        },
+        {
+            "name": "exactly one setup warp and no route teleports",
+            "passed": true,
+            "measured": 0.0
+        }
+    ],
+    "runtimeErrors": [],
+    "samples": [
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 0.7957239747047424,
+                "z": 9.166666984558105
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 1.119798183441162,
+                "z": 10.333333969116211
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 1.4438719749450684,
+                "z": 11.5
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 1.7679462432861328,
+                "z": 12.666666984558105
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 2.0920205116271973,
+                "z": 13.833333969116211
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 2.4160947799682617,
+                "z": 15.0
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 2.740168571472168,
+                "z": 16.166667938232422
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 3.064242362976074,
+                "z": 17.33333396911621
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 3.3883161544799805,
+                "z": 18.5
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 3.712390899658203,
+                "z": 19.666667938232422
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 4.036464214324951,
+                "z": 20.83333396911621
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 4.360538959503174,
+                "z": 22.0
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 4.68461275100708,
+                "z": 23.166667938232422
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 5.008687496185303,
+                "z": 24.33333396911621
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 5.332761764526367,
+                "z": 25.500001907348633
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 5.430000305175781,
+                "z": 26.666667938232422
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1",
+            "position": {
+                "x": -18.0,
+                "y": 5.430000305175781,
+                "z": 27.768163681030273
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 1 stop",
+            "position": {
+                "x": -18.0,
+                "y": 5.430000305175781,
+                "z": 27.768163681030273
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -18.0,
+                "y": 5.430000305175781,
+                "z": 27.768163681030273
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -17.768953323364258,
+                "y": 5.430000305175781,
+                "z": 28.303791046142578
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -17.306859970092773,
+                "y": 5.430000305175781,
+                "z": 29.375041961669922
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -16.84476661682129,
+                "y": 5.708890914916992,
+                "z": 30.4462947845459
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -16.382675170898438,
+                "y": 6.080472946166992,
+                "z": 31.517547607421875
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -15.920580863952637,
+                "y": 6.452053546905518,
+                "z": 32.58879852294922
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -15.458488464355469,
+                "y": 6.823635578155518,
+                "z": 33.66004943847656
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -14.996395111083984,
+                "y": 7.195216655731201,
+                "z": 34.73130416870117
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -14.5343017578125,
+                "y": 7.566798686981201,
+                "z": 35.802555084228516
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -14.072209358215332,
+                "y": 7.938379764556885,
+                "z": 36.87380599975586
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -13.610116004943848,
+                "y": 8.309962272644043,
+                "z": 37.94506072998047
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -13.148022651672363,
+                "y": 8.681543350219727,
+                "z": 39.01631164550781
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -12.685930252075195,
+                "y": 9.05312442779541,
+                "z": 40.087562561035156
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -12.24527645111084,
+                "y": 9.387516975402832,
+                "z": 41.04057693481445
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -11.752222061157227,
+                "y": 9.75905990600586,
+                "z": 42.09793472290039
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -11.259167671203613,
+                "y": 10.130603790283203,
+                "z": 43.155296325683594
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -10.843283653259277,
+                "y": 10.428308486938477,
+                "z": 44.119422912597656
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -10.41501522064209,
+                "y": 10.429935455322266,
+                "z": 45.0779914855957
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2",
+            "position": {
+                "x": -10.079981803894043,
+                "y": 10.430000305175781,
+                "z": 45.82505798339844
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 2 stop",
+            "position": {
+                "x": -10.079981803894043,
+                "y": 10.429999351501465,
+                "z": 45.82505798339844
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -9.63623332977295,
+                "y": 10.430000305175781,
+                "z": 46.77668380737305
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -9.214157104492188,
+                "y": 10.436816215515137,
+                "z": 47.73802947998047
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -8.752063751220703,
+                "y": 10.700488090515137,
+                "z": 48.80928421020508
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -8.289971351623535,
+                "y": 10.964159965515137,
+                "z": 49.88053512573242
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -7.827877998352051,
+                "y": 11.22783088684082,
+                "z": 50.951786041259766
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -7.365785121917725,
+                "y": 11.49150276184082,
+                "z": 52.023040771484375
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -6.903692245483398,
+                "y": 11.75517463684082,
+                "z": 53.09429168701172
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -6.441599369049072,
+                "y": 12.018844604492188,
+                "z": 54.16554260253906
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -5.979506015777588,
+                "y": 12.282517433166504,
+                "z": 55.23679733276367
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -5.538853168487549,
+                "y": 12.51979923248291,
+                "z": 56.1898078918457
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -5.0457987785339355,
+                "y": 12.78344440460205,
+                "z": 57.247169494628906
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -4.552744388580322,
+                "y": 13.047088623046875,
+                "z": 58.304527282714844
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -4.059689521789551,
+                "y": 13.3107328414917,
+                "z": 59.36188507080078
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -3.6376137733459473,
+                "y": 13.5480318069458,
+                "z": 60.32323455810547
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -3.175520658493042,
+                "y": 13.811702728271484,
+                "z": 61.39448928833008
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -2.7441563606262207,
+                "y": 14.048994064331055,
+                "z": 62.35166931152344
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3",
+            "position": {
+                "x": -2.3096957206726074,
+                "y": 14.28628158569336,
+                "z": 63.30746078491211
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 3 stop",
+            "position": {
+                "x": -2.0981686115264893,
+                "y": 14.40434455871582,
+                "z": 63.7851676940918
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 4",
+            "position": {
+                "x": -2.0981686115264893,
+                "y": 14.40434455871582,
+                "z": 63.7851676940918
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 4",
+            "position": {
+                "x": -2.0981686115264893,
+                "y": 14.40434455871582,
+                "z": 63.7851676940918
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 4",
+            "position": {
+                "x": -2.0710232257843018,
+                "y": 14.430000305175781,
+                "z": 64.71810913085938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 4",
+            "position": {
+                "x": -2.071023464202881,
+                "y": 14.430000305175781,
+                "z": 65.88477325439453
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 4",
+            "position": {
+                "x": -2.07102370262146,
+                "y": 14.430000305175781,
+                "z": 67.05143737792969
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 4",
+            "position": {
+                "x": -2.071023941040039,
+                "y": 14.430000305175781,
+                "z": 68.21810913085938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 4",
+            "position": {
+                "x": -2.0438783168792725,
+                "y": 14.430000305175781,
+                "z": 69.26771545410156
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 4",
+            "position": {
+                "x": -2.016732931137085,
+                "y": 14.430000305175781,
+                "z": 70.31731414794922
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 4",
+            "position": {
+                "x": -2.009946823120117,
+                "y": 14.430000305175781,
+                "z": 71.36721801757813
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "ascent 4 stop",
+            "position": {
+                "x": -2.0031604766845703,
+                "y": 14.429998397827148,
+                "z": 71.76840209960938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031604766845703,
+                "y": 14.429998397827148,
+                "z": 71.76840209960938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031604766845703,
+                "y": 14.429998397827148,
+                "z": 71.76840209960938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031604766845703,
+                "y": 14.429998397827148,
+                "z": 71.76840209960938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031604766845703,
+                "y": 14.429998397827148,
+                "z": 71.76840209960938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031604766845703,
+                "y": 14.429998397827148,
+                "z": 71.76840209960938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031604766845703,
+                "y": 14.429998397827148,
+                "z": 71.76840209960938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031604766845703,
+                "y": 14.429998397827148,
+                "z": 71.76840209960938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031604766845703,
+                "y": 14.429998397827148,
+                "z": 71.76840209960938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031604766845703,
+                "y": 14.429998397827148,
+                "z": 71.76840209960938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031604766845703,
+                "y": 14.429998397827148,
+                "z": 71.76840209960938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031604766845703,
+                "y": 14.429998397827148,
+                "z": 71.76840209960938
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.003159999847412,
+                "y": 14.430000305175781,
+                "z": 71.06839752197266
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.003159523010254,
+                "y": 14.430000305175781,
+                "z": 69.9017333984375
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031590461730957,
+                "y": 14.430000305175781,
+                "z": 68.73506164550781
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031583309173584,
+                "y": 14.430000305175781,
+                "z": 67.56839752197266
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.0031578540802,
+                "y": 14.430000305175781,
+                "z": 66.4017333984375
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.003157377243042,
+                "y": 14.430000305175781,
+                "z": 65.23506164550781
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3",
+            "position": {
+                "x": -2.003156900405884,
+                "y": 14.430000305175781,
+                "z": 64.18897247314453
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 3 stop",
+            "position": {
+                "x": -2.003156900405884,
+                "y": 14.429998397827148,
+                "z": 64.18897247314453
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -2.003156900405884,
+                "y": 14.429998397827148,
+                "z": 64.18897247314453
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -2.2342031002044678,
+                "y": 14.376519203186035,
+                "z": 63.65334701538086
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -2.696295738220215,
+                "y": 14.114826202392578,
+                "z": 62.582096099853516
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -3.158388376235962,
+                "y": 13.851152420043945,
+                "z": 61.510841369628906
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -3.62048077583313,
+                "y": 13.587481498718262,
+                "z": 60.43959045410156
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -4.082573413848877,
+                "y": 13.323809623718262,
+                "z": 59.36833572387695
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -4.544665813446045,
+                "y": 13.060137748718262,
+                "z": 58.29708480834961
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -5.006758689880371,
+                "y": 12.796465873718262,
+                "z": 57.225830078125
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -5.468851089477539,
+                "y": 12.532794952392578,
+                "z": 56.154579162597656
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -5.930943489074707,
+                "y": 12.269122123718262,
+                "z": 55.08332824707031
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -6.393036365509033,
+                "y": 12.005451202392578,
+                "z": 54.0120735168457
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -6.855128765106201,
+                "y": 11.741779327392578,
+                "z": 52.94082260131836
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -7.286492824554443,
+                "y": 11.490642547607422,
+                "z": 51.983638763427734
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -7.779547214508057,
+                "y": 11.226999282836914,
+                "z": 50.9262809753418
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -8.272601127624512,
+                "y": 10.963354110717773,
+                "z": 49.868919372558594
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -8.707061767578125,
+                "y": 10.738500595092773,
+                "z": 48.91312789916992
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -9.169154167175293,
+                "y": 10.474830627441406,
+                "z": 47.84187698364258
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2",
+            "position": {
+                "x": -9.60361385345459,
+                "y": 10.429999351501465,
+                "z": 46.886085510253906
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 2 stop",
+            "position": {
+                "x": -9.90676212310791,
+                "y": 10.429999351501465,
+                "z": 46.20537185668945
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -10.399816513061523,
+                "y": 10.429999351501465,
+                "z": 45.14801025390625
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -10.818796157836914,
+                "y": 10.430000305175781,
+                "z": 44.185272216796875
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -11.280888557434082,
+                "y": 10.136270523071289,
+                "z": 43.11402130126953
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -11.74298095703125,
+                "y": 9.77962589263916,
+                "z": 42.04276657104492
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -12.205073356628418,
+                "y": 9.417424201965332,
+                "z": 40.97151565551758
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -12.667165756225586,
+                "y": 9.049667358398438,
+                "z": 39.900264739990234
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -13.129258155822754,
+                "y": 8.676356315612793,
+                "z": 38.829010009765625
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -13.591350555419922,
+                "y": 8.29748821258545,
+                "z": 37.75775909423828
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -14.05344295501709,
+                "y": 7.913063049316406,
+                "z": 36.68650436401367
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -14.4971923828125,
+                "y": 7.551901817321777,
+                "z": 35.73488235473633
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -14.990245819091797,
+                "y": 7.2008466720581055,
+                "z": 34.67752456665039
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -15.48330020904541,
+                "y": 6.844234466552734,
+                "z": 33.62016296386719
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -15.976354598999023,
+                "y": 6.48206901550293,
+                "z": 32.56280517578125
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -16.395334243774414,
+                "y": 6.1424689292907715,
+                "z": 31.600067138671875
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -16.857425689697266,
+                "y": 5.7580461502075195,
+                "z": 30.5288143157959
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -17.291885375976563,
+                "y": 5.436463832855225,
+                "z": 29.573020935058594
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1",
+            "position": {
+                "x": -17.723249435424805,
+                "y": 5.430000305175781,
+                "z": 28.615840911865234
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 1 stop",
+            "position": {
+                "x": -17.91901969909668,
+                "y": 5.430000305175781,
+                "z": 28.179954528808594
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.91901969909668,
+                "y": 5.430000305175781,
+                "z": 28.179954528808594
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.91901969909668,
+                "y": 5.430000305175781,
+                "z": 28.179954528808594
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.91901969909668,
+                "y": 5.430000305175781,
+                "z": 27.246620178222656
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.919017791748047,
+                "y": 5.429999828338623,
+                "z": 26.079954147338867
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.919017791748047,
+                "y": 5.185526371002197,
+                "z": 24.913286209106445
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.919015884399414,
+                "y": 4.875340938568115,
+                "z": 23.746620178222656
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.919015884399414,
+                "y": 4.521637439727783,
+                "z": 22.579954147338867
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.919015884399414,
+                "y": 4.228118419647217,
+                "z": 21.413286209106445
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.91901397705078,
+                "y": 3.8845996856689453,
+                "z": 20.246620178222656
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.91901397705078,
+                "y": 3.575340747833252,
+                "z": 19.079954147338867
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.91901397705078,
+                "y": 3.248488426208496,
+                "z": 17.913286209106445
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.91901206970215,
+                "y": 2.9170074462890625,
+                "z": 16.746620178222656
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.91901206970215,
+                "y": 2.6068215370178223,
+                "z": 15.57995319366455
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.91901206970215,
+                "y": 2.253117799758911,
+                "z": 14.413286209106445
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.919010162353516,
+                "y": 1.959599494934082,
+                "z": 13.24661922454834
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.919010162353516,
+                "y": 1.6373775005340576,
+                "z": 12.196619987487793
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.95294189453125,
+                "y": 1.3439545631408691,
+                "z": 11.03044605255127
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.980087280273438,
+                "y": 1.0376241207122803,
+                "z": 9.980840682983398
+            },
+            "grounded": false,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0",
+            "position": {
+                "x": -17.980085372924805,
+                "y": 0.7302167415618896,
+                "z": 8.930840492248535
+            },
+            "grounded": true,
+            "penetration": 0.0
+        },
+        {
+            "leg": "descent 0 stop",
+            "position": {
+                "x": -17.997051239013672,
+                "y": 0.5287652015686035,
+                "z": 8.205615043640137
+            },
+            "grounded": true,
+            "penetration": 0.0
+        }
+    ],
+    "geometryConcerns": [],
+    "setupWarps": 1,
+    "movementFrames": 1359,
+    "groundedFrames": 981,
+    "maximumAirborneFrames": 8,
+    "largestCapsulePenetration": 0.0,
+    "minimumUnderpassClearance": 5.171934127807617,
+    "method": "Actual saved v13 pilot, CharacterController and input actions in Play Mode. A single setup warp places the pilot at route start; virtual left stick moves and real keyboard A/D input turns through ascent and reversed descent. No position or orientation writes after setup. Geometry casts inspect all live solids at center and width margins, overlap/penetration of a disabled CapsuleCollider matching the full saved CharacterController shape is measured during travel. Underpass is geometric support/headroom evidence, not a separate traversed route. This is focused route verification, not headset or performance acceptance."
+}

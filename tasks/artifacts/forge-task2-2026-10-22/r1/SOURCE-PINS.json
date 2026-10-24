@@ -1,0 +1,42 @@
+{
+  "branch": "octoberBranch",
+  "head": "84cb1229cd1c1cdd037c43e660d2a181304ada51",
+  "masterCompared": "457435eb3010c5b3dd92d2e1a46d9c75d851780a",
+  "editedFiles": [
+    "web/lib/projections/queries/skater-queries.ts",
+    "web/lib/projections/queries/skater-queries.test.ts",
+    "web/lib/projections/stages/skater-stage.ts",
+    "web/lib/projections/nativeGoalAccounting.test.ts",
+    "web/scripts/fixtures/native-player-offline-synthetic.json",
+    "web/scripts/qualify-native-players-offline.ts",
+    "web/scripts/qualify-native-players-offline.test.ts",
+    "web/scripts/qualify-native-players-offline.md",
+    "web/lib/projections/calculators/skater-adjustments.ts",
+    "web/lib/projections/runProjectionV2.test.ts"
+  ],
+  "retainedHistoricalDependencies": [
+    "web/lib/projections/calculators/skater-adjustments.ts",
+    "web/lib/projections/constants/projection-weights.ts",
+    "web/lib/projections/types/run-forge-projections.types.ts",
+    "web/lib/projections/runProjectionV2.test.ts",
+    "supabase/migrations/20261021182129_forge_latest_rolling_rows.sql"
+  ],
+  "sha256": {
+    "web/lib/projections/queries/skater-queries.ts": "4589f8d79dd6c30be4c2653fe82af1166535b97450eaaa5fd049459c54441893",
+    "web/lib/projections/queries/skater-queries.test.ts": "cdc0a351a4c71db1d30879c25763023fc4da36f148ab0313e317af1346ac9c15",
+    "web/lib/projections/stages/skater-stage.ts": "fe8357390ed4d5ed599bbd0429df5ea6150f703c9f8b121819198d6b4fc8c05b",
+    "web/lib/projections/nativeGoalAccounting.test.ts": "ab32053a3ee2a4fc030c55c89fc0ba1b9425d9b9da0d2aa9ac0aa1188d26e1d8",
+    "web/scripts/fixtures/native-player-offline-synthetic.json": "12953ed69ad7ab160c91f712bee24b3f891ce62092ce12ac7d0962a489d538fe",
+    "web/scripts/qualify-native-players-offline.ts": "d345fcc4913c8e9ecf87b00f6500aa811a9f9f64e0f6e7988dfb8da61bcb7275",
+    "web/scripts/qualify-native-players-offline.test.ts": "cf99e337551c94231b7d0df81a045dcf1a0c497f2a093c16d80e8be526d1dfbc",
+    "web/scripts/qualify-native-players-offline.md": "13d962de7c6975bfc773a302f0992e32c2d4302cceb73578c9fa9628eb25f8d9",
+    "web/lib/projections/calculators/skater-adjustments.ts": "89cf0e544daac80c01f9af267a7774a31ce523d2e483fd87074d999c18fd119b",
+    "web/lib/projections/constants/projection-weights.ts": "1200d9379191de7e569bed14f680777e307829df2d92520b2ed67609ea14792e",
+    "web/lib/projections/types/run-forge-projections.types.ts": "2f7ddc868b55e8cb042abf2c0ef3c5904777cb8817b3d985440e1fe40f07e1a6",
+    "web/lib/projections/runProjectionV2.test.ts": "b669fbeb639c733c27dfee2f27003c9ae0d7359c282e0ee495e45792663ca5d3",
+    "supabase/migrations/20261021182129_forge_latest_rolling_rows.sql": "7f1ef23da246a8f535e4e00a5a3aef33e70f7772f7d502d1baef5e233da70fce"
+  },
+  "releaseQualified": false,
+  "candidateVersion": "R1",
+  "parentSourcePins": "../SOURCE-PINS.json"
+}

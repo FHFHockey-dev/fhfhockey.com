@@ -1,0 +1,7 @@
+{
+  "canonical_all_pins_match": true,
+  "patch_applies_to_exact_baseline": true,
+  "patched_files_match": true,
+  "patch_file_count": 17,
+  "overlay_hash_match": true
+}

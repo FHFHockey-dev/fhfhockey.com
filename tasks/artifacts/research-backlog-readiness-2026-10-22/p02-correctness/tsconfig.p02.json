@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "next-bootstrap.d.ts",
+    "components/PlayerStats/playerStatsContract.ts",
+    "components/PlayerStats/playerStatsContract.test.ts",
+    "components/PlayerStats/PlayerContextualStats.tsx",
+    "components/PlayerStats/PlayerContextualStats.test.tsx",
+    "lib/NHL/statsPageFetch.ts",
+    "lib/NHL/statsPageFetch.test.ts",
+    "lib/NHL/statsPageTypes.ts",
+    "components/StatsPage/LeaderboardCategoryGoalie.tsx",
+    "components/StatsPage/LeaderboardCategoryGoalie.test.tsx",
+    "components/StatsPage/MobileTabInterface.tsx",
+    "pages/stats/index.tsx"
+  ]
+}

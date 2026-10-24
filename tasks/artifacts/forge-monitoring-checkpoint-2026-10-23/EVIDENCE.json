@@ -1,0 +1,70 @@
+{
+  "as_of": "2026-10-23T15:52:55Z",
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "receipt_counts": {
+    "D0": 62,
+    "DU": 62,
+    "DUK": 62
+  },
+  "total_completed_offline_receipts": 186,
+  "production_runtime_observed": false,
+  "actual_production_run_ids": null,
+  "current_release_c_schedules_equal": true,
+  "schedules": [
+    {
+      "path": "/api/v1/db/run-rolling-forge-pipeline?mode=daily_incremental&includeDownstream=true&includeAccuracy=false&stopOnFailure=false",
+      "schedule": "5,10,15,20,30,35,40,45,55 10 * * *"
+    },
+    {
+      "path": "/api/v1/db/forge-served-forecast-settle",
+      "schedule": "0 11 * * *"
+    },
+    {
+      "path": "/api/v1/db/forge-served-forecast-snapshot",
+      "schedule": "30 12 * * *"
+    },
+    {
+      "path": "/api/v1/db/cron-report",
+      "schedule": "0 13 * * *"
+    }
+  ],
+  "private_pilot": "closed; future events/readout cancelled; stale ACTIVE label has expired UNTIL",
+  "process_list": {
+    "outcome": "blocked",
+    "action": "ps -axo pid=,ppid=,etime=,command=",
+    "reason": "sandbox PermissionError: Operation not permitted: ps",
+    "retry": false
+  },
+  "coordination": {
+    "ledger_owner": "01a16391-47f8-74d9-9cab-9f20cf1b50e0",
+    "pipeline_owner": "01a16391-ed12-75cc-9dc8-e1c04ad170fa",
+    "direct_message_sent": false,
+    "status": "parent relay pending; no thread-messaging tool exposed"
+  },
+  "mutations": {
+    "captures": 0,
+    "production_reads": 0,
+    "production_writes": 0,
+    "schedules": 0,
+    "reruns": 0,
+    "interruptions": 0,
+    "register_edits": 0
+  },
+  "source_sha256": {
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "2c04edaee2da9bd0ef2f8dfd3b404f041f432f21738c49eb3999dcca3c21d51f",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/fhfh-sprint-ledger-2026-10-22/CURRENT-OWNERSHIP.md": "2025f09a6dbc08907a753aa3be430ac82f0a893bd65ece301a3cd8117582d1ec",
+    "/Users/tim/Code/fhfhockey.com/web/vercel.json": "bcd2cab8174bead693c7a4268ce2dd44ea551c9dfa92736b347868a0ebac2d2b",
+    "/Users/tim/Code/fhfhockey.com/web/lib/rollingForgePipelineRunState.ts": "6ce1bab745bb6fa870b7aeb717c61b2470072db3645047e48006ea53304d2d38",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/ctpi-duplicate-upsert-audit-2026-10-22/REPORT.md": "bd6976afe3ceef43aebd46a8f68fc610aacb3dcec77d4bda23d6a9d1f5e5da00",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-f6-ledger-week-2026-10-23/BASELINE-RECEIPTS.json": "2ba6cffb2f949ccd8236ed68fd9e52c3b2daedefc5d89fd42e379717facb74d5",
+    "/Users/tim/Documents/Codex/2026-10-23/task-8/artifacts/derived-exposure/REPORT.md": "b921afae882e1ef60ca15312f51b71e51edc3abb675f9ff2739f87616cf6b7b4",
+    "/Users/tim/Documents/Codex/2026-10-23/task-8/artifacts/derived-exposure/VERIFICATION-AND-MECHANISM.json": "70244621d1c2732b12718942d71def956e469c661255b50e6554cb2b1b2ed4a9",
+    "/Users/tim/Documents/FHFH-private/forge-walk-forward-20261014-v1/protocol/operations.json": "eefbf837157f04486bad4af5fb17333b1fdc85db73ad128f077c8bb478d8f641",
+    "/Users/tim/Documents/FHFH-private/forge-walk-forward-20261014-v1/protocol/closure-decision-20261017.json": "1046139dd5de900f54f3bc8ab009db1ccf71514b6ed66c1a8be8db4a6ef55fc5",
+    "/Users/tim/Documents/FHFH-private/forge-walk-forward-20261014-v1/protocol/closure-amendment-20261017-v1.json": "e2c5f491660f0004360d8eeb3a88d0414aac639300dc2322683d6816f323b364",
+    "/Users/tim/.codex/automations/forge-finite-experiment-dispatch/automation.toml": "e3fbce18462fffa00c82463d72ca79f0cae7801a8dc85c39e38dbe2d7a435286",
+    "/Users/tim/Documents/Codex/2026-10-23/task-8/artifacts/derived-exposure/results/D0-receipts.json": "06112869d15c331fedd33397e0e9200396bef77c9b1fd1caf3366ebe01d0770c",
+    "/Users/tim/Documents/Codex/2026-10-23/task-8/artifacts/derived-exposure/results/DU-receipts.json": "a2277ecc94e0bf31968ebe1bfb3ddff0044f4b335c8943831f34e4bf8c9a4b95",
+    "/Users/tim/Documents/Codex/2026-10-23/task-8/artifacts/derived-exposure/results/DUK-receipts.json": "6d25e9f8689dec6a7d96ab98d8916c9d08edb0c4f7a284ed6d228d2ecedd0486"
+  }
+}

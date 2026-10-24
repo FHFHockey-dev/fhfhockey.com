@@ -1,0 +1,21 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/in-season/workspaceRoutes.test.ts __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts lib/rosterScheduleData/planning.test.ts -t P07|serves interim|workspace|account|access|owner|capability|private|no-store|policy
+
+
+ RUN  v3.2.7 /private/tmp/fhfh-p07-r1-review-3mw_5nd7/web
+
+ ✓ lib/rosterScheduleData/planning.test.ts (107 tests | 101 skipped) 24ms
+(node:38305) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/in-season/workspaceRoutes.test.ts (22 tests) 147ms
+(node:38305) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts (8 tests | 7 skipped) 4ms
+
+ Test Files  3 passed (3)
+      Tests  29 passed | 108 skipped (137)
+   Start at  11:47:58
+   Duration  1.32s (transform 544ms, setup 14ms, collect 652ms, tests 175ms, environment 251ms, prepare 75ms)
+
+

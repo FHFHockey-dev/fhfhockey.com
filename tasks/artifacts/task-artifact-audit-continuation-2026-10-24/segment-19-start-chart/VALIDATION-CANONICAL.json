@@ -1,0 +1,167 @@
+{
+  "at": "2026-10-24T19:52:54.099295+00:00",
+  "before_ids": 214,
+  "after_ids": 214,
+  "before_evidence": 1201,
+  "after_evidence": 1233,
+  "added_ids": [],
+  "changed_existing_ids": [
+    "SITE-START-CONTRACT",
+    "NATIVE-ISSUANCE",
+    "SITE-START-RECENTFORM",
+    "REPO-DOCUMENTATION"
+  ],
+  "all_prior_ids_scopes_evidence_prefixes_preserved": true,
+  "legacy_blocks_byte_identical": 32,
+  "unchanged_existing_rows_identical": 210,
+  "readable_children_before": 48,
+  "readable_children_after": 56,
+  "scalar_label_checks": [
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "implementation",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "acceptance",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "release",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "next_action",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "NATIVE-ISSUANCE",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-RECENTFORM",
+      "field": "implementation",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-RECENTFORM",
+      "field": "acceptance",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-RECENTFORM",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "SITE-START-RECENTFORM",
+      "field": "next_action",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "implementation",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "acceptance",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "release",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-START-CONTRACT",
+      "field": "next_action",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "NATIVE-ISSUANCE",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-START-RECENTFORM",
+      "field": "implementation",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-START-RECENTFORM",
+      "field": "acceptance",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-START-RECENTFORM",
+      "field": "verification",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "SITE-START-RECENTFORM",
+      "field": "next_action",
+      "label_value_matched": true
+    },
+    {
+      "document": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md",
+      "taskID": "REPO-DOCUMENTATION",
+      "field": "verification",
+      "label_value_matched": true
+    }
+  ],
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "95388d86ad5a39a8aeb0ca290c3c4c2375d6fb79553d64ee0ac00adf32aa1e0d",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "a6694debc718574d9d3457601b66172972b4a85f1b9ad64d43bd03361ed17b51",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "536cc05b16b7683b5195b7ad3d7e85616a733fbe3d8414e4cfb128887c7c7036"
+  },
+  "candidate_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "ea51204fb3651d0c843b16512ca28a1faa835c2f0d11b65ef7fa9db61cc5636d",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "e380c5e22aaa5a8dde99e85f263f524202a4101b2a9d0bf5ba800102d09869a1",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "851adc891422d9224d67e4e775c3bae644462e74b12fd793053bd368e84fe650"
+  },
+  "no_added_trailing_whitespace": true,
+  "application_tests_git_or_external_operations": 0,
+  "whole_tree_content_audit_complete": false,
+  "canonical_written": true
+}

@@ -1,0 +1,128 @@
+{
+  "verdict": "accepted_with_limits_local_security_session_candidate",
+  "changes_required_findings": [],
+  "candidate_patch_sha256": "aa929138adc11eed6eb2070aeddb90f28465c31c426f85314abf4dc94012da38",
+  "canonical_head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "runtime": {
+    "parent_assignment": {
+      "model": "GPT-6.1 Sol",
+      "reasoning": "high"
+    },
+    "model_and_reasoning_independently_verified": false,
+    "verification_limit": "No runtime model/effort telemetry exposed",
+    "node": "22.11.0",
+    "vitest": "3.2.7",
+    "react": "18.3.1",
+    "playwright": "1.60.0",
+    "esbuild": "0.25.12",
+    "supabase_js": "2.89.0"
+  },
+  "fresh_controls": {
+    "status": "passed",
+    "files": 1,
+    "tests": 35,
+    "duration_ms": 733,
+    "log": "CONTROLS-initial.log",
+    "test": "security-controls.test.tsx",
+    "network_guards": [
+      "fetch",
+      "XMLHttpRequest",
+      "WebSocket",
+      "http.request/get",
+      "https.request/get",
+      "net.connect/createConnection",
+      "tls.connect"
+    ]
+  },
+  "owner_evidence_reused": {
+    "focused_tests": 109,
+    "admin_regressions": 61,
+    "scoped_typescript": "passed_owner_evidence",
+    "scoped_lint": "passed_owner_evidence",
+    "patch_dry_run": "passed_owner_evidence",
+    "rerun": false,
+    "pins": "SOURCE-PINS.json"
+  },
+  "browser": {
+    "bundle_status": "compiled",
+    "bundle_inputs": 49,
+    "initial_launch": "blocked_macos_machport_permission_denied_1100",
+    "initial_failure_preserved": "browser/RESULTS-sandbox.json",
+    "approved_run_status": "failed_fixture_assumption_partial_evidence",
+    "same_script_pins": "browser/APPROVED-RUN-PINS.json",
+    "assertions_passed": 4,
+    "assertions_failed": 1,
+    "assertions_not_reached": 4,
+    "passed": [
+      "signed-out shell denies workspace and edition read",
+      "signed-in non-editor denies workspace and edition read",
+      "editor mounts actual renderer and sends synthetic bearer",
+      "account switch resets actual workspace and rejects pending old edition"
+    ],
+    "failed": "Expected automatic B2 edition on token refresh before releasing pending old-token response",
+    "interpretation": "Automatic token-refresh refetch is not promised; loading states can batch and same-user key remains. Failure is not evidence old data was accepted. Stale-token rejection browser path was not reached. Independent unit stale-token rejection passed.",
+    "requests": 4,
+    "external_application_requests_observed": 0,
+    "uncaught_page_errors_observed": [],
+    "screenshots": {
+      "01-editor.png": "eff460a67f10f3df63ca15d5ff9af485d51147400cf574361473bd8901feb209",
+      "02-account-B.png": "57292b8f1e19844d0b9561694170eeda0fc810c5fccec6d6a21305ac9631ce8d"
+    },
+    "screenshots_visually_inspected": [
+      "02-account-B.png"
+    ],
+    "styles": "neutral_fixture_no_visual_layout_or_png_acceptance",
+    "new_browser_profile": true,
+    "server_or_ports_used": false,
+    "real_sessions_or_ensureUserRecords_writes": false,
+    "followup_plan": "REPORT.md"
+  },
+  "c3_merge": {
+    "coordinator_merged_sha256": "c3cf3f66b7b51d992a11df5207a429ed22350bd88c03ba43993033e82ff1941b",
+    "actual_diff_review": "only exact three-case C3 cancellation-storage cleanup block added to social tests; social controls preserved",
+    "runtime_composition_verification": "coordinator_owned",
+    "reviewer_integration": false
+  },
+  "not_run": [
+    "full_social_share_e2e",
+    "Next_server_or_build",
+    "real_Supabase_or_RLS",
+    "hosted_route_checks",
+    "role_grant",
+    "deployment",
+    "remaining_browser_controls_after_failed_assumption"
+  ],
+  "external_operations": {
+    "hosted_requests": 0,
+    "db_or_account_writes": 0,
+    "role_grants": 0,
+    "remote_builds": 0,
+    "deployments": 0,
+    "paid_actions": 0,
+    "Git_index_or_refs_mutations": 0
+  },
+  "write_boundary_note": "Review source/artifacts isolated; Vitest default cache followed artifact node_modules symlink and appended :security-controls.test.tsx metadata to existing ignored web/node_modules/.vite/vitest/da39a3ee5e6b4b0d3255bfef95601890afd80709/results.json. Shared cache left intact; no canonical source/config edits.",
+  "integrity": "FINAL-INTEGRITY.json",
+  "artifact_sha256": {
+    "REPORT.md": "5261a720d18a6b48f2bda7bf64ae6cfffac88e967c07fcf4dedcccfe049f805c",
+    "SOURCE-PINS.json": "2452dfb844695c49466ca1eecae8cecc547b4f73f2dcaf6c402c03e80476fc34",
+    "FINAL-INTEGRITY.json": "bc9f083fe3c48bb12d611f3636626480631754bd94634bb13c8b39a8bd215d33",
+    "CONTROLS-initial.log": "d6f30b1f6ed1e9743b1b4c9745c8b7d09ede5ab37a9f48870a4a16b8591502d1",
+    "security-controls.test.tsx": "02a7221514f32b965dfc0dbbc3d721b796a186e70e90c2f77cd8f28350c5d6ca",
+    "vitest.config.mjs": "6daa57439cdb00dbb1de92a4cca9a5803517de5ece2a072dfcfd30c5bc725a0f",
+    "network-block.ts": "10fe37eb7221f75321894302462201454f41749e96a891e5f9b8ef6c4283af47",
+    "BROWSER-build.log": "c6cbb43fea81f71e53808be26a15227ac6099f2f8c9160e660e2bd016bb10644",
+    "BROWSER-build-corrected.log": "5f02ba44a32b2e9c5e3f06ae909427ef1da313a1c6a1508d41087ab290408984",
+    "BROWSER-run.log": "bb525ee387856ac1d586b429a26f47d4ef05008da35c73ba250f7070c863c193",
+    "BROWSER-approved-run.log": "adecc085577662e0ae6a431616985b6d12cc5eeae43510b1e9643a24643fc22d",
+    "browser/RESULTS.json": "1371737bde0a3e3f8f73dc3906f9ed200230043828d67dd0a40eb9db6e56fe0c",
+    "browser/RESULTS-sandbox.json": "60b380ee4b5672b1eadf1c3200b2c53a2b7b1af717e70f8512135848e5df3a80",
+    "browser/APPROVED-RUN-PINS.json": "1a6ce90a52675a0ba80cde5c49140c45e102cf3f72d22979e121f81574037e7c",
+    "browser/DEPENDENCY-PINS.json": "6547b22bd22b08ee356b9d2111f8389d282d8db4a16ca3e1bdc887666011b2bc",
+    "browser/build.cjs": "251bd7ea2d4a1ceb8486c3b5e49de7217af362ab14d5beb74da6b1f8030b6d16",
+    "browser/run.cjs": "dd5ef2acb3332e70319fd846defcf1340e64fd6da1089950b2121fe04cc49f5d",
+    "browser/bundle.js": "23812c4600f249c1735e5515c8209dcc496a68c0f0f2846f0b39f910e0c138f4",
+    "browser/01-editor.png": "eff460a67f10f3df63ca15d5ff9af485d51147400cf574361473bd8901feb209",
+    "browser/02-account-B.png": "57292b8f1e19844d0b9561694170eeda0fc810c5fccec6d6a21305ac9631ce8d"
+  }
+}

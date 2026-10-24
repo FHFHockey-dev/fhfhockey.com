@@ -1,0 +1,1583 @@
+--- a/web/e2e/roster-schedule-optimizer.spec.ts
++++ b/web/e2e/roster-schedule-optimizer.spec.ts
+@@ -1,4 +1,5 @@
+ import { expect, test } from "@playwright/test";
++import { routeCurrentPlanning, showScheduleView, openDisclosure, expectQualityReadiness, setPlanningTime, installPlanningClock, RSO_FIXTURE_BRIDGE, RSO_FIXTURE_PRINCIPAL } from "./roster-schedule-optimizer-fixtures";
+ import { writeFile } from "node:fs/promises";
+ import { installDraftProAuthenticatedFixtures } from "./draft-pro-fixtures";
+ import type { GameForecast, LeagueRules, PlanningPlayer, PlanningSnapshot, PlanningWorkspace } from "../lib/rosterScheduleOptimizer/planningTypes";
+@@ -6,6 +7,7 @@
+ import { saveWorkspaceSchema, snapshotSchema } from "../lib/in-season/workspaceSchema";
+ import { forecastCalendarPolicy } from "../lib/player-forecasts/contributions";
+ import { currentRsoUsePolicy } from "../lib/player-forecasts/rsoUsePolicy";
++import { applyProviderGoalieStarts } from "../lib/rosterScheduleOptimizer/providerGoalieStarts";
+ import { compactBridgeForecasts } from "../lib/rosterScheduleData/bridgeForecastWire";
+ 
+ const player = { id: "fhfh:1", nhlId: 1, name: "Alpha Center", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "unknown" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] };
+@@ -15,7 +17,7 @@
+ const fixtureForecast = (member: PlanningPlayer, game: PlanningSnapshot["games"][number], goals: number): GameForecast => ({
+   playerId: member.id, gameId: game.id, stats: { GOALS: goals }, sourceKind: "detailed", sourceWatermark: "fixture-inputs",
+   allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false }, conditioning: "unconditional",
+-  startProbability: null, confirmedStart: false, revisionId: "fixture", modelVersion: "fixture", limitations: [],
++  startProbability: null, confirmedStart: false, revisionId: RSO_FIXTURE_BRIDGE, modelVersion: "fixture", limitations: [],
+   cutoffAt: "2026-09-26T00:00:00Z", issuedAt: "2026-09-26T00:00:00Z", expiresAt: game.startsAt!,
+   issuedContext: { version: "forge-issued-context-v1", playerId: member.id, gameId: game.id, nhlPlayerId: member.nhlId!,
+     seasonId: 20262027, teamId: member.nhlTeamId!, scheduledAt: game.startsAt!, scheduleRevision: game.scheduleRevision!,
+@@ -29,8 +31,7 @@
+   await page.addInitScript((value) => { if (!localStorage.getItem("fhfh:rso:workspace:v1")) localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(value)); }, workspace);
+ }
+ async function openPlanDetails(page: import("@playwright/test").Page) {
+-  const details = page.locator("#rso-plan-details");
+-  if (!await details.evaluate(node => (node as HTMLDetailsElement).open)) await details.locator(":scope > summary").click();
++  await showScheduleView(page, "details");
+ }
+ async function openPlanningSetup(page: import("@playwright/test").Page) {
+   const toggle = page.getByRole("button", { name: /Planning setup ·/ });
+@@ -54,7 +55,7 @@
+ }
+ 
+ test("connected refresh fixtures preserve nonzero intent through offline, cooldown, Undo and reopen", async ({ page }, testInfo) => {
+-  await page.clock.install({ time: new Date("2026-10-11T12:00:00Z") });
++  await installPlanningClock(page, { time: new Date("2026-10-11T12:00:00Z") });
+   await installDraftProAuthenticatedFixtures(page, () => ({ access: { eligible: false, grantingSources: [], expiresAt: null, verifiedAt: null, nextVerificationAt: null, reason: "no_active_grant", capabilities: [], providerReadiness: { stripe: false, patreon: false, yahoo: false } } }));
+   const storageKey = `sb-${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL || "https://fyhftlxokyjtpndbkfse.supabase.co").hostname.split(".")[0]}-auth-token`;
+   await page.addInitScript(key => { const session = localStorage.getItem("sb-127-auth-token"); if (session) localStorage.setItem(key, session); }, storageKey);
+@@ -64,7 +65,7 @@
+   workspace.intent.steps = [{ id: "fixture-add", type: "add", playerId: players[1].id, at: "2026-10-12T12:00:00Z", effectiveAt: "2026-10-12T12:00:00Z", conditional: false, dependsOn: [] }]; workspace.intent.protectedPlayerIds = [players[0].id];
+   await seedWorkspace(page, workspace);
+   await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync", "rso_auto_upkeep"] } } }));
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players, games: [], forecasts: [], evidence: {} } } }));
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players, games: [], forecasts: [], evidence: {} } } }));
+   let reads = 0;
+   await page.route("**/api/v1/roster-schedule-optimizer/provider", route => {
+     const read = ++reads;
+@@ -89,12 +90,13 @@
+ });
+ 
+ test.beforeEach(async ({ page }) => {
++  await page.route("**/api/**", route => route.fulfill({ status: 503, json: { error: "fixture: unmocked API" } }));
+   await page.route("**/*", route => {
+     const host = new URL(route.request().url()).hostname;
+     return ["127.0.0.1", "localhost"].includes(host) ? route.fallback() : route.abort();
+   });
+-  await page.clock.setFixedTime(new Date("2026-09-26T00:00:00Z"));
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", (route) => route.fulfill({ json: { success: true, data: { players: [player], games: [], forecasts: [], evidence: {} } } }));
++  await setPlanningTime(page, new Date("2026-09-26T00:00:00Z"));
++  await routeCurrentPlanning(page, (route) => route.fulfill({ json: { success: true, data: { players: [player], games: [], forecasts: [], evidence: {} } } }));
+   await page.route("**/api/v1/roster-schedule-optimizer/access", (route) => route.fulfill({ json: { data: { eligible: false, capabilities: [], grantingSources: [], expiresAt: null, reason: "manual" } } }));
+   await page.route("**/api/v1/roster-schedule-optimizer/workspace?**", (route) => route.fulfill({ status: 401, json: { error: "unauthorized" } }));
+ });
+@@ -112,11 +114,11 @@
+     await page.setViewportSize({ width, height });
+     await page.goto("/roster-schedule-optimizer");
+     await expect(page.getByRole("heading", { name: "Roster Schedule Optimizer" })).toBeVisible();
+-    if (!(await page.getByRole("button", { name: "Remove Alpha Center" }).isVisible())) {
+-      await page.getByRole("searchbox", { name: "Find a player" }).fill("Alpha");
+-      await page.getByRole("button", { name: "Add", exact: true }).click();
+-    }
++    await expect(page.getByRole("region", { name: "Roster and setup" }).getByRole("button", { name: "Alpha Center CAR · C", exact: true })).toBeVisible();
++    const manage = page.getByLabel("Manage Alpha Center", { exact: true });
++    await manage.click();
+     await expect(page.getByRole("button", { name: "Remove Alpha Center" })).toBeVisible();
++    await manage.click();
+     await page.getByText("League rules and scoring", { exact: true }).click();
+     const confirm = page.getByRole("button", { name: "Confirm planning inputs", exact: true });
+     await expect(confirm).toBeEnabled();
+@@ -138,7 +140,9 @@
+     });
+     await expectDesktopFrameVisible(page);
+     await page.reload();
++    await page.getByLabel("Manage Alpha Center", { exact: true }).click();
+     await expect(page.getByRole("button", { name: "Remove Alpha Center" })).toBeVisible();
++    await page.getByLabel("Manage Alpha Center", { exact: true }).click();
+     await page.getByText("League rules and scoring", { exact: true }).click();
+     await expect(confirm).toBeEnabled();
+     await page.getByText("League rules and scoring", { exact: true }).click();
+@@ -155,12 +159,16 @@
+   await page.goto("/roster-schedule-optimizer");
+   await expect(page.getByRole("region", { name: "Itinerary" })).toBeVisible();
+   await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Roster" }).click();
++  await openDisclosure(page, "Add or import roster");
+   await page.getByRole("textbox", { name: "Paste roster names" }).fill("Alpha Center");
+   await page.getByRole("button", { name: "Review pasted names" }).click();
+   await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Matchup" }).click();
+   await expect(page.getByText(/Opponent inputs are missing/)).toBeVisible();
+   await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Roster" }).click();
++  await page.getByLabel("Manage Alpha Center", { exact: true }).click();
+   await expect(page.getByRole("button", { name: "Remove Alpha Center" })).toBeVisible();
++  await page.getByLabel("Manage Alpha Center", { exact: true }).click();
++  await openDisclosure(page, "Add or import roster");
+   await page.getByRole("textbox", { name: "Paste roster names" }).fill("Alpha Center");
+   await page.getByRole("button", { name: "Review pasted names" }).click();
+   await expect(page.locator("#rso-action-status")).toHaveText("Roster review complete: 0 added, 1 already rostered, 0 unresolved. No new roster players were added.");
+@@ -175,7 +183,7 @@
+   await page.setViewportSize({ width: 1440, height: 900 });
+   await page.getByRole("button", { name: "Matchup", exact: true }).click();
+   await expect(page.getByRole("region", { name: "Candidates and detail" })).toBeHidden();
+-  await page.getByRole("button", { name: /Show (lineup analysis|schedule-capacity assignment)/ }).click();
++  await showScheduleView(page, "player");
+   await expect(page.getByRole("table", { name: "Individual player weekly schedule" })).toBeVisible();
+   const schedulePlayer = page.getByRole("button", { name: /^Schedule details for Alpha Center,/ });
+   if (!(await schedulePlayer.isVisible())) await page.getByRole("button", { name: /^Bench \d+, expand/ }).click();
+@@ -191,13 +199,16 @@
+ test("readiness controls reach existing inputs across the required viewports", async ({ page }, testInfo) => {
+   const errors: string[] = [];
+   page.on("pageerror", error => errors.push(error.message));
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: {
+-    success: true, data: { players: [player], games: [fixtureGame("empty-roster-game", 2, "CAR")], forecasts: [], evidence: {} },
+-  } }));
++  await routeCurrentPlanning(page, route => {
++    const day = route.request().method() === "POST" ? route.request().postDataJSON().endDate : new URL(route.request().url()).searchParams.get("endDate")!;
++    return route.fulfill({ json: { success: true, data: { players: [player],
++      games: [{ ...fixtureGame("empty-roster-game", 2, "CAR"), date: day, startsAt: `${day}T23:00:00Z` }], forecasts: [], evidence: {} } } });
++  });
+   for (const [width, height] of [[1180, 757], [1024, 768], [768, 1024], [720, 450], [390, 844], [320, 844]]) {
+     await page.setViewportSize({ width, height });
+     await page.goto("/roster-schedule-optimizer");
+-    const readiness = page.locator("details").filter({ has: page.getByText("Planning readiness", { exact: true }) });
++    await openDisclosure(page, /^More tools$/);
++    const readiness = page.locator("details").filter({ has: page.locator(":scope > summary").getByText("Planning readiness", { exact: true }) });
+     await readiness.locator(":scope > summary").focus();
+     await page.keyboard.press("Enter");
+     await expect(readiness).toHaveAttribute("open", "");
+@@ -214,7 +225,8 @@
+     await page.getByRole("button", { name: "Review rules", exact: true }).focus();
+     await page.keyboard.press("Space");
+     await expect(page.locator("#rso-rule-settings > summary")).toBeFocused();
+-    await expect(page.getByText(/Daily mode and roster slots are proposed defaults/)).toBeVisible();
++    await expect(page.getByText("Review league rules, scoring, locked assignments and player availability. Confirm again when these inputs change.", { exact: false })).toBeVisible();
++    await expect(page.getByRole("combobox", { name: "Lineup mode", exact: true })).toHaveValue("daily");
+     await page.getByRole("button", { name: "Review coverage", exact: true }).focus();
+     await page.keyboard.press("Enter");
+     await expect(page.locator("#rso-matchup-heading")).toBeFocused();
+@@ -256,10 +268,10 @@
+   await seedWorkspace(page, workspace);
+   const games = [fixtureGame("g-a", 5, "CAR"), fixtureGame("g-b", 6, "NJD"), fixtureGame("g-c", 7, "BOS")];
+   const forecasts = games.map((game, index) => fixtureForecast(players[index], game, index + 1));
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", (route) => route.fulfill({ json: { success: true, data: { players, games, forecasts, evidence: {} } } }));
++  await routeCurrentPlanning(page, (route) => route.fulfill({ json: { success: true, data: { players, games, forecasts, evidence: {} } } }));
+   await page.setViewportSize({ width: 1440, height: 900 });
+   await page.goto("/roster-schedule-optimizer");
+-  await page.getByRole("button", { name: "Streaming itinerary", exact: true }).click();
++  await showScheduleView(page, "itinerary");
+   const stream = page.getByRole("region", { name: "Itinerary" }).getByRole("table").first();
+   await expect(stream).toContainText("Alpha Center");
+   await expect(stream).toContainText("Bravo Center");
+@@ -267,13 +279,14 @@
+   await expect(stream.getByRole("row", { name: /C#1/ }).getByRole("cell").nth(0)).toContainText("Hold");
+   await expect(stream.getByRole("row", { name: /C#1/ }).getByRole("cell").nth(1)).toContainText("Conditional add");
+   await expect(stream.getByRole("row", { name: /C#1/ }).getByRole("cell").nth(2)).toContainText("Conditional add");
+-  await expect(page.getByRole("region", { name: "Plan summary" }).getByText("3", { exact: true }).first()).toBeVisible();
++  await expect(page.getByRole("region", { name: "Plan summary" }).getByRole("article").filter({ has: page.getByText("Active games", { exact: true }) }).locator("strong")).toHaveText("3 / 3");
++  await openPlanDetails(page);
+   await expect(page.getByRole("region", { name: "Itinerary" }).getByText("ADD Bravo Center", { exact: true })).toBeVisible();
+   await expect(page.getByRole("region", { name: "Itinerary" }).getByText("ADD Charlie Center", { exact: true })).toBeVisible();
+   const nextAction = page.getByText("Next selected action: ADD Bravo Center", { exact: true });
+   await expect(nextAction).toBeVisible();
+   await expect(page.getByText("Review inputs and rule checks before acting.", { exact: false })).toBeVisible();
+-  await page.getByRole("button", { name: /Show (lineup analysis|schedule-capacity assignment)/ }).click();
++  await showScheduleView(page, "player");
+   await openPlanningSetup(page);
+   await page.getByText("League rules and scoring").click();
+   await page.getByRole("button", { name: "Confirm planning inputs", exact: true }).click();
+@@ -316,9 +329,9 @@
+   await seedWorkspace(page, workspace);
+   const games = [fixtureGame("g-a1", 5, "CAR"), fixtureGame("g-b1", 5, "NJD"), fixtureGame("g-a2", 6, "CAR"), fixtureGame("g-b2", 6, "NJD")];
+   const forecasts = games.map((game) => fixtureForecast(game.teamAbbreviation === "CAR" ? players[0] : players[1], game, game.teamAbbreviation === "CAR" ? 1 : 10));
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", (route) => route.fulfill({ json: { success: true, data: { players, games, forecasts, evidence: {} } } }));
+-  await page.goto("/roster-schedule-optimizer");
+-  await page.getByRole("button", { name: "Streaming itinerary", exact: true }).click();
++  await routeCurrentPlanning(page, (route) => route.fulfill({ json: { success: true, data: { players, games, forecasts, evidence: {} } } }));
++  await page.goto("/roster-schedule-optimizer");
++  await showScheduleView(page, "itinerary");
+   const row = page.getByRole("region", { name: "Itinerary" }).getByRole("table").first().getByRole("row", { name: /C#1/ });
+   await expect(row.getByRole("cell").nth(0)).toContainText("Alpha Center");
+   await expect(row.getByRole("cell").nth(1)).toContainText("Alpha Center");
+@@ -330,7 +343,7 @@
+   { candidateShots: 7, candidateLock: false, label: "gains" },
+   { candidateShots: 2, candidateLock: true, label: "unavailable baseline" },
+ ]) test(`fixture category ${label} use only startable post-acquisition games on desktop and mobile`, async ({ page }, testInfo) => {
+-  await page.clock.setFixedTime(new Date("2026-10-05T00:00:00Z"));
++  await setPlanningTime(page, new Date("2026-10-05T00:00:00Z"));
+   const players = [fixturePlayer(1, "Alpha Center", "CAR"), fixturePlayer(2, "Drop Center", "BOS"), fixturePlayer(3, "Candidate Center", "NJD")];
+   const rules: LeagueRules = { ...fixtureRules, rosterSlots: { C: 1, BN: 1 }, acquisitionTiming: "next_day",
+     periods: [{ id: "Before reset", start: `${date(5)}T00:00:00Z`, end: `${date(6)}T00:00:00Z`, remaining: 1, source: "manager" },
+@@ -353,7 +366,7 @@
+       : game.date === date(5) ? { GOALS: 99, SHOTS: 99 } : { GOALS: 3, SHOTS: candidateShots } };
+   });
+   await seedWorkspace(page, workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: {
++  await routeCurrentPlanning(page, route => route.fulfill({ json: {
+     success: true, data: { players, games, forecasts, evidence: {} },
+   } }));
+   const errors: string[] = [];
+@@ -379,13 +392,13 @@
+       await expect(gains.getByText("Opponent 10 · win → win")).toBeVisible();
+     }
+     await expect(gains).toContainText("not win probabilities");
+-    await expect(itinerary.getByText(/Category alternatives ·/)).toHaveText(/Category alternatives ·/);
+-    if (width < 1101) await expect(itinerary.getByText(/Category alternatives ·/)).toBeVisible();
++    if (width < 1101) await page.getByRole("navigation", { name: "Workspace views" }).getByRole("button", { name: "Candidates", exact: true }).click();
++    await expect(page.getByRole("region", { name: "Candidate browser" }).getByText("Ranked by more starts. Each card shows the category gains and losses for the whole swap.", { exact: true })).toBeVisible();
+     await expect(itinerary.getByText(/Best found ·/)).toHaveCount(0);
+-    await itinerary.getByRole("button", { name: "Show category lineup comparison" }).click();
++    await showScheduleView(page, "player");
++    await expect(itinerary.getByRole("button", { name: "Show category lineup comparison" })).toHaveAttribute("aria-pressed", "true");
+     await openPlanDetails(page);
+-    await expect(itinerary.getByText(/Supported category values describe this lineup/)).toBeVisible();
+-    await expect(itinerary.getByText(/Incomplete forecast, matchup or coverage evidence/)).toHaveCount(0);
++    await expect(gains.getByText("Category gains unavailable. Review forecast coverage, opponent inputs, acquisition rules and goalie minimums.", { exact: true })).toHaveCount(0);
+     await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+       intent: workspace.intent, lockedAssignments: workspace.lockedAssignments,
+     });
+@@ -459,10 +472,11 @@
+   await confirm.click();
+   await expect(confirm).toBeDisabled();
+   await page.getByText("League rules and scoring", { exact: true }).click();
++  await openDisclosure(page, "Find & filter");
+   await page.getByRole("searchbox", { name: "Find candidate" }).fill("Alpha");
+   await page.getByRole("button", { name: "All players", exact: true }).click();
+   await page.getByRole("button", { name: "Select add" }).click();
+-  await expect(page.getByText("ADD Alpha Center")).toBeVisible();
++  await expect(page.getByText("ADD Alpha Center", { exact: true })).toBeVisible();
+   const selected = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent);
+   await openPlanningSetup(page);
+   holdRefresh = true;
+@@ -476,7 +490,7 @@
+   holdRefresh = false; releaseRefresh();
+   await expect(page.getByText(/appears on the actual roster; review whether this selected add is complete/)).toBeVisible();
+   await expect(page.locator("#rso-provider-refresh-status")).toHaveText("Provider inputs refreshed. Selected moves were kept.");
+-  await expect(page.getByText("ADD Alpha Center")).toBeVisible();
++  await expect(page.getByText("ADD Alpha Center", { exact: true })).toBeVisible();
+   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+     intent: selected, lockedAssignments: retained.lockedAssignments,
+     manualPlayers: expect.arrayContaining([expect.objectContaining({ id: lockedPlayer.id, name: "Locked Player", availability: "unknown" })]),
+@@ -505,6 +519,7 @@
+   await page.getByRole("button", { name: "View account save" }).click();
+   await expect(confirm).toBeDisabled();
+   await expect(page.getByText(/Review league rules, scoring, locked assignments and player availability/)).toBeVisible();
++  await page.locator('[class*="navStatus"]').hover();
+   await page.getByRole("button", { name: "Continue manually" }).click();
+   await expect(confirm).toBeEnabled();
+   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!))).toMatchObject({
+@@ -537,16 +552,16 @@
+     const member = members.find(member => member.teamAbbreviation === game.teamAbbreviation)!;
+     return fixtureForecast(member, game, member.id === members[0].id ? 4 : 1);
+   });
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
+   let providerConflict = false;
+   const providerLock = { date: date(6), playerId: members[0].id, slotId: "C#1" };
+   await page.route("**/api/v1/roster-schedule-optimizer/provider", route => route.fulfill({ json: { success: true,
+     snapshot: { id: providerConflict ? "provider-conflict" : "provider-open", context: workspace.context,
+       players: members, roster: workspace.roster, games, forecasts, rules: workspace.rules,
+-      lockedAssignments: providerConflict ? [providerLock] : [], realized: {}, opponent: null, evidence: {} },
++      lockedAssignments: providerConflict ? [providerLock] : [], realized: {}, opponent: null, evidence: { schedule: { source: "Complete synthetic provider schedule", asOf: workspace.context.asOf, seasonId: 20262027, completeness: "complete", limitations: [] } } },
+     capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: true, limitations: [] } } }));
+   await page.goto("/roster-schedule-optimizer");
+-  const outcome = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ has: page.getByText("Projected outcome", { exact: true }) }).locator("strong");
++  const outcome = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ has: page.getByText("Projected points", { exact: true }) }).locator("strong");
+   await expect(outcome).toHaveText("5");
+   await page.getByRole("button", { name: "Save to account" }).click();
+   await expect(page.getByText("Saved to account.", { exact: true })).toBeVisible();
+@@ -591,8 +606,8 @@
+     lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
+   const requestedZones: string[] = [];
+   const dataZones: string[] = [];
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => {
+-    dataZones.push(new URL(route.request().url()).searchParams.get("timeZone")!);
++  await routeCurrentPlanning(page, route => {
++    dataZones.push(route.request().method() === "POST" ? route.request().postDataJSON().timeZone : new URL(route.request().url()).searchParams.get("timeZone")!);
+     return route.fulfill({ json: { success: true, data: { players: [player], games: [], forecasts: [], evidence: {} } } });
+   });
+   await page.route("**/api/v1/roster-schedule-optimizer/provider", route => {
+@@ -618,8 +633,8 @@
+ });
+ 
+ test("shows sequential stream occupants with real games and retains workspace layout when details expand", async ({ page }, testInfo) => {
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", (route) => {
+-    const start = new URL(route.request().url()).searchParams.get("startDate")!;
++  await routeCurrentPlanning(page, (route) => {
++    const start = route.request().method() === "POST" ? route.request().postDataJSON().startDate : new URL(route.request().url()).searchParams.get("startDate")!;
+     const next = (days: number) => { const date = new Date(`${start}T12:00:00Z`); date.setUTCDate(date.getUTCDate() + days); return date.toISOString().slice(0, 10); };
+     const games = [
+       { id: "g1", date: next(1), startsAt: `${next(1)}T23:00:00Z`, teamAbbreviation: "CAR", opponent: "NJD", home: true, status: "scheduled" },
+@@ -629,15 +644,18 @@
+     const forecasts = [{ playerId: player.id, gameId: "g1" }, { playerId: beta.id, gameId: "g2" }].map((row) => ({ ...row, stats: { GOALS: 0.4 }, allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false }, conditioning: "unconditional", startProbability: null, confirmedStart: false, revisionId: "revision", issuedAt: new Date().toISOString(), modelVersion: "test", limitations: [] }));
+     return route.fulfill({ json: { success: true, data: { players: [player, beta], games, forecasts, evidence: {} } } });
+   });
++  await setPlanningTime(page, "2026-09-21T00:00:00Z");
+   await page.setViewportSize({ width: 1440, height: 900 });
+   await page.goto("/roster-schedule-optimizer");
++  await openDisclosure(page, "Add or import roster");
+   await page.getByRole("textbox", { name: "Paste roster names" }).fill("Alpha Center\nBravo Center");
+   await page.getByRole("button", { name: "Review pasted names" }).click();
+   await page.getByText("League rules and scoring").click();
+   await page.getByLabel("C", { exact: true }).fill("1");
++  await showScheduleView(page, "itinerary");
+   await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Alpha Center");
+   await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Bravo Center");
+-  await page.getByRole("button", { name: /Show (lineup analysis|schedule-capacity assignment)/ }).click();
++  await showScheduleView(page, "player");
+   await page.getByText("Scoring, budgets, and lock windows", { exact: true }).click({ timeout: 10000 });
+   await expectDesktopFrameVisible(page);
+   await page.screenshot({ path: testInfo.outputPath("roster-optimizer-1440.png"), fullPage: true });
+@@ -651,17 +669,18 @@
+   workspace.roster = players.map((player) => ({ playerId: player.id, position: "active" }));
+   await seedWorkspace(page, workspace);
+   const games = Array.from({ length: 7 }, (_, i) => ({ ...fixtureGame(`g-${i}`, 5, "CAR"), date: `2026-10-${String(i + 5).padStart(2, "0")}`, startsAt: `2026-10-${String(i + 5).padStart(2, "0")}T23:00:00Z` }));
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", (route) => route.fulfill({ json: { success: true, data: { players, games, forecasts: [], evidence: {} } } }));
++  await routeCurrentPlanning(page, (route) => route.fulfill({ json: { success: true, data: { players, games, forecasts: [], evidence: {} } } }));
+   await page.setViewportSize({ width: 1440, height: 900 });
+   await page.goto("/roster-schedule-optimizer");
+   const itinerary = page.getByRole("region", { name: "Itinerary", exact: true });
++  await showScheduleView(page, "itinerary");
+   await expect(itinerary.getByRole("table")).toContainText("Roster Player 1");
+   for (const [width, height] of [[1440, 900], [1920, 1080]]) {
+     await page.setViewportSize({ width, height });
+-    await page.getByRole("button", { name: "Streaming itinerary", exact: true }).click();
++    await showScheduleView(page, "itinerary");
+     await expectDesktopFrameVisible(page);
+     await page.screenshot({ path: testInfo.outputPath(`rso-itinerary-${width}.png`), fullPage: true });
+-    await page.getByRole("button", { name: /Show (lineup analysis|schedule-capacity assignment)/ }).click();
++    await showScheduleView(page, "player");
+     await expect(itinerary.getByRole("table")).toHaveCount(1);
+     await expect(itinerary.getByRole("columnheader", { name: "Slot / player", exact: true })).toBeVisible();
+     const nestedVerticalScrolls = await itinerary.evaluate((panel) => Array.from(panel.querySelectorAll("div")).filter((node) => node.scrollHeight > node.clientHeight + 1 && ["auto", "scroll"].includes(getComputedStyle(node).overflowY)).length);
+@@ -671,7 +690,7 @@
+     await page.screenshot({ path: testInfo.outputPath(`rso-lineup-${width}.png`), fullPage: true });
+   }
+   await page.setViewportSize({ width: 390, height: 844 });
+-  await expect(page.getByRole("button", { name: /Show (lineup analysis|schedule-capacity assignment)/ })).toHaveAttribute("aria-pressed", "true");
++  await expect(page.getByRole("group", { name: "Schedule view", exact: true }).getByRole("button", { name: /^Show (lineup by player|category lineup comparison)$/ })).toHaveAttribute("aria-pressed", "true");
+   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
+   await page.screenshot({ path: testInfo.outputPath("rso-mobile.png"), fullPage: true });
+ });
+@@ -687,20 +706,26 @@
+   await seedWorkspace(page, workspace);
+   await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync"], grantingSources: ["test"] } } }));
+   await page.route("**/api/v1/roster-schedule-optimizer/provider", route => route.fulfill({ status: 502, json: { success: false, error: "Yahoo roster/settings reads timed out after retrying." } }));
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => {
+-    const start = new URL(route.request().url()).searchParams.get("startDate")!;
++  await routeCurrentPlanning(page, route => {
++    const start = route.request().method() === "POST" ? route.request().postDataJSON().startDate : new URL(route.request().url()).searchParams.get("startDate")!;
+     const games = players.map(player => ({ ...fixtureGame(player.id, 5, player.teamAbbreviation!), date: start, startsAt: `${start}T23:00:00Z` }));
+-    return route.fulfill({ json: { success: true, data: { players, games, forecasts: [], evidence: {}, matchupWeeks: [{ gameKey: "477", week: 1, startDate: "2026-09-29", endDate: "2026-10-04" }, { gameKey: "477", week: 2, startDate: "2026-10-05", endDate: "2026-10-11" }] } } });
++    return route.fulfill({ json: { success: true, data: { players: players.map(player => ({ ...player, availability: "unknown" })), games, forecasts: [], evidence: {}, matchupWeeks: [{ gameKey: "477", week: 1, startDate: "2026-09-29", endDate: "2026-10-04" }, { gameKey: "477", week: 2, startDate: "2026-10-05", endDate: "2026-10-11" }] } } });
+   });
+   await page.setViewportSize({ width: 1440, height: 900 });
+   await page.goto("/roster-schedule-optimizer");
+   await openPlanDetails(page);
+   await expect(page.getByText("Yahoo roster/settings reads timed out after retrying.")).toBeVisible();
+-  await expect(page.getByText(/Using retained roster inputs/)).toBeVisible();
++  await expect(page.getByText("Retained roster · roster, locks & availability unverified.", { exact: true })).toBeVisible();
++  await showScheduleView(page, "itinerary");
+   await expect(page.getByRole("region", { name: "Itinerary", exact: true }).getByRole("table")).toContainText("Alpha Center");
++  await openDisclosure(page, "Find & filter");
+   await page.getByRole("button", { name: "All players", exact: true }).click();
+-  await expect(page.getByRole("region", { name: "Candidate browser" })).toContainText("+AGP 1");
+-  await expect(page.getByText(/Add\/drop plans need acquisition-effective timing/).first()).toBeVisible();
++  const candidateBrowser = page.getByRole("region", { name: "Candidate browser" });
++  await expect(candidateBrowser.getByRole("button", { name: /^Preview swap/ })).toHaveCount(0);
++  await expect(candidateBrowser.getByText("Net AGP", { exact: true })).toHaveCount(0);
++  await openDisclosure(page, /^More tools$/);
++  await openDisclosure(page, /^Why add\/drop plans may be unavailable$/);
++  await expect(page.locator("details").filter({ has: page.locator(":scope > summary").getByText("Why add/drop plans may be unavailable", { exact: true }) })).toContainText("Add/drop plans need acquisition-effective timing");
+   await openPlanningSetup(page);
+   await page.getByRole("button", { name: "Previous matchup week" }).click();
+   await expect(page.getByLabel("From", { exact: true })).toHaveValue("2026-09-29");
+@@ -709,8 +734,10 @@
+   await page.getByRole("button", { name: "Next matchup week" }).click();
+   await expect(page.getByLabel("From", { exact: true })).toHaveValue("2026-10-05");
+   await expect(page.getByRole("region", { name: "Itinerary", exact: true }).getByRole("table")).toContainText("Alpha Center");
++  await openDisclosure(page, "Find & filter");
+   await page.getByRole("button", { name: "All players", exact: true }).click();
+-  await expect(page.getByRole("region", { name: "Candidate browser" })).toContainText("+AGP 1");
++  await expect(candidateBrowser.getByRole("button", { name: /^Preview swap/ })).toHaveCount(0);
++  await expect(candidateBrowser.getByText("Net AGP", { exact: true })).toHaveCount(0);
+   await expectDesktopFrameVisible(page);
+   await page.screenshot({ path: testInfo.outputPath("rso-timeout-schedule.png"), fullPage: true });
+ });
+@@ -729,33 +756,39 @@
+   const games = players.map((player, index) => fixtureGame(`game-${index}`, 5, player.teamAbbreviation!));
+   let fullCoverage = false;
+   await seedWorkspace(page, workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true,
+     data: { players, games, forecasts: fullCoverage ? players.map((player, index) => fixtureForecast(player, games[index], [9, 4, 5][index]))
+       : [fixtureForecast(players[1], games[1], 2), fixtureForecast(players[2], games[2], 3)], evidence: {} } } }));
+   await page.goto("/roster-schedule-optimizer");
+   await openPlanDetails(page);
+-  await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
+-  await page.getByRole("button", { name: "Show schedule-capacity assignment" }).click();
++  await expectQualityReadiness(page, false);
++  await showScheduleView(page, "player");
+   await openPlanDetails(page);
+-  await expect(page.getByRole("status").filter({ hasText: "This assignment shows legal schedule capacity" })).toBeVisible();
+-  await expect(page.getByRole("button", { name: "Show lineup analysis" })).toHaveCount(0);
++  await expectQualityReadiness(page, false);
++  await expectQualityReadiness(page, false);
+   fullCoverage = true;
+   for (const [width, height] of [[1180, 757], [1024, 768], [768, 1024], [390, 844], [320, 844]]) {
+     await page.setViewportSize({ width, height });
+     await page.reload();
+     await openPlanDetails(page);
+-    await page.getByRole("button", { name: "Show lineup analysis" }).click();
++    await showScheduleView(page, "player");
+     await openPlanDetails(page);
+-    await expect(page.getByRole("status").filter({ hasText: "Lineup analysis uses proposed or saved inputs" })).toBeVisible();
++    await expectQualityReadiness(page, true);
++    await expect(page.getByText("Inputs reviewed for this session. Unknown values still need verification.", { exact: false })).toHaveCount(0);
+     await expect(page.getByText(/Suggested assignment uses reviewed inputs/)).toHaveCount(0);
+-    const readiness = page.locator("details").filter({ has: page.getByText("Planning readiness", { exact: true }) });
++    await openDisclosure(page, /^More tools$/);
++    const readiness = page.locator("details").filter({ has: page.locator(":scope > summary").getByText("Planning readiness", { exact: true }) });
++    if (await readiness.evaluate(node => (node as HTMLDetailsElement).open)) await readiness.locator(":scope > summary").click();
+     await readiness.locator(":scope > summary").focus();
+     await page.keyboard.press("Enter");
+     await page.getByRole("button", { name: "Review rules", exact: true }).click();
+     await page.getByRole("button", { name: "Confirm planning inputs", exact: true }).focus();
+     await page.keyboard.press("Space");
++    await openDisclosure(page, /^League rules and scoring$/);
++    await expect(page.getByText("Inputs reviewed for this session. Unknown values still need verification.", { exact: false })).toBeVisible();
++    await page.locator("#rso-rule-settings > summary").click();
+     await page.getByRole("button", { name: "View plan", exact: true }).click();
+-    await expect(page.getByRole("status").filter({ hasText: "Suggested assignment uses reviewed inputs" })).toBeVisible();
++    await openPlanDetails(page);
+     await page.getByText("Why players are outside this assignment", { exact: true }).click();
+     const bench = page.getByRole("article", { name: "Matthew Knies bench decision" });
+     await expect(bench).toContainText("Complete-plan start/sit score: selected 14; with Matthew Knies 9");
+@@ -788,14 +821,14 @@
+     return fixtureForecast(players[index], game, [9, 10, 7, 8][index]);
+   });
+   await seedWorkspace(page, workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true,
+     data: { players, games, forecasts, evidence: {} } } }));
+   const errors: string[] = [];
+   page.on("pageerror", error => errors.push(error.message));
+   await page.goto("/roster-schedule-optimizer");
+   await openPlanDetails(page);
+   for (let pass = 0; pass < 2; pass++) {
+-    await page.getByRole("button", { name: "Show lineup analysis" }).click();
++    await showScheduleView(page, "player");
+     await openPlanDetails(page);
+     await page.getByText("Why players are outside this assignment", { exact: true }).click();
+     const bench = page.getByRole("article", { name: "Drake Batherson bench decision" });
+@@ -804,6 +837,7 @@
+     await expect(bench).toContainText("LW#1: Kirill Kaprizov → Matthew Knies");
+     await expect(bench).toContainText("RW#1: Matthew Knies → Drake Batherson");
+     await expect(bench.getByRole("list", { name: "Changed assignments" })).not.toContainText("UTIL#1");
++    await showScheduleView(page, "player");
+     const center = page.getByRole("region", { name: "Itinerary" }).getByRole("row").filter({ hasText: "Locked Center" });
+     await expect(center.getByRole("button", { name: "Schedule details for Locked Center, UTIL#1, league positions C, Fantasy assigned", exact: true })).toBeVisible();
+     if (pass === 0) await page.reload();
+@@ -820,21 +854,23 @@
+   workspace.roster.push({ playerId: players[1].id, position: "bench" });
+   const games = [fixtureGame("alpha", 5, "CAR"), fixtureGame("bravo", 5, "NJD")];
+   await seedWorkspace(page, workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true,
+     data: { players, games, forecasts: games.map((game, index) => fixtureForecast(players[index], game, index ? 1 : 9)), evidence: {} } } }));
+   await page.goto("/roster-schedule-optimizer");
+-  await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
++  await expectQualityReadiness(page, false);
+   await expect(page.locator("[data-nextjs-dialog], .vite-error-overlay")).toHaveCount(0);
+   const reviews = page.getByText("Review evidence", { exact: true });
+   for (let index = 0; index < 2; index++) {
++    await page.getByLabel(`Manage ${players[index].name}`, { exact: true }).click();
+     await reviews.nth(index).click();
+     await page.getByRole("checkbox", { name: "Manager confirms league positions" }).nth(index).check();
+-    if (!index) await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
++    if (!index) await expectQualityReadiness(page, false);
+   }
+-  await expect(page.getByRole("button", { name: "Show lineup analysis" })).toBeVisible();
++  await expectQualityReadiness(page, true);
++  await showScheduleView(page, "itinerary");
+   await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Alpha Center");
+   await page.reload();
+-  await expect(page.getByRole("button", { name: "Show lineup analysis" })).toBeVisible();
++  await expectQualityReadiness(page, true);
+   const retained = await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).manualPlayers);
+   expect(retained.every((player: PlanningPlayer) => player.eligibilityVerified === true)).toBe(true);
+   expect(errors).toEqual([]);
+@@ -850,13 +886,13 @@
+   const games = [fixtureGame("goalie-first", 8, "CAR"), fixtureGame("goalie-second", 9, "CAR")];
+   let probability = 0.8;
+   await seedWorkspace(page, workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true,
+     data: { players, games, forecasts: players.map(member => ({ ...fixtureForecast(member, games[0], 0),
+       stats: { SAVES_GOALIE: 20 }, startProbability: probability })), evidence: {} } } }));
+   await page.setViewportSize({ width: 1440, height: 900 });
+   await page.goto("/roster-schedule-optimizer");
+-  await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
+-  const outcome = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ hasText: "Projected outcome" }).locator("strong");
++  await expectQualityReadiness(page, false);
++  const outcome = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ hasText: "Projected points" }).locator("strong");
+   await expect(outcome).toHaveText("—");
+   await page.getByRole("button", { name: "Matchup", exact: true }).click();
+   const pairs = page.getByRole("group", { name: "Back-to-back goalie evidence" });
+@@ -905,13 +941,13 @@
+       ...(mode === "unproven-lineage" ? { sourceKind: undefined, issuedContext: undefined,
+         sourceWatermark: undefined, cutoffAt: undefined, expiresAt: undefined } : {}) }));
+     await seedWorkspace(page, workspace);
+-    await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
++    await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true,
+       data: { players, games, forecasts, evidence: {} } } }));
+     await page.goto("/roster-schedule-optimizer");
+-    await expect(page.getByRole("button", { name: mode === "assignment-only" ? "Show lineup analysis" : "Show schedule-capacity assignment" })).toBeVisible();
+-    const outcome = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ hasText: "Projected outcome" }).locator("strong");
++    await expectQualityReadiness(page, mode === "assignment-only");
++    const outcome = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ hasText: "Projected points" }).locator("strong");
+     await expect(outcome).toHaveText("—");
+-    if (mode === "assignment-only") await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Bravo Center");
++    if (mode === "assignment-only") await expect(page.getByRole("table", { name: "Lineup by position" }).getByRole("button", { name: "Bravo Center, C, 2026-10-05", exact: true })).toBeVisible();
+     await page.getByRole("button", { name: "Matchup", exact: true }).click();
+     await expect(page.getByText(/Full comparison unavailable/)).toBeVisible();
+     await page.getByText(/Forecast coverage ·/).click();
+@@ -921,7 +957,7 @@
+     await expect(page.getByText(new RegExp(`Alpha Center · game alpha · GOALS: ${reason}`))).toBeVisible();
+     if (mode === "unproven-lineage") {
+       await page.reload();
+-      await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
++      await expectQualityReadiness(page, false);
+       await expect(outcome).toHaveText("—");
+     }
+   });
+@@ -969,8 +1005,13 @@
+     if (switching) await heldSave;
+     return route.fulfill({ json: { data: { ...request, version: 1, updatedAt: new Date().toISOString() } } });
+   });
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
+-    data: { players: players.map(player => ({ ...player, eligibilityVerified: false })), games, forecasts: [], evidence: {} } } }));
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true,
++    data: { players, games, forecasts: games.map((game, index) => ({ ...fixtureForecast(players[index], game, index ? 9 : 1),
++      allowedUses: { assignment: !refreshed, totals: refreshed, comparison: false, conditionalTieBreak: false } })), evidence: {},
++      forecastManifest: { version: "planning-forecasts-v1", id: refreshed ? "new" : "old", seasonId: 20262027,
++        asOf: workspace.context.asOf, scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: [RSO_FIXTURE_BRIDGE],
++        baselineChecksum: null, requiredOpportunities: 2, forecastedOpportunities: 2, exclusionCounts: { use_not_approved: 2 },
++        exclusions: games.map((game, index) => ({ gameId: game.id, playerId: players[index].id, targetKey: "GOALS", reasons: ["use_not_approved"] })) } } } }));
+   await page.route("**/api/v1/roster-schedule-optimizer/provider", async route => {
+     const late = switching;
+     if (late) await heldProvider;
+@@ -978,7 +1019,7 @@
+     return route.fulfill({ json: { success: true, snapshot: { id: refreshed ? "provider-new" : "provider-old",
+       context: workspace.context, players: late ? players.map(player => ({ ...player, name: `Late First Account ${player.name}` })) : players, roster: workspace.roster, games,
+       forecasts: games.map((game, index) => ({ ...fixtureForecast(players[index], game, index ? 9 : 1), allowedUses })),
+-      rules: workspace.rules, lockedAssignments: [], realized: {}, opponent: null, evidence: {},
++      rules: workspace.rules, lockedAssignments: [], realized: {}, opponent: null, evidence: { schedule: { source: "Complete synthetic provider schedule", asOf: workspace.context.asOf, seasonId: 20262027, completeness: "complete", limitations: [] } },
+       forecastManifest: { version: "planning-forecasts-v1", id: refreshed ? "new" : "old", seasonId: 20262027,
+         asOf: workspace.context.asOf, scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: ["fixture"],
+         baselineChecksum: null, requiredOpportunities: 2, forecastedOpportunities: 2, exclusionCounts: { use_not_approved: 2 },
+@@ -987,11 +1028,11 @@
+   });
+   await page.goto("/roster-schedule-optimizer");
+   await openPlanDetails(page);
+-  await expect(page.getByRole("button", { name: "Show lineup analysis" })).toBeVisible();
++  await expectQualityReadiness(page, true);
+   refreshed = true;
+   await openPlanningSetup(page);
+   await page.getByRole("button", { name: "Refresh provider" }).click();
+-  await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
++  await expectQualityReadiness(page, false);
+   await page.getByRole("button", { name: "Save to account" }).click();
+   await expect(page.getByText("Saved to account.")).toBeVisible();
+   expect(saved).toMatchObject({ forecastManifest: { id: "new", exclusions: [
+@@ -1040,6 +1081,8 @@
+   await expect.poll(() => rosterPanel.evaluate(panel => (panel as HTMLElement).inert)).toBe(true);
+   releaseAccess();
+   await page.screenshot({ path: testInfo.outputPath("rso-switched-account.png") });
++  // The released status rail discloses all notices on pointer hover or keyboard focus.
++  await page.locator('[class*="navStatus"]').hover();
+   await page.getByRole("button", { name: "Continue manually" }).click();
+   await expect(setup).not.toHaveAttribute("disabled", "");
+   await expect(setup.getByRole("combobox", { name: "Source", exact: true })).toBeEnabled();
+@@ -1048,7 +1091,7 @@
+     const value = JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!);
+     return { provider: value.context.provider, intent: value.intent, roster: value.roster, lockedAssignments: value.lockedAssignments };
+   })).toEqual({ provider: "manual", intent: beforeSwitch.intent, roster: beforeSwitch.roster, lockedAssignments: beforeSwitch.lockedAssignments });
+-  await rosterPanel.getByRole("checkbox", { name: "Protect", exact: true }).first().check();
++  await rosterPanel.getByRole("checkbox", { name: `Protect ${players[0].name}`, exact: true }).check();
+   await expect.poll(async () => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent.protectedPlayerIds)).toEqual([players[0].id]);
+   expect(pageErrors).toEqual([]);
+   await page.screenshot({ path: testInfo.outputPath("rso-manual-fork-editing.png") });
+@@ -1065,10 +1108,11 @@
+   const forecasts = games.map((game, index) => fixtureForecast(players[index], game, index ? 1 : 9));
+   forecasts.push({ ...forecasts[0], revisionId: "conflict", stats: { GOALS: 3 } });
+   await seedWorkspace(page, workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true,
+     data: { players, games, forecasts, evidence: {} } } }));
+   await page.goto("/roster-schedule-optimizer");
+-  await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
++  await expectQualityReadiness(page, false);
++  await showScheduleView(page, "itinerary");
+   await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText(/Alpha Center|Bravo Center/);
+   await page.getByRole("button", { name: "Matchup", exact: true }).click();
+   await page.getByText(/Forecast coverage ·/).click();
+@@ -1080,7 +1124,7 @@
+ test("points goalie coverage survives worker reload and benches harmful starts once credited", async ({ page }) => {
+   await page.route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname)
+     ? route.fallback() : route.abort());
+-  await page.clock.setFixedTime("2026-10-05T00:00:00Z");
++  await setPlanningTime(page, "2026-10-05T00:00:00Z");
+   const players = [fixturePlayer(1, "Coverage Goalie", "CAR"), fixturePlayer(2, "Lower Penalty Goalie", "NJD")]
+     .map(row => ({ ...row, playerClass: "goalie" as const, eligiblePositions: ["G"] }));
+   const games = players.map((row, index) => fixtureGame(String(30 + index), 5, row.teamAbbreviation!));
+@@ -1095,19 +1139,18 @@
+   workspace.intent.goalieCoverage = "cover";
+   workspace.realized = { GOALS_AGAINST_GOALIE: 0 };
+   await seedWorkspace(page, workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true,
+     data: { players, games, forecasts, evidence: {} } } }));
+   const errors: string[] = [];
+   page.on("pageerror", error => errors.push(error.message));
+   await page.goto("/roster-schedule-optimizer");
+   await openPlanDetails(page);
+   const itinerary = page.getByRole("region", { name: "Itinerary" });
+-  const minimum = page.getByRole("region", { name: "Plan summary" }).getByRole("article").filter({
+-    has: page.getByText("Goalie minimum", { exact: true }) });
++  const minimum = page.getByRole("button", { name: /^Goalie starts / });
+   const expectCoverage = async () => {
+-    await page.getByRole("button", { name: "Show lineup analysis" }).click();
++    await showScheduleView(page, "position");
++    await expect(page.getByRole("table", { name: "Lineup by position" }).getByRole("button", { name: /^Coverage Goalie, G,/ })).toBeVisible();
+     await openPlanDetails(page);
+-    await expect(itinerary).toContainText("G#1 · Coverage Goalie");
+     const explanation = page.getByText("Why players are outside this assignment", { exact: true }).locator("..");
+     if (!await explanation.evaluate(node => (node as HTMLDetailsElement).open)) await explanation.locator("summary").click();
+     const bench = explanation.getByRole("article", { name: "Lower Penalty Goalie bench decision" });
+@@ -1115,8 +1158,7 @@
+     await expect(bench).toContainText("selected -1; with Lower Penalty Goalie -0.5");
+     await expect(bench).toContainText("selected 1; with Lower Penalty Goalie 0.25");
+     await expect(bench).toContainText("Expected starts or appearances do not establish a satisfied minimum");
+-    await expect(minimum).toContainText("0 / 1");
+-    await expect(minimum).toContainText("Not yet satisfied by credited results");
++    await expect(minimum).toHaveText("Goalie starts 0/1");
+   };
+   await expectCoverage();
+   await page.reload();
+@@ -1124,18 +1166,19 @@
+   await expectCoverage();
+   await page.getByText("League rules and scoring", { exact: true }).click();
+   await page.getByLabel("Goalie credited", { exact: true }).fill("1");
+-  await expect(minimum).toContainText("Satisfied by credited results");
+-  await expect(itinerary).not.toContainText("G#1 · Coverage Goalie");
++  await expect(minimum).toHaveText("Goalie starts 1/1");
+   await expect(itinerary).toContainText("Benching this appearance avoids a negative scoring contribution");
++  await showScheduleView(page, "position");
++  await expect(page.getByRole("table", { name: "Lineup by position" }).getByRole("button", { name: /^Coverage Goalie, G,/ })).toHaveCount(0);
+   expect(errors).toEqual([]);
+ });
+ 
+ for (const mode of ["manual", "connected"] as const) {
+-test(`retained blended inputs survive worker reload and expire borrowed participation (${mode})`, async ({ page }) => {
++test(`unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (${mode})`, async ({ page }, testInfo) => {
+   await page.route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname)
+     ? route.fallback() : route.abort());
+   const now = "2026-09-29T00:00:00Z";
+-  await page.clock.setFixedTime(now);
++  await setPlanningTime(page, now);
+   const players = [fixturePlayer(1, "Alpha Center", "CAR"), fixturePlayer(2, "Bravo Center", "CAR")]
+     .map((row, index) => ({ ...row, id: String(index + 1), nhlTeamId: 12, rosterRevision: "roster" }));
+   const workspace = fixtureWorkspace(players, { ...fixtureRules, rosterSlots: { C: 1, BN: 1 } });
+@@ -1162,7 +1205,8 @@
+       sourceWatermark: "input", scheduleRevision: "schedule", rosterRevision: "roster" }] }))) as PlanningSnapshot;
+   expect(retained.forecasts[0].contributions?.GOALS.sourceKind).toBe("blended");
+   let responseAsOf = now;
+-  let refreshedRates: PlanningSnapshot["baselineSources"];
++  // Current rates arrive from the server read; embedded saved inputs alone are not a rate catalogue.
++  let refreshedRates: PlanningSnapshot["baselineSources"] = [retained.forecasts[0].contributions!.GOALS.inputs!.baseline!];
+   let forecastManifest: NonNullable<PlanningSnapshot["forecastManifest"]> = {
+     version: "planning-forecasts-v1", id: "policy-14", calendarPolicy: forecastCalendarPolicy(14),
+     seasonId: 20262027, asOf: now, scheduleRevision: "schedule", rosterRevision: "roster",
+@@ -1180,70 +1224,73 @@
+       snapshot: { ...retained, baselineSources: refreshedRates, forecastManifest,
+         id: `retained-${responseAsOf}`, context: { ...retained.context, asOf: responseAsOf } },
+       capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: true, limitations: [] } } }));
+-    await page.route("**/api/v1/roster-schedule-optimizer/workspace**", route => {
++    await page.route("**/api/v1/roster-schedule-optimizer/workspace**", async route => {
+       if (route.request().method() === "PUT") {
+         const request = route.request().postDataJSON();
+         expect(snapshotSchema.safeParse(request.snapshot).success).toBe(true);
+         saved = { workspace: request.workspace, snapshot: request.snapshot, version: 1, updatedAt: responseAsOf };
++        await writeFile(testInfo.outputPath("saved-native-inputs.json"), JSON.stringify(saved, null, 2));
+       }
+       return route.fulfill({ json: { data: saved } });
+     });
+   }
+ 
+   await seedWorkspace(page, workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true,
+     data: { players, games, forecasts: retained.forecasts, baselineSources: refreshedRates, forecastManifest, evidence: {} } } }));
+   const errors: string[] = [];
+   page.on("pageerror", error => errors.push(error.message));
+   await page.goto("/roster-schedule-optimizer");
+   await openPlanDetails(page);
+   const projected = page.getByRole("region", { name: "Plan summary" }).getByRole("article").filter({
+-    has: page.getByText("Projected outcome", { exact: true }) });
+-  await expect(page.getByRole("button", { name: "Show lineup analysis" })).toBeVisible();
+-  await expect(projected).toContainText("3.1");
+-  await expect(projected).toContainText("Includes baseline estimates");
+-  const expectBenchExplanation = async () => {
+-    await page.getByRole("button", { name: "Show lineup analysis" }).click();
+-    await openPlanDetails(page);
+-    const explanation = page.getByText("Why players are outside this assignment", { exact: true }).locator("..");
+-    if (!await explanation.evaluate(node => (node as HTMLDetailsElement).open)) await explanation.locator("summary").click();
+-    const bench = explanation.getByRole("article", { name: "Bravo Center bench decision" });
+-    await expect(bench).toContainText("Complete-plan start/sit score: selected 3.143; with Bravo Center 1");
+-    await expect(bench).toContainText("C#1: Alpha Center → Bravo Center");
+-    await expect(bench).toContainText("blended detailed/baseline estimate");
+-    await expect(bench).toContainText("Appearance assumption: 50%");
+-    await expect(bench).toContainText("not an approved projected total or acquisition comparison");
++    has: page.getByText("Projected points", { exact: true }) });
++  await expectQualityReadiness(page, false);
++  await expect(projected).toContainText("—");
++  // These native revisions have no target approval. Serialized permissions and
++  // retained participation cannot authorize numerical use on reload or refresh.
++  await expect(page.getByRole("button", { name: "Best projected points", exact: true })).toBeDisabled();
++  const expectUnapprovedCapacity = async () => {
++    await showScheduleView(page, "position");
++    await expect(page.getByRole("table", { name: "Lineup by position" }).getByRole("button", { name: /^Alpha Center, C,/ })).toBeVisible();
++    await expect(page.getByRole("button", { name: "Best projected points", exact: true })).toBeDisabled();
++    await expect(projected).toContainText("—");
+   };
+-  await expectBenchExplanation();
++  await expectUnapprovedCapacity();
+   if (mode === "connected") {
+     await page.getByRole("button", { name: "Save to account" }).click();
+     await expect(page.getByText("Saved to account.")).toBeVisible();
+     expect(saved).toMatchObject({ snapshot: { forecasts: [{ sourceWatermark: "captured-reads",
+-      contributions: { GOALS: { sourceKind: "blended", inputs: { detailed: { sourceWatermark: "captured-reads" } } } } }, {}] } });
++      contributions: { GOALS: { allowedUses: { assignment: false, totals: false, comparison: false }, inputs: {
++        detailed: { sourceWatermark: "captured-reads", issuedAt: "2026-09-28T01:00:00Z" },
++        baseline: { sourceId: "alpha-rate", issuedAt: "2026-09-27T01:00:00Z", expiresAt: "2026-10-09T00:00:00Z" },
++        participation: { issuedAt: "2026-09-28T01:00:00Z", expiresAt: "2026-09-30T00:00:00Z" } } } } }, {}] } });
+     await page.getByRole("button", { name: "View account save" }).click();
+-    await expect(projected).toContainText("3.1");
+-    await expectBenchExplanation();
++    await expect(projected).toContainText("—");
++    await expectUnapprovedCapacity();
+   }
+ 
++  await showScheduleView(page, "itinerary");
+   await expect(page.getByRole("region", { name: "Itinerary" }).getByRole("table").first()).toContainText("Alpha Center");
+   await page.reload();
+   await openPlanDetails(page);
+-  await expect(page.getByRole("button", { name: "Show lineup analysis" })).toBeVisible();
+-  await expect(projected).toContainText("3.1");
+-  await expectBenchExplanation();
++  await expectQualityReadiness(page, false);
++  await expect(projected).toContainText("—");
++  await expectUnapprovedCapacity();
+   await page.getByRole("button", { name: "Matchup", exact: true }).click();
+   const sources = page.getByRole("region", { name: "Matchup" }).locator("details").filter({
+     has: page.getByText("Selected lineup · estimate sources", { exact: true }) });
+-  const expectSourceTimes = async (withAssists = false, goalsBlended = true) => {
++  const expectSourceTimes = async (withAssists = false) => {
+     if (!await sources.evaluate(node => (node as HTMLDetailsElement).open)) await sources.locator("summary").click();
+     const goals = sources.getByRole("article", { name: "Alpha Center game 30 GOALS evidence" });
+     await expect(goals.getByText(/^Detailed production input/)).toContainText("issued Sep 28, 1:00 AM UTC");
+     await expect(goals.getByText(/^Participation input/)).toContainText("issued Sep 28, 1:00 AM UTC");
+     await expect(goals).not.toContainText("Sep 29");
+-    if (goalsBlended) {
++    // The selected evidence kind can change when an input is denied. Any displayed
++    // baseline still has its original clock; account transport checks every input.
++    if (await goals.getByText(/^Baseline rate input/).count()) {
+       await expect(goals.getByText(/^Baseline rate input/)).toContainText("issued Sep 27, 1:00 AM UTC");
+       await expect(goals.getByText(/^Baseline rate input/)).toContainText("expires Oct 9");
+-    } else await expect(goals.getByText(/^Baseline rate input/)).toHaveCount(0);
++    }
+     if (withAssists) {
+       const assists = sources.getByRole("article", { name: "Alpha Center game 30 ASSISTS evidence" });
+       await expect(assists.getByText(/^Baseline rate input/)).toContainText("issued Sep 29, 12:00 AM UTC");
+@@ -1253,31 +1300,31 @@
+     }
+   };
+   await sources.locator("summary").click();
+-  await expect(sources).toContainText("Blended detailed/baseline estimate");
++  await expect(sources).toContainText("Unavailable");
+   await expect(sources).toContainText("Alpha Center · game 30 · GOALS");
+   await expectSourceTimes();
+   const originalRate = retained.forecasts[0].contributions!.GOALS.inputs!.baseline!;
+   refreshedRates = [originalRate, ...players.map(row => ({ ...originalRate,
+     playerId: Number(row.id), nhlPlayerId: row.nhlId!, sourceId: `assists-${row.id}`, targetKey: "ASSISTS",
+     cutoffAt: "2026-09-28T23:00:00Z", issuedAt: "2026-09-29T00:00:00Z", expiresAt: "2026-10-10T00:00:00Z" }))];
+-  await page.getByText("Scoring, budgets, and lock windows", { exact: true }).click();
++  await openDisclosure(page, "Scoring, budgets, and lock windows");
+   await page.getByRole("button", { name: "Add point weight", exact: true }).click();
+   await page.getByLabel("Statistic", { exact: true }).nth(1).fill("ASSISTS");
+   await page.getByLabel("Statistic", { exact: true }).nth(1).press("Tab");
+   await page.reload();
+   await openPlanDetails(page);
+-  await expect(page.getByRole("button", { name: "Show lineup analysis" })).toBeVisible();
+-  await expect(projected).toContainText("4.1");
++  await expectQualityReadiness(page, false);
++  await expect(projected).toContainText("—");
+   await page.getByRole("button", { name: "Matchup", exact: true }).click();
+   await sources.locator("summary").click();
+   await expect(sources).toContainText("Alpha Center · game 30 · ASSISTS");
+-  await expect(sources).toContainText("Baseline rate estimate");
++  await expect(sources).toContainText("Unavailable");
+   await expectSourceTimes(true);
+   if (mode === "connected") {
+     await page.getByRole("button", { name: "Save to account" }).click();
+     await expect(page.getByText("Saved to account.")).toBeVisible();
+     await page.getByRole("button", { name: "View account save" }).click();
+-    await expect(projected).toContainText("4.1");
++    await expect(projected).toContainText("—");
+     if (await sources.evaluate(node => (node as HTMLDetailsElement).open)) await sources.locator("summary").click();
+     await sources.locator("summary").focus();
+     await expect(sources.locator("summary")).toBeFocused();
+@@ -1288,17 +1335,16 @@
+   forecastManifest = { ...forecastManifest, id: "policy-21", calendarPolicy: forecastCalendarPolicy(21) };
+   await page.reload();
+   await openPlanDetails(page);
+-  await expect(projected.locator("strong")).toHaveText("5");
++  await expect(projected.locator("strong")).toHaveText("—");
+   await page.getByRole("button", { name: "Matchup", exact: true }).click();
+   await sources.locator("summary").click();
+-  await expect(sources).toContainText("Detailed game estimate");
+-  await expect(sources).toContainText("Baseline rate estimate");
+-  await expectSourceTimes(true, false);
++  await expect(sources).toContainText("Unavailable");
++  await expectSourceTimes(true);
+   forecastManifest = { ...forecastManifest, id: "news-refresh", acceptedNewsRevision: "opaque-news-receipts",
+     issuedRevisionIds: ["detail-2"] };
+   await page.reload();
+   await openPlanDetails(page);
+-  await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
++  await expectQualityReadiness(page, false);
+   await expect(projected).toContainText("—");
+   if (mode === "connected") {
+     await page.getByRole("button", { name: "Save to account" }).click();
+@@ -1308,10 +1354,10 @@
+   }
+   forecastManifest = { ...forecastManifest, id: "post-news", issuedRevisionIds: forecasts.map(row => row.revisionId) };
+   responseAsOf = "2026-10-01T00:00:00Z";
+-  await page.clock.setFixedTime(responseAsOf);
++  await setPlanningTime(page, responseAsOf);
+   await page.reload();
+   await openPlanDetails(page);
+-  await expect(page.getByRole("button", { name: "Show schedule-capacity assignment" })).toBeVisible();
++  await expectQualityReadiness(page, false);
+   await expect(projected).toContainText("—");
+   await page.getByRole("button", { name: "Matchup", exact: true }).click();
+   await expect(page.getByText(/Full comparison unavailable/)).toBeVisible();
+@@ -1323,7 +1369,7 @@
+   await page.setViewportSize({ width: 1440, height: 1000 });
+   await page.route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname)
+     ? route.fallback() : route.abort());
+-  await page.clock.install({ time: new Date("2026-10-04T00:00:00Z") });
++  await installPlanningClock(page, { time: new Date("2026-10-04T00:00:00Z") });
+   const owned = fixturePlayer(1, "Owned Center", "NJD");
+   const low = { ...fixturePlayer(2, "Alpha Unknown", "CAR"), availability: "unknown" as const, eligibilityVerified: false };
+   const high = { ...fixturePlayer(3, "Zeta Free Agent", "CAR"), eligiblePositions: ["C", "Util"], availability: "free_agent" as const };
+@@ -1334,20 +1380,42 @@
+     .map(member => fixtureForecast(member, game, member.id === high.id ? 10 : 2)));
+   const rules = { ...fixtureRules, rosterSlots: { C: 1, UTIL: 1, D: 1 }, periods: [] };
+   await seedWorkspace(page, fixtureWorkspace(members, rules));
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
++  await page.addInitScript(() => {
++    const NativeWorker = window.Worker;
++    (window as any).__feedbackPlanEvidence = [];
++    window.Worker = class extends NativeWorker {
++      constructor(url: string | URL, options?: WorkerOptions) {
++        super(url, options);
++        this.addEventListener("message", event => {
++          if (event.data.result) (window as any).__feedbackPlanEvidence.push({ activeGames: event.data.result.selected.activeGames,
++            limitations: event.data.result.selected.limitations, intentRevision: event.data.result.intentRevision });
++        });
++      }
++    };
++  });
+   await page.goto("/roster-schedule-optimizer");
+   const browser = page.getByRole("region", { name: "Candidate browser" });
++  await openDisclosure(page, "Find & filter");
++  await browser.getByRole("button", { name: "By Team", exact: true }).click();
+   await expect(browser.getByText("CAR · 2 players", { exact: true })).toBeVisible();
+   await expect(page.getByText("Selected moves are a plan. Confirm roster changes with your provider.")).toHaveCount(0);
+-  const adds = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ hasText: "Planned adds" });
+-  await expect(adds.locator("strong")).toHaveText("0");
++  await openPlanDetails(page);
++  const adds = page.getByLabel("Planned adds", { exact: true });
++  await expect(adds).toContainText("Planned adds: 0");
+   await expect(adds).toContainText("Allowance unknown");
+   await browser.getByText("CAR · 2 players", { exact: true }).click();
+   await expect(browser.getByText("CAR · C/Util", { exact: true })).toBeVisible();
+   await expect(browser.locator("button").filter({ hasText: /^(Zeta Free Agent|Alpha Unknown)/ }).first()).toContainText("Zeta Free Agent");
+-  await expect(browser).toContainText("Horizon points 20");
++  // Gross fixture ability is not an authorized net plan when the allowance is unknown.
++  expect(forecasts.filter(row => row.playerId === high.id).reduce((sum, row) => sum + row.stats.GOALS!, 0)).toBe(20);
++  await expect(browser.getByRole("region", { name: "Net plan comparison" })).toHaveCount(0);
++  await expect(browser.getByText("Net Pts", { exact: true })).toHaveCount(0);
++  await openDisclosure(page, /^Why some players aren't ranked$/);
++  await expect(browser.getByRole("list", { name: "Why some players aren't ranked" })).toContainText("Your league's add rules (timing or moves left) aren't set yet.");
+   await browser.getByRole("button", { name: /Zeta Free Agent/ }).scrollIntoViewIfNeeded();
+   await page.screenshot({ path: testInfo.outputPath("rso-feedback-by-team.png"), fullPage: true });
++  await openDisclosure(page, "Find & filter");
+   await browser.getByRole("button", { name: "All players", exact: true }).click();
+   await expect(browser.getByRole("button", { name: /Zeta Free Agent/ })).toHaveCount(1);
+   await page.screenshot({ path: testInfo.outputPath("rso-feedback-all-players.png"), fullPage: true });
+@@ -1355,7 +1423,8 @@
+   await expect(browser.getByRole("button", { name: /Alpha Unknown/ })).toHaveCount(0);
+   await browser.getByRole("combobox", { name: "Position", exact: true }).selectOption("");
+   await browser.getByRole("combobox", { name: "Team", exact: true }).selectOption("SEA");
+-  await expect(browser).toContainText("Horizon points unavailable");
++  await expect(browser.getByText("Net Pts", { exact: true })).toHaveCount(0);
++  await expect(browser.getByRole("list", { name: "Why some players aren't ranked" })).toContainText("Your league's add rules (timing or moves left) aren't set yet.");
+   await expect(browser.getByRole("button", { name: "Select add", exact: true })).toHaveCount(0);
+   await browser.getByRole("combobox", { name: "Team", exact: true }).selectOption("CAR");
+   await browser.getByRole("searchbox", { name: "Find candidate" }).fill("Alpha");
+@@ -1375,11 +1444,19 @@
+   await detail.getByLabel("Eligible positions", { exact: true }).blur();
+   await expect.poll(async () => (await stored()).manualPlayers.find(member => member.id === low.id)).toMatchObject({ eligiblePositions: ["C", "LW"], eligibilityVerified: true });
+   expect((await stored()).intent).toEqual(selectedIntent);
+-  await expect(adds.locator("strong")).toHaveText("1");
++  await expect(adds).toContainText("Planned adds: 1");
+   await expect(adds).toContainText("Allowance unknown");
+-  await expect(page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ hasText: "Active games" }).locator("strong")).toHaveText("3");
++  const activeGames = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ has: page.getByText("Active games", { exact: true }) }).locator("strong");
++  // A saved proposed add does not join the evaluated roster without a covering acquisition period.
++  await expect.poll(async () => (await activeGames.innerText()).split(" / ")[0]).toBe("1");
++  await expect.poll(() => page.evaluate(() => (window as any).__feedbackPlanEvidence.some((row: any) =>
++    row.activeGames === 1 && row.limitations.some((text: string) => text.includes("No acquisition period covers"))))).toBe(true);
++  await writeFile(testInfo.outputPath("candidate-feedback-evidence.json"), JSON.stringify({
++    sourceGrossPoints: 20, selectedIntent, worker: await page.evaluate(() => (window as any).__feedbackPlanEvidence),
++  }, null, 2));
+   await page.screenshot({ path: testInfo.outputPath("rso-feedback-desktop.png"), fullPage: true });
+   await page.reload();
++  await openDisclosure(page, "Find & filter");
+   await page.getByRole("button", { name: "All players", exact: true }).click();
+   await browser.getByRole("searchbox", { name: "Find candidate" }).fill("Alpha");
+   await browser.getByRole("button", { name: /Alpha Unknown/ }).click();
+@@ -1403,7 +1480,7 @@
+   await page.setViewportSize({ width: 1440, height: 1000 });
+   await page.route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname)
+     ? route.fallback() : route.abort());
+-  await page.clock.install({ time: new Date("2026-10-04T00:00:00Z") });
++  await installPlanningClock(page, { time: new Date("2026-10-04T00:00:00Z") });
+   const owned = fixturePlayer(1, "Owned Center", "NJD");
+   const low = fixturePlayer(2, "Four Low Value Games", "CAR");
+   const high = fixturePlayer(3, "Three High Value Games", "SEA");
+@@ -1415,32 +1492,34 @@
+   const workspace = fixtureWorkspace(members);
+   workspace.context.endDate = date(8);
+   await seedWorkspace(page, workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
+   await page.goto("/roster-schedule-optimizer");
+   const browser = page.getByRole("region", { name: "Candidate browser" });
++  await openDisclosure(page, "Find & filter");
+   await browser.getByRole("button", { name: "All players", exact: true }).click();
+   const order = browser.locator("button").filter({ hasText: /^(Four Low Value Games|Three High Value Games)/ });
+   await expect(order.first()).toContainText("Three High Value Games");
+-  await expect(browser.getByRole("button", { name: /Three High Value Games/ }).locator("..")).toContainText("Potential active points gain 26");
+-  await expect(browser.getByRole("button", { name: /Four Low Value Games/ }).locator("..")).toContainText("+AGP 2");
++  await expect(browser.locator('[data-rso-candidate-id="fhfh:3"]').getByText("Net Pts", { exact: true }).locator("..").locator("strong")).toHaveText("+26");
++  await expect(browser.locator('[data-rso-candidate-id="fhfh:2"]').getByText("Net AGP", { exact: true }).locator("..").locator("strong")).toHaveText("+2");
+   await order.first().scrollIntoViewIfNeeded();
+   await page.screenshot({ path: testInfo.outputPath("rso-projected-fit.png"), fullPage: true });
+-  await browser.getByRole("combobox", { name: "Sort", exact: true }).selectOption("schedule");
++  await browser.getByRole("button", { name: "By more starts", exact: true }).click();
+   await expect(order.first()).toContainText("Four Low Value Games");
+-  await expect(browser.getByRole("heading", { name: "Schedule first", exact: true })).toBeVisible();
++  await expect(browser.getByRole("button", { name: "By more starts", exact: true })).toHaveAttribute("aria-pressed", "true");
+   await order.first().scrollIntoViewIfNeeded();
+   await page.screenshot({ path: testInfo.outputPath("rso-schedule-first.png"), fullPage: true });
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts: forecasts.filter(row => row.playerId !== owned.id), evidence: {} } } }));
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts: forecasts.filter(row => row.playerId !== owned.id), evidence: {} } } }));
+   await page.reload();
++  await openDisclosure(page, "Find & filter");
+   await browser.getByRole("button", { name: "All players", exact: true }).click();
+-  await expect(browser.getByText("Schedule first · active points unavailable", { exact: true })).toBeVisible();
+-  await expect(browser.getByRole("button", { name: /Three High Value Games/ }).locator("..")).toContainText("Potential active points gain unavailable");
++  await expect(browser.locator('[data-rso-candidate-id="fhfh:2"]').getByText("Net Pts", { exact: true }).locator("..").locator("strong")).toHaveText("—");
++  await expect(browser.locator('[data-rso-candidate-id="fhfh:3"]').getByText("Net Pts", { exact: true }).locator("..").locator("strong")).toHaveText("—");
+   expect(errors).toEqual([]);
+   await expect(page.locator("[data-nextjs-dialog]")).toHaveCount(0);
+ });
+ 
+ test("planning worker measures the full typical workload and cancels superseded edits", async ({ page }, testInfo) => {
+-  await page.clock.setFixedTime(new Date("2026-10-04T00:00:00Z"));
++  await setPlanningTime(page, new Date("2026-10-04T00:00:00Z"));
+   await page.addInitScript(() => {
+     const receipt = (window as any).__planningPerformance = { workers: [] as any[], edits: [] as any[], clearAt: null as number | null, ticks: 0, maxGapMs: 0 };
+     let previous = performance.now();
+@@ -1484,7 +1563,7 @@
+     return { ...forecast, cutoffAt: workspace.context.asOf, issuedAt: workspace.context.asOf, issuedContext: { ...forecast.issuedContext!, observedAt: workspace.context.asOf } };
+   }));
+   await seedWorkspace(page, workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
+   await page.goto("/roster-schedule-optimizer");
+   await openPlanningSetup(page);
+   const goalieChoice = page.getByRole("combobox", { name: "Goalie choice", exact: true });
+@@ -1493,7 +1572,7 @@
+   await expect.poll(() => planner(1)).toMatchObject({ role: "planner", roster: 25 });
+   await goalieChoice.selectOption("cover");
+   await expect.poll(() => planner(2)).toMatchObject({ activeGames: 70, dates });
+-  const outcome = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ has: page.getByText("Projected outcome", { exact: true }) }).locator("strong");
++  const outcome = page.getByRole("region", { name: "Plan summary" }).locator("article").filter({ has: page.getByText("Projected points", { exact: true }) }).locator("strong");
+   await outcome.evaluate(element => {
+     const observer = new MutationObserver(() => { if (element.textContent === "—") { (window as any).__planningPerformance.clearAt = performance.now(); observer.disconnect(); } });
+     observer.observe(element, { childList: true, characterData: true, subtree: true });
+@@ -1529,7 +1608,7 @@
+         const timer = window.setInterval(() => { const now = performance.now(); maxGapMs = Math.max(maxGapMs, now - previous); previous = now; ticks++; }, 20);
+         this.addEventListener("message", event => {
+           window.clearInterval(timer);
+-          if (event.data.metrics) (window as any).__candidatePerformance.push({ elapsedMs: performance.now() - started, ticks, maxGapMs,
++          if (event.data.metrics) (window as any).__candidatePerformance.push({ elapsedMs: performance.now() - started, ticks, maxGapMs, search: event.data.metrics.search,
+             evaluated: event.data.metrics.activePoints.filter((row: any[]) => row[1] !== null).length });
+         }, { once: true });
+         super.postMessage(message, options);
+@@ -1545,21 +1624,29 @@
+   const workspace = fixtureWorkspace(members);
+   workspace.context.endDate = date(6);
+   await seedWorkspace(page, workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts, evidence: {} } } }));
+   await page.goto("/roster-schedule-optimizer");
+   const browser = page.getByRole("region", { name: "Candidate browser" });
++  await openDisclosure(page, "Find & filter");
+   await browser.getByRole("button", { name: "All players", exact: true }).click();
+-  const best = browser.getByRole("button", { name: /Last Candidate Best Quality/ });
++  const best = browser.getByRole("button", { name: /^Last Candidate Best Quality,/ });
+   await expect(best).toBeVisible();
+-  await expect(best.locator("..")).toContainText("+AGP 0");
+-  await expect(best.locator("..")).toContainText("Potential active points gain 16");
+-  await expect(browser.getByRole("heading", { name: "Projected fit · active points gain", exact: true }).locator("+ div")).toContainText("Last Candidate Best Quality");
++  await expect(browser.locator('[data-rso-candidate-id="fhfh:1000"]').getByText("Net AGP", { exact: true }).locator("..").locator("strong")).toHaveText("0");
++  await expect(browser.locator('[data-rso-candidate-id="fhfh:1000"]').getByText("Net Pts", { exact: true }).locator("..").locator("strong")).toHaveText("+16");
++  await expect(browser.locator("[data-rso-candidate-id]").first()).toHaveAttribute("data-rso-candidate-id", "fhfh:1000");
+   await browser.getByRole("searchbox", { name: "Find candidate" }).fill("Candidate 42");
+   await expect(best).toHaveCount(0);
+   await expect(browser.getByRole("button", { name: /Candidate 42/ }).first()).toBeVisible();
+   const metrics = await page.evaluate(() => (window as any).__candidatePerformance);
+-  expect(metrics.some((row: any) => row.evaluated === 999 && row.ticks > 0 && row.maxGapMs < 500)).toBe(true);
+   await writeFile(testInfo.outputPath("candidate-performance.json"), JSON.stringify(metrics, null, 2));
++  // Released bounded search admits the full population, then scores a capped shortlist.
++  const completePopulation = metrics.find((row: any) => row.search?.eligibleCandidates === 999);
++  expect(completePopulation).toBeDefined();
++  expect(completePopulation.search.candidates).toBeLessThanOrEqual(40);
++  expect(completePopulation.search.evaluated).toBeLessThanOrEqual(160);
++  expect(completePopulation.search.complete).toBe(false);
++  expect(completePopulation.ticks).toBeGreaterThan(0);
++  expect(completePopulation.maxGapMs).toBeLessThan(500);
+   await browser.getByRole("searchbox", { name: "Find candidate" }).fill("");
+   await page.screenshot({ path: testInfo.outputPath("rso-worker-zero-agp.png"), fullPage: true });
+ });
+@@ -1590,7 +1677,7 @@
+   workspace.context.endDate = date(5);
+   workspace.intent.steps = [];
+   await seedWorkspace(page, workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true,
+     data: { players, games: [game], forecasts, evidence: { schedule: { source: "complete synthetic Audit1 universe",
+       asOf: workspace.context.asOf, seasonId: 20262027, completeness: "complete", limitations: [] } } } } }));
+   await page.goto("/roster-schedule-optimizer");
+@@ -1602,13 +1689,13 @@
+   const strongest = metrics.candidates.find((candidate: any) => candidate.playerId === "fhfh:140");
+   expect(strongest.plans.some((plan: any) => plan.netPoints === 999 && plan.steps[0].dropPlayerId === "fhfh:3")).toBe(true);
+   const card = page.locator('[data-rso-candidate-id="fhfh:140"]');
+-  await expect(card).toContainText("Net points +999");
++  await expect(card.getByText("Net Pts", { exact: true }).locator("..").locator("strong")).toHaveText("+999");
+   await expect(card).toContainText("Owned Weak");
+-  await expect(card.getByRole("button", { name: "Select compared plan" })).toBeDisabled();
++  await expect(card.getByRole("button", { name: /^Preview swap: add Strongest Last Candidate, drop Owned Weak$/ })).toBeDisabled();
+   await page.getByText("League rules and scoring", { exact: true }).click();
+   await page.getByRole("button", { name: "Confirm planning inputs" }).click();
+   await page.getByText("League rules and scoring", { exact: true }).click();
+-  await expect(card.getByRole("button", { name: "Select compared plan" })).toBeEnabled();
++  await expect(card.getByRole("button", { name: /^Preview swap: add Strongest Last Candidate, drop Owned Weak$/ })).toBeEnabled();
+   expect(await page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).intent.steps)).toEqual([]);
+   await writeFile(testInfo.outputPath("audit1-native-worker.json"), JSON.stringify({
+     scope: "Native browser Worker and served local UI; intercepted synthetic inputs, not genuine feed acceptance", metrics,
+@@ -1629,19 +1716,27 @@
+   const games = Array.from({ length: 7 }, (_, index) => ({ ...fixtureGame(`compact-${index}`, 5, "CAR"), date: `2026-10-${String(index + 5).padStart(2, "0")}`, startsAt: `2026-10-${String(index + 5).padStart(2, "0")}T23:00:00Z` }));
+   return { workspace, players, games };
+ }
++async function openCompactControls(page: import("@playwright/test").Page) {
++  await showScheduleView(page, "player");
++  await openDisclosure(page, /^Date controls$/);
++  await openDisclosure(page, /^Day capacity/);
++}
+ async function installCompactFixture(page: import("@playwright/test").Page, count: number, customize?: (fixture: ReturnType<typeof compactWorkspace>) => void) {
+   const fixture = compactWorkspace(count);
+   customize?.(fixture);
+-  await page.clock.setFixedTime(new Date("2026-10-07T12:00:00Z"));
++  await setPlanningTime(page, new Date("2026-10-07T12:00:00Z"));
+   await seedWorkspace(page, fixture.workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: fixture.players, games: fixture.games, forecasts: [], evidence: {
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players: fixture.players, games: fixture.games, forecasts: [], evidence: {
+     schedule: { source: "fictional compact fixture", asOf: "2026-10-07T12:00:00Z", seasonId: 20262027, completeness: "complete", limitations: [] },
+   } } } }));
+   await page.goto("/roster-schedule-optimizer");
++  await openCompactControls(page);
++
+   await expect(page.getByRole("slider", { name: "Selected planning day" })).toHaveAttribute("aria-valuetext", "Wed, Oct 7");
+-  await expect(page.getByText(/Local planning lineup · GP/)).toBeVisible();
++  await expect(page.getByText("Range totals", { exact: true })).toBeVisible();
+   return fixture;
+ }
++const alignmentObservations = new WeakMap<import("@playwright/test").Page, unknown[]>();
+ async function expectDaySliderAligned(page: import("@playwright/test").Page) {
+   const slider = page.getByRole("slider", { name: "Selected planning day" });
+   const thumbCenter = await slider.evaluate(node => {
+@@ -1653,6 +1748,18 @@
+   const headerCenter = await page.getByRole("button", { name: `Select ${date}`, exact: true }).evaluate(node => {
+     const box = node.closest("th")!.getBoundingClientRect(); return box.left + box.width / 2;
+   });
++  {
++    const geometry = await page.evaluate(() => Object.fromEntries(["scheduleLegend", "dayControls", "compactScroll", "compactTable"].map(name => {
++      const node = document.querySelector(`[class*="${name}"]`) as HTMLElement | null;
++      return [name, node ? { rect: node.getBoundingClientRect().toJSON(), padding: getComputedStyle(node).padding, width: getComputedStyle(node).width } : null];
++    })));
++    const selectedHeader = await page.getByRole("button", { name: `Select ${date}`, exact: true }).evaluate(node => node.closest("th")!.getBoundingClientRect().toJSON());
++    const observation = { date, viewport: page.viewportSize(), thumbCenter, headerCenter, delta: Math.abs(thumbCenter - headerCenter), geometry, selectedHeader };
++    const observations = [...(alignmentObservations.get(page) ?? []), observation];
++    alignmentObservations.set(page, observations);
++    await writeFile(test.info().outputPath("slider-alignment-observations.json"), JSON.stringify(observations, null, 2));
++    if (observation.delta > 1) await writeFile(test.info().outputPath("slider-alignment-failure.json"), JSON.stringify(observation, null, 2));
++  }
+   expect(Math.abs(thumbCenter - headerCenter)).toBeLessThanOrEqual(1);
+ }
+ 
+@@ -1664,7 +1771,7 @@
+   await expect(table.locator('tr[data-player-id]')).toHaveCount(count);
+   await expect(table.locator('tr[data-compact-row]')).toHaveCount(count);
+   await expect(page.getByRole("heading", { name: "Current Roster" })).toBeVisible();
+-  await expect(page.getByRole("heading", { name: "Available Players" })).toBeVisible();
++  await expect(page.getByRole("heading", { name: "Best Fit Available" })).toBeVisible();
+   const metrics = await table.evaluate(node => {
+     const viewport = node.parentElement!.getBoundingClientRect();
+     const bodyTop = Math.max(viewport.top, node.querySelector("thead")!.getBoundingClientRect().bottom);
+@@ -1719,18 +1826,24 @@
+     if (group.position === "BENCH") expect(group.renderedLabel!.controlRight).toBeLessThanOrEqual(group.renderedLabel!.playerLeft!);
+     expect(group.contentInset).toBeGreaterThanOrEqual(28);
+   }
++  // Released Release C contract, independently pinned in RSO-SUMMARY-ORACLE-RECONCILIATION.json.
++  for (const label of ["Active games", "Bench games", "Projected points"]) {
++    await expect(page.getByRole("region", { name: "Plan summary" }).getByText(label, { exact: true })).toBeVisible();
++  }
+   const articleBorders = await page.getByRole("region", { name: "Plan summary" }).locator("article").evaluateAll(nodes => nodes.map(node => ({
+     width: getComputedStyle(node).borderLeftWidth, style: getComputedStyle(node).borderLeftStyle,
+     topLeftRadius: getComputedStyle(node).borderTopLeftRadius, bottomLeftRadius: getComputedStyle(node).borderBottomLeftRadius,
+     band: getComputedStyle(node).borderLeftColor, outlineColors: [getComputedStyle(node).borderTopColor, getComputedStyle(node).borderRightColor, getComputedStyle(node).borderBottomColor],
+     outlineWidths: [getComputedStyle(node).borderTopWidth, getComputedStyle(node).borderRightWidth, getComputedStyle(node).borderBottomWidth],
++    accentWidth: getComputedStyle(node, "::before").width, accentColor: getComputedStyle(node, "::before").backgroundColor,
+     before: getComputedStyle(node, "::before").content, after: getComputedStyle(node, "::after").content,
+   })));
+-  expect(articleBorders).toHaveLength(7);
++  expect(articleBorders).toHaveLength(3);
+   for (const border of articleBorders) {
+-    expect(border.width).toBe("10px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("10px"); expect(border.bottomLeftRadius).toBe("10px");
++    expect(border.width).toBe("1px"); expect(border.style).toBe("solid"); expect(border.topLeftRadius).toBe("10px"); expect(border.bottomLeftRadius).toBe("10px");
+     expect(border.outlineColors).toEqual([border.band, border.band, border.band]); expect(border.outlineWidths).toEqual(["1px", "1px", "1px"]);
+-    expect(border.before).toBe("none"); expect(border.after).toBe("none");
++    expect(border.before).toBe('""'); expect(border.accentWidth).toBe("4px");
++    expect(border.accentColor).not.toBe("rgba(0, 0, 0, 0)"); expect(border.after).toBe("none");
+   }
+   await writeFile(testInfo.outputPath(`compact-${count}-metrics.json`), JSON.stringify(metrics, null, 2));
+   for (const height of metrics.rowHeights) { expect(height).toBeGreaterThanOrEqual(28); expect(height).toBeLessThanOrEqual(48); }
+@@ -1872,7 +1985,7 @@
+   const monday = page.getByRole("button", { name: "Select Mon, Oct 5" });
+   await monday.focus(); await page.keyboard.press("Enter");
+   await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 5");
+-  await expect(page.getByText(/Past lineup unverified · GP/)).toBeVisible();
++  await expect(page.getByText("Past lineup unverified", { exact: true })).toBeVisible();
+   await expect(page.getByRole("table", { name: "Individual player weekly schedule" }).getByRole("rowheader", { name: /Pending C/ }).first()).toBeVisible();
+   await page.keyboard.press("ArrowRight"); await expect(slider).toHaveAttribute("aria-valuetext", dates[0]);
+   await page.screenshot({ path: testInfo.outputPath("compact-date-focus.png") });
+@@ -1880,7 +1993,9 @@
+   await expect(table.locator('tbody[data-position="BENCH"] tr[data-player-id]')).toHaveCount(6);
+   await expect(table.locator('tbody[data-position="Review"]')).toHaveCount(0);
+   const bench = page.getByRole("button", { name: /Bench \d+/ });
+-  const capacityDisclosure = page.getByText("· Local simulated Bench, not Yahoo placement. 6 players / 0 configured places · 6 over capacity; all retained.", { exact: true });
++  const capacityDisclosure = page.locator('[id$="-bench-capacity"]');
++  await expect(capacityDisclosure).toContainText("6 / 0 local Bench places · over capacity; all retained");
++  await expect(capacityDisclosure).toContainText("Local simulated Bench, not Yahoo placement. 6 players / 0 configured places · 6 over capacity; all retained.");
+   const expectCapacityAboveSchedule = async () => {
+     const note = (await capacityDisclosure.boundingBox())!;
+     const scroll = (await page.getByRole("region", { name: "Player weekly schedule scroll area" }).boundingBox())!;
+@@ -1897,8 +2012,8 @@
+   await expect(page.getByRole("region", { name: "Selected-day lineup summary" }).getByText("Active slots").locator("..")).toHaveText("Active slots14/14");
+   await expect(page.getByRole("region", { name: "Selected-day lineup summary" }).getByText("Open slots").locator("..")).toHaveText("Open slots0");
+   await page.screenshot({ path: testInfo.outputPath("compact-bench-collapsed-1440x900.png") });
+-  await page.getByRole("button", { name: "Streaming itinerary", exact: true }).click();
+-  await page.getByRole("button", { name: "Show schedule-capacity assignment", exact: true }).click();
++  await showScheduleView(page, "itinerary");
++  await openCompactControls(page);
+   await expect(bench).toHaveAttribute("aria-expanded", "false");
+   await expect(slider).toHaveAttribute("aria-valuetext", dates[2]);
+   await bench.focus();
+@@ -1942,6 +2057,19 @@
+     await expectDaySliderAligned(page);
+     await scroll.evaluate(node => { node.scrollLeft = 120; });
+     await expectDaySliderAligned(page);
++    if (width === 375) {
++      const disclosure = page.locator("summary").filter({ hasText: /^Date controls$/ }).locator("..");
++      await disclosure.evaluate(node => { node.scrollLeft = 60; });
++      await expect.poll(() => scroll.evaluate(node => node.scrollLeft)).toBe(60);
++      await expectDaySliderAligned(page);
++      await disclosure.locator("summary").click();
++      await expect(disclosure).not.toHaveAttribute("open", "");
++      await scroll.evaluate(node => { node.scrollLeft = 120; });
++      await disclosure.locator("summary").click();
++      await expect(disclosure).toHaveAttribute("open", "");
++      await expect.poll(() => disclosure.evaluate(node => node.scrollLeft)).toBe(120);
++      await expectDaySliderAligned(page);
++    }
+     const bench = page.getByRole("button", { name: /^Bench \d+,/ });
+     await bench.tap();
+     await expect(bench).toHaveAttribute("aria-expanded", "false");
+@@ -1979,24 +2107,48 @@
+ 
+ test.extend({ timezoneId: "Pacific/Kiritimati" })("compact future and partial weeks use league dates and retain the full horizon without saving", async ({ page }) => {
+   await page.setViewportSize({ width: 1440, height: 900 });
++  await page.addInitScript(() => {
++    const NativeWorker = window.Worker;
++    (window as any).__currentReadContexts = [];
++    window.Worker = class extends NativeWorker {
++      constructor(url: string | URL, options?: WorkerOptions) {
++        super(url, options);
++        this.addEventListener("message", event => {
++          if (event.data.displaySnapshot) (window as any).__currentReadContexts.push({
++            asOf: event.data.displaySnapshot.context.asOf, manifestAsOf: event.data.data?.forecastManifest?.asOf,
++          });
++        });
++      }
++    };
++  });
+   const fixture = compactWorkspace(20);
+   fixture.workspace.context.endDate = "2026-10-18";
+   fixture.workspace.context.timeZone = "America/Los_Angeles";
+-  await page.clock.setFixedTime(new Date("2026-10-05T12:00:00Z"));
++  await setPlanningTime(page, new Date("2026-10-05T12:00:00Z"));
+   await seedWorkspace(page, fixture.workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: {
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: {
+     players: fixture.players, games: fixture.games, forecasts: [], evidence: {},
+   } } }));
+   await page.goto("/roster-schedule-optimizer");
++  await openCompactControls(page);
+   const slider = page.getByRole("slider", { name: "Selected planning day" });
+   await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 5");
+-  await page.clock.setFixedTime(new Date("2026-10-07T01:00:00Z"));
++  const savedBeforeRead = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
++  await setPlanningTime(page, new Date("2026-10-07T01:00:00Z"));
+   await page.reload();
++  await openCompactControls(page);
+   await expect(slider).toHaveAttribute("aria-valuetext", "Tue, Oct 6");
+   await expect(page.getByRole("button", { name: "Select Mon, Oct 5" }).locator("..")).toHaveClass(/elapsedDay/);
+   await expect(page.getByRole("button", { name: "Select Tue, Oct 6" }).locator("..")).not.toHaveClass(/elapsedDay/);
+   await expect(page.getByRole("button", { name: "Select Wed, Oct 7" }).locator("..")).not.toHaveClass(/elapsedDay/);
+-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem("fhfh:rso:workspace:v1")!).context.asOf)).toBe("2026-10-07T01:00:00.000Z");
++  await expect.poll(() => page.evaluate(() => (window as any).__currentReadContexts)).toContainEqual({
++    asOf: "2026-10-07T01:00:00.000Z", manifestAsOf: "2026-10-07T01:00:00.000Z",
++  });
++  expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(savedBeforeRead);
++  expect(JSON.parse(savedBeforeRead!).context.asOf).toBe(fixture.workspace.context.asOf);
++  await writeFile(test.info().outputPath("current-read-preservation.json"), JSON.stringify({
++    contexts: await page.evaluate(() => (window as any).__currentReadContexts), savedAsOf: JSON.parse(savedBeforeRead!).context.asOf,
++  }, null, 2));
+   await page.getByRole("button", { name: "Select Thu, Oct 8" }).click();
+   await expect(slider).toHaveAttribute("aria-valuetext", "Thu, Oct 8");
+   const stored = await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"));
+@@ -2012,6 +2164,7 @@
+     localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(workspace));
+   });
+   await page.reload();
++  await openCompactControls(page);
+   await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 7");
+   await expectDaySliderAligned(page);
+   await expect(page.getByRole("button", { name: "Select Mon, Oct 5" })).toBeDisabled();
+@@ -2023,9 +2176,10 @@
+   const fixture = compactWorkspace(20);
+   fixture.workspace.context.startDate = "2026-10-12";
+   fixture.workspace.context.endDate = "2026-10-18";
+-  await page.clock.setFixedTime(new Date("2026-10-07T12:00:00Z"));
++  await setPlanningTime(page, new Date("2026-10-07T12:00:00Z"));
+   await seedWorkspace(page, fixture.workspace);
+   await page.goto("/roster-schedule-optimizer");
++  await openCompactControls(page);
+   const slider = page.getByRole("slider", { name: "Selected planning day" });
+   await expect(slider).toHaveAttribute("aria-valuetext", "Mon, Oct 12");
+   await expect(slider).toHaveAttribute("min", "0");
+@@ -2047,6 +2201,7 @@
+     localStorage.setItem("fhfh:rso:workspace:v1", JSON.stringify(workspace));
+   });
+   await page.reload();
++  await openCompactControls(page);
+   await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
+   await expect(page.getByRole("button", { name: "Select Mon, Oct 12" })).toBeDisabled();
+   await expect(page.getByRole("button", { name: "Select Tue, Oct 13" })).toBeDisabled();
+@@ -2065,6 +2220,7 @@
+   expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+   await page.getByRole("button", { name: "Select Sun, Oct 18" }).click();
+   await page.reload();
++  await openCompactControls(page);
+   await expect(slider).toHaveAttribute("aria-valuetext", "Sun, Oct 18");
+   expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+   await page.screenshot({ path: testInfo.outputPath("partial-future-resumed-sunday.png") });
+@@ -2076,6 +2232,7 @@
+       sessionStorage.setItem(marker, "applied");
+     }, { value, marker });
+     await page.reload();
++  await openCompactControls(page);
+   };
+   const other = JSON.parse(stored!);
+   other.context.teamId = "other-manual-team";
+@@ -2088,6 +2245,7 @@
+   for (const value of ["not-a-date", "2026-10-21"]) {
+     await page.evaluate(({ key, value }) => localStorage.setItem(key, value), { key: preferenceKey, value });
+     await page.reload();
++  await openCompactControls(page);
+     await expect(slider).toHaveAttribute("aria-valuetext", "Wed, Oct 14");
+     expect(await page.evaluate(() => localStorage.getItem("fhfh:rso:workspace:v1"))).toBe(stored);
+   }
+@@ -2132,15 +2290,16 @@
+   const fixture = compactWorkspace(20);
+   fixture.players[0].teamAbbreviation = null;
+   fixture.players[0].eligibilityVerified = false;
+-  await page.clock.setFixedTime(new Date("2026-10-07T12:00:00Z"));
++  await setPlanningTime(page, new Date("2026-10-07T12:00:00Z"));
+   await seedWorkspace(page, fixture.workspace);
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: {
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: {
+     players: fixture.players, games: fixture.games, forecasts: [], evidence: {
+       schedule: { source: "fictional partial fixture", asOf: "2026-10-07T12:00:00Z", seasonId: 20262027, completeness: "partial", limitations: ["Schedule coverage is incomplete; retry the missing team dates."] },
+-      forecasts: { source: "fictional unavailable fixture", asOf: null, seasonId: 20262027, completeness: "unavailable", limitations: ["Forecasts unavailable. Schedule planning remains usable; player-quality decisions need verification."] },
++      forecasts: { source: "fictional unavailable fixture", asOf: null, seasonId: 20262027, completeness: "unknown", limitations: ["Forecasts unavailable. Schedule planning remains usable; player-quality decisions need verification."] },
+     },
+   } } }));
+   await page.goto("/roster-schedule-optimizer");
++  await openCompactControls(page);
+   const table = page.getByRole("table", { name: "Individual player weekly schedule" });
+   const summary = page.getByRole("region", { name: "Selected-day lineup summary" });
+   const verifyMobileWorkspaces = async (state: "partial" | "unavailable") => {
+@@ -2163,7 +2322,7 @@
+         await expect(page.getByText("Shared schedule: partial", { exact: true })).toBeVisible();
+         await expect(summary.getByText("Roster games").locator("..")).toHaveText("Roster games19 known");
+       } else {
+-        await expect(page.getByText(/Planning data is temporarily unavailable. Your saved manual workspace is preserved/)).toBeVisible();
++        await expect(page.getByRole("group", { name: "Planning command bar" }).getByRole("status").filter({ hasText: /Planning data is temporarily unavailable. Your saved manual workspace is preserved/ })).toBeVisible();
+         await expect(summary.getByText("Roster games").locator("..")).toHaveText("Roster gamesUnknown");
+       }
+       await page.screenshot({ path: testInfo.outputPath(`compact-${state}-${width}.png`) });
+@@ -2172,8 +2331,12 @@
+     await page.setViewportSize({ width: 1440, height: 900 });
+   };
+   await expect(table.locator('[data-player-id]')).toHaveCount(20);
++  await openDisclosure(page, /^More tools$/);
++  await openDisclosure(page, /^Shared schedule: partial/);
+   await expect(page.getByText("Shared schedule: partial", { exact: true })).toBeVisible();
+-  await expect(page.getByText(/Forecasts unavailable. Schedule planning remains usable/).first()).toBeVisible();
++  const scheduleEvidence = page.locator("details").filter({ has: page.locator(":scope > summary").getByText("Shared schedule: partial", { exact: true }) }).getByRole("list");
++  await expect(scheduleEvidence).toBeVisible();
++  await expect(scheduleEvidence).toContainText("Forecasts unavailable. Schedule planning remains usable");
+   await expect(summary.getByText("Roster games").locator("..")).toHaveText("Roster games19 known");
+   await expect(summary.getByText("NHL games").locator("..")).toHaveText("NHL games1 known");
+   await expect(summary.getByText("Open slots").locator("..")).toContainText("unresolved");
+@@ -2181,11 +2344,12 @@
+   await expectDesktopFrameVisible(page);
+   await page.screenshot({ path: testInfo.outputPath("compact-partial-1440x900.png") });
+   await verifyMobileWorkspaces("partial");
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ status: 503, json: { error: {
++  await routeCurrentPlanning(page, route => route.fulfill({ status: 503, json: { error: {
+     code: "planning_unavailable", message: "Planning data is temporarily unavailable. Your saved manual workspace is preserved. Retry the schedule read.",
+   } } }));
+   await page.reload();
+-  await expect(page.getByText(/Planning data is temporarily unavailable. Your saved manual workspace is preserved/)).toBeVisible();
++  await openCompactControls(page);
++  await expect(page.getByRole("group", { name: "Planning command bar" }).getByRole("status").filter({ hasText: /Planning data is temporarily unavailable. Your saved manual workspace is preserved/ })).toBeVisible();
+   await expect(table.locator('[data-player-id]')).toHaveCount(20);
+   await expect(summary.getByText("Roster games").locator("..")).toHaveText("Roster gamesUnknown");
+   await expect(summary.getByText("NHL games").locator("..")).toHaveText("NHL gamesUnknown");
+@@ -2200,7 +2364,7 @@
+   // Offline fixture: abort non-local requests and answer any unmocked API with 503 (routes registered later win).
+   await page.route(url => !["127.0.0.1", "localhost"].includes(url.hostname), route => route.abort());
+   await page.route("**/api/**", route => route.fulfill({ status: 503, json: { error: "fixture: not mocked" } }));
+-  await page.clock.install({ time: new Date("2026-09-26T12:00:00Z") });
++  await installPlanningClock(page, { time: new Date("2026-09-26T12:00:00Z") });
+   const members = [fixturePlayer(1, "Alpha Center", "CAR"), { ...fixturePlayer(3, "Healthy Defender", "BOS"), eligiblePositions: ["D"], injury: null }];
+   const workspace = fixtureWorkspace(members, { ...fixtureRules, rosterSlots: { C: 1, D: 1, BN: 1, IR: 1 } });
+   workspace.context = { ...workspace.context, provider: "yahoo", leagueId: "league", teamId: "team", endDate: date(6) };
+@@ -2212,7 +2376,7 @@
+   await page.route("**/api/v1/roster-schedule-optimizer/access", route => route.fulfill({ json: { data: { eligible: true, capabilities: ["rso_sync"], grantingSources: ["test"], expiresAt: null, reason: null } } }));
+   await page.route("**/api/v1/roster-schedule-optimizer/workspace**", route => route.fulfill({ json: { data: null } }));
+   const games = [5, 6].flatMap(day => members.map(member => fixtureGame(`${member.id}:${day}`, day, member.teamAbbreviation!)));
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts: [], evidence: {} } } }));
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true, data: { players: members, games, forecasts: [], evidence: {} } } }));
+   // A live Yahoo read: no injury designation for the defender, and so no IR eligibility.
+   await page.route("**/api/v1/roster-schedule-optimizer/provider", route => route.fulfill({ json: { success: true,
+     snapshot: { id: "provider-healthy-ir", context: workspace.context, players: members, roster: workspace.roster, games, forecasts: [], rules: workspace.rules,
+@@ -2235,7 +2399,7 @@
+   await page.route(url => !["127.0.0.1", "localhost"].includes(url.hostname), route => route.abort());
+   await page.route("**/api/**", route => route.fulfill({ status: 503, json: { error: "fixture: not mocked" } }));
+   const evaluatedAt = "2026-10-05T18:00:00.000Z";
+-  await page.clock.install({ time: new Date(evaluatedAt) });
++  await installPlanningClock(page, { time: new Date(evaluatedAt) });
+   const goalie = (id: number, name: string, team: string): PlanningPlayer => ({ ...fixturePlayer(id, name, team), eligiblePositions: ["G"], playerClass: "goalie" });
+   const members = [goalie(11, "Starting Goalie", "DAL"), goalie(12, "Sitting Goalie", "VGK")];
+   const mark = (isStarting: boolean) => ({ source: "yahoo" as const, date: date(5), isStarting, observedAt: "2026-10-05T17:30:00.000Z" });
+@@ -2259,7 +2423,7 @@
+   const { wire } = compactBridgeForecasts([bridgeRow(members[0], 0.6), bridgeRow(members[1], 0.7)], { players: members, games }, 20262027);
+   expect(wire?.rows).toHaveLength(2);
+   // The current read: FORGE's bridge rows under a manifest naming their revision (the data route has no Yahoo marks).
+-  await page.route("**/api/v1/roster-schedule-optimizer/data?**", route => route.fulfill({ json: { success: true,
++  await routeCurrentPlanning(page, route => route.fulfill({ json: { success: true,
+     data: { players: members, games, forecasts: [], baselineSources: [], participationSources: [],
+       evidence: { schedule: { source: "fixture", asOf: evaluatedAt, seasonId: 20262027, completeness: "complete", limitations: [] } },
+       forecastManifest: { version: "planning-forecasts-v1", id: "current-read", seasonId: 20262027, asOf: evaluatedAt,
+@@ -2267,6 +2431,23 @@
+         requiredOpportunities: 2, forecastedOpportunities: 2, exclusionCounts: {},
+         rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: [revision] } } },
+     bridgeForecasts: wire, read: { nonce: route.request().headers()["x-rso-read-nonce"], evaluatedAt } } }));
++  // Authenticated current server read, separate from the saved/provider labels.
++  const confirmed = applyProviderGoalieStarts([bridgeRow(members[0], 0.6), bridgeRow(members[1], 0.7)], {
++    marked, catalog: members, games, bridgeRevisionIds: new Set([revision]), now: Date.parse(evaluatedAt),
++  });
++  let privateReads = 0;
++  await page.route("**/api/v1/roster-schedule-optimizer/yahoo-current-data", route => {
++    const request = route.request(), body = request.postDataJSON(); privateReads++;
++    expect(request.method()).toBe("POST");
++    expect(JSON.parse(Buffer.from(request.headers().authorization.split(".")[1], "base64url").toString()).sub).toBe(RSO_FIXTURE_PRINCIPAL);
++    expect(body).toMatchObject({ teamId: "team", leagueId: "league", seasonId: 20262027, startDate: date(5), endDate: date(6), timeZone: "UTC" });
++    return route.fulfill({ json: { success: true, data: { players: members, games, forecasts: confirmed, evidence: {},
++      forecastManifest: { version: "planning-forecasts-v1", id: "server-confirmed", seasonId: 20262027, asOf: evaluatedAt,
++        scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: [revision], baselineChecksum: null,
++        requiredOpportunities: 2, forecastedOpportunities: 2, exclusionCounts: {},
++        rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: [revision] } } },
++      read: { ...body, principalId: RSO_FIXTURE_PRINCIPAL, evaluatedAt, expiresAt: "2026-10-05T18:02:00.000Z" } } });
++  });
+   // A live Yahoo roster read carrying tonight's marks.
+   await page.route("**/api/v1/roster-schedule-optimizer/provider", route => route.fulfill({ json: { success: true,
+     snapshot: { id: "provider-goalie-marks", context: workspace.context, players: marked, roster: workspace.roster, games, forecasts: [], rules: workspace.rules,
+@@ -2275,7 +2456,7 @@
+     capabilities: { roster: true, availability: true, rules: true, matchup: false, acquisitions: false, limitations: [] } } }));
+   await page.setViewportSize({ width: 1440, height: 900 });
+   await page.goto("/roster-schedule-optimizer");
+-  await page.getByRole("button", { name: "By position" }).click();
++  await showScheduleView(page, "position");
+   const grid = page.getByRole("table", { name: "Lineup by position" });
+   const starter = grid.getByRole("button", { name: `Starting Goalie, G, ${date(5)}` });
+   await expect(starter.getByLabel(/^Starting \(Yahoo, read .+\); start chance 100% for this game$/)).toHaveText("✓");
+@@ -2283,5 +2464,6 @@
+   await expect(grid.getByRole("button", { name: `Sitting Goalie, bench, has a game, ${date(5)}` })
+     .getByLabel(/^Not starting \(Yahoo, read .+\)$/)).toHaveText("✗");
+   await expect(starter.getByLabel(/Expected fantasy points:/)).toContainText("5.0");
++  expect(privateReads).toBeGreaterThan(0);
+   await page.screenshot({ path: testInfo.outputPath("yahoo-goalie-marks-1440x900.png") });
+ });
+--- /dev/null
++++ b/web/e2e/roster-schedule-optimizer-fixtures.ts
+@@ -0,0 +1,104 @@
++import { expect, type Page, type Route } from "@playwright/test";
++import { currentRsoUsePolicy } from "../lib/player-forecasts/rsoUsePolicy";
++
++/** Explicitly synthetic server-selected bridge; never a native target review. */
++export const RSO_FIXTURE_BRIDGE = "forge-daily-bridge-v1:e2e-current-read";
++export const RSO_FIXTURE_PRINCIPAL = "00000000-0000-4000-8000-000000000001";
++const fixtureTimes = new WeakMap<Page, string>();
++const fixtureClockRevisions = new WeakMap<Page, number>();
++export async function setPlanningTime(page: Page, value: Date | string | number) {
++  fixtureTimes.set(page, new Date(value).toISOString());
++  // Keep the window and real Worker on the same monotonic clock for publication expiry.
++  const fixed = new Date(value).getTime();
++  const revision = (fixtureClockRevisions.get(page) ?? 0) + 1;
++  fixtureClockRevisions.set(page, revision);
++  await page.addInitScript(({ at, revision }) => {
++    const state = window as Window & { __rsoFixtureClockRevision?: number };
++    // Multiple init scripts have no promised execution order after a reload.
++    if ((state.__rsoFixtureClockRevision ?? 0) >= revision) return;
++    state.__rsoFixtureClockRevision = revision;
++    const NativeDate = Date;
++    window.Date = class extends NativeDate {
++      constructor(...args: any[]) { super(...(args.length ? args : [at]) as [any]); }
++      static now() { return at; }
++    } as DateConstructor;
++  }, { at: fixed, revision });
++}
++export async function installPlanningClock(page: Page, options: { time: Date | string | number }) {
++  fixtureTimes.set(page, new Date(options.time).toISOString());
++  await page.clock.install(options);
++}
++
++/** Preserve each scenario's payload/failures while supplying the actual current-read
++ * transport contract. Only rows deliberately built with RSO_FIXTURE_BRIDGE receive
++ * bridge permission. Native/legacy rows and saved provider labels remain unapproved. */
++export async function routeCurrentPlanning(page: Page, handler: (route: Route) => unknown) {
++  const install = async (pattern: string, privateRead: boolean) => page.route(pattern, route => {
++    const wrapped = new Proxy(route, { get(target, key) {
++      if (key === "fulfill") return async (options: Parameters<Route["fulfill"]>[0] = {}) => {
++        const body = options.json;
++        if (!body?.success || !body.data || (options.status ?? 200) >= 400) return target.fulfill(options);
++        const request = target.request(), query = new URL(request.url()).searchParams;
++        const scope = privateRead ? request.postDataJSON() : Object.fromEntries(query);
++        if (privateRead) {
++          expect(request.method()).toBe("POST");
++          expect(new URL(request.url()).pathname).toBe("/api/v1/roster-schedule-optimizer/yahoo-current-data");
++          const bearer = request.headers().authorization;
++          expect(bearer).toMatch(/^Bearer .+\.fixture$/);
++          const principal = JSON.parse(Buffer.from(bearer!.split(".")[1], "base64url").toString()).sub;
++          if (principal !== RSO_FIXTURE_PRINCIPAL) return target.fulfill({ status: 403, json: { success: false, error: "synthetic scope belongs to another principal" } });
++        }
++        const evaluatedAt = body.read?.evaluatedAt ?? fixtureTimes.get(page);
++        if (!evaluatedAt) throw new Error("Set the synthetic server clock before installing current-read fixtures.");
++        const nonce = privateRead ? scope.nonce : request.headers()["x-rso-read-nonce"];
++        const data = body.data, existing = data.forecastManifest;
++        const forecasts = data.forecasts ?? [];
++        const manifest = { version: "planning-forecasts-v1", id: "synthetic-current-read", seasonId: Number(scope.seasonId),
++          scheduleRevision: "synthetic-schedule", rosterRevision: "synthetic-roster",
++          issuedRevisionIds: [...new Set(forecasts.map((row: { revisionId: string }) => row.revisionId))], baselineChecksum: null,
++          requiredOpportunities: forecasts.length, forecastedOpportunities: forecasts.length, exclusionCounts: {}, ...existing,
++          asOf: evaluatedAt, rsoUsePolicy: existing?.rsoUsePolicy ?? { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision,
++            bridgeRevisionIds: forecasts.some((row: { revisionId: string }) => row.revisionId === RSO_FIXTURE_BRIDGE) ? [RSO_FIXTURE_BRIDGE] : [] } };
++        return target.fulfill({ ...options, json: { ...body, data: { ...data,
++          evidence: { schedule: { source: "Complete synthetic schedule fixture", asOf: evaluatedAt,
++            seasonId: Number(scope.seasonId), completeness: "complete", limitations: [] }, ...data.evidence }, forecastManifest: manifest },
++          read: { nonce, evaluatedAt, ...(body.read ?? {}), ...(privateRead ? { nonce,
++            principalId: RSO_FIXTURE_PRINCIPAL, teamId: scope.teamId, leagueId: scope.leagueId,
++            seasonId: scope.seasonId, startDate: scope.startDate, endDate: scope.endDate, timeZone: scope.timeZone,
++            // Generic fixtures carry public priors, not provider confirmations.
++            expiresAt: null } : {}) } } });
++      };
++      const value = Reflect.get(target, key); return typeof value === "function" ? value.bind(target) : value;
++    } });
++    return handler(wrapped);
++  });
++  await install("**/api/v1/roster-schedule-optimizer/data?**", false);
++  await install("**/api/v1/roster-schedule-optimizer/yahoo-current-data", true);
++}
++
++export async function showScheduleView(page: Page, view: "player" | "position" | "itinerary" | "details") {
++  const workspace = page.getByRole("navigation", { name: "Workspace views" });
++  if (await workspace.isVisible()) await workspace.getByRole("button", { name: "Itinerary", exact: true }).click();
++  const group = page.getByRole("group", { name: "Schedule view", exact: true });
++  const button = group.getByRole("button", { name: view === "player" ? /^Show (lineup by player|category lineup comparison)$/
++    : view === "position" ? "By position" : view === "itinerary" ? "Streaming itinerary" : "Plan details", exact: true });
++  await button.click(); await expect(button).toHaveAttribute("aria-pressed", "true");
++  if (view === "player") await expect(page.getByRole("table", { name: "Individual player weekly schedule" })).toBeVisible();
++  if (view === "position") await expect(page.getByRole("table", { name: "Lineup by position" })).toBeVisible();
++  if (view === "details") await expect(page.getByRole("region", { name: "Plan details", exact: true })).toBeVisible();
++}
++
++export async function openDisclosure(page: Page, name: string | RegExp) {
++  const summary = page.locator("summary").filter({ hasText: name });
++  const details = summary.locator("..");
++  if (!await details.evaluate(node => (node as HTMLDetailsElement).open)) await summary.click();
++  await expect(details).toHaveAttribute("open", "");
++}
++
++export async function expectQualityReadiness(page: Page, available: boolean) {
++  await openDisclosure(page, /^More tools$/);
++  await openDisclosure(page, /^Planning readiness/);
++  const readiness = page.locator("details").filter({ has: page.locator(":scope > summary").getByText("Planning readiness", { exact: true }) });
++  await expect(readiness).toContainText(available ? "Player-quality assignment evidence available" : "Schedule-only capacity; player-quality decisions remain unresolved.");
++  await page.locator("summary").filter({ hasText: /^More tools$/ }).click();
++}

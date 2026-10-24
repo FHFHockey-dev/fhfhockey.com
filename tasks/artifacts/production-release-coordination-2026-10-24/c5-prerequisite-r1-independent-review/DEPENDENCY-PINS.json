@@ -1,0 +1,39 @@
+{
+  "dependencies": {
+    "web/utils/adminOnlyMiddleware.ts": {
+      "sha256": "de749fa9e811aacbbd1c85a080140f380fd8c3d3794ad378caa9dd4025f444c5",
+      "equals_production": true
+    },
+    "web/lib/cron/timingContract.ts": {
+      "sha256": "ded35e2b2b243ade44b9ea0a4ae1f575f4dccdb6e13c195c81eb844cc9b629ff",
+      "equals_production": true
+    },
+    "web/lib/integrations/espn/server.ts": {
+      "sha256": "da5497fbd8a978560e9275e941f4b4492f81fc0293defc923f51bb18d190a622",
+      "equals_production": true
+    },
+    "web/lib/integrations/fantrax/server.ts": {
+      "sha256": "8813727dd91523bd7d7874c7767b5c66ecb58ea2faefa6cc7ba699b4962f5d22",
+      "equals_production": true
+    },
+    "web/lib/integrations/patreon/sync.ts": {
+      "sha256": "088eb6abf73b1213ed72ce652a61c1beb5d84fb73f0f26952c03d6b6f1f972ec",
+      "equals_production": true
+    },
+    "web/vercel.json": {
+      "sha256": "bcd2cab8174bead693c7a4268ce2dd44ea551c9dfa92736b347868a0ebac2d2b",
+      "equals_production": true
+    },
+    "vercel.json": {
+      "sha256": "c18d6c5262ce3443c70667b03b99b2f7d91d3977b0e522c5eb01077d89f7f961",
+      "equals_production": true
+    }
+  },
+  "inherited_C5_r2_route_list_exactly_preserved": true,
+  "committed_HEAD_routes": 74,
+  "C5_r2_declared_routes": 75,
+  "only_C5_r2_addition_to_HEAD": [
+    "v1/db/update-drafted-prospects.ts"
+  ],
+  "unrelated_route_additions": []
+}

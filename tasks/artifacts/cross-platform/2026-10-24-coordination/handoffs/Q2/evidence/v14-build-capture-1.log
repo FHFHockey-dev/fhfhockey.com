@@ -1,0 +1,1154 @@
+Unity Editor version:    6000.6.5f1 (3ff58d469c8a)
+Branch:                  6000.6/staging
+Build type:              Release
+Batch mode:              YES
+macOS version:           Version 27.0.1 (Build 26A434)
+Darwin version:          27.0.0
+Architecture:            arm64
+Running under Rosetta:   NO
+Available memory:        65536 MB
+Date:                    2026-10-24T15:02:32Z
+VBCSCompilerPreWarmer: watching VBCSCompiler (PID 19873)
+VBCSCompilerPreWarmer: pre-warm launched (dotnet PID 19875)
+VBCSCompiler prewarm took 2.39 ms
+Launching external process: /Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Helpers/UnityLicensingClient.app/Contents/MacOS/Unity.Licensing.Client
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Channel LicenseClient-tim doesn't exist
+[Licensing::Module] Successfully launched the LicensingClient (PId: 19876)
+Launching external process: /Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Helpers/PackageManager/Server/UnityPackageManager
+
+COMMAND LINE ARGUMENTS:
+/Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/MacOS/Unity
+-batchmode
+-quit
+-job-worker-count
+2
+-projectPath
+/Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject
+-executeMethod
+VesperBasin.Editor.SprintV14.BuildAndCapture
+-logFile
+/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/evidence/v14-build-capture-1.log
+Successfully changed project path to: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject
+/Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject
+[UnityMemory] Configuration Parameters - Can be set up in boot.config
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-gi-baking-worker=262144"
+    "memorysetup-temp-allocator-size-nav-mesh-worker=65536"
+    "memorysetup-temp-allocator-size-audio-worker=65536"
+    "memorysetup-temp-allocator-size-cloud-worker=32768"
+    "memorysetup-temp-allocator-size-preload-manager=33554432"
+    "memorysetup-remapper-allocator-initial-capacity=32768"
+    "memorysetup-temp-allocator-size-gfx=262144"
+    "memorysetup-allocator-temp-initial-block-size-main=262144"
+    "memorysetup-allocator-temp-initial-block-size-worker=262144"
+    "memorysetup-temp-allocator-size-background-worker=32768"
+    "memorysetup-temp-allocator-size-job-worker=262144"
+    "memorysetup-bucket-allocator-granularity=16"
+    "memorysetup-bucket-allocator-bucket-count=8"
+    "memorysetup-bucket-allocator-block-size=33554432"
+    "memorysetup-bucket-allocator-block-count=8"
+    "memorysetup-main-allocator-block-size=16777216"
+    "memorysetup-thread-allocator-block-size=16777216"
+    "memorysetup-main-allocator-mimalloc-enabled=1"
+    "memorysetup-gfx-main-allocator-block-size=16777216"
+    "memorysetup-gfx-thread-allocator-block-size=16777216"
+    "memorysetup-cache-allocator-block-size=4194304"
+    "memorysetup-typetree-allocator-block-size=2097152"
+    "memorysetup-profiler-bucket-allocator-granularity=16"
+    "memorysetup-profiler-bucket-allocator-bucket-count=8"
+    "memorysetup-profiler-bucket-allocator-block-size=33554432"
+    "memorysetup-profiler-bucket-allocator-block-count=8"
+    "memorysetup-profiler-allocator-block-size=16777216"
+    "memorysetup-profiler-editor-allocator-block-size=1048576"
+    "memorysetup-temp-allocator-size-main=16777216"
+    "memorysetup-job-temp-allocator-block-size=2097152"
+    "memorysetup-job-temp-allocator-block-size-background=1048576"
+    "memorysetup-job-temp-allocator-reduction-small-platforms=262144"
+Logging is directed to a specific file, skipping project log.
+Player connection [8606203776]  Target information:
+
+Player connection [8606203776]  * "[IP] 10.0.0.133 [Port] 55504 [Flags] 2 [Guid] 1229065057 [EditorId] 1229065057 [Version] 1048832 [Id] OSXEditor(0,Tims-MacBook-Pro-2.local) [Debug] 1 [PackageName] OSXEditor [ProjectName] Editor" 
+
+Player connection [8606203776] Host joined multi-casting on [225.0.0.222:54997]...
+Player connection [8606203776] Host joined alternative multi-casting on [225.0.0.222:34997]...
+JobSystem: Creating JobQueue using job-worker-count value 2
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-tim" at "2026-10-24T15:02:33.065593Z"
+[Package Manager] Connected to IPC stream "Upm-19872" after 0.1 seconds.
+[Licensing::Module] Licensing is not yet initialized.
+Initialising UDS system complete:
+  - System type: Client
+  - Resource namespace: c70b17832081eed8386718e124d974af
+  - Shared memory size: 1073741824
+  - Command buffer id: 1052672
+  - Command buffer size: 8192
+  - Hashmap size: 4194304
+  - Service connected: false
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.3+d7ffd15
+  Session Id:              714088ae1454494fa8dafe21b9f182f4
+  Correlation Id:          3f0401c3d194c09839a76876b0e5d0e5
+  External correlation Id: 866830724941124352
+  Machine Id:              EfwFPrceK8ZgfUl2Tu1gpTo7PsU=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-tim" (connect: 0.11s, validation: 0.02s, handshake: 0.23s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-tim-notifications" at "2026-10-24T15:02:33.313122Z"
+[Licensing::Module] Connected to LicensingClient (PId: 19876, launch time: 0.00, total connection time: 0.36s)
+[Licensing::Module] Error: Access token is unavailable; failed to update
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] License group:
+  Id: 2476048537058-UnityPersXXXX
+  Product: Unity Personal
+  Type: Assigned
+  Expiration: Unlimited
+[Licensing::Client] Successfully updated license, isAsync: True, time: 0.00
+[Licensing::Client] Successfully resolved entitlement details
+[Licensing::Module] Licensing Background thread has ended after 0.37s
+[Licensing::Module] Licensing is initialized (took 0.15s).
+[Licensing::Client] Successfully resolved entitlement details
+Library Redirect Path: Library/
+Launching Unity Data Store - /Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Helpers/Unity.DataStore 
+Unity Data Store artifact dir = Library/DataStore, working dir = /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProjectUnity Data Store running and initialised
+[Physics::Module] Selected backend (deferred post-plugins).
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Initialize engine version: 6000.6.5f1 (3ff58d469c8a)
+[EntityIdStore] init: VM path (explicit commit), pageSize=16384, blockCount=262144, entitiesPerBlock=1024, slots reserved=4294967296 bytes
+[Subsystems] Discovering subsystems at path /Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Assets
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+ preferred device: Apple M4 Max (high power)
+Metal devices available: 1
+0: Apple M4 Max (high power)
+Using device Apple M4 Max (high power)
+Initializing Metal device caps: Apple M4 Max
+Mac GPU Family: 2
+Apple GPU Family: 9
+MSL Version: 3.0
+Has Float MSAA: 1
+Has Float Filtering: 1
+ReadWrite Texture Tier: 2
+Initialize mono
+Mono path[0] = '/Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/Scripting/Managed'
+Mono path[1] = '/Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/Scripting/BCLExtensions/runtime/netstandard2.1'
+Mono path[2] = '/Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/lib/mono/unityjit-macos'
+Mono config path = '/Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/Scripting/MonoBleedingEdge/etc'
+Using monoOptions --debugger-agent=transport=dt_socket,embedding=1,server=y,suspend=n,address=127.0.0.1:56872
+CodeReloadManager initialized
+ImportWorker Server TCP listen port: 0
+AcceleratorClientConnectionCallback - disconnected - :0
+Begin MonoManager ReloadAssembly
+Registering precompiled unity dll's ...
+Register platform support module: /Applications/Unity/Hub/Editor/6000.6.5f1/PlaybackEngines/WebGLSupport/UnityEditor.WebGL.Extensions.dll
+Register platform support module: /Applications/Unity/Hub/Editor/6000.6.5f1/PlaybackEngines/MacStandaloneSupport/UnityEditor.OSXStandalone.Extensions.dll
+[Licensing::Client] Successfully resolved entitlement details
+Register platform support module: /Applications/Unity/Hub/Editor/6000.6.5f1/PlaybackEngines/AndroidPlayer/UnityEditor.Android.Extensions.dll
+Registered in 0.001489 seconds.
+Native extension for Android target not found
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+Package Manager log level set to [2]
+ScheduleIndexationOnStartup MainProcess:False IndexOnStartup:False
+Scripting: successfully reloaded assembly
+- Finished resetting the current domain, in  0.320 seconds
+Domain Reload Profiling: 578ms
+	BeginReloadAssembly (47ms)
+		CreateAndSetChildDomain (8ms)
+	RebuildCommonClasses (3ms)
+	RebuildNativeTypeToScriptingClass (9ms)
+	initialDomainReloadingComplete (27ms)
+	LoadAllAssembliesAndSetupDomain (172ms)
+		LoadAssemblies (39ms)
+		TypeCache.Refresh (125ms)
+			TypeCache.ScanAssembly (116ms)
+		AnalyzeDomain (0ms)
+	FinalizeReload (321ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (3ms)
+			BeforeProcessingInitializeOnLoad (51ms)
+			ProcessInitializeOnLoadAttributes (48ms)
+			ProcessInitializeOnLoadMethodAttributes (108ms)
+[Licensing::Client] Successfully resolved entitlement details
+Application.AssetDatabase Initial Refresh Start
+[Package Manager] Restoring resolved packages state from cache
+[Licensing::Client] Successfully resolved entitlement details
+[Package Manager] Registered 63 packages:
+  Packages from [https://packages.unity.com]:
+    com.unity.ai.navigation@2.0.15 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.ai.navigation@a9c5744fc1de)
+    com.unity.collab-proxy@2.13.6 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.collab-proxy@4628d2ba6ea4)
+    com.unity.ide.rider@3.0.38 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.ide.rider@1f60b3138684)
+    com.unity.ide.visualstudio@2.0.26 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.ide.visualstudio@a99d56dec63f)
+    com.unity.inputsystem@1.20.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.inputsystem@7a4e1a2a8194)
+    com.unity.visualscripting@1.9.12 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.visualscripting@4edfcc09512f)
+    com.unity.xr.core-utils@2.6.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.xr.core-utils@a8b900321199)
+    com.unity.xr.legacyinputhelpers@3.0.1 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.xr.legacyinputhelpers@3f62d634f63b)
+    com.unity.xr.management@4.7.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.xr.management@2ad85c7dd480)
+    com.unity.xr.openxr@1.18.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.xr.openxr@b5b77b4027be)
+    com.unity.searcher@4.9.5 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.searcher@a463122f2c00)
+    com.unity.profiling.core@1.0.3 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.profiling.core@8a49f7027d06)
+    com.unity.nuget.mono-cecil@1.11.6 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.nuget.mono-cecil@ecb9724e46ff)
+  Built-in packages:
+    com.unity.render-pipelines.universal@17.6.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.render-pipelines.universal@2309ae255609)
+    com.unity.test-framework@1.8.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.test-framework@80f691d4262b)
+    com.unity.timeline@6.6.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.timeline@4891807c6bd8)
+    com.unity.ugui@2.6.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.ugui@42f0bd825000)
+    com.unity.modules.accessibility@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.accessibility)
+    com.unity.modules.adaptiveperformance@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.adaptiveperformance)
+    com.unity.modules.ai@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.ai)
+    com.unity.modules.androidjni@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.androidjni)
+    com.unity.modules.animation@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.animation)
+    com.unity.modules.assetbundle@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.assetbundle)
+    com.unity.modules.audio@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.audio)
+    com.unity.modules.cloth@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.cloth)
+    com.unity.modules.director@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.director)
+    com.unity.modules.imageconversion@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.imageconversion)
+    com.unity.modules.imgui@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.imgui)
+    com.unity.modules.jsonserialize@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.jsonserialize)
+    com.unity.modules.particlesystem@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.particlesystem)
+    com.unity.modules.physics@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.physics)
+    com.unity.modules.physics2d@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.physics2d)
+    com.unity.modules.physicscore2d@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.physicscore2d)
+    com.unity.modules.screencapture@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.screencapture)
+    com.unity.modules.terrain@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.terrain)
+    com.unity.modules.terrainphysics@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.terrainphysics)
+    com.unity.modules.tetgen@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.tetgen)
+    com.unity.modules.tilemap@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.tilemap)
+    com.unity.modules.timelinefoundation@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.timelinefoundation)
+    com.unity.modules.ui@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.ui)
+    com.unity.modules.uielements@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.uielements)
+    com.unity.modules.umbra@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.umbra)
+    com.unity.modules.unityanalytics@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.unityanalytics)
+    com.unity.modules.unitywebrequest@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.unitywebrequest)
+    com.unity.modules.unitywebrequestassetbundle@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.unitywebrequestassetbundle)
+    com.unity.modules.unitywebrequestaudio@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.unitywebrequestaudio)
+    com.unity.modules.unitywebrequesttexture@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.unitywebrequesttexture)
+    com.unity.modules.unitywebrequestwww@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.unitywebrequestwww)
+    com.unity.modules.vectorgraphics@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.vectorgraphics)
+    com.unity.modules.vehicles@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.vehicles)
+    com.unity.modules.video@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.video)
+    com.unity.modules.wind@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.wind)
+    com.unity.modules.xr@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.xr)
+    com.unity.modules.subsystems@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.subsystems)
+    com.unity.modules.hierarchycore@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.modules.hierarchycore)
+    com.unity.ext.nunit@2.1.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.ext.nunit@0198eae3b53e)
+    com.unity.render-pipelines.core@17.6.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.render-pipelines.core@285af6b8c83f)
+    com.unity.shadergraph@17.6.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.shadergraph@58bcb150677d)
+    com.unity.render-pipelines.universal-config@17.6.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.render-pipelines.universal-config@561422b74439)
+    com.unity.graph-authoring@1.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.graph-authoring@cfd2588851ee)
+    com.unity.burst@2.0.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.burst@626e66ab421b)
+    com.unity.collections@6.6.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.collections@10fff0607388)
+    com.unity.test-framework.performance@6.6.0 (location: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.test-framework.performance@54c5bd86aedb)
+[Subsystems] Looking for new subsystems at path /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.xr.openxr@b5b77b4027be
+[Subsystems] Novel subsystem found at Library/PackageCache/com.unity.xr.openxr@b5b77b4027be/Runtime/UnitySubsystemsManifest.json
+[Subsystems] Discovering subsystems at path /Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/UnitySubsystems
+[Subsystems] Discovering subsystems at path /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Assets
+[Subsystems] Discovering subsystems at path /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Library/PackageCache/com.unity.xr.openxr@b5b77b4027be
+[Subsystems] No descriptors matched for  examples in Library/PackageCache/com.unity.xr.openxr@b5b77b4027be/Runtime/UnitySubsystemsManifest.json.
+[Subsystems] 1 'inputs' descriptors matched in Library/PackageCache/com.unity.xr.openxr@b5b77b4027be/Runtime/UnitySubsystemsManifest.json
+[Subsystems] 1 'displays' descriptors matched in Library/PackageCache/com.unity.xr.openxr@b5b77b4027be/Runtime/UnitySubsystemsManifest.json
+[Subsystems] No descriptors matched for  meshings in Library/PackageCache/com.unity.xr.openxr@b5b77b4027be/Runtime/UnitySubsystemsManifest.json.
+[Package Manager] Done registering packages in 0.01 seconds
+[ScriptCompilation] Requested script compilation because: AssetDatabase observed changes in script compilation related files
+Starting: /Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/BuildPipeline/bee_backend --ipc --defer-dag-verification --dagfile="Library/Bee/200b0aE.dag" --continue-on-failure --profile="Library/Bee/backend1.traceevents" ScriptAssemblies
+WorkingDir: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject
+DisplayProgressbar: Compiling Scripts
+warn: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Assembly system.runtime.interopservices.windowsruntime has duplicate hint path. Ignoring "/Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/Scripting/UnityReferenceAssemblies/unity-4.8-api/Facades/System.Runtime.InteropServices.WindowsRuntime.dll" in favor of "/Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/Scripting/NetStandard/Extensions/2.0.0/System.Runtime.InteropServices.WindowsRuntime.dll"
+warn: Unity.ILPP.Runner.PostProcessingAssemblyLoadContext[0]
+      Assembly system.componentmodel.composition has duplicate hint path. Ignoring "/Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/Scripting/UnityReferenceAssemblies/unity-4.8-api/System.ComponentModel.Composition.dll" in favor of "/Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/Scripting/NetStandard/compat/2.1.0/shims/netfx/System.ComponentModel.Composition.dll"
+Starting: /Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/Scripting/DotNetSdk/dotnet "/Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/BuildPipeline/ScriptCompilationBuildProgram.exe" "Library/Bee/200b0aE.dag.json" "Library/Bee/200b0aE-inputdata.json" "Library/Bee/buildprogram0.traceevents"
+WorkingDir: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject
+ExitCode: 4 Duration: 0s212ms
+Rebuilding DAG because FileSignature timestamp changed: Library/Bee/200b0aE-inputdata.json
+[ 821/1120  0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+*** Tundra requires additional run (0.20 seconds), 1 items updated, 812 evaluated
+ExitCode: 0 Duration: 1s86ms
+Starting: /Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Resources/BuildPipeline/bee_backend --ipc --defer-dag-verification --dagfile="Library/Bee/200b0aE.dag" --continue-on-failure --dagfilejson="Library/Bee/200b0aE.dag.json" --profile="Library/Bee/backend2.traceevents" ScriptAssemblies
+WorkingDir: /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject
+ExitCode: 0 Duration: 1s124ms
+Finished compiling graph: 1123 nodes, 25509 flattened edges (21273 ToBuild, 192 ToUse), maximum node priority 1396
+[ 556/1120  0s] WriteText Library/Bee/artifacts/200b0aE.dag/Assembly-CSharp-Editor.rsp
+[ 839/1120  0s] ILPP-Configuration Library/ilpp-configuration.nevergeneratedoutput
+[1116/1120  0s] Csc Library/Bee/artifacts/200b0aE.dag/Assembly-CSharp-Editor.dll (+2 others)
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(21,21): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(32,76): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(32,32): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(33,65): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(33,32): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(75,27): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(79,28): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(93,27): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintInspect.cs(38,112): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintInspect.cs(38,34): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintInspect.cs(44,85): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintInspect.cs(44,38): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintInspect.cs(51,78): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintInspect.cs(51,31): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintInspect.cs(53,86): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintInspect.cs(53,36): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintInspect.cs(54,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintMapPass.cs(51,70): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintMapPass.cs(51,22): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintMapPass.cs(84,75): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintMapPass.cs(84,28): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintMapPass.cs(95,15): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV03.cs(25,71): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV03.cs(25,22): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV03.cs(64,69): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV03.cs(64,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV14Survey.cs(26,105): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV14Survey.cs(26,30): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV04.cs(16,69): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV04.cs(16,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV04.cs(19,69): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV04.cs(19,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV04.cs(20,68): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV04.cs(20,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV14Capture.cs(35,77): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV14Capture.cs(54,63): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV14Capture.cs(74,88): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV14Capture.cs(74,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV14Capture.cs(75,80): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV14Capture.cs(75,33): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV06.cs(16,69): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV06.cs(16,22): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV06.cs(21,69): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV06.cs(21,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV05.cs(21,69): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV05.cs(21,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV14.cs(68,105): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV14.cs(68,30): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV07.cs(11,14): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV08.cs(18,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV08.cs(20,24): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV08.cs(22,85): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV08.cs(22,38): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV09.cs(38,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV09.cs(63,48): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV09.cs(68,32): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV10.cs(22,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV10.cs(34,27): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV09.cs(92,86): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV09.cs(92,39): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV10.cs(106,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV10.cs(133,117): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV10.cs(133,70): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV11.cs(23,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV11.cs(26,27): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV12.cs(27,85): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV12.cs(27,38): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV12.cs(44,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(31,89): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(31,31): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(32,87): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(32,30): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(48,84): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(48,31): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(68,85): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(68,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(77,118): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(77,71): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV12MatchedCapture.cs(44,30): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV12MatchedCapture.cs(55,26): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV13Survey.cs(19,106): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV13Survey.cs(19,30): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV13.cs(27,97): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV13.cs(27,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV13Capture.cs(33,77): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV13Capture.cs(48,63): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV13Capture.cs(68,88): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV13Capture.cs(68,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV13Capture.cs(69,80): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV13Capture.cs(69,33): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+[1117/1120  0s] ILPostProcess Library/Bee/artifacts/200b0aE.dag/post-processed/Assembly-CSharp-Editor.dll (+pdb)
+Processing assembly Library/Bee/artifacts/200b0aE.dag/Assembly-CSharp-Editor.dll, with 140 defines and 396 references
+processors: Unity.Jobs.CodeGen.JobsILPostProcessor, zzzUnity.Burst.CodeGen.BurstILPostProcessor
+1 processor(s) skipped this assembly
+running Unity.Jobs.CodeGen.JobsILPostProcessor
+[1118/1120  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-Editor.pdb
+[1119/1120  0s] CopyFiles Library/ScriptAssemblies/Assembly-CSharp-Editor.dll
+*** Tundra build success (1.11 seconds), 6 items updated, 1120 evaluated
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(21,21): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(32,76): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(32,32): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(33,65): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(33,32): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(75,27): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(79,28): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/Tests/VesperV09RigTests.cs(93,27): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintInspect.cs(38,112): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintInspect.cs(38,34): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintInspect.cs(44,85): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintInspect.cs(44,38): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintInspect.cs(51,78): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintInspect.cs(51,31): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintInspect.cs(53,86): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintInspect.cs(53,36): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintInspect.cs(54,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintMapPass.cs(51,70): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintMapPass.cs(51,22): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintMapPass.cs(84,75): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintMapPass.cs(84,28): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintMapPass.cs(95,15): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV03.cs(25,71): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV03.cs(25,22): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV03.cs(64,69): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV03.cs(64,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV14Survey.cs(26,105): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV14Survey.cs(26,30): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV04.cs(16,69): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV04.cs(16,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV04.cs(19,69): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV04.cs(19,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV04.cs(20,68): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV04.cs(20,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV14Capture.cs(35,77): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV14Capture.cs(54,63): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV14Capture.cs(74,88): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV14Capture.cs(74,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV14Capture.cs(75,80): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV14Capture.cs(75,33): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV06.cs(16,69): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV06.cs(16,22): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV06.cs(21,69): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV06.cs(21,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV05.cs(21,69): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV05.cs(21,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV14.cs(68,105): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV14.cs(68,30): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV07.cs(11,14): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV08.cs(18,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV08.cs(20,24): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV08.cs(22,85): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV08.cs(22,38): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV09.cs(38,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV09.cs(63,48): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV09.cs(68,32): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV10.cs(22,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV10.cs(34,27): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV09.cs(92,86): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV09.cs(92,39): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV10.cs(106,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV10.cs(133,117): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV10.cs(133,70): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV11.cs(23,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV11.cs(26,27): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV12.cs(27,85): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV12.cs(27,38): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV12.cs(44,25): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(31,89): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(31,31): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(32,87): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(32,30): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(48,84): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(48,31): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(68,85): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(68,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(77,118): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV11SavedValidator.cs(77,71): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV12MatchedCapture.cs(44,30): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV12MatchedCapture.cs(55,26): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV13Survey.cs(19,106): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV13Survey.cs(19,30): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV13.cs(27,97): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV13.cs(27,21): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsInactive, FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV13Capture.cs(33,77): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV13Capture.cs(48,63): warning CS0618: 'Object.FindFirstObjectByType<T>()' is obsolete: 'FindFirstObjectByType has been deprecated because it relies on instance ID ordering. Use FindAnyObjectByType instead, which does not depend on ordering.'
+Assets/MapPrototype/Editor/SprintV13Capture.cs(68,88): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV13Capture.cs(68,35): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+Assets/MapPrototype/Editor/SprintV13Capture.cs(69,80): warning CS0618: 'FindObjectsSortMode' is obsolete: 'FindObjectsSortMode has been deprecated. Use the FindObjectsByType overloads that do not take a FindObjectsSortMode parameter.'
+Assets/MapPrototype/Editor/SprintV13Capture.cs(69,33): warning CS0618: 'Object.FindObjectsByType<T>(FindObjectsSortMode)' is obsolete: 'FindObjectsByType with FindObjectsSortMode parameter has been deprecated. Use FindObjectsByType<T>() or FindObjectsByType<T>(FindObjectsInactive) instead. InstanceID will be replaced in the future with EntityId and previous sort order cannot be maintained.'
+AssetDatabase: script compilation time: 2.797710s
+Total cache size 254581205
+Total cache size after purge 254581205, took 00:00:00.0712839
+Begin MonoManager ReloadAssembly
+'Packages/com.unity.render-pipelines.core/Editor/Deprecated.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+'Packages/com.unity.render-pipelines.core/Editor/Deprecated.cs' contains partial class of Unity.Object, exactly 1 of the partial classes needs to be in a file with the same filename. This is to know the one that can be referenced from ie. GameObjects
+Native extension for Android target not found
+Native extension for OSXStandalone target not found
+Native extension for WebGL target not found
+ScheduleIndexationOnStartup MainProcess:True IndexOnStartup:True
+Scripting: successfully reloaded assembly
+- Finished resetting the current domain, in  0.474 seconds
+Domain Reload Profiling: 942ms
+	BeginReloadAssembly (115ms)
+		DisableScriptedObjects (10ms)
+		CreateAndSetChildDomain (38ms)
+	RebuildCommonClasses (5ms)
+	RebuildNativeTypeToScriptingClass (9ms)
+	initialDomainReloadingComplete (23ms)
+	LoadAllAssembliesAndSetupDomain (316ms)
+		LoadAssemblies (134ms)
+		TypeCache.Refresh (101ms)
+			TypeCache.ScanAssembly (91ms)
+		AnalyzeDomain (42ms)
+			BuildScriptInfoCaches (37ms)
+			ResolveRequiredComponents (4ms)
+	FinalizeReload (474ms)
+		SetupLoadedEditorAssemblies (0ms)
+			InitializePlatformSupportModulesInManaged (3ms)
+			BeforeProcessingInitializeOnLoad (56ms)
+			ProcessInitializeOnLoadAttributes (157ms)
+			ProcessInitializeOnLoadMethodAttributes (52ms)
+		AwakeInstancesAfterBackupRestoration (10ms)
+Launching external process: /Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/Helpers/UnityShaderCompiler
+Starting new worker id: 0 with log in /Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject/Logs/AssetImportWorkerHW0.log
+Importing 'GUID: 6f1b01bf28c0e4bb5b9b2e4c90a30aaf - Path: Assets/MapPrototype/Shaders/VesperV14StrataRock.shader' with importer (ShaderImporter)
+Launched and connected shader compiler UnityShaderCompiler after 0.01 seconds
+WARNING: Shader Unsupported: 'VesperBasin/V14 Strata Rock' - All subshaders removed
+WARNING: Shader Did you use #pragma only_renderers and omit this platform?
+WARNING: Shader If subshaders removal was intentional, you may have forgotten turning Fallback off?
+WARNING: Shader Unsupported: 'VesperBasin/V14 Strata Rock' - All subshaders removed
+WARNING: Shader Did you use #pragma only_renderers and omit this platform?
+WARNING: Shader If subshaders removal was intentional, you may have forgotten turning Fallback off?
+Imported 'GUID: 6f1b01bf28c0e4bb5b9b2e4c90a30aaf' -> (Import Result ID: 'dc29aa586405ee06982bbe4339def63b') in 0.048 seconds [static and dynamic dependencies]. Details - ImportResultOutputID=3fed860c84b6af6da895f24ea6afb8e5 DependenciesID=7ca530368ad51956a9394a5b95cea480 StaticDependenciesID=5233b2d3337dfdb783afd6df9ed249a6 
+WARNING: Shader Unsupported: 'VesperBasin/V14 Strata Rock' - All subshaders removed
+WARNING: Shader Did you use #pragma only_renderers and omit this platform?
+WARNING: Shader If subshaders removal was intentional, you may have forgotten turning Fallback off?
+
+Asset Pipeline Refresh (id=378f3d0c47422487d813321e0acf9955): Total: 4.728 seconds - Initiated by InitialRefreshV2(ForceSynchronousImport)
+	(Values over 0.05ms)
+	Summary:
+		Imports: total=1 (actual=1, local cache=0, cache server=0)
+		Asset DB Process Time: managed=0 ms, native=1113 ms
+		Asset DB Callback time: managed=263 ms, native=33 ms
+		Scripting: domain reloads=1, domain reload time=486 ms, compile time=2799 ms, other=31 ms
+		Project Asset Count: scripts=1586, non-scripts=2624
+		Asset File Changes: new=3, changed=4, moved=0, deleted=0
+		Scan Filter Count: 1
+	InvokePackagesCallback: 10.618ms
+	ApplyChangesToAssetFolders: 0.227ms
+	Scan: 391.892ms
+	Collect global state as custom dependencies: 9.862ms
+	OnSourceAssetsModified: 0.634ms
+	CategorizeScriptCompilationAssets: 27.056ms
+	ProcessAssetsWithTransientArtifactChanges: 38.437ms
+	CategorizeAssets: 39.306ms
+	CompileScripts: 2798.788ms
+	ImportOutOfDateAssets: 536.918ms (480.107ms without children)
+		ImportManagerImport: 53.323ms (0.739ms without children)
+			UpdateCategorizedAssets: 0.239ms
+		UnloadImportedAssets: 1.653ms
+		EnsureUptoDateAssetsAreRegisteredWithGuidPM: 0.394ms
+		ImportSchedulerStart: 1.392ms
+	PostProcessAllAssets: 283.989ms
+		ShaderAssetModifiedCallback 20.627ms
+		XRBuildSystem.XRAssetImported 0.222ms
+		MonoPostProcessAllAssets: 262.795ms
+			SyncVS.PostprocessSyncProject 132.718ms
+			AssetPostprocessor.OnPostprocessAllAssets 85.189ms
+			AssetCallbacks.OnPostprocessAllAssets 10.748ms
+			StyleCatalogPostProcessor.OnPostprocessAllAssets 9.086ms
+			UniversalRenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 9.054ms
+			BuilderAssetPostprocessor.OnPostprocessAllAssets 3.402ms
+			AssetChangedListener.OnPostprocessAllAssets 0.876ms
+			ShaderGraphAssetPostProcessor.OnPostprocessAllAssets 0.869ms
+			WindowAssetPostprocessingWatcher.OnPostprocessAllAssets 0.812ms
+			SpeedTree9Postprocessor.OnPostprocessAllAssets 0.781ms
+			RetainedModeAssetPostprocessor.OnPostprocessAllAssets 0.670ms
+			EditModeScopePostprocessor.OnPostprocessAllAssets 0.429ms
+			MaterialPostprocessor.OnPostprocessAllAssets 0.360ms
+			RenderPipelineGlobalSettingsPostprocessor.OnPostprocessAllAssets 0.311ms
+			ArtifactBrowserPostProcessor.OnPostprocessAllAssets 0.272ms
+			ShaderReflectionAssetPostProcessor.OnPostprocessAllAssets 0.241ms
+			PostProcessor.OnPostprocessAllAssets 0.185ms
+			InputActionAssetPostprocessor.OnPostprocessAllAssets 0.174ms
+			TextAssetPostProcessor.OnPostprocessAllAssets 0.166ms
+			UVCSAssetPostprocessor.OnPostprocessAllAssets 0.152ms
+			AudioMixerPostprocessor.OnPostprocessAllAssets 0.146ms
+			ReferencedClipsPostProcessor.OnPostprocessAllAssets 0.140ms
+			AssetEvents.OnPostprocessAllAssets 0.128ms
+			TMPro_TexturePostProcessor.OnPostprocessAllAssets 0.127ms
+			InputActionJsonNameModifierAssetProcessor.OnPostprocessAllAssets 0.126ms
+			ProjectSettingsPostprocessor.OnPostprocessAllAssets 0.099ms
+			TerrainToolbarOverlayPostProcessor.OnPostprocessAllAssets 0.090ms
+			SpeedTreePostProcessor.OnPostprocessAllAssets 0.067ms
+			ConfigAssetsTracker.OnPostprocessAllAssets 0.060ms
+			ThemePostprocessor.OnPostprocessAllAssets 0.059ms
+			AssetDatabaseCallbacks.OnPostprocessAllAssets 0.057ms
+			SamplePostprocessor.OnPostprocessAllAssets 0.052ms
+	PostAssetChangesProfiler: 2.210ms
+	UnloadStreamsBegin: 1.128ms
+	PersistCurrentRevisions: 0.164ms
+	GenerateScriptTypeHashes: 0.825ms
+	GenerateScriptTypeSerializationHashes: 1.540ms
+	Untracked: 585.478ms
+
+Application.AssetDatabase Initial Refresh End
+Shader Hidden/ChartRasterizerHardware is not supported: GPU does not support conservative rasterization
+Shader Hidden/ChartRasterizerHardware is not supported: GPU does not support conservative rasterization
+Scanning for USB devices : 0.023ms
+Initializing Unity extensions:
+2026-10-24 11:02:39.115 Unity[19872:443640] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x772675bac0 SDF, ke='Command-F12'>, but is only supported for system-provided menu items; will not be used
+[MODES] ModeService[none].Initialize
+[MODES] ModeService[none].LoadModes
+[MODES] Loading mode Default (0) for mode-current-id-Vesper Basin Prototype
+Unloading 68 Unused Serialized files (Serialized files now loaded: 0)
+Unloading 7279 unused Assets / (12.9 MB). Loaded Objects now: 8276.
+Memory consumption went from 259.7 MB to 246.8 MB.
+Total: 7.089625 ms (FindLiveObjects: 0.387667 ms CreateObjectMapping: 0.107458 ms MarkObjects: 4.567459 ms  DeleteObjects: 1.933875 ms)
+
+2026-10-24 11:02:39.197 Unity[19872:443640] NSEventModifierFlagFunction specified to -setKeyEquivalentModifierMask: for item <NSMenuItem: 0x7726760a00 SDF, ke='Command-F12'>, but is only supported for system-provided menu items; will not be used
+Importing 'GUID: b307c8cb59dd8407196caa682893a622 - Path: Assets/MapPrototype/SprintAssets/v14' with importer (DefaultImporter)
+Imported 'GUID: b307c8cb59dd8407196caa682893a622' -> (Import Result ID: '8d9cb0c52fb42032e1b7611addb33a3a') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=6163d3514d97c24a5b78c3ee5472afaf DependenciesID=6a09ef392b1eedd0c25acb0d3bf818b1 StaticDependenciesID=11b0fa80123a783241d75e1c30809f4e 
+Importing 'GUID: 98faa85326af842f9a1496a3c3c4c19b - Path: Assets/MapPrototype/SprintAssets/v14/Terrain' with importer (DefaultImporter)
+Imported 'GUID: 98faa85326af842f9a1496a3c3c4c19b' -> (Import Result ID: 'a9776fb1224a82732c754c121b7d1003') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=923676523db4995d2ab0296f7a13d121 DependenciesID=2484d2efd20eed9e941721ce7aaeb9f6 StaticDependenciesID=5f16fa4daea2544e53e0ad64f0b00710 
+Asset Pipeline Refresh (id=ad481e9ab938447c0bd54fe59c396fa4): Total: 0.181 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Importing 'GUID: 209553af5d3b34ea89794bcf56d581ad - Path: Assets/MapPrototype/SprintAssets/v14/V14 sandstone strata bands.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 209553af5d3b34ea89794bcf56d581ad' -> (Import Result ID: '947be98eaac7b4e390e3c86110bf2d54') in 0.002 seconds [static dependencies only]. Details - ImportResultOutputID=ccc1c757f28ed86fa423e315b61ea97f DependenciesID=8a51007dbdea367cd4897e8ad38ed222 StaticDependenciesID=0bab7e8d9377e9fe99de867d1bf84c72 
+Asset Pipeline Refresh (id=1ee6d33d803924f6c9c2611f8ec35dde): Total: 0.029 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 92c804b4465bd478ba73597f610f587c - Path: Assets/MapPrototype/SprintAssets/v14/V14 plateau dust.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 92c804b4465bd478ba73597f610f587c' -> (Import Result ID: '62128891605664c4b7e8e419c383b17c') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=0cf561d9502bef33f73bf91984c0ca63 DependenciesID=b74856b3859ebf3e331f80b4344dd9ee StaticDependenciesID=c954e0283a46fded9218822f81543ab3 
+Asset Pipeline Refresh (id=2f6364e7d1f2b456797f692ac47d4b44): Total: 0.026 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 4d8ed83c34b164f0f83106a9e3d01cd3 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 01 Oxide shadow beds.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 4d8ed83c34b164f0f83106a9e3d01cd3' -> (Import Result ID: 'be0b0ca36b4bf0cd0c9da6b68924fe98') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=490ff6529b9bb7ad8b93eeb289724160 DependenciesID=4a558d620eb9e23213ad99dd0c0662b9 StaticDependenciesID=361fee1b18b8a77448fd22a79648d5cd 
+Asset Pipeline Refresh (id=d6f6a7a71d164493cbd1f3a8fa2bfbfe): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: e9822b7782e3442348a7df00f4b66732 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 02 Red sandstone.mat' with importer (NativeFormatImporter)
+Imported 'GUID: e9822b7782e3442348a7df00f4b66732' -> (Import Result ID: '6d0d52c0858ca9657015ce1875d33bfe') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=504b1e5016cd7a2a2352085d240d915f DependenciesID=55dab9ad9ea4376ec10187665a1112da StaticDependenciesID=6350e548343fa364eb56dc06d2bb8cf1 
+Asset Pipeline Refresh (id=a21952f2cf90848d5b4ba767df74b427): Total: 0.024 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 918fd06c2a4c44fcf94cd5719a5096e5 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 03 Pale sediment seams.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 918fd06c2a4c44fcf94cd5719a5096e5' -> (Import Result ID: '6dd125cc0a5773073763998e1bbf2358') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=f7243d637bb8263ccac471c6bf3171e7 DependenciesID=77c4688ea66169ebfbd57670e9b4070d StaticDependenciesID=732a14ec033107fbf898beb08bf8c89c 
+Asset Pipeline Refresh (id=3103ccc592add4e5cadb176a0d3d1aeb): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Worker ready: AssetImportWorkerHW0 0
+Importing 'GUID: eac5dbb1381b84b85a72b4da1db9ecfc - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 04 Sunworn sandstone caps.mat' with importer (NativeFormatImporter)
+Imported 'GUID: eac5dbb1381b84b85a72b4da1db9ecfc' -> (Import Result ID: 'c1b3b7e2ce529d5ba14c353b2d4c8cdb') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=58b48d74a21cc0907a6836db6d5ba1cd DependenciesID=cb5f7c7bf175a062f5d83900824376c2 StaticDependenciesID=6e39daf7db555b50d1b334e2e1ba0581 
+Refreshing native plugins compatible for Editor in 2.12 ms, found 9 plugins.
+Asset Pipeline Refresh (id=ccf81a6186e6742448af4dc15500280a): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: ed29c2d8293514d0787339f412d19de4 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 05 Deep basin silt.mat' with importer (NativeFormatImporter)
+Imported 'GUID: ed29c2d8293514d0787339f412d19de4' -> (Import Result ID: '5a7b42209a65bd30d20fa00315fc0df9') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=b8b96ab7f09799ddb2539427c175dfb5 DependenciesID=e19ec494d9855f26db71d1739c1f6581 StaticDependenciesID=42f71eaf14ef5c2425645239976783b6 
+Asset Pipeline Refresh (id=ebcfec540f1b54a8a92ab2f539ef028b): Total: 0.022 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: e76568d025b344eb1ba56f87a399bfd9 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 01 Warm shaded sandstone.mat' with importer (NativeFormatImporter)
+Imported 'GUID: e76568d025b344eb1ba56f87a399bfd9' -> (Import Result ID: '38198df868911dabb60c6e0e84dc0c49') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=a73d882a78f874b24d81c357ef3121bc DependenciesID=9b9f75f6934ce2a65974d8566b443e5d StaticDependenciesID=dd52cbdb1eba1929d879d797845562c7 
+Refreshing native plugins compatible for Editor in 2.23 ms, found 9 plugins.
+Asset Pipeline Refresh (id=de40a06eef95a44f5bb79b523d01c832): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 7d058eccdf3dd49ab9e263b207e0a5d2 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 02 Rust sediment.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 7d058eccdf3dd49ab9e263b207e0a5d2' -> (Import Result ID: '789a0fc35f7d5c828a23dd2a64bf2236') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=8367e8b29f8479c5d0c943dba8c8db81 DependenciesID=b93bd1fe977370bc26ee92fe494e38a8 StaticDependenciesID=c7bcd5acdc2ed0949f597b05d6c81d6c 
+Asset Pipeline Refresh (id=b5fc69b8b5ca7490b8bf67dc32d7b024): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: ee04314c8502445b7af57da39ad8535b - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 03 Dusty sandstone.mat' with importer (NativeFormatImporter)
+Imported 'GUID: ee04314c8502445b7af57da39ad8535b' -> (Import Result ID: '4f416f01beb717d6ee3ca0b2e81ddd4a') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=09db90578b7ed516a1c8aac6a8461461 DependenciesID=64238665c076dffa1d1f542f2fb86b2c StaticDependenciesID=e267ffa8a6aab1fcfaede1f1eb94615c 
+Asset Pipeline Refresh (id=da797364523c44a4cbd78027faddb877): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 5930ed0f2b80e43c7a32985844d67103 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 04 Pale exposed ledges.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 5930ed0f2b80e43c7a32985844d67103' -> (Import Result ID: 'b8a9dbc21f2cd09f478cd6db0a53cb1b') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=60aa7a03c6cd3ba25b44e0f9aa91505e DependenciesID=762555502f5db986753429389538847b StaticDependenciesID=658d4ec64d6f52a834d837d1391b71f8 
+Asset Pipeline Refresh (id=d59f97e4936cb46638b7951a970c9bd7): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 145624845e9dd4936a067d6d017e5b5f - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 05 Oxide seams.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 145624845e9dd4936a067d6d017e5b5f' -> (Import Result ID: '44e3dc64268942bb42b68075a9e99dba') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=33acb0bc918ff6a646b946b14e5e3393 DependenciesID=1c69ba954e03dd76ba5dd0f56761e5a3 StaticDependenciesID=f70d31f0e0ae87c4f7cbf6b2cbc13375 
+Asset Pipeline Refresh (id=a35dff6cccdda451db8df0ee3a4b3950): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 50e4170391e0c4cb8a3fa0a867165e1c - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 06 Weathered plateau caps.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 50e4170391e0c4cb8a3fa0a867165e1c' -> (Import Result ID: 'e08901db053d1a6e0341331fba3ad66c') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=850d9dede661ef42692c1cccf2e2a496 DependenciesID=a121a35e6031611eac26dd6219c5457e StaticDependenciesID=3c393582bb80e65dabd8053d6c8da6b8 
+Asset Pipeline Refresh (id=a58261650d4f44183ac971d21f445a7b): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 5e9003504b77442579be8c3a3d96dc61 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 5e9003504b77442579be8c3a3d96dc61' -> (Import Result ID: '7c2b3f41aeab8db03011625be8c7753d') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=9122b8d7ea21e270324f8afde36d3117 DependenciesID=7597b44706d888bc5f61204ff1a51ce0 StaticDependenciesID=ad4df5b290dd0a407bd42bd683978fcf 
+Asset Pipeline Refresh (id=ab41a69aa76244c86b62a8fbf3d66b01): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: b29f1b34a77774ec899e7567f677013b - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat' with importer (NativeFormatImporter)
+Imported 'GUID: b29f1b34a77774ec899e7567f677013b' -> (Import Result ID: 'ea529ee4f9c9e93dd43c7d5197130c0d') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=65a9478281c75f9c9da102d656ca2171 DependenciesID=7c77d5f779ad9ecb525e61a974e05a78 StaticDependenciesID=7713e9858e95c46bd99186088b7a78ee 
+Refreshing native plugins compatible for Editor in 2.23 ms, found 9 plugins.
+Asset Pipeline Refresh (id=6bedadc2fad4e4a7e84ab91fd03685b7): Total: 0.024 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 4d22bf8b0eb494730b55f6ec982a0d99 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata Canyon boundary.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 4d22bf8b0eb494730b55f6ec982a0d99' -> (Import Result ID: '9aaa63715d5c25e927bf4e94508453a9') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=b4870035e00c62fffd0ecee3e014e940 DependenciesID=be208279a607bff4519656dba47cb94e StaticDependenciesID=4b71b2c13db1ad5e0d10a47dd7d66168 
+Asset Pipeline Refresh (id=141b9f00592a54971b3f2e5457a6f7fa): Total: 0.024 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Opening scene 'Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity'
+Unloading 2 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity'
+	Deserialize:            16.423 ms
+	Integration:            157.569 ms
+	Integration of assets:  0.021 ms
+	Thread Wait Time:       0.003 ms
+	Total Operation Time:   174.016 ms
+Unloading 30 unused Assets / (41.9 KB). Loaded Objects now: 11362.
+Memory consumption went from 255.3 MB to 255.2 MB.
+Total: 5.069500 ms (FindLiveObjects: 0.305042 ms CreateObjectMapping: 0.056416 ms MarkObjects: 4.587750 ms  DeleteObjects: 0.029792 ms)
+
+Asset Pipeline Refresh (id=456a0b8820d4c400d884fd6deeca33cd): Total: 0.071 seconds - Initiated by RefreshV2(NoUpdateAssetOptions)
+Importing 'GUID: 8f60bea4f597d4eb9ba20369fcae4228 - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Reusable broken terrace 0.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 8f60bea4f597d4eb9ba20369fcae4228' -> (Import Result ID: '8989f8292fe7e142d8f5fccf0c115492') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=b60bced571bfcf6a9f7619f08c4407a2 DependenciesID=c91095d6806028defa1e32d1b5da7635 StaticDependenciesID=9cba2bb6f320d2fc82d7fdfb5ee361e6 
+Asset Pipeline Refresh (id=91573d28c5bad4d8a8af9fc214e95c38): Total: 0.024 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 25b484b79317e463c8cfa5e38e362779 - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Reusable broken terrace 1.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 25b484b79317e463c8cfa5e38e362779' -> (Import Result ID: '25741a388678f0aa233c893851637140') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=5c341a301193bbe51dcd5718ee9f4af5 DependenciesID=ec531092af13d7f6d916e28603c0b657 StaticDependenciesID=e046ae02a3717066176390b4e3fefb86 
+Asset Pipeline Refresh (id=ed096198c5d6142bd940caedc485c642): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 071483e7f95c74353b8a9030904a51ee - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Reusable broken terrace 2.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 071483e7f95c74353b8a9030904a51ee' -> (Import Result ID: '2e25e842ca4c138226a4563f33dcda69') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=38e56463b2fe02288f7a6d22e65023ab DependenciesID=21a5fe2629ae0148cc37d51438e20d74 StaticDependenciesID=aa03f022fc3e42fac2b2c973897653e5 
+Asset Pipeline Refresh (id=725a1ad87a1e14eefaf0629e647ed47e): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 7b8939d44017543b18a7fef769972a0a - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Reusable broken terrace 3.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 7b8939d44017543b18a7fef769972a0a' -> (Import Result ID: '2f80c68c49672ca8a36325bfb736355d') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=97ee9673c701d90d3e43205b39772124 DependenciesID=7a2248f7306caed34bf317c646fdb364 StaticDependenciesID=b1a5ad4ba943df3cd8afdcc52d20d15b 
+Asset Pipeline Refresh (id=61872a467930a46bf847de4db4ea1993): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 98581bc019b5e41a58d0ad975140f532 - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Reusable fractured local rock 0.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 98581bc019b5e41a58d0ad975140f532' -> (Import Result ID: '6fac5be6490f7a5ac07a57ad0bca3b21') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=88dd6ea8f4abe2cee7ad234152d6655f DependenciesID=d9ea2be385f8d20975bdd42cee47f454 StaticDependenciesID=183563c55efe5bcc8c41bb17d72ce5aa 
+Asset Pipeline Refresh (id=bade1141d02df4c5da4a0d1d3a8f9c3d): Total: 0.024 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 38bb082303c3441a99956500f8fc3f50 - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Reusable fractured local rock 1.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 38bb082303c3441a99956500f8fc3f50' -> (Import Result ID: '9b900ea1777edd3da3ed69338adba8aa') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=d0e3f12db0f59f31ade67df70703b234 DependenciesID=2bcf5134079f3056d09fa15057f8ec09 StaticDependenciesID=9309800594808c12732fdb2082712254 
+Asset Pipeline Refresh (id=4d7fa22cc4e13450280c70ae6214d296): Total: 0.024 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 70b7279122c9e4495b7ee466fb8ddfca - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Reusable fractured local rock 2.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 70b7279122c9e4495b7ee466fb8ddfca' -> (Import Result ID: '4d68e8cd479b7b660aeaa71d53185235') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=f518f56b9b85236e7d5868ebbae608d8 DependenciesID=cae5506e978a73b554dc79a477dd64b4 StaticDependenciesID=00585fba6c457a770881d8a8a067baaa 
+Asset Pipeline Refresh (id=19a3f4862b80d4cb395dd0882f49c92e): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: cd3a60c018b9649769575d950ad51311 - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Reusable fractured local rock 3.asset' with importer (NativeFormatImporter)
+Imported 'GUID: cd3a60c018b9649769575d950ad51311' -> (Import Result ID: '92422fa6124b9b7a1a5f1cffab131b4b') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=4a5cd71cbe719b62c3d61c35cf8bf911 DependenciesID=4001d24559f585b9e87db32516d819ab StaticDependenciesID=caad89310de770a8261127f47e83c7fb 
+Asset Pipeline Refresh (id=40da045167d144594a7134a18c3a2bae): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: a2c83ceca5e594143ad1e06113ef8c2d - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Reusable stepped buttress 0.asset' with importer (NativeFormatImporter)
+Imported 'GUID: a2c83ceca5e594143ad1e06113ef8c2d' -> (Import Result ID: 'f09676825c9a87e6ca26da4eb3aad7e4') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=f1ab8a6e518a3fe67b5e27a42834dd02 DependenciesID=dff8762282c631ceaac1179f5ee3794a StaticDependenciesID=186113952a09c04894c7916ea239f7cf 
+Asset Pipeline Refresh (id=dc262a8b0df6d434dba11429aabbe3cc): Total: 0.023 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: c8d46de88eb9b441984d53700f323c1f - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Reusable stepped buttress 1.asset' with importer (NativeFormatImporter)
+Imported 'GUID: c8d46de88eb9b441984d53700f323c1f' -> (Import Result ID: '8a189317a147e197e41b45be00a79b3f') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=3995ec0f1d1d27a7c0241a03721164c9 DependenciesID=6787cf2e5efa5ae721d70ef00d8badf8 StaticDependenciesID=e218350bdaad843be35e78bbd0ef619f 
+Asset Pipeline Refresh (id=9e9800d0adbd346faa81b589b893cfbd): Total: 0.022 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: aa23afb75caff495caf835950a67c444 - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Radar plateau and route shoulders.asset' with importer (NativeFormatImporter)
+Imported 'GUID: aa23afb75caff495caf835950a67c444' -> (Import Result ID: '27720d15b32e49de3c8038858f3399c6') in 0.002 seconds [static dependencies only]. Details - ImportResultOutputID=7b9638578741393b46a482f146b7537d DependenciesID=c006bd01a55a97b1cd124933558027d3 StaticDependenciesID=6961a2d22b97c152347723fe436b73a9 
+Refreshing native plugins compatible for Editor in 2.05 ms, found 9 plugins.
+Asset Pipeline Refresh (id=c54ceca6d255744c0bbec30cf59726b5): Total: 0.025 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 71446ba4ecbf04eff8ed05af1f08ebf3 - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/High artillery plateau.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 71446ba4ecbf04eff8ed05af1f08ebf3' -> (Import Result ID: '398529b688d47bb7f70397caebc36818') in 0.002 seconds [static dependencies only]. Details - ImportResultOutputID=20806309c5ff22b30880a6dc342e5c78 DependenciesID=2aa0a26c1bc27fa6f61ac0bea352a454 StaticDependenciesID=0a049d75338c261562def72f8a166651 
+Asset Pipeline Refresh (id=9c6e1ce8256bc418b9d02070ff5e0d2b): Total: 0.025 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 1ef340aa894db43ba8a1cb6e9b45b815 - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Lower terraced boundary ridges.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 1ef340aa894db43ba8a1cb6e9b45b815' -> (Import Result ID: '2673a2f611412817f1b711b48827d36e') in 0.002 seconds [static dependencies only]. Details - ImportResultOutputID=134ee43f1515e013556e0cd44da5beb4 DependenciesID=20ddd8caae8512767f1cc5394f77dcf4 StaticDependenciesID=fe2416347b2423fa3f5011c2e73fa7cc 
+Asset Pipeline Refresh (id=e9d8a629520814923b4072a8d662c19b): Total: 0.025 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 0138208930097431b9e542f33016c541 - Path: Assets/MapPrototype/SprintAssets/v14/Terrain/Distant open skyline.asset' with importer (NativeFormatImporter)
+Imported 'GUID: 0138208930097431b9e542f33016c541' -> (Import Result ID: 'fbde7cd4d8920974458612ec5e40a05b') in 0.002 seconds [static dependencies only]. Details - ImportResultOutputID=e496a9065bd3d63fd38a157e9a8124e7 DependenciesID=d9fcc1876f39b6a6c8d1405a00c6a14e StaticDependenciesID=d0b8b05a37dddfaf5603485e4d66ceaf 
+Asset Pipeline Refresh (id=13bec8703dc7f456fbf3aa1640d52ea6): Total: 0.024 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+Importing 'GUID: 50e4170391e0c4cb8a3fa0a867165e1c - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 06 Weathered plateau caps.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 50e4170391e0c4cb8a3fa0a867165e1c' -> (Import Result ID: 'ba5c24644597a7c2291bc09ad2ec328b') in 0.001 seconds [static dependencies only]. Details - ImportResultOutputID=850d9dede661ef42692c1cccf2e2a496 DependenciesID=e7e8cb7de29ea998204d34e96f69eac2 StaticDependenciesID=e3439550736bf9f33a6c13bfecb95c10 
+Importing 'GUID: 918fd06c2a4c44fcf94cd5719a5096e5 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 03 Pale sediment seams.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 918fd06c2a4c44fcf94cd5719a5096e5' -> (Import Result ID: 'efdba75ecae5402edd3288c6b4dbe325') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=f7243d637bb8263ccac471c6bf3171e7 DependenciesID=04a9bd926ab6d8da7f652d1c5039a271 StaticDependenciesID=51bf734ab19e6c789b644182176a02dd 
+Importing 'GUID: b29f1b34a77774ec899e7567f677013b - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata Sandstone ground.mat' with importer (NativeFormatImporter)
+Imported 'GUID: b29f1b34a77774ec899e7567f677013b' -> (Import Result ID: 'bb29784fb2eff28985b7a6677134c978') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=65a9478281c75f9c9da102d656ca2171 DependenciesID=9c92b5bb6ac8ef2988092f662010f223 StaticDependenciesID=6fa7656ff1f6f1b583c9c2ddca4f30eb 
+Importing 'GUID: 145624845e9dd4936a067d6d017e5b5f - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 05 Oxide seams.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 145624845e9dd4936a067d6d017e5b5f' -> (Import Result ID: '1718337a5500a4f0465c87cd972112f8') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=33acb0bc918ff6a646b946b14e5e3393 DependenciesID=4f76cfbd0128b2e9fd3b19a36846d009 StaticDependenciesID=27ba0171702a58560514213c2ed9d7d8 
+Importing 'GUID: e76568d025b344eb1ba56f87a399bfd9 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 01 Warm shaded sandstone.mat' with importer (NativeFormatImporter)
+Imported 'GUID: e76568d025b344eb1ba56f87a399bfd9' -> (Import Result ID: 'dc9dad17b0767c197a57717fc6c8bd17') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=a73d882a78f874b24d81c357ef3121bc DependenciesID=048363417189ccbc218bbeb34bb6fa66 StaticDependenciesID=4fb1aa27722d22ebf0d84911e4c36ca7 
+Importing 'GUID: 5930ed0f2b80e43c7a32985844d67103 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 04 Pale exposed ledges.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 5930ed0f2b80e43c7a32985844d67103' -> (Import Result ID: 'c865993c737b3e0be0b89df4a75e584c') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=60aa7a03c6cd3ba25b44e0f9aa91505e DependenciesID=beba2899af1731ad54a074d6d36a8fe1 StaticDependenciesID=005557345ccbc1c29f16f615babf8012 
+Importing 'GUID: e9822b7782e3442348a7df00f4b66732 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 02 Red sandstone.mat' with importer (NativeFormatImporter)
+Imported 'GUID: e9822b7782e3442348a7df00f4b66732' -> (Import Result ID: 'abcffa6f1a023d00652d542669976a78') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=504b1e5016cd7a2a2352085d240d915f DependenciesID=4745b9c3e16ff0f06135b67e1c3315c1 StaticDependenciesID=0a909325026b3749ad0f2f843c5c8945 
+Importing 'GUID: eac5dbb1381b84b85a72b4da1db9ecfc - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 04 Sunworn sandstone caps.mat' with importer (NativeFormatImporter)
+Imported 'GUID: eac5dbb1381b84b85a72b4da1db9ecfc' -> (Import Result ID: 'ea6ad0af5d7770b35bb0292bd8b19efc') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=58b48d74a21cc0907a6836db6d5ba1cd DependenciesID=06ed6df03241d3d079647fd796200fb1 StaticDependenciesID=1b125b705a8f0e1b830a99a4ed850097 
+Importing 'GUID: 4d22bf8b0eb494730b55f6ec982a0d99 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata Canyon boundary.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 4d22bf8b0eb494730b55f6ec982a0d99' -> (Import Result ID: '039b120261c84045b544d32917dee022') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=b4870035e00c62fffd0ecee3e014e940 DependenciesID=9410e14ff1496993fede7c4e6c2cc373 StaticDependenciesID=e5f91940396fcd1248cee631acc89738 
+Importing 'GUID: 4d8ed83c34b164f0f83106a9e3d01cd3 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 01 Oxide shadow beds.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 4d8ed83c34b164f0f83106a9e3d01cd3' -> (Import Result ID: 'd57f1c2c986904905dd4b840e4cb33d1') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=490ff6529b9bb7ad8b93eeb289724160 DependenciesID=81f14c14641cc77b0d91022ea4a32cd4 StaticDependenciesID=42eff7bfdf4857eab1e586212c735888 
+Importing 'GUID: 7d058eccdf3dd49ab9e263b207e0a5d2 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 02 Rust sediment.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 7d058eccdf3dd49ab9e263b207e0a5d2' -> (Import Result ID: 'fee2c2b8f3854f5e5004889697d6b876') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=8367e8b29f8479c5d0c943dba8c8db81 DependenciesID=1bec59d9b0413a47ade07b1550a11eef StaticDependenciesID=5e60c4c1b6981e94f54858de1ee109f4 
+Importing 'GUID: ed29c2d8293514d0787339f412d19de4 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 05 Deep basin silt.mat' with importer (NativeFormatImporter)
+Imported 'GUID: ed29c2d8293514d0787339f412d19de4' -> (Import Result ID: '4f7e520a6b32897bd32ad3e1d3585472') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=b8b96ab7f09799ddb2539427c175dfb5 DependenciesID=fec82039a5db81c845b09f444dfd9474 StaticDependenciesID=766d98d9f99426c1fcb9760ac949040f 
+Importing 'GUID: 5e9003504b77442579be8c3a3d96dc61 - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata Faceted canyon.mat' with importer (NativeFormatImporter)
+Imported 'GUID: 5e9003504b77442579be8c3a3d96dc61' -> (Import Result ID: '809c99aca9a2b998801e20844c353442') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=9122b8d7ea21e270324f8afde36d3117 DependenciesID=621ca895eea608af5e70139bc7cb076e StaticDependenciesID=dea234499771947babce385b02120eea 
+Importing 'GUID: ee04314c8502445b7af57da39ad8535b - Path: Assets/MapPrototype/SprintAssets/v14/V14 strata 03 Dusty sandstone.mat' with importer (NativeFormatImporter)
+Imported 'GUID: ee04314c8502445b7af57da39ad8535b' -> (Import Result ID: 'dfc33dd1dddc9b78923d5d1704ab6d10') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=09db90578b7ed516a1c8aac6a8461461 DependenciesID=09a230ffa2f7d11a2418d88c76d0b049 StaticDependenciesID=148116afb6a322baf0737e6c81716562 
+Asset Pipeline Refresh (id=f8ebdf129bf524f4083437ba55a34e43): Total: 0.030 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+VESPER_V14_TERRAIN {"owner":"SprintV14Terrain","localFormInstances":17,"nearFormInstances":20,"farFormInstances":14,"localTriangles":10160,"nearTriangles":14400,"farTriangles":10080,"renderers":4,"colliders":3,"materials":6,"textures":2,"radarTop":13.699999809265137,"artilleryTop":26.600000381469727,"note":"v14 regeneration of the v13 additive terrain with stepped flat-topped buttresses and planar broken caps. Keep v12 playable islands, basin and water. Hide old near/far backdrop renderers and disable old near collider in v13 only. All new collision uses the visible mesh; distant ridges have no collision. No headset performance claim."}
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+VesperBasin.Editor.SprintV14Terrain:Build (UnityEngine.Transform,string,UnityEngine.Material[]) (at Assets/MapPrototype/Editor/SprintV14Terrain.cs:104)
+VesperBasin.Editor.SprintV14:Build () (at Assets/MapPrototype/Editor/SprintV14.cs:65)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: Assets/MapPrototype/Editor/SprintV14Terrain.cs Line: 104)
+
+Importing 'GUID: 379e2375b0aaa4104b9c7f15ffd624c7 - Path: Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity' with importer (DefaultImporter)
+Imported 'GUID: 379e2375b0aaa4104b9c7f15ffd624c7' -> (Import Result ID: '6e8af915bd33843870b08903b21530b3') in 0.000 seconds [static dependencies only]. Details - ImportResultOutputID=c55067b342f3b7933b21a588ba3755f8 DependenciesID=3364fde7066919813efe5f78c57aa335 StaticDependenciesID=7508811e23f060a85e56dc1baa6eeb8d 
+Asset Pipeline Refresh (id=6d28574a500a841d9a12d570c55318a1): Total: 0.028 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+VESPER_V14_BUILT Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity swapped=41
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+VesperBasin.Editor.SprintV14:Build () (at Assets/MapPrototype/Editor/SprintV14.cs:83)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: Assets/MapPrototype/Editor/SprintV14.cs Line: 83)
+
+Opening scene 'Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity'
+Unloading 24 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity'
+	Deserialize:            14.751 ms
+	Integration:            6.791 ms
+	Integration of assets:  0.005 ms
+	Thread Wait Time:       0.002 ms
+	Total Operation Time:   21.548 ms
+Unloading 205 unused Assets / (357.8 KB). Loaded Objects now: 11396.
+Memory consumption went from 269.9 MB to 269.6 MB.
+Total: 5.164375 ms (FindLiveObjects: 0.315250 ms CreateObjectMapping: 0.060666 ms MarkObjects: 4.508834 ms  DeleteObjects: 0.185500 ms)
+
+Opening scene 'Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity'
+Unloading 1 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/MapPrototype/Scenes/VesperBasin_v13_RadarAscent.unity'
+	Deserialize:            14.742 ms
+	Integration:            7.388 ms
+	Integration of assets:  0.008 ms
+	Thread Wait Time:       0.008 ms
+	Total Operation Time:   22.146 ms
+Unloading 1 unused Assets / (2.4 KB). Loaded Objects now: 11396.
+Memory consumption went from 259.6 MB to 259.6 MB.
+Total: 5.057750 ms (FindLiveObjects: 0.316458 ms CreateObjectMapping: 0.063125 ms MarkObjects: 4.570750 ms  DeleteObjects: 0.014333 ms)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+GPU Resident Drawer created.
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:60)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Opening scene 'Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity'
+Unloading 7 Unused Serialized files (Serialized files now loaded: 0)
+Loaded scene 'Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity'
+	Deserialize:            14.923 ms
+	Integration:            22.146 ms
+	Integration of assets:  0.004 ms
+	Thread Wait Time:       -0.000 ms
+	Total Operation Time:   37.072 ms
+Unloading 23 unused Assets / (1.0 MB). Loaded Objects now: 11463.
+Memory consumption went from 275.0 MB to 274.0 MB.
+Total: 5.781875 ms (FindLiveObjects: 0.324500 ms CreateObjectMapping: 0.057000 ms MarkObjects: 5.093375 ms  DeleteObjects: 0.212375 ms)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:58)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+Your project uses a scriptable render pipeline. You can use Camera.stereoTargetEye only with the built-in renderer.
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:LogWarning (object)
+UnityEngine.Camera:set_stereoTargetEye (UnityEngine.StereoTargetEyeMask) (at /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs:292)
+VesperBasin.Editor.SprintV14Capture:Render (VesperBasin.Editor.SprintV14Capture/Receipt,string,string,UnityEngine.Camera,VesperBasin.Editor.SprintV13Capture/View,bool,int) (at Assets/MapPrototype/Editor/SprintV14Capture.cs:87)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:60)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: /Users/bokken/build/output/unity/unity/Runtime/Export/Camera/Camera.bindings.cs Line: 292)
+
+VESPER_V14_MATCHED_CAPTURES_PASS images=22
+UnityEngine.Debug:ExtractStackTraceNoAlloc (byte*,int,string)
+UnityEngine.StackTraceUtility:ExtractStackTrace () (at /Users/bokken/build/output/unity/unity/Runtime/Export/Scripting/StackTrace.cs:23)
+UnityEngine.DebugLogHandler:Internal_Log (UnityEngine.LogType,UnityEngine.LogOption,string,UnityEngine.Object)
+UnityEngine.DebugLogHandler:LogFormat (UnityEngine.LogType,UnityEngine.Object,string,object[])
+UnityEngine.Logger:Log (UnityEngine.LogType,object)
+UnityEngine.Debug:Log (object)
+VesperBasin.Editor.SprintV14Capture:Run () (at Assets/MapPrototype/Editor/SprintV14Capture.cs:69)
+VesperBasin.Editor.SprintV14:BuildAndCapture () (at Assets/MapPrototype/Editor/SprintV14.cs:44)
+
+(Filename: Assets/MapPrototype/Editor/SprintV14Capture.cs Line: 69)
+
+Thread 0x7126197000 may have been prematurely finalized
+Batchmode quit successfully invoked - shutting down!
+Killing ADB server in 0.039681 seconds.
+Importing 'GUID: 00000000000000009000000000000000 - Path: ProjectSettings/QualitySettings.asset' with importer (LibraryAssetImporter)
+Imported 'GUID: 00000000000000009000000000000000' -> (Import Result ID: '597666b1b1f463cc7e61f958283c351f') in 0.002 seconds [static dependencies only]. Details - ImportResultOutputID=2a108b3da874f726c62fbe5f12be4a8a DependenciesID=1c67c5430c16bcfb3399088436ace9c1 StaticDependenciesID=2a41202a459f33c7fed91c732bcb5c0a 
+Asset Pipeline Refresh (id=3399f3c65d9594bf2b15bce417de9a68): Total: 0.013 seconds - Initiated by StopAssetImportingV2(NoUpdateAssetOptions)
+GPU Resident Drawer disposed.
+Thread 0x177587000 may have been prematurely finalized
+Input System module state changed to: ShutdownInProgress.
+Input Polling Thread exited.
+Input System module state changed to: Shutdown.
+Thread 0x176887000 may have been prematurely finalized
+Thread 0x176913000 may have been prematurely finalized
+[Physics::Module] Cleanup current backend.
+[Physics::Module] Id: 0xf2b8ea05
+[Licensing::IpcConnector] LicenseClient-tim-notifications channel disconnected successfully.
+[Licensing::IpcConnector] LicenseClient-tim channel disconnected successfully.
+Shut down UDS service system complete
+Lingering sessions upon destruction of worker manager
+Unity Data Store service was successfully shut down
+UDS shutting down local client system
+AcceleratorClientConnectionCallback - disconnected - :0
+Cleanup mono
+CodeReloadManager destroyed
+debugger-agent: Unable to listen on 43
+Exiting batchmode successfully now!
+[ExitDontLaunchBugReporter] Exiting without the bug reporter. Application will exit with return code 0
+[Package Manager] Server process was shutdown

@@ -1,6 +1,7 @@
 import type { CurrentPlanningOptions } from "lib/rosterScheduleOptimizer/currentPlanningRead";
 import type { RosterPlanningExecution } from "lib/rosterScheduleOptimizer/executionAdapter";
 import type { PlanIntent, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+import { yahooPlanningReadBroker } from "./yahooPlanningReadBroker";
 
 type Execution = { promise: Promise<RosterPlanningExecution>; users: number; cancel: () => void };
 const generations = new WeakMap<PlanningSnapshot, Map<string, Execution>>();
@@ -23,24 +24,29 @@ export function requestRosterPlanning(snapshot: PlanningSnapshot, intent: PlanIn
       players: [...new Map([...previousView!.players, ...snapshot.players].map(row => [row.id, row])).values()],
       games: previousView!.games, evidence: { ...previousView!.evidence, ...snapshot.evidence } } : snapshot;
     const controller = new AbortController();
+    const broker = input.context?.provider === "yahoo" && options.yahooPrincipalId && options.allowRead !== false
+      ? yahooPlanningReadBroker(input.context, options.yahooPrincipalId, controller) : null;
     let worker: Worker | null = null;
+    controller.signal.addEventListener("abort", () => { worker?.terminate(); worker = null; }, { once: true });
     const promise = new Promise<RosterPlanningExecution>((resolve, reject) => {
       if (typeof Worker !== "undefined") {
         try {
           worker = new Worker(new URL("./rosterPlanning.worker.ts", import.meta.url));
           worker.onmessage = (event: MessageEvent<RosterPlanningExecution & { error?: string }>) => {
-            worker?.terminate(); worker = null;
+            worker?.terminate(); worker = null; broker?.close();
             if (!controller.signal.aborted) event.data.error ? reject(new Error(event.data.error)) : resolve(event.data);
           };
-          worker.onerror = () => { worker?.terminate(); worker = null; reject(new Error("Planning worker could not complete. Retry after reviewing the inputs.")); };
-          worker.postMessage({ snapshot: input, intent, options, candidateOptions: { requestedPlayerIds: ids } });
-        } catch (error) { reject(error); }
+          worker.onerror = () => { worker?.terminate(); worker = null; broker?.close(); reject(new Error("Planning worker could not complete. Retry after reviewing the inputs.")); };
+          const request = { snapshot: input, intent, options, candidateOptions: { requestedPlayerIds: ids } };
+          if (broker) worker.postMessage(request, [broker.port]); else worker.postMessage(request);
+        } catch (error) { worker?.terminate(); worker = null; broker?.close(); reject(error); }
       } else {
         import("lib/rosterScheduleOptimizer/executionAdapter").then(({ executeRosterPlanning }) =>
-          executeRosterPlanning(input, intent, options, { requestedPlayerIds: ids }, controller.signal)).then(resolve, reject);
+          executeRosterPlanning(input, intent, options, { requestedPlayerIds: ids }, controller.signal, broker?.port))
+          .then(resolve, reject).finally(() => broker?.close());
       }
     });
-    execution = { promise, users: 0, cancel: () => { controller.abort(); worker?.terminate(); worker = null; } };
+    execution = { promise, users: 0, cancel: () => { controller.abort(); broker?.close(); worker?.terminate(); worker = null; } };
     entries.set(key, execution);
   }
   execution.users++;

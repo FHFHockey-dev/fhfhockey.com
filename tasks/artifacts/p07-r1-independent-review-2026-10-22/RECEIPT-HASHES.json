@@ -1,0 +1,22 @@
+{
+  "p07IndependentBoundary.test.ts": "27e59bb1412a411052a81097c6469cdd8262441b85a9cc30194b3b49d893a65e",
+  "goalie-display.log": "4e2754108f04a8f1c70affeb16abac5baf8b42197f0aa410acee3b9d6364965a",
+  "BILLING-BOUNDARY-HASHES.json": "ada5290f44779d71769156e1e89b886f2afb6bfd2402e385da8d74c6a31976a8",
+  "PRIOR-STATS-PINS.json": "3b87f50841ab989573aeadc18f10a092e275c8648de9dc0f3f567769cca1b9bb",
+  "REPORT.md": "8022c9b17b23d8a101ed07dd9451b04dc62363c793ebf618a7b13dd4787591d6",
+  "COMMANDS.md": "e0c2b238a3466ad27c1054751cf19e55fc42d7e800063fc65559716cb50999f4",
+  "p07IndependentComponent.test.tsx": "2cf652dc27a5934edda3e9aa128ad1b08714be552c0f24c259aec30f3b2416b3",
+  "routes.log": "3f4ce5ded3ed0cf780f6a6be70ca5ec0b86969b1dbddf9c1cd63bbe15b18258f",
+  "EXTRA-BOUNDARY-HASHES.json": "c2fd31c2bb3c9a5fd89b0adc4290f0f1b4a60db95f5ae9050e5f13434957d406",
+  "component-harness-diagnostic.log": "2b8012aa4512c33f197427e43c3ba5b7ba7daa2273830a0cf3fa01a968a3e054",
+  "independent-boundary.log": "f6505b53268e3dc60eaa9041ec1be7d8345455fad5ab6838e69ebbb50bb61490",
+  "independent-review-expiry.log": "1ecb8e2462094dc32b9701fcff2eacc4c961a2b515598fb0a25b757ac4b56372",
+  "VERIFICATION.json": "b4539898d0933174de6e9d1af0b09e4c7620a48b449ea288a434c47dffb43122",
+  "END-HASHES.json": "768e18e709b03011458c9b5cd6d18415c04173f226b8b0298bf45b600fa8b33d",
+  "SCRATCH-PATH.txt": "dfbf01839546bc3eb384606f8e77be68042c581ef90abb3b5fbdf24ad6bd29b0",
+  "START-HASHES.json": "d4464e030ef68cbd21054f6d1299b7e650a7093d9d9eda57e5ffeef249b67e2f",
+  "SNAPSHOT-CHECK.json": "df552391256f9bb8dcce5add65d9d00caf9683919ce7f88f3a6b2855f2da30ff",
+  "focused.log": "9ee176a50d4a26d292c70be2cec8c9bc999d575ad40828ff87aca34779a0a9a2",
+  "independent-component.log": "dbfb321177ebce5130bbc54464e79b4b6e5b823666b2b6dc44c2b5e4dcbef807",
+  "p07ReviewFixture.ts": "e888b0923af2996b0fa8f53cd8b1dd263f8da3740de87573bff01dfb34bd84e8"
+}

@@ -1,0 +1,1000 @@
+
+> web@0.1.0 test
+> vitest --run __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts utils/fetchWigoPlayerStats.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > preserves a source failure as an error instead of an empty game log
+Workspaceing game log for Goals (Player 1, Season 20252026) from wgo_skater_stats.goals using date='date' and season='season_id'
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > uses numeric season_id and date for WGO game logs
+Workspaceing game log for Goals (Player 8478402, Season 20252026) from wgo_skater_stats.goals using date='date' and season='season_id'
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > uses numeric season_id and date for WGO game logs
+Workspaceed data for Goals: 1 rows
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > uses the numeric season column and date_scraped for NST game logs
+Workspaceing game log for ixG (Player 8478402, Season 20252026) from nst_gamelog_as_counts.ixg using date='date_scraped' and season='season'
+
+stdout | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > uses the numeric season column and date_scraped for NST game logs
+Workspaceed data for ixG: 1 rows
+
+ ❯ utils/fetchWigoPlayerStats.test.ts (25 tests | 4 failed) 12ms
+   ✓ shared points and consistency game log > deduplicates identical game identities and preserves missing activity fields 1ms
+   ✓ shared points and consistency game log > surfaces conflicting duplicates instead of choosing a score 3ms
+   ✓ shared points and consistency game log > rejects unknown game identities rather than silently merging them 0ms
+   ✓ buildPlayerAggregatedStats > normalizes aggregate values using the shared stat contract 1ms
+   ✓ buildPlayerAggregatedStats > derives per-60 values from counts and ATOI when the rates table is missing 0ms
+   ✓ buildPlayerAggregatedStats > does not let a rates override revive recent values with missing denominators 0ms
+   ✓ buildPlayerAggregatedStats > keeps unavailable recent source rates unavailable despite an override (null) 0ms
+   ✓ buildPlayerAggregatedStats > keeps unavailable recent source rates unavailable despite an override (undefined) 0ms
+   ✓ buildPlayerAggregatedStats > keeps unavailable recent source rates unavailable despite an override (NaN) 0ms
+   ✓ buildPlayerAggregatedStats > keeps unavailable recent source rates unavailable despite an override (0) 0ms
+   ✓ buildPlayerAggregatedStats > keeps unavailable recent source rates unavailable despite an override (3) 0ms
+   × buildPlayerAggregatedStats > keeps supported recent rates authoritative over legacy fields (null) 1ms
+     → expected null to be 6 // Object.is equality
+   ✓ buildPlayerAggregatedStats > keeps supported recent rates authoritative over legacy fields (undefined) 0ms
+   × buildPlayerAggregatedStats > keeps supported recent rates authoritative over legacy fields (NaN) 0ms
+     → expected null to be 6 // Object.is equality
+   × buildPlayerAggregatedStats > keeps supported recent rates authoritative over legacy fields (0) 1ms
+     → expected +0 to be 6 // Object.is equality
+   × buildPlayerAggregatedStats > keeps supported recent rates authoritative over legacy fields (999) 0ms
+     → expected 999 to be 6 // Object.is equality
+   ✓ buildPlayerAggregatedStats > uses totals fallback for missing standard count values 0ms
+   ✓ fetchPlayerGameLogForStat query contract > preserves a source failure as an error instead of an empty game log 0ms
+   ✓ fetchPlayerGameLogForStat query contract > uses numeric season_id and date for WGO game logs 0ms
+   ✓ fetchPlayerGameLogForStat query contract > uses the numeric season column and date_scraped for NST game logs 0ms
+   ✓ fetchPaginatedData query contract > uses stable player ordering through every page 0ms
+   ✓ per-game totals units > converts the source fraction 0.005 to percentage points 0.5 0ms
+   ✓ per-game totals units > converts the source fraction 0 to percentage points 0 0ms
+   ✓ per-game totals units > converts the source fraction 1 to percentage points 100 0ms
+   ✓ per-game totals units > converts the source fraction null to percentage points null 0ms
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > returns a structured dependency error instead of leaking html
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with complete source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with complete source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with complete source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with complete source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with complete source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with complete source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with absent source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with absent source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with absent source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with absent source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with absent source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with absent source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with partial source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with partial source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with partial source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with partial source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with partial source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with partial source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with zero source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with zero source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with zero source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with zero source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with zero source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with zero source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong season source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong season source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong season source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong season source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong season source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong season source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing season source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing season source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing season source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing season source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing season source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing season source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing NHL season source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing NHL season source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing NHL season source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing NHL season source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing NHL season source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing NHL season source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong date source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong date source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong date source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong date source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong date source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong date source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with cross-season source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with cross-season source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with cross-season source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with cross-season source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with cross-season source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with cross-season source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing goals source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing goals source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing goals source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing goals source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing goals source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing goals source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite goals source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite goals source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite goals source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite goals source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite goals source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite goals source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing points source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing points source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing points source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing points source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing points source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing points source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing shots source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing shots source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing shots source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing shots source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing shots source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing shots source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing primary assists source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing primary assists source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing primary assists source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing primary assists source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing primary assists source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing primary assists source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP points source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP points source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP points source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP points source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP points source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP points source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP percentage source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP percentage source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP percentage source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP percentage source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP percentage source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP percentage source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with zero counts source coverage for every timeframe
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with zero counts source coverage for every timeframe
+Current Season: 20252026, Last Season: 20242025, 3YA Seasons: 20242025, 20232024, 20222023
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with zero counts source coverage for every timeframe
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with zero counts source coverage for every timeframe
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with zero counts source coverage for every timeframe
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > writes recent rates with zero counts source coverage for every timeframe
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: false)
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: false)
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: false)
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: false)
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: false)
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: false)
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: true)
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: true)
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: true)
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: true)
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: true)
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: true)
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats_totals read failure
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats_totals read failure
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats_totals read failure
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats_totals read failure
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats_totals read failure
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats_totals read failure
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_individual_counts read failure
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_individual_counts read failure
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_individual_counts read failure
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_individual_counts read failure
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_individual_counts read failure
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_individual_counts read failure
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_on_ice_counts read failure
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_on_ice_counts read failure
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_on_ice_counts read failure
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_on_ice_counts read failure
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_on_ice_counts read failure
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_on_ice_counts read failure
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats read failure
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats read failure
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats read failure
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats read failure
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats read failure
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts read failure
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts read failure
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts read failure
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts read failure
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts read failure
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts read failure
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts_oi read failure
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts_oi read failure
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts_oi read failure
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts_oi read failure
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts_oi read failure
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts_oi read failure
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > excludes nonappearances without dropping valid zero-count games
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > excludes nonappearances without dropping valid zero-count games
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > excludes nonappearances without dropping valid zero-count games
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > excludes nonappearances without dropping valid zero-count games
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > excludes nonappearances without dropping valid zero-count games
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > excludes nonappearances without dropping valid zero-count games
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (duplicate)
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (duplicate)
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (duplicate)
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (duplicate)
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (duplicate)
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (duplicate)
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (missing identity)
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (missing identity)
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (missing identity)
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (missing identity)
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (missing identity)
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (missing identity)
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (wrong season)
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (wrong season)
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (wrong season)
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (wrong season)
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (wrong season)
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (wrong season)
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (playoff identity)
+Starting player stats update (v9 - Separate Recent Table - Full Code)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (playoff identity)
+Current Season: 20262027, Last Season: 20252026, 3YA Seasons: 20252026, 20242025, 20232024
+Fetching relevant player IDs from 'players' table with pagination...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (playoff identity)
+Workspaceed 1 player ID rows from 'players', found 1 unique non-goalie IDs.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (playoff identity)
+Obtained 1 unique player IDs to process.
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (playoff identity)
+Upserting final batches (1 career, 1 recent)...
+
+stdout | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (playoff identity)
+Final wigo_career batch upsert successful.
+Final wigo_recent batch upsert successful.
+Finished player stats update in 0.00s.
+
+ ❯ __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts (33 tests | 13 failed) 25ms
+   ✓ /api/v1/db/calculate-wigo-stats route > returns a structured dependency error instead of leaking html 4ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with complete source coverage for every timeframe 2ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with absent source coverage for every timeframe 1ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with partial source coverage for every timeframe 1ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite source coverage for every timeframe 0ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with zero source coverage for every timeframe 1ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP source coverage for every timeframe 0ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong season source coverage for every timeframe 0ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with missing season source coverage for every timeframe 0ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with missing NHL season source coverage for every timeframe 0ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with wrong date source coverage for every timeframe 0ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with cross-season source coverage for every timeframe 0ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with missing goals source coverage for every timeframe 0ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with nonfinite goals source coverage for every timeframe 2ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with missing points source coverage for every timeframe 1ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with missing shots source coverage for every timeframe 0ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with missing primary assists source coverage for every timeframe 0ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP points source coverage for every timeframe 0ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with missing PP percentage source coverage for every timeframe 0ms
+   ✓ /api/v1/db/calculate-wigo-stats route > writes recent rates with zero counts source coverage for every timeframe 0ms
+   × /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: false) 2ms
+     → expected 2.3999999999999995 to be 2.4 // Object.is equality
+   × /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: true) 2ms
+     → expected [ [ 'select', …(1) ], …(2) ] to deep equally contain [ 'in', 'season', …(1) ]
+   × /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats_totals read failure 0ms
+     → expected 200 to be 500 // Object.is equality
+   × /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_individual_counts read failure 0ms
+     → expected 200 to be 500 // Object.is equality
+   × /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_on_ice_counts read failure 0ms
+     → expected 200 to be 500 // Object.is equality
+   × /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats read failure 0ms
+     → expected 200 to be 500 // Object.is equality
+   × /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts read failure 0ms
+     → expected 200 to be 500 // Object.is equality
+   × /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts_oi read failure 0ms
+     → expected 200 to be 500 // Object.is equality
+   × /api/v1/db/calculate-wigo-stats route > excludes nonappearances without dropping valid zero-count games 1ms
+     → expected { Object (player_id, l5_gp, ...) } to match object { l5_gp: 1, l5_sog: +0, …(2) }
+(106 matching properties omitted from actual)
+   × /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (duplicate) 0ms
+     → expected 200 to be 500 // Object.is equality
+   × /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (missing identity) 0ms
+     → expected 200 to be 500 // Object.is equality
+   × /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (wrong season) 1ms
+     → expected 200 to be 500 // Object.is equality
+   × /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (playoff identity) 0ms
+     → expected 200 to be 500 // Object.is equality
+
+ Test Files  2 failed (2)
+      Tests  17 failed | 41 passed (58)
+   Start at  12:35:10
+   Duration  594ms (transform 128ms, setup 6ms, collect 184ms, tests 37ms, environment 557ms, prepare 72ms)
+
+(node:51292) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:51291) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | utils/fetchWigoPlayerStats.test.ts > shared points and consistency game log > surfaces conflicting duplicates instead of choosing a score
+Unexpected error in fetchPlayerGameLogConsistencyData for player 1, season 20252026: Error: Game log contains conflicting rows for the same game.
+    at Module.fetchPlayerGameLogConsistencyData (/Users/tim/Code/fhfhockey.com/web/utils/fetchWigoPlayerStats.ts:920:15)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at /Users/tim/Code/fhfhockey.com/web/utils/fetchWigoPlayerStats.test.ts:42:5
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+stderr | utils/fetchWigoPlayerStats.test.ts > shared points and consistency game log > rejects unknown game identities rather than silently merging them
+Unexpected error in fetchPlayerGameLogConsistencyData for player 1, season 20252026: Error: Game log contains a missing or invalid game identity.
+    at Module.fetchPlayerGameLogConsistencyData (/Users/tim/Code/fhfhockey.com/web/utils/fetchWigoPlayerStats.ts:915:15)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at /Users/tim/Code/fhfhockey.com/web/utils/fetchWigoPlayerStats.test.ts:47:5
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:752:20
+
+stderr | utils/fetchWigoPlayerStats.test.ts > fetchPlayerGameLogForStat query contract > preserves a source failure as an error instead of an empty game log
+Supabase error fetching game log for Goals (Player 1, Season 20252026): source unavailable
+
+stderr | __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > returns a structured dependency error instead of leaking html
+Critical error during player stats update: Error: <!DOCTYPE html><html><body>Error code 522 from supabase.co</body></html>
+    at /Users/tim/Code/fhfhockey.com/web/__tests__/pages/api/v1/db/calculate-wigo-stats.test.ts:120:7
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:155:11
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:752:26
+    at file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:1863:10)
+    at runTest (file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:1574:12)
+    at processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at runSuite (file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+    at runSuite (file:///Users/tim/Code/fhfhockey.com/web/node_modules/@vitest/runner/dist/chunk-hooks.js:1729:8)
+
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 17 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  utils/fetchWigoPlayerStats.test.ts > buildPlayerAggregatedStats > keeps supported recent rates authoritative over legacy fields (null)
+ FAIL  utils/fetchWigoPlayerStats.test.ts > buildPlayerAggregatedStats > keeps supported recent rates authoritative over legacy fields (NaN)
+AssertionError: expected null to be 6 // Object.is equality
+
+- Expected: 
+6
+
++ Received: 
+null
+
+ ❯ utils/fetchWigoPlayerStats.test.ts:227:66
+    225|     const rows = buildPlayerAggregatedStats({ careerData: null, recent…
+    226|     for (const column of ["L5", "L10", "L20"] as const) {
+    227|       expect(rows.find(row => row.label === "PTS/60")?.[column]).toBe(…
+       |                                                                  ^
+    228|       expect(rows.find(row => row.label === "G/60")?.[column]).toBe(0);
+    229|       expect(rows.find(row => row.label === "PPP/60")?.[column]).toBe(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/17]⎯
+
+ FAIL  utils/fetchWigoPlayerStats.test.ts > buildPlayerAggregatedStats > keeps supported recent rates authoritative over legacy fields (0)
+AssertionError: expected +0 to be 6 // Object.is equality
+
+- Expected
++ Received
+
+- 6
++ 0
+
+ ❯ utils/fetchWigoPlayerStats.test.ts:227:66
+    225|     const rows = buildPlayerAggregatedStats({ careerData: null, recent…
+    226|     for (const column of ["L5", "L10", "L20"] as const) {
+    227|       expect(rows.find(row => row.label === "PTS/60")?.[column]).toBe(…
+       |                                                                  ^
+    228|       expect(rows.find(row => row.label === "G/60")?.[column]).toBe(0);
+    229|       expect(rows.find(row => row.label === "PPP/60")?.[column]).toBe(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/17]⎯
+
+ FAIL  utils/fetchWigoPlayerStats.test.ts > buildPlayerAggregatedStats > keeps supported recent rates authoritative over legacy fields (999)
+AssertionError: expected 999 to be 6 // Object.is equality
+
+- Expected
++ Received
+
+- 6
++ 999
+
+ ❯ utils/fetchWigoPlayerStats.test.ts:227:66
+    225|     const rows = buildPlayerAggregatedStats({ careerData: null, recent…
+    226|     for (const column of ["L5", "L10", "L20"] as const) {
+    227|       expect(rows.find(row => row.label === "PTS/60")?.[column]).toBe(…
+       |                                                                  ^
+    228|       expect(rows.find(row => row.label === "G/60")?.[column]).toBe(0);
+    229|       expect(rows.find(row => row.label === "PPP/60")?.[column]).toBe(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/17]⎯
+
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: false)
+AssertionError: expected 2.3999999999999995 to be 2.4 // Object.is equality
+
+- Expected
++ Received
+
+- 2.4
++ 2.3999999999999995
+
+ ❯ __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts:261:42
+    259|       expect(recent[`l${n}_atoi`]).toBe(missingGame ? null : 20);
+    260|       expect(recent[`l${n}_sog_per_60`]).toBe(missingGame ? null : 12);
+    261|       expect(recent[`l${n}_ixg_per_60`]).toBe(missingGame ? null : 2.4…
+       |                                          ^
+    262|     }
+    263|     for (const table of ["nst_gamelog_as_counts", "nst_gamelog_as_coun…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/17]⎯
+
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > uses the NHL frame despite intervening NST postseason rows (missing October 5: true)
+AssertionError: expected [ [ 'select', …(1) ], …(2) ] to deep equally contain [ 'in', 'season', …(1) ]
+
+- Expected
++ Received
+
+  [
+-   "in",
+-   "season",
++   [
++     "select",
++     "date_scraped, season, toi, ixg, icf, iscfs, hdcf",
++   ],
++   [
++     "eq",
++     "player_id",
++     8476453,
++   ],
+    [
+-     20262027,
+-     20252026,
++     "limit",
++     20,
+    ],
+  ]
+
+ ❯ __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts:265:27
+    263|     for (const table of ["nst_gamelog_as_counts", "nst_gamelog_as_coun…
+    264|       const trace = traces.find(trace => trace.table === table)!;
+    265|       expect(trace.calls).toContainEqual(["in", "season", [20262027, 2…
+       |                           ^
+    266|       expect(trace.calls).toContainEqual(["in", "date_scraped", nhl.ma…
+    267|       expect(trace.calls.some(call => call[0] === "limit")).toBe(false…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/17]⎯
+
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats_totals read failure
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_individual_counts read failure
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_seasonal_on_ice_counts read failure
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a wgo_skater_stats read failure
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts read failure
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > does not publish aggregates after a nst_gamelog_as_counts_oi read failure
+AssertionError: expected 200 to be 500 // Object.is equality
+
+- Expected
++ Received
+
+- 500
++ 200
+
+ ❯ __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts:276:28
+    274|     const { writes } = installRecentFrameMock([game], [game], [game], …
+    275|     const res = await runRecentFixture();
+    276|     expect(res.statusCode).toBe(500);
+       |                            ^
+    277|     expect(res.body.success).toBe(false);
+    278|     expect(res.body.message).toContain(failedTable);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/17]⎯
+
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > excludes nonappearances without dropping valid zero-count games
+AssertionError: expected { Object (player_id, l5_gp, ...) } to match object { l5_gp: 1, l5_sog: +0, …(2) }
+(106 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "l5_atoi": 20,
+-   "l5_gp": 1,
+-   "l5_sog": 0,
+-   "l5_sog_per_60": 0,
++   "l5_atoi": null,
++   "l5_gp": 2,
++   "l5_sog": 4,
++   "l5_sog_per_60": null,
+  }
+
+ ❯ __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts:288:35
+    286|     const { writes } = installRecentFrameMock([scratch, game], [game]);
+    287|     expect((await runRecentFixture()).statusCode).toBe(200);
+    288|     expect(writes.wigo_recent[0]).toMatchObject({ l5_gp: 1, l5_sog: 0,…
+       |                                   ^
+    289|   });
+    290| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/17]⎯
+
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (duplicate)
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (missing identity)
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (wrong season)
+ FAIL  __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts > /api/v1/db/calculate-wigo-stats route > rejects an invalid NHL appearance frame (playoff identity)
+AssertionError: expected 200 to be 500 // Object.is equality
+
+- Expected
++ Received
+
+- 500
++ 200
+
+ ❯ __tests__/pages/api/v1/db/calculate-wigo-stats.test.ts:299:51
+    297|       : { ...game, date: "2026-10-22" };
+    298|     const { writes } = installRecentFrameMock(problem === "duplicate" …
+    299|     expect((await runRecentFixture()).statusCode).toBe(500);
+       |                                                   ^
+    300|     expect(writes).toEqual({});
+    301|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/17]⎯
+

@@ -1,0 +1,12 @@
+{
+  "extends": "../../../../web/tsconfig.json",
+  "include": [
+    "../../../../web/next-bootstrap.d.ts",
+    "../../../../web/lib/forge-testing-grounds/TestingGroundsOwnerGate.tsx",
+    "../../../../web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx"
+  ],
+  "exclude": [],
+  "compilerOptions": {
+    "incremental": false
+  }
+}

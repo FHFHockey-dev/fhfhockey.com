@@ -1,0 +1,76 @@
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf/web
+
+(node:51284) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/schedule.test.ts (33 tests) 81ms
+(node:51286) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/db/cron-audit-wrappers.test.ts (41 tests) 94ms
+(node:51293) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/cron/withCronJobAudit.test.ts (27 tests) 60ms
+(node:51295) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx (30 tests) 281ms
+(node:51297) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/players.test.ts (12 tests) 86ms
+(node:51299) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | __tests__/pages/api/internal/yahoo-live-draft.test.ts > Yahoo production scheduler > runs bounded batches across the minute boundary
+yahoo_live_draft_scheduled_cycle { cycles: 65, attempted: 65, succeeded: 65, failed: 0 }
+
+stdout | __tests__/pages/api/internal/yahoo-live-draft.test.ts > Yahoo production scheduler > records a partial batch as a failed run with its true counters
+yahoo_live_draft_scheduled_cycle { cycles: 65, attempted: 195, succeeded: 130, failed: 65 }
+
+ ✓ __tests__/pages/api/internal/yahoo-live-draft.test.ts (17 tests) 13ms
+(node:51301) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/tiers.test.ts (8 tests) 45ms
+(node:51303) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/matchups.test.ts (9 tests) 63ms
+(node:51305) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/mondayGrid.test.ts (9 tests) 37ms
+(node:51307) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/playerSources.test.ts (5 tests) 4ms
+(node:51309) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/access.test.ts (24 tests) 5ms
+(node:51311) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/trends.test.ts (6 tests) 172ms
+(node:51313) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/editionFetch.test.ts (15 tests) 219ms
+(node:51315) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stderr | lib/cron/nhlOffSeason.test.ts > withNhlOffSeasonSkip > runs the handler when the window is 'unknown'
+[nhl-off-season] season window unavailable; running job { reason: 'lookup failed' }
+
+stderr | lib/cron/nhlOffSeason.test.ts > withNhlOffSeasonSkip > marks the response as seasonal game data on skip, ignore and run paths alone
+[nhl-off-season] season window unavailable; running job { reason: 'lookup failed' }
+
+ ✓ lib/cron/nhlOffSeason.test.ts (11 tests) 14ms
+(node:51317) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/SocialShare/SocialShare.test.tsx (3 tests) 171ms
+(node:51319) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/score.test.ts (4 tests) 2ms
+(node:51321) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/SocialShare/SocialShareAccessGate.test.tsx (10 tests) 50ms
+(node:51323) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ lib/socialShare/teamRates.test.ts (3 tests) 3ms
+ ✓ __tests__/pages/api/v1/db/update-drafted-prospects.test.ts (14 tests) 8ms
+
+ Test Files  19 passed (19)
+      Tests  281 passed (281)
+   Start at  19:30:15
+   Duration  8.26s (transform 477ms, setup 36ms, collect 1.73s, tests 1.41s, environment 2.77s, prepare 593ms)
+

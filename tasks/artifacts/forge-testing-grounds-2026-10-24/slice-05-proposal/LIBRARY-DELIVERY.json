@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-24",
+  "status": "created",
+  "library_file_id": "libfile_cc38ec891b2481918b7a88ecd0c24341",
+  "file_id": "file_00000000d41481fd8a1a40aac3162ff1",
+  "file_name": "preview(1).html",
+  "library_path": "/preview(1).html",
+  "version": 0,
+  "mime_type": "text/html",
+  "size_bytes": 236107,
+  "local_path": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/forge-testing-grounds-2026-10-24/slice-04/preview.html",
+  "local_identity_metadata_applied": true,
+  "frozen_bytes_unchanged": true,
+  "download_url": "https://chatgpt.com/api/library/files/libfile_cc38ec891b2481918b7a88ecd0c24341/download",
+  "scope": "Frozen slice04 synthetic self-contained interactive HTML only; no private data, external assets or active launch. No sharing permission changed.",
+  "validationReused": "Existing8/8 DOM checks, TS/lint, actual generated HTML jsdom execution with blocked/sealed changes and zero fetch/external resources/runtime errors. No browser visual or Library inline-preview claim.",
+  "helperDirectory": "/tmp/forge-testing-library-wQhSe902",
+  "helperSource": "Current Library skill scripts/library_file_transfer.py and library_hosted_apps.py",
+  "helperOutcome": "apply-xattrs exit0; byte hash unchanged"
+}

@@ -1,0 +1,39 @@
+{
+  "at": "2026-10-24T16:30:28.159103+00:00",
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "11cdb7f985621231a80b803429a34d0aa8a111db66c8f697581b7f7601361fea",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "01e4e3b089a79424f919a9b5cb8259c77bd682bc7ed5964531250a642f54c4de",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "09f13408bdf961f813c3680de4d3fa89a7a7df4ab13b1035665e6657fd4dcda3"
+  },
+  "ids": 206,
+  "evidence_entries": 925,
+  "changed_ids": [
+    "PIPE-JOB79",
+    "SUSTAINABILITY-NATURAL",
+    "CRON-SCHEDULE-DISPOSITION",
+    "PIPE-NATURAL",
+    "BILLING-CANCEL-RELOAD",
+    "SITE-FORGE-TESTING-GROUNDS",
+    "REPO-DOCUMENTATION"
+  ],
+  "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+  "library_version": 6,
+  "metadata_helper_exit": 0,
+  "metadata_readback": [
+    {
+      "name": "user.library-file-version",
+      "exit_code": 0,
+      "value_matches": true
+    }
+  ],
+  "canonical_bytes_unchanged_by_library": true,
+  "source_coverage": {
+    "partially-inspected": 6,
+    "content-reviewed": 9
+  },
+  "next_cursor": "tasks/TASKS/dead-code-cleanup/burn-down-plan.md",
+  "remaining_base_queue": 12171,
+  "whole_tree_content_audit_complete": false,
+  "pending_actions": "Next coherent documentary batch and segment06 owner-steer reconciliation. No running/uncertain canonical or Library operation.",
+  "resolved_tool_issue": "Python os.listxattr unavailable; read-only /usr/bin/xattr verification succeeded. Initial verification attempt stopped before output writes; no uncertain mutation."
+}

@@ -44,3 +44,40 @@ need a port.
 Review each report and diff, integrate (Lane B's P(over) consumes Lane C's distributions; Lane A's
 moneyline de-vig is to be deduped with Lane B's devig.ts), run the checks, commit with explicit
 paths, then ask TJ about releases.
+
+## Release A (10-22 PM)
+- Candidate `9d789c372` on master `27751818b`. It holds task 1 `96e381ee0` plus its ledger prerequisite from the 10-22 sync (7 files: ledger, test, scoreboard, settle and snapshot routes, settle test) and 11.3 `857428050` (10 files).
+- Deferred to release B: P07 R2 `2708fd428`, task 10 `78a445a27` and fixtures `1a9c48975`. Their import closure needs unreleased model code (projections calculators, weights, gameRevisions) and the native forecast stack.
+- Gate: tsc 0, eslint 0, CSS pure OK. Vitest has 13 failures, all in master's 6 baseline files.
+- Behaviour note: from the next settle cron (11:00 UTC), missing players settle as unknown instead of DNP zeros, and unsupported earlier settlements are cleared.
+- The RSO "16 players unprojected" ticket went to rso-lane.
+- Next: TJ approves the push, then push, Vercel watch, 5-GET smoke, sync octoberBranch with TJ.
+- Release A shipped: master `9d789c372` (`dpl_J8nEZopFmW7s3XTYGK4SP9uktzQn` READY; the other 3 projects CANCELED); smoke 5/5 (4×200, jobs 401).
+- octoberBranch synced as `67deb1e07` (ours merge, tree unchanged) and pushed with TJ's approval at 19:00Z. All 4 projects have previews disabled; after a 10-minute watch, 0 builds, 0 gh statuses and 0 deployments.
+- Next: release B after the model-lane backtest verdict. The RSO "unprojected" ticket is with rso-lane.
+
+## Release B (10-22 evening)
+- TJ chose "Build B, adapt 2 tests". Candidate `40b17b572` on `9d789c372`: the model lane's prototype patch (sha256 b5eb9939…, 37 files) plus the two adapted PPP expectations in `qualify-native-players-offline.test.ts`. PPP is now a blocked `present_native_diagnostic`.
+- Gate: tsc 0; ESLint 0 on the 36 changed TS files. Vitest: 9967 passed, 1 failed (master's `supportedBaselineMigration` baseline). release B fixes the other master baseline files.
+- Gotcha: the qualify test runs `git rev-parse HEAD`, so the export needs its own commit. Never set GIT_DIR.
+- Gotcha: zsh `$T:web/...` applies a history modifier, so write `${T}:web/...`. zsh also doesn't word-split `$FILES`.
+- RSO P07, task 10 and the fixtures are still excluded: their closure needs 7 modules that exist only on octoberBranch.
+- Next: TJ approves the push, then push, watch, smoke, sync.
+- Release B shipped: master `40b17b572` (`dpl_AcigmB8dqZQZLEcyd6imHxpscd6P` READY; the other 3 projects CANCELED); smoke 5/5.
+- octoberBranch synced as `45839f872` and pushed with TJ's approval at 19:56Z. After a 10-minute watch, 0 builds, 0 gh statuses and 0 deployments.
+- Still open: the RSO stack release (P07, task 10, fixtures, plus the unreleased octoberBranch RSO/native stack), and the rso-lane "unprojected" ticket.
+
+## Release C (tasks 3+4)
+- The model lane handed off tasks 3+4 with a relayed TJ approval. I build and gate locally, but push only after TJ approves directly in a pop-up.
+- Candidate `d4c2632d3` on `40b17b572`: patch sha256 9fc1f7af…, 8 files. projection-weights differs from octoberBranch only in line order.
+- Gate: tsc 0, ESLint 0. Vitest: 9967 passed, 1 failed (master's `supportedBaselineMigration` baseline).
+- Release C shipped: master `d4c2632d3`, `dpl_G2REeofNhSMFgHLSDczeD1MS9vMb` READY; smoke 5/5. TJ approved the push directly in a pop-up.
+- octoberBranch synced as `782805fee` and pushed at 22:32Z with TJ's approval. That push includes the 3 RSO commits; the 10-minute no-build watch result is recorded above.
+- Model lane final report: task 9 not cleared (`5c6cadc84`, artifacts only). k re-fit hybrid committed as `0dd535e0d` (projection-weights + tests); unreleased, rides with the next model release. Task 5 deferred by TJ (needs native goal-accounting contract ES+PP+PK).
+- Open gaps: PPP +17% (forward PP goals per shot 0.20 vs 0.17), goal compression from the small-sample shrink cap of 0.76, and ES dilution over non-dressed skaters.
+
+## 10-23 unfinished-work review for the Codex sprint
+- Ran six read-only sweeps: register, FORGE, RSO/billing, other products, git state, diaries. Wrote `tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-unfinished-work-review.md`, left uncommitted because the Codex release lane owns git refs today.
+- Codex was already sprinting (release/integration lane, P07 correction lease on currentPlanningRead.ts). Its LEDGER.md predates Releases A/B/C.
+- The top TJ gates: D4 89/90 before 10-30, billing SQL relocation, goalie marks (badge vs server), paywall exposure, FORGE gate approvals.
+- TJ approved the RSO + FORGE hand-over to Codex. Wrote `tasks/artifacts/cross-platform/2026-10-23-claude-to-codex-rso-forge-handover.md` (R1–R7, F1–F10, custody transfer) and the durable gate kit `tasks/artifacts/forge-gate-kit-2026-10-23/` (cohort games, actuals, gate_ci.py, mz.py). Both are uncommitted; Codex commits them with its register. Claude lanes are closed for these areas.

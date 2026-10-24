@@ -1,0 +1,13 @@
+{
+  "scope": "Only unreached R1 cases; original ten assertions omitted except minimal auth/session setup",
+  "changes": [
+    "gate status selectors target p[role=status]",
+    "reuse R1 bundle byte-for-byte",
+    "remove already passed R1 assertion sequence"
+  ],
+  "R1_script_sha256": "b0343a24f3dcd0067d5d0e0a715fdc50951f55a69995e256d4a6001a3e75ed7c",
+  "R2_script_sha256": "16c37ea19f8e9c0d4921b93103c25f0a26a42df6c64d50e0a082b04ef963ab00",
+  "R1_bundle_sha256": "11c34cbd6e1f60ead0f111241f365ca402f148cee80ef79cb5d5a4f832ed51b8",
+  "R2_bundle_sha256": "11c34cbd6e1f60ead0f111241f365ca402f148cee80ef79cb5d5a4f832ed51b8",
+  "bundle_unchanged": true
+}

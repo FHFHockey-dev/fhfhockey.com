@@ -1,0 +1,39 @@
+{
+  "cwd": "/tmp/fhfh-account-rollout-6ca52clw/snapshot/web",
+  "environment": {
+    "PATH": "/usr/local/bin:/usr/bin:/bin",
+    "HOME": "/tmp/fhfh-account-rollout-6ca52clw/snapshot/home",
+    "TMPDIR": "/tmp/fhfh-account-rollout-6ca52clw/snapshot/tmp",
+    "TZ": "UTC",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://unit-tests.supabase.invalid",
+    "NEXT_PUBLIC_SUPABASE_PUBLIC_KEY": "synthetic-public-key",
+    "SUPABASE_SERVICE_ROLE_KEY": "synthetic-service-role-key",
+    "NODE_OPTIONS": "--require /tmp/fhfh-account-rollout-6ca52clw/snapshot/web/audit-network-deny.cjs",
+    "npm_config_offline": "true",
+    "npm_config_audit": "false",
+    "npm_config_fund": "false"
+  },
+  "commands": [
+    [
+      "tests",
+      [
+        "npm",
+        "test",
+        "--",
+        "--run",
+        "--config",
+        "audit.vitest.config.mts",
+        "components/account/InSeasonPanel.rollout.test.tsx",
+        "-t",
+        "explains free rollout",
+        "--reporter=json",
+        "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/billing-sales-rollout-2026-10-23/account-rollout-correction/red-tests.json"
+      ]
+    ]
+  ],
+  "pins": {
+    "web/components/account/InSeasonPanel.tsx": "1e53f506cae3e06fd8b3604c4119e92dc3fe14ae7f18e152c16211097f0eb24a",
+    "web/components/account/InSeasonPanel.test.tsx": "49196d2addbdbad7291e7361e8964fa070d0f9cbd633340eb5e724e56594827f",
+    "web/components/account/InSeasonPanel.rollout.test.tsx": "b63510f723564a0707ed92f581f83f02a1f6db114550ff4415ab770db9d0e930"
+  }
+}

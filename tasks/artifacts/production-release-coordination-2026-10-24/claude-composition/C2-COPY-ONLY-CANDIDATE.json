@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-24T21:19:41.067672+00:00",
+  "base": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "snapshot": "/tmp/fhfh-c2-copy-only-release-ts8y0cz3",
+  "selected": {
+    "web/components/NewsFeed/NewsCard.tsx": {
+      "sha256": "ab46854d98aa3ee4f2ae1e433dfb4f38b55af2c875d5c88fa58e47f72a3a928a",
+      "source": "C2 exact copy semantics/retained fixture regressions transplanted to production baseline; sanitized accepted fixture only"
+    },
+    "web/components/NewsFeed/NewsCard.test.tsx": {
+      "sha256": "a9e031dac51da085f7d9ec14ce08ec62049e6fde50d4259e4243eb63a9aa52af",
+      "source": "C2 exact copy semantics/retained fixture regressions transplanted to production baseline; sanitized accepted fixture only"
+    },
+    "web/lib/sources/fixtures/homepageNewsReceipt.json": {
+      "sha256": "ac3e9711a02275749990f9020611e560ae8c07b6f06daa476f587bb14467a0a1",
+      "source": "C2 exact copy semantics/retained fixture regressions transplanted to production baseline; sanitized accepted fixture only"
+    }
+  },
+  "status": "Prepared isolated C2 public-copy-only production composition",
+  "scope": "Production renderer layout/reader/homepage/writer remain unchanged. Same reviewed unresolvedReason condition and exact plain-language const, retained fixture regressions. New metadata source/serializer and identity proposal excluded.",
+  "prior_composition_findings": "Mixed C2 metadata/news composition lacks homepageTime/newsLineupPresentation prerequisites and has older expected source label; preserved C2-NEWS logs and source pins, not claimed ready."
+}

@@ -2,10 +2,11 @@ import { randomUUID } from "node:crypto";
 import adminOnly from "utils/adminOnlyMiddleware";
 import { previewNhlDraftBatch, importNhlIdentity } from "lib/sources/nhlProspectIdentity";
 import { tweetPipelineFlags } from "lib/sources/tweetInterpretation";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 
 export const config = { maxDuration: 120 };
 
-export default adminOnly(async (req, res) => {
+export default adminOnly(withCronJobAudit(async (req, res) => {
   if (!["GET", "POST"].includes(req.method ?? "")) return res.status(405).end();
   const scheduled = req.query.scheduled === "true";
   const dryRun = req.query.dryRun === "true" || (!scheduled && req.query.dryRun !== "false");
@@ -48,4 +49,5 @@ export default adminOnly(async (req, res) => {
     }).eq("job_key", key).eq("owner", owner);
     return res.status(400).json({ success: false, message: error instanceof Error ? error.message : "Prospect refresh failed." });
   }
-});
+}, { jobName: "/api/v1/db/update-drafted-prospects", recordRowMetrics: false,
+  responsePreviewKeys: ["success", "skipped", "reason", "dryRun", "year", "total", "nextCursor", "message"] }));

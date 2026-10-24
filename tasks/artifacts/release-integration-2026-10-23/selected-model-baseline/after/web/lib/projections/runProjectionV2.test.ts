@@ -1,0 +1,2276 @@
+import { describe, expect, it } from "vitest";
+import { playerForecastSourcePayloadHash } from "lib/player-forecasts/sourceSnapshot";
+import { captureForgeIssuedContexts, forgeIssuedContextsFingerprint } from "./issuedContext";
+import { capturedReadReceipt, captureProjectionInputs, interceptProjectionQuery, replayProjectionInputs } from "./inputCapture";
+import { capturedIssuedTargets, parseForgeIssuedTargets } from "./gameRevisions";
+import type { ForgeIssuedContextV1 } from "./issuedContext";
+
+
+import {
+  buildSequentialHorizonScalarsFromDates,
+  blendTopStarterScenarioOutputs,
+  buildTopStarterScenarios,
+  computeGoalieRestSplitSavePctAdjustment,
+  computeNstOpponentDangerAdjustment,
+  computeTeamFiveOnFiveContextAdjustment,
+  computeTeamStrengthContextAdjustment,
+  assessLineCombinationRecency,
+  buildSkaterRoleTags,
+  normalizeWgoToiToSeconds,
+  blendToiSecondsWithDeploymentPrior,
+  computeSkaterShotQualityAdjustments,
+  computeSkaterOnIceContextAdjustments,
+  computeSkaterTeamLevelContextAdjustments,
+  computeSkaterOpponentGoalieContextAdjustments,
+  computeSkaterRestScheduleAdjustments,
+  computeSkaterSampleShrinkageAdjustments,
+  computeStrengthSplitConversionRates,
+  allocatePpToiByTeamOpportunity,
+  computeTeammateAssistCoupling,
+  applyRoleSpecificUsageBounds,
+  mergeSkaterCandidatePoolForRecovery,
+  constrainSkaterIdsToActiveRoster,
+  selectLineCombinationFallback,
+  computeSkaterTeamToiTargetWithPoolGuard,
+  validateReconciledPlayerDistribution,
+  buildSkaterRoleScenarios,
+  blendSkaterScenarioStatLines,
+  blendSkaterScenarioStatLinesAcrossHorizon,
+  buildSkaterScenarioMetadata,
+  summarizeSkaterRoleContinuity,
+  computeSkaterRoleStabilityMultiplier,
+  availabilityMultiplierForEvent,
+  filterActiveSkaterCandidateIds,
+  computeStarterProbabilities,
+  selectStarterCandidateGoalieIds,
+  toGoalieRestSplitBucket,
+  type StarterContextForTest
+} from "./run-forge-projections";
+import { allocateTeamAssists, computeSkaterAssistShare, computeSkaterPhysicalEventRates, computeSkaterShotRatePer60, resolveSkaterConversionRates, resolveAssistDenominators, SKATER_ASSIST_DENOMINATOR_DEFAULT } from "./calculators/skater-adjustments";
+import { SKATER_PHYSICAL_RATE_PRIORS } from "./constants/projection-weights";
+import { computeTeamPpShare } from "./stages/skater-stage";
+import type { RollingRow } from "./types/run-forge-projections.types";
+
+function buildContext(
+  overrides?: Partial<StarterContextForTest>
+): StarterContextForTest {
+  return {
+    startsByGoalie: new Map<number, number>(),
+    lastPlayedDateByGoalie: new Map<number, string>(),
+    totalGames: 10,
+    previousGameDate: null,
+    previousGameStarterGoalieId: null,
+    ...overrides
+  };
+}
+
+describe("immutable issued target receipts", () => {
+  it("binds final written targets to captured identities and keeps unsupported components missing", () => {
+    const contexts = [{ game: { id: 30 }, roster: [7, 8, 9].map(playerId => ({ canonicalId: playerId,
+      nhlId: playerId * 11, teamId: 1, seasonId: 20262027 })) }] as ForgeIssuedContextV1[];
+    const skater = { game_id: 30, team_id: 1, horizon_games: 1, player_id: 77,
+      proj_goals_es: 1, proj_goals_pp: 0, proj_goals_pk: null, proj_hits: 2,
+      uncertainty: { model: { skater_selection: { production_conditioning: "conditional_playing" } } } };
+    const write = (table: string, row: unknown) => [{ method: "from", args: [table] }, { method: "upsert", args: [row] }];
+    const writes = [write("forge_player_projections", [skater, { ...skater, player_id: 999 }]),
+      write("forge_player_projections", { ...skater, proj_hits: null, proj_goals_pk: 0 }),
+      write("forge_player_projections", { ...skater, player_id: 88, horizon_games: 5 }),
+      write("forge_goalie_projections", { game_id: 30, team_id: 1, horizon_games: 1, goalie_id: 99,
+        uncertainty: { daily_board_candidates: [{ playerId: 99,
+          conditional: { SAVES_GOALIE: 0, WINS_GOALIE: 0.5, GOALIE_MINUTES: null } }] } })];
+    const receipt = capturedIssuedTargets(contexts, writes);
+    expect(receipt).toMatchObject({ version: "forge-issued-targets-v1", outputHash: expect.stringMatching(/^[a-f0-9]{64}$/),
+      unmappedOutputs: 1, opportunities: [
+        { playerId: 7, nhlPlayerId: 77, gameId: 30, teamId: 1, seasonId: 20262027,
+          conditioning: "conditional_playing", population: "skater", targetKeys: ["GOALS"] },
+        { playerId: 9, conditioning: "conditional_start", population: "goalie", targetKeys: ["SAVES_GOALIE", "WINS_GOALIE"] } ] });
+    expect(capturedIssuedTargets(contexts, [writes[0]]).opportunities[0].targetKeys).toEqual(["HITS"]);
+    expect(parseForgeIssuedTargets({ ...receipt, privateInput: "must stay private",
+      opportunities: receipt.opportunities.map(row => ({ ...row, privatePayload: "secret" })) }, 30)).toEqual(receipt);
+    expect(parseForgeIssuedTargets(receipt, 31)?.opportunities).toEqual([]);
+    for (const invalid of [null, { ...receipt, version: "legacy" }, { ...receipt, outputHash: "missing" },
+      { ...receipt, opportunities: [...receipt.opportunities, receipt.opportunities[0]] },
+      { ...receipt, opportunities: [{ ...receipt.opportunities[0], playerId: -1 }] },
+      { ...receipt, opportunities: [{ ...receipt.opportunities[0], targetKeys: ["SAVES_GOALIE"] }] }]) {
+      expect(parseForgeIssuedTargets(invalid, 30)).toBeNull();
+    }
+  });
+});
+
+describe("starter probability heuristics", () => {
+  it("suppresses the previous-game starter on game 2 of a back-to-back", () => {
+    const starterA = 1001;
+    const starterB = 1002;
+    const context = buildContext({
+      startsByGoalie: new Map([
+        [starterA, 5],
+        [starterB, 5]
+      ]),
+      lastPlayedDateByGoalie: new Map([
+        [starterA, "2026-02-06"],
+        [starterB, "2026-02-03"]
+      ]),
+      previousGameDate: "2026-02-06",
+      previousGameStarterGoalieId: starterA
+    });
+
+    const probs = computeStarterProbabilities({
+      asOfDate: "2026-02-07",
+      candidateGoalieIds: [starterA, starterB],
+      starterContext: context,
+      priorStartProbByGoalieId: new Map([
+        [starterA, 0.5],
+        [starterB, 0.5]
+      ]),
+      teamGoalsFor: 2.8,
+      opponentGoalsFor: 3.1
+    });
+
+    expect((probs.get(starterA) ?? 0)).toBeLessThan(probs.get(starterB) ?? 0);
+  });
+
+  it("heavily penalizes stale goalies after 30+ days", () => {
+    const stale = 2001;
+    const active = 2002;
+    const context = buildContext({
+      startsByGoalie: new Map([
+        [stale, 7],
+        [active, 3]
+      ]),
+      lastPlayedDateByGoalie: new Map([
+        [stale, "2025-12-20"],
+        [active, "2026-02-05"]
+      ]),
+      previousGameDate: "2026-02-05",
+      previousGameStarterGoalieId: active
+    });
+
+    const probs = computeStarterProbabilities({
+      asOfDate: "2026-02-07",
+      candidateGoalieIds: [stale, active],
+      starterContext: context,
+      priorStartProbByGoalieId: new Map([
+        [stale, 0.6],
+        [active, 0.4]
+      ]),
+      teamGoalsFor: 2.7,
+      opponentGoalsFor: 2.9
+    });
+
+    expect((probs.get(stale) ?? 0)).toBeLessThan(0.2);
+    expect((probs.get(active) ?? 0)).toBeGreaterThan(0.8);
+  });
+
+  it("applies line-combo recency prior as a soft starter boost", () => {
+    const goalieA = 2101;
+    const goalieB = 2102;
+    const context = buildContext({
+      startsByGoalie: new Map([
+        [goalieA, 5],
+        [goalieB, 5]
+      ]),
+      lastPlayedDateByGoalie: new Map([
+        [goalieA, "2026-02-05"],
+        [goalieB, "2026-02-05"]
+      ]),
+      previousGameDate: "2026-02-05",
+      previousGameStarterGoalieId: goalieA
+    });
+
+    const withoutLineCombo = computeStarterProbabilities({
+      asOfDate: "2026-02-07",
+      candidateGoalieIds: [goalieA, goalieB],
+      starterContext: context,
+      priorStartProbByGoalieId: new Map([
+        [goalieA, 0.5],
+        [goalieB, 0.5]
+      ]),
+      teamGoalsFor: 3,
+      opponentGoalsFor: 3
+    });
+    const withLineCombo = computeStarterProbabilities({
+      asOfDate: "2026-02-07",
+      candidateGoalieIds: [goalieA, goalieB],
+      starterContext: context,
+      priorStartProbByGoalieId: new Map([
+        [goalieA, 0.5],
+        [goalieB, 0.5]
+      ]),
+      lineComboPriorByGoalieId: new Map([
+        [goalieA, 0.85],
+        [goalieB, 0.15]
+      ]),
+      teamGoalsFor: 3,
+      opponentGoalsFor: 3
+    });
+
+    expect((withLineCombo.get(goalieA) ?? 0)).toBeGreaterThan(
+      withoutLineCombo.get(goalieA) ?? 0
+    );
+    expect((withLineCombo.get(goalieA) ?? 0)).toBeLessThan(0.95);
+  });
+
+  it("uses projected GSAA/60 and season start share as soft priors", () => {
+    const goalieA = 2201;
+    const goalieB = 2202;
+    const context = buildContext({
+      startsByGoalie: new Map([
+        [goalieA, 5],
+        [goalieB, 5]
+      ]),
+      lastPlayedDateByGoalie: new Map([
+        [goalieA, "2026-02-05"],
+        [goalieB, "2026-02-05"]
+      ])
+    });
+
+    const base = computeStarterProbabilities({
+      asOfDate: "2026-02-07",
+      candidateGoalieIds: [goalieA, goalieB],
+      starterContext: context,
+      priorStartProbByGoalieId: new Map([
+        [goalieA, 0.5],
+        [goalieB, 0.5]
+      ]),
+      teamGoalsFor: 3,
+      opponentGoalsFor: 3
+    });
+    const withQualityPriors = computeStarterProbabilities({
+      asOfDate: "2026-02-07",
+      candidateGoalieIds: [goalieA, goalieB],
+      starterContext: context,
+      priorStartProbByGoalieId: new Map([
+        [goalieA, 0.5],
+        [goalieB, 0.5]
+      ]),
+      projectedGsaaPer60ByGoalieId: new Map([
+        [goalieA, 0.28],
+        [goalieB, -0.2]
+      ]),
+      seasonStartPctByGoalieId: new Map([
+        [goalieA, 0.66],
+        [goalieB, 0.41]
+      ]),
+      seasonGamesPlayedByGoalieId: new Map([
+        [goalieA, 36],
+        [goalieB, 14]
+      ]),
+      teamGoalsFor: 3,
+      opponentGoalsFor: 3
+    });
+
+    expect((withQualityPriors.get(goalieA) ?? 0)).toBeGreaterThan(
+      base.get(goalieA) ?? 0
+    );
+  });
+});
+
+describe("issued FORGE context", () => {
+  const game = { id: 2026020001, date: "2026-09-29", seasonId: 20262027,
+    startTime: "2026-09-29T21:00:00Z", homeTeamId: 3, awayTeamId: 4 };
+  const schedule = (teamId: number, opponentTeamId: number) => ({ game_key: "477", season: "2026",
+    source_season_id: 20262027, source_game_id: game.id, team_id: teamId,
+    opponent_team_id: opponentTeamId, team_abbreviation: teamId === 3 ? "NYR" : "PHI",
+    opponent_abbreviation: opponentTeamId === 3 ? "NYR" : "PHI", start_time: game.startTime,
+    game_status: "FUT", schedule_status: "OK", source_updated_at: null,
+    fetched_at: "2026-09-28T12:00:00Z" });
+  const data = () => ({ games: [game], roster_optimizer_team_games: [schedule(3, 4), schedule(4, 3)],
+    rosters: [{ playerId: 100, teamId: 3, seasonId: 20262027, is_current: true,
+      created_at: "2026-09-01T00:00:00Z" }],
+    fhfh_player_identities: [{ id: 7, nhl_player_id: 100, current_nhl_team_id: 3,
+      verification_status: "verified", lifecycle_status: "active_nhl", updated_at: "2026-09-27T00:00:00Z" }] });
+  function client(tables: ReturnType<typeof data>, reportedExtra = 0) {
+    const reads: Array<{ table: string; filters: Array<[string, string, unknown]> }> = [];
+    return { reads, from(table: keyof ReturnType<typeof data>) {
+      const filters: Array<(row: Record<string, unknown>) => boolean> = [];
+      const filterArgs: Array<[string, string, unknown]> = [];
+      const query: Record<string, any> = {};
+      query.select = () => query;
+      query.eq = (column: string, value: unknown) => { filterArgs.push(["eq", column, value]); filters.push((row) => row[column] === value); return query; };
+      query.in = (column: string, values: unknown[]) => { filterArgs.push(["in", column, values]); filters.push((row) => values.includes(row[column])); return query; };
+      query.is = () => query;
+      query.not = () => query;
+      query.order = () => query;
+      query.range = async (start: number, end: number) => {
+        reads.push({ table, filters: filterArgs });
+        const rows = tables[table].filter((row) => filters.every((filter) => filter(row)));
+        return { data: rows.slice(start, end + 1), count: rows.length + reportedExtra, error: null };
+      };
+      return query;
+    } };
+  }
+
+  it("retains game, schedule and unique canonical roster fingerprints from bounded reads", async () => {
+    const db = client(data());
+    const [context] = await captureForgeIssuedContexts(game.date, [game.id], db);
+    expect(context.game).toEqual(game);
+    expect(context.schedule).toHaveLength(2);
+    expect(context.schedule[0]).toMatchObject({ teamId: 3, opponentTeamId: 4,
+      sourceUpdatedAt: null, fetchedAt: "2026-09-28T12:00:00Z",
+      revision: playerForecastSourcePayloadHash({ id: String(game.id), start: new Date(game.startTime).toISOString(),
+        team: "NYR", opponent: "PHI", status: "FUT", schedule: "OK" }) });
+    expect(context.roster).toEqual([{ canonicalId: 7, nhlId: 100, seasonId: 20262027, teamId: 3,
+      membershipCreatedAt: ["2026-09-01T00:00:00Z"], identityUpdatedAt: "2026-09-27T00:00:00Z",
+      revision: playerForecastSourcePayloadHash({ playerId: 7, nhlId: 100, seasonId: 20262027,
+        teamId: 3, membership: ["2026-09-01T00:00:00Z"] }) }]);
+    expect(forgeIssuedContextsFingerprint([context])).toBe(forgeIssuedContextsFingerprint([
+      { ...context, observedAt: "2026-10-01T00:00:00Z" }]));
+    expect(forgeIssuedContextsFingerprint([context])).not.toBe(forgeIssuedContextsFingerprint([
+      { ...context, schedule: [{ ...context.schedule[0], scheduleStatus: "PPD" }, context.schedule[1]] }]));
+    expect(db.reads.find((read) => read.table === "rosters" && read.filters.some(([method, column]) => method === "in" && column === "teamId"))?.filters)
+      .toContainEqual(["in", "teamId", [3, 4]]);
+    expect(db.reads.find((read) => read.table === "rosters" && read.filters.some(([method, column]) => method === "in" && column === "playerId"))?.filters)
+      .toContainEqual(["in", "playerId", [100]]);
+  });
+
+  it("rejects ambiguous identity and incomplete bounded context reads", async () => {
+    const ambiguous = data();
+    ambiguous.fhfh_player_identities.push({ ...ambiguous.fhfh_player_identities[0], id: 8 });
+    await expect(captureForgeIssuedContexts(game.date, [game.id], client(ambiguous))).rejects.toThrow("ambiguous");
+    const twoTeams = data();
+    twoTeams.rosters.push({ ...twoTeams.rosters[0], teamId: 99 });
+    await expect(captureForgeIssuedContexts(game.date, [game.id], client(twoTeams))).rejects.toThrow("ambiguous");
+    await expect(captureForgeIssuedContexts(game.date, [game.id], client(data(), 1))).rejects.toThrow(/incomplete|truncated/);
+  });
+
+  it("does not fabricate a canonical mapping for an unmapped roster member", async () => {
+    const unmapped = data();
+    unmapped.fhfh_player_identities = [];
+    const [context] = await captureForgeIssuedContexts(game.date, [game.id], client(unmapped));
+    expect(context.roster).toEqual([]);
+    expect(unmapped.rosters).toHaveLength(1);
+  });
+
+  it("accepts equivalent alternate cache keys and rejects conflicting versions or malformed membership", async () => {
+    const equivalent = data();
+    equivalent.roster_optimizer_team_games.push({ ...schedule(3, 4), game_key: "alternate",
+      fetched_at: "2026-09-28T13:00:00Z" });
+    const [context] = await captureForgeIssuedContexts(game.date, [game.id], client(equivalent));
+    expect(context.schedule).toHaveLength(2);
+    expect(context.schedule[0]).toMatchObject({ gameKey: "alternate", fetchedAt: "2026-09-28T13:00:00Z" });
+    const alternateOnly = data();
+    alternateOnly.roster_optimizer_team_games = alternateOnly.roster_optimizer_team_games.map((row) =>
+      ({ ...row, game_key: "alternate" }));
+    expect((await captureForgeIssuedContexts(game.date, [game.id], client(alternateOnly)))[0].schedule)
+      .toEqual(expect.arrayContaining([expect.objectContaining({ gameKey: "alternate" })]));
+
+    const conflicting = data();
+    conflicting.roster_optimizer_team_games.push({ ...schedule(3, 4), game_key: "alternate", schedule_status: "PPD" });
+    await expect(captureForgeIssuedContexts(game.date, [game.id], client(conflicting))).rejects.toThrow("conflicting");
+    const malformed = data();
+    malformed.rosters[0].created_at = "invalid";
+    await expect(captureForgeIssuedContexts(game.date, [game.id], client(malformed))).rejects.toThrow("malformed");
+    const malformedId = data();
+    malformedId.rosters[0].playerId = 0;
+    await expect(captureForgeIssuedContexts(game.date, [game.id], client(malformedId))).rejects.toThrow("malformed");
+  });
+
+  it("retains a distinct context for each explicitly scoped game", async () => {
+    const two = data();
+    const second = { ...game, id: 2026020002 };
+    two.games.push(second);
+    two.roster_optimizer_team_games.push({ ...schedule(3, 4), source_game_id: second.id },
+      { ...schedule(4, 3), source_game_id: second.id });
+    const contexts = await captureForgeIssuedContexts(game.date, [second.id, game.id], client(two));
+    expect(contexts.map((context) => context.game.id)).toEqual([game.id, second.id]);
+    expect(contexts.every((context) => context.schedule.length === 2)).toBe(true);
+  });
+
+  it("consumes both context read sets during offline replay", async () => {
+    const raw = client(data());
+    const db = { from(table: keyof ReturnType<typeof data>) {
+      return interceptProjectionQuery("from", [table], () => raw.from(table)) ?? raw.from(table);
+    } };
+    const captured = await captureProjectionInputs(async () => {
+      const before = await captureForgeIssuedContexts(game.date, [game.id], db);
+      const after = await captureForgeIssuedContexts(game.date, [game.id], db);
+      return { before, after };
+    });
+    const liveReads = raw.reads.length;
+    expect(captured.reads.length).toBe(liveReads);
+    const receipt = capturedReadReceipt(captured.reads);
+    expect(receipt).toMatchObject({ version: "forge-captured-reads-v1", readCount: liveReads });
+    expect(receipt.hash).toBe(playerForecastSourcePayloadHash(captured.reads));
+    const reorderedKeys = JSON.parse(JSON.stringify(captured.reads), (_key, value) =>
+      value && typeof value === "object" && !Array.isArray(value)
+        ? Object.fromEntries(Object.entries(value).reverse()) : value);
+    expect(capturedReadReceipt(reorderedKeys)).toEqual(receipt);
+    expect(capturedReadReceipt([{ ...captured.reads[0], result: { data: [] } }, ...captured.reads.slice(1)]).hash)
+      .not.toBe(receipt.hash);
+    expect(() => capturedReadReceipt([])).toThrow("timestamped reads");
+    expect(() => capturedReadReceipt([{ ...captured.reads[0], receivedAt: "invalid" }])).toThrow("timestamped reads");
+    const replayed = await replayProjectionInputs(captured.reads, async () => {
+      const before = await captureForgeIssuedContexts(game.date, [game.id], db);
+      const after = await captureForgeIssuedContexts(game.date, [game.id], db);
+      return { before, after };
+    });
+    expect(raw.reads).toHaveLength(liveReads);
+    expect(forgeIssuedContextsFingerprint(replayed.result.before))
+      .toBe(forgeIssuedContextsFingerprint(captured.result.before));
+    expect(forgeIssuedContextsFingerprint(replayed.result.after))
+      .toBe(forgeIssuedContextsFingerprint(captured.result.after));
+  });
+});
+
+describe("starter candidate filtering", () => {
+  it("removes non-current-team goalies and very stale options", () => {
+    const legacyGoalie = 3001;
+    const staleGoalie = 3002;
+    const activeGoalie = 3003;
+    const context = buildContext({
+      startsByGoalie: new Map([
+        [legacyGoalie, 6],
+        [staleGoalie, 2],
+        [activeGoalie, 2]
+      ]),
+      lastPlayedDateByGoalie: new Map([
+        [legacyGoalie, "2026-02-01"],
+        [staleGoalie, "2025-11-01"],
+        [activeGoalie, "2026-02-06"]
+      ])
+    });
+
+    const candidates = selectStarterCandidateGoalieIds({
+      asOfDate: "2026-02-07",
+      rawCandidateGoalieIds: [legacyGoalie, staleGoalie, activeGoalie],
+      currentTeamGoalieIds: new Set([staleGoalie, activeGoalie]),
+      context,
+      limit: 3
+    });
+
+    expect(candidates).toContain(activeGoalie);
+    expect(candidates).not.toContain(legacyGoalie);
+    expect(candidates).not.toContain(staleGoalie);
+  });
+});
+
+describe("deployment TOI prior helpers", () => {
+  it("normalizes minute-based WGO TOI values to seconds", () => {
+    expect(normalizeWgoToiToSeconds(15)).toBe(900);
+    expect(normalizeWgoToiToSeconds(22.5)).toBe(1350);
+  });
+
+  it("keeps second-like WGO TOI values in seconds", () => {
+    expect(normalizeWgoToiToSeconds(960)).toBe(960);
+  });
+
+  it("returns null for invalid or non-positive WGO TOI values", () => {
+    expect(normalizeWgoToiToSeconds(null)).toBeNull();
+    expect(normalizeWgoToiToSeconds(undefined)).toBeNull();
+    expect(normalizeWgoToiToSeconds(0)).toBeNull();
+    expect(normalizeWgoToiToSeconds(-5)).toBeNull();
+  });
+
+  it("blends rolling TOI with deployment prior using provided weight", () => {
+    const blended = blendToiSecondsWithDeploymentPrior({
+      rollingSeconds: 900,
+      deploymentPriorSeconds: 780,
+      rollingWeight: 0.8
+    });
+    expect(blended).toBe(876);
+  });
+
+  it("falls back to whichever source exists when one side is missing", () => {
+    expect(
+      blendToiSecondsWithDeploymentPrior({
+        rollingSeconds: null,
+        deploymentPriorSeconds: 720,
+        rollingWeight: 0.8
+      })
+    ).toBe(720);
+    expect(
+      blendToiSecondsWithDeploymentPrior({
+        rollingSeconds: 840,
+        deploymentPriorSeconds: null,
+        rollingWeight: 0.8
+      })
+    ).toBe(840);
+  });
+});
+
+describe("skater shot-quality adjustments", () => {
+  it("returns neutral multipliers when no profile exists", () => {
+    const result = computeSkaterShotQualityAdjustments({ profile: null });
+    expect(result.shotRateMultiplier).toBe(1);
+    expect(result.goalRateMultiplier).toBe(1);
+    expect(result.sampleWeight).toBe(0);
+  });
+
+  it("boosts goal conversion and shot rate for strong ixG + rush/rebound profiles", () => {
+    const result = computeSkaterShotQualityAdjustments({
+      profile: {
+        sourceDate: "2026-02-05",
+        nstShotsPer60: 10.2,
+        nstIxgPer60: 1.15,
+        nstRushAttemptsPer60: 0.9,
+        nstReboundsCreatedPer60: 0.7
+      }
+    });
+    expect(result.sampleWeight).toBeGreaterThan(0.6);
+    expect(result.shotRateMultiplier).toBeGreaterThan(1);
+    expect(result.goalRateMultiplier).toBeGreaterThan(1);
+    expect(result.qualityPerShot).toBeGreaterThan(0.1);
+  });
+
+  it("penalizes weak shot-quality profiles", () => {
+    const result = computeSkaterShotQualityAdjustments({
+      profile: {
+        sourceDate: "2026-02-05",
+        nstShotsPer60: 7.4,
+        nstIxgPer60: 0.45,
+        nstRushAttemptsPer60: 0.2,
+        nstReboundsCreatedPer60: 0.1
+      }
+    });
+    expect(result.goalRateMultiplier).toBeLessThan(1);
+    expect(result.shotRateMultiplier).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("skater on-ice context adjustments", () => {
+  it("returns neutral multipliers without a profile", () => {
+    const result = computeSkaterOnIceContextAdjustments({ profile: null });
+    expect(result.shotEnvironmentMultiplier).toBe(1);
+    expect(result.goalEnvironmentMultiplier).toBe(1);
+    expect(result.assistEnvironmentMultiplier).toBe(1);
+    expect(result.sampleWeight).toBe(0);
+  });
+
+  it("boosts environment multipliers for strong on-ice xG and possession", () => {
+    const result = computeSkaterOnIceContextAdjustments({
+      profile: {
+        sourceDate: "2026-02-05",
+        nstOiXgfPer60: 3.1,
+        nstOiXgaPer60: 2.0,
+        nstOiCfPct: 56.2,
+        possessionPctSafe: null
+      }
+    });
+    expect(result.sampleWeight).toBeGreaterThan(0.6);
+    expect(result.shotEnvironmentMultiplier).toBeGreaterThan(1);
+    expect(result.goalEnvironmentMultiplier).toBeGreaterThan(1);
+    expect(result.assistEnvironmentMultiplier).toBeGreaterThan(1);
+  });
+
+  it("penalizes environment for poor on-ice xG and possession", () => {
+    const result = computeSkaterOnIceContextAdjustments({
+      profile: {
+        sourceDate: "2026-02-05",
+        nstOiXgfPer60: 1.9,
+        nstOiXgaPer60: 3.0,
+        nstOiCfPct: 44.1,
+        possessionPctSafe: null
+      }
+    });
+    expect(result.shotEnvironmentMultiplier).toBeLessThan(1);
+    expect(result.goalEnvironmentMultiplier).toBeLessThan(1);
+    expect(result.assistEnvironmentMultiplier).toBeLessThan(1);
+  });
+});
+
+describe("skater team-level context adjustments", () => {
+  it("returns neutral multipliers when no team context is available", () => {
+    const result = computeSkaterTeamLevelContextAdjustments({
+      teamStrengthPrior: null,
+      opponentStrengthPrior: null,
+      teamFiveOnFiveProfile: null,
+      opponentFiveOnFiveProfile: null,
+      teamNstProfile: null,
+      opponentNstProfile: null
+    });
+    expect(result.sampleWeight).toBe(0);
+    expect(result.shotRateMultiplier).toBe(1);
+    expect(result.goalRateMultiplier).toBe(1);
+    expect(result.assistRateMultiplier).toBe(1);
+  });
+
+  it("boosts multipliers in favorable offense + opponent-defense environments", () => {
+    const result = computeSkaterTeamLevelContextAdjustments({
+      teamStrengthPrior: {
+        sourceDate: "2026-02-05",
+        xga: 120,
+        xgaPerGame: 2.7,
+        xgfPerGame: 3.35
+      },
+      opponentStrengthPrior: {
+        sourceDate: "2026-02-05",
+        xga: 140,
+        xgaPerGame: 3.45,
+        xgfPerGame: 2.85
+      },
+      teamFiveOnFiveProfile: {
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        savePct5v5: 0.922,
+        shootingPlusSavePct5v5: 1.03
+      },
+      opponentFiveOnFiveProfile: {
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        savePct5v5: 0.905,
+        shootingPlusSavePct5v5: 0.98
+      },
+      teamNstProfile: {
+        source: "nst_team_all",
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        xga: 125,
+        xgaPer60: 2.8
+      },
+      opponentNstProfile: {
+        source: "nst_team_all",
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        xga: 132,
+        xgaPer60: 2.95
+      }
+    });
+    expect(result.sampleWeight).toBeGreaterThan(0.6);
+    expect(result.shotRateMultiplier).toBeGreaterThan(1);
+    expect(result.goalRateMultiplier).toBeGreaterThan(1);
+    expect(result.assistRateMultiplier).toBeGreaterThan(1);
+  });
+
+  it("penalizes multipliers in weak offense + strong-opponent-defense environments", () => {
+    const result = computeSkaterTeamLevelContextAdjustments({
+      teamStrengthPrior: {
+        sourceDate: "2026-02-05",
+        xga: 120,
+        xgaPerGame: 2.9,
+        xgfPerGame: 2.45
+      },
+      opponentStrengthPrior: {
+        sourceDate: "2026-02-05",
+        xga: 115,
+        xgaPerGame: 2.35,
+        xgfPerGame: 3.1
+      },
+      teamFiveOnFiveProfile: {
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        savePct5v5: 0.918,
+        shootingPlusSavePct5v5: 0.97
+      },
+      opponentFiveOnFiveProfile: {
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        savePct5v5: 0.935,
+        shootingPlusSavePct5v5: 1.02
+      },
+      teamNstProfile: {
+        source: "nst_team_all",
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        xga: 116,
+        xgaPer60: 2.2
+      },
+      opponentNstProfile: {
+        source: "nst_team_all",
+        sourceDate: "2026-02-05",
+        gamesPlayed: 50,
+        xga: 115,
+        xgaPer60: 2.1
+      }
+    });
+    expect(result.shotRateMultiplier).toBeLessThan(1);
+    expect(result.goalRateMultiplier).toBeLessThan(1);
+    expect(result.assistRateMultiplier).toBeLessThan(1);
+  });
+});
+
+describe("skater opponent-goalie context adjustments", () => {
+  it("returns neutral multipliers with no opponent goalie context", () => {
+    const result = computeSkaterOpponentGoalieContextAdjustments({
+      context: null
+    });
+    expect(result.sampleWeight).toBe(0);
+    expect(result.goalRateMultiplier).toBe(1);
+    expect(result.assistRateMultiplier).toBe(1);
+  });
+
+  it("penalizes scoring when likely opponent starter projects strong", () => {
+    const result = computeSkaterOpponentGoalieContextAdjustments({
+      context: {
+        source: "goalie_start_projections",
+        weightedProjectedGsaaPer60: 0.32,
+        topStarterProbability: 0.82,
+        probabilityMass: 0.95,
+        isConfirmedStarter: true
+      }
+    });
+    expect(result.sampleWeight).toBeGreaterThan(0.8);
+    expect(result.goalRateMultiplier).toBeLessThan(1);
+    expect(result.assistRateMultiplier).toBeLessThan(1);
+  });
+
+  it("boosts scoring when likely opponent starter projects weak", () => {
+    const result = computeSkaterOpponentGoalieContextAdjustments({
+      context: {
+        source: "goalie_start_projections",
+        weightedProjectedGsaaPer60: -0.28,
+        topStarterProbability: 0.74,
+        probabilityMass: 0.92,
+        isConfirmedStarter: false
+      }
+    });
+    expect(result.sampleWeight).toBeGreaterThan(0.5);
+    expect(result.goalRateMultiplier).toBeGreaterThan(1);
+    expect(result.assistRateMultiplier).toBeGreaterThan(1);
+  });
+});
+
+describe("skater rest/schedule adjustments", () => {
+  it("returns neutral multipliers when rest context is unavailable", () => {
+    const result = computeSkaterRestScheduleAdjustments({
+      teamRestDays: null,
+      opponentRestDays: null,
+      isHome: false
+    });
+    expect(result.sampleWeight).toBe(0);
+    expect(result.toiMultiplier).toBe(1);
+    expect(result.shotRateMultiplier).toBe(1);
+    expect(result.goalRateMultiplier).toBe(1);
+    expect(result.assistRateMultiplier).toBe(1);
+  });
+
+  it("penalizes on second leg of back-to-back against rested opponent", () => {
+    const result = computeSkaterRestScheduleAdjustments({
+      teamRestDays: 1,
+      opponentRestDays: 3,
+      isHome: false
+    });
+    expect(result.sampleWeight).toBe(1);
+    expect(result.toiMultiplier).toBeLessThan(1);
+    expect(result.shotRateMultiplier).toBeLessThan(1);
+    expect(result.goalRateMultiplier).toBeLessThan(1);
+    expect(result.assistRateMultiplier).toBeLessThan(1);
+  });
+
+  it("boosts rested home team versus opponent on back-to-back", () => {
+    const result = computeSkaterRestScheduleAdjustments({
+      teamRestDays: 3,
+      opponentRestDays: 1,
+      isHome: true
+    });
+    expect(result.toiMultiplier).toBeGreaterThan(1);
+    expect(result.shotRateMultiplier).toBeGreaterThan(1);
+    expect(result.goalRateMultiplier).toBeGreaterThan(1);
+    expect(result.assistRateMultiplier).toBeGreaterThan(1);
+  });
+
+  it("reads rest days as days since the previous game, so a back-to-back (1) is the heavy tier", () => {
+    const rest = (teamRestDays: number, opponentRestDays: number, buckets?: "legacy") =>
+      computeSkaterRestScheduleAdjustments({ teamRestDays, opponentRestDays, isHome: false, buckets });
+    expect(rest(1, 1).toiMultiplier).toBe(0.8876);
+    expect(rest(2, 2).toiMultiplier).toBe(0.9626);
+    expect(rest(3, 3).toiMultiplier).toBe(1.0096);
+    expect(rest(4, 4).toiMultiplier).toBe(1.0276);
+    expect(rest(1, 1).toiMultiplier).toBeLessThan(rest(2, 2).toiMultiplier);
+    // Every tier moved up one day with unchanged magnitudes.
+    for (const [team, opp] of [[1, 2], [2, 1], [3, 1], [4, 2], [2, 5]]) {
+      expect(rest(team, opp)).toMatchObject({
+        toiMultiplier: rest(team - 1, opp - 1, "legacy").toiMultiplier,
+        shotRateMultiplier: rest(team - 1, opp - 1, "legacy").shotRateMultiplier,
+        goalRateMultiplier: rest(team - 1, opp - 1, "legacy").goalRateMultiplier,
+        assistRateMultiplier: rest(team - 1, opp - 1, "legacy").assistRateMultiplier
+      });
+    }
+    expect(rest(1, 1, "legacy").toiMultiplier).toBe(0.9626);
+    const missingOpponent = { teamRestDays: 2, opponentRestDays: null, isHome: true };
+    expect(computeSkaterRestScheduleAdjustments(missingOpponent)).toEqual({
+      ...computeSkaterRestScheduleAdjustments({ ...missingOpponent, teamRestDays: 1, buckets: "legacy" }), teamRestDays: 2 });
+  });
+});
+
+describe("skater small-sample shrinkage adjustments", () => {
+  it("flags low sample and callup fallback with sparse evidence", () => {
+    const result = computeSkaterSampleShrinkageAdjustments({
+      evToiSecondsAll: 210,
+      ppToiSecondsAll: 40,
+      evShotsAll: 5,
+      ppShotsAll: 1
+    });
+    expect(result.sampleWeight).toBeLessThan(0.25);
+    expect(result.isLowSample).toBe(true);
+    expect(result.usedCallupFallback).toBe(true);
+  });
+
+  it("returns strong sample weight for established skaters", () => {
+    const result = computeSkaterSampleShrinkageAdjustments({
+      evToiSecondsAll: 1450,
+      ppToiSecondsAll: 380,
+      evShotsAll: 85,
+      ppShotsAll: 22
+    });
+    expect(result.sampleWeight).toBeGreaterThan(0.6);
+    expect(result.isLowSample).toBe(false);
+    expect(result.usedCallupFallback).toBe(false);
+  });
+});
+
+describe("skater assist share of on-ice goals", () => {
+  it("uses the F/D prior for its strength without IPP history", () => {
+    for (const ipp of [null, undefined, 0, Number.NaN]) {
+      const prior = computeSkaterAssistShare({ goalsAll: 10, assistsAll: 20, ippAllPct: ipp, position: "C", strength: "es" });
+      expect(prior.onIceGoalsHistory).toBe(0);
+      expect(prior.share).toBeCloseTo(0.3747, 12);
+    }
+    expect(computeSkaterAssistShare({ goalsAll: null, assistsAll: 5, ippAllPct: 50, position: "D", strength: "pp" }).share).toBeCloseTo(0.4838, 12);
+  });
+
+  it("shrinks the observed share toward the prior by on-ice goals", () => {
+    // Release C: 10 G + 20 A at 60% IPP = 50 on-ice goals; (20 + 258 x 0.3747) / (50 + 258).
+    const es = computeSkaterAssistShare({ goalsAll: 10, assistsAll: 20, ippAllPct: 60, position: "L", strength: "es" });
+    expect(es.onIceGoalsHistory).toBeCloseTo(50, 10);
+    expect(es.share).toBeCloseTo((20 + 258 * 0.3747) / 308, 10);
+    // Defence PP: 2 G + 18 A at 50% IPP = 40 on-ice goals; (18 + 84 x 0.4838) / (40 + 84).
+    expect(computeSkaterAssistShare({ goalsAll: 2, assistsAll: 18, ippAllPct: 50, position: "D", strength: "pp" }).share)
+      .toBeCloseTo((18 + 84 * 0.4838) / 124, 10);
+  });
+
+  it("never credits more assists than on-ice goals and stays within bounds", () => {
+    // IPP above 100% is inconsistent source data: assists cap at the implied on-ice goals.
+    const capped = computeSkaterAssistShare({ goalsAll: 0, assistsAll: 30, ippAllPct: 150, position: "C", strength: "pp" });
+    expect(capped.onIceGoalsHistory).toBeCloseTo(20, 10);
+    expect(capped.share).toBeCloseTo((20 + 58 * 0.3554) / 78, 10);
+    expect(computeSkaterAssistShare({ goalsAll: 0, assistsAll: 1e6, ippAllPct: 100, position: "C", strength: "es" }).share).toBe(0.9);
+  });
+});
+
+describe("skater shot rate prior", () => {
+  it("returns the F/D prior without exposure", () => {
+    expect(computeSkaterShotRatePer60({ position: "C", strength: "es", shotsAll: null, ratePer60All: null, shotsRecent: null, toiRecentSeconds: null })).toBe(6.62);
+    expect(computeSkaterShotRatePer60({ position: "D", strength: "pp", shotsAll: 0, ratePer60All: 0, shotsRecent: 0, toiRecentSeconds: 0 })).toBe(8.39);
+  });
+
+  it("shrinks the all-window rate by its hours, then blends the last five by theirs", () => {
+    // 100 shots at 10/60 = 10 h; base = (100 + 8.4 x 6.62) / 18.4. Last five: 5 shots in 1 h.
+    const base = (100 + 8.4 * 6.62) / 18.4;
+    expect(computeSkaterShotRatePer60({ position: "R", strength: "es", shotsAll: 100, ratePer60All: 10, shotsRecent: null, toiRecentSeconds: null }))
+      .toBeCloseTo(base, 10);
+    expect(computeSkaterShotRatePer60({ position: "R", strength: "es", shotsAll: 100, ratePer60All: 10, shotsRecent: 5, toiRecentSeconds: 3600 }))
+      .toBeCloseTo(base + (1 / 9.4) * (5 - base), 10);
+  });
+});
+
+describe("position goal-conversion priors", () => {
+  const counts = { evGoalsRecent: 0, evShotsRecent: 0, evGoalsAll: 0, evShotsAll: 0, evAssistsRecent: 0, evAssistsAll: 0,
+    ppGoalsRecent: 0, ppShotsRecent: 0, ppGoalsAll: 0, ppShotsAll: 0, ppAssistsRecent: 0, ppAssistsAll: 0,
+    goalRateMultiplier: 1, assistRateMultiplier: 1 };
+
+  it("falls back to the F/D prior and weighs history against its measured shots", () => {
+    const d = computeStrengthSplitConversionRates({ ...counts, position: "D" });
+    expect(d.goalRateEs).toBeCloseTo(0.0537, 10);
+    expect(d.goalRatePp).toBeCloseTo(0.0862, 10);
+    // A forward's 30 goals on 200 ES shots against 423 prior shots.
+    const f = computeStrengthSplitConversionRates({ ...counts, evGoalsAll: 30, evShotsAll: 200, position: "C" });
+    expect(f.goalRateEs).toBeCloseTo((30 + 423 * 0.1181) / 623, 10);
+    // Without a position the former position-blind prior remains.
+    expect(computeStrengthSplitConversionRates(counts).goalRateEs).toBeCloseTo(0.095, 10);
+  });
+
+  it("keeps the small-sample goal shrink toward the position prior", () => {
+    const rates = { goalRateEs: 0.2, goalRatePp: null, assistRateEs: null, assistRatePp: null };
+    const resolved = resolveSkaterConversionRates({ splitRates: rates, sampleWeight: 0.5, position: "D" });
+    expect(resolved.goalRateEs).toBeCloseTo(0.5 * 0.2 + 0.5 * 0.0537, 10);
+    expect(resolved.goalRatePp).toBeCloseTo(0.0862, 10);
+    // Without a position a supported head is used as fitted.
+    expect(resolveSkaterConversionRates({ splitRates: rates, sampleWeight: 0.5 }).goalRateEs).toBeCloseTo(0.2, 10);
+  });
+});
+
+describe("team assist allocation", () => {
+  const skater = (toiEs: number, toiPp: number, goalsEs: number, goalsPp: number, assistShareEs = 0.35, assistSharePp = 0.35) =>
+    ({ toiEs, toiPp, goalsEs, goalsPp, assistShareEs, assistSharePp });
+
+  it("reconciles team assists to league assists per goal at each strength", () => {
+    const team = [skater(1200, 200, 0.4, 0.2), skater(1100, 180, 0.3, 0.1, 0.4, 0.5), skater(900, 0, 0.1, 0, 0.25),
+      skater(1300, 120, 0.05, 0.02, 0.3, 0.45), skater(1000, 60, 0.15, 0)];
+    const assists = allocateTeamAssists(team);
+    const total = (key: "assistsEs" | "assistsPp") => assists.reduce((sum, row) => sum + row[key], 0);
+    expect(total("assistsEs")).toBeCloseTo(1.65 * 1.0, 10);
+    expect(total("assistsPp")).toBeCloseTo(1.91 * 0.32, 10);
+    // A skater with no PP minutes is on the ice for no PP goals.
+    expect(assists[2].assistsPp).toBe(0);
+  });
+
+  it("splits by on-ice time and assist share, not by the skater's own goals", () => {
+    const [scorer, setup] = allocateTeamAssists([skater(1000, 0, 0.6, 0, 0.2), skater(1000, 0, 0, 0, 0.6)]);
+    expect(setup.assistsEs / scorer.assistsEs).toBeCloseTo(3, 10);
+  });
+
+  it("assigns no assists without team goals or ice time", () => {
+    expect(allocateTeamAssists([skater(0, 0, 0, 0), skater(0, 0, 0, 0)])).toEqual([{ assistsEs: 0, assistsPp: 0 }, { assistsEs: 0, assistsPp: 0 }]);
+    expect(allocateTeamAssists([])).toEqual([]);
+  });
+});
+
+describe("skater physical event rates", () => {
+  // Invented all-strength rows: 110 window minutes and 5000 three-season minutes.
+  const allRow = (overrides: Partial<RollingRow> = {}): RollingRow => ({
+    game_id: 2026020100, season: 20262027, player_id: 7, strength_state: "all", game_date: "2026-10-13",
+    toi_seconds_avg_last5: 1320, toi_seconds_avg_all: null, sog_per_60_last5: null, sog_per_60_all: null,
+    sog_per_60_avg_last5: null, sog_per_60_avg_all: null, goals_total_last5: null, shots_total_last5: null,
+    assists_total_last5: null, goals_total_all: null, shots_total_all: null, assists_total_all: null,
+    hits_per_60_last5: 0, hits_per_60_all: null, blocks_per_60_last5: 0, blocks_per_60_all: null,
+    hits_per_60_avg_last5: null, hits_per_60_avg_all: null, blocks_per_60_avg_last5: null, blocks_per_60_avg_all: null,
+    toi_seconds_total_last5: 6600, hits_per_60_hits_3ya: 220, hits_per_60_toi_seconds_3ya: 300000,
+    blocks_per_60_blocks_3ya: 380, blocks_per_60_toi_seconds_3ya: 300000,
+    ...overrides,
+  });
+  const hitsWeight = 110 / (110 + 240);
+  const blocksWeight = 110 / (110 + 1000);
+  // Invented league totals: D hits 3.2/60 over the prior two seasons, 2.8/60 so far this season.
+  const league = (overrides: { hitsToDate?: number; toiToDate?: number } = {}) => ({
+    F: { toDate: { hits: 4900, blocks: 2100, toiSeconds: 3_600_000 }, prior: { hits: 49000, blocks: 21000, toiSeconds: 36_000_000 } },
+    D: { toDate: { hits: overrides.hitsToDate ?? 280, blocks: 440, toiSeconds: overrides.toiToDate ?? 360_000 },
+      prior: { hits: 3200, blocks: 4400, toiSeconds: 3_600_000 } },
+  });
+
+  it("keeps a thin window of zero hits and blocks from zeroing an established defenseman", () => {
+    // No current-season split and no league totals: all history is prior, at half weight, with constant priors.
+    const rates = computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 1200 });
+    expect(rates.hitsRecentWeight).toBeCloseTo(hitsWeight, 12);
+    expect(rates.blocksRecentWeight).toBeCloseTo(blocksWeight, 12);
+    expect(rates.hitsPer60).toBeCloseTo((1 - hitsWeight) * (0.5 * 220 * 60 + 50 * 3.2) / (0.5 * 5000 + 50), 12);
+    expect(rates.blocksPer60).toBeCloseTo((1 - blocksWeight) * (0.5 * 380 * 60 + 300 * 4.4) / (0.5 * 5000 + 300), 12);
+    expect(rates.blocksPer60).toBeGreaterThan(3);
+    expect(rates).toMatchObject({ hitsLeagueScale: 1, blocksLeagueScale: 1 });
+  });
+
+  it("keeps this season at full weight and rescales prior seasons to the league rate to date", () => {
+    const row = allRow({ hits_per_60_hits_season: 10, hits_per_60_toi_seconds_season: 6000,
+      blocks_per_60_blocks_season: 8, blocks_per_60_toi_seconds_season: 6000 });
+    const rates = computeSkaterPhysicalEventRates({ all: row, position: "D", esPpToiSeconds: 1200,
+      currentSeasonId: 20262027, league: league() });
+    // League to date shrunk by 5750 D minutes toward 3.2: (60*280 + 3.2*5750) / (6000 + 5750).
+    const leagueHits = (60 * 280 + 3.2 * 5750) / (6000 + 5750);
+    expect(rates.hitsLeagueScale).toBeCloseTo(leagueHits / 3.2, 12);
+    expect(rates.blocksLeagueScale).toBeCloseTo(1, 12);
+    const baseline = ((10 + 0.5 * (leagueHits / 3.2) * 210) * 60 + 50 * leagueHits) / ((6000 + 0.5 * 294000) / 60 + 50);
+    expect(rates.hitsPer60).toBeCloseTo((1 - hitsWeight) * baseline, 12);
+    const unscaled = computeSkaterPhysicalEventRates({ all: row, position: "D", esPpToiSeconds: 1200, currentSeasonId: 20262027 });
+    expect(unscaled.hitsLeagueScale).toBe(1);
+    expect(rates.hitsPer60).toBeLessThan(unscaled.hitsPer60);
+  });
+
+  it.each([
+    ["C", "hits", 4.9, 50], ["D", "hits", 3.2, 50],
+    ["C", "blocks", 2.1, 300], ["D", "blocks", 4.4, 300],
+  ] as const)("keeps partial current-season %s %s count/exposure pairs unknown", (position, metric, prior, priorMinutes) => {
+    const row = allRow({
+      [`${metric}_per_60_last5`]: null, [`${metric}_per_60_${metric}_3ya`]: 200,
+      [`${metric}_per_60_toi_seconds_3ya`]: 240000,
+    });
+    const rate = (events: number | null | undefined, seconds: number | null | undefined) => computeSkaterPhysicalEventRates({
+      all: { ...row, [`${metric}_per_60_${metric}_season`]: events, [`${metric}_per_60_toi_seconds_season`]: seconds },
+      position, esPpToiSeconds: 1200, currentSeasonId: 20262027, league: null,
+    })[`${metric}Per60`];
+    const unsplit = (0.5 * 200 * 60 + priorMinutes * prior) / (0.5 * 4000 + priorMinutes);
+    for (const missing of [null, undefined]) {
+      // Either missing member invalidates the split, without inventing its partner.
+      expect(rate(missing, 120000)).toBeCloseTo(unsplit, 12);
+      expect(rate(40, missing)).toBeCloseTo(unsplit, 12);
+      expect(rate(0, missing)).toBeCloseTo(unsplit, 12);
+      expect(rate(missing, 0)).toBeCloseTo(unsplit, 12);
+    }
+    const observedZero = (0.5 * 200 * 60 + priorMinutes * prior) / (2000 + 0.5 * 2000 + priorMinutes);
+    expect(rate(0, 120000)).toBeCloseTo(observedZero, 12);
+    expect(rate(null, 120000)).not.toBe(rate(0, 120000));
+    expect(rate(40, 120000)).toBeCloseTo(((40 + 0.5 * 160) * 60 + priorMinutes * prior) / (3000 + priorMinutes), 12);
+  });
+
+  it("treats a row from an earlier season as all prior history", () => {
+    const seasonFields = { hits_per_60_hits_season: 40, hits_per_60_toi_seconds_season: 60000 };
+    const stale = computeSkaterPhysicalEventRates({ all: allRow({ season: 20252026, ...seasonFields }), position: "D",
+      esPpToiSeconds: 1200, currentSeasonId: 20262027, league: league() });
+    const withoutSplit = computeSkaterPhysicalEventRates({ all: allRow({ season: 20252026 }), position: "D",
+      esPpToiSeconds: 1200, currentSeasonId: 20262027, league: league() });
+    expect(stale.hitsPer60).toBeCloseTo(withoutSplit.hitsPer60, 12);
+    const current = computeSkaterPhysicalEventRates({ all: allRow(seasonFields), position: "D",
+      esPpToiSeconds: 1200, currentSeasonId: 20262027, league: league() });
+    expect(current.hitsPer60).not.toBeCloseTo(stale.hitsPer60, 6);
+  });
+
+  it("bounds the league scale and uses the prior two seasons' rate before any league games", () => {
+    const low = computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 1200,
+      currentSeasonId: 20262027, league: league({ hitsToDate: 0, toiToDate: 360_000_000 }) });
+    expect(low.hitsLeagueScale).toBe(0.7);
+    const high = computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 1200,
+      currentSeasonId: 20262027, league: league({ hitsToDate: 1_000_000, toiToDate: 360_000_000 }) });
+    expect(high.hitsLeagueScale).toBe(1.3);
+    const opening = computeSkaterPhysicalEventRates({ all: undefined, position: "D", esPpToiSeconds: 1200,
+      currentSeasonId: 20262027, league: league({ hitsToDate: 0, toiToDate: 0 }) });
+    expect(opening.hitsLeagueScale).toBe(1);
+    expect(opening.hitsPer60).toBeCloseTo(3.2, 12);
+    const noPriorTotals = computeSkaterPhysicalEventRates({ all: undefined, position: "C", esPpToiSeconds: 1000,
+      currentSeasonId: 20262027, league: { ...league(), F: { toDate: league().F.toDate, prior: { hits: 0, blocks: 0, toiSeconds: 0 } } } });
+    expect(noPriorTotals).toMatchObject({ ...SKATER_PHYSICAL_RATE_PRIORS.F, hitsLeagueScale: 1, blocksLeagueScale: 1 });
+  });
+
+  it("uses the position prior, not zero, when there is no all-strength row or history", () => {
+    expect(computeSkaterPhysicalEventRates({ all: undefined, position: "D", esPpToiSeconds: 1200 }))
+      .toEqual({ hitsPer60: SKATER_PHYSICAL_RATE_PRIORS.D.hitsPer60, blocksPer60: SKATER_PHYSICAL_RATE_PRIORS.D.blocksPer60,
+        hitsRecentWeight: 0, blocksRecentWeight: 0, hitsLeagueScale: 1, blocksLeagueScale: 1, toiMultiplier: 1 });
+    const forward = computeSkaterPhysicalEventRates({ all: undefined, position: "C", esPpToiSeconds: 1000 });
+    expect(forward).toMatchObject(SKATER_PHYSICAL_RATE_PRIORS.F);
+    expect(forward.blocksPer60).toBeLessThan(SKATER_PHYSICAL_RATE_PRIORS.D.blocksPer60);
+    const noHistory = computeSkaterPhysicalEventRates({ position: "D", esPpToiSeconds: 1200, all: allRow({
+      hits_per_60_last5: null, hits_per_60_hits_3ya: null, hits_per_60_toi_seconds_3ya: null }) });
+    expect(noHistory.hitsPer60).toBe(SKATER_PHYSICAL_RATE_PRIORS.D.hitsPer60);
+  });
+
+  it("shrinks a short rookie history toward the prior and lets a genuine non-hitter stay near zero", () => {
+    const rookie = computeSkaterPhysicalEventRates({ position: "L", esPpToiSeconds: 1000, all: allRow({
+      hits_per_60_hits_3ya: 0, hits_per_60_toi_seconds_3ya: 7560 }) });
+    expect(rookie.hitsPer60).toBeCloseTo((1 - hitsWeight) * (50 * 4.9) / (0.5 * 126 + 50), 12);
+    const nonHitter = computeSkaterPhysicalEventRates({ position: "L", esPpToiSeconds: 1000, all: allRow({ hits_per_60_hits_3ya: 0 }) });
+    expect(nonHitter.hitsPer60).toBeGreaterThan(0);
+    expect(nonHitter.hitsPer60).toBeLessThan(0.3);
+  });
+
+  it("weights the recent rate by the minutes its window covers and reads the legacy rate when canonical is missing", () => {
+    const short = computeSkaterPhysicalEventRates({ position: "C", esPpToiSeconds: 1000, all: allRow({ hits_per_60_last5: 9 }) });
+    const long = computeSkaterPhysicalEventRates({ position: "C", esPpToiSeconds: 1000,
+      all: allRow({ hits_per_60_last5: 9, toi_seconds_total_last5: 60000 }) });
+    expect(long.hitsRecentWeight).toBeGreaterThan(short.hitsRecentWeight);
+    expect(long.hitsPer60).toBeGreaterThan(short.hitsPer60);
+    expect(long.hitsPer60).toBeLessThan(9);
+    const legacy = computeSkaterPhysicalEventRates({ position: "C", esPpToiSeconds: 1000,
+      all: allRow({ hits_per_60_last5: null, hits_per_60_avg_last5: 9 }) });
+    expect(legacy.hitsPer60).toBeCloseTo(short.hitsPer60, 12);
+  });
+
+  it("adds bounded PK time and never returns negative or non-finite rates", () => {
+    expect(computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 1200 }).toiMultiplier).toBeCloseTo(1.1, 12);
+    expect(computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 600 }).toiMultiplier).toBe(1.3);
+    expect(computeSkaterPhysicalEventRates({ all: allRow(), position: "D", esPpToiSeconds: 1500 }).toiMultiplier).toBe(1);
+    expect(computeSkaterPhysicalEventRates({ all: allRow({ toi_seconds_avg_last5: null }), position: "D", esPpToiSeconds: 1200 }).toiMultiplier).toBe(1);
+    const malformed = computeSkaterPhysicalEventRates({ position: "D", esPpToiSeconds: 0, all: allRow({
+      hits_per_60_last5: Number.NaN, blocks_per_60_last5: -2, toi_seconds_total_last5: -60,
+      hits_per_60_hits_3ya: -5, blocks_per_60_toi_seconds_3ya: Number.POSITIVE_INFINITY }) });
+    for (const value of Object.values(malformed)) {
+      expect(Number.isFinite(value)).toBe(true);
+      expect(value).toBeGreaterThanOrEqual(0);
+    }
+    expect(malformed).toMatchObject({ hitsPer60: SKATER_PHYSICAL_RATE_PRIORS.D.hitsPer60,
+      blocksPer60: SKATER_PHYSICAL_RATE_PRIORS.D.blocksPer60, hitsRecentWeight: 0, blocksRecentWeight: 0,
+      toiMultiplier: 1 });
+  });
+});
+
+describe("strength-split conversion rates", () => {
+  it("models PP goal rate above ES goal rate when PP shot conversion evidence is stronger", () => {
+    const result = computeStrengthSplitConversionRates({
+      evGoalsRecent: 1,
+      evShotsRecent: 16,
+      evGoalsAll: 8,
+      evShotsAll: 120,
+      evAssistsRecent: 2,
+      evAssistsAll: 18,
+      ppGoalsRecent: 2,
+      ppShotsRecent: 10,
+      ppGoalsAll: 9,
+      ppShotsAll: 52,
+      ppAssistsRecent: 2,
+      ppAssistsAll: 11,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1
+    });
+    expect(result.goalRatePp).toBeGreaterThan(result.goalRateEs);
+  });
+
+  it("applies external multipliers independently to split rates", () => {
+    const base = computeStrengthSplitConversionRates({
+      evGoalsRecent: 1,
+      evShotsRecent: 14,
+      evGoalsAll: 7,
+      evShotsAll: 110,
+      evAssistsRecent: 2,
+      evAssistsAll: 16,
+      ppGoalsRecent: 1,
+      ppShotsRecent: 8,
+      ppGoalsAll: 6,
+      ppShotsAll: 45,
+      ppAssistsRecent: 2,
+      ppAssistsAll: 10,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1
+    });
+    const boosted = computeStrengthSplitConversionRates({
+      evGoalsRecent: 1,
+      evShotsRecent: 14,
+      evGoalsAll: 7,
+      evShotsAll: 110,
+      evAssistsRecent: 2,
+      evAssistsAll: 16,
+      ppGoalsRecent: 1,
+      ppShotsRecent: 8,
+      ppGoalsAll: 6,
+      ppShotsAll: 45,
+      ppAssistsRecent: 2,
+      ppAssistsAll: 10,
+      goalRateMultiplier: 1.1,
+      assistRateMultiplier: 1.08
+    });
+    expect(boosted.goalRateEs).toBeGreaterThan(base.goalRateEs);
+    expect(boosted.goalRatePp).toBeGreaterThan(base.goalRatePp);
+    expect(boosted.assistRateEs).toBeGreaterThan(base.assistRateEs);
+    expect(boosted.assistRatePp).toBeGreaterThan(base.assistRatePp);
+  });
+
+  it("applies stronger shrinkage for tiny samples than for established samples", () => {
+    const lowSample = computeStrengthSplitConversionRates({
+      evGoalsRecent: 1,
+      evShotsRecent: 1,
+      evGoalsAll: 1,
+      evShotsAll: 1,
+      evAssistsRecent: 0,
+      evAssistsAll: 0,
+      ppGoalsRecent: 1,
+      ppShotsRecent: 1,
+      ppGoalsAll: 1,
+      ppShotsAll: 1,
+      ppAssistsRecent: 0,
+      ppAssistsAll: 0,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1
+    });
+    const established = computeStrengthSplitConversionRates({
+      evGoalsRecent: 1,
+      evShotsRecent: 1,
+      evGoalsAll: 18,
+      evShotsAll: 95,
+      evAssistsRecent: 0,
+      evAssistsAll: 20,
+      ppGoalsRecent: 1,
+      ppShotsRecent: 1,
+      ppGoalsAll: 10,
+      ppShotsAll: 48,
+      ppAssistsRecent: 0,
+      ppAssistsAll: 12,
+      goalRateMultiplier: 1,
+      assistRateMultiplier: 1
+    });
+
+    expect(lowSample.goalRateEs).toBeLessThan(established.goalRateEs);
+    expect(lowSample.goalRatePp).toBeLessThan(established.goalRatePp);
+  });
+});
+
+describe("assist rate scale", () => {
+  const leagueAverage = {
+    evGoalsRecent: 4, evShotsRecent: 0, evGoalsAll: 20, evShotsAll: 0, evAssistsRecent: 7, evAssistsAll: 34,
+    ppGoalsRecent: 4, ppShotsRecent: 0, ppGoalsAll: 20, ppShotsAll: 0, ppAssistsRecent: 7, ppAssistsAll: 34,
+    goalRateMultiplier: 1, assistRateMultiplier: 1
+  };
+  it("fits assists per goal, pulled modestly from the 1.7 raw rate toward the 1.44 prior", () => {
+    const perGoal = computeStrengthSplitConversionRates({ ...leagueAverage, assistDenominator: "per_goal" });
+    // Prior strength 11*(0.35+1.35*18/42) ~ 10.2 pseudo-goals: base (34+1.44*10.2)/30.2 ~ 1.61, recent 7/4 at weight ~0.28.
+    expect(perGoal.assistRateEs).toBeCloseTo(1.651, 3);
+    const legacy = computeStrengthSplitConversionRates({ ...leagueAverage, assistDenominator: "per_two_goals" });
+    expect(legacy.assistRateEs).toBeCloseTo(0.8255, 3);
+    expect(perGoal.assistRateEs).toBeCloseTo(legacy.assistRateEs * 2, 10);
+    expect(perGoal.assistRatePp).toBeCloseTo(legacy.assistRatePp * 2, 10);
+    expect(legacy.goalRateEs).toBe(perGoal.goalRateEs);
+  });
+  it("keeps the legacy per-two-goals numbers exactly", () => {
+    const legacy = computeStrengthSplitConversionRates({ ...leagueAverage, evGoalsAll: 0, evGoalsRecent: 0, evAssistsAll: 0,
+      evAssistsRecent: 0, ppGoalsAll: 1, ppGoalsRecent: 0, ppAssistsAll: 3, ppAssistsRecent: 0, assistDenominator: "per_two_goals" });
+    expect(legacy.assistRateEs).toBe(0.72);
+    // (3 + 0.95 * s) / (2 + s), s = clamp(16 * (0.35 + 1.35 * 24 / 26), 6, 30)
+    const s = 16 * (0.35 + 1.35 * 24 / 26);
+    expect(legacy.assistRatePp).toBeCloseTo((3 + 0.95 * s) / (2 + s), 12);
+  });
+  it("refits ES assists per goal and keeps PP on the per-two-goals scale by default", () => {
+    const legacy = computeStrengthSplitConversionRates({ ...leagueAverage, assistDenominator: "per_two_goals" });
+    const esOnly = computeStrengthSplitConversionRates({ ...leagueAverage,
+      assistDenominator: { es: "per_goal", pp: "per_two_goals" } });
+    expect(esOnly.assistRateEs).toBeCloseTo(legacy.assistRateEs * 2, 10);
+    expect(esOnly.assistRatePp).toBe(legacy.assistRatePp);
+    expect(esOnly.goalRateEs).toBe(legacy.goalRateEs);
+    expect(computeStrengthSplitConversionRates(leagueAverage)).toEqual(esOnly);
+    expect(SKATER_ASSIST_DENOMINATOR_DEFAULT).toEqual({ es: "per_goal", pp: "per_two_goals" });
+    expect(resolveAssistDenominators("per_goal")).toEqual({ es: "per_goal", pp: "per_goal" });
+    expect(resolveAssistDenominators(undefined)).toEqual(SKATER_ASSIST_DENOMINATOR_DEFAULT);
+    expect(resolveAssistDenominators(undefined, { es: "per_two_goals", pp: "per_goal" })).toEqual({ es: "per_two_goals", pp: "per_goal" });
+  });
+});
+
+describe("pp opportunity allocation", () => {
+  it("allocates team PP TOI target across skaters using role-weighted shares", () => {
+    const allocation = allocatePpToiByTeamOpportunity({
+      projectedByPlayer: new Map([
+        [
+          1,
+          {
+            toiPp: 220,
+            roleTag: {
+              esRole: "L1",
+              unitTier: "TOP",
+              roleRank: 1,
+              source: "line_combination"
+            }
+          }
+        ],
+        [
+          2,
+          {
+            toiPp: 120,
+            roleTag: {
+              esRole: "L2",
+              unitTier: "MIDDLE",
+              roleRank: 5,
+              source: "line_combination"
+            }
+          }
+        ],
+        [
+          3,
+          {
+            toiPp: 35,
+            roleTag: {
+              esRole: "L4",
+              unitTier: "DEPTH",
+              roleRank: 11,
+              source: "line_combination"
+            }
+          }
+        ]
+      ]),
+      targetTeamPpSeconds: 540
+    });
+    const total = Array.from(allocation.perPlayerPpToiSeconds.values()).reduce(
+      (acc, n) => acc + n,
+      0
+    );
+    expect(Math.round(total)).toBe(540);
+    expect((allocation.perPlayerPpToiSeconds.get(1) ?? 0)).toBeGreaterThan(
+      allocation.perPlayerPpToiSeconds.get(2) ?? 0
+    );
+    expect((allocation.perPlayerPpToiSeconds.get(2) ?? 0)).toBeGreaterThan(
+      allocation.perPlayerPpToiSeconds.get(3) ?? 0
+    );
+  });
+});
+
+describe("official pp opportunity", () => {
+  const top = { esRole: "PP1", unitTier: "TOP", roleRank: 1, source: "line_combination" } as const;
+  const depth = { esRole: "L4", unitTier: "DEPTH", roleRank: 12, source: "line_combination" } as const;
+  it("splits the team PP target in proportion to official last-10 PP TOI, falling back to rolling for absent players", () => {
+    const allocation = allocatePpToiByTeamOpportunity({
+      projectedByPlayer: new Map([
+        [1, { toiPp: 30, roleTag: depth, officialPpToiAvgSec: 240 }],
+        [2, { toiPp: 200, roleTag: top, officialPpToiAvgSec: 60 }],
+        [3, { toiPp: 90, roleTag: top, officialPpToiAvgSec: null }],
+        [4, { toiPp: 0, roleTag: top }]
+      ]),
+      targetTeamPpSeconds: 390
+    });
+    expect(allocation.perPlayerPpToiSeconds.get(1)).toBe(240);
+    expect(allocation.perPlayerPpToiSeconds.get(2)).toBe(60);
+    expect(allocation.perPlayerPpToiSeconds.get(3)).toBe(90);
+    expect(allocation.perPlayerPpToiSeconds.get(4)).toBe(0);
+    const twoPlayers = allocatePpToiByTeamOpportunity({
+      projectedByPlayer: new Map([[1, { toiPp: 10, roleTag: null, officialPpToiAvgSec: 240 }],
+        [2, { toiPp: 10, roleTag: top, officialPpToiAvgSec: 60 }]]),
+      targetTeamPpSeconds: 500
+    });
+    expect([twoPlayers.perPlayerPpToiSeconds.get(1), twoPlayers.perPlayerPpToiSeconds.get(2)]).toEqual([400, 100]);
+  });
+
+  it("applies the TOP/MIDDLE PP minimum only to players with a PP unit", () => {
+    const usage = { roleTag: { ...top, esRole: "L1" }, toiEsSeconds: 1080, toiPpSeconds: 20, sogPer60Es: 9, sogPer60Pp: 10 };
+    expect(applyRoleSpecificUsageBounds({ ...usage, hasPpUnit: true }).toiPpSeconds).toBe(120);
+    expect(applyRoleSpecificUsageBounds({ ...usage, hasPpUnit: false }).toiPpSeconds).toBe(20);
+    expect(applyRoleSpecificUsageBounds({ ...usage, roleTag: { ...usage.roleTag, unitTier: "MIDDLE" }, hasPpUnit: false }).toiPpSeconds).toBe(20);
+  });
+
+  it("uses official PP share when present, else puts PK time in the strength-table denominator", () => {
+    const strength = { toiEsSecondsAvg: 15000, toiPpSecondsAvg: 1200, toiPkSecondsAvg: 1800, shotsEsAvg: 25, shotsPpAvg: 6 };
+    const official = { games: 10, ppToiSkaterSecondsAvg: 720, ppShotsAvg: 4, totalToiSkaterSecondsAvg: 18000, perPlayerPpToiAvgSec: new Map<number, number>() };
+    expect(computeTeamPpShare({ official, strengthAverages: strength, preAllocationToiEs: 0, preAllocationToiPp: 0 }))
+      .toEqual({ ppShare: 0.04, legacyPpShare: 1200 / 16200, source: "official_wgo" });
+    expect(computeTeamPpShare({ official: null, strengthAverages: strength, preAllocationToiEs: 0, preAllocationToiPp: 0 }))
+      .toEqual({ ppShare: 1200 / 18000, legacyPpShare: 1200 / 16200, source: "strength_table_pk_denominator" });
+    const noStrength = { toiEsSecondsAvg: null, toiPpSecondsAvg: null, toiPkSecondsAvg: null, shotsEsAvg: null, shotsPpAvg: null };
+    expect(computeTeamPpShare({ official: null, strengthAverages: noStrength, preAllocationToiEs: 900, preAllocationToiPp: 100 }))
+      .toEqual({ ppShare: 0.1, legacyPpShare: 0.1, source: "strength_table_pk_denominator" });
+  });
+});
+
+describe("teammate assist coupling", () => {
+  it("boosts assist dependency for top-unit players with strong line/PP share", () => {
+    const result = computeTeammateAssistCoupling({
+      roleTag: {
+        esRole: "L1",
+        unitTier: "TOP",
+        roleRank: 1,
+        source: "line_combination"
+      },
+      playerShotsEs: 4.2,
+      lineGroupShotsEs: 14.5,
+      teamShotsEs: 30.1,
+      playerPpShare: 0.28
+    });
+    expect(result.dependencyScore).toBeGreaterThan(0.2);
+    expect(result.assistRateEsMultiplier).toBeGreaterThan(1);
+    expect(result.assistRatePpMultiplier).toBeGreaterThan(1);
+  });
+
+  it("penalizes assist dependency for depth players with low teammate context", () => {
+    const result = computeTeammateAssistCoupling({
+      roleTag: {
+        esRole: "L4",
+        unitTier: "DEPTH",
+        roleRank: 12,
+        source: "line_combination"
+      },
+      playerShotsEs: 2.1,
+      lineGroupShotsEs: 3.2,
+      teamShotsEs: 31.8,
+      playerPpShare: 0.03
+    });
+    expect(result.assistRateEsMultiplier).toBeLessThan(1);
+    expect(result.assistRatePpMultiplier).toBeLessThan(1);
+  });
+});
+
+describe("role-specific usage bounds", () => {
+  it("caps depth skater TOI/shot spikes", () => {
+    const bounded = applyRoleSpecificUsageBounds({
+      roleTag: {
+        esRole: "L4",
+        unitTier: "DEPTH",
+        roleRank: 12,
+        source: "line_combination"
+      },
+      toiEsSeconds: 1200,
+      toiPpSeconds: 320,
+      sogPer60Es: 12.1,
+      sogPer60Pp: 18.4
+    });
+    expect(bounded.wasBounded).toBe(true);
+    expect(bounded.toiEsSeconds).toBeLessThanOrEqual(940);
+    expect(bounded.toiPpSeconds).toBeLessThanOrEqual(190);
+    expect(bounded.sogPer60Es).toBeLessThanOrEqual(8.2);
+    expect(bounded.sogPer60Pp).toBeLessThanOrEqual(13);
+  });
+
+  it("preserves top-role usage when already within bounds", () => {
+    const bounded = applyRoleSpecificUsageBounds({
+      roleTag: {
+        esRole: "L1",
+        unitTier: "TOP",
+        roleRank: 1,
+        source: "line_combination"
+      },
+      toiEsSeconds: 1080,
+      toiPpSeconds: 230,
+      sogPer60Es: 10.4,
+      sogPer60Pp: 14.2
+    });
+    expect(bounded.wasBounded).toBe(false);
+    expect(bounded.toiEsSeconds).toBe(1080);
+    expect(bounded.toiPpSeconds).toBe(230);
+  });
+});
+
+describe("skater pool recovery safeguards", () => {
+  it("merges supplemental skaters without dropping original ordering", () => {
+    const merged = mergeSkaterCandidatePoolForRecovery({
+      baseSkaterIds: [1, 2, 3, 4],
+      supplementalSkaterIds: [3, 5, 6, 7, 8],
+      targetCount: 7
+    });
+    expect(merged).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it("can restore a collapsed pool toward 18 skaters with supplemental candidates", () => {
+    const merged = mergeSkaterCandidatePoolForRecovery({
+      baseSkaterIds: [1, 2, 3, 4, 5, 6, 7],
+      supplementalSkaterIds: [
+        8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+      ],
+      targetCount: 18
+    });
+    expect(merged.length).toBe(18);
+    expect(merged.slice(0, 7)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+    expect(merged[17]).toBe(18);
+  });
+
+  it("constrains candidates to active roster skaters", () => {
+    const constrained = constrainSkaterIdsToActiveRoster({
+      candidateSkaterIds: [10, 11, 12, 13],
+      activeRosterSkaterIds: [11, 13, 15]
+    });
+    expect(constrained).toEqual([11, 13]);
+  });
+
+  it("keeps line skaters beyond the old first24 membership sample", () => {
+    const roster = Array.from({ length: 49 }, (_, index) => index + 1);
+    expect(constrainSkaterIdsToActiveRoster({ candidateSkaterIds: [20, 27, 49], activeRosterSkaterIds: roster }))
+      .toEqual([20, 27, 49]);
+  });
+
+  it("lets the gated season bootstrap reach current roster candidates before rolling history exists", () => {
+    const args = { rollingSkaterIds: [], activeRosterSkaterIds: [11, 13, 13, NaN], seasonBootstrap: true };
+    expect(selectLineCombinationFallback(args)).toEqual({ playerIds: [11, 13], rosterBootstrap: true });
+    expect(selectLineCombinationFallback({ ...args, seasonBootstrap: false }).playerIds).toEqual([]);
+    expect(selectLineCombinationFallback({ ...args, activeRosterSkaterIds: [] }).playerIds).toEqual([]);
+    expect(selectLineCombinationFallback({ ...args, rollingSkaterIds: [17, 19] }))
+      .toEqual({ playerIds: [17, 19], rosterBootstrap: false });
+  });
+
+  it("fails open when active roster skaters are unavailable", () => {
+    const constrained = constrainSkaterIdsToActiveRoster({
+      candidateSkaterIds: [20, 21, 22, 22],
+      activeRosterSkaterIds: []
+    });
+    expect(constrained).toEqual([20, 21, 22]);
+  });
+
+  it("caps team skater TOI target when projected pool is undersized", () => {
+    const guarded = computeSkaterTeamToiTargetWithPoolGuard({
+      canonicalTargetSeconds: 18000,
+      projectedSkaterCount: 7,
+      ppShare: 0.11
+    });
+    expect(guarded.wasCapped).toBe(true);
+    expect(guarded.targetSeconds).toBeLessThan(18000);
+    expect(guarded.targetSeconds).toBeLessThanOrEqual(8400);
+  });
+
+  it("keeps canonical team skater TOI target for normal projected pool sizes", () => {
+    const guarded = computeSkaterTeamToiTargetWithPoolGuard({
+      canonicalTargetSeconds: 18000,
+      projectedSkaterCount: 18,
+      ppShare: 0.11
+    });
+    expect(guarded.wasCapped).toBe(false);
+    expect(guarded.targetSeconds).toBe(18000);
+  });
+
+  it("keeps canonical team skater TOI target at the minimum valid projected pool size", () => {
+    const guarded = computeSkaterTeamToiTargetWithPoolGuard({
+      canonicalTargetSeconds: 18000,
+      projectedSkaterCount: 15,
+      ppShare: 0.11
+    });
+    expect(guarded.wasCapped).toBe(false);
+    expect(guarded.targetSeconds).toBe(18000);
+  });
+
+  it("caps team skater TOI target immediately below the minimum valid projected pool size", () => {
+    const guarded = computeSkaterTeamToiTargetWithPoolGuard({
+      canonicalTargetSeconds: 18000,
+      projectedSkaterCount: 14,
+      ppShare: 0.11
+    });
+    expect(guarded.wasCapped).toBe(true);
+    expect(guarded.targetSeconds).toBeLessThan(18000);
+  });
+});
+
+describe("reconciliation distribution validation", () => {
+  it("keeps reconciled vectors unchanged when concentration is within limits", () => {
+    const baseline = [
+      { playerId: 1, toiEsSeconds: 560, toiPpSeconds: 145, shotsEs: 2.3, shotsPp: 0.75 },
+      { playerId: 2, toiEsSeconds: 510, toiPpSeconds: 130, shotsEs: 2.0, shotsPp: 0.64 },
+      { playerId: 3, toiEsSeconds: 460, toiPpSeconds: 115, shotsEs: 1.8, shotsPp: 0.57 },
+      { playerId: 4, toiEsSeconds: 420, toiPpSeconds: 95, shotsEs: 1.6, shotsPp: 0.49 },
+      { playerId: 5, toiEsSeconds: 330, toiPpSeconds: 70, shotsEs: 1.2, shotsPp: 0.38 },
+      { playerId: 6, toiEsSeconds: 260, toiPpSeconds: 45, shotsEs: 0.9, shotsPp: 0.26 }
+    ];
+    const result = validateReconciledPlayerDistribution({
+      baselinePlayers: baseline,
+      reconciledPlayers: baseline,
+      targets: {
+        toiEsSeconds: 2540,
+        toiPpSeconds: 600,
+        shotsEs: 9.8,
+        shotsPp: 3.09
+      }
+    });
+    expect(result.wasAdjusted).toBe(false);
+    expect(result.players[0].toiEsSeconds).toBe(560);
+  });
+
+  it("blends and renormalizes when one player dominates ES/PP share", () => {
+    const baseline = [
+      { playerId: 1, toiEsSeconds: 980, toiPpSeconds: 260, shotsEs: 4.2, shotsPp: 1.4 },
+      { playerId: 2, toiEsSeconds: 840, toiPpSeconds: 210, shotsEs: 3.4, shotsPp: 1.0 },
+      { playerId: 3, toiEsSeconds: 720, toiPpSeconds: 170, shotsEs: 2.8, shotsPp: 0.8 }
+    ];
+    const extreme = [
+      { playerId: 1, toiEsSeconds: 1800, toiPpSeconds: 520, shotsEs: 8.2, shotsPp: 2.5 },
+      { playerId: 2, toiEsSeconds: 420, toiPpSeconds: 55, shotsEs: 1.5, shotsPp: 0.35 },
+      { playerId: 3, toiEsSeconds: 320, toiPpSeconds: 25, shotsEs: 1.1, shotsPp: 0.2 }
+    ];
+    const result = validateReconciledPlayerDistribution({
+      baselinePlayers: baseline,
+      reconciledPlayers: extreme,
+      targets: {
+        toiEsSeconds: 2540,
+        toiPpSeconds: 600,
+        shotsEs: 10.8,
+        shotsPp: 3.2
+      }
+    });
+    const totalEs = result.players.reduce((acc, p) => acc + p.toiEsSeconds, 0);
+    const totalPp = result.players.reduce((acc, p) => acc + p.toiPpSeconds, 0);
+    expect(result.wasAdjusted).toBe(true);
+    expect(Math.round(totalEs)).toBe(2540);
+    expect(Math.round(totalPp)).toBe(600);
+    expect(result.topEsShareAfter).toBeLessThan(0.6);
+  });
+});
+
+describe("skater role scenarios", () => {
+  it("builds normalized top scenarios from role continuity", () => {
+    const scenarios = buildSkaterRoleScenarios({
+      roleTag: {
+        esRole: "L1",
+        unitTier: "TOP",
+        roleRank: 1,
+        source: "line_combination"
+      },
+      roleContinuity: {
+        windowGames: 10,
+        appearancesTracked: 10,
+        gamesInCurrentRole: 8,
+        continuityShare: 0.8,
+        roleChangeRate: 0.2,
+        volatilityIndex: 0.2
+      }
+    });
+    const total = scenarios.reduce((acc, s) => acc + s.probability, 0);
+    expect(scenarios.length).toBeGreaterThan(1);
+    expect(Math.round(total * 1000)).toBe(1000);
+    expect(scenarios[0].role).toBe("L1");
+  });
+
+  it("produces meaningful alternate scenarios under volatility", () => {
+    const scenarios = buildSkaterRoleScenarios({
+      roleTag: {
+        esRole: "D2",
+        unitTier: "MIDDLE",
+        roleRank: 4,
+        source: "line_combination"
+      },
+      roleContinuity: {
+        windowGames: 8,
+        appearancesTracked: 8,
+        gamesInCurrentRole: 3,
+        continuityShare: 0.375,
+        roleChangeRate: 0.57,
+        volatilityIndex: 0.5
+      }
+    });
+    expect(scenarios.some((s) => s.role === "D3")).toBe(true);
+    expect((scenarios[0]?.probability ?? 0)).toBeLessThan(0.8);
+  });
+});
+
+describe("skater scenario stat blending", () => {
+  it("returns base outputs when scenarios are absent", () => {
+    const result = blendSkaterScenarioStatLines({
+      currentRole: "L2",
+      scenarios: [],
+      baseGoalsEs: 0.42,
+      baseGoalsPp: 0.16,
+      baseAssistsEs: 0.33,
+      baseAssistsPp: 0.18
+    });
+    expect(result.blended.goalsEs).toBe(0.42);
+    expect(result.blended.goalsPp).toBe(0.16);
+    expect(result.scenarioLines.length).toBe(0);
+  });
+
+  it("blends scenario lines by probability", () => {
+    const result = blendSkaterScenarioStatLines({
+      currentRole: "L2",
+      scenarios: [
+        { role: "L2", probability: 0.7, source: "current_role" },
+        { role: "L1", probability: 0.3, source: "adjacent_role" }
+      ],
+      baseGoalsEs: 0.5,
+      baseGoalsPp: 0.2,
+      baseAssistsEs: 0.45,
+      baseAssistsPp: 0.25
+    });
+    expect(result.scenarioLines.length).toBe(2);
+    expect(result.blended.goalsEs).toBeGreaterThan(0.5);
+    expect(result.blended.assistsEs).toBeGreaterThan(0.45);
+  });
+
+  it("matches exact weighted expectation for explicit two-scenario mixture", () => {
+    const result = blendSkaterScenarioStatLines({
+      currentRole: "L2",
+      scenarios: [
+        { role: "L2", probability: 0.6, source: "current_role" },
+        { role: "L3", probability: 0.4, source: "adjacent_role" }
+      ],
+      baseGoalsEs: 0.5,
+      baseGoalsPp: 0.25,
+      baseAssistsEs: 0.4,
+      baseAssistsPp: 0.2
+    });
+    // L2 keeps baseline (multiplier 1). L3 is one rank lower (goal*0.93 assist*0.91).
+    const expectedGoalsEs = 0.6 * 0.5 + 0.4 * (0.5 * 0.93);
+    const expectedAssistsEs = 0.6 * 0.4 + 0.4 * (0.4 * 0.91);
+    expect(result.blended.goalsEs).toBeCloseTo(expectedGoalsEs, 4);
+    expect(result.blended.assistsEs).toBeCloseTo(expectedAssistsEs, 4);
+  });
+});
+
+describe("horizon scenario propagation", () => {
+  it("returns per-game scenario summaries matching horizon length", () => {
+    const result = blendSkaterScenarioStatLinesAcrossHorizon({
+      currentRole: "L1",
+      scenarios: [
+        { role: "L1", probability: 0.78, source: "current_role" },
+        { role: "L2", probability: 0.22, source: "adjacent_role" }
+      ],
+      baseGoalsEs: 0.65,
+      baseGoalsPp: 0.26,
+      baseAssistsEs: 0.61,
+      baseAssistsPp: 0.33,
+      horizonScalars: [1, 0.92, 0.84],
+      roleContinuity: {
+        windowGames: 10,
+        appearancesTracked: 10,
+        gamesInCurrentRole: 7,
+        continuityShare: 0.7,
+        roleChangeRate: 0.2,
+        volatilityIndex: 0.25
+      }
+    });
+    expect(result.horizonScenarioSummaries.length).toBe(3);
+    expect(result.horizonScenarioSummaries[0]?.topRole).toBe("L1");
+  });
+
+  it("softens top-role certainty deeper into horizon", () => {
+    const result = blendSkaterScenarioStatLinesAcrossHorizon({
+      currentRole: "L1",
+      scenarios: [
+        { role: "L1", probability: 0.88, source: "current_role" },
+        { role: "L2", probability: 0.12, source: "adjacent_role" }
+      ],
+      baseGoalsEs: 0.6,
+      baseGoalsPp: 0.24,
+      baseAssistsEs: 0.56,
+      baseAssistsPp: 0.29,
+      horizonScalars: [1, 0.91, 0.83, 0.78],
+      roleContinuity: {
+        windowGames: 10,
+        appearancesTracked: 10,
+        gamesInCurrentRole: 8,
+        continuityShare: 0.8,
+        roleChangeRate: 0.1,
+        volatilityIndex: 0.2
+      }
+    });
+    const firstTop = result.horizonScenarioSummaries[0]?.topProbability ?? 0;
+    const lastTop =
+      result.horizonScenarioSummaries[result.horizonScenarioSummaries.length - 1]
+        ?.topProbability ?? 0;
+    expect(lastTop).toBeLessThan(firstTop);
+  });
+
+  it("preserves total blended mass near base means for neutral role scenarios", () => {
+    const result = blendSkaterScenarioStatLinesAcrossHorizon({
+      currentRole: "L2",
+      scenarios: [
+        { role: "L2", probability: 0.5, source: "current_role" },
+        { role: "L2", probability: 0.5, source: "adjacent_role" }
+      ],
+      baseGoalsEs: 0.44,
+      baseGoalsPp: 0.2,
+      baseAssistsEs: 0.38,
+      baseAssistsPp: 0.24,
+      horizonScalars: [1, 0.93, 0.88],
+      roleContinuity: null
+    });
+    expect(result.blended.goalsEs).toBeCloseTo(0.44, 4);
+    expect(result.blended.assistsPp).toBeCloseTo(0.24, 4);
+  });
+});
+
+describe("skater scenario metadata", () => {
+  it("produces model version, count, and sorted top drivers", () => {
+    const metadata = buildSkaterScenarioMetadata({
+      scenarios: [
+        { role: "L2", probability: 0.22, source: "adjacent_role" },
+        { role: "L1", probability: 0.68, source: "current_role" },
+        { role: "L4", probability: 0.1, source: "depth_fallback" }
+      ]
+    });
+    expect(metadata.modelVersion).toBe("skater-role-scenario-v1");
+    expect(metadata.scenarioCount).toBe(3);
+    expect(metadata.topScenarioDrivers[0]?.role).toBe("L1");
+    expect(metadata.topScenarioDrivers.length).toBe(3);
+  });
+});
+
+describe("active skater filtering", () => {
+  const recencySeasons = [
+    { id: 20252026, startDate: "2025-10-07", regularSeasonEndDate: "2026-04-17", endDate: "2026-06-15", numberOfGames: 82 },
+    { id: 20262027, startDate: "2026-09-29", regularSeasonEndDate: "2027-04-10", endDate: "2027-06-10", numberOfGames: 84 },
+  ];
+  const inSeasonEvidence = {
+    currentSeasonId: 20252026, recencySeasons: [recencySeasons[0]],
+    recencyEventByPlayerId: new Map([1, 11, 12, 13, 52].map(id => [id, { date: ({ 1: "2026-02-06", 11: "2026-02-06", 12: "2026-01-10", 13: "2025-11-20", 52: "2026-02-05" } as Record<number, string>)[id], seasonId: 20252026, type: 2 }])),
+  };
+  it("uses continuous in-season age without admitting traded, rookie or missing season evidence", () => {
+    const common = { asOfDate: "2026-10-05", currentSeasonId: 20262027, recencySeasons, teamId: 5,
+      recencyEventByPlayerId: new Map([[1, "2026-04-13"], [2, "2026-04-13"], [4, "2026-02-01"], [5, "2026-05-01"]].map(([id,date]) => [Number(id), { date: String(date), seasonId: 20252026, type: 2 }])),
+      rawSkaterIds: [1, 2, 3, 4, 5], playerMetaById: new Map([
+        [1, { id: 1, team_id: 5, position: "C" }], [2, { id: 2, team_id: 8, position: "C" }],
+        [3, { id: 3, team_id: 5, position: "C" }], [4, { id: 4, team_id: 5, position: "C" }],
+        [5, { id: 5, team_id: 5, position: "C" }]]),
+      latestMetricDateByPlayerId: new Map([[1, "2026-04-13"], [2, "2026-04-13"], [4, "2026-02-01"], [5, "2026-05-01"]]) };
+    const result = filterActiveSkaterCandidateIds(common);
+    expect(result.eligibleSkaterIds).toEqual([1]);
+    expect(result.recencyMultiplierByPlayerId.get(1)).toBe(1);
+    expect(result.excludedSkaterIdsByReason).toEqual({ teamOrPosition: [2], missingRecentMetrics: [3], hardStale: [4], invalidSeasonEvidence: [5] });
+    const missing = filterActiveSkaterCandidateIds({ ...common, recencySeasons: [] });
+    expect(missing.eligibleSkaterIds).toEqual([]);
+    expect(missing.excludedSkaterIdsByReason.invalidSeasonEvidence).toEqual([1, 4, 5]);
+    expect(missing.excludedSkaterIdsByReason.missingRecentMetrics).toEqual([3]);
+  });
+  it("retains a verified season-opening prior without weakening team or position filters", () => {
+    const result = filterActiveSkaterCandidateIds({ ...inSeasonEvidence, asOfDate: "2026-10-06", teamId: 5, rawSkaterIds: [1, 2, 3, 4],
+      playerMetaById: new Map([[1, { id: 1, team_id: 5, position: "C" }], [2, { id: 2, team_id: 5, position: "LW" }],
+        [3, { id: 3, team_id: 8, position: "C" }], [4, { id: 4, team_id: 5, position: "G" }]]),
+      latestMetricDateByPlayerId: new Map([[1, "2026-04-15"]]), seasonBootstrapPlayerIds: new Set([1, 2, 3, 4]) });
+    expect(result.eligibleSkaterIds).toEqual([1, 2]);
+    expect(result.recencyMultiplierByPlayerId.get(1)).toBe(1);
+  });
+  it("filters out non-team and goalie-position candidates", () => {
+    const result = filterActiveSkaterCandidateIds({ ...inSeasonEvidence,
+      asOfDate: "2026-02-07",
+      teamId: 5,
+      rawSkaterIds: [1, 2, 3],
+      playerMetaById: new Map([
+        [1, { id: 1, team_id: 5, position: "C" }],
+        [2, { id: 2, team_id: 8, position: "RW" }],
+        [3, { id: 3, team_id: 5, position: "G" }]
+      ]),
+      latestMetricDateByPlayerId: new Map([[1, "2026-02-06"]])
+    });
+
+    expect(result.eligibleSkaterIds).toEqual([1]);
+    expect(result.stats.filteredByTeamOrPosition).toBe(2);
+  });
+
+  it("hard-filters skaters with stale metrics beyond threshold and soft-penalizes mid-stale skaters", () => {
+    const result = filterActiveSkaterCandidateIds({ ...inSeasonEvidence,
+      asOfDate: "2026-02-07",
+      teamId: 5,
+      rawSkaterIds: [11, 12, 13],
+      playerMetaById: new Map([
+        [11, { id: 11, team_id: 5, position: "LW" }],
+        [12, { id: 12, team_id: 5, position: "RW" }],
+        [13, { id: 13, team_id: 5, position: "D" }]
+      ]),
+      latestMetricDateByPlayerId: new Map([
+        [11, "2026-02-06"],
+        [12, "2026-01-10"],
+        [13, "2025-11-20"]
+      ])
+    });
+
+    expect(result.eligibleSkaterIds).toContain(11);
+    expect(result.eligibleSkaterIds).toContain(12);
+    expect(result.eligibleSkaterIds).not.toContain(13);
+    expect(result.recencyMultiplierByPlayerId.get(11)).toBe(1);
+    expect((result.recencyMultiplierByPlayerId.get(12) ?? 1)).toBeLessThan(1);
+    expect(result.stats.softStalePenalized).toBe(1);
+    expect(result.stats.filteredHardStale).toBe(1);
+  });
+
+  it("treats players with no recent metrics as inactive and excludes them", () => {
+    const result = filterActiveSkaterCandidateIds({ ...inSeasonEvidence,
+      asOfDate: "2026-02-07",
+      teamId: 10,
+      rawSkaterIds: [51, 52],
+      playerMetaById: new Map([
+        [51, { id: 51, team_id: 10, position: "C" }],
+        [52, { id: 52, team_id: 10, position: "LW" }]
+      ]),
+      latestMetricDateByPlayerId: new Map([[52, "2026-02-05"]])
+    });
+
+    expect(result.eligibleSkaterIds).toEqual([52]);
+    expect(result.stats.filteredMissingRecentMetrics).toBe(1);
+    expect(result.excludedSkaterIdsByReason.missingRecentMetrics).toEqual([51]);
+  });
+});
+
+describe("line-combination recency assessment", () => {
+  it("marks missing line combinations as hard stale", () => {
+    const result = assessLineCombinationRecency({
+      asOfDate: "2026-02-07",
+      sourceGameDate: null
+    });
+
+    expect(result.isMissing).toBe(true);
+    expect(result.isHardStale).toBe(true);
+    expect(result.daysStale).toBeNull();
+  });
+
+  it("marks moderately old line combinations as soft stale only", () => {
+    const result = assessLineCombinationRecency({
+      asOfDate: "2026-02-07",
+      sourceGameDate: "2026-01-27"
+    });
+
+    expect(result.isMissing).toBe(false);
+    expect(result.isSoftStale).toBe(true);
+    expect(result.isHardStale).toBe(false);
+    expect(result.daysStale).toBe(11);
+  });
+
+  it("keeps line combinations at the soft-stale boundary in the fresh bucket", () => {
+    const result = assessLineCombinationRecency({
+      asOfDate: "2026-02-07",
+      sourceGameDate: "2026-01-28"
+    });
+
+    expect(result.daysStale).toBe(10);
+    expect(result.isSoftStale).toBe(false);
+    expect(result.isHardStale).toBe(false);
+  });
+
+  it("marks very old line combinations as hard stale", () => {
+    const result = assessLineCombinationRecency({
+      asOfDate: "2026-02-07",
+      sourceGameDate: "2026-01-15"
+    });
+
+    expect(result.isSoftStale).toBe(true);
+    expect(result.isHardStale).toBe(true);
+    expect(result.daysStale).toBe(23);
+  });
+
+  it("keeps boundary-day line combinations out of hard-stale bucket", () => {
+    const result = assessLineCombinationRecency({
+      asOfDate: "2026-02-07",
+      sourceGameDate: "2026-01-17"
+    });
+
+    expect(result.daysStale).toBe(21);
+    expect(result.isSoftStale).toBe(true);
+    expect(result.isHardStale).toBe(false);
+  });
+});
+
+describe("skater role tagging", () => {
+  it("assigns line/pair roles from line-combination ordering", () => {
+    const roles = buildSkaterRoleTags({
+      lineCombination: {
+        gameId: 1,
+        teamId: 55,
+        forwards: [101, 102, 103, 104, 105, 106],
+        defensemen: [201, 202, 203, 204],
+        goalies: [301]
+      },
+      useFallbackRoles: false,
+      fallbackRankedSkaterIds: [],
+      teamId: 55,
+      playerMetaById: new Map([
+        [101, { id: 101, team_id: 55, position: "C" }],
+        [102, { id: 102, team_id: 55, position: "LW" }],
+        [103, { id: 103, team_id: 55, position: "RW" }],
+        [104, { id: 104, team_id: 55, position: "C" }],
+        [105, { id: 105, team_id: 55, position: "LW" }],
+        [106, { id: 106, team_id: 55, position: "RW" }],
+        [201, { id: 201, team_id: 55, position: "D" }],
+        [202, { id: 202, team_id: 55, position: "D" }],
+        [203, { id: 203, team_id: 55, position: "D" }],
+        [204, { id: 204, team_id: 55, position: "D" }]
+      ])
+    });
+
+    expect(roles.get(101)?.esRole).toBe("L1");
+    expect(roles.get(104)?.esRole).toBe("L2");
+    expect(roles.get(201)?.esRole).toBe("D1");
+    expect(roles.get(203)?.esRole).toBe("D2");
+    expect(roles.get(101)?.source).toBe("line_combination");
+  });
+
+  it("falls back to TOI-ranked roles when requested", () => {
+    const roles = buildSkaterRoleTags({
+      lineCombination: null,
+      useFallbackRoles: true,
+      fallbackRankedSkaterIds: [401, 402, 403, 404, 405, 406, 501, 502],
+      teamId: 77,
+      playerMetaById: new Map([
+        [401, { id: 401, team_id: 77, position: "C" }],
+        [402, { id: 402, team_id: 77, position: "LW" }],
+        [403, { id: 403, team_id: 77, position: "RW" }],
+        [404, { id: 404, team_id: 77, position: "C" }],
+        [405, { id: 405, team_id: 77, position: "LW" }],
+        [406, { id: 406, team_id: 77, position: "RW" }],
+        [501, { id: 501, team_id: 77, position: "D" }],
+        [502, { id: 502, team_id: 77, position: "D" }]
+      ])
+    });
+
+    expect(roles.get(401)?.esRole).toBe("L1");
+    expect(roles.get(404)?.esRole).toBe("L2");
+    expect(roles.get(501)?.esRole).toBe("D1");
+    expect(roles.get(401)?.source).toBe("fallback_toi_rank");
+  });
+
+  it("handles emergency fallback skaters with unknown position by assigning depth role", () => {
+    const roles = buildSkaterRoleTags({
+      lineCombination: null,
+      useFallbackRoles: true,
+      fallbackRankedSkaterIds: [9001],
+      teamId: 88,
+      playerMetaById: new Map([
+        [9001, { id: 9001, team_id: 88, position: null }]
+      ])
+    });
+
+    expect(roles.get(9001)?.esRole).toBe("L4");
+    expect(roles.get(9001)?.unitTier).toBe("DEPTH");
+    expect(roles.get(9001)?.source).toBe("fallback_toi_rank");
+  });
+});
+
+describe("skater role continuity", () => {
+  it("computes continuity and volatility summaries from recent role history", () => {
+    const summary = summarizeSkaterRoleContinuity({
+      currentRole: "L1",
+      recentRoles: ["L1", "L1", "L2", "L1", "L2", "L1"],
+      windowGames: 6
+    });
+
+    expect(summary.appearancesTracked).toBe(6);
+    expect(summary.gamesInCurrentRole).toBe(4);
+    expect(summary.continuityShare).toBeCloseTo(0.6667, 4);
+    expect(summary.roleChangeRate).toBeGreaterThan(0);
+    expect(summary.volatilityIndex).toBeCloseTo(0.3333, 4);
+  });
+
+  it("penalizes volatile role histories and mildly boosts stable roles", () => {
+    const volatile = computeSkaterRoleStabilityMultiplier({
+      windowGames: 8,
+      appearancesTracked: 8,
+      gamesInCurrentRole: 2,
+      continuityShare: 0.25,
+      roleChangeRate: 0.8,
+      volatilityIndex: 0.75
+    });
+    const stable = computeSkaterRoleStabilityMultiplier({
+      windowGames: 8,
+      appearancesTracked: 8,
+      gamesInCurrentRole: 7,
+      continuityShare: 0.875,
+      roleChangeRate: 0.1,
+      volatilityIndex: 0.25
+    });
+
+    expect(volatile).toBeLessThan(1);
+    expect(stable).toBeGreaterThanOrEqual(1);
+    expect(stable).toBeGreaterThan(volatile);
+  });
+});
+
+describe("roster-event availability weighting", () => {
+  it("fully removes unavailable event types and restores on return/callup", () => {
+    expect(availabilityMultiplierForEvent("INJURY_OUT", 1)).toBe(0);
+    expect(availabilityMultiplierForEvent("IR", 0.8)).toBe(0);
+    expect(availabilityMultiplierForEvent("LTIR", 0.6)).toBe(0);
+    expect(availabilityMultiplierForEvent("SUSPENSION", 0.9)).toBe(0);
+    expect(availabilityMultiplierForEvent("RETURN", 0.2)).toBe(1);
+    expect(availabilityMultiplierForEvent("CALLUP", 0.7)).toBe(1);
+  });
+
+  it("applies confidence-weighted penalties for partial-availability events", () => {
+    const dtdLow = availabilityMultiplierForEvent("DTD", 0.2) ?? 1;
+    const dtdHigh = availabilityMultiplierForEvent("DTD", 0.9) ?? 1;
+    const scratch = availabilityMultiplierForEvent("SCRATCH", 0.8) ?? 1;
+    const benching = availabilityMultiplierForEvent("BENCHING", 0.8) ?? 1;
+
+    expect(dtdHigh).toBeLessThan(dtdLow);
+    expect(scratch).toBeLessThan(benching);
+    expect(scratch).toBeLessThan(1);
+    expect(benching).toBeLessThan(1);
+  });
+});
+
+describe("starter scenarios", () => {
+  it("builds normalized top-2 scenarios from multi-goalie probabilities", () => {
+    const scenarios = buildTopStarterScenarios({
+      probabilitiesByGoalieId: new Map([
+        [4001, 0.5],
+        [4002, 0.3],
+        [4003, 0.2]
+      ])
+    });
+
+    expect(scenarios).toHaveLength(2);
+    expect(scenarios[0]?.goalieId).toBe(4001);
+    expect(scenarios[1]?.goalieId).toBe(4002);
+    expect(scenarios[0]?.probability).toBeCloseTo(0.625, 5);
+    expect(scenarios[1]?.probability).toBeCloseTo(0.375, 5);
+  });
+
+  it("returns a single scenario with full probability when only one goalie exists", () => {
+    const scenarios = buildTopStarterScenarios({
+      probabilitiesByGoalieId: new Map([[4010, 1]])
+    });
+
+    expect(scenarios).toHaveLength(1);
+    expect(scenarios[0]?.goalieId).toBe(4010);
+    expect(scenarios[0]?.probability).toBe(1);
+    expect(scenarios[0]?.rawProbability).toBe(1);
+  });
+});
+
+describe("scenario blending", () => {
+  it("blends top scenarios using raw starter probabilities", () => {
+    const blended = blendTopStarterScenarioOutputs({
+      scenarioProjections: [
+        {
+          goalie_id: 5001,
+          rank: 1,
+          starter_probability_raw: 0.6,
+          starter_probability_top2_normalized: 0.6,
+          proj_shots_against: 30,
+          proj_saves: 27,
+          proj_goals_allowed: 3,
+          proj_win_prob: 0.55,
+          proj_shutout_prob: 0.05,
+          modeled_save_pct: 0.9,
+          workload_save_pct_penalty: 0
+        },
+        {
+          goalie_id: 5002,
+          rank: 2,
+          starter_probability_raw: 0.3,
+          starter_probability_top2_normalized: 0.3,
+          proj_shots_against: 30,
+          proj_saves: 26.1,
+          proj_goals_allowed: 3.9,
+          proj_win_prob: 0.5,
+          proj_shutout_prob: 0.03,
+          modeled_save_pct: 0.87,
+          workload_save_pct_penalty: 0
+        }
+      ],
+      fallbackProjection: {
+        proj_shots_against: 30,
+        proj_saves: 27,
+        proj_goals_allowed: 3,
+        proj_win_prob: 0.55,
+        proj_shutout_prob: 0.05,
+        modeled_save_pct: 0.9,
+        workload_save_pct_penalty: 0
+      }
+    });
+
+    expect(blended.probability_mass).toBeCloseTo(0.9, 5);
+    expect(blended.residual_probability_mass).toBeCloseTo(0.1, 5);
+    expect(blended.proj_saves).toBeCloseTo(26.73, 5);
+    expect(blended.proj_goals_allowed).toBeCloseTo(3.27, 5);
+  });
+});
+
+describe("horizon scalars", () => {
+  it("builds sequential scalars with schedule decay and b2b penalty", () => {
+    const scalars = buildSequentialHorizonScalarsFromDates(
+      ["2026-02-10", "2026-02-11", "2026-02-14"],
+      5
+    );
+
+    expect(scalars).toHaveLength(5);
+    expect(scalars[0]).toBeCloseTo(1, 5);
+    expect(scalars[1]).toBeLessThan(scalars[0] ?? 1);
+    expect(scalars[2]).toBeGreaterThan(scalars[1] ?? 0);
+  });
+});
+
+describe("goalie rest-split adjustments", () => {
+  it("maps days-since-start into expected rest buckets", () => {
+    expect(toGoalieRestSplitBucket(0)).toBe("0");
+    expect(toGoalieRestSplitBucket(1)).toBe("1");
+    expect(toGoalieRestSplitBucket(2)).toBe("2");
+    expect(toGoalieRestSplitBucket(3)).toBe("3");
+    expect(toGoalieRestSplitBucket(4)).toBe("4_plus");
+    expect(toGoalieRestSplitBucket(null)).toBe("4_plus");
+  });
+
+  it("applies sample-weighted positive adjustments and ignores low-sample buckets", () => {
+    const profile = {
+      sourceDate: "2026-02-05",
+      savePctByBucket: {
+        "0": 0.88,
+        "1": 0.912,
+        "2": 0.922,
+        "3": 0.915,
+        "4_plus": 0.905
+      },
+      gamesByBucket: {
+        "0": 3,
+        "1": 5,
+        "2": 1,
+        "3": 2,
+        "4_plus": 4
+      }
+    };
+
+    const day1Adj = computeGoalieRestSplitSavePctAdjustment({
+      profile,
+      daysSinceLastStart: 1
+    });
+    const day2Adj = computeGoalieRestSplitSavePctAdjustment({
+      profile,
+      daysSinceLastStart: 2
+    });
+
+    expect(day1Adj).toBeGreaterThan(0);
+    expect(day2Adj).toBe(0);
+  });
+});
+
+describe("team strength priors", () => {
+  it("increases shots-against and opponent goal context when defense xGA and opponent xGF are elevated", () => {
+    const adjustment = computeTeamStrengthContextAdjustment({
+      defendingTeamPrior: {
+        sourceDate: "2026-02-08",
+        xga: 172,
+        xgaPerGame: 3.35,
+        xgfPerGame: 3.05
+      },
+      opponentTeamPrior: {
+        sourceDate: "2026-02-08",
+        xga: 164,
+        xgaPerGame: 3.12,
+        xgfPerGame: 3.28
+      }
+    });
+
+    expect(adjustment.sampleWeight).toBeGreaterThan(0.9);
+    expect(adjustment.shotsAgainstPctAdjustment).toBeGreaterThan(0);
+    expect(adjustment.opponentGoalsForPctAdjustment).toBeGreaterThan(0);
+  });
+
+  it("raises team goals when the opponent's defence allows more xG", () => {
+    const leaky = computeTeamStrengthContextAdjustment({
+      defendingTeamPrior: {
+        sourceDate: "2026-02-08",
+        xga: 150,
+        xgaPerGame: 2.95,
+        xgfPerGame: 2.95
+      },
+      opponentTeamPrior: {
+        sourceDate: "2026-02-08",
+        xga: 165,
+        xgaPerGame: 3.3,
+        xgfPerGame: 2.95
+      }
+    });
+    const stingy = computeTeamStrengthContextAdjustment({
+      defendingTeamPrior: {
+        sourceDate: "2026-02-08",
+        xga: 150,
+        xgaPerGame: 2.95,
+        xgfPerGame: 2.95
+      },
+      opponentTeamPrior: {
+        sourceDate: "2026-02-08",
+        xga: 135,
+        xgaPerGame: 2.7,
+        xgfPerGame: 2.95
+      }
+    });
+
+    expect(leaky.teamGoalsForPctAdjustment).toBeGreaterThan(0);
+    expect(stingy.teamGoalsForPctAdjustment).toBeLessThan(0);
+  });
+
+  it("returns neutral adjustments when no team priors are available", () => {
+    const adjustment = computeTeamStrengthContextAdjustment({
+      defendingTeamPrior: null,
+      opponentTeamPrior: null
+    });
+
+    expect(adjustment.sampleWeight).toBe(0);
+    expect(adjustment.shotsAgainstPctAdjustment).toBe(0);
+    expect(adjustment.teamGoalsForPctAdjustment).toBe(0);
+    expect(adjustment.opponentGoalsForPctAdjustment).toBe(0);
+  });
+});
+
+describe("team 5v5 context priors", () => {
+  it("boosts league save context for strong 5v5 save profiles", () => {
+    const adjustment = computeTeamFiveOnFiveContextAdjustment({
+      defendingTeamProfile: {
+        sourceDate: "2026-02-08",
+        gamesPlayed: 52,
+        savePct5v5: 0.934,
+        shootingPlusSavePct5v5: 1.03
+      },
+      opponentTeamProfile: {
+        sourceDate: "2026-02-08",
+        gamesPlayed: 52,
+        savePct5v5: 0.915,
+        shootingPlusSavePct5v5: 0.99
+      }
+    });
+
+    expect(adjustment.sampleWeight).toBeGreaterThan(0.9);
+    expect(adjustment.leagueSavePctAdjustment).toBeGreaterThan(0);
+    expect(Math.abs(adjustment.contextPctAdjustment)).toBeLessThan(0.03);
+  });
+
+  it("returns neutral values when no 5v5 profile is available", () => {
+    const adjustment = computeTeamFiveOnFiveContextAdjustment({
+      defendingTeamProfile: null,
+      opponentTeamProfile: null
+    });
+
+    expect(adjustment.sampleWeight).toBe(0);
+    expect(adjustment.leagueSavePctAdjustment).toBe(0);
+    expect(adjustment.contextPctAdjustment).toBe(0);
+  });
+});
+
+describe("NST opponent danger context", () => {
+  it("raises shot-danger context when defending team has elevated NST xGA/60", () => {
+    const adjustment = computeNstOpponentDangerAdjustment({
+      defendingTeamProfile: {
+        source: "nst_team_all",
+        sourceDate: "2026-02-08",
+        gamesPlayed: 51,
+        xga: 140,
+        xgaPer60: 2.9
+      },
+      opponentTeamProfile: {
+        source: "nst_team_all",
+        sourceDate: "2026-02-08",
+        gamesPlayed: 51,
+        xga: 122,
+        xgaPer60: 2.55
+      }
+    });
+
+    expect(adjustment.sampleWeight).toBeGreaterThan(0.7);
+    expect(adjustment.contextPctAdjustment).toBeGreaterThan(0);
+  });
+
+  it("returns neutral adjustments when NST profiles are unavailable", () => {
+    const adjustment = computeNstOpponentDangerAdjustment({
+      defendingTeamProfile: null,
+      opponentTeamProfile: null
+    });
+
+    expect(adjustment.sampleWeight).toBe(0);
+    expect(adjustment.contextPctAdjustment).toBe(0);
+  });
+});

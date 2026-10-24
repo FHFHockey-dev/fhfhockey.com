@@ -1,0 +1,194 @@
+
+ RUN  v3.2.7 /private/tmp/fhfh-c2-isolated/web
+
+ ❯ lib/sources/tweetLunaReview.test.ts (46 tests | 5 failed) 796ms
+   ✓ bounded retained Luna caller > defaults off before reading input or invoking transport 17ms
+   ✓ bounded retained Luna caller > runs the real caller through mocked Responses then pinned Decisions without promoting facts 57ms
+   ✓ bounded retained Luna caller > holds missing original publishedAt before dispatch 2ms
+   ✓ bounded retained Luna caller > holds missing original author before dispatch 1ms
+   ✓ bounded retained Luna caller > holds missing original originalPostId before dispatch 1ms
+   ✓ bounded retained Luna caller > rebuilds the snapshot for the exact source publication instant 1ms
+   ✓ bounded retained Luna caller > holds unavailable historical identity evidence without a paid request 1ms
+   ✓ bounded retained Luna caller > rejects injected id and stops before downstream fan-out 25ms
+   ✓ bounded retained Luna caller > rejects injected span and stops before downstream fan-out 23ms
+   ✓ bounded retained Luna caller > rejects injected authority and stops before downstream fan-out 23ms
+   ✓ bounded retained Luna caller > keeps missing/ambiguous candidates as abstentions without paid widening 23ms
+   ✓ bounded retained Luna caller > rejects a forced choice across colliding surnames 21ms
+   ✓ bounded retained Luna caller > rejects practice certainty inflation to confirmed 23ms
+   ✓ bounded retained Luna caller > rejects practice certainty inflation to ruled_out 27ms
+   ✓ bounded retained Luna caller > keeps proposed projected separate from applied start probabilities 23ms
+   ✓ bounded retained Luna caller > keeps proposed likely separate from applied start probabilities 23ms
+   ✓ bounded retained Luna caller > keeps proposed unknown separate from applied start probabilities 24ms
+   ✓ bounded retained Luna caller > keeps proposed confirmed separate from applied start probabilities 23ms
+   ✓ bounded retained Luna caller > keeps proposed ruled_out separate from applied start probabilities 22ms
+   × bounded retained Luna caller > reuses settled responses across processes without new dispatch 65ms
+     → expected [ 2, 2 ] to deeply equal [ 2, +0 ]
+   ✓ bounded retained Luna caller > keeps a retraction/version separate and applies neither interpretation 83ms
+   ✓ bounded retained Luna caller > rejects a confirmed proposal that contradicts explicit not-starting wording 24ms
+   ✓ bounded retained Luna caller > retains timeout reservation, blocks replay and performs no retries 32ms
+   ✓ bounded retained Luna caller > preserves the historical global stop regardless of apparent headroom 2ms
+   ✓ bounded retained Luna caller > enforces aggregate exposure before key lookup 3ms
+   × bounded retained Luna caller > honors kill switch before admission or key lookup 4ms
+     → expected { …(14) } to match object { status: 'held', attempts: +0 }
+(17 matching properties omitted from actual)
+   × bounded retained Luna caller > holds a Decisions-only kill-switch stop with zero attempts 3ms
+     → expected { …(14) } to match object { status: 'held', attempts: +0, …(1) }
+(16 matching properties omitted from actual)
+   × bounded retained Luna caller > holds a kill switch that stops the Decisions leg after Responses 23ms
+     → expected { …(14) } to match object { status: 'held', attempts: 1, …(1) }
+(20 matching properties omitted from actual)
+   × bounded retained Luna caller > holds a Decisions-leg timeout and keeps both admitted reservations counted 49ms
+     → expected { …(14) } to match object { status: 'held', attempts: 2, …(2) }
+(19 matching properties omitted from actual)
+   ✓ bounded retained Luna caller > counts a reservation admitted before a missing key as an attempt without dispatch 23ms
+   ✓ bounded retained Luna caller > leaves a partial Decisions review as review_only with its hold 46ms
+   ✓ bounded retained Luna caller > blocks unknown model billing without saving a successful receipt 23ms
+   ✓ bounded retained Luna caller > does not mistake review proposals for the homepage's versioned event contract 42ms
+   ✓ bounded retained Luna caller > serializes admissions from independent store instances 11ms
+   ✓ bounded retained Luna caller > reserves above the full-context long-rate regional ceiling 0ms
+   ✓ bounded retained Luna caller > preserves retained reference bytes 0ms
+   ✓ provenance-preserving S01–S10 development library > retains 'S01' source lineage and separates labels from facts 0ms
+   ✓ provenance-preserving S01–S10 development library > retains 'S02' source lineage and separates labels from facts 0ms
+   ✓ provenance-preserving S01–S10 development library > retains 'S03' source lineage and separates labels from facts 0ms
+   ✓ provenance-preserving S01–S10 development library > retains 'S04' source lineage and separates labels from facts 1ms
+   ✓ provenance-preserving S01–S10 development library > retains 'S05' source lineage and separates labels from facts 0ms
+   ✓ provenance-preserving S01–S10 development library > retains 'S06' source lineage and separates labels from facts 0ms
+   ✓ provenance-preserving S01–S10 development library > retains 'S07' source lineage and separates labels from facts 0ms
+   ✓ provenance-preserving S01–S10 development library > retains 'S08' source lineage and separates labels from facts 0ms
+   ✓ provenance-preserving S01–S10 development library > retains 'S09' source lineage and separates labels from facts 0ms
+   ✓ provenance-preserving S01–S10 development library > retains 'S10' source lineage and separates labels from facts 0ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > reuses settled responses across processes without new dispatch
+AssertionError: expected [ 2, 2 ] to deeply equal [ 2, +0 ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    2,[22m
+[32m-   0,[39m
+[31m+   2,[39m
+[2m  ][22m
+
+ ❯ lib/sources/tweetLunaReview.test.ts:139:47
+    137|     const h = harness(); const first = await h.run(), second = await h…
+    138|     expect(second.identity).toEqual(first.identity); expect(h.fetcher)…
+    139|     expect([first.attempts, second.attempts]).toEqual([2, 0]);
+       |                                               ^
+    140|     expect(Object.keys(h.ledger().attempts)).toHaveLength(2);
+    141|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > honors kill switch before admission or key lookup
+AssertionError: expected { …(14) } to match object { status: 'held', attempts: +0 }
+(17 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "attempts": 0,[39m
+[31m+   "attempts": 1,[39m
+[2m    "status": "held",[22m
+[2m  }[22m
+
+ ❯ lib/sources/tweetLunaReview.test.ts:170:15
+    168|   it("honors kill switch before admission or key lookup", async () => {
+    169|     const h = harness({ stopped: true }); const r = await h.run(); exp…
+    170|     expect(r).toMatchObject({ status: "held", attempts: 0 });
+       |               ^
+    171|   });
+    172|   it("holds a Decisions-only kill-switch stop with zero attempts", asy…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > holds a Decisions-only kill-switch stop with zero attempts
+AssertionError: expected { …(14) } to match object { status: 'held', attempts: +0, …(1) }
+(16 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "attempts": 0,[39m
+[31m+   "attempts": 1,[39m
+[2m    "decisionReview": {[22m
+[2m      "status": "unknown",[22m
+[2m    },[22m
+[32m-   "status": "held",[39m
+[31m+   "status": "review_only",[39m
+[2m  }[22m
+
+ ❯ lib/sources/tweetLunaReview.test.ts:175:15
+    173|     const h = harness({ stopped: true }), input = fixture(); delete in…
+    174|     const r = await h.run(input);
+    175|     expect(r).toMatchObject({ status: "held", attempts: 0, decisionRev…
+       |               ^
+    176|     expect(r.holds).toEqual(expect.arrayContaining(["decisions_unresol…
+    177|     expect(h.fetcher).not.toHaveBeenCalled(); expect(h.ledger().attemp…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > holds a kill switch that stops the Decisions leg after Responses
+AssertionError: expected { …(14) } to match object { status: 'held', attempts: 1, …(1) }
+(20 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "attempts": 1,[39m
+[31m+   "attempts": 2,[39m
+[2m    "decisionReview": {[22m
+[2m      "status": "unknown",[22m
+[2m    },[22m
+[32m-   "status": "held",[39m
+[31m+   "status": "review_only",[39m
+[2m  }[22m
+
+ ❯ lib/sources/tweetLunaReview.test.ts:182:15
+    180|     let stop = false; const h = harness({ stopped: () => stop, mutate:…
+    181|     const r = await h.run();
+    182|     expect(r).toMatchObject({ status: "held", attempts: 1, decisionRev…
+       |               ^
+    183|     expect(r.holds).toContain("luna_dispatch_disabled"); expect(r.hold…
+    184|     expect(h.fetcher).toHaveBeenCalledTimes(1); expect(h.ledger().bloc…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  lib/sources/tweetLunaReview.test.ts > bounded retained Luna caller > holds a Decisions-leg timeout and keeps both admitted reservations counted
+AssertionError: expected { …(14) } to match object { status: 'held', attempts: 2, …(2) }
+(19 matching properties omitted from actual)
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[33m@@ -4,7 +4,7 @@[39m
+[2m      "status": "unknown",[22m
+[2m    },[22m
+[2m    "requestIds": [[22m
+[2m      "request-responses",[22m
+[2m    ],[22m
+[32m-   "status": "held",[39m
+[31m+   "status": "review_only",[39m
+[2m  }[22m
+
+ ❯ lib/sources/tweetLunaReview.test.ts:188:15
+    186|   it("holds a Decisions-leg timeout and keeps both admitted reservatio…
+    187|     const h = harness({ timeout: "decisions", timeoutMs: 5 }); const r…
+    188|     expect(r).toMatchObject({ status: "held", attempts: 2, requestIds:…
+       |               ^
+    189|     expect(r.holds).toEqual(expect.arrayContaining(["decisions_unresol…
+    190|     expect(h.ledger().blockedReason).toBe("unknown_billed_outcome");
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 41 passed (46)
+   Start at  12:17:55
+   Duration  1.19s (transform 141ms, setup 0ms, collect 275ms, tests 796ms, environment 0ms, prepare 28ms)
+

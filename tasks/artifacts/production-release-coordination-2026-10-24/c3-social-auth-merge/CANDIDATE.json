@@ -1,0 +1,14 @@
+{
+  "at": "2026-10-24T21:13:49.192616+00:00",
+  "base": "d4c2632d39ee8a59fa683f44a0e1d21c55db66bd",
+  "snapshot": "/tmp/fhfh-social-c3-auth-compose-v0a1u6ui",
+  "pins": {
+    "web/contexts/AuthProviderContext/index.tsx": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+    "web/lib/supabase/browser-auth.ts": "6c4f86fefb3219fb310513efc85aaafe3dc5b698a2fab24b78731628255ef2b0",
+    "web/__tests__/contexts/AuthProviderContext.test.tsx": "c3cf3f66b7b51d992a11df5207a429ed22350bd88c03ba43993033e82ff1941b",
+    "web/lib/socialShare/access.ts": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660"
+  },
+  "scope": "Social AuthProvider runtime, its exact new role/access helper, C3 browser-auth cleanup and clean merged test against production dependencies. No panel, data, role, config or canonical source changes.",
+  "status": "Clean mechanical merge prepared; focused verification pending",
+  "setup_correction": "Initial isolated context composition omitted its new access.ts import. Preserved failure; added exact reviewed helper pin, not a source correction."
+}

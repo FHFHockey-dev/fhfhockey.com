@@ -1,0 +1,10 @@
+{
+  "exitCode": 0,
+  "restored": {
+    "snapshot": "/private/tmp/fhfh-release-restore-proof-4omrun7g/snapshot",
+    "verifiedFiles": 3637,
+    "contentTreeSha256": "d54286fd7f8ad2a32abb2fa928f21a01b3c8d8ce300d4caa526cfb2fb0e53f95",
+    "dependencies": "Use the existing matching Node22.11.0/npm10.9.0 installation; node_modules, environment and credentials are not archived."
+  },
+  "scope": "Archive round-trip only; no tests, services, installation or Git operation"
+}

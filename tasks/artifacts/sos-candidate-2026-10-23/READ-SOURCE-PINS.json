@@ -1,0 +1,13 @@
+{
+  "observed_unchanged_since_initial_inspection": true,
+  "files": {
+    "web/lib/underlying-stats/teamScheduleStrength.ts": "2f75bd42f1abdaeb072c2f3f622383e0439b5b52fcbdaf35be5faa64e207fa8e",
+    "web/components/GameGrid/utils/calcWeekScore.ts": "0f544a126c5e16baf08febb7c7e89aa759883b20f203ad8ae3a8ac05ff619ca8",
+    "web/components/GameGrid/utils/scheduleOpportunity.ts": "02198b9a732bc7b25e14e0ef285bae73b348ce5f645a26efe177ae52e773380c",
+    "tasks/artifacts/codex-2026-10-20/research/sos/benchmark.mjs": "1883b2abd1f335588c09b43efb09e129aaa307f52b3b7bdca3cf771f59967a46",
+    "tasks/artifacts/codex-2026-10-20/research/sos/results.json": "531a28f1ac5097ef582c81c8db1a2dcc7bfb977847b92b7ccd72530b82e9040c",
+    "tasks/artifacts/codex-2026-10-20/research/imported-checkpoint/sos/SOS-METHODS.md": "5d9c6fe2adb0750c94d168224f52404757fb1db65392669b7b74691cb9cf14f1",
+    "tasks/artifacts/codex-2026-10-20/research/imported-checkpoint/sos/SOS-CODE-MAP.md": "90ed68331955975cf07144a6d9c33355c6037811552c99e8393184dce11153d8",
+    "tasks/artifacts/codex-2026-10-20/research/imported-checkpoint/sos/sos_synthetic.py": "51026460179467476c84ff6cb713be3cb1287b8e6683bed9999b01476396863a"
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "source": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2-rows.json",
+  "sourceSha256": "52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+  "values": {
+    "atoi": {
+      "value": 21.043333333333333,
+      "state": "valid",
+      "numerator": 6313,
+      "denominator": 5
+    },
+    "sog60": {
+      "value": 11.975289086012989,
+      "state": "valid",
+      "numerator": 21,
+      "denominator": 6313
+    },
+    "ixg60": {
+      "value": 1.0378583874544591,
+      "state": "valid",
+      "numerator": 1.82,
+      "denominator": 6313
+    },
+    "icf60": {
+      "value": 19.958815143354983,
+      "state": "valid",
+      "numerator": 35,
+      "denominator": 6313
+    }
+  },
+  "historyGate": "Complete appearance history through the common cutoff is unverified",
+  "completionGate": "Completed-game evidence is unverified",
+  "claim": "Prior approved one-player arithmetic only; no completion/history/source-definition/league coverage verified; no live readiness or rank",
+  "externalRequests": 0
+}

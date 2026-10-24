@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+ ✓ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-review/boundaries.test.ts (20 tests | 18 skipped) 3ms
+ ✓ tasks/artifacts/forge-testing-grounds-2026-10-24/slice-01-r1-review/precision.test.ts (6 tests) 7ms
+
+ Test Files  2 passed (2)
+      Tests  8 passed | 18 skipped (26)
+   Start at  11:07:23
+   Duration  274ms (transform 38ms, setup 3ms, collect 54ms, tests 10ms, environment 0ms, prepare 61ms)
+

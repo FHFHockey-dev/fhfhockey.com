@@ -1,0 +1,15 @@
+{
+  "path": "tasks/artifacts/claude-audit-fix-queue-2026-10-22/QUEUE.md",
+  "sha256": "11cf841e336c061a1664cbfd20f0e553d095b73395df72a3230e91083d956be9",
+  "bytes": 22860,
+  "lines": 128,
+  "mtime_ns": 1792641654505654401,
+  "coverage": "partially-inspected",
+  "reviewed_ranges": [
+    [
+      1,
+      54
+    ]
+  ],
+  "review_scope": "Referenced queue1\u201354 read during S13 scope lookup. No S13/GS2 match found; old A1\u2013A10 statuses were not adopted or reopened. No full-queue review or dispatch authority inferred."
+}

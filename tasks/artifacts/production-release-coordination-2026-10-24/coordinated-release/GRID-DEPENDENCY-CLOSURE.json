@@ -1,0 +1,35 @@
+{
+  "roots": [
+    "web/components/GameGrid/utils/scheduleOpportunity.ts",
+    "web/components/GameGrid/OpportunitySparkline.tsx",
+    "web/components/GameGrid/OpportunitySparkline.module.scss",
+    "web/components/GameGrid/utils/useFourWeekSchedule.ts",
+    "web/components/GameGrid/utils/useFourWeekSchedule.test.ts",
+    "web/components/GameGrid/utils/useSchedule.ts",
+    "web/components/GameGrid/GameGrid.tsx",
+    "web/components/GameGrid/GameGrid.module.scss",
+    "web/components/GameGrid/DesktopMasterTable.tsx",
+    "web/components/GameGrid/utils/FourWeekGrid.tsx",
+    "web/components/GameGrid/OpponentMetricsTable.tsx",
+    "web/components/GameGrid/utils/useOpponentMetricsData.ts",
+    "web/components/GameGrid/utils/useOpponentMetricsData.test.ts",
+    "web/components/GameGrid/TransposedGrid.tsx",
+    "web/components/GameGrid/OpponentMetricsTable.module.scss",
+    "web/components/GameGrid/utils/FourWeekGrid.module.scss",
+    "web/components/GameGrid/OpportunitySparkline.test.tsx",
+    "web/components/GameGrid/SortableHeaders.test.tsx",
+    "web/components/GameGrid/utils/FourWeekGrid.test.tsx",
+    "web/components/GameGrid/LoadingCells.tsx",
+    "web/components/GameGrid/LoadingCells.module.scss",
+    "web/components/GameGrid/GameGridPage.test.tsx"
+  ],
+  "selected_missing_dependencies": [
+    "web/components/GameGrid/utils/../DetailToggle.module.scss",
+    "web/components/GameGrid/utils/useOpportunityClock.ts",
+    "web/components/GameGrid/RatingMeter.tsx",
+    "web/components/GameGrid/utils/opponentCategoryEffects.ts",
+    "web/components/GameGrid/RatingMeter.module.scss"
+  ],
+  "cap": 12,
+  "canonical_edits": 0
+}

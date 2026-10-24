@@ -1,0 +1,14 @@
+{
+  "latest_delta": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/SS1-13.patch",
+  "sha256": "e0a1a46c339990879c225739b24528787f8b3a3704a0b27c2a7027b2f901cfad",
+  "exact_cut_paths": [
+    "web/lib/socialShare/tiers.ts",
+    "web/lib/socialShare/tiers.test.ts",
+    "web/components/SocialShare/SocialShare.tsx",
+    "web/components/SocialShare/SocialShare.module.scss",
+    "web/e2e/social-share.spec.ts"
+  ],
+  "reverse_apply_check": 0,
+  "canonical_writes": 0,
+  "meaning": "Five frozen SS1-13 source/spec paths match current handback delta before any isolated auth-fixture spec adaptation. No code adoption beyond the frozen cut."
+}

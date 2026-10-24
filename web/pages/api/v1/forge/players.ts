@@ -4,7 +4,6 @@ import { buildEndpointScanSummary } from "lib/api/scanSummary";
 import { resolveLatestStartedSeasonIdForDate } from "lib/NHL/server";
 import { resolveProjectionTeamIdentity } from "lib/NHL/seasonAwareScheduleTeam";
 import supabase from "lib/supabase/server";
-import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
 import { excludeOffReleaseRuns } from "lib/projections/releasedRunFence";
 import { formatDurationMsToMMSS } from "lib/formatDurationMmSs";
 import { buildResolvedDataServingContract } from "lib/dashboard/freshness";
@@ -177,7 +176,7 @@ async function fetchFallbackRunWithPlayerData(
       (candidates ?? []) as Array<{
         run_id: string;
         as_of_date: string;
-        metrics?: { input_provenance?: { external_fantasy_input_contract?: string } };
+        metrics?: unknown;
       }>
     )
       // Within a date, a full-slate run outranks a later single-game run.
@@ -191,7 +190,6 @@ async function fetchFallbackRunWithPlayerData(
       )
       .map(({ row }) => row);
     for (const row of rows) {
-      if (row.metrics?.input_provenance?.external_fantasy_input_contract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) continue;
       const { count, error } = await supabase
         .from("forge_player_projections")
         .select("player_id", { count: "exact", head: true })

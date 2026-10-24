@@ -1,0 +1,2 @@
+lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts(55,75): error TS2353: Object literal may only specify known properties, and 'SAVES_GOALIE' does not exist in type '{ GOALS: number; }'.
+lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts(55,110): error TS2353: Object literal may only specify known properties, and 'SAVES_GOALIE' does not exist in type '{ GOALS: number; }'.

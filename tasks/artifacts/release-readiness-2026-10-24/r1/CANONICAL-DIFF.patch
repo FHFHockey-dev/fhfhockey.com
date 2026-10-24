@@ -1,0 +1,76 @@
+diff --git a/web/__tests__/pages/api/v1/start-chart.test.ts b/web/__tests__/pages/api/v1/start-chart.test.ts
+index b37c7ddf1..5a91fc01e 100644
+--- a/web/__tests__/pages/api/v1/start-chart.test.ts
++++ b/web/__tests__/pages/api/v1/start-chart.test.ts
+@@ -18,6 +18,8 @@ import { decodePlanningDataTransport, encodePlanningDataTransport } from "lib/ro
+ import { BOARD_CATEGORIES } from "lib/projections/starterBoardScoring";
+ import type { ContributionSource } from "lib/player-forecasts/contributions";
+ import type { PlanningData } from "lib/rosterScheduleOptimizer/planningTypes";
++import * as rsoPolicy from "lib/player-forecasts/rsoUsePolicy";
++import { bindFixtureForecast, fixtureRsoPolicy } from "lib/player-forecasts/rsoUsePolicy.fixtures";
+ 
+ const {
+   fromMock,
+@@ -1743,27 +1745,43 @@ describe("/api/v1/start-chart", () => {
+     };
+     const selectedIntent: PlanIntent = { revision: 3, steps: [], protectedPlayerIds: [], excludedPlayerIds: [],
+       goalieCoverage: "accept_risk", goalieWindow: "any", goalieSplit: "mon_thu", alternativeCount: 5 };
++    // Valid issued values are not RSO permission; keep production review-before-use closed.
++    expect(rsoPolicy.RSO_USE_POLICY.reviews).toHaveLength(0);
++    const unreviewed = evaluatePlan(data, selectedIntent, "outcome");
++    expect(unreviewed.comparisonEligible).toBe(false);
++    expect(unreviewed.projectedValue).toBeNull();
++    const fictionalPolicy = fixtureRsoPolicy([...new Set(forecasts.map(row => row.modelVersion!))],
++      ["GOALS", "SHOTS_ON_GOAL"]);
++    data.forecasts = forecasts.map(bindFixtureForecast);
++    const review = vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fictionalPolicy);
+     const original = JSON.stringify({ data, selectedIntent, revision: fixture.revision });
+-    await serveAdmissionFixture(fixture);
+-    const handler = (await import("../../../../pages/api/v1/start-chart")).default;
+-    for (const [target, expectedId] of [["GOALS", fixture.players[1].id], ["SHOTS_ON_GOAL", fixture.players[0].id]]) {
+-      const res = createMockRes();
+-      await handler({ method: "POST", query: { date: fixture.date }, body: { profile: { skater: { [target]: 1 } } } } as any, res);
+-      expect(res.statusCode).toBe(200);
+-      const selected = evaluatePlan({ ...data, rules: { ...data.rules,
+-        scoring: { mode: "points", weights: { [target]: 1 }, categories: [] } } }, selectedIntent, "outcome");
+-      expect(selected).toMatchObject({ legal: true, activeGames: 1, benchGames: 1, comparisonEligible: true,
+-        recommendation: { eligible: true } });
+-      expect(selected.assignments.map(row => row.playerId)).toEqual([expectedId]);
+-      for (const forecast of forecasts) {
+-        const board = res.body.players.find((row: any) => row.player_id === fixture.players.find(row => row.id === forecast.playerId)!.nhlId);
+-        expect(board.forecast.expected).toEqual(forecast.stats);
+-        expect(board.boardScore.points).toBeCloseTo(forecast.stats[target]!);
+-        expect(board.position_ranks.C).toBe(forecast.playerId === expectedId ? 1 : 2);
++    try {
++      await serveAdmissionFixture(fixture);
++      const handler = (await import("../../../../pages/api/v1/start-chart")).default;
++      for (const [target, expectedId] of [["GOALS", fixture.players[1].id], ["SHOTS_ON_GOAL", fixture.players[0].id]]) {
++        const res = createMockRes();
++        await handler({ method: "POST", query: { date: fixture.date }, body: { profile: { skater: { [target]: 1 } } } } as any, res);
++        expect(res.statusCode).toBe(200);
++        const selected = evaluatePlan({ ...data, rules: { ...data.rules,
++          scoring: { mode: "points", weights: { [target]: 1 }, categories: [] } } }, selectedIntent, "outcome");
++        expect(selected).toMatchObject({ legal: true, activeGames: 1, benchGames: 1, comparisonEligible: true,
++          recommendation: { eligible: true } });
++        expect(selected.assignments.map(row => row.playerId)).toEqual([expectedId]);
++        for (const forecast of forecasts) {
++          const board = res.body.players.find((row: any) => row.player_id === fixture.players.find(row => row.id === forecast.playerId)!.nhlId);
++          expect(board.forecast.expected).toEqual(forecast.stats);
++          expect(board.boardScore.points).toBeCloseTo(forecast.stats[target]!);
++          expect(board.position_ranks.C).toBe(forecast.playerId === expectedId ? 1 : 2);
++        }
++        expect(selected.projectedValue).toBeCloseTo(forecasts.find(row => row.playerId === expectedId)!.stats[target]!);
+       }
+-      expect(selected.projectedValue).toBeCloseTo(forecasts.find(row => row.playerId === expectedId)!.stats[target]!);
+-    }
+-    expect(JSON.stringify({ data, selectedIntent, revision: fixture.revision })).toBe(original);
++      expect(JSON.stringify({ data, selectedIntent, revision: fixture.revision })).toBe(original);
++      review.mockReturnValue({ ...fictionalPolicy, revokedReviewIds: fictionalPolicy.reviews.map(row => row.id) });
++      const revoked = evaluatePlan(data, selectedIntent, "outcome");
++      expect(revoked.comparisonEligible).toBe(false);
++      expect(revoked.projectedValue).toBeNull();
++      expect(rsoPolicy.RSO_USE_POLICY.reviews).toHaveLength(0);
++    } finally { review.mockRestore(); }
+   });
+ 
+   it.each(["scalar mismatch", "missing authoritative evidence", "conditional only", "unknown participation"])("withholds skater output for %s", async problem => {

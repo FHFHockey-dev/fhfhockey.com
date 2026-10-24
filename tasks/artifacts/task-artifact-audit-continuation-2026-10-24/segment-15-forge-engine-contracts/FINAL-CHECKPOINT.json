@@ -1,0 +1,59 @@
+{
+  "at": "2026-10-24T19:19:19.645044+00:00",
+  "status": "Verified bounded checkpoint; whole requested content audit unfinished",
+  "canonical_ids": 213,
+  "canonical_evidence": 1123,
+  "readable_children": 30,
+  "added_parent_ids": [
+    "FORGE-COMPARISON-PROGRAM",
+    "SITE-FORGE-RANGE-PRESENTATION"
+  ],
+  "changed_existing_ids": [
+    "REPO-DOCUMENTATION",
+    "SITE-FORGE-TESTING-GROUNDS",
+    "FPI-03"
+  ],
+  "readable_children_added": 10,
+  "evidence_added": 21,
+  "all_prior_211_ids_scopes_evidence_preserved": true,
+  "legacy_blocks_byte_identical": 32,
+  "unchanged_existing_rows_identical": 208,
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "288b318523c21dc69946b5e3e58a2ee49733e3d147f7e8f3a5167b1cec806fc4",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "6d8966eab0a09aa494aea732938f63c3f372e7eb266ee2c8eb323b59d2b521b3",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "1b06be8634de0ee07e8e27343d61799e8e833efd8c029e187758f51d513554ac"
+  },
+  "library": {
+    "at": "2026-10-24T19:19:19.645044+00:00",
+    "status": "succeeded",
+    "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "version_before": 13,
+    "version_after": 14,
+    "raw_response": "LIBRARY-REPLACE-RAW.json",
+    "parsed_receipt": "LIBRARY-REPLACE-RECEIPT.json",
+    "helper_exit_code": 0,
+    "native_returned_xattrs_matched": [
+      "user.library-file-version"
+    ],
+    "local_master_sha256": "288b318523c21dc69946b5e3e58a2ee49733e3d147f7e8f3a5167b1cec806fc4",
+    "file_size_bytes": 613652,
+    "same_identity": true,
+    "replacement_attempts": 1,
+    "no_remote_checksum_download_claim": true,
+    "download_url": "https://chatgpt.com/api/library/files/libfile_9987e7d9d1b8819181b366a318cc9a9c/download",
+    "no_pending_or_uncertain_operation": true
+  },
+  "segment_coverage": {
+    "content-reviewed": 5,
+    "full_text_bytes": 145928,
+    "partially-inspected": 1,
+    "partial_scope": "All PRD prose read; historical commented SQL appendix structurally inspected, not semantically full-reviewed."
+  },
+  "remaining_unique_text_candidates": 1654,
+  "not_all_candidates_deep_read_obligations": true,
+  "remaining_base_queue_items": 12082,
+  "next_cursor": "tasks/TASKS/three-pillars-analytics/sustainability/tasks-prd-sustainability-barometer.md",
+  "pending_or_uncertain_operations": [],
+  "audit_blockers": [],
+  "application_tests_git_production_provider_new_workers": 0
+}

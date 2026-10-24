@@ -1,0 +1,39 @@
+[
+  {
+    "name": "scoped-types",
+    "argv": [
+      "npm",
+      "exec",
+      "--offline",
+      "--no",
+      "--",
+      "tsc",
+      "--noEmit",
+      "--incremental",
+      "false",
+      "--project",
+      "audit.scoped-tsconfig.json"
+    ],
+    "exit_code": 2,
+    "started_at": "2026-10-23T12:25:26.133974+00:00",
+    "ended_at": "2026-10-23T12:25:27.865375+00:00"
+  },
+  {
+    "name": "scoped-lint",
+    "argv": [
+      "npm",
+      "exec",
+      "--offline",
+      "--no",
+      "--",
+      "eslint",
+      "lib/player-forecasts/resolvedPlanningForecast.ts",
+      "lib/player-forecasts/rsoUsePolicy.ts",
+      "lib/rosterScheduleOptimizer/planningReproducibility.test.ts",
+      "lib/rosterScheduleOptimizer/rsoBoundaryReview.test.ts"
+    ],
+    "exit_code": 0,
+    "started_at": "2026-10-23T12:25:27.865402+00:00",
+    "ended_at": "2026-10-23T12:25:29.223434+00:00"
+  }
+]

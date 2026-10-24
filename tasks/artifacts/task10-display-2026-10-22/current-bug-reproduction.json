@@ -1,0 +1,7 @@
+{
+  "source": "Current untouched RosterScheduleOptimizer.tsx pointsFor callback, transpiled and executed directly",
+  "scenario": "GOALS=1, weight=3; ASSISTS absent, weight=2",
+  "actual": 3,
+  "required": null,
+  "status": "F7 reproduced; integration pending lease"
+}

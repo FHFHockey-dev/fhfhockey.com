@@ -1,0 +1,26 @@
+{
+  "captured_at": "2026-10-22T13:57:35.689004+00:00",
+  "head": "a565238f670edc4cf65da79ad52ba82ec41f3b71",
+  "branch": "octoberBranch",
+  "files": {
+    "web/lib/player-forecasts/rsoUsePolicy.ts": null,
+    "web/lib/player-forecasts/rsoUsePolicy.test.ts": null,
+    "web/lib/rosterScheduleData/planning.ts": "a3cba77737afee79fdea0a971f37350b613daca1f36f52f8c7e6132b74a4ff84",
+    "web/lib/rosterScheduleData/planning.test.ts": "30ec57586d80e83ce0602f90a2c0ab89e93934b7f06681f7885f822a7bc88748",
+    "web/lib/rosterScheduleOptimizer/planningTypes.ts": "9362696dbe129b45ac8c5e204972396cbd2ed362aa41122017ded95ee0207294",
+    "web/lib/player-forecasts/planningContributions.ts": "d04bef7eee21b7672d78242134fe3f2ef8c11da2f16df7f3279943f22c8e8b08",
+    "web/lib/player-forecasts/planningContributions.test.ts": "85665ae6cf5a9f17230bea469e14be6c7eafb44d6224c034fda8d4954cd3ff62",
+    "web/lib/player-forecasts/resolvedPlanningForecast.ts": "2070019c4ea4d9c8cda19b11da5050b2da845825732eacde30b02da1e46ef745",
+    "web/lib/rosterScheduleOptimizer/planning.ts": "e7260eb53bb984191724eb0014c406c91713029a5c2f01cf52eaad4810a70cac",
+    "web/lib/rosterScheduleOptimizer/planning.test.ts": "1d201bc76ebed038edc0dc27127f238e6789653f8f25a34460057b8338513a00",
+    "web/lib/rosterScheduleData/planningDataTransport.ts": "c71139a8919d6b77a34911913285656141e54157ae2e3724010e5ab1e363c040",
+    "web/lib/in-season/workspaceSchema.ts": "cc312bf6cb48722f0ddcbde0c287e5306e442579fefc93e23e45e56a09bf6b79",
+    "web/lib/in-season/workspaceSchema.test.ts": "f215c31e8d97956d22f013baab8a22e3f3034da5e2bdd92fde429f049e947354",
+    "web/lib/rosterScheduleOptimizer/refreshForecastInputs.test.ts": "ea0c2efe67468ef6a5be24364fd649bf682685f1a4ea36031fff1f095b880d9c",
+    "web/pages/api/v1/roster-schedule-optimizer/data.ts": "fa9e46ddb4dcf2714e97b67011a80a9f57258c645d4f4e2ee72c5cb3a2edd03b",
+    "web/__tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts": "2d3ded14afb002ff1026a5a9ebbdf6be6d94a70c9ca742c1416e39043f84344b",
+    "web/lib/integrations/yahoo/rosterPlanning.ts": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+    "web/lib/integrations/yahoo/rosterPlanning.test.ts": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+    "web/lib/player-forecasts/gameExpectationReader.ts": "08e40d57f885db0ef41fecf928590c577c79f9ffc415ffa5dd4b6c4214d810bd"
+  }
+}

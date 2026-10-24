@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-24T20:32:44.867973+00:00",
+  "tentative_unique_text_candidates": 1589,
+  "not_all_are_deep_document_obligations": true,
+  "next_sources": [
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
+      "bytes": 124967,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/prd-in-season-trust-clarity-decision-workflow.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "321ef612fffa770f5cc6edb784e8986519b59050d475e280e9229f99dd69eca9",
+      "bytes": 32481,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    },
+    {
+      "path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
+      "priority": 0,
+      "kind": "unique-task-document",
+      "coverage": "partially-inspected",
+      "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
+      "bytes": 71778,
+      "duplicate_of": null,
+      "representative_coverage": null,
+      "cursor": "No full semantic/visual review recorded; reuse exact selected source anchors in CHANGELOG and DOCUMENT-QUEUE before expanding."
+    }
+  ],
+  "group_disposition": "All11named CCC/GDL primary documents content-read;8dated structured sources bounded;16copies inherit only boundedscope. Other IFTTT program artifacts remain queued, not blanketread.",
+  "constraints": [
+    "Preserve current implementation and accepted local/retired/paused gates.",
+    "No replay of old source runbooks, browser/provider/production actions or staffing requests.",
+    "Historical working-note/log/catalog remainder is a distinct lower-priority class, not fullreview."
+  ]
+}

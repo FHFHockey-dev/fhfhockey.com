@@ -1,0 +1,20 @@
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/socialShare/teamRates.test.ts (3 tests) 4ms
+ ✓ lib/socialShare/playerSources.test.ts (5 tests) 4ms
+ ✓ lib/socialShare/access.test.ts (24 tests) 6ms
+ ✓ lib/socialShare/tiers.test.ts (5 tests) 28ms
+ ✓ lib/socialShare/mondayGrid.test.ts (9 tests) 42ms
+ ✓ lib/socialShare/matchups.test.ts (9 tests) 70ms
+ ✓ lib/socialShare/schedule.test.ts (32 tests) 73ms
+ ✓ components/SocialShare/SocialShareAccessGate.test.tsx (10 tests) 56ms
+ ✓ lib/socialShare/players.test.ts (12 tests) 95ms
+ ✓ lib/socialShare/trends.test.ts (6 tests) 184ms
+ ✓ lib/socialShare/editionFetch.test.ts (15 tests) 225ms
+ ✓ components/SocialShare/SocialShare.test.tsx (1 test) 54ms
+
+ Test Files  12 passed (12)
+      Tests  131 passed (131)
+   Start at  17:31:29
+   Duration  1.09s (transform 765ms, setup 59ms, collect 1.65s, tests 842ms, environment 5.57s, prepare 919ms)
+

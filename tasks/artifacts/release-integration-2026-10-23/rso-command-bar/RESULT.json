@@ -1,0 +1,136 @@
+{
+  "status": "pass",
+  "scope": "Actual SCSS, synthetic markup matching connected command-bar content; full Next/application regression still required",
+  "results": [
+    {
+      "version": "before",
+      "width": 1180,
+      "viewport": 1180,
+      "documentWidth": 1468,
+      "height": 44,
+      "outside": [
+        {
+          "text": "View account save",
+          "left": 1081.375,
+          "right": 1201.21875
+        },
+        {
+          "text": "Save to account",
+          "left": 1205.21875,
+          "right": 1311.28125
+        },
+        {
+          "text": "Refresh provider",
+          "left": 1319.28125,
+          "right": 1428
+        },
+        {
+          "text": "☰",
+          "left": 1436,
+          "right": 1468
+        }
+      ]
+    },
+    {
+      "version": "before",
+      "width": 1440,
+      "viewport": 1440,
+      "documentWidth": 1468,
+      "height": 44,
+      "outside": [
+        {
+          "text": "☰",
+          "left": 1436,
+          "right": 1468
+        }
+      ]
+    },
+    {
+      "version": "before",
+      "width": 1920,
+      "viewport": 1920,
+      "documentWidth": 1920,
+      "height": 44,
+      "outside": []
+    },
+    {
+      "version": "before",
+      "width": 1024,
+      "viewport": 1024,
+      "documentWidth": 1024,
+      "height": 143,
+      "outside": []
+    },
+    {
+      "version": "before",
+      "width": 390,
+      "viewport": 390,
+      "documentWidth": 390,
+      "height": 259,
+      "outside": []
+    },
+    {
+      "version": "before",
+      "width": 320,
+      "viewport": 320,
+      "documentWidth": 376,
+      "height": 259,
+      "outside": [
+        {
+          "text": "Save to account",
+          "left": 269.5625,
+          "right": 375.625
+        }
+      ]
+    },
+    {
+      "version": "after",
+      "width": 1180,
+      "viewport": 1180,
+      "documentWidth": 1180,
+      "height": 82,
+      "outside": []
+    },
+    {
+      "version": "after",
+      "width": 1440,
+      "viewport": 1440,
+      "documentWidth": 1440,
+      "height": 82,
+      "outside": []
+    },
+    {
+      "version": "after",
+      "width": 1920,
+      "viewport": 1920,
+      "documentWidth": 1920,
+      "height": 44,
+      "outside": []
+    },
+    {
+      "version": "after",
+      "width": 1024,
+      "viewport": 1024,
+      "documentWidth": 1024,
+      "height": 143,
+      "outside": []
+    },
+    {
+      "version": "after",
+      "width": 390,
+      "viewport": 390,
+      "documentWidth": 390,
+      "height": 293,
+      "outside": []
+    },
+    {
+      "version": "after",
+      "width": 320,
+      "viewport": 320,
+      "documentWidth": 320,
+      "height": 293,
+      "outside": []
+    }
+  ],
+  "unexpectedRequests": 0
+}

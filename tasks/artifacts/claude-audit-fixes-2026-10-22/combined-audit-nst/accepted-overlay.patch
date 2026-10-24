@@ -1,0 +1,2344 @@
+diff --git a/web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts b/web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts
+--- a/web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts
++++ b/web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts
+@@ -604,6 +604,24 @@
+     });
+   });
+ 
++  it("keeps an explicit NST window bounded and holds uncertain writes even when stopOnFailure is false", async () => {
++    vi.useFakeTimers({ toFake: ["Date"] });
++    vi.setSystemTime(new Date("2026-10-19T10:05:00.000Z"));
++    updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => {
++      res.status(500).json({ success: false, error: "write acknowledgement lost", writePersistence: "not_confirmed" });
++    });
++    const res = createMockRes();
++    await handler({ method: "GET", query: { mode: "daily_incremental", startDate: "2026-10-16", endDate: "2026-10-17", stopOnFailure: "false" }, headers: {} } as any, res);
++    expect(updateNstGamelogMock.mock.calls[0][0].query).toEqual({
++      runMode: "incremental", startDate: "2026-10-16", endDate: "2026-10-17",
++      deadlineAt: String(Date.parse("2026-10-19T10:05:00.000Z") + 190_000)
++    });
++    expect(res.body.termination).toMatchObject({ state: "stopped_on_blocking_failure", resumeRequired: false, reason: "manual_review_required" });
++    expect(res.body.failureSummary.terminalStop).toEqual({ code: "nst_persistence_unconfirmed", stageId: "upstream_skater_sources" });
++    expect(updateWgoSkatersMock).not.toHaveBeenCalled();
++    expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
++  });
++
+   it("does not include retired support-only WGO routes in the upstream stage", async () => {
+     const req: any = {
+       method: "GET",
+@@ -823,23 +841,20 @@
+       expect(runProjectionV2Mock.mock.calls[0]?.[0]?.query?.date).toBe("2026-10-19");
+     });
+ 
+-    describe("NST step resume (agreed contract; inactive until Codex ships it)", () => {
++    describe("NST step resume (production-default producer contract)", () => {
+       const continuation = (cursor: string, overrides: Record<string, string> = {}) =>
+         async (req: any, res: any) => {
+           res.status(207).json({
+             success: false,
+             operationStatus: "continuation_required",
+-            resume: { required: true, request: { query: { ...req.query, cursor, deadlineAt: "1", ...overrides } } }
++            nstProgress: { auditPersistence: "confirmed" },
++            resume: { required: true, request: { query: { ...req.query, cursor, ...overrides } } }
+           });
+         };
+-      const reply = (status: number, body: Record<string, unknown>) => async (_req: any, res: any) => {
++      const reply = (status: number, body: unknown) => async (_req: any, res: any) => {
+         res.status(status).json(body);
+       };
+-      beforeEach(() => {
+-        __testables.nstStepResume.enabled = true;
+-      });
+       afterEach(() => {
+-        __testables.nstStepResume.enabled = false;
+         updateNstGamelogMock.mockReset();
+       });
+ 
+@@ -875,6 +890,28 @@
+         expect(nstStageRow()).toMatchObject({ status: "complete" });
+         expect(third.statusCode).toBe(200);
+         expect(third.body.termination).toMatchObject({ state: "completed" });
++        const fourth = await invokeScheduled("2026-10-19T10:20:00.000Z");
++        expect(fourth.body.termination.state).toBe("completed");
++        expect(updateNstGamelogMock).toHaveBeenCalledTimes(3);
++        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
++        expect([...pipelineStateRows.values()].filter(row => row.operation_key.startsWith("upstream_skater_sources:kill:"))).toHaveLength(0);
++      });
++
++      it("keeps a resumed source-down result explicitly degraded and allows WGO once", async () => {
++        updateNstGamelogMock.mockImplementationOnce(continuation("7"))
++          .mockImplementationOnce(reply(503, { success: false, operationStatus: "source_down",
++            nstProgress: { auditPersistence: "confirmed", sourceOutcomes: { unresolvedCount: 1 } } }));
++        await invokeScheduled("2026-10-19T10:05:00.000Z");
++        const second = await invokeScheduled("2026-10-19T10:10:00.000Z");
++        expect(updateNstGamelogMock.mock.calls[1][0].query).toMatchObject({ cursor: "7" });
++        expect(second.body.failureSummary.degradedSteps).toEqual([
++          { stageId: "upstream_skater_sources", stepId: "update-nst-gamelog", code: "nst_source_unavailable", reason: expect.stringContaining("Backfill the date") }
++        ]);
++        expect(nstStageRow()).toMatchObject({ status: "complete", cursor_game_id: 7 });
++        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
++        await invokeScheduled("2026-10-19T10:15:00.000Z");
++        expect(updateNstGamelogMock).toHaveBeenCalledTimes(2);
++        expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
+       });
+ 
+       it("advances to WGO on the expected no-completed-games skip", async () => {
+@@ -889,11 +926,20 @@
+       });
+ 
+       it.each([
++        ["a missing success acknowledgement", reply(200, {})],
++        ["a null success body", reply(200, null)],
++        ["a non-boolean success acknowledgement", reply(200, { success: "true" })],
++        ["a contradictory successful continuation", reply(200, { success: true, operationStatus: "continuation_required", resume: { required: true } })],
+         ["a provider failure (>= 400)", reply(503, { success: false, classification: "rate_limited" })],
+         ["incomplete work (200, success false)", reply(200, { success: false, message: "Incomplete NST work; inspect source outcomes and deferred URLs." })],
+         ["a 207 that is not a continuation", reply(207, { success: false, operationStatus: "partial" })],
+         ["a cursor that is not positive", continuation("0")],
+         ["a non-integer cursor", continuation("7.5")],
++        ["a changed deadline", continuation("7", { deadlineAt: "1" })],
++        ["an unacknowledged continuation", async (req: any, res: any) => {
++          res.status(207).json({ success: false, operationStatus: "continuation_required",
++            resume: { required: true, request: { query: { ...req.query, cursor: "7" } } } });
++        }],
+         ["a missing cursor", async (req: any, res: any) => {
+           res.status(207).json({ success: false, operationStatus: "continuation_required",
+             resume: { required: true, request: { query: { ...req.query } } } });
+@@ -932,7 +978,23 @@
+         expect(nstStageRow()).toMatchObject({ status: "failed", cursor_game_id: 7 });
+       });
+ 
+-      it("does not advance when the cursor cannot be stored: the next invocation repeats from the last stored cursor", async () => {
++      it.each(["auditPersistence", "writePersistence"])("holds %s uncertainty for review across invocations without rerunning NST", async (field) => {
++        updateNstGamelogMock
++          .mockImplementationOnce(continuation("7"))
++          .mockImplementationOnce(reply(500, { success: false, error: "acknowledgement lost", [field]: "not_confirmed" }));
++        await invokeScheduled("2026-10-19T10:05:00.000Z");
++        const failed = await invokeScheduled("2026-10-19T10:10:00.000Z");
++        expect(failed.body.termination).toMatchObject({ state: "stopped_on_blocking_failure", resumeRequired: false, reason: "manual_review_required" });
++        expect(nstStageRow()).toMatchObject({ status: "failed", last_error: "nst_persistence_unconfirmed", cursor_game_id: 7 });
++        const held = await invokeScheduled("2026-10-19T10:15:00.000Z");
++        expect(held.body.termination).toMatchObject({ state: "stopped_on_blocking_failure", resumeRequired: false, reason: "manual_review_required" });
++        expect(held.body.failureSummary.terminalStop).toEqual({ code: "nst_persistence_unconfirmed", stageId: "upstream_skater_sources" });
++        expect(updateNstGamelogMock).toHaveBeenCalledTimes(2);
++        expect(updateWgoSkatersMock).not.toHaveBeenCalled();
++        expect(updateRollingPlayerAveragesMock).not.toHaveBeenCalled();
++      });
++
++      it("does not advance when the cursor cannot be stored and holds the abandoned NST call for review", async () => {
+         const original = pipelineStateRpc.getMockImplementation()!;
+         let failedAdvance = false;
+         pipelineStateRpc.mockImplementation(async (name: string, a: any) => {
+@@ -949,10 +1011,12 @@
+           expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+           expect(nstStageRow()).toMatchObject({ status: "running", cursor_game_id: null });
+ 
+-          // After the lease frees, NST repeats from the stored (empty) cursor.
+-          await invokeScheduled("2026-10-19T10:15:00.000Z");
+-          expect(updateNstGamelogMock.mock.calls[1]?.[0]?.query).toEqual(nstQuery("2026-10-19T10:15:00.000Z"));
+-          expect(updateWgoSkatersMock).toHaveBeenCalledTimes(1);
++          // An acknowledged producer response does not prove why a later
++          // running row was abandoned. Recovery requires receipt review.
++          const held = await invokeScheduled("2026-10-19T10:15:00.000Z");
++          expect(held.body.termination).toMatchObject({ resumeRequired: false, reason: "manual_review_required" });
++          expect(updateNstGamelogMock).toHaveBeenCalledTimes(1);
++          expect(updateWgoSkatersMock).not.toHaveBeenCalled();
+         } finally {
+           pipelineStateRpc.mockImplementation(original);
+         }
+@@ -967,11 +1031,9 @@
+           counts: { rows_persisted: 0, fetch_or_write_failed: 1 } } } };
+       afterEach(() => {
+         updateNstGamelogMock.mockReset();
+-        __testables.nstStepResume.enabled = false;
+-      });
+-
+-      it.each([false, true])("with NST step resume %s: WGO and the later stages run, and the response names the degraded step", async (resumeEnabled) => {
+-        __testables.nstStepResume.enabled = resumeEnabled;
++      });
++
++      it("runs WGO and the later stages, and names the degraded step", async () => {
+         updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => { res.status(200).json(outage); });
+ 
+         const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+@@ -1026,28 +1088,6 @@
+         expect(stageStatus(res, "upstream_skater_sources").status).toBe("failed");
+         expect(res.body.termination).toMatchObject({ state: "stopped_on_blocking_failure" });
+         expect(res.body.failureSummary.degradedSteps).toEqual([]);
+-      });
+-    });
+-
+-    describe("while NST step resume is inactive, today's NST responses behave as before", () => {
+-      afterEach(() => updateNstGamelogMock.mockReset());
+-
+-      it.each([
+-        ["success", 200, { success: true, message: "Done" }, "success"],
+-        ["incomplete work", 200, { success: false, message: "Incomplete NST work; inspect source outcomes and deferred URLs." }, "failed"],
+-        ["an error", 500, { success: false, error: "boom" }, "failed"],
+-        ["a continuation", 207, { success: false, operationStatus: "continuation_required",
+-          resume: { required: true, request: { query: { runMode: "incremental", startDate: "2026-10-18", endDate: "2026-10-18", cursor: "7" } } } }, "failed"],
+-      ])("%s: WGO still runs and nothing is stored", async (_label, status, body, stepStatus) => {
+-        updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => { res.status(status).json(body); });
+-
+-        const res = await invokeScheduled("2026-10-19T10:05:00.000Z");
+-
+-        expect(stageStatus(res, "upstream_skater_sources").steps.map((step: any) => [step.id, step.status])).toEqual([
+-          ["update-nst-gamelog", stepStatus], ["update-wgo-skaters", "success"], ["update-wgo-totals", "success"],
+-        ]);
+-        expect(updateNstGamelogMock.mock.calls[0]?.[0]?.query).not.toHaveProperty("cursor");
+-        expect(nstStageRow()?.cursor_game_id ?? null).toBeNull();
+       });
+     });
+ 
+@@ -1615,3 +1655,113 @@
+     expect(Number(query.deadlineAt)).toBeLessThanOrEqual(Date.now() + 190_000);
+   });
+ });
++
++// Appended to the unchanged owner's test harness prefix in an isolated test file.
++// Existing candidate source/tests stay byte-identical. All providers are mocked.
++import serverClient from "lib/supabase/server";
++
++describe("NST acquisition and uncertain-persistence regressions", () => {
++  const stageKey = (id: string) => `rolling_forge_pipeline|daily_incremental:2026-10-19|${id}`;
++  const stageRow = () => pipelineStateRows.get(stageKey("upstream_skater_sources"));
++  const originalRpc = pipelineStateRpc.getMockImplementation()!;
++  const originalFrom = vi.mocked(serverClient.from).getMockImplementation()!;
++  const success = async (_req: any, res: any) => res.status(200).json({ success: true });
++  const signal = () => {
++    let resolve!: () => void;
++    const promise = new Promise<void>(done => { resolve = done; });
++    return { promise, resolve };
++  };
++  const invoke = async (query: Record<string, string> = {}) => {
++    const res = createMockRes();
++    await handler({ method: "GET", headers: {}, query: { mode: "daily_incremental", includeAccuracy: "false", ...query } } as any, res);
++    return res;
++  };
++  const seed = (id: string, extras: Record<string, unknown> = {}) => pipelineStateRows.set(stageKey(id), {
++    pipeline_key: "rolling_forge_pipeline", scope_key: "daily_incremental:2026-10-19", operation_key: id,
++    revision: 1, status: "complete", cursor_game_id: null, cursor_date: "2026-10-19",
++    range_start_date: "2026-10-19", range_end_date: "2026-10-19", lease_owner: null,
++    lease_expires_at: null, last_error: null, updated_at: "2026-10-19T10:04:00.000Z", ...extras
++  });
++
++  beforeEach(() => {
++    vi.clearAllMocks();
++    vi.useFakeTimers({ toFake: ["Date"] });
++    vi.setSystemTime(new Date("2026-10-19T10:05:00.000Z"));
++    pipelineStateRows.clear();
++    pipelineStateRpc.mockImplementation(originalRpc);
++    vi.mocked(serverClient.from).mockImplementation(originalFrom);
++    process.env.CRON_SECRET = "test-secret";
++    for (const mock of [updateGamesMock, updateTeamsMock, updatePlayersMock, updateNstGamelogMock,
++      updateWgoSkatersMock, updateWgoTotalsMock, updateWgoAveragesMock, updateLineCombinationsMock,
++      updatePowerPlayCombinationsMock, updateRollingPlayerAveragesMock, ingestProjectionInputsMock,
++      shiftChartsMock, buildProjectionDerivedMock, updateGoalieProjectionsV2Mock, runProjectionV2Mock, runProjectionAccuracyMock]) {
++      mock.mockReset().mockImplementation(success);
++    }
++    seed("core_entity_freshness");
++    seed("upstream_skater_sources", { status: "failed", last_error: "stage_handoff", cursor_game_id: 7 });
++  });
++  afterEach(() => {
++    pipelineStateRpc.mockImplementation(originalRpc);
++    vi.mocked(serverClient.from).mockImplementation(originalFrom);
++    vi.useRealTimers();
++  });
++
++  it("must preserve a durable manual-review hold when another same-version invocation read state before the hold", async () => {
++    const enteredNst = signal(), releaseNst = signal(), readSnapshot = signal(), releaseSnapshot = signal();
++    updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) => {
++      enteredNst.resolve();
++      await releaseNst.promise;
++      res.status(500).json({ success: false, error: "audit acknowledgement lost", auditPersistence: "not_confirmed" });
++    });
++    const firstPromise = invoke();
++    await enteredNst.promise;
++    let intercept = true;
++    vi.mocked(serverClient.from).mockImplementation(((table: string) => {
++      const query = originalFrom(table as any);
++      if (table === "projection_pipeline_state" && intercept) {
++        intercept = false;
++        const originalThen = (query as any).then;
++        (query as any).then = (resolve: any, reject: any) => originalThen(async (snapshot: any) => {
++          readSnapshot.resolve();
++          await releaseSnapshot.promise;
++          return resolve(snapshot);
++        }, reject);
++      }
++      return query;
++    }) as any);
++    const observerPromise = invoke();
++    await readSnapshot.promise;
++    releaseNst.resolve();
++    const first = await firstPromise;
++    expect(first.body.termination.reason).toBe("manual_review_required");
++    expect(stageRow().last_error).toBe("nst_persistence_unconfirmed");
++    releaseSnapshot.resolve();
++    const observer = await observerPromise;
++    console.log("REVIEW_RACE_OBSERVED", JSON.stringify({ nstCalls: updateNstGamelogMock.mock.calls.length,
++      observerTermination: observer.body.termination, finalStage: stageRow() }));
++    expect.soft(updateNstGamelogMock).toHaveBeenCalledTimes(1);
++    expect.soft(observer.body.termination.reason).toBe("manual_review_required");
++    expect.soft(stageRow().last_error).toBe("nst_persistence_unconfirmed");
++  });
++
++  it("must not advertise retry when a manual-review hold cannot be saved", async () => {
++    pipelineStateRpc.mockImplementation(async (name: string, args: any) => {
++      if (args.p_transition === "fail" && args.p_last_error === "nst_persistence_unconfirmed") {
++        return { data: null, error: { message: "synthetic hold persistence failure" } };
++      }
++      return originalRpc(name, args);
++    });
++    updateNstGamelogMock.mockImplementationOnce(async (_req: any, res: any) =>
++      res.status(500).json({ success: false, error: "write acknowledgement lost", writePersistence: "not_confirmed" }));
++    const first = await invoke();
++    console.log("REVIEW_FAILED_HOLD_FIRST", JSON.stringify({ termination: first.body.termination, row: stageRow() }));
++    expect.soft(first.body.termination).toMatchObject({ resumeRequired: false, reason: "manual_review_required" });
++    vi.setSystemTime(new Date("2026-10-19T10:15:00.000Z"));
++    const next = await invoke();
++    console.log("REVIEW_FAILED_HOLD_NEXT", JSON.stringify({ nstCalls: updateNstGamelogMock.mock.calls.length,
++      termination: next.body.termination, row: stageRow() }));
++    expect.soft(updateNstGamelogMock).toHaveBeenCalledTimes(1);
++    expect.soft(updateWgoSkatersMock).not.toHaveBeenCalled();
++  });
++
++});
+diff --git a/web/components/GameStateAnalysis/GameStateAnalysis.test.tsx b/web/components/GameStateAnalysis/GameStateAnalysis.test.tsx
+--- a/web/components/GameStateAnalysis/GameStateAnalysis.test.tsx
++++ b/web/components/GameStateAnalysis/GameStateAnalysis.test.tsx
+@@ -21,7 +21,7 @@
+ function query(rows: Record<string, unknown>[]) {
+   const result = Promise.resolve({ data: rows, error: null });
+   const q: any = {};
+-  for (const method of ["select", "eq", "gte", "lte", "gt", "order", "limit"]) {
++  for (const method of ["select", "eq", "gte", "lte", "gt", "or", "order", "limit"]) {
+     q[method] = vi.fn(() => q);
+   }
+   q.then = (resolve: any, reject: any) => result.then(resolve, reject);
+@@ -92,6 +92,15 @@
+ });
+ 
+ describe("situation cards", () => {
++  it("keeps an incomplete strength sample unknown", () => {
++    const card = buildStrengthCard("5v5", "5v5", [strengthRow(), strengthRow({ gp: null })]);
++    expect(card.games).toBeNull();
++    expect(card.attemptsPct).toBeNull();
++    expect(card.goalsFor).toBeNull();
++    expect(card.toiSeconds).toBeNull();
++    expect(card.note).toBe("Incomplete game sample · Natural Stat Trick");
++  });
++
+   it("never labels shot-attempt shares as xGF", () => {
+     const card = buildScoreStateCard(
+       "leading",
+diff --git a/web/components/GameStateAnalysis/GameStateAnalysis.tsx b/web/components/GameStateAnalysis/GameStateAnalysis.tsx
+--- a/web/components/GameStateAnalysis/GameStateAnalysis.tsx
++++ b/web/components/GameStateAnalysis/GameStateAnalysis.tsx
+@@ -37,7 +37,7 @@
+   goalsAgainst: number | null;
+   pdo: number | null;
+   toiSeconds: number | null;
+-  games: number;
++  games: number | null;
+   note: string;
+ }
+ 
+@@ -75,7 +75,9 @@
+     toiSeconds: totals.toiSeconds,
+     games: totals.games,
+     note:
+-      totals.games > 0
++      totals.games === null
++        ? "Incomplete game sample · Natural Stat Trick"
++        : totals.games > 0
+         ? `Regular season · ${gamesLabel(totals.games)} · Natural Stat Trick`
+         : "No games in sample"
+   };
+@@ -194,7 +196,7 @@
+           .eq("team_abbreviation", teamAbbrev)
+           .gte("date", window.start)
+           .lte("date", window.end)
+-          .gt("gp", 0)
++          .or("gp.neq.0,gp.is.null")
+           .order("date", { ascending: false });
+ 
+       const [evenStrength, powerPlay, penaltyKill] = await Promise.all([
+diff --git a/web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx b/web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx
+new file mode 100644
+--- /dev/null
++++ b/web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx
+@@ -0,0 +1,162 @@
++import React from "react";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
++
++const mocks = vi.hoisted(() => ({ fetch: vi.fn() }));
++vi.mock("lib/cors-fetch", () => ({ default: mocks.fetch }));
++vi.mock("react-chartjs-2", () => ({
++  Doughnut: ({ data }: any) => <pre data-testid="chart">{JSON.stringify(data)}</pre>
++}));
++
++import GoalieShareChart, { type GoalieGameRow } from "./index";
++
++const rows: GoalieGameRow[] = Array.from({ length: 250 }, (_, index) => ({
++  gameId: index + 1,
++  gameDate: new Date(Date.UTC(2025, 9, 1 + index)).toISOString().slice(0, 10),
++  teamAbbrev: "PHI",
++  playerId: index < 200 ? 1 : 2,
++  goalieFullName: index < 200 ? "Starter One" : "Backup Two",
++  gamesPlayed: 1,
++  wins: 0,
++  losses: 0,
++  otLosses: 0,
++  saves: 27,
++  shotsAgainst: 30,
++  goalsAgainst: 3,
++  timeOnIce: 3600
++}));
++
++const response = (data: unknown, status = 200) => ({
++  ok: status === 200,
++  status,
++  json: async () => data
++});
++
++function mockPages(page: (start: number) => ReturnType<typeof response>) {
++  mocks.fetch.mockImplementation(async (url: string) => {
++    const parsed = new URL(url);
++    return parsed.pathname.endsWith("/season")
++      ? response({ data: [{ id: 20252026 }] })
++      : page(Number(parsed.searchParams.get("start")));
++  });
++}
++
++const completePage = (start: number) =>
++  response({ total: rows.length, data: rows.slice(start, start + 100) });
++
++async function finishRequests() {
++  await act(async () => { await vi.advanceTimersByTimeAsync(2500); });
++}
++
++beforeEach(() => {
++  vi.useFakeTimers();
++  vi.spyOn(console, "warn").mockImplementation(() => {});
++  vi.spyOn(console, "error").mockImplementation(() => {});
++});
++
++afterEach(() => {
++  cleanup();
++  vi.useRealTimers();
++  vi.restoreAllMocks();
++  vi.resetAllMocks();
++});
++
++describe("GoalieShareChart complete page sets", () => {
++  it.each([0, 100, 200])("withholds every window after repeated 429s at offset %i", async (failedStart) => {
++    mockPages((start) => start === failedStart ? response({}, 429) : completePage(start));
++    render(<GoalieShareChart />);
++    await finishRequests();
++
++    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
++    expect(screen.getByRole("alert").textContent).toMatch(/unavailable|incomplete/i);
++    const failedCalls = mocks.fetch.mock.calls.filter(([url]) =>
++      new URL(url).searchParams.get("start") === String(failedStart));
++    expect(failedCalls).toHaveLength(2);
++
++    const calls = mocks.fetch.mock.calls.length;
++    for (const span of ["L10", "L20", "L30", "Season"]) {
++      fireEvent.click(screen.getByRole("button", { name: span }));
++      expect(screen.queryAllByTestId("chart")).toHaveLength(0);
++    }
++    expect(mocks.fetch).toHaveBeenCalledTimes(calls);
++  });
++
++  it.each([0, 100, 200])("rejects a successful but short page at offset %i", async (shortStart) => {
++    mockPages((start) => start === shortStart
++      ? response({ total: rows.length, data: rows.slice(start, start + 1) })
++      : completePage(start));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
++    expect(screen.getByRole("alert").textContent).toMatch(/unavailable|incomplete/i);
++  });
++
++  it.each([
++    { data: rows.slice(0, 100) },
++    { total: 250, data: null },
++    { total: -1, data: [] }
++  ])("rejects invalid completeness metadata: %j", async (payload) => {
++    mockPages(() => response(payload));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
++    expect(screen.getByRole("alert")).toBeTruthy();
++  });
++
++  it("rejects totals that change between pages", async () => {
++    mockPages((start) => start === 100
++      ? response({ total: 300, data: rows.slice(100, 200) })
++      : completePage(start));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
++    expect(screen.getByRole("alert")).toBeTruthy();
++  });
++
++  it("recovers within the retry budget and re-slices complete data without fetching", async () => {
++    let attempts = 0;
++    mockPages((start) => start === 100 && attempts++ === 0
++      ? response({}, 429)
++      : completePage(start));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(screen.queryByRole("alert")).toBeNull();
++    expect(JSON.parse(screen.getByTestId("chart").textContent!).datasets[0].data).toEqual([200, 50]);
++    const calls = mocks.fetch.mock.calls.length;
++    fireEvent.click(screen.getByRole("button", { name: "L10" }));
++    expect(JSON.parse(screen.getByTestId("chart").textContent!).datasets[0].data).toEqual([10]);
++    expect(mocks.fetch).toHaveBeenCalledTimes(calls);
++  });
++
++  it("keeps a verified empty season distinct from a failed page", async () => {
++    mockPages(() => response({ total: 0, data: [] }));
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(screen.queryByRole("alert")).toBeNull();
++    expect(screen.getByText(/No goalie data available/)).toBeTruthy();
++    expect(mocks.fetch).toHaveBeenCalledTimes(2);
++  });
++
++  it("keeps page concurrency bounded at eight", async () => {
++    let active = 0;
++    let maximum = 0;
++    mocks.fetch.mockImplementation(async (url: string) => {
++      const parsed = new URL(url);
++      if (parsed.pathname.endsWith("/season")) return response({ data: [{ id: 20252026 }] });
++      const start = Number(parsed.searchParams.get("start"));
++      active++;
++      maximum = Math.max(maximum, active);
++      await new Promise((resolve) => setTimeout(resolve, 10));
++      active--;
++      return response({
++        total: 1000,
++        data: Array.from({ length: 100 }, (_, index) => ({ ...rows[0], gameId: start + index + 1 }))
++      });
++    });
++    render(<GoalieShareChart />);
++    await finishRequests();
++    expect(maximum).toBe(8);
++    expect(mocks.fetch).toHaveBeenCalledTimes(11);
++    expect(screen.getAllByTestId("chart")).toHaveLength(1);
++  });
++});
+diff --git a/web/components/GoalieShareChart/index.tsx b/web/components/GoalieShareChart/index.tsx
+--- a/web/components/GoalieShareChart/index.tsx
++++ b/web/components/GoalieShareChart/index.tsx
+@@ -162,6 +162,7 @@
+   const [goalieGames, setGoalieGames] = useState<GoalieGameRow[]>([]);
+   const [selectedSpan, setSelectedSpan] = useState<SpanType>("Season");
+   const [loading, setLoading] = useState<boolean>(true);
++  const [loadError, setLoadError] = useState<string | null>(null);
+   const [selectedTeam, setSelectedTeam] = useState<string>(() => {
+     // Default to first team alphabetically
+     const sortedTeamAbbrevs = Object.keys(teamsInfo).sort();
+@@ -175,7 +176,7 @@
+     if (hasLoggedRateLimit.current) return;
+     hasLoggedRateLimit.current = true;
+     console.warn(
+-      "NHL API rate-limited some requests (429). Showing partial goalie data."
++      "NHL API rate-limited some requests (429). Goalie data is unavailable."
+     );
+   }, []);
+ 
+@@ -183,7 +184,7 @@
+     url: string,
+     context: string,
+     maxAttempts = 2
+-  ): Promise<any | null> => {
++  ): Promise<any> => {
+     let lastError: unknown = null;
+ 
+     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+@@ -215,7 +216,6 @@
+ 
+     if (isRateLimitError(lastError)) {
+       logRateLimitOnce();
+-      return null;
+     }
+     throw lastError;
+   }, [logRateLimitOnce]);
+@@ -251,10 +251,17 @@
+     };
+     const readPage = async (start: number): Promise<{ rows: GoalieGameRow[]; total: number }> => {
+       const response = await fetchJsonWithRetry(pageUrl(start), context);
+-      const payload = response ? unwrapProxyPayload(response, context) : null;
++      const payload = unwrapProxyPayload(response, context);
++      if (!Array.isArray(payload?.data) || !Number.isInteger(payload.total) || payload.total < 0) {
++        throw new Error(`${context}: invalid page metadata`);
++      }
++      const expectedRows = Math.min(GOALIE_GAME_PAGE_SIZE, Math.max(0, payload.total - start));
++      if (payload.data.length !== expectedRows) {
++        throw new Error(`${context}: incomplete page at ${start}`);
++      }
+       return {
+-        rows: Array.isArray(payload?.data) ? payload.data : [],
+-        total: Number(payload?.total) || 0
++        rows: payload.data,
++        total: payload.total
+       };
+     };
+ 
+@@ -268,7 +275,12 @@
+       const pages = await Promise.all(
+         starts.slice(index, index + GOALIE_GAME_PAGE_CONCURRENCY).map(readPage)
+       );
+-      pages.forEach((page) => rows.push(...page.rows));
++      pages.forEach((page) => {
++        if (page.total !== firstPage.total) {
++          throw new Error(`${context}: total changed between pages`);
++        }
++        rows.push(...page.rows);
++      });
+     }
+     setGoalieGames(rows);
+   }, [fetchJsonWithRetry]);
+@@ -305,6 +317,8 @@
+       try {
+         await fetchGoalieGames(seasonId);
+       } catch (error) {
++        setGoalieGames([]);
++        setLoadError("Goalie data is unavailable because the complete season could not be loaded.");
+         if (!isRateLimitError(error)) {
+           console.error("Error fetching goalie game data:", error);
+         }
+@@ -616,6 +630,8 @@
+ 
+       {loading ? (
+         <div className={styles.loadingMessage}>Loading goalie data...</div>
++      ) : loadError ? (
++        <div className={styles.noDataMessage} role="alert">{loadError}</div>
+       ) : (
+         <>
+           {Object.keys(goalieStats).length > 0 ? (
+diff --git a/web/components/TeamDashboard/AdvancedL10Metrics.test.tsx b/web/components/TeamDashboard/AdvancedL10Metrics.test.tsx
+--- a/web/components/TeamDashboard/AdvancedL10Metrics.test.tsx
++++ b/web/components/TeamDashboard/AdvancedL10Metrics.test.tsx
+@@ -13,7 +13,7 @@
+ function query(rows: Rows) {
+   const result = Promise.resolve({ data: rows, error: null });
+   const q: any = {};
+-  for (const method of ["select", "eq", "gte", "lte", "gt", "order", "limit"]) {
++  for (const method of ["select", "eq", "gte", "lte", "gt", "or", "order", "limit"]) {
+     q[method] = vi.fn(() => q);
+   }
+   q.then = (resolve: any, reject: any) => result.then(resolve, reject);
+@@ -79,6 +79,33 @@
+ });
+ 
+ describe("AdvancedL10Metrics", () => {
++  it("shows incomplete game exposure separately from zero games", async () => {
++    install({
++      nhl_standings_details: [standings],
++      wgo_team_stats: [wgoRows[0], { ...wgoRows[1], games_played: null }],
++      nst_team_5v5: [nstRows[0], { ...nstRows[1], gp: null }]
++    });
++    render(<AdvancedL10Metrics teamId="4" teamAbbrev="PHI" seasonId="20262027" />);
++    await waitFor(() => expect(screen.getByText("Corsi For %")).toBeTruthy());
++    expect(screen.getAllByText(/Incomplete game sample/)).toHaveLength(3);
++    expect(screen.queryByText("No games in sample")).toBeNull();
++    expect(screen.getAllByText("—").length).toBeGreaterThan(5);
++    expect(screen.queryByText("0.0%")).toBeNull();
++  });
++
++  it("does not render precise rates from asymmetric missing counts", async () => {
++    install({
++      nhl_standings_details: [standings],
++      wgo_team_stats: [wgoRows[0], { ...wgoRows[1], power_play_goals_for: null, shots_for_per_game: null }],
++      nst_team_5v5: [nstRows[0], { ...nstRows[1], ca: null }]
++    });
++    render(<AdvancedL10Metrics teamId="4" teamAbbrev="PHI" seasonId="20262027" />);
++    await waitFor(() => expect(screen.getByText("Corsi For %")).toBeTruthy());
++    for (const label of ["Corsi For %", "Power Play", "Shots For/GP"]) {
++      expect(screen.getByText(label).parentElement?.textContent).toContain("—");
++    }
++  });
++
+   it("shows L10 shares from summed counts with fraction thresholds", async () => {
+     const queries = install({
+       nhl_standings_details: [standings],
+@@ -109,7 +136,7 @@
+     const nst = queries.nst_team_5v5;
+     expect(nst.gte).toHaveBeenCalledWith("date", "2026-10-07");
+     expect(nst.lte).toHaveBeenCalledWith("date", "2027-04-15");
+-    expect(nst.gt).toHaveBeenCalledWith("gp", 0);
++    expect(nst.or).toHaveBeenCalledWith("gp.neq.0,gp.is.null");
+     expect(nst.limit).toHaveBeenCalledWith(10);
+     expect(queries.wgo_team_stats.gte).toHaveBeenCalledWith("date", "2026-10-07");
+   });
+diff --git a/web/components/TeamDashboard/AdvancedL10Metrics.tsx b/web/components/TeamDashboard/AdvancedL10Metrics.tsx
+--- a/web/components/TeamDashboard/AdvancedL10Metrics.tsx
++++ b/web/components/TeamDashboard/AdvancedL10Metrics.tsx
+@@ -32,9 +32,9 @@
+   pdo: number | null;
+   homeRecord: string;
+   roadRecord: string;
+-  teamGames: number;
++  teamGames: number | null;
+   teamThroughDate: string | null;
+-  advancedGames: number;
++  advancedGames: number | null;
+   advancedThroughDate: string | null;
+ }
+ 
+@@ -145,7 +145,7 @@
+           .eq("season_id", parseInt(seasonId))
+           .gte("date", window.start)
+           .lte("date", window.end)
+-          .gt("games_played", 0)
++          .or("games_played.neq.0,games_played.is.null")
+           .order("date", { ascending: false })
+           .limit(10);
+ 
+@@ -173,7 +173,7 @@
+           .eq("team_abbreviation", teamAbbrev)
+           .gte("date", window.start)
+           .lte("date", window.end)
+-          .gt("gp", 0)
++          .or("gp.neq.0,gp.is.null")
+           .order("date", { ascending: false })
+           .limit(10);
+ 
+@@ -227,16 +227,16 @@
+           const l5Team = aggregateWgoTeamGames(teamGames.slice(0, 5));
+           const l5Advanced = aggregateNstTeamCounts(advancedGames.slice(0, 5));
+           const trends = [
+-            l5Team.games >= 5
++            l5Team.games !== null && l5Team.games >= 5
+               ? compareTrend("Shots For/Game", l5Team.shotsFor, l10Team.shotsFor, 1)
+               : null,
+-            l5Team.games >= 5
++            l5Team.games !== null && l5Team.games >= 5
+               ? compareTrend("Power Play %", l5Team.powerPlayPct, l10Team.powerPlayPct, 100)
+               : null,
+-            l5Team.games >= 5
++            l5Team.games !== null && l5Team.games >= 5
+               ? compareTrend("Penalty Kill %", l5Team.penaltyKillPct, l10Team.penaltyKillPct, 100)
+               : null,
+-            l5Advanced.games >= 5
++            l5Advanced.games !== null && l5Advanced.games >= 5
+               ? compareTrend("Corsi For %", l5Advanced.cfPct, l10Advanced.cfPct, 100)
+               : null
+           ].filter((trend): trend is TrendData => trend !== null);
+@@ -285,8 +285,10 @@
+     }
+   };
+ 
+-  const sampleNote = (games: number, throughDate: string | null) =>
+-    games > 0
++  const sampleNote = (games: number | null, throughDate: string | null) =>
++    games === null
++      ? "Incomplete game sample"
++      : games > 0
+       ? `Last ${games} game${games === 1 ? "" : "s"} through ${throughDate}`
+       : "No games in sample";
+ 
+diff --git a/web/components/TeamDashboard/TeamDashboard.test.tsx b/web/components/TeamDashboard/TeamDashboard.test.tsx
+--- a/web/components/TeamDashboard/TeamDashboard.test.tsx
++++ b/web/components/TeamDashboard/TeamDashboard.test.tsx
+@@ -123,6 +123,7 @@
+   query.gte = vi.fn(() => query);
+   query.lte = vi.fn(() => query);
+   query.gt = vi.fn(() => query);
++  query.or = vi.fn(() => query);
+   query.range = vi.fn(() => query);
+   query.order = vi.fn(() => query);
+   query.limit = vi.fn(() => query);
+@@ -720,7 +721,57 @@
+     expect(wgo.limit).not.toHaveBeenCalled();
+     expect(wgo.gte).toHaveBeenCalledWith("date", "2025-10-07");
+     expect(wgo.lte).toHaveBeenCalledWith("date", "2026-04-16");
+-    expect(wgo.gt).toHaveBeenCalledWith("games_played", 0);
++    expect(wgo.or).toHaveBeenCalledWith("games_played.neq.0,games_played.is.null");
++  });
++
++  it("withholds rates from asymmetric counts and labels unknown game exposure", async () => {
++    useCurrentSeasonQueryMock.mockReturnValue(successfulSeasonQuery({ seasonId: 20252026 }));
++    const summary = teamSummaryFixture();
++    installCompleteRequests({
++      summary: { data: summary, error: null },
++      standings: { data: [standingsFixture()], error: null },
++      stats5v5: {
++        data: [advancedFixture({ cf: 10, ca: 20 }), advancedFixture({ gp: null, cf: 10, ca: 20 })],
++        error: null,
++      },
++      specialTeams: {
++        data: [
++          specialTeamsFixture({ games_played: 1, power_play_goals_for: null, pp_opportunities: 5 }),
++          specialTeamsFixture({ games_played: 1, power_play_goals_for: 1, pp_opportunities: 5 }),
++        ],
++        error: null,
++      },
++      allTeamsSummary: { data: [summary], error: null },
++    });
++    render(<TeamDashboard teamId="22" teamAbbrev="EDM" seasonId="20252026" />);
++    const powerPlay = await screen.findByText("Power Play %");
++    expect(powerPlay.parentElement?.textContent).toContain("N/A");
++    expect(screen.getByTitle(/unavailable: incomplete game sample/)).toBeTruthy();
++    expect(screen.getByText("Corsi For %").parentElement?.textContent).toContain("N/A");
++  });
++
++  it.each(["current", "peer", "none"])("keeps aggregate ranks unknown when %s data is incomplete", async (missing) => {
++    useCurrentSeasonQueryMock.mockReturnValue(successfulSeasonQuery({ seasonId: 20252026 }));
++    const summary = teamSummaryFixture();
++    const currentAdvanced = advancedFixture({ cf: 0, ca: missing === "current" ? null : 20 });
++    const peerAdvanced = advancedFixture({ team_abbreviation: "PHI", cf: 10, ca: missing === "peer" ? null : 20 });
++    const currentSpecial = specialTeamsFixture({ games_played: 1, power_play_goals_for: missing === "current" ? null : 0 });
++    const peerSpecial = specialTeamsFixture({ team_id: 4, games_played: 1, power_play_goals_for: missing === "peer" ? null : 2 });
++    installCompleteRequests({
++      summary: { data: summary, error: null },
++      standings: { data: [standingsFixture()], error: null },
++      stats5v5: { data: [currentAdvanced], error: null },
++      specialTeams: { data: [currentSpecial], error: null },
++      allTeamsSummary: { data: [summary], error: null },
++      allTeamsAdvanced: { data: [currentAdvanced, peerAdvanced], error: null },
++      allTeamsSpecialTeams: { data: [currentSpecial, peerSpecial], error: null },
++    });
++    render(<TeamDashboard teamId="22" teamAbbrev="EDM" seasonId="20252026" />);
++    const corsiRank = await screen.findByText("CF%");
++    const expectedRank = missing === "none" ? "#2" : "#—";
++    expect(corsiRank.parentElement?.textContent).toContain(expectedRank);
++    expect(screen.getByText("PP Goals For").parentElement?.textContent).toContain(expectedRank);
++    expect(screen.getByText("xG%").parentElement?.textContent).toContain("#1");
+   });
+ 
+   it("renders primary content before league rankings finish", async () => {
+diff --git a/web/components/TeamDashboard/TeamDashboard.tsx b/web/components/TeamDashboard/TeamDashboard.tsx
+--- a/web/components/TeamDashboard/TeamDashboard.tsx
++++ b/web/components/TeamDashboard/TeamDashboard.tsx
+@@ -103,8 +103,8 @@
+   goals_against_l10: number;
+   shots_for_l10: number;
+   shots_against_l10: number;
+-  pp_pct_l10: number;
+-  pk_pct_l10: number;
++  pp_pct_l10: number | null;
++  pk_pct_l10: number | null;
+ }
+ 
+ interface LeagueRankings {
+@@ -263,7 +263,7 @@
+   const [goaltendingLoading, setGoaltendingLoading] = useState(true);
+   const [rankingsLoading, setRankingsLoading] = useState(true);
+   const [error, setError] = useState<string | null>(null);
+-  const [gameRecordsCount, setGameRecordsCount] = useState<number>(0);
++  const [gameRecordsCount, setGameRecordsCount] = useState<number | null>(0);
+   const [includePlayoffs, setIncludePlayoffs] = useState<boolean>(false);
+   const [settledRequestIdentity, setSettledRequestIdentity] = useState<
+     string | null
+@@ -440,7 +440,7 @@
+           .eq("season_id", validatedSeasonId)
+           .gte("date", startDate)
+           .lte("date", endDate)
+-          .gt("games_played", 0)
++          .or("games_played.neq.0,games_played.is.null")
+           .order("date", { ascending: false });
+ 
+         // The four primary reads are independent; run them together.
+@@ -494,7 +494,7 @@
+           const season5v5 = aggregateNstTeamCounts(stats5v5);
+           setGameRecordsCount(season5v5.games);
+ 
+-          if (season5v5.games > 0) {
++          if (season5v5.games !== 0) {
+             setTeamStats({
+               cf_pct: season5v5.cfPct,
+               xgf_pct: season5v5.xgfPct,
+@@ -536,10 +536,10 @@
+             shots_against_l10: 0,
+             pp_pct_l10:
+               aggregateWgoTeamGames(specialTeams?.slice(0, 10) ?? [])
+-                .powerPlayPct ?? 0,
++                .powerPlayPct,
+             pk_pct_l10:
+               aggregateWgoTeamGames(specialTeams?.slice(0, 10) ?? [])
+-                .penaltyKillPct ?? 0,
++                .penaltyKillPct,
+           };
+           setRecentPerformance(recent);
+         }
+@@ -754,7 +754,7 @@
+                     )
+                     .gte("date", startDate)
+                     .lte("date", endDate)
+-                    .gt("gp", 0)
++                    .or("gp.neq.0,gp.is.null")
+                     .order("date", { ascending: true })
+                     .order("team_abbreviation", { ascending: true })
+                     .range(from, to),
+@@ -768,7 +768,7 @@
+                     .eq("season_id", validatedSeasonId)
+                     .gte("date", startDate)
+                     .lte("date", endDate)
+-                    .gt("games_played", 0)
++                    .or("games_played.neq.0,games_played.is.null")
+                     .order("date", { ascending: true })
+                     .order("team_id", { ascending: true })
+                     .range(from, to),
+@@ -787,16 +787,17 @@
+               if (allTeamsSummary && summaryData) {
+                 // Calculate rankings
+                 const calculateRank = (
+-                  value: number,
+-                  allValues: number[],
++                  value: number | null | undefined,
++                  allValues: (number | null | undefined)[],
+                   higherIsBetter: boolean = true,
+                 ) => {
+-                  if (value === null || value === undefined || isNaN(value))
+-                    return 32;
++                  // Zero is the existing unranked sentinel, never a league rank.
++                  if (value === null || value === undefined || !Number.isFinite(value))
++                    return 0;
+                   const validValues = allValues.filter(
+-                    (v) => v !== null && v !== undefined && !isNaN(v),
++                    (v): v is number => typeof v === "number" && Number.isFinite(v),
+                   );
+-                  if (validValues.length === 0) return 32;
++                  if (validValues.length === 0 || validValues.length !== allValues.length) return 0;
+ 
+                   const sortedValues = [...validValues].sort((a, b) =>
+                     higherIsBetter ? b - a : a - b,
+@@ -888,19 +889,19 @@
+                   // Special teams additional stats
+                   const allPpOpportunities =
+                     allTeamsSpecialTeams?.map(
+-                      (team) => team.pp_opportunities_per_game || 0,
++                      (team) => team.pp_opportunities_per_game,
+                     ) || [];
+                   const allPpGoalsFor =
+                     allTeamsSpecialTeams?.map(
+-                      (team) => team.power_play_goals_for || 0,
++                      (team) => team.power_play_goals_for,
+                     ) || [];
+                   const allPpGoalsAgainst =
+                     allTeamsSpecialTeams?.map(
+-                      (team) => team.pp_goals_against || 0,
++                      (team) => team.pp_goals_against,
+                     ) || [];
+                   const allShGoalsFor =
+                     allTeamsSpecialTeams?.map(
+-                      (team) => team.sh_goals_for || 0,
++                      (team) => team.sh_goals_for,
+                     ) || [];
+ 
+                   // Calculate home/road/L10 rankings
+@@ -974,75 +975,75 @@
+                     );
+ 
+                     const allCfPct = latestAdvancedStats.map(
+-                      (team) => team.cf_pct || 0,
++                      (team) => team.cf_pct,
+                     );
+                     const allXgfPct = latestAdvancedStats.map(
+-                      (team) => team.xgf_pct || 0,
++                      (team) => team.xgf_pct,
+                     );
+                     const allPdo = latestAdvancedStats.map(
+-                      (team) => team.pdo || 0,
++                      (team) => team.pdo,
+                     );
+                     const allHdcfPct = latestAdvancedStats.map(
+-                      (team) => team.hdcf_pct || 0,
++                      (team) => team.hdcf_pct,
+                     );
+                     const allScfPct = latestAdvancedStats.map(
+-                      (team) => team.scf_pct || 0,
++                      (team) => team.scf_pct,
+                     );
+                     const allSavePct = latestAdvancedStats.map(
+-                      (team) => team.sv_pct || 0,
++                      (team) => team.sv_pct,
+                     );
+                     const allShootingPct = latestAdvancedStats.map(
+-                      (team) => team.sh_pct || 0,
++                      (team) => team.sh_pct,
+                     );
+                     const allXgf = latestAdvancedStats.map(
+-                      (team) => team.xgf || 0,
++                      (team) => team.xgf,
+                     );
+                     const allXga = latestAdvancedStats.map(
+-                      (team) => team.xga || 0,
++                      (team) => team.xga,
+                     );
+ 
+                     cfPctRank = calculateRank(
+-                      currentTeamAdvanced.cf_pct || 0,
++                      currentTeamAdvanced.cf_pct,
+                       allCfPct,
+                       true,
+                     );
+                     xgfPctRank = calculateRank(
+-                      currentTeamAdvanced.xgf_pct || 0,
++                      currentTeamAdvanced.xgf_pct,
+                       allXgfPct,
+                       true,
+                     );
+                     pdoRank = calculateRank(
+-                      currentTeamAdvanced.pdo || 0,
++                      currentTeamAdvanced.pdo,
+                       allPdo,
+                       true,
+                     );
+                     hdcfPctRank = calculateRank(
+-                      currentTeamAdvanced.hdcf_pct || 0,
++                      currentTeamAdvanced.hdcf_pct,
+                       allHdcfPct,
+                       true,
+                     );
+                     scfPctRank = calculateRank(
+-                      currentTeamAdvanced.scf_pct || 0,
++                      currentTeamAdvanced.scf_pct,
+                       allScfPct,
+                       true,
+                     );
+                     savePct5v5Rank = calculateRank(
+-                      currentTeamAdvanced.sv_pct || 0,
++                      currentTeamAdvanced.sv_pct,
+                       allSavePct,
+                       true,
+                     );
+                     shootingPct5v5Rank = calculateRank(
+-                      currentTeamAdvanced.sh_pct || 0,
++                      currentTeamAdvanced.sh_pct,
+                       allShootingPct,
+                       true,
+                     );
+                     xgfRank = calculateRank(
+-                      currentTeamAdvanced.xgf || 0,
++                      currentTeamAdvanced.xgf,
+                       allXgf,
+                       true,
+                     );
+                     xgaRank = calculateRank(
+-                      currentTeamAdvanced.xga || 0,
++                      currentTeamAdvanced.xga,
+                       allXga,
+                       false,
+                     ); // Lower is better for xGA
+@@ -1106,22 +1107,22 @@
+                     ),
+                     goal_diff_rank: calculateRank(goalDiff, allGoalDiffs, true),
+                     pp_opportunities_rank: calculateRank(
+-                      currentTeamSpecialTeams?.pp_opportunities_per_game || 0,
++                      currentTeamSpecialTeams?.pp_opportunities_per_game,
+                       allPpOpportunities,
+                       true,
+                     ),
+                     pp_goals_for_rank: calculateRank(
+-                      currentTeamSpecialTeams?.power_play_goals_for || 0,
++                      currentTeamSpecialTeams?.power_play_goals_for,
+                       allPpGoalsFor,
+                       true,
+                     ),
+                     pp_goals_against_rank: calculateRank(
+-                      currentTeamSpecialTeams?.pp_goals_against || 0,
++                      currentTeamSpecialTeams?.pp_goals_against,
+                       allPpGoalsAgainst,
+                       false,
+                     ),
+                     sh_goals_for_rank: calculateRank(
+-                      currentTeamSpecialTeams?.sh_goals_for || 0,
++                      currentTeamSpecialTeams?.sh_goals_for,
+                       allShGoalsFor,
+                       true,
+                     ),
+@@ -1248,10 +1249,10 @@
+   };
+ 
+   const formatRank = (rank: number | undefined) =>
+-    rank === undefined ? (rankingsLoading ? "#…" : "#—") : `#${rank}`;
++    rank === undefined ? (rankingsLoading ? "#…" : "#—") : rank > 0 ? `#${rank}` : "#—";
+ 
+   const getRankingColor = (rank: number | undefined) => {
+-    if (rank === undefined) return "";
++    if (rank === undefined || rank <= 0) return "";
+     if (rank <= 10) return styles.excellent;
+     if (rank >= 23) return styles.poor;
+     return styles.average;
+@@ -1292,7 +1293,7 @@
+       xga: leagueRankings.xga_rank,
+     };
+ 
+-    return rankMap[statName] || 16; // Default to middle if stat not found
++    return rankMap[statName] || null;
+   };
+ 
+   if (isLoading || settledRequestIdentity !== requestIdentity) {
+@@ -1835,7 +1836,7 @@
+               Advanced Analytics
+               <span
+                 className={styles.infoIcon}
+-                title={`5v5 ${includePlayoffs ? "season + playoffs" : "regular season"} averages based on ${gameRecordsCount} game records. Data includes: Expected Goals For/Against, Corsi, HDCF, PDO, and shooting percentages at even strength.`}
++                title={`5v5 ${includePlayoffs ? "season + playoffs" : "regular season"} averages ${gameRecordsCount === null ? "unavailable: incomplete game sample" : `based on ${gameRecordsCount} game records`}. Data includes: Expected Goals For/Against, Corsi, HDCF, PDO, and shooting percentages at even strength.`}
+               >
+                 &#9432;
+               </span>
+diff --git a/web/hooks/useShotData.test.tsx b/web/hooks/useShotData.test.tsx
+new file mode 100644
+--- /dev/null
++++ b/web/hooks/useShotData.test.tsx
+@@ -0,0 +1,152 @@
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { act, cleanup, renderHook } from "@testing-library/react";
++
++const mocks = vi.hoisted(() => ({ pages: vi.fn() }));
++vi.mock("lib/supabase", () => ({
++  default: { from: () => { throw new Error("Unexpected unmocked query"); } }
++}));
++vi.mock("lib/supabase/pagination", () => ({ fetchAllSupabasePages: mocks.pages }));
++
++import { useShotData } from "./useShotData";
++
++function deferred<T>() {
++  let resolve!: (value: T) => void;
++  let reject!: (error: Error) => void;
++  const promise = new Promise<T>((yes, no) => { resolve = yes; reject = no; });
++  return { promise, resolve, reject };
++}
++
++const games = (team: number) => [{ id: team, hometeamid: team, awayteamid: 99 }];
++const shots = (team: number, type = "goal") => [
++  { gameid: team, eventownerteamid: team, xcoord: 10, ycoord: 5, typedesckey: type },
++  { gameid: team, eventownerteamid: 99, xcoord: -10, ycoord: 5, typedesckey: type }
++];
++const filters = { eventTypes: ["goal"], gameTypes: ["02"] };
++
++async function flush() {
++  await act(async () => { await Promise.resolve(); });
++}
++
++beforeEach(() => {
++  vi.spyOn(console, "log").mockImplementation(() => {});
++  vi.spyOn(console, "error").mockImplementation(() => {});
++});
++afterEach(() => {
++  cleanup();
++  vi.restoreAllMocks();
++  vi.resetAllMocks();
++});
++
++describe("useShotData request ownership", () => {
++  it.each(["games", "shots"])("keeps cached A after A → B → A while B %s are pending", async (stage) => {
++    const pending = deferred<any[]>();
++    mocks.pages.mockResolvedValueOnce(games(1)).mockResolvedValueOnce(shots(1));
++    const { result, rerender } = renderHook(({ team }) => useShotData(team, "20262027", filters), {
++      initialProps: { team: 1 }
++    });
++    await flush();
++    expect(result.current.shotData[0].eventownerteamid).toBe(1);
++
++    if (stage === "shots") mocks.pages.mockResolvedValueOnce(games(2));
++    mocks.pages.mockReturnValueOnce(pending.promise);
++    rerender({ team: 2 });
++    await flush();
++    expect(result.current.shotData).toEqual([]);
++    rerender({ team: 1 });
++    expect(result.current.isLoading).toBe(false);
++    expect(result.current.shotData[0].eventownerteamid).toBe(1);
++    await act(async () => { pending.resolve(stage === "games" ? games(2) : shots(2)); });
++
++    expect(result.current.shotData[0].eventownerteamid).toBe(1);
++    expect(result.current.opponentShotData[0].eventownerteamid).toBe(99);
++    expect(result.current.error).toBeNull();
++    expect(result.current.isLoading).toBe(false);
++    expect(mocks.pages).toHaveBeenCalledTimes(stage === "games" ? 3 : 4);
++  });
++
++  it.each(["success", "empty", "error"])("ignores stale %s and finally while the current request is loading", async (outcome) => {
++    const old = deferred<any[]>();
++    const current = deferred<any[]>();
++    mocks.pages.mockReturnValueOnce(old.promise).mockReturnValueOnce(current.promise);
++    const { result, rerender } = renderHook(({ team }) => useShotData(team, "20262027", filters), {
++      initialProps: { team: 1 }
++    });
++    rerender({ team: 2 });
++    await act(async () => {
++      if (outcome === "error") old.reject(new Error("obsolete failure"));
++      else old.resolve(outcome === "empty" ? [] : games(1));
++    });
++    expect(result.current).toMatchObject({ isLoading: true, error: null, shotData: [], opponentShotData: [] });
++    expect(mocks.pages).toHaveBeenCalledTimes(2);
++    await act(async () => { current.resolve([]); });
++    expect(result.current).toMatchObject({ isLoading: false, error: null, shotData: [] });
++  });
++
++  it("defers hidden reads and preserves the loaded key across tab visibility and equal filters", async () => {
++    mocks.pages.mockResolvedValueOnce(games(1)).mockResolvedValueOnce(shots(1));
++    const { result, rerender } = renderHook(({ enabled }) => useShotData(1, "20262027", {
++      eventTypes: ["goal"], gameTypes: ["02"]
++    }, enabled), { initialProps: { enabled: false } });
++    expect(mocks.pages).not.toHaveBeenCalled();
++    rerender({ enabled: true });
++    await flush();
++    expect(result.current.shotData[0].eventownerteamid).toBe(1);
++    rerender({ enabled: false });
++    rerender({ enabled: true });
++    await flush();
++    expect(result.current.isLoading).toBe(false);
++    expect(mocks.pages).toHaveBeenCalledTimes(2);
++  });
++
++  it("retires a pending hidden-tab request and fetches again when shown", async () => {
++    const hidden = deferred<any[]>();
++    mocks.pages.mockResolvedValueOnce(games(1)).mockReturnValueOnce(hidden.promise);
++    const { result, rerender } = renderHook(({ enabled }) => useShotData(1, "20262027", filters, enabled), {
++      initialProps: { enabled: true }
++    });
++    await flush();
++    rerender({ enabled: false });
++    await act(async () => { hidden.resolve(shots(1)); });
++    expect(result.current.shotData).toEqual([]);
++    mocks.pages.mockResolvedValueOnce(games(1)).mockResolvedValueOnce(shots(1));
++    rerender({ enabled: true });
++    await flush();
++    expect(result.current.shotData[0].eventownerteamid).toBe(1);
++    expect(mocks.pages).toHaveBeenCalledTimes(4);
++  });
++
++  it.each(["event", "game", "season"])("owns pending reads by %s filter as well as team", async (changed) => {
++    const old = deferred<any[]>();
++    mocks.pages.mockResolvedValueOnce(games(1)).mockReturnValueOnce(old.promise);
++    const { result, rerender } = renderHook(({ event, game, season }) => useShotData(1, season, {
++      eventTypes: [event], gameTypes: [game]
++    }), { initialProps: { event: "goal", game: "02", season: "20262027" } });
++    await flush();
++    mocks.pages.mockResolvedValueOnce(games(1)).mockResolvedValueOnce(shots(1, "hit"));
++    rerender({
++      event: changed === "event" ? "hit" : "goal",
++      game: changed === "game" ? "03" : "02",
++      season: changed === "season" ? "20252026" : "20262027"
++    });
++    await flush();
++    await act(async () => { old.resolve(shots(1)); });
++    expect(result.current.shotData[0].typedesckey).toBe("hit");
++    expect(result.current.isLoading).toBe(false);
++    expect(result.current.error).toBeNull();
++    expect(mocks.pages).toHaveBeenCalledTimes(4);
++  });
++
++  it("clears the previous error when loading a different key", async () => {
++    mocks.pages.mockRejectedValueOnce(new Error("current failure"));
++    const { result, rerender } = renderHook(({ team }) => useShotData(team, "20262027", filters), {
++      initialProps: { team: 1 }
++    });
++    await flush();
++    expect(result.current.error?.message).toBe("current failure");
++    mocks.pages.mockResolvedValueOnce([]);
++    rerender({ team: 2 });
++    await flush();
++    expect(result.current.error).toBeNull();
++    expect(result.current.isLoading).toBe(false);
++  });
++});
+diff --git a/web/hooks/useShotData.ts b/web/hooks/useShotData.ts
+--- a/web/hooks/useShotData.ts
++++ b/web/hooks/useShotData.ts
+@@ -60,16 +60,21 @@
+   const [isLoading, setIsLoading] = useState<boolean>(true);
+   const [error, setError] = useState<Error | null>(null);
+   const loadedKey = useRef<string | null>(null);
++  const filterKey = JSON.stringify({
++    eventTypes: filters.eventTypes,
++    gameTypes: filters.gameTypes
++  });
++  const requestKey = JSON.stringify([teamId, season, filterKey]);
+ 
+   useEffect(() => {
+-    const requestKey = JSON.stringify([
+-      teamId,
+-      season,
+-      filters.eventTypes,
+-      filters.gameTypes
+-    ]);
++    let active = true;
++    const requestFilters: ShotDataFilters = JSON.parse(filterKey);
++    setError(null);
+     // Keep already-loaded data when the tab is hidden and shown again.
+-    if (!enabled || loadedKey.current === requestKey) return;
++    if (!enabled || loadedKey.current === requestKey) {
++      setIsLoading(false);
++      return;
++    }
+ 
+     console.log("useShotData called with teamId:", teamId, "season:", season);
+     if (!teamId || !season) {
+@@ -87,12 +92,13 @@
+ 
+         // Initialize game type filter condition
+         const gameTypeFilters =
+-          filters.gameTypes?.map((gameType) => {
++          requestFilters.gameTypes?.map((gameType) => {
+             const seasonStart = season!.substring(0, 4);
+             return `id.like.${seasonStart}${gameType}%`;
+           }) || [];
+ 
+         const games = await fetchAllSupabasePages<any>(({ from, to }) => {
++          if (!active) return Promise.resolve({ data: [], error: null });
+           let gamesQuery = supabase
+             .from("pbp_games")
+             .select("id, hometeamid, awayteamid")
+@@ -104,6 +110,7 @@
+ 
+           return gamesQuery.range(from, to) as any;
+         }, { pageSize: PAGE_SIZE });
++        if (!active) return;
+ 
+         console.log("Fetched games for team", teamId, ":", games.length);
+ 
+@@ -150,6 +157,7 @@
+         // Process each chunk of game IDs
+         for (const gameIdChunk of gameIdChunks) {
+           const events = await fetchAllSupabasePages<any>(({ from, to }) => {
++            if (!active) return Promise.resolve({ data: [], error: null });
+             let eventsQuery = supabase
+               .from("pbp_plays")
+               .select(
+@@ -160,12 +168,13 @@
+             // Don't filter out shots without coordinates initially
+             // We'll normalize them later in the processing step
+ 
+-            if (filters.eventTypes && filters.eventTypes.length > 0) {
+-              eventsQuery = eventsQuery.in("typedesckey", filters.eventTypes);
++            if (requestFilters.eventTypes && requestFilters.eventTypes.length > 0) {
++              eventsQuery = eventsQuery.in("typedesckey", requestFilters.eventTypes);
+             }
+ 
+             return eventsQuery.range(from, to) as any;
+           }, { pageSize: PAGE_SIZE });
++          if (!active) return;
+ 
+           if (events.length > 0) {
+             console.log("All events count:", events.length);
+@@ -250,15 +259,22 @@
+         setOpponentShotData(allOpponentShots);
+         loadedKey.current = requestKey;
+       } catch (err) {
++        if (!active) return;
+         setError(err instanceof Error ? err : new Error(String(err)));
+         console.error("Error fetching shot data:", err);
+       } finally {
+-        setIsLoading(false);
++        if (active) setIsLoading(false);
+       }
+     }
+ 
+     fetchTeamShotData();
+-  }, [teamId, season, filters.eventTypes, filters.gameTypes, enabled]);
+-
+-  return { shotData, opponentShotData, isLoading, error };
++    return () => { active = false; };
++  }, [teamId, season, filterKey, requestKey, enabled]);
++
++  return {
++    shotData: loadedKey.current === requestKey ? shotData : [],
++    opponentShotData: loadedKey.current === requestKey ? opponentShotData : [],
++    isLoading,
++    error
++  };
+ }
+diff --git a/web/lib/integrations/yahoo/rosterPlanning.test.ts b/web/lib/integrations/yahoo/rosterPlanning.test.ts
+--- a/web/lib/integrations/yahoo/rosterPlanning.test.ts
++++ b/web/lib/integrations/yahoo/rosterPlanning.test.ts
+@@ -5,15 +5,11 @@
+ import { defaultIntent } from "lib/rosterScheduleOptimizer/workspace";
+ import { candidatePlanMetrics } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
+ 
+-const mocks = vi.hoisted(() => ({ user: { id: "owner-a" }, allowed: false, requireUser: vi.fn(), access: vi.fn(), snapshot: vi.fn(), planningData: vi.fn(), settings: vi.fn(), draftResource: vi.fn(), boardResource: vi.fn(), planningResource: vi.fn() }));
++const mocks = vi.hoisted(() => ({ user: { id: "owner-a" }, allowed: false, requireUser: vi.fn(), access: vi.fn(), draftAccess: vi.fn(), from: vi.fn(), snapshot: vi.fn(), planningData: vi.fn(), settings: vi.fn(), draftResource: vi.fn(), boardResource: vi.fn(), planningResource: vi.fn() }));
+ vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.requireUser }));
+-vi.mock("lib/in-season/server", () => ({
+-  loadInSeasonAccess: mocks.access,
+-  requireInSeasonCapability: (access: { capabilities: string[] }, capability: string) => {
+-    if (!access.capabilities.includes(capability)) throw Object.assign(new Error("Access required"), { statusCode: 403 });
+-  },
+-}));
+-vi.mock("lib/supabase/server", () => ({ default: { from: vi.fn() } }));
++vi.mock("lib/in-season/server", () => ({ loadInSeasonAccess: mocks.access }));
++vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: mocks.draftAccess }));
++vi.mock("lib/supabase/server", () => ({ default: { from: mocks.from } }));
+ vi.mock("lib/rosterScheduleData/planning", async (original) => ({ ...await original<typeof import("../../rosterScheduleData/planning")>(), loadPlanningData: mocks.planningData }));
+ vi.mock("lib/integrations/yahoo/gameContext", async (original) => ({ ...await original<typeof import("./gameContext")>(), resolveYahooGameContext: async () => ({ gameKey: "453", targetSeasonId: 20262027 }), assertYahooLeagueGameContext: () => undefined }));
+ vi.mock("lib/integrations/yahoo/liveDraft", async (original) => ({ ...await original<typeof import("./liveDraft")>(), parseYahooBoardSettings: mocks.settings }));
+@@ -34,7 +30,10 @@
+ beforeEach(() => {
+   mocks.allowed = false;
+   mocks.requireUser.mockReset().mockResolvedValue(mocks.user);
+-  mocks.access.mockReset().mockImplementation(async () => ({ capabilities: mocks.allowed ? ["rso_sync"] : [] }));
++  mocks.access.mockReset().mockImplementation(async () => ({ eligible: mocks.allowed, capabilities: mocks.allowed ? ["rso_sync"] : [],
++    reason: mocks.allowed ? "eligible" : "no_active_grant", expiresAt: null, nextVerificationAt: null }));
++  mocks.draftAccess.mockReset().mockResolvedValue({ eligible: false, reason: "no_active_grant", expiresAt: null, nextVerificationAt: null });
++  mocks.from.mockReset();
+   mocks.snapshot.mockReset().mockResolvedValue({ snapshot: { id: "verified" }, capabilities: { roster: true } });
+   mocks.planningData.mockReset(); mocks.settings.mockReset(); mocks.draftResource.mockReset(); mocks.boardResource.mockReset(); mocks.planningResource.mockReset();
+ });
+@@ -516,9 +515,11 @@
+     const limited = res(); await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), limited);
+     expect(limited.statusCode).toBe(429);
+     expect(limited.body).toMatchObject({ success: false, code: "yahoo_rate_limited", retryAfterSeconds: 3600 });
++    expect(mocks.snapshot).toHaveBeenCalledTimes(1);
+     mocks.snapshot.mockResolvedValueOnce({ snapshot: { id: "partial" }, capabilities: { availability: false }, code: "yahoo_rate_limited", retryAfterSeconds: 1200 });
+     const partial = res(); await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), partial);
+     expect(partial.body).toMatchObject({ success: true, code: "yahoo_rate_limited", retryAfterSeconds: 1200 });
++    expect(mocks.snapshot).toHaveBeenCalledTimes(2);
+   });
+   it("returns curated provider diagnostics while keeping raw exceptions private", async () => {
+     mocks.allowed = true;
+@@ -531,22 +532,94 @@
+       mocks.snapshot.mockRejectedValueOnce(new Error("private upstream response"));
+       const raw = res(); await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), raw);
+       expect(raw.statusCode).toBe(503);
++      expect(raw.body.error).toBe("Provider inputs could not be verified. Your selected plan is preserved.");
+       expect(raw.body.error).not.toContain("private upstream response");
+       expect(JSON.stringify(log.mock.calls)).not.toContain("private upstream response");
++      expect(mocks.snapshot).toHaveBeenCalledTimes(2);
+     } finally { log.mockRestore(); }
+   });
+   it("checks sync capability before any provider read", async () => {
+     const response = res();
+     await providerHandler(req("POST", { provider: "yahoo", teamId: "forged", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
+     expect(response.statusCode).toBe(403);
++    expect(mocks.access).toHaveBeenCalledWith("owner-a");
++    expect(mocks.draftAccess).toHaveBeenCalledWith("owner-a", expect.any(Object));
+     expect(mocks.snapshot).not.toHaveBeenCalled();
++    expect(mocks.from).not.toHaveBeenCalled();
++  });
++  it.each([
++    { eligible: false, capabilities: ["rso_sync"] },
++    { eligible: true, capabilities: [] },
++  ])("requires both verified eligibility and the in-season sync capability (%j)", async access => {
++    mocks.access.mockResolvedValue({ ...access, reason: "no_active_grant" });
++    const response = res();
++    await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
++    expect(response.statusCode).toBe(403);
++    expect(mocks.snapshot).not.toHaveBeenCalled();
++    expect(mocks.from).not.toHaveBeenCalled();
++  });
++  it("fails closed on entitlement outages before provider reads and keeps errors private", async () => {
++    mocks.access.mockRejectedValue(new Error("private in-season verification detail"));
++    mocks.draftAccess.mockRejectedValue(new Error("private draft verification detail"));
++    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
++    try {
++      const response = res();
++      await providerHandler(req("POST", { provider: "yahoo", userId: "owner-b", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
++      expect(response.statusCode).toBe(503);
++      expect(response.body).toEqual({ success: false, error: "Provider inputs could not be verified. Your selected plan is preserved." });
++      expect(JSON.stringify(log.mock.calls)).not.toContain("private");
++      expect(mocks.access).toHaveBeenCalledWith("owner-a");
++      expect(mocks.draftAccess).toHaveBeenCalledWith("owner-a", expect.any(Object));
++      expect(mocks.snapshot).not.toHaveBeenCalled();
++      expect(mocks.from).not.toHaveBeenCalled();
++    } finally { log.mockRestore(); }
++  });
++  it("allows a verified Draft Pro fallback and forwards only authenticated identity", async () => {
++    mocks.draftAccess.mockResolvedValue({ eligible: true, reason: "eligible", expiresAt: "2027-07-01T04:00:00Z", nextVerificationAt: null });
++    const response = res();
++    await providerHandler(req("POST", { provider: "yahoo", userId: "owner-b", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
++    expect(response.body.success).toBe(true);
++    expect(mocks.access).toHaveBeenCalledWith("owner-a");
++    expect(mocks.draftAccess).toHaveBeenCalledWith("owner-a", expect.any(Object));
++    expect(mocks.snapshot).toHaveBeenCalledWith(expect.objectContaining({ userId: "owner-a", teamId: "selected" }));
+   });
+   it("passes only the authenticated user to the provider adapter", async () => {
+     mocks.allowed = true;
+     const response = res();
+     await providerHandler(req("POST", { provider: "yahoo", userId: "owner-b", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
+     expect(response.body.success).toBe(true);
++    expect(mocks.access).toHaveBeenCalledWith("owner-a");
++    expect(mocks.draftAccess).not.toHaveBeenCalled();
+     expect(mocks.snapshot).toHaveBeenCalledWith(expect.objectContaining({ userId: "owner-a", teamId: "selected" }));
++  });
++  it("rejects another owner's team through the real adapter before provider resource reads", async () => {
++    mocks.allowed = true;
++    const actual = await vi.importActual<typeof import("./rosterPlanning")>("./rosterPlanning");
++    mocks.snapshot.mockImplementationOnce(actual.loadYahooPlanningSnapshot);
++    const foreignTeam: Record<string, unknown> = { id: "foreign-team", user_id: "owner-b", provider: "yahoo", team_metadata: { is_owned: true } };
++    const filters: Record<string, unknown> = {};
++    const query = { select: () => query, eq: (key: string, value: unknown) => { filters[key] = value; return query; },
++      maybeSingle: async () => ({ data: Object.entries(filters).every(([key, value]) => foreignTeam[key] === value) ? foreignTeam : null, error: null }) };
++    mocks.from.mockReturnValue(query);
++    const response = res();
++    await providerHandler(req("POST", { provider: "yahoo", userId: "owner-b", teamId: "foreign-team", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
++    expect(response.statusCode).toBe(404);
++    expect(response.body).toMatchObject({ success: false, code: "team_unavailable" });
++    expect(filters).toEqual({ id: "foreign-team", user_id: "owner-a", provider: "yahoo" });
++    expect(mocks.from).toHaveBeenCalledExactlyOnceWith("external_teams");
++    expect(mocks.draftResource).not.toHaveBeenCalled();
++    expect(mocks.boardResource).not.toHaveBeenCalled();
++    expect(mocks.planningResource).not.toHaveBeenCalled();
++  });
++  it("rejects unauthenticated requests before entitlement or provider reads", async () => {
++    mocks.requireUser.mockImplementation(async (_req, response) => { response.status(401).json({ error: "Sign in" }); return null; });
++    const response = res();
++    await providerHandler(req("POST", { provider: "yahoo", userId: "owner-b", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
++    expect(response.statusCode).toBe(401);
++    expect(mocks.access).not.toHaveBeenCalled();
++    expect(mocks.draftAccess).not.toHaveBeenCalled();
++    expect(mocks.snapshot).not.toHaveBeenCalled();
++    expect(mocks.from).not.toHaveBeenCalled();
+   });
+   it("rejects non-POST requests without authentication or provider reads", async () => {
+     const response = res(); await providerHandler(req("GET"), response);
+@@ -629,24 +702,42 @@
+     .map(id => ({ playerId: id, name: id, position: "C", slotId: null })) }];
+   const scoring = { mode: "points" as const, categories: [], weights: { GOALS: 3, ASSISTS: 2, PP_POINTS: 1, SHOTS_ON_GOAL: 0.2, HITS: 0.2,
+     BLOCKED_SHOTS: 0.25, WINS_GOALIE: 4, GOALS_AGAINST_GOALIE: -1, SAVES_GOALIE: 0.2, SHUTOUTS_GOALIE: 3 } };
+-  const tables: Record<string, Array<Record<string, number>>> = {
++  const tables: Record<string, Array<Record<string, number | string | null | undefined>>> = {
+     wgo_skater_stats: [{ player_id: 10, game_id: 201, goals: 1, assists: 1, pp_points: 1, shots: 4, hits: 2, blocked_shots: 0 },
+       { player_id: 99, game_id: 201, goals: 0, assists: 0, pp_points: 0, shots: 1, hits: 0, blocked_shots: 1 }],
+     wgo_goalie_stats: [{ goalie_id: 20, game_id: 202, wins: 1, goals_against: 2, saves: 30, shutouts: 0 }],
+   };
+-  const db = { from: (table: string) => { const query: any = { select: () => query, in: (_c: string, ids: number[]) => { query.ids = ids; return query; },
+-    order: () => query, range: async () => ({ data: tables[table].filter(row => query.ids.includes(row.game_id)), error: null }) }; return query; } } as any;
+-  const points = async (overrides: Partial<Parameters<typeof yahooPastLineupPoints>[1]> = {}) => Object.fromEntries((await yahooPastLineupPoints(db,
++  const db = (rows = tables) => ({ from: (table: string) => { const query: any = { select: () => query, in: (_c: string, ids: number[]) => { query.ids = ids; return query; },
++    order: () => query, range: async () => ({ data: rows[table].filter(row => query.ids.includes(row.game_id)), error: null }) }; return query; } }) as any;
++  const points = async (overrides: Partial<Parameters<typeof yahooPastLineupPoints>[1]> = {}, rows = tables) => Object.fromEntries((await yahooPastLineupPoints(db(rows),
+     { pastLineups: lineup, players, games, scoring, ...overrides }))[0].entries.map(entry => [entry.playerId, entry.points]));
+ 
+   it("scores each player's night with the league weights", async () => {
+     // Larkin 3 + 2 + 1 + 0.8 + 0.4; Oettinger 4 - 2 + 6; a scratch in a landed game scores 0; no game and unlanded stats stay unknown.
+     await expect(points()).resolves.toEqual({ larkin: 7.2, scratch: 0, oettinger: 8, idle: null, late: null });
+   });
++  it.each([null, undefined, "", " \t ", "invalid", NaN, Infinity])("keeps an unavailable weighted actual unknown (%s) but ignores zero-weight fields", async value => {
++    const rows = {
++      wgo_skater_stats: [{ player_id: 10, game_id: 201, goals: 2, hits: value }],
++      wgo_goalie_stats: [{ goalie_id: 20, game_id: 202, wins: 1, saves: value }],
++    };
++    await expect(points({ scoring: { ...scoring, weights: { GOALS: 1, HITS: 1, WINS_GOALIE: 4, SAVES_GOALIE: 0.2 } } }, rows)).resolves
++      .toMatchObject({ larkin: null, oettinger: null });
++    await expect(points({ scoring: { ...scoring, weights: { GOALS: 1, HITS: 0, WINS_GOALIE: 4, SAVES_GOALIE: 0 } } }, rows)).resolves
++      .toMatchObject({ larkin: 2, oettinger: 4 });
++  });
++  it.each([0, "0"])("preserves a recorded numeric zero (%s)", async value => {
++    const rows = {
++      wgo_skater_stats: [{ player_id: 10, game_id: 201, hits: value }],
++      wgo_goalie_stats: [{ goalie_id: 20, game_id: 202, goals_against: value }],
++    };
++    await expect(points({ scoring: { ...scoring, weights: { HITS: 1, GOALS_AGAINST_GOALIE: -1 } } }, rows)).resolves
++      .toMatchObject({ larkin: 0, oettinger: 0 });
++  });
+   it("leaves points unknown when a weighted stat can't be scored per game, or outside points leagues", async () => {
+     await expect(points({ scoring: { ...scoring, weights: { ...scoring.weights, SAVE_PERCENTAGE: 5 } } })).resolves
+       .toMatchObject({ larkin: 7.2, oettinger: null });
+-    const categories = await yahooPastLineupPoints(db, { pastLineups: lineup, players, games, scoring: { mode: "categories", weights: {}, categories: [] } });
++    const categories = await yahooPastLineupPoints(db(), { pastLineups: lineup, players, games, scoring: { mode: "categories", weights: {}, categories: [] } });
+     expect(categories).toBe(lineup);
+   });
+   it("does not score a game that is not final", async () => {
+diff --git a/web/lib/integrations/yahoo/rosterPlanning.ts b/web/lib/integrations/yahoo/rosterPlanning.ts
+--- a/web/lib/integrations/yahoo/rosterPlanning.ts
++++ b/web/lib/integrations/yahoo/rosterPlanning.ts
+@@ -77,7 +77,9 @@
+     if (!own) return 0;
+     let total = 0;
+     for (const [key, weight] of tier.weights) {
+-      const value = Number(own[tier.columns[key]] ?? 0);
++      const raw = own[tier.columns[key]];
++      if (raw === null || raw === undefined || (typeof raw === "string" && raw.trim() === "")) return null;
++      const value = Number(raw);
+       if (!Number.isFinite(value)) return null;
+       total += value * weight;
+     }
+diff --git a/web/lib/projections/projectionPipelineState.test.ts b/web/lib/projections/projectionPipelineState.test.ts
+--- a/web/lib/projections/projectionPipelineState.test.ts
++++ b/web/lib/projections/projectionPipelineState.test.ts
+@@ -107,6 +107,35 @@
+     expect(mocks.like).toHaveBeenCalledWith("operation_key", "canonical:%");
+     expect(mocks.lte).toHaveBeenCalledWith("range_end_date", "2026-07-20");
+     expect(mocks.limit).toHaveBeenCalledWith(1);
++  });
++
++  it("checks resumability against the same freshly read revision used by acquisition", async () => {
++    mocks.maybeSingle.mockResolvedValueOnce({ data: stateRow({
++      revision: 5, status: "failed", lease_owner: null, lease_expires_at: null,
++      last_error: "nst_persistence_unconfirmed",
++    }), error: null });
++    const assertResumable = vi.fn((current: Readonly<ProjectionPipelineLease>) => {
++      expect(current.revision).toBe(5);
++      if (current.lastError === "nst_persistence_unconfirmed") throw new Error("manual review");
++    });
++    await expect(acquireProjectionPipelineLease({ supabase,
++      operationKey: "canonical:2026-07-19:2026-07-19", rangeStartDate: "2026-07-19",
++      rangeEndDate: "2026-07-19", initialCursorDate: "2026-07-19", assertResumable,
++    })).rejects.toThrow("manual review");
++    expect(assertResumable).toHaveBeenCalledTimes(1);
++    expect(mocks.rpc).not.toHaveBeenCalled();
++  });
++
++  it("does not reacquire when the guarded revision changes before the RPC", async () => {
++    mocks.maybeSingle.mockResolvedValueOnce({ data: stateRow({ revision: 5, status: "failed", last_error: "stage_handoff" }), error: null });
++    mocks.rpc.mockResolvedValueOnce({ data: null, error: { message: "PROJECTION_PIPELINE_REVISION_MISMATCH" } });
++    const assertResumable = vi.fn();
++    await expect(acquireProjectionPipelineLease({ supabase,
++      operationKey: "canonical:2026-07-19:2026-07-19", rangeStartDate: "2026-07-19",
++      rangeEndDate: "2026-07-19", initialCursorDate: "2026-07-19", assertResumable,
++    })).rejects.toThrow("PROJECTION_PIPELINE_REVISION_MISMATCH");
++    expect(assertResumable).toHaveBeenCalledWith(expect.objectContaining({ revision: 5 }));
++    expect(mocks.rpc).toHaveBeenCalledWith("advance_projection_pipeline_state_v1", expect.objectContaining({ p_expected_revision: 5 }));
+   });
+ 
+   it("acquires an absent operation with revision zero and a bounded lease", async () => {
+diff --git a/web/lib/projections/projectionPipelineState.ts b/web/lib/projections/projectionPipelineState.ts
+--- a/web/lib/projections/projectionPipelineState.ts
++++ b/web/lib/projections/projectionPipelineState.ts
+@@ -324,6 +324,8 @@
+   initialCursorDate: string;
+   leaseMs?: number;
+   now?: Date;
++  /** Guard the same revision used by the acquire CAS; a rejection must not mutate it. */
++  assertResumable?: (current: Readonly<ProjectionPipelineLease>) => void;
+ }): Promise<ProjectionPipelineLease> {
+   const client = args.supabase as unknown as StateClient;
+   const pipelineKey = requirePipelineOrOperationKey(
+@@ -370,6 +372,7 @@
+     }
+     return current;
+   }
++  if (current) args.assertResumable?.(current);
+   const shouldResume =
+     current?.status === "failed" || current?.status === "running";
+   const leaseOwner = randomUUID();
+diff --git a/web/lib/rollingForgePipelineRunState.ts b/web/lib/rollingForgePipelineRunState.ts
+--- a/web/lib/rollingForgePipelineRunState.ts
++++ b/web/lib/rollingForgePipelineRunState.ts
+@@ -37,6 +37,9 @@
+ // A partial stage releases its lease with an explicit resumable marker.
+ export const ROLLING_FORGE_HANDOFF_LEASE_MS = 30_000;
+ const HANDOFF_CODE = "stage_handoff";
++export const NST_PERSISTENCE_UNCONFIRMED = "nst_persistence_unconfirmed";
++export class RollingForgeStageReviewRequiredError extends Error {}
++
+ 
+ const FAILURE_ATTEMPT_PATTERN = /^stage_failed:attempt-(\d+)$/;
+ 
+@@ -180,7 +183,22 @@
+     rangeEndDate: args.runDate,
+     initialCursorDate: args.runDate,
+     leaseMs: Math.max(30_000, args.leaseExpiresAtMs - now.getTime()),
+-    now
++    now,
++    assertResumable: args.stageId === "upstream_skater_sources" ? (current) => {
++      if (current.status === "failed" && current.lastError === NST_PERSISTENCE_UNCONFIRMED) {
++        throw new RollingForgeStageReviewRequiredError("NST persistence is unconfirmed; the durable review hold cannot be reacquired.");
++      }
++      // A running row is durable pre-call intent. Without an acknowledged
++      // handoff, even an expired owner may have written data or lost its hold.
++      // Refuse all running takeovers, including expiry between this read and CAS.
++      if (current.status === "running") {
++        const expiresAt = Date.parse(current.leaseExpiresAt ?? "");
++        if (Number.isFinite(expiresAt) && expiresAt > now.getTime()) {
++          throw new Error("PROJECTION_PIPELINE_LEASE_HELD");
++        }
++        throw new RollingForgeStageReviewRequiredError("NST invocation ended without an acknowledged handoff; inspect persistence before retrying.");
++      }
++    } : undefined
+   });
+ }
+ 
+@@ -217,6 +235,7 @@
+   lease: ProjectionPipelineLease;
+   outcome: "complete" | "failed";
+   attempt?: number;
++  failureCode?: string;
+ }) {
+   return finishProjectionPipelineLease({
+     supabase: args.supabase,
+@@ -224,7 +243,7 @@
+     outcome: args.outcome,
+     failureCode:
+       args.outcome === "failed"
+-        ? buildRollingForgeStageFailureCode(args.attempt ?? 1)
++        ? args.failureCode ?? buildRollingForgeStageFailureCode(args.attempt ?? 1)
+         : undefined
+   });
+ }
+diff --git a/web/lib/stats/percentUnits.test.ts b/web/lib/stats/percentUnits.test.ts
+--- a/web/lib/stats/percentUnits.test.ts
++++ b/web/lib/stats/percentUnits.test.ts
+@@ -1,10 +1,14 @@
+ import { describe, expect, it } from "vitest";
+ import {
+   aggregateNstTeamCounts,
++  aggregateWgoTeamGames,
+   formatFractionPercent,
+   ratio,
+   shareOfSums,
+-  toFraction
++  sumField,
++  toFraction,
++  type NstTeamCountRow,
++  type WgoTeamGameRow
+ } from "./percentUnits";
+ 
+ describe("declared percentage units", () => {
+@@ -37,6 +41,93 @@
+     expect(ratio(null, 10)).toBeNull();
+     expect(shareOfSums(0, 0)).toBeNull();
+     expect(shareOfSums(0, 10)).toBe(0);
++  });
++});
++
++describe("full-window count completeness", () => {
++  const nst: NstTeamCountRow = {
++    gp: 1, toi: 3000, cf: 10, ca: 20, xgf: 1, xga: 2,
++    hdcf: 3, hdca: 4, scf: 5, sca: 6, gf: 0, ga: 1, sf: 10, sa: 20
++  };
++  const wgo: WgoTeamGameRow = {
++    games_played: 1, shots_for_per_game: 30, shots_against_per_game: 20,
++    power_play_goals_for: 1, pp_opportunities: 5, pp_goals_against: 1,
++    times_shorthanded: 4, sh_goals_for: 0, sh_goals_against: 0,
++    faceoffs_won: 10, faceoffs_lost: 20
++  };
++
++  it("does not silently sum a partial field", () => {
++    expect(sumField([1, null, 2], (value) => value)).toBeNull();
++    expect(sumField([1, undefined, 2], (value) => value)).toBeNull();
++    expect(sumField([1, NaN, 2], (value) => value)).toBeNull();
++    expect(sumField([0, 0], (value) => value)).toBe(0);
++    expect(sumField([], (value: number) => value)).toBeNull();
++  });
++
++  it.each([
++    ["cf", "cfPct"], ["ca", "cfPct"], ["xgf", "xgfPct"], ["xga", "xgfPct"],
++    ["hdcf", "hdcfPct"], ["hdca", "hdcfPct"], ["scf", "scfPct"], ["sca", "scfPct"],
++    ["gf", "shootingPct"], ["sf", "shootingPct"], ["ga", "savePct"], ["sa", "savePct"],
++    ["xgf", "xgfPerGame"], ["xga", "xgaPerGame"], ["toi", "toiSeconds"]
++  ] as const)("keeps asymmetric NST %s missingness unknown in %s", (field, metric) => {
++    const totals = aggregateNstTeamCounts([nst, { ...nst, [field]: null }]);
++    expect(totals[metric]).toBeNull();
++    expect(totals.games).toBe(2);
++  });
++
++  it.each([
++    ["power_play_goals_for", "powerPlayPct"], ["pp_opportunities", "powerPlayPct"],
++    ["pp_goals_against", "penaltyKillPct"], ["times_shorthanded", "penaltyKillPct"],
++    ["faceoffs_won", "faceoffWinPct"], ["faceoffs_lost", "faceoffWinPct"],
++    ["shots_for_per_game", "shotsFor"], ["shots_against_per_game", "shotsAgainst"],
++    ["pp_opportunities", "ppOpportunitiesPerGame"], ["sh_goals_for", "shGoalsFor"],
++    ["sh_goals_against", "shGoalsAgainst"]
++  ] as const)("keeps asymmetric WGO %s missingness unknown in %s", (field, metric) => {
++    const totals = aggregateWgoTeamGames([wgo, { ...wgo, [field]: null }]);
++    expect(totals[metric]).toBeNull();
++    expect(totals.games).toBe(2);
++  });
++
++  it.each([null, undefined, NaN, -1])("does not discard unknown game exposure (%s)", (games) => {
++    const nstTotals = aggregateNstTeamCounts([nst, { ...nst, gp: games }]);
++    expect(nstTotals.games).toBeNull();
++    expect(nstTotals.cfPct).toBeNull();
++    expect(nstTotals.xgfPerGame).toBeNull();
++    expect(nstTotals.goalsFor).toBeNull();
++    expect(nstTotals.toiSeconds).toBeNull();
++    const wgoTotals = aggregateWgoTeamGames([wgo, { ...wgo, games_played: games as number | null }]);
++    expect(wgoTotals.games).toBeNull();
++    expect(wgoTotals.powerPlayPct).toBeNull();
++    expect(wgoTotals.shotsFor).toBeNull();
++    expect(wgoTotals.shGoalsFor).toBeNull();
++  });
++
++  it("retains complete metrics and real zeros without inventing missing exposure", () => {
++    const totals = aggregateNstTeamCounts([nst, { ...nst, toi: null }]);
++    expect(totals.toiSeconds).toBeNull();
++    expect(totals.cfPct).toBeCloseTo(1 / 3);
++    expect(totals.goalsFor).toBe(0);
++    expect(totals.shootingPct).toBe(0);
++    expect(totals.xgfPerGame).toBe(1);
++
++    const zeroEvent = { ...wgo, shots_for_per_game: 0, power_play_goals_for: 0, pp_opportunities: 0 };
++    expect(aggregateWgoTeamGames([zeroEvent]).powerPlayPct).toBeNull();
++    const combined = aggregateWgoTeamGames([zeroEvent, wgo, { games_played: 0 }]);
++    expect(combined.games).toBe(2);
++    expect(combined.powerPlayPct).toBeCloseTo(1 / 5);
++    expect(combined.shotsFor).toBe(15);
++    expect(combined.shGoalsFor).toBe(0);
++    expect(aggregateWgoTeamGames([]).games).toBe(0);
++  });
++
++  it("does not combine complementary missing sides or publish derived partial metrics", () => {
++    const nstTotals = aggregateNstTeamCounts([{ ...nst, gf: null }, { ...nst, sf: null }]);
++    expect(nstTotals.shootingPct).toBeNull();
++    expect(nstTotals.pdo).toBeNull();
++    const wgoTotals = aggregateWgoTeamGames([{ ...wgo, shots_for_per_game: null }, wgo]);
++    expect(wgoTotals.shotsFor).toBeNull();
++    expect(wgoTotals.shotsAgainst).toBe(20);
++    expect(wgoTotals.shotDifferential).toBeNull();
+   });
+ });
+ 
+diff --git a/web/lib/stats/percentUnits.ts b/web/lib/stats/percentUnits.ts
+--- a/web/lib/stats/percentUnits.ts
++++ b/web/lib/stats/percentUnits.ts
+@@ -36,7 +36,7 @@
+   return numerator / denominator;
+ }
+ 
+-/** Sums one field across rows; null when no row carries a finite value. */
++/** Full-sample sum: null for an empty sample or any missing/nonfinite value. */
+ export function sumField<T>(
+   rows: readonly T[],
+   read: (row: T) => number | null | undefined
+@@ -44,7 +44,8 @@
+   let total: number | null = null;
+   for (const row of rows) {
+     const value = read(row);
+-    if (isFiniteNumber(value)) total = (total ?? 0) + value;
++    if (!isFiniteNumber(value)) return null;
++    total = (total ?? 0) + value;
+   }
+   return total;
+ }
+@@ -81,7 +82,7 @@
+ }
+ 
+ export interface NstTeamShareAggregate {
+-  games: number;
++  games: number | null;
+   toiSeconds: number | null;
+   goalsFor: number | null;
+   goalsAgainst: number | null;
+@@ -99,16 +100,19 @@
+ 
+ /**
+  * Aggregates NST team rows with matching numerators and exposure
+- * (ratio of sums), never a mean of per-row percentages. Rows without games
+- * played are excluded.
++ * (ratio of sums), never a mean of per-row percentages. Known zero-game rows
++ * are excluded; unknown game exposure invalidates the sample. Each metric
++ * requires all of its count fields across that same sample.
+  */
+ export function aggregateNstTeamCounts(
+   rows: readonly NstTeamCountRow[]
+ ): NstTeamShareAggregate {
+-  const played = rows.filter((row) => isFiniteNumber(row.gp) && row.gp > 0);
+-  const games = played.reduce((total, row) => total + (row.gp as number), 0);
++  const played = rows.filter((row) => row.gp !== 0);
++  const games = played.length === 0 ? 0 : sumField(played, (row) =>
++    isFiniteNumber(row.gp) && row.gp > 0 ? row.gp : null
++  );
+   const sum = (key: keyof NstTeamCountRow) =>
+-    sumField(played, (row) => row[key]);
++    games === null ? null : sumField(played, (row) => row[key]);
+ 
+   const goalsFor = sum("gf");
+   const goalsAgainst = sum("ga");
+@@ -132,8 +136,8 @@
+     savePct,
+     pdo:
+       shootingPct === null || savePct === null ? null : shootingPct + savePct,
+-    xgfPerGame: games > 0 ? ratio(xgf, games) : null,
+-    xgaPerGame: games > 0 ? ratio(xga, games) : null
++    xgfPerGame: ratio(xgf, games),
++    xgaPerGame: ratio(xga, games)
+   };
+ }
+ 
+@@ -157,14 +161,14 @@
+   faceoffs_lost?: number | null;
+ }
+ 
+-/** Ratio-of-sums totals over WGO team game rows; rows without games are excluded. */
++/** Full-sample totals over WGO game rows; only known zero-game rows are excluded. */
+ export function aggregateWgoTeamGames(rows: readonly WgoTeamGameRow[]) {
+-  const played = rows.filter(
+-    (row) => isFiniteNumber(row.games_played) && row.games_played > 0
+-  );
+-  const games = played.reduce((total, row) => total + (row.games_played ?? 0), 0);
++  const played = rows.filter((row) => row.games_played !== 0);
++  const games = played.length === 0 ? 0 : sumField(played, (row) =>
++    isFiniteNumber(row.games_played) && row.games_played > 0 ? row.games_played : null
++  );
+   const sum = (read: (row: WgoTeamGameRow) => number | null | undefined) =>
+-    sumField(played, read);
++    games === null ? null : sumField(played, read);
+   const perGameTotal = (read: (row: WgoTeamGameRow) => number | null | undefined) =>
+     sum((row) => {
+       const value = read(row);
+@@ -194,7 +198,7 @@
+       shotsFor === null || shotsAgainst === null ? null : shotsFor - shotsAgainst,
+     powerPlayPct: ratio(ppGoalsFor, ppOpportunities),
+     penaltyKillPct: pkGoalsAgainstRate === null ? null : 1 - pkGoalsAgainstRate,
+-    ppOpportunitiesPerGame: games > 0 ? ratio(ppOpportunities, games) : null,
++    ppOpportunitiesPerGame: ratio(ppOpportunities, games),
+     ppGoalsFor,
+     ppGoalsAgainst,
+     shGoalsFor: sum((row) => row.sh_goals_for),
+diff --git a/web/lib/stats/teamCountConsumers.test.tsx b/web/lib/stats/teamCountConsumers.test.tsx
+new file mode 100644
+--- /dev/null
++++ b/web/lib/stats/teamCountConsumers.test.tsx
+@@ -0,0 +1,210 @@
++import React from "react";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++import { cleanup, render, screen, within } from "@testing-library/react";
++
++const mocks = vi.hoisted(() => ({ from: vi.fn() }));
++vi.mock("lib/supabase", () => ({ default: { from: mocks.from } }));
++vi.mock("lib/fetchWithCache", () => ({ default: async () => ({ data: [], games: [] }) }));
++vi.mock("hooks/useCurrentSeason", () => ({
++  useCurrentSeasonQuery: () => ({
++    data: {
++      seasonId: 20262027,
++      regularSeasonStartDate: "2026-10-01T00:00:00Z",
++      regularSeasonEndDate: "2027-04-20T00:00:00Z",
++      seasonEndDate: "2027-06-30T00:00:00Z"
++    },
++    isPending: false, isError: false, status: "success"
++  })
++}));
++vi.mock("components/TeamDashboard/TeamLeaders", () => ({ TeamLeaders: () => null }));
++vi.mock("components/TeamDashboard/GameByGameTimeline", () => ({ GameByGameTimeline: () => null }));
++vi.mock("recharts", async (importOriginal) => ({
++  ...await importOriginal<typeof import("recharts")>(),
++  ResponsiveContainer: () => null
++}));
++
++import { AdvancedL10Metrics } from "components/TeamDashboard/AdvancedL10Metrics";
++import { TeamDashboard } from "components/TeamDashboard/TeamDashboard";
++import { GameStateAnalysis } from "components/GameStateAnalysis/GameStateAnalysis";
++
++type Row = Record<string, string | number | null>;
++
++// Execute the requested filters before ordering/limits/projection. In particular,
++// SQL comparisons reject null; only an explicit is.null branch retains it.
++function query(input: Row[]) {
++  const predicates: ((row: Row) => boolean)[] = [];
++  const order: { field: string; ascending: boolean }[] = [];
++  let fields: string[] | null = null;
++  let start = 0;
++  let limit = Infinity;
++  const result = () => {
++    const rows = input.filter((row) => predicates.every((test) => test(row)));
++    rows.sort((a, b) => {
++      for (const { field, ascending } of order) {
++        const left = a[field];
++        const right = b[field];
++        if (left === right) continue;
++        const comparison = left == null ? 1 : right == null ? -1 : left < right ? -1 : 1;
++        return ascending ? comparison : -comparison;
++      }
++      return 0;
++    });
++    return rows.slice(start, start + limit).map((row) => fields
++      ? Object.fromEntries(fields.map((field) => [field, row[field] ?? null]))
++      : row);
++  };
++  const q: any = {};
++  q.select = (columns: string) => {
++    fields = columns === "*" ? null : columns.split(",").map((field) => field.trim());
++    return q;
++  };
++  q.eq = (field: string, value: string | number) => {
++    predicates.push((row) => row[field] === value);
++    return q;
++  };
++  for (const op of ["gte", "lte", "gt"]) {
++    q[op] = (field: string, value: string | number) => {
++      predicates.push((row) => {
++        const actual = row[field];
++        return actual != null && (op === "gt" ? actual > value : op === "gte" ? actual >= value : actual <= value);
++      });
++      return q;
++    };
++  }
++  q.or = (expression: string) => {
++    const branches = expression.split(",").map((branch) => {
++      const match = /^(\w+)\.(neq|is)\.(0|null)$/.exec(branch);
++      if (!match) throw new Error(`Unsupported test predicate: ${branch}`);
++      const [, field, op, value] = match;
++      if (op === "is" && value === "null") return (row: Row) => row[field] == null;
++      if (op === "neq" && value === "0") return (row: Row) => row[field] != null && row[field] !== 0;
++      throw new Error(`Unsupported test predicate: ${branch}`);
++    });
++    predicates.push((row) => branches.some((test) => test(row)));
++    return q;
++  };
++  q.order = (field: string, { ascending }: { ascending: boolean }) => {
++    order.push({ field, ascending });
++    return q;
++  };
++  q.limit = (count: number) => { limit = count; return q; };
++  q.range = (from: number, to: number) => { start = from; limit = to - from + 1; return q; };
++  q.single = async () => {
++    const rows = result();
++    return { data: rows.length === 1 ? rows[0] : null, error: rows.length === 1 ? null : new Error("Expected one synthetic row") };
++  };
++  q.then = (resolve: any, reject: any) => Promise.resolve({ data: result(), error: null }).then(resolve, reject);
++  return q;
++}
++
++const common = { team_id: 4, team_abbreviation: "PHI", season_id: 20262027, date: "2026-10-10" };
++const wgo: Row = {
++  ...common, games_played: 1, shots_for_per_game: 25, shots_against_per_game: 30,
++  power_play_goals_for: 1, pp_opportunities: 5, pp_goals_against: 1, times_shorthanded: 4,
++  sh_goals_for: 0, sh_goals_against: 0, faceoffs_won: 10, faceoffs_lost: 20
++};
++const nst: Row = {
++  ...common, gp: 1, toi: 3000, cf: 10, ca: 20, xgf: 1, xga: 2, hdcf: 3, hdca: 4,
++  scf: 5, sca: 6, gf: 1, ga: 2, sf: 10, sa: 20
++};
++let tables: Record<string, Row[]>;
++
++beforeEach(() => {
++  tables = {
++    nhl_standings_details: [{ ...common, team_abbrev: "PHI", l10_wins: 1, l10_losses: 1, l10_ot_losses: 0 }],
++    team_summary_years: [{ ...common, games_played: 2, goals_for: 3, goals_against: 2, wins: 1, points: 2 }],
++    wgo_team_stats: [{ ...wgo }, { ...wgo, date: "2026-10-11" }],
++    nst_team_5v5: [{ ...nst }, { ...nst, date: "2026-10-11" }],
++    nst_team_pp: [{ ...nst }, { ...nst, date: "2026-10-11" }],
++    nst_team_pk: [{ ...nst }, { ...nst, date: "2026-10-11" }]
++  };
++  mocks.from.mockImplementation((table: string) => query(tables[table] ?? []));
++});
++afterEach(() => { cleanup(); vi.resetAllMocks(); });
++
++describe("count consumers retain source exposure", () => {
++  it.each([
++    ["wgo_team_stats", "games_played", "Power Play"],
++    ["nst_team_5v5", "gp", "Corsi For %"]
++  ])("keeps an existing null-exposure row in the %s L10 sample", async (table, field, label) => {
++    tables[table][1][field] = null;
++    render(<AdvancedL10Metrics teamId="4" teamAbbrev="PHI" seasonId="20262027" />);
++    const value = await screen.findByText(label);
++    expect(value.parentElement?.textContent).toContain("—");
++    expect(screen.getAllByText(/Incomplete game sample/).length).toBeGreaterThan(0);
++  });
++
++  it("keeps unknown rows inside L10 without allowing known zero rows to displace them", async () => {
++    for (const [table, field, row] of [
++      ["wgo_team_stats", "games_played", wgo], ["nst_team_5v5", "gp", nst]
++    ] as const) {
++      tables[table] = [
++        ...Array.from({ length: 10 }, (_, i) => ({ ...row, date: `2026-10-${10 + i}` })),
++        { ...row, date: "2026-10-20", [field]: null },
++        ...Array.from({ length: 12 }, (_, i) => ({ ...row, date: `2026-11-${String(i + 1).padStart(2, "0")}`, [field]: 0 }))
++      ];
++    }
++    render(<AdvancedL10Metrics teamId="4" teamAbbrev="PHI" seasonId="20262027" />);
++    await screen.findByText("Corsi For %");
++    expect(screen.getByText("Power Play").parentElement?.textContent).toContain("—");
++    expect(screen.getByText("Corsi For %").parentElement?.textContent).toContain("—");
++    expect(screen.getAllByText(/Incomplete game sample/)).toHaveLength(3);
++    expect(screen.queryByText("No games in sample")).toBeNull();
++  });
++
++  it("preserves L10 date/team/season bounds and excludes zero rows before the limit", async () => {
++    for (const [table, field, row] of [
++      ["wgo_team_stats", "games_played", wgo], ["nst_team_5v5", "gp", nst]
++    ] as const) {
++      tables[table] = [
++        ...Array.from({ length: 10 }, (_, i) => ({ ...row, date: `2026-10-${10 + i}` })),
++        { ...row, date: "2026-10-01", [field]: null }, // Outside the latest ten.
++        { ...row, date: "2026-08-31", [field]: null },
++        { ...row, date: "2027-09-01", [field]: null },
++        { ...row, team_id: 22, team_abbreviation: "EDM", date: "2026-10-22", [field]: null },
++        ...Array.from({ length: 12 }, (_, i) => ({ ...row, date: `2026-11-${String(i + 1).padStart(2, "0")}`, [field]: 0 }))
++      ];
++    }
++    tables.wgo_team_stats.push({ ...wgo, season_id: 20252026, date: "2026-10-23", games_played: null });
++    render(<AdvancedL10Metrics teamId="4" teamAbbrev="PHI" seasonId="20262027" />);
++    await screen.findByText("Corsi For %");
++    expect(screen.getByText("Power Play").parentElement?.textContent).toContain("20.0%");
++    expect(screen.getByText("Corsi For %").parentElement?.textContent).toContain("33.3%");
++    expect(screen.getAllByText(/Last 10 games through 2026-10-19/)).toHaveLength(3);
++    expect(screen.queryByText(/Incomplete game sample/)).toBeNull();
++  });
++
++  it.each([
++    ["nst_team_5v5", "5v5"], ["nst_team_pp", "Power Play"], ["nst_team_pk", "Penalty Kill"]
++  ])("retains null exposure in %s strength totals", async (table, title) => {
++    tables[table][1].gp = null;
++    render(<GameStateAnalysis teamId="4" teamAbbrev="PHI" seasonId="20262027" />);
++    const heading = await screen.findByRole("heading", { name: title });
++    const card = within(heading.parentElement!.parentElement!);
++    expect(card.getByText("CF%").parentElement?.textContent).toContain("—");
++    expect(card.getByText("Incomplete game sample · Natural Stat Trick")).toBeTruthy();
++  });
++
++  it("retains null exposure in season WGO totals", async () => {
++    tables.wgo_team_stats[1].games_played = null;
++    render(<TeamDashboard teamId="4" teamAbbrev="PHI" seasonId="20262027" />);
++    const label = await screen.findByText("Power Play %");
++    expect(label.parentElement?.textContent).toContain("N/A");
++    expect(screen.getByText("PP Goals For").parentElement?.textContent).toContain("—");
++  });
++
++  it.each(["current", "peer"])("retains null exposure from the %s team in both ranking sources", async (missing) => {
++    if (missing === "current") {
++      tables.nst_team_5v5[1].gp = null;
++      tables.wgo_team_stats[1].games_played = null;
++    } else {
++      tables.nst_team_5v5.push({ ...nst, team_abbreviation: "EDM", team_id: 22, gp: null });
++      tables.wgo_team_stats.push({ ...wgo, team_abbreviation: "EDM", team_id: 22, games_played: null });
++    }
++    render(<TeamDashboard teamId="4" teamAbbrev="PHI" seasonId="20262027" />);
++    const rank = await screen.findByText("CF%");
++    expect(rank.parentElement?.textContent).toContain("#—");
++    expect(screen.getByText("PP Goals For").parentElement?.textContent).toContain("#—");
++    if (missing === "current") expect(screen.getByTitle(/incomplete game sample/)).toBeTruthy();
++  });
++});
+diff --git a/web/pages/api/v1/db/run-rolling-forge-pipeline.ts b/web/pages/api/v1/db/run-rolling-forge-pipeline.ts
+--- a/web/pages/api/v1/db/run-rolling-forge-pipeline.ts
++++ b/web/pages/api/v1/db/run-rolling-forge-pipeline.ts
+@@ -30,7 +30,9 @@
+   readRollingForgeRunState,
+   readRollingForgeStageFailedAttempts,
+   readRollingForgeStageKills,
+-  recordRollingForgeStageKill
++  recordRollingForgeStageKill,
++  NST_PERSISTENCE_UNCONFIRMED,
++  RollingForgeStageReviewRequiredError
+ } from "lib/rollingForgePipelineRunState";
+ 
+ import updateGamesHandler from "./update-games";
+@@ -64,6 +66,7 @@
+   reason?: string;
+   // Set when a source shortfall was downgraded so the stage still completes.
+   degraded?: "nst_source_unavailable";
++  requiresReview?: "nst_persistence_unconfirmed";
+ };
+ 
+ type StageResult = {
+@@ -95,7 +98,8 @@
+     | "stage_in_progress_elsewhere"
+     | "state_error"
+     | "retry_on_next_invocation"
+-    | "attempts_exhausted";
++    | "attempts_exhausted"
++    | "manual_review_required";
+   rollingResumeFrom?: number | null;
+   detail?: string;
+ };
+@@ -157,7 +161,7 @@
+ 
+ type RouteHandler = (req: any, res: any) => Promise<void>;
+ 
+-type TerminalStopCode = "attempts_exhausted" | "stage_killed";
++type TerminalStopCode = "attempts_exhausted" | "stage_killed" | "nst_persistence_unconfirmed";
+ 
+ function getParam(req: NextApiRequest, key: string): string | null {
+   const value = req.query[key];
+@@ -412,8 +416,8 @@
+  * NST step resume: the consumer side of the pipeline <-> update-nst-gamelog
+  * contract (tasks/artifacts/cross-platform/2026-10-21-claude-to-codex-pipeline-
+  * nst-contract.md with its ~01:00Z amendment, accepted by Codex in
+- * 2026-10-20-codex-to-claude-pipeline-nst-contract.md). INACTIVE until Codex
+- * ships it; enable only after review. With it enabled:
++ * 2026-10-20-codex-to-claude-pipeline-nst-contract.md). The delivered producer
++ * acknowledges progress before returning its continuation:
+  * - 200 with success true finishes the step (operationStatus
+  *   "skipped_no_completed_games" is the expected no-work skip); WGO follows.
+  * - 207, operationStatus "continuation_required", resume.required true and
+@@ -426,7 +430,6 @@
+  * one `cursor`, a positive integer past the cursor sent, kept in the
+  * forward-only cursor_game_id. Any other query is uncertain and fails the step.
+  */
+-const nstStepResume = { enabled: false };
+ // Terminal audit headroom kept back from the NST step's deadline.
+ const NST_DEADLINE_HEADROOM_MS = 20_000;
+ // vercel.json maxDuration: an explicit run never gets longer than this.
+@@ -439,19 +442,23 @@
+ 
+ function readNstOutcome(step: StepResult, sentCursor: number | null): NstOutcome {
+   const body = step.summary as Record<string, any> | null;
+-  const record = body && typeof body === "object" ? body : null;
+-  if (step.statusCode === 200 && record?.success !== false && !record?.error) {
++  const record = body && typeof body === "object" && !Array.isArray(body) ? body : null;
++  if (step.statusCode === 200 && record?.success === true && !record.error && !record.resume?.required
++    && (record.operationStatus == null || ["completed", "skipped_no_completed_games"].includes(record.operationStatus))) {
+     return { kind: "finished", skipped: record?.operationStatus === "skipped_no_completed_games" };
+   }
+   if (step.statusCode !== 207 || record?.operationStatus !== "continuation_required") {
+     return { kind: "blocked", reason: "NST did not finish or return a continuation; the stage stops here." };
+   }
++  if (record.error || record.success !== false || record.nstProgress?.auditPersistence !== "confirmed") {
++    return { kind: "blocked", reason: "NST continuation has no confirmed progress acknowledgement." };
++  }
+   const query = record.resume?.required === true ? record.resume.request?.query : null;
+   if (!query || typeof query !== "object" || Array.isArray(query)) {
+     return { kind: "blocked", reason: "NST continuation has no replayable resume.request.query." };
+   }
+-  const { cursor: rawCursor, deadlineAt: _replayDeadline, ...scope } = query as Record<string, unknown>;
+-  const { cursor: _sentCursor, deadlineAt: _sentDeadline, ...sentScope } = step.query;
++  const { cursor: rawCursor, ...scope } = query as Record<string, unknown>;
++  const { cursor: _sentCursor, ...sentScope } = step.query;
+   const sameScope =
+     Object.keys(scope).length === Object.keys(sentScope).length &&
+     Object.entries(sentScope).every(([key, value]) => scope[key] === value);
+@@ -690,7 +697,7 @@
+       });
+       break;
+     case "upstream_skater_sources": {
+-      const nstCursor = nstStepResume.enabled ? (args.nstResumeCursor ?? null) : null;
++      const nstCursor = args.nstResumeCursor ?? null;
+       const nst = await invokeRouteStep({
+         id: "update-nst-gamelog",
+         route: "/api/v1/db/update-nst-gamelog",
+@@ -698,9 +705,8 @@
+         query: {
+           runMode: "incremental",
+           startDate: args.sourceStartDate,
+-          // The implicit run names its one completed date; explicit windows
+-          // pass through as before.
+-          ...(args.useDurableProjectionBacklog ? { endDate: args.sourceEndDate } : {}),
++          // Freeze the source aperture for scheduled and explicit requests.
++          endDate: args.sourceEndDate,
+           ...(nstCursor != null ? { cursor: String(nstCursor) } : {}),
+           ...(args.sourceDeadlineAtMs != null
+             ? { deadlineAt: String(args.sourceDeadlineAtMs - NST_DEADLINE_HEADROOM_MS) }
+@@ -708,6 +714,14 @@
+         }
+       });
+       steps.push(nst);
++      const nstBody = nst.summary as Record<string, any> | null;
++      if (nstBody?.auditPersistence === "not_confirmed" || nstBody?.writePersistence === "not_confirmed"
++        || nstBody?.nstProgress?.auditPersistence === "not_confirmed") {
++        nst.status = "failed";
++        nst.requiresReview = NST_PERSISTENCE_UNCONFIRMED;
++        nst.reason = "NST persistence is unconfirmed; inspect the source/audit receipt before retrying.";
++        break;
++      }
+       if (nst.status === "failed" && isNstSourceShortfall(nst)) {
+         const message = (nst.summary as Record<string, any>).message;
+         nst.status = "skipped";
+@@ -715,7 +729,7 @@
+         nst.reason = `NST source unavailable; this run continues on WGO without the day's NST counts. Backfill the date once NST returns.${
+           typeof message === "string" && message ? ` NST: ${message.slice(0, 200)}` : ""}`;
+       }
+-      if (nstStepResume.enabled && !nst.degraded) {
++      if (!nst.degraded) {
+         const outcome = readNstOutcome(nst, nstCursor);
+         if (outcome.kind === "continuation") {
+           // WGO waits until NST finishes.
+@@ -1212,6 +1226,15 @@
+       );
+       continue;
+     }
++    if (state?.status === "failed" && state.lastError === NST_PERSISTENCE_UNCONFIRMED) {
++      stageResults.push(notRunStage(stage, "failed", "NST persistence is unconfirmed; manual review is required before retrying.", true));
++      termination = {
++        state: "stopped_on_blocking_failure", resumeRequired: false, nextStartDate: null,
++        runKey, nextStageId: stage.id, reason: "manual_review_required"
++      };
++      terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
++      continue;
++    }
+     const failedAttempts = readRollingForgeStageFailedAttempts(state);
+     if (
+       state?.status === "failed" &&
+@@ -1266,7 +1289,9 @@
+     // died (the function was killed). Its progress is stored, so the stage is
+     // taken again, but every dead invocation is counted and the run stops
+     // once there have been too many.
+-    if (isRollingForgeStageLeaseDead(state)) {
++    // NST cannot replay an abandoned invocation without reviewing its writes.
++    // Its acquisition guard below handles the fresh state without mutating it.
++    if (stage.id !== "upstream_skater_sources" && isRollingForgeStageLeaseDead(state)) {
+       let kills: number;
+       try {
+         kills = await recordRollingForgeStageKill({
+@@ -1341,6 +1366,14 @@
+       });
+     } catch (error) {
+       const message = errorMessage(error);
++      if (error instanceof RollingForgeStageReviewRequiredError) {
++        stageResults.push(notRunStage(stage, "failed", message, true));
++        termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
++          nextStartDate: null, runKey, nextStageId: stage.id,
++          reason: "manual_review_required", detail: message };
++        terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
++        continue;
++      }
+       termination = continuation(
+         /LEASE_HELD|REVISION_MISMATCH|CONCURRENT_CHANGE/.test(message)
+           ? "stage_in_progress_elsewhere"
+@@ -1439,23 +1472,32 @@
+         );
+       } else if (result.status === "failed") {
+         const attempt = failedAttempts + 1;
++        const reviewCode = result.steps.find(step => step.requiresReview)?.requiresReview;
++        // The known uncertainty remains terminal even if saving its hold fails.
++        // The already-acquired running row also blocks a later NST takeover.
++        if (reviewCode) {
++          termination = { state: "stopped_on_blocking_failure", resumeRequired: false,
++            nextStartDate: null, runKey, nextStageId: stage.id, reason: "manual_review_required" };
++          terminalStopCode = reviewCode;
++        }
+         await finishRollingForgeStage({
+           supabase,
+           lease: activeLease,
+           outcome: "failed",
+-          attempt
++          attempt,
++          failureCode: reviewCode
+         });
+         if (stage.blocking) {
+-          const willRetry = attempt < MAX_BLOCKING_STAGE_ATTEMPTS;
++          const willRetry = !reviewCode && attempt < MAX_BLOCKING_STAGE_ATTEMPTS;
+           termination = {
+             state: "stopped_on_blocking_failure",
+             resumeRequired: willRetry,
+             nextStartDate: null,
+             runKey,
+             nextStageId: stage.id,
+-            reason: willRetry ? "retry_on_next_invocation" : "attempts_exhausted"
++            reason: reviewCode ? "manual_review_required" : willRetry ? "retry_on_next_invocation" : "attempts_exhausted"
+           };
+-          if (!willRetry) terminalStopCode = "attempts_exhausted";
++          if (!willRetry) terminalStopCode = reviewCode ?? "attempts_exhausted";
+         }
+       } else {
+         await finishRollingForgeStage({ supabase, lease: activeLease, outcome: "complete" });
+@@ -1489,8 +1531,7 @@
+ export const __testables = {
+   listGameIdsInRange,
+   invokeRouteStep,
+-  runStage,
+-  nstStepResume
++  runStage
+ };
+ 
+ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseBody>) {
+@@ -1630,21 +1671,26 @@
+       stageResults.push(result);
+ 
+       if (
+-        stopOnFailure &&
++        result.steps.some(step => step.requiresReview) || (stopOnFailure &&
+         stage.blocking &&
+-        (result.status === "failed" || result.status === "partial")
++        (result.status === "failed" || result.status === "partial"))
+       ) {
+         blocked = true;
+       }
+     }
+ 
++    const manualReviewStage = stageResults.find(stage => stage.steps.some(step => step.requiresReview));
++    if (manualReviewStage) terminalStopCode = NST_PERSISTENCE_UNCONFIRMED;
+     const failedBlocking = stageResults.some(
+       (stage) => stage.blocking && stage.status === "failed"
+     );
+     const partialBlocking = stageResults.find(
+       (stage) => stage.blocking && stage.status === "partial"
+     );
+-    termination = failedBlocking
++    termination = manualReviewStage
++      ? { state: "stopped_on_blocking_failure", resumeRequired: false, nextStartDate: null,
++          nextStageId: manualReviewStage.id, reason: "manual_review_required" }
++      : failedBlocking
+       ? {
+           state: "stopped_on_blocking_failure",
+           resumeRequired: true,

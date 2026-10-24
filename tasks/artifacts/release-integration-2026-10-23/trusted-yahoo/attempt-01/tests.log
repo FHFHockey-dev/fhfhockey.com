@@ -1,0 +1,17 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/integrations/yahoo/planningConfirmations.test.ts lib/integrations/yahoo/planningConfirmationRoute.test.ts hooks/yahooPlanningReadBroker.test.ts lib/rosterScheduleOptimizer/executionAdapter.test.ts hooks/useRosterPlanning.test.tsx lib/rosterScheduleOptimizer/providerGoalieStarts.test.ts --reporter=json --outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/trusted-yahoo/tests.json
+
+(node:69939) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:69939) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:69939) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:69939) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:69939) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:69939) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/release-integration-2026-10-23/trusted-yahoo/tests.json

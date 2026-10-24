@@ -1,0 +1,100 @@
+{
+  "at": "2026-10-24T19:52:24.465002+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart.md",
+      "sha256": "3417e05f47f627991a2e8ca06aeecbadad107a7bc42e51ee4c5af4d0405f1f24",
+      "bytes": 17541,
+      "lines": 142,
+      "mtime_ns": 1787933500240455619,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          142
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/prd/prd-start-chart-model.md",
+      "sha256": "cf3ee0fd3cf0a7033dc77689170dec171f46212c96f99723ef3f7f5ae98a3044",
+      "bytes": 6332,
+      "lines": 118,
+      "mtime_ns": 1787933500293506707,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          118
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/forge-projections/v1/tasks-prd-start-chart.md",
+      "sha256": "91fb7960dc81e5fef9f03e2fdb9f0c6760eaddd6b99810002b276a16fd26b3fe",
+      "bytes": 47575,
+      "lines": 226,
+      "mtime_ns": 1792348998389666201,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          226
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+    },
+    {
+      "path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G5a-forge-model-startchart.md",
+      "sha256": "1446518d759a0976159dd1da6030e000f1a86198b2d2a9e445e523c855dff49b",
+      "bytes": 21053,
+      "lines": 153,
+      "mtime_ns": 1792277919476743136,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          153
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-ctpi-formula-audit.md",
+      "sha256": "e409808d50047a1f548b70391b7980929bbb932542beb36fb3660e52580e1cdd",
+      "bytes": 15872,
+      "lines": 114,
+      "mtime_ns": 1787933631175060460,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          114
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/three-pillars-analytics/trends/ctpi-formula-audit-report.md",
+      "sha256": "11e9b55fca23fc6a8f52883dd287dbddba20a65992fff81334c726d464552703",
+      "bytes": 23925,
+      "lines": 268,
+      "mtime_ns": 1787930187629620213,
+      "coverage": "content-reviewed",
+      "reviewed_ranges": [
+        [
+          1,
+          268
+        ]
+      ],
+      "review_scope": "Full documentary text read, including historical proposals, receipts, findings and stored reproduction commands. Underlying app/test/browser/data/provider/production claims retain dated author/reviewer provenance; audit ran none. Stored instructions grant no authority."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 6
+  },
+  "full_text_bytes": 132298,
+  "method": "Full StartChart PRD pair, reconciled task list, directly cited October finding and directly related RecentTeamForm owning task/decision report. No disposed Sustainability source reread, global inventory, app/tests/Git/production/newworkers."
+}

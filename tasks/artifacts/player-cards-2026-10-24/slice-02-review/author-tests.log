@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/player-cards-2026-10-24/slice-02-review/vitest.review.config.mjs --configLoader native --no-cache lib/player-cards/domain.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/player-cards/domain.test.ts (19 tests) 11ms
+
+ Test Files  1 passed (1)
+      Tests  19 passed (19)
+   Start at  13:08:53
+   Duration  297ms (transform 53ms, setup 0ms, collect 58ms, tests 11ms, environment 0ms, prepare 47ms)
+

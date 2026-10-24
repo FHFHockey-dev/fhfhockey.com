@@ -1,0 +1,581 @@
+{
+  "at": "2026-10-24T20:53:33.183652+00:00",
+  "all_matched": true,
+  "checks": [
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/owner-decisions-and-evidence.md",
+      "sha256": "6aa646aa01bd0d7cf57e70dd1e113303313e17e0718f8d81533fbd72f5a38473",
+      "matched": true
+    },
+    {
+      "path": "tasks/prd-in-season-trust-clarity-decision-workflow.md",
+      "sha256": "321ef612fffa770f5cc6edb784e8986519b59050d475e280e9229f99dd69eca9",
+      "matched": true
+    },
+    {
+      "path": "tasks/tasks-prd-in-season-trust-clarity-decision-workflow.md",
+      "sha256": "e4fc2b9ecdd0ac93dc93636a4ab0520fd499774f377fd70d7f77a9070591478b",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-keyboard-status-1180.json",
+      "sha256": "87f9f537dd13a019814723a12e49089f8cf7e468e54a8ada57d73e74318234cd",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-keyboard-status-390.json",
+      "sha256": "9da357f78dc6216f433039333181253ce2b77899c9c2d3e0f49e68d280f84665",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-native-zoom-evidence.json",
+      "sha256": "79304002d18395603dfc25938a874e5a614f8d86465a661dca6815283e00c2dc",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-status-contrast-1180.json",
+      "sha256": "f487ab2351fdcfe059d96b47d58e4e555b0f8fd01908375808e62f655ea7acbd",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-status-contrast-390.json",
+      "sha256": "05e072f3183295f4e91bc2406fcafa4a3f97a86c5297d7038482d79e883b45a1",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-status-contrast-measured.json",
+      "sha256": "16776ec91f8519fcd47e6ae7a0aa2ddd622c4510172dae04df73825738fe9547",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/database-evidence.json",
+      "sha256": "217e98efbd081bdfffa49153796a9312ef30db791f5ba4fa1ea37f2d87df9a66",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/grid-native-zoom-evidence.json",
+      "sha256": "62b23848fe51ce43dee633d6bf8d2e64643f60e23687f00921a67d3f0804326e",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/integrated-five-width-evidence.json",
+      "sha256": "11bb853a7ed7ff58795882537a0b11743729a68dad8061f6364b5b170715199c",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/news-exact-original-browser-evidence.json",
+      "sha256": "bb1c9eef2fb5cfe68e1557bf42e564a7189e8b849da737298ba8ff38641a8755",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/news-native-zoom-evidence.json",
+      "sha256": "f3cdcb2b6a26d0e823684052c9aaee135d763a40e3eb92fa3875fd893cb41639",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-composite-coverage-evidence.json",
+      "sha256": "6515164e5362af476ad1ac527c52e2882a40345da483a8596207141b0c158e41",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-fantasy-availability-browser.json",
+      "sha256": "ccc2893c5c244b321aabd0cb5345d11e06aed14b7009628008c86e9a2ecd697a",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-fantasy-composite-builder-after-pp-select.json",
+      "sha256": "5d6867644b1d7ab54a14645c4600196c7f3049af3f0913bdd37cb4335cd4f0fb",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-fantasy-composite-builder.json",
+      "sha256": "bd288efb26ae2887dee8d34d572fddb45a3bebbc745ec5aefa7f64e401c7b9fd",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-native-zoom-evidence.json",
+      "sha256": "9b140ed5753f10ce8ea3178fe1bb5c15c21897e6665c53bf191ba1021b2d304b",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-pp-input-evidence.json",
+      "sha256": "168ee5d1399358ad7ceb2767ef41382aae95a589fe2138bc413774d199ad9b81",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-rolling-history-validation.json",
+      "sha256": "8de707e100e8cec77a3a42687c94b1512c2001eea08b9f97d414e57812cbebad",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-sample-evidence.json",
+      "sha256": "b0dcd290dd4072fe6446d230154dfa1de74a631b244745648f52d9ff4f92af1f",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-stored-history-evidence.json",
+      "sha256": "317dc6fc3d1f54ce6d973a9ac529e4da1bac0440bbbfa5a6ad5aa01143ba2fef",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-url-ready-evidence.json",
+      "sha256": "857e0269dcc9f6fff539d32aa2518acb856bb4a5443637ad39233ab73996e622",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-url-ready-first-load.json",
+      "sha256": "5c7dc31d74658924da9935d9c66aa2b6ac9bd1a66fcbb4a13f50878445d41bf4",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-visible-context-browser.json",
+      "sha256": "3123b75b65bf8dc52b599eacf8329a2d9a17f6ca53ce5a4b648a3c0ac3cb1dd8",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-switch-browser-evidence.json",
+      "sha256": "ff06286c2cfe7549ea35dbae07b8bb5eba476b847e77babc57d3ffa4e19ea656",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-switch-evidence.json",
+      "sha256": "0cf8cba52e86244fcee1d4e5243c001069f591b488a03d81854721a5218e8e6c",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-native-zoom-evidence.json",
+      "sha256": "4df9da60b04000a89cc5a014593542243fa77e4ffdf508e1d7275332b8175103",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/wigo-native-zoom-evidence.json",
+      "sha256": "26ef81e773c22e8588e09e45a1f9918cefa1fe82cdb42532b6fe17e4cfbeb409",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/wigo-source-catalog-evidence.json",
+      "sha256": "ec91312f411a1eb067a60953a7285653de3577f8de80e8fc2d38d8983d297174",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/completion-typecheck-recovery.json",
+      "sha256": "7060c84f37cbd90cde866449873917ee320078c26d9bb030d697719060b0ca68",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/drive-producer-leads.json",
+      "sha256": "6b07d237763979780cd72b0da815a3bb93a4d5849dabfdee3bf0e2627881fffd",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/goalie-writer-run-receipts.json",
+      "sha256": "35ed5587a7e074f17944f340d693392421be6b813015b5f1d9b76716dce56c9f",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/news-publication-batch-receipts.json",
+      "sha256": "43e00d3d2bde83efa118e500d4ff263ddbc1cc513590e77ad68bad2c42e72f98",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/retained-provider-readonly-evidence.json",
+      "sha256": "2ddc4b73f7160e9b4139481c822ec7d472d0dd08cafbcb2c251e254813165c32",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-native-zoom-200.png",
+      "sha256": "aaa9a410a353f612e6f7b393794e3abcd5519fef40c42ab83bf8b20d34c05c28",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-native-zoom-filters-200.png",
+      "sha256": "9643e124ab652ee3dc2759ef5587d4f8b603806313562aa82297046352a9162b",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-native-zoom-scoring-200.png",
+      "sha256": "f4343385f23659c3980e19263a55a5a514369b9475000e029d6e6dc26ca460f4",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-native-zoom-scoring-before-200.png",
+      "sha256": "d49233a49e96b20e0c73c160677f9db689d96b8eca9efaacb815e613036839bc",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-retry-keyboard-focus-1180.png",
+      "sha256": "29c8dcf7c9d91bda301c3807826b4b77e11fd49d6303adb00abeaf9365b70a65",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-retry-keyboard-focus-390.png",
+      "sha256": "c874918cede50469c2b61ac1695da347d73bee450f6ba9de31f3d490f57c756d",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-status-contrast-1180-board-no-scheduled-games.png",
+      "sha256": "44873ece39d72dfe3facabc18970e27b55eef59b4bde801e9e814f3cbef9063d",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-status-contrast-1180-board-partial-upcoming.png",
+      "sha256": "935d8c9cdf10adea71e46350ee8b0a8aae04673ea3919e8dca7a4aa251f23c2f",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-status-contrast-1180-board-retry-keyboard-focus.png",
+      "sha256": "29c8dcf7c9d91bda301c3807826b4b77e11fd49d6303adb00abeaf9365b70a65",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-status-contrast-390-board-no-scheduled-games.png",
+      "sha256": "3ac2075d81384eed9b53c079245ae9500ceeb05e9f4a05cab932725e73b8c5b6",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-status-contrast-390-board-partial-upcoming.png",
+      "sha256": "9ea0b8379b123881ee2d0a9860b34d4807c1e265483675a2853871c9dbbe549d",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-status-contrast-390-board-retry-keyboard-focus.png",
+      "sha256": "e95d811c86884ecb87e306f88358efe31195e309e8914df9e3a7a97ea899b4b4",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-status-contrast-browser.log",
+      "sha256": "6f2464fe6259bf4ccc2164ae7ce4e975d4ec275b90b64463f9a236aa11e7a690",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/board-status-contrast-lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/candidate-1024x768.png",
+      "sha256": "cda116f121ada525fd29572f49658630c4e10a4ba3a12c395e22ee1740678aa4",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/candidate-1180x757.png",
+      "sha256": "5ea565ff6d779c542facd2f4ea4fbda50195faec398a3a6cb1d407720da8af12",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/candidate-320x844.png",
+      "sha256": "0ffa1fff1da502e9f1b4e28bae6699672140a2cd10e88156bd8bcddc4f9dd8f1",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/candidate-390x844.png",
+      "sha256": "4275399084d7ef140b6f8de0c021c0142c18032f737416ff276c91a31fad49dc",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/candidate-768x1024.png",
+      "sha256": "010cc0952102371cd9cd658326b6eef5eaf50dbdfc5b2ff35f6601eccb47816d",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/grid-native-zoom-200.png",
+      "sha256": "ecdcc26c3ee392101e65d7b1db8a1a9862f5695497499db9f1a0e8268415716a",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/grid-native-zoom-before-200.png",
+      "sha256": "0104e4f8fc7af87e7031bb389b1d4792086493073f853cd15c207b645aaf6c77",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/grid-native-zoom-controls-200.png",
+      "sha256": "54cc256367707eadf1b1958d790c8281840e2182ceca3201ed8b5f7563cd3544",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/integrated-five-width-dialog-name-failure.log",
+      "sha256": "ebd1ac10b7463edd4f2e571e369542bbc5f53a21f14237c285a3e392b324e30d",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/integrated-five-width-final.log",
+      "sha256": "cd8fec8c61da63b74aafbeb8d5be68c0b0cc74a5a4dc34b08e3d3e8befd06d33",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/integrated-five-width-initial.log",
+      "sha256": "23dc55263c93513a117f7c488cf21474916f6d785c80e00f199f561accd8c2b7",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/integrated-five-width-lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/measure-board-status-contrast.py",
+      "sha256": "8a92e40fceed116bc996c37d4d6f761e090e8e8e3ae6054089186f4a7391db46",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/news-barzal-original-browser.jpg",
+      "sha256": "3387d1cbb72e30833586cceb5235f2381d699d65634e17b114b9ec26ea94d8c3",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/news-native-compact-source-300.jpg",
+      "sha256": "ca0465c2ce080a01404c7762badfd34af2653cc06c1f87662f4a8ff7bda282ce",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/news-native-compact-update-300.jpg",
+      "sha256": "b6ee61e68388c95951289685cf25a33746666dbb44a08e081776b8a3fccf6ddb",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/news-native-zoom-injuries-200.jpg",
+      "sha256": "6f10763489bcc54a0cf2b901c4f5965b5dd9b9324fb1036dcd84882da72ecfc1",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/news-native-zoom-source-200.jpg",
+      "sha256": "8a4445e71bfa2d59a509c18be3034666e4bcac15826cc227d7edc7c1a18d6931",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/news-soucy-original-browser.jpg",
+      "sha256": "6e1372c561b9e614df4022b815f8517facd2cce75d6ed7edc192d878fed9c68d",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-fantasy-availability.png",
+      "sha256": "5474bc1c11215c48123c9417728299c66c7445c98aff8ae6fd0780f09be0de22",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-fantasy-composite-read-only.ts",
+      "sha256": "9e899255797c2a5d8e96e4a1460ffec5d596108561d83203bef2c142515a0e9f",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-live-timeout-recovery.png",
+      "sha256": "2c2e8815b38245cdb815078e2b1619832926c6214e8df3d9d97f7c087434e135",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-native-zoom-200.png",
+      "sha256": "d2c511df52c456f944d6d3840f75fceff9d13032d699ba749e7a9b9b473e8f54",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-native-zoom-sample-200.png",
+      "sha256": "ec2fa839f4708e5d48ea19455c2302a0aa1e91728d36de6c54729f8a0ec3c7ff",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-rolling-history-read-only.ts",
+      "sha256": "df0d8460e8adeb7b663af2adfb52c7bdecf50d77f95acf7c9329da14f3275e27",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-url-ready.png",
+      "sha256": "2c2e8815b38245cdb815078e2b1619832926c6214e8df3d9d97f7c087434e135",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-visible-context-1180.png",
+      "sha256": "284fa400cbec9797224154af74c9f2892e3e8f6587dfe7215742683a38f0d567",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rankings-visible-context-390.png",
+      "sha256": "6e9adcc2cc3db53b639bf56a9b51ffa94b4f63bdaae54be30887977c06967d45",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-browser-after.png",
+      "sha256": "f13184eb0ba368f974825728d1f19d5551d83e5b2e6fe3f6a073f374fc642cf9",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-browser-final.log",
+      "sha256": "79648a9e7355292aaad8d87a0e3ac46e09a0de2ea93e943d905047712ed9c784",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-browser-lint.log",
+      "sha256": "4752a616e78ed3929d1bd25e418d2d7edf97db79e5ed62d2046a58f8316d8eef",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-browser-selector-failure.log",
+      "sha256": "b7a8c9fc2d701f78717aac3f866689cc64d66da977cd4ee8499162d76d5f6bc0",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-browser-stale-notice-before.png",
+      "sha256": "02bdfd0701b44c4f0b69d7d1165333eed3c72a836c984e304d653eb3815a7414",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-browser-stale-notice-red.log",
+      "sha256": "b0c9527243b115be4d2b65741ef17686974403ba226d8e83e1b40f62931bb084",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-browser-unit.log",
+      "sha256": "fed978ff36c10741d932246d2ad37f12ab8cb160d20da4e0f7596b46a4b32d1a",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-switch-lint.log",
+      "sha256": "4752a616e78ed3929d1bd25e418d2d7edf97db79e5ed62d2046a58f8316d8eef",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-switch-provider-red.log",
+      "sha256": "8ecd4d206ba61a3c9451df75af4093e667f7e27f542fce742274b6382ba254d6",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-switch-save-red.log",
+      "sha256": "5f5ec55634785dfd49c2719480c72a81a81f3b9682cca44abe6d3eb5be732789",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-switch-tests.log",
+      "sha256": "8db57f486771696d989a059a368d8ba1a30b9e5c29d587ca11fba07bcf2e2373",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-account-switch-types.log",
+      "sha256": "9e6993bb48b098a28392bf63cf05d8c7a16b0376f8e9f2cd8f17505c020acbba",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-native-zoom-manual-200.jpg",
+      "sha256": "09d84e06bc09f76de3db3ae29411ca7e7d4a34177b838f7541b13830962ab2f7",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-native-zoom-readiness-200.jpg",
+      "sha256": "c4fa10f7e641bd90ee40e6ea2b6acac1ee7c91af6561b7070463eb09d7e0d80b",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-native-zoom-readiness-before-200.jpg",
+      "sha256": "a9b6ac8f5b24fb9d440562f9eb52347132d0833f34b08ca0779ee99f25944d2c",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/rso-native-zoom-rules-200.jpg",
+      "sha256": "b432561eb96cc96209275783f6248b0bfbd179db124f89dd8515df633b8c692a",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/slate-1024x768-after.png",
+      "sha256": "5af26e6977b549f4b2e2c20f2f93cfac0430e5139331c2d1c9f4c7402578f1cf",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/slate-1180x757-after.png",
+      "sha256": "5b58a282b32c676bff9cb2dd9ebc7d0e707521f7266f518bd00e1feda678969f",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/slate-1180x757.png",
+      "sha256": "4f1e36ee3c2bf94820294ce6014a2ede8593d0bf152c239d3d667cfc8deefd92",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/wigo-native-zoom-before-200.jpg",
+      "sha256": "b56c46884cf3eb64988324368e9f7a4dec9cf02a6c6422a70e1932175a6027df",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/wigo-native-zoom-controls-200.jpg",
+      "sha256": "d20ad41feff186c93c4a87edd4622a6aa1579db374c6910b240e6f07163b755f",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/wigo-native-zoom-zero-diff-200.jpg",
+      "sha256": "6fb1d58fd44f3974dd66b231ee34ca649d5b530e33c27ff7a8e48e504c317ff7",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-01/wigo-populated-cohort-charts-fixture-1920x1080.png",
+      "sha256": "e251a8b9a4312666497af6691c3cd3589faaa89531ddefcfd03d17d8b15384dd",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/completion-account-lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/completion-account-test.log",
+      "sha256": "d3cb8edc55ade2c29009fa7d6ee05a149b649e5ccb9f2bd06f0fd18bab6af348",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/completion-types-final.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/completion-types-initial.log",
+      "sha256": "1d1c1c18aa5cec6937ceb25f707c4566c81457d92d6114f809bf33a5171b27d9",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/manual-fork-editing.png",
+      "sha256": "8486e15b1cabfc329959d5673ab81f8125fba8d0c248e242f978b381de070e96",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/readonly-browser-fieldset-assertion.log",
+      "sha256": "1b80a6e88902646148f4176876d9c5e4d9dae43be95a13e59a87a21afb731ee7",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/readonly-browser-lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/readonly-browser.log",
+      "sha256": "186b976a12c56ea06e81552f6bb3a49b7ffe1c3472572c1f23d787a75f810a12",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/readonly-component.log",
+      "sha256": "4589fa29d2940bb5e61d71141ce4a19124a7a680e0b276ccd33b2ee34fc5b88d",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/readonly-lint.log",
+      "sha256": "4752a616e78ed3929d1bd25e418d2d7edf97db79e5ed62d2046a58f8316d8eef",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/readonly-red.log",
+      "sha256": "fe5e174089a73dd7215337001418ccabe0461af6c9ee2c445e2122000e6a4448",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/readonly-selected-intent-lint.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/readonly-selected-intent.log",
+      "sha256": "b36b0693aa9f555fee67c76a8ba6636b71faa4eb14cff2d19065345664d0ecf7",
+      "matched": true
+    },
+    {
+      "path": "tasks/TASKS/in-season-trust-clarity-decision-workflow/evidence/2026-10-02/retained-provider-readonly.png",
+      "sha256": "3227de8a4790b483d4870f1bc9d0ab20ff7f5ea5d4ca432d07aafd6599ca9c30",
+      "matched": true
+    }
+  ]
+}

@@ -1,0 +1,176 @@
+{
+  "mode": "baseline",
+  "at": "2026-10-24T17:45:26.129Z",
+  "checks": [
+    {
+      "name": "network failure (Failed to fetch): no raw/private text",
+      "pass": false,
+      "shown": [
+        "Failed to fetch"
+      ]
+    },
+    {
+      "name": "network failure (Failed to fetch): retry stays available",
+      "pass": true
+    },
+    {
+      "name": "request timed out: no raw/private text",
+      "pass": false,
+      "shown": [
+        "Failed to fetch"
+      ]
+    },
+    {
+      "name": "request timed out: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "503 outage with HTML body: no raw/private text",
+      "pass": false,
+      "shown": [
+        "Unexpected token '<', \"<html><h1>\"... is not valid JSON"
+      ]
+    },
+    {
+      "name": "503 outage with HTML body: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "422 forwarding a configuration error: no raw/private text",
+      "pass": false,
+      "shown": [
+        "RESEND_API_KEY is not configured."
+      ]
+    },
+    {
+      "name": "422 forwarding a configuration error: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "500 with database and email details: no raw/private text",
+      "pass": false,
+      "shown": [
+        "duplicate key value violates unique constraint \"draft_pro_refund_requests_pkey\" for tim@example.com"
+      ]
+    },
+    {
+      "name": "500 with database and email details: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "404 with internal identifiers: no raw/private text",
+      "pass": false,
+      "shown": [
+        "Purchase 9f1c for user 7d2a not found in draft_pro_purchases"
+      ]
+    },
+    {
+      "name": "404 with internal identifiers: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "401 expired authentication: no raw/private text",
+      "pass": false,
+      "shown": [
+        "invalid JWT: unable to parse or verify signature, token is expired"
+      ]
+    },
+    {
+      "name": "401 expired authentication: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "400 validation error: no raw/private text",
+      "pass": false,
+      "shown": [
+        "Expected string, received number at path explanation"
+      ]
+    },
+    {
+      "name": "400 validation error: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "409 existing open request: no raw/private text",
+      "pass": false,
+      "shown": [
+        "Conflict on refund row r_8812"
+      ]
+    },
+    {
+      "name": "409 existing open request: retry stays available",
+      "pass": true
+    },
+    {
+      "name": "support link stays valid",
+      "pass": true
+    },
+    {
+      "name": "one POST per user submit (no automatic retries)",
+      "pass": true,
+      "posts": 10
+    },
+    {
+      "name": "every state screenshot is distinct",
+      "pass": true,
+      "count": 11
+    }
+  ],
+  "states": [
+    {
+      "state": "refund form before submit",
+      "file": "01-form-ready.png",
+      "sha256": "97345c38b35c590aa3ca874c5f451e69ede2fbbc517c42b35373a44e06ac8246"
+    },
+    {
+      "state": "network failure (Failed to fetch)",
+      "file": "02-network-failure.png",
+      "sha256": "6cc13d81d224a7970ae029d12e1dc0e0a01a97c232511b1cbbbbfc65e89e78b0"
+    },
+    {
+      "state": "request timed out",
+      "file": "03-timeout.png",
+      "sha256": "17b4aba88f576ab4bbdacd8385a6b61490bef506302aece11d8077bcf6a43c50"
+    },
+    {
+      "state": "503 outage with HTML body",
+      "file": "04-outage-html.png",
+      "sha256": "e583e7edf934325f8748d0f794e6bf66ab2efd55d449ec233ece9f8839c4b6b9"
+    },
+    {
+      "state": "422 forwarding a configuration error",
+      "file": "05-config-error.png",
+      "sha256": "04527248cedbe10649bcc4c71226f071bb9a2665a92c0c58dda378ac67675078"
+    },
+    {
+      "state": "500 with database and email details",
+      "file": "06-server-private.png",
+      "sha256": "9673df61648a7033b0babfd0e590c4669a2f35d5a2064755241b8b2604d87579"
+    },
+    {
+      "state": "404 with internal identifiers",
+      "file": "07-not-found.png",
+      "sha256": "365755955bc96b51e536b2adb2320df3eee8c6111073815d5849360874aa06c5"
+    },
+    {
+      "state": "401 expired authentication",
+      "file": "08-auth-expired.png",
+      "sha256": "8c79f056c045ab5ab57e87387e4c0c52564159a294d0a83ea79b453808f1fc73"
+    },
+    {
+      "state": "400 validation error",
+      "file": "09-validation.png",
+      "sha256": "da47e4ab37d806b234a6968e437c7373d7bb7f8b06bcd8fbc3cf35ac7bdf9e22"
+    },
+    {
+      "state": "409 existing open request",
+      "file": "10-open-request.png",
+      "sha256": "67d2dcbf7de2252a48fecd610695805965daf9320d72a711f45a3e5922f64c7b"
+    },
+    {
+      "state": "manual retry confirmed (fixture 201)",
+      "file": "11-retry-confirmed.png",
+      "sha256": "712cdb1dabb643a75536381ed9e8f00e51b6b6e6e617460c13e8b69c6fe5e7e5"
+    }
+  ]
+}

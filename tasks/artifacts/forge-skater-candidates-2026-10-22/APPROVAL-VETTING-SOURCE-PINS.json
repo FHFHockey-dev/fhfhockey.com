@@ -1,0 +1,20 @@
+{
+  "sourceSha256": {
+    "web/scripts/forge-assist-export.ts": "d1c79d1869910d0fddd0284fb67baeb4b9e2968ea4a7321dc2e16f36ca6b5c2a",
+    "web/scripts/forge-assist-export.test.ts": "4a7049f444bb5642c7f726890498d4d1c375b06c429ce665b139b30dcc15670a",
+    "tasks/artifacts/forge-skater-candidates-2026-10-22/task3-pilot-export.sql": "363ce0994cf92c31719169e4df6083b8e15012b9e8d6583db2fb36a1773b7cc2",
+    "tasks/artifacts/forge-skater-candidates-2026-10-22/TASK3-DATA-ASK.md": "c2247356c14947d7af8195ff66de7cf5fb1e4527eab1d3530a0ab90c950fd6a1"
+  },
+  "archiveSha256": "4301c741f32d3303154d2f2df449b424210ddc27a81673c5c0b08df5253624e7",
+  "tests": {
+    "exportReceiverCases": 13,
+    "passed": true
+  },
+  "scopedLint": "passed",
+  "fullCurrentTreeTypeScript": "passed",
+  "databaseExecuted": false,
+  "receiverBytesLimit": 16777216,
+  "receiverBoundary": "count before buffering/JSON parsing; not upstream-client/network or server-memory bound",
+  "priorSnapshotsPreserved": true,
+  "sharedStageCalculatorEdited": false
+}

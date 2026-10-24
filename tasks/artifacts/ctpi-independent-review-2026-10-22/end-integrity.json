@@ -1,0 +1,63 @@
+{
+  "checked_at": "2026-10-22T13:36:49.740723+00:00",
+  "head": "87ab20cbd6059d2e2116843f303ed00b4902c2ac",
+  "branch": "octoberBranch",
+  "base_head": "d3f057c6c849d5d5474bc912a6f461f617c65b15",
+  "archive_sha256": "55ad5f2061a7ec995e6d71dc1654e6c80c793193a5b1e1a76be3a3b1c3564c91",
+  "archive_files_verified": 21,
+  "patch_sha256": "79474e676d3267d6deaf751f690bb657766cb108149619286000feed045025b0",
+  "patch_matches_exact_base_to_canonical_diff": true,
+  "baseline_git_hashes_match": true,
+  "files": [
+    {
+      "path": "web/pages/api/v1/db/update-team-ctpi-daily.ts",
+      "sha256": "7ba8680eb056ffe7ed220d3c0955dc61569fca17050bfd516493a21377b3e7d7",
+      "base_sha256": "03a310525d41b5933dab7cedf9a1005b4cd9feec39fdabfd39c0471d0372ab98",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/__tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts",
+      "sha256": "7150b3470fdd1d44848aa859206d542879c37428fe2fbf9946ea3988dd3efb59",
+      "base_sha256": "c80e7a616da5e4704efeddba9285645d9f2d865b211afb0cfc697a0b12a81465",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/trends/ctpi.ts",
+      "sha256": "fcb2d4080ae1e149dd859d50e02057bc6ba272999db3a665496bd85ee8619991",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/trends/ctpi.test.ts",
+      "sha256": "8dc6167b211e52be7dad00485c0882172c8297ecdd58622c364882446307fe83",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/trends/recentTeamFormV2.ts",
+      "sha256": "6e79ec9416cd56f8aea8b14cebb1d30e85a7531e38a2dced7d2d3b6e03c1d770",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/trends/recentTeamFormV2Provenance.ts",
+      "sha256": "397cb093dbf8c7a1ebb7f680216573c86f589d00c886bcaf01d4b6a565ab27c6",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/trends/recentTeamFormV2Materialization.ts",
+      "sha256": "f97797c295bb3890f34d2e133f8ae4b6ce9a2f2fff4d6ee4ed4d388c7c69b314",
+      "canonical_matches": true,
+      "tested_matches": true
+    },
+    {
+      "path": "web/lib/projections/materializationFingerprint.ts",
+      "sha256": "9449439b3e9ad0737738a27da06b1c81004f5d7ba291144663e9b39a21c701fd",
+      "canonical_matches": true,
+      "tested_matches": true
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-24T20:02:15.253192+00:00",
+  "full_sources": [
+    "tasks/TASKS/three-pillars-analytics/prd-three-pillars-analytics.md",
+    "tasks/TASKS/three-pillars-analytics/tasks-prd-three-pillars-analytics.md",
+    "tasks/TASKS/three-pillars-analytics/trends/prd-trends.md"
+  ],
+  "full_text_bytes": 55780,
+  "reused_full_review": {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md",
+    "sha256": "3e866cc5a143fe69bad009e971550c75d7bf1bf72a6feaf0151e704439425003",
+    "bytes": 17593,
+    "lines": 99,
+    "coverage": "reused-prior-full-review",
+    "prior_review": {
+      "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md",
+      "sha256": "3e866cc5a143fe69bad009e971550c75d7bf1bf72a6feaf0151e704439425003",
+      "coverage": "content-reviewed"
+    },
+    "prior_coverage_record": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/CONTINUATION.json",
+    "scope": "Unchanged exact-hash full documentary review reused. Body not reread; no new app/runtime/production acceptance or review scope inferred."
+  },
+  "narrow_sources": [
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/WORK-PACKETS.md",
+      "sha256": "802bf2543ab8f1981767c354cc52080a51e3724b7a7b00f2683e624b8537187c",
+      "bytes": 11208,
+      "lines": 52,
+      "mtime_ns": 1792757466627986377,
+      "coverage": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          18,
+          27
+        ]
+      ],
+      "review_scope": "Only packet status lines18\u201327 read to distinguish public Trends completion from planned S13/S14 dependency/cohort scope. Historical packet allocation is not current dispatch authority; remainder unreviewed this segment."
+    },
+    {
+      "path": "tasks/artifacts/claude-audit-fix-queue-2026-10-22/QUEUE.md",
+      "sha256": "11cf841e336c061a1664cbfd20f0e553d095b73395df72a3230e91083d956be9",
+      "bytes": 22860,
+      "lines": 128,
+      "mtime_ns": 1792641654505654401,
+      "coverage": "partially-inspected",
+      "reviewed_ranges": [
+        [
+          1,
+          54
+        ]
+      ],
+      "review_scope": "Referenced queue1\u201354 read during S13 scope lookup. No S13/GS2 match found; old A1\u2013A10 statuses were not adopted or reopened. No full-queue review or dispatch authority inferred."
+    }
+  ],
+  "unopened_external_plan": "/Users/tim/.claude/plans/users-tim-downloads-fhfh-stats-audit-ev-delegated-sprout.md",
+  "external_scope": "Reference only, outside named task tree; not opened.",
+  "limits": "Named source group only, not all ThreePillars source folders. Narrow queue/packet remainder stays unreviewed. No current app/runtime proof."
+}

@@ -8,9 +8,12 @@ import { DAYS, EXTENDED_DAY_ABBREVIATION, EXTENDED_DAYS } from "lib/NHL/types";
 import { useTeamsMap } from "hooks/useTeams";
 import VerticalMatchupCell from "./VerticalMatchupCell";
 import Toggle from "./Toggle";
+import { LoadingCell, LoadingRows } from "./LoadingCells";
 import { calcTotalGP, calcTotalOffNights } from "./TotalGamesPerDayRow";
 
 type TransposedGridProps = {
+  scheduleReady?: boolean;
+  scheduleLoading?: boolean;
   sortedTeams: Array<{
     teamId: number;
     totalGamesPlayed: number;
@@ -31,6 +34,8 @@ type TransposedGridProps = {
 };
 
 export default function TransposedGrid({
+  scheduleReady = true,
+  scheduleLoading = false,
   sortedTeams,
   games,
   excludedDays,
@@ -163,7 +168,7 @@ export default function TransposedGrid({
   return (
     <div className={styles.gridWrapper}>
       <div className={styles.tableScroller}>
-      <table className={styles.transposedGrid}>
+      <table className={styles.transposedGrid} aria-busy={scheduleLoading}>
         <thead>
           <tr>
             <th className={styles.dayHeader}>
@@ -172,7 +177,7 @@ export default function TransposedGrid({
             <th>
               <div className={styles.cellContent}>Total GP</div>
             </th>
-            {sortedTeamColumns.map((team, index) => {
+            {!scheduleReady ? Array.from({ length: 32 }, (_, index) => <th key={index} aria-hidden="true">{scheduleLoading ? <LoadingCell shape="team" /> : "—"}</th>) : sortedTeamColumns.map((team, index) => {
               const teamData = teamsMap[team.teamId];
               return (
                 <th
@@ -217,6 +222,7 @@ export default function TransposedGrid({
           </tr>
         </thead>
         <tbody>
+          {!scheduleReady ? <LoadingRows columns={34} rows={daysToRender.length + 3} teamColumn={-1} rowHeight={40} waiting={scheduleLoading} /> : <>
           {sortedDays.map((day, dayIndex) => {
             const cellDate = format(addDays(parseISO(start), dayIndex), "M/d");
             const isDisabled = excludedDays.includes(day as EXTENDED_DAY_ABBREVIATION);
@@ -336,6 +342,7 @@ export default function TransposedGrid({
               </td>
             ))}
           </tr>
+          </>}
         </tbody>
       </table>
       </div>

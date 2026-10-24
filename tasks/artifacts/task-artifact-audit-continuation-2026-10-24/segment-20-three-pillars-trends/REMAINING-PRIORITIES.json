@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-24T20:02:15.253192+00:00",
+  "source": "Saved inventory and exact content/role/partial overlays only",
+  "remaining_unique_candidates": 1627,
+  "remaining_by_kind": {
+    "unique-task-document": 1627,
+    "structured-evidence": 2524,
+    "binary-or-supporting-snapshot": 3814,
+    "duplicate-scope-check": 4088
+  },
+  "not_all_candidates_require_full_read": true,
+  "next_task_bearing_group": [
+    "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-audit.md",
+    "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-audit.md",
+    "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-prd-rolling-player-metrics-remediation.md",
+    "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/prd/prd-rolling-player-metrics-remediation.md"
+  ],
+  "next_family_not_opened": true
+}

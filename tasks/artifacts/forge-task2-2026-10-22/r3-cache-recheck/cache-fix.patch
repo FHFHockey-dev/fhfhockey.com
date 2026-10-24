@@ -1,0 +1,158 @@
+diff --git a/web/lib/projections/goalie/leagueSavePct.test.ts b/web/lib/projections/goalie/leagueSavePct.test.ts
+new file mode 100644
+index 0000000000..3b19387ea2
+--- /dev/null
++++ b/web/lib/projections/goalie/leagueSavePct.test.ts
+@@ -0,0 +1,44 @@
++import { beforeEach, describe, expect, it, vi } from "vitest";
++
++const reads = vi.hoisted(() => ({ count: 0 }));
++
++vi.mock("lib/supabase/server", () => {
++  const rows = [
++    { game_date: "2025-12-01", shots_against: 30, goals_allowed: 3 },
++    { game_date: "2026-10-10", shots_against: 28, goals_allowed: 2 },
++  ];
++  const builder: any = {
++    select: () => builder,
++    gte: () => builder,
++    lt: () => builder,
++    order: () => builder,
++    range: async () => {
++      reads.count += 1;
++      return { data: rows, error: null };
++    },
++  };
++  return { default: { from: () => builder } };
++});
++
++import { getSeasonLeagueSavePct, type SeasonLeagueSavePctCache } from "./leagueSavePct";
++
++describe("getSeasonLeagueSavePct", () => {
++  beforeEach(() => {
++    reads.count = 0;
++  });
++
++  it("reads once per run and as-of date, reusing the run's cache", async () => {
++    const runCache: SeasonLeagueSavePctCache = new Map();
++    const first = await getSeasonLeagueSavePct("2026-10-22", runCache);
++    const second = await getSeasonLeagueSavePct("2026-10-22", runCache);
++    expect(second).toBe(first);
++    expect(first.source).toBe("observed");
++    expect(reads.count).toBe(1);
++  });
++
++  it("reads again in a new run for the same date, so every run records its own input", async () => {
++    await getSeasonLeagueSavePct("2026-10-22", new Map());
++    await getSeasonLeagueSavePct("2026-10-22", new Map());
++    expect(reads.count).toBe(2);
++  });
++});
+diff --git a/web/lib/projections/goalie/leagueSavePct.ts b/web/lib/projections/goalie/leagueSavePct.ts
+index 083bf3f953..39ebc4b423 100644
+--- a/web/lib/projections/goalie/leagueSavePct.ts
++++ b/web/lib/projections/goalie/leagueSavePct.ts
+@@ -79,10 +79,18 @@ async function loadSeasonLeagueSavePct(asOfDate: string): Promise<SeasonLeagueSa
+   };
+ }
+ 
+-const cache = new Map<string, Promise<SeasonLeagueSavePct>>();
++/** One per projection run (created beside the run's other caches), keyed by as-of date. */
++export type SeasonLeagueSavePctCache = Map<string, Promise<SeasonLeagueSavePct>>;
+ 
+-/** Memoized per as-of date; a failed read falls back to the fitted constant with a warning. */
+-export function getSeasonLeagueSavePct(asOfDate: string): Promise<SeasonLeagueSavePct> {
++/**
++ * Memoized per run and as-of date, never across runs: every run makes its own read, so
++ * reconstruction input capture records it even when a process runs several times. A failed
++ * read falls back to the fitted constant with a warning.
++ */
++export function getSeasonLeagueSavePct(
++  asOfDate: string,
++  cache: SeasonLeagueSavePctCache
++): Promise<SeasonLeagueSavePct> {
+   const cached = cache.get(asOfDate);
+   if (cached) return cached;
+   const pending = (async () => {
+diff --git a/web/lib/projections/goaliePipeline.test.ts b/web/lib/projections/goaliePipeline.test.ts
+index 00eb864f84..8029cc77b0 100644
+--- a/web/lib/projections/goaliePipeline.test.ts
++++ b/web/lib/projections/goaliePipeline.test.ts
+@@ -84,7 +84,8 @@ describe("goalie producer confirmation evidence", () => {
+       teamHorizonScalarsCache: new Map(), playerPropContextByGamePlayerKey: new Map([100, 101].map(id => [`${game.id}:${id}`, {
+         player_total_saves: { marketType: "player_total_saves", sourceRank: 1, sourceNames: ["synthetic-book"], sportsbookKeys: [],
+           observedAt: null, freshnessExpiresAt: null, outcomes: [] } }])),
+-      selectedGoalieByTeamId: new Map(), playerPredictionOutputRows: [], modelMarketFlagRows: [], metrics: { warnings: [] },
++      selectedGoalieByTeamId: new Map(), playerPredictionOutputRows: [], modelMarketFlagRows: [], leagueSavePctCache: new Map(),
++      metrics: { warnings: [] },
+     };
+     fixtureWrites.mockClear();
+     expect(await runPerGameGoalieStage(args)).toEqual({ timedOut: false, goalieRowsUpserted: 1 });
+@@ -227,7 +228,7 @@ describe("goalie producer paired game win probabilities", () => {
+         startsLast7Days: 0, startsLast14Days: 0, daysSinceLastStart: 3, isGoalieBackToBack: false }])),
+       goalieRestSplitProfileCache: new Map([100, 200].map(id => [`${id}:${date}`, null])),
+       teamHorizonScalarsCache: new Map(), playerPropContextByGamePlayerKey: new Map(), selectedGoalieByTeamId: new Map(),
+-      playerPredictionOutputRows: [], modelMarketFlagRows: [], metrics: { warnings: [] },
++      playerPredictionOutputRows: [], modelMarketFlagRows: [], leagueSavePctCache: new Map(), metrics: { warnings: [] },
+     };
+     fixtureWrites.mockClear();
+     expect(await runPerGameGoalieStage(args)).toEqual({ timedOut: false, goalieRowsUpserted: 2 });
+diff --git a/web/lib/projections/run-forge-projections.ts b/web/lib/projections/run-forge-projections.ts
+index af43e52fb1..68408941dd 100644
+--- a/web/lib/projections/run-forge-projections.ts
++++ b/web/lib/projections/run-forge-projections.ts
+@@ -306,6 +306,7 @@ import {
+   type GoalieStageCandidate,
+   type SelectedGoalieProjection,
+ } from "./stages/goalie-stage";
++import type { SeasonLeagueSavePctCache } from "./goalie/leagueSavePct";
+ import { runPerGameSkaterStage } from "./stages/skater-stage";
+ import {
+   ANALYTICS_MODEL_NAME,
+@@ -778,6 +779,7 @@ async function runProjectionCalculations(
+     const goalieEvidenceCache = new Map<string, GoalieEvidence>();
+     const teamStrengthCache = new Map<string, TeamStrengthAverages>();
+     const leaguePhysicalTotalsCache = new Map<string, LeaguePhysicalTotals | null>();
++    const leagueSavePctCache: SeasonLeagueSavePctCache = new Map();
+     const learningCounters = {
+       players: 0,
+       goalRecent: 0,
+@@ -989,6 +991,7 @@ async function runProjectionCalculations(
+         playerPredictionOutputRows,
+         modelMarketFlagRows,
+         gameMarketSummary: gameMarketContextByGameId.get(game.id),
++        leagueSavePctCache,
+         metrics: metrics as { warnings: string[] },
+       });
+       goalieRowsUpserted += goalieStageResult.goalieRowsUpserted;
+diff --git a/web/lib/projections/stages/goalie-stage.ts b/web/lib/projections/stages/goalie-stage.ts
+index ef2fcc5fb8..256e4e384b 100644
+--- a/web/lib/projections/stages/goalie-stage.ts
++++ b/web/lib/projections/stages/goalie-stage.ts
+@@ -15,7 +15,7 @@ import {
+   marketTeamWinProbability,
+   teamWinProbability,
+ } from "../goalie/goalieOutcomes";
+-import { getSeasonLeagueSavePct } from "../goalie/leagueSavePct";
++import { getSeasonLeagueSavePct, type SeasonLeagueSavePctCache } from "../goalie/leagueSavePct";
+ import {
+   augmentStarterModelMetaWithScenarioProjections,
+   buildGoalieUncertaintyWithModel,
+@@ -119,6 +119,8 @@ export async function runPerGameGoalieStage(args: {
+   goalieCandidates: GoalieStageCandidate[];
+   /** This game's market summaries (h2h moneyline -> de-vigged team win probability when present). */
+   gameMarketSummary?: Record<string, MarketTypeSummary>;
++  /** The run's league save % cache (one per run, so each run records its own read). */
++  leagueSavePctCache: SeasonLeagueSavePctCache;
+   teamShotsByTeamId: Map<number, { shotsEs: number; shotsPp: number }>;
+   teamGoalsByTeamId: Map<number, number>;
+   teamAbbreviationById: Map<number, string>;
+@@ -176,7 +178,7 @@ export async function runPerGameGoalieStage(args: {
+   const bootstrap = args.seasonBootstrap ? await loadSeasonBootstrap(
+     [...new Set(goalieCandidates.flatMap((candidate) => candidate.candidateGoalieIds))],
+     seasonYear * 10000 + seasonYear + 1, asOfDate, "goalie", false) : new Map<number, SeasonBootstrap>();
+-  const seasonLeague = await getSeasonLeagueSavePct(asOfDate);
++  const seasonLeague = await getSeasonLeagueSavePct(asOfDate, args.leagueSavePctCache);
+   if (seasonLeague.warning) metrics.warnings.push(seasonLeague.warning);
+   for (const c of goalieCandidates) {
+     if (Date.now() > deadlineMs) {

@@ -1,0 +1,30 @@
+[
+  {
+    "name": "starter-board-tests",
+    "argv": [
+      "npm",
+      "test",
+      "--",
+      "--run",
+      "--config",
+      "audit.vitest.config.mts",
+      "lib/integrations/yahoo/liveDraftApi.test.ts",
+      "--reporter=json",
+      "--outputFile=/Users/tim/Code/fhfhockey.com/tasks/artifacts/billing-sales-rollout-2026-10-23/starter-board-tests.json"
+    ],
+    "exit_code": 0
+  },
+  {
+    "name": "starter-board-lint",
+    "argv": [
+      "npm",
+      "exec",
+      "--offline",
+      "--no",
+      "--",
+      "eslint",
+      "lib/integrations/yahoo/liveDraftApi.test.ts"
+    ],
+    "exit_code": 0
+  }
+]

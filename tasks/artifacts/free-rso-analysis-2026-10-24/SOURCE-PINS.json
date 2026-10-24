@@ -1,0 +1,342 @@
+{
+  "capturedAt": "2026-10-24T22:20:00.678735+00:00",
+  "scope": "Local file bytes, individually captured; not a Git or deployment identity. No live reads.",
+  "files": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b",
+      "bytes": 17422,
+      "lines": 130
+    },
+    {
+      "path": "web/pages/roster-schedule-optimizer.tsx",
+      "sha256": "79c12b938273398aecbbebbdc3eefaecb6b8516ab2646b426382f0d017974ddf",
+      "bytes": 707,
+      "lines": 24
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx",
+      "sha256": "3d7e8ac4c48fe6decde41ef48ec8606af6ce58030586fea9e0ab50f4d277e803",
+      "bytes": 165475,
+      "lines": 1234
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.tsx",
+      "sha256": "c3ff6cb96ea340c40ccd0719109fcdb0e09c1eb8e54518cd3d8eb0a6785611a7",
+      "bytes": 14710,
+      "lines": 159
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateCard.tsx",
+      "sha256": "39cfa74dcbedd1897cc0f87b586cd8a53b44796b6f8d1ad697533e21658f8dda",
+      "bytes": 10981,
+      "lines": 126
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/TeamScheduleContext.tsx",
+      "sha256": "fd294f0302475e2de1c91198a9cd5ca3837306f50e060751d7f91d953e358652",
+      "bytes": 5990,
+      "lines": 69
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.presentation.test.tsx",
+      "sha256": "3dad74fc7bb29415bc1b4ee5521c980a2d40f6e17e5bcf947ebce130996c8737",
+      "bytes": 25744,
+      "lines": 308
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/CandidateBrowser.integration.test.tsx",
+      "sha256": "eb2381452a65065250b699f38883c5d9f15f4d1bda560d96698bb9fe05dc6be9",
+      "bytes": 8987,
+      "lines": 125
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx",
+      "sha256": "914a1f665db2d3e5a28f9b172cc1bb5e02f1648ce9143e289a8fee2e1d624539",
+      "bytes": 7911,
+      "lines": 100
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/TeamScheduleContext.test.tsx",
+      "sha256": "ce99e4cc8f4ddbcc2e69ff3d4defe2d9ed24b6a5f16730588b61c79eb5620c19",
+      "bytes": 5791,
+      "lines": 88
+    },
+    {
+      "path": "web/pages/api/v1/roster-schedule-optimizer/data.ts",
+      "sha256": "a8549dccf6bfda665576ae2d41df6e39db9ca09e2be11098a467e85a5b63e049",
+      "bytes": 3332,
+      "lines": 40
+    },
+    {
+      "path": "web/pages/api/v1/roster-schedule-optimizer/schedule.ts",
+      "sha256": "bf48cf11fe17e0177ee855e0c91bd54ec62fdf9e783a8c2ab55b639a25d2a4fd",
+      "bytes": 2152,
+      "lines": 74
+    },
+    {
+      "path": "web/pages/api/v1/roster-schedule-optimizer/access.ts",
+      "sha256": "e65e0f5c316424c6d28eebe9cf292257deb3e2c669621edeeb0890f6f83b9842",
+      "bytes": 1323,
+      "lines": 21
+    },
+    {
+      "path": "web/pages/api/v1/roster-schedule-optimizer/workspace.ts",
+      "sha256": "0848b58b2f38d52d38c17a8ba1ce611f0baddacecfb4f7a39ab08832f10c5721",
+      "bytes": 14891,
+      "lines": 165
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/workspace.ts",
+      "sha256": "8a82c0f7c21f031402e0a3d6a480de12a8e780a9fe2f5097236bce64e00fcb3f",
+      "bytes": 21941,
+      "lines": 289
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/planning.ts",
+      "sha256": "d1300a64ac98d97765b9daff8017f3fe8341aa8757984ff176a177fc3a2674f2",
+      "bytes": 115803,
+      "lines": 1456
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/currentPlanningRead.ts",
+      "sha256": "e54bbb13d53a67400716fa329d90ab8f20e3c98c564a932f4f3224b71bf76adf",
+      "bytes": 11355,
+      "lines": 161
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planning.ts",
+      "sha256": "e945135114e21ff631a1f23b486490323e569db0c30d67b6c565deb2a87f5306",
+      "bytes": 29157,
+      "lines": 333
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planningInputs.ts",
+      "sha256": "8193aa5d1bd22349b729e0a135f2060e847c5569312f83a84b23d2cbee498313",
+      "bytes": 13132,
+      "lines": 177
+    },
+    {
+      "path": "web/lib/rosterScheduleData/bridgeForecastWire.ts",
+      "sha256": "d5e4aa7b51cdc6d5362ebfe5b70f163701764b80d9db14feae35beef53959b27",
+      "bytes": 11970,
+      "lines": 173
+    },
+    {
+      "path": "web/lib/integrations/providerSyncAccessServer.ts",
+      "sha256": "5bad05d9da49a333cf1a0a5ba51a2ac1ca625fc80715c3953247267f688f48b4",
+      "bytes": 3128,
+      "lines": 52
+    },
+    {
+      "path": "web/lib/integrations/providerSyncAccess.test.ts",
+      "sha256": "a8e8c6ce0a02bd46ebf762bb0b4e7cb76b80803aac3a06011d80dea3d0d6764b",
+      "bytes": 7902,
+      "lines": 96
+    },
+    {
+      "path": "web/lib/integrations/yahoo/playerWriter.ts",
+      "sha256": "6758de5dd20a5be44473e56b2f2522692d5ea086a8e2143ba0862809c0ad98c8",
+      "bytes": 5942,
+      "lines": 179
+    },
+    {
+      "path": "web/lib/in-season/access.ts",
+      "sha256": "9618ba3948af343520576aa9384a4d191c346e8a0a132597e471efffcb15b6c4",
+      "bytes": 3258,
+      "lines": 53
+    },
+    {
+      "path": "web/lib/in-season/workspaceRoutes.test.ts",
+      "sha256": "49c98e024723477224e074daaed6eef3ad349afffba9c148ba604a789d10ce85",
+      "bytes": 26691,
+      "lines": 336
+    },
+    {
+      "path": "web/hooks/useRosterPlanning.ts",
+      "sha256": "fe82194f4d8b6111e1410b452708417b43eda28f6f43823f84664cdf58f43f9b",
+      "bytes": 3047,
+      "lines": 42
+    },
+    {
+      "path": "web/hooks/rosterPlanningExecution.ts",
+      "sha256": "e5d7f6ae500b94a8f3b386a3404780bafe7ff64e109d44180dcd84298fc1a9aa",
+      "bytes": 3985,
+      "lines": 59
+    },
+    {
+      "path": "web/lib/socialShare/players.ts",
+      "sha256": "2f1e55d6344c3fe43791ccf69ab16606c058a2ef476a3e00f91fa4c9180fdcf7",
+      "bytes": 18283,
+      "lines": 220
+    },
+    {
+      "path": "web/lib/socialShare/playerSources.ts",
+      "sha256": "ea09e49dc7c99bc23e81240a2cb05242cb21b6004ba8c8d26456237b756447f8",
+      "bytes": 6885,
+      "lines": 83
+    },
+    {
+      "path": "web/lib/socialShare/playerSources.test.ts",
+      "sha256": "6f22f6f5d65ffc50eea8e82f41d3a78df0e86750a5e97fb8429573379b723d72",
+      "bytes": 6376,
+      "lines": 84
+    },
+    {
+      "path": "web/lib/socialShare/players.test.ts",
+      "sha256": "c0ab55093f6a70e7c61531961823fe008044736fccbe9042ea965051c9f30aba",
+      "bytes": 14978,
+      "lines": 195
+    },
+    {
+      "path": "web/lib/socialShare/server.ts",
+      "sha256": "c8fa67330e51230754ca9e5f6464a504b5c6ef870d0dd1ad01773c07ab732831",
+      "bytes": 7076,
+      "lines": 84
+    },
+    {
+      "path": "web/lib/socialShare/schedule.ts",
+      "sha256": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73",
+      "bytes": 13079,
+      "lines": 164
+    },
+    {
+      "path": "web/lib/socialShare/schedule.test.ts",
+      "sha256": "9001cce64b6e60ce54a961fa05fb0579ee67a30f2939649c64ae19a70bc5baa3",
+      "bytes": 35657,
+      "lines": 438
+    },
+    {
+      "path": "web/lib/socialShare/tiers.ts",
+      "sha256": "1cf324324672f65ba2800581e98a452806ab52d0c4e46375b1f61d69dad083ca",
+      "bytes": 7255,
+      "lines": 112
+    },
+    {
+      "path": "web/lib/socialShare/tiers.test.ts",
+      "sha256": "593945464ca78b391dc66a4e7f726e6012a2e352c0f69851d1dc52b9157395bb",
+      "bytes": 9029,
+      "lines": 122
+    },
+    {
+      "path": "web/lib/socialShare/types.ts",
+      "sha256": "eb760730dce3310e78810969a2596870704a5038c471301d75e21c2455427c20",
+      "bytes": 8752,
+      "lines": 212
+    },
+    {
+      "path": "web/lib/socialShare/mondayGrid.ts",
+      "sha256": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960",
+      "bytes": 3448,
+      "lines": 65
+    },
+    {
+      "path": "web/lib/socialShare/matchups.ts",
+      "sha256": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba",
+      "bytes": 11835,
+      "lines": 155
+    },
+    {
+      "path": "web/lib/socialShare/teamRates.ts",
+      "sha256": "b30ffcb491fc60213fc476b2cc67f41a3330a5be9e4a89d8599d446fb0f96a32",
+      "bytes": 2304,
+      "lines": 36
+    },
+    {
+      "path": "web/lib/socialShare/access.ts",
+      "sha256": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "bytes": 1871,
+      "lines": 43
+    },
+    {
+      "path": "web/lib/socialShare/access.test.ts",
+      "sha256": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+      "bytes": 6435,
+      "lines": 117
+    },
+    {
+      "path": "web/lib/socialShare/edition.ts",
+      "sha256": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0",
+      "bytes": 1152,
+      "lines": 18
+    },
+    {
+      "path": "web/lib/socialShare/editionFetch.ts",
+      "sha256": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "bytes": 2007,
+      "lines": 36
+    },
+    {
+      "path": "web/components/SocialShare/SocialShare.tsx",
+      "sha256": "c03a6593297578e65f9397e94f558ac36c2fea7c3e6c50e57ba26d0d696e6cfb",
+      "bytes": 71497,
+      "lines": 648
+    },
+    {
+      "path": "web/components/SocialShare/SocialShareAccessGate.test.tsx",
+      "sha256": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+      "bytes": 4301,
+      "lines": 77
+    },
+    {
+      "path": "web/pages/api/v1/social-share/[format].ts",
+      "sha256": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+      "bytes": 1715,
+      "lines": 22
+    },
+    {
+      "path": "web/pages/social-share/[format].tsx",
+      "sha256": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "bytes": 1173,
+      "lines": 22
+    },
+    {
+      "path": "web/components/GameGrid/utils/calcWeekScore.ts",
+      "sha256": "0f544a126c5e16baf08febb7c7e89aa759883b20f203ad8ae3a8ac05ff619ca8",
+      "bytes": 3261,
+      "lines": 81
+    },
+    {
+      "path": "web/lib/NHL/server/index.ts",
+      "sha256": "0499ac3f3fdedb228efdd2091d2c93b6e79ef35b8fa56328ed60b7201fc3d435",
+      "bytes": 16457,
+      "lines": 571
+    },
+    {
+      "path": "web/lib/NHL/base.ts",
+      "sha256": "9dea7379b52e7b562f7483de2c0c57145c6210ccd5bfe771812c1ffdedea5010",
+      "bytes": 4355,
+      "lines": 157
+    },
+    {
+      "path": "web/lib/supabase/pagination.ts",
+      "sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+      "bytes": 5438,
+      "lines": 227
+    },
+    {
+      "path": "web/pages/api/v1/transactions/ownership-snapshots.ts",
+      "sha256": "543b02e64075715fd619faddf3223f38828cbae214f35cf7ca44ae7159cdb5c7",
+      "bytes": 10524,
+      "lines": 272
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/RECEIPT-13.md",
+      "sha256": "6e21f204baf4f0845453576e6fa66b120e2f5bfc61881ebb8116f16d087cdbbe",
+      "bytes": 7829,
+      "lines": 91
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/RECEIPT-8-CORRECTION.md",
+      "sha256": "801ed3f9e1c66b355a74adb95d2ec52c2696090fa524c91762cbbbe1b6b80ecc",
+      "bytes": 2919,
+      "lines": 40
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/t13/vitest.log",
+      "sha256": "07f32aec9f9ebf683b91a65495938b8ebe8c311d9779a054f23197d7c6586dc4",
+      "bytes": 916,
+      "lines": 20
+    }
+  ]
+}

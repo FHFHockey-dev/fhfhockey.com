@@ -1,0 +1,768 @@
+--- a/web/components/account/DraftProPanel.tsx
++++ b/web/components/account/DraftProPanel.tsx
+@@ -66,10 +66,6 @@
+   return Number.isNaN(date.getTime()) ? "Unavailable" : date.toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" });
+ }
+ 
+-function checkoutUnavailableReason(reason: string) {
+-  return ({ checkout_disabled: "Checkout is not available right now.", stripe_not_configured: "Checkout is not configured yet.", site_url_not_configured: "Checkout is not configured yet.", pass_expired: "This Draft Pro pass is no longer available.", already_eligible: "Draft Pro is already active for this account." } as Record<string, string>)[reason] ?? "Checkout is unavailable right now.";
+-}
+-
+ export default function DraftProPanel() {
+   const router = useRouter();
+   const [account, setAccount] = useState<AccountData | null>(null);
+@@ -84,7 +80,6 @@
+   const [submitting, setSubmitting] = useState(false);
+   const [feedback, setFeedback] = useState<string | null>(null);
+   const [patreonAction, setPatreonAction] = useState<"refresh" | "connect" | null>(null);
+-  const [checkoutLoading, setCheckoutLoading] = useState(false);
+   const [checkoutState, setCheckoutState] = useState<"idle" | "waiting" | "confirming" | "confirmed" | "ineligible" | "cancelled">("idle");
+   const [checkoutRetryAvailable, setCheckoutRetryAvailable] = useState(false);
+   const [accessCode, setAccessCode] = useState("");
+@@ -144,7 +139,6 @@
+       setCheckoutRetryAvailable(false);
+       setSubmitting(false);
+       setPatreonAction(null);
+-      setCheckoutLoading(false);
+       setAccount(null);
+       setPurchaseId("");
+       setReason("other");
+@@ -296,51 +290,6 @@
+     }
+   }
+ 
+-  async function startCheckout() {
+-    const accountEpoch = accountEpochRef.current;
+-    cancelCheckoutVerification();
+-    setCheckoutLoading(true);
+-    setFeedback(null);
+-    try {
+-      const session = (await supabase.auth.getSession()).data.session;
+-      if (!session?.access_token) throw new Error("Sign in before purchasing Draft Pro.");
+-      const identity = session.user?.id ?? null;
+-      if (!checkoutMountedRef.current || accountEpoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
+-      const response = await fetch("/api/v1/account/draft-pro/checkout", {
+-        method: "POST",
+-        headers: { Authorization: `Bearer ${session.access_token}` },
+-      });
+-      const body = await response.json().catch(() => ({}));
+-      if (!checkoutMountedRef.current || accountEpoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
+-      if (!response.ok) {
+-        throw new Error(body.error?.message ?? body.error ?? "Checkout could not be started.");
+-      }
+-      if (typeof body.url === "string") {
+-        window.location.assign(body.url);
+-        return;
+-      }
+-      if (body.state === "waiting" || body.state === "confirming") {
+-        setCheckoutState(body.state);
+-        setCheckoutRetryAvailable(true);
+-        setFeedback("Checkout is still open or confirming. Refresh your account access after completing payment.");
+-        setCheckoutLoading(false);
+-        return;
+-      }
+-      if (body.alreadyPurchased) {
+-        await loadAccount();
+-        if (!checkoutMountedRef.current || accountEpoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
+-        setCheckoutLoading(false);
+-        return;
+-      }
+-      throw new Error("Checkout could not be started.");
+-    } catch (checkoutError) {
+-      if (checkoutMountedRef.current && accountEpoch === accountEpochRef.current) {
+-        setFeedback(checkoutError instanceof Error ? checkoutError.message : "Checkout could not be started.");
+-        setCheckoutLoading(false);
+-      }
+-    }
+-  }
+-
+   const verifyCheckout = useCallback(async (sessionId: string, attempt = 0, epoch = checkoutEpochRef.current) => {
+     const isCurrent = () => checkoutMountedRef.current && epoch === checkoutEpochRef.current;
+     if (!isCurrent()) return;
+@@ -403,17 +352,16 @@
+ 
+   const openRefundPurchaseIds = new Set(account.refundRequests.filter((request) => ["open", "reviewing"].includes(request.status)).map((request) => request.purchaseId));
+   const canRequest = Boolean(selectedPurchase?.refundEligibility.eligible && !openRefundPurchaseIds.has(selectedPurchase.id));
+-  const checkoutAvailability = account.checkoutAvailability ?? { available: false, reason: "checkout_disabled" };
+-  const passInfo = account.passInfo ?? { priceCents: 599, expiresAt: "2027-07-01T04:00:00.000Z", renewal: "none" as const };
+   return <section className={styles.panel} aria-labelledby="draft-pro-panel-title">
+     <div className={styles.heading}><div><p className={styles.eyebrow}>Account access</p><h2 id="draft-pro-panel-title">Draft Pro</h2></div><span className={account.access.eligible ? styles.active : styles.inactive}>{account.access.eligible ? "Active" : "Inactive"}</span></div>
+     <p className={styles.summary}>{account.access.eligible ? `Access from ${account.access.grantingSources.join(" and ")}.` : "Your retained Draft Pro work is locked while access is inactive."} No automatic renewal.</p>
+     {account.access.capabilities?.includes("god_view") ? <p>God View — upcoming picks and team roster openings — is included in your season pass.</p> : null}
+     {accessCodeState === "success" && accessCodeMessage ? <p className={styles.successNotice} role="status">{accessCodeMessage}</p> : null}
+     {checkoutState !== "idle" ? <div className={styles.notice} role="status"><p>{checkoutState === "waiting" ? "Checking payment status…" : checkoutState === "confirming" ? "Payment is confirming with Stripe." : checkoutState === "confirmed" ? "Draft Pro access is confirmed." : checkoutState === "cancelled" ? "Checkout was cancelled. Your free draft remains available." : "Your purchase could not be confirmed yet. Try refreshing this page or contact support if payment was completed."}</p>{checkoutRetryAvailable ? <div className={styles.actions}><button type="button" onClick={() => { const sessionId = checkoutVerificationRef.current; if (sessionId) { cancelCheckoutVerification(); void verifyCheckout(sessionId, 0, checkoutEpochRef.current); } else void loadAccount(); }}>Check purchase status again</button></div> : null}</div> : null}
+-    {!account.access.eligible ? <><div className={styles.actions}>{checkoutAvailability.available ? <button type="button" className={styles.premiumButton} onClick={() => void startCheckout()} disabled={checkoutLoading}>{checkoutLoading ? "Opening checkout…" : `Get Draft Pro — $${(passInfo.priceCents / 100).toFixed(2)} one-time`}</button> : <span className={styles.notice}>{checkoutUnavailableReason(checkoutAvailability.reason)}</span>}<span className={styles.notice}>One-time access through {formatEasternDate(passInfo.expiresAt)} (Eastern). No automatic renewal.</span></div><form className={styles.accessCodeForm} onSubmit={redeemAccessCode} aria-labelledby="draft-pro-access-code-title"><h3 id="draft-pro-access-code-title">Have an access code?</h3><p>Enter your purchase recovery code or a complimentary code. Codes work only with the account they belong to.</p><label htmlFor="draft-pro-access-code">Draft Pro access code</label><div className={styles.accessCodeRow}><input id="draft-pro-access-code" name="code" type="text" autoComplete="off" inputMode="text" minLength={20} maxLength={200} value={accessCode} onChange={(event) => setAccessCode(event.target.value)} disabled={accessCodeState === "submitting"} /><button type="submit" disabled={accessCodeState === "submitting"}>{accessCodeState === "submitting" ? "Redeeming…" : "Redeem code"}</button></div>{accessCodeState === "error" && accessCodeMessage ? <p className={styles.errorNotice} role="alert">{accessCodeMessage}</p> : null}</form></> : null}
+-    <p className={styles.muted}>Pass price excludes applicable tax. <a href="/draft-pro/policies#terms">Terms</a> · <a href="/draft-pro/policies#privacy">Privacy</a> · <a href="/draft-pro/policies#refunds">Refund requests</a> · <a href="mailto:tim@fhfhockey.com">Support</a></p>
+-    <div><h3>Available with Draft Pro</h3>{account.availableFeatures?.some((feature) => featureLabels[feature]) ? <ul>{account.availableFeatures.filter((feature) => featureLabels[feature]).map((feature) => <li key={feature}>{featureLabels[feature]}</li>)}</ul> : <p>No premium capabilities are currently available. Free manual drafting remains available.</p>}<p className={styles.muted}>Yahoo sync is planned, with no guaranteed launch date. Features released before this pass expires are included.</p></div>
++    <p className={styles.notice}>New Draft Pro purchases are closed. Existing access, saved work and purchase recovery remain available.</p>
++    {!account.access.eligible ? <><form className={styles.accessCodeForm} onSubmit={redeemAccessCode} aria-labelledby="draft-pro-access-code-title"><h3 id="draft-pro-access-code-title">Have an access code?</h3><p>Enter your purchase recovery code or a complimentary code. Codes work only with the account they belong to.</p><label htmlFor="draft-pro-access-code">Draft Pro access code</label><div className={styles.accessCodeRow}><input id="draft-pro-access-code" name="code" type="text" autoComplete="off" inputMode="text" minLength={20} maxLength={200} value={accessCode} onChange={(event) => setAccessCode(event.target.value)} disabled={accessCodeState === "submitting"} /><button type="submit" disabled={accessCodeState === "submitting"}>{accessCodeState === "submitting" ? "Redeeming…" : "Redeem code"}</button></div>{accessCodeState === "error" && accessCodeMessage ? <p className={styles.errorNotice} role="alert">{accessCodeMessage}</p> : null}</form></> : null}
++    <p className={styles.muted}><a href="/draft-pro/policies#terms">Terms</a> · <a href="/draft-pro/policies#privacy">Privacy</a> · <a href="/draft-pro/policies#refunds">Refund requests</a> · <a href="mailto:tim@fhfhockey.com">Support</a></p>
++    <div><h3>Available with Draft Pro</h3>{account.availableFeatures?.some((feature) => featureLabels[feature]) ? <ul>{account.availableFeatures.filter((feature) => featureLabels[feature]).map((feature) => <li key={feature}>{featureLabels[feature]}</li>)}</ul> : <p>No premium capabilities are currently available. Free manual drafting remains available.</p>}<p className={styles.muted}>Existing Draft Pro access continues under its original terms.</p></div>
+     <dl className={styles.details}><div><dt>Access expires</dt><dd>{formatEasternDate(account.access.expiresAt)} (Eastern)</dd></div><div><dt>Verified</dt><dd>{formatDate(account.access.verifiedAt)}</dd></div><div><dt>Patreon status</dt><dd>{account.access.grantingSources.includes("patreon") ? "Granting access" : "Not granting access"}</dd></div></dl>
+     <div className={styles.actions}><button type="button" onClick={() => void patreonActionRequest("refresh")} disabled={Boolean(patreonAction)}>{patreonAction === "refresh" ? "Refreshing…" : "Refresh Patreon"}</button><button type="button" onClick={() => void patreonActionRequest("connect")} disabled={Boolean(patreonAction)}>{patreonAction === "connect" ? "Opening…" : "Connect Patreon"}</button></div>
+     {copyStatus ? <p role="status">{copyStatus}</p> : null}
+--- a/web/components/account/DraftProPanel.test.tsx
++++ b/web/components/account/DraftProPanel.test.tsx
+@@ -127,16 +127,15 @@
+     expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/v1/account/draft-pro/checkout/verify");
+   });
+ 
+-  it("keeps a no-URL checkout in its confirming state", async () => {
+-    const inactiveAccount = { ...account, access: { ...account.access, eligible: false } };
+-    const fetchMock = vi.fn()
+-      .mockResolvedValueOnce({ ok: true, json: async () => ({ data: inactiveAccount }) })
+-      .mockResolvedValueOnce({ ok: true, json: async () => ({ url: null, state: "confirming" }) });
+-    vi.stubGlobal("fetch", fetchMock);
+-    render(<DraftProPanel />);
+-    fireEvent.click(await screen.findByRole("button", { name: /Get Draft Pro/ }));
+-    expect(await screen.findByText(/Checkout is still open or confirming/i)).toBeTruthy();
+-    expect(screen.getByRole("button", { name: "Check purchase status again" })).toBeTruthy();
++  it("never offers new checkout even from a stale available response", async () => {
++    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { ...account, access: { ...account.access, eligible: false } } }) });
++    vi.stubGlobal("fetch", fetchMock);
++    render(<DraftProPanel />);
++    expect(await screen.findByText(/New Draft Pro purchases are closed/)).toBeTruthy();
++    expect(screen.queryByRole("button", { name: /Get Draft Pro|Buy/ })).toBeNull();
++    expect(screen.getByLabelText("Draft Pro access code")).toBeTruthy();
++    expect(screen.getByText("Opening night")).toBeTruthy();
++    expect(fetchMock.mock.calls.some(([url]) => url === "/api/v1/account/draft-pro/checkout")).toBe(false);
+   });
+ 
+   it("cancels a pending checkout retry when the panel unmounts", async () => {
+--- a/web/lib/draft-pro/features.ts
++++ b/web/lib/draft-pro/features.ts
+@@ -25,7 +25,8 @@
+     env[DRAFT_PRO_FEATURE_ENV_NAMES[name]] === "true";
+   const savedDrafts = enabled("saved_drafts");
+   return {
+-    checkout: enabled("checkout"),
++    // New sales are closed. Historical grants and capabilities remain independent.
++    checkout: false,
+     recommendations: enabled("recommendations"),
+     dust: enabled("dust"),
+     blended_csv: enabled("blended_csv"),
+--- a/web/lib/draft-pro/features.test.ts
++++ b/web/lib/draft-pro/features.test.ts
+@@ -39,3 +39,8 @@
+     }).private_imports).toBe(true);
+   });
+ });
++
++
++it("cannot reopen new sales through legacy checkout configuration", () => {
++  expect(getDraftProFeatureFlags({ DRAFT_PRO_CHECKOUT_ENABLED: "true", DRAFT_PRO_SAVED_DRAFTS_ENABLED: "true" })).toMatchObject({ checkout: false, saved_drafts: true });
++});
+--- a/web/lib/draft-pro/account/index.ts
++++ b/web/lib/draft-pro/account/index.ts
+@@ -10,6 +10,7 @@
+ type AccountClient = Pick<typeof serviceRoleClient, "from">;
+ 
+ export type DraftProCheckoutAvailabilityReason =
++  | "sales_closed"
+   | "available"
+   | "checkout_disabled"
+   | "stripe_not_configured"
+@@ -23,11 +24,7 @@
+ };
+ 
+ export function getDraftProCheckoutAvailability({
+-  now,
+   eligible,
+-  checkoutEnabled,
+-  stripeConfigured,
+-  siteUrlConfigured,
+ }: {
+   now: Date;
+   eligible: boolean;
+@@ -36,11 +33,7 @@
+   siteUrlConfigured: boolean;
+ }): DraftProCheckoutAvailability {
+   if (eligible) return { available: false, reason: "already_eligible" };
+-  if (now.getTime() >= Date.parse(DRAFT_PRO_EXPIRATION)) return { available: false, reason: "pass_expired" };
+-  if (!checkoutEnabled) return { available: false, reason: "checkout_disabled" };
+-  if (!stripeConfigured) return { available: false, reason: "stripe_not_configured" };
+-  if (!siteUrlConfigured) return { available: false, reason: "site_url_not_configured" };
+-  return { available: true, reason: "available" };
++  return { available: false, reason: "sales_closed" };
+ }
+ 
+ function validReceiptUrl(value: unknown) {
+--- a/web/lib/draft-pro/account/index.test.ts
++++ b/web/lib/draft-pro/account/index.test.ts
+@@ -86,8 +86,8 @@
+   const afterExpiry = new Date("2027-07-01T04:00:00.000Z");
+   const configured = { checkoutEnabled: true, stripeConfigured: true, siteUrlConfigured: true };
+ 
+-  it("is available only when flag, configuration, site URL, and time allow it", () => {
+-    expect(getDraftProCheckoutAvailability({ ...configured, now: beforeExpiry, eligible: false })).toEqual({ available: true, reason: "available" });
++  it("keeps new sales closed even when the legacy configuration permits them", () => {
++    expect(getDraftProCheckoutAvailability({ ...configured, now: beforeExpiry, eligible: false })).toEqual({ available: false, reason: "sales_closed" });
+   });
+ 
+   it.each([
+@@ -97,6 +97,6 @@
+     ["already entitled", { eligible: true }, "already_eligible"],
+     ["pass expired", {}, "pass_expired"],
+   ])("returns a stable reason for %s", (_label, overrides, reason) => {
+-    expect(getDraftProCheckoutAvailability({ ...configured, now: reason === "pass_expired" ? afterExpiry : beforeExpiry, eligible: false, ...overrides })).toEqual({ available: false, reason });
++    expect(getDraftProCheckoutAvailability({ ...configured, now: reason === "pass_expired" ? afterExpiry : beforeExpiry, eligible: false, ...overrides })).toEqual({ available: false, reason: reason === "already_eligible" ? reason : "sales_closed" });
+   });
+ });
+--- a/web/pages/api/v1/account/draft-pro/checkout.ts
++++ b/web/pages/api/v1/account/draft-pro/checkout.ts
+@@ -1,20 +1,6 @@
+ import type { NextApiRequest, NextApiResponse } from "next";
+ 
+ import { requireApiUser } from "lib/api/requireApiUser";
+-import { loadDraftProAccess } from "lib/draft-pro/server";
+-import { getDraftProFeatureFlags } from "lib/draft-pro/features";
+-import { createDraftProCheckout } from "lib/integrations/stripe/checkout";
+-import { getStripeClient, isStripeConfigured } from "lib/integrations/stripe/config";
+-
+-function requestOrigin(req: NextApiRequest) {
+-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+-  if (configured) return configured.replace(/\/$/, "");
+-  if (process.env.NODE_ENV === "production") throw new Error("The canonical application origin is not configured.");
+-  const host = req.headers.host;
+-  if (!host || !/^[a-z0-9.-]+(?::\d+)?$/i.test(host)) throw new Error("A valid application origin is required.");
+-  return `${req.headers["x-forwarded-proto"] === "https" ? "https" : "http"}://${host}`;
+-}
+-
+ export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+   res.setHeader("Cache-Control", "private, no-store");
+   if (req.method !== "POST") {
+@@ -23,15 +9,6 @@
+   }
+   const user = await requireApiUser(req, res);
+   if (!user) return;
+-  const flags = getDraftProFeatureFlags();
+-  if (!flags.checkout) return res.status(403).json({ error: "Draft Pro checkout is unavailable." });
+-  if (!isStripeConfigured()) return res.status(503).json({ error: "Stripe checkout is unavailable." });
+-  try {
+-    const access = await loadDraftProAccess(user.id, { now: new Date(), flags, patreonVerificationAvailable: true });
+-    if (access.eligible) return res.status(409).json({ error: "Draft Pro is already active for this account." });
+-    const result = await createDraftProCheckout({ stripe: getStripeClient(), userId: user.id, origin: requestOrigin(req) });
+-    return res.status(200).json(result);
+-  } catch (error) {
+-    return res.status(500).json({ error: "Checkout could not be started." });
+-  }
++  // Keep this unconditional: stale clients and old rollout configuration cannot sell a pass.
++  return res.status(403).json({ error: "New Draft Pro purchases are closed. Existing access and purchase recovery remain available.", code: "draft_pro_sales_closed" });
+ }
+--- a/web/lib/draft-pro/api-tests/checkout.test.ts
++++ b/web/lib/draft-pro/api-tests/checkout.test.ts
+@@ -10,4 +10,11 @@
+ describe("checkout route guards",()=>{beforeEach(()=>{vi.clearAllMocks();auth.mockResolvedValue({id:"u1"});flags.mockReturnValue({checkout:true});access.mockResolvedValue({eligible:false});});
+ it("does not create without authentication",async()=>{auth.mockResolvedValue(null);await handler({method:"POST",headers:{}} as any,res());expect(create).not.toHaveBeenCalled()});
+ it("does not create while checkout is disabled",async()=>{flags.mockReturnValue({checkout:false});const r=res();await handler({method:"POST",headers:{}} as any,r);expect(r.statusCode).toBe(403);expect(create).not.toHaveBeenCalled()});
+-it("does not create for an already eligible account",async()=>{access.mockResolvedValue({eligible:true});const r=res();await handler({method:"POST",headers:{}} as any,r);expect(r.statusCode).toBe(409);expect(create).not.toHaveBeenCalled()});});
++it("does not create for an already eligible account",async()=>{access.mockResolvedValue({eligible:true});const r=res();await handler({method:"POST",headers:{}} as any,r);expect(r.statusCode).toBe(403);expect(create).not.toHaveBeenCalled()});});
++
++it.each([false, true])("rejects stale/direct checkout even when the old flag says %s", async enabled => {
++  vi.clearAllMocks(); auth.mockResolvedValue({ id: "owner" }); flags.mockReturnValue({ checkout: enabled });
++  const r=res(); await handler({method:"POST",headers:{},body:{userId:"other"}} as any,r);
++  expect(r.statusCode).toBe(403); expect(r.body.code).toBe("draft_pro_sales_closed");
++  expect(create).not.toHaveBeenCalled(); expect(access).not.toHaveBeenCalled();
++});
+--- a/web/lib/integrations/providerSyncAccess.ts
++++ b/web/lib/integrations/providerSyncAccess.ts
+@@ -2,7 +2,7 @@
+   eligible: boolean;
+   expiresAt: string | null;
+   nextVerificationAt: string | null;
+-  reason: "eligible" | "authentication_required" | "no_active_grant" | "expired" | "verification_unavailable";
++  reason: "eligible" | "rollout_free" | "authentication_required" | "no_active_grant" | "expired" | "verification_unavailable";
+ };
+ 
+ export const PROVIDER_SYNC_ACCESS_HREF = "/account?section=in-season";
+--- a/web/lib/integrations/providerSyncAccessServer.ts
++++ b/web/lib/integrations/providerSyncAccessServer.ts
+@@ -11,10 +11,18 @@
+   }
+ }
+ 
+-/** Both existing grant systems remain authoritative; this never creates a grant. */
+-export async function loadProviderSyncAccess(userId: string | null, options: { inSeason?: InSeasonAccess } = {}): Promise<ProviderSyncAccess> {
++/** Server-only activation: leave unset until the approved checkout is working. */
++export function isProviderSyncPremiumEnforced(env: Readonly<Record<string, string | undefined>> = process.env) {
++  return env.PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED === "true";
++}
++
++/** Sync permission is separate from a paid grant; billing callers request entitlementOnly. */
++export async function loadProviderSyncAccess(userId: string | null, options: { inSeason?: InSeasonAccess; entitlementOnly?: boolean } = {}): Promise<ProviderSyncAccess> {
+   const denied = (reason: ProviderSyncAccess["reason"]): ProviderSyncAccess => ({ eligible: false, expiresAt: null, nextVerificationAt: null, reason });
+   if (!userId) return denied("authentication_required");
++  if (!options.entitlementOnly && !isProviderSyncPremiumEnforced()) {
++    return { eligible: true, expiresAt: null, nextVerificationAt: null, reason: "rollout_free" };
++  }
+   let unavailable = false;
+   let expired = false;
+   try {
+--- a/web/lib/integrations/providerSyncAccess.test.ts
++++ b/web/lib/integrations/providerSyncAccess.test.ts
+@@ -2,7 +2,7 @@
+ import { resolveInSeasonAccess, type InSeasonGrant } from "lib/in-season/access";
+ import { isMonthlyFailureGraceActive, monthlyFailureWindow, purchasedCoverageAfterCancellation, seasonPassCoverage } from "lib/in-season/commerce";
+ import { resolveDraftProAccess, type DraftProEntitlement } from "lib/draft-pro/access";
+-import { loadProviderSyncAccess, requireProviderSyncAccess } from "./providerSyncAccessServer";
++import { isProviderSyncPremiumEnforced, loadProviderSyncAccess, requireProviderSyncAccess } from "./providerSyncAccessServer";
+ import { providerSyncAccessMessage } from "./providerSyncAccess";
+ 
+ const mocks = vi.hoisted(() => ({ season: vi.fn(), draft: vi.fn() }));
+@@ -13,8 +13,8 @@
+ const paid: InSeasonGrant = { source: "purchase", reference: "verified-purchase", status: "active", effectiveFrom: "2026-10-01T04:00:00Z", effectiveTo: "2026-11-01T04:00:00Z" };
+ function season(grants: InSeasonGrant[]) { mocks.season.mockResolvedValue(resolveInSeasonAccess(grants, now)); }
+ function draft(grants: DraftProEntitlement[]) { mocks.draft.mockResolvedValue(resolveDraftProAccess({ now, userId: "owner", entitlements: grants, flags, patreonVerificationAvailable: true })); }
+-beforeEach(() => { vi.useFakeTimers(); vi.setSystemTime(now); vi.resetAllMocks(); season([]); draft([]); });
+-afterEach(() => vi.useRealTimers());
++beforeEach(() => { vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", "true"); vi.useFakeTimers(); vi.setSystemTime(now); vi.resetAllMocks(); season([]); draft([]); });
++afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); });
+ 
+ describe("shared provider sync entitlement", () => {
+   it("rejects anonymous callers before any entitlement lookup", async () => {
+@@ -74,3 +74,23 @@
+     expect(providerSyncAccessMessage("error", null)).toContain("could not be verified");
+   });
+ });
++
++
++describe("paid sync rollout", () => {
++  it.each([undefined, "false", "TRUE", "1", " true "])("keeps enforcement off for %s", async value => {
++    vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", value);
++    expect(isProviderSyncPremiumEnforced()).toBe(false);
++    mocks.season.mockRejectedValue(new Error("billing unavailable"));
++    expect(await requireProviderSyncAccess("owner")).toEqual({ eligible: true, reason: "rollout_free", expiresAt: null, nextVerificationAt: null });
++    expect(mocks.season).not.toHaveBeenCalled(); expect(mocks.draft).not.toHaveBeenCalled();
++    await expect(requireProviderSyncAccess(null)).rejects.toMatchObject({ statusCode: 401 });
++  });
++  it.each(["free", "paid", "legacy", "unavailable"])("keeps %s billing entitlement truthful while sync is free", async kind => {
++    vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", undefined);
++    if (kind === "paid") season([paid]);
++    if (kind === "legacy") draft([{ source: "purchase", status: "active", effectiveFrom: paid.effectiveFrom, effectiveTo: paid.effectiveTo }]);
++    if (kind === "unavailable") mocks.season.mockRejectedValue(new Error("offline"));
++    expect((await requireProviderSyncAccess("owner")).reason).toBe("rollout_free");
++    expect(await loadProviderSyncAccess("owner", { entitlementOnly: true })).toMatchObject({ eligible: ["paid", "legacy"].includes(kind), reason: kind === "unavailable" ? "verification_unavailable" : kind === "free" ? "no_active_grant" : "eligible" });
++  });
++});
+--- a/web/pages/api/v1/account/provider-sync.ts
++++ b/web/pages/api/v1/account/provider-sync.ts
+@@ -8,7 +8,7 @@
+   if (req.method !== "GET") { res.setHeader("Allow", "GET"); return res.status(405).end(); }
+   const user = await requireApiUser(req, res);
+   if (!user) return;
+-  const access = await loadProviderSyncAccess(user.id);
++  const access = await loadProviderSyncAccess(user.id, { entitlementOnly: req.query.entitlementOnly === "true" });
+   if (access.reason === "verification_unavailable") return res.status(503).json({ error: { code: access.reason, message: "Premium access could not be verified. Please try again." } });
+   return res.status(200).json({ data: { access } });
+ }
+--- a/web/hooks/useProviderSyncAccess.ts
++++ b/web/hooks/useProviderSyncAccess.ts
+@@ -1,6 +1,6 @@
+ import type { ProviderSyncAccess } from "lib/integrations/providerSyncAccess";
+ import { useAccountAccess } from "./useAccountAccess";
+ 
+-export function useProviderSyncAccess() {
+-  return useAccountAccess<ProviderSyncAccess>("/api/v1/account/provider-sync");
++export function useProviderSyncAccess(options: { entitlementOnly?: boolean } = {}) {
++  return useAccountAccess<ProviderSyncAccess>(`/api/v1/account/provider-sync${options.entitlementOnly ? "?entitlementOnly=true" : ""}`);
+ }
+--- a/web/hooks/useDraftProAccess.test.tsx
++++ b/web/hooks/useDraftProAccess.test.tsx
+@@ -1,4 +1,4 @@
+-import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
++import { act, cleanup, render, renderHook, screen, waitFor } from "@testing-library/react";
+ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ 
+ const authState = vi.hoisted(() => ({
+@@ -21,6 +21,7 @@
+ 
+ import { useDraftProAccess } from "./useDraftProAccess";
+ import { useProviderSyncAccess } from "./useProviderSyncAccess";
++import ProviderSyncNotice from "components/account/ProviderSyncNotice";
+ 
+ const access = {
+   eligible: true,
+@@ -110,3 +111,27 @@
+   });
+ 
+ });
++
++
++describe("provider sync free rollout UI", () => {
++  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
++  it("shows no upgrade gate for an authenticated free account", async () => {
++    authState.getSession.mockResolvedValue({ data: { session: { access_token: "fixture" } } });
++    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { access: { eligible: true, reason: "rollout_free", expiresAt: null } } }) });
++    vi.stubGlobal("fetch", fetchMock);
++    function Surface() { const state = useProviderSyncAccess(); return <><ProviderSyncNotice {...state} /><button disabled={state.status !== "ready" || !state.access?.eligible}>Sync fixture</button></>; }
++    render(<Surface />);
++    await waitFor(() => expect((screen.getByRole("button", { name: "Sync fixture" }) as HTMLButtonElement).disabled).toBe(false));
++    expect(screen.queryByRole("link", { name: "View premium access" })).toBeNull();
++    expect(fetchMock).toHaveBeenCalledWith("/api/v1/account/provider-sync", expect.anything());
++  });
++  it("requests real entitlements explicitly for billing readback", async () => {
++    authState.getSession.mockResolvedValue({ data: { session: { access_token: "fixture" } } });
++    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ data: { access: { eligible: false, reason: "no_active_grant", expiresAt: null } } }) });
++    vi.stubGlobal("fetch", fetchMock);
++    const { result } = renderHook(() => useProviderSyncAccess({ entitlementOnly: true }));
++    await waitFor(() => expect(result.current.status).toBe("ready"));
++    expect(result.current.access?.eligible).toBe(false);
++    expect(fetchMock).toHaveBeenCalledWith("/api/v1/account/provider-sync?entitlementOnly=true", expect.anything());
++  });
++});
+--- a/web/components/account/InSeasonPanel.tsx
++++ b/web/components/account/InSeasonPanel.tsx
+@@ -6,7 +6,7 @@
+ type Subscription = { subscriptionId: string; cancelledAt: string | null; billingStoppedAt: string | null; stopComplete: boolean };
+ 
+ export default function InSeasonPanel() {
+-  const { status, access, refresh } = useProviderSyncAccess();
++  const { status, access, refresh } = useProviderSyncAccess({ entitlementOnly: true });
+   const [available, setAvailable] = useState(false);
+   const [monthlyAvailable, setMonthlyAvailable] = useState(false);
+   const [monthlyReason, setMonthlyReason] = useState("disabled");
+--- a/web/components/account/InSeasonPanel.test.tsx
++++ b/web/components/account/InSeasonPanel.test.tsx
+@@ -17,6 +17,7 @@
+ afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+ it("shows the agreed price, Eastern cutoff and monthly unavailability without legacy checkout", () => {
+   render(<InSeasonPanel />);
++  expect(mocks.access).toHaveBeenCalledWith({ entitlementOnly: true });
+   expect(screen.getByRole("heading", { name: "Season pass · $24.99" })).toBeTruthy();
+   expect(screen.getByText(/midnight New York time/)).toBeTruthy();
+   expect(screen.getByRole("button", { name: /Buy season pass/ }).hasAttribute("disabled")).toBe(true);
+--- a/web/pages/api/v1/account/in-season/checkout.ts
++++ b/web/pages/api/v1/account/in-season/checkout.ts
+@@ -32,7 +32,7 @@
+     ? "Monthly signup is unavailable because the first charge is below the verified payment minimum. No amount will be rounded up or carried forward."
+     : monthly.reason === "season_ended" ? "Monthly signup has closed for the season." : MONTHLY_CHECKOUT_BLOCKER });
+   try {
+-    const access = await loadProviderSyncAccess(user.id);
++    const access = await loadProviderSyncAccess(user.id, { entitlementOnly: true });
+     if (typeof access.eligible !== "boolean" || access.reason === "verification_unavailable") return res.status(503).json({ error: "Existing access could not be checked. Please try again." });
+     if (access.eligible) return res.status(409).json({ error: "Premium sync is already active for this account." });
+     const data = monthly && monthly.minimum
+--- a/web/lib/in-season/billingRoutes.test.ts
++++ b/web/lib/in-season/billingRoutes.test.ts
+@@ -48,7 +48,7 @@
+   it.each([{ plan: "season_pass", userId: "victim" }, { plan: "annual" }, { plan: "season_pass", priceId: "price_599" }, null])("rejects forged or invalid body %j", async (body) => { const res = response(); await checkout(request(body), res); expect(res.status).toHaveBeenCalledWith(400); expect(mocks.create).not.toHaveBeenCalled(); });
+   it("blocks monthly without creating an uncapped subscription", async () => { const res = response(); await checkout(request({ plan: "monthly" }), res); expect(res.status).toHaveBeenCalledWith(409); expect(mocks.stripe).not.toHaveBeenCalled(); });
+   it.each(["paid monthly", "season pass", "supporter", "retained Draft Pro", "applicable grace"])("does not sell a duplicate to an eligible %s account", async () => { const res = response(); mocks.access.mockResolvedValue({ eligible: true, reason: "eligible" }); await checkout(request(), res); expect(res.status).toHaveBeenCalledWith(409); expect(mocks.create).not.toHaveBeenCalled(); });
+-  it.each(["no_active_grant", "expired"])("uses the authenticated principal for %s accounts", async (reason) => { const res = response(); mocks.access.mockResolvedValue({ eligible: false, reason }); await checkout(request(), res); expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ userId: "verified-user", plan: "season_pass" })); expect(res.status).toHaveBeenCalledWith(200); });
++  it.each(["no_active_grant", "expired"])("uses the authenticated principal for %s accounts", async (reason) => { const res = response(); mocks.access.mockResolvedValue({ eligible: false, reason }); await checkout(request(), res); expect(mocks.access).toHaveBeenCalledWith("verified-user", { entitlementOnly: true }); expect(mocks.create).toHaveBeenCalledWith(expect.objectContaining({ userId: "verified-user", plan: "season_pass" })); expect(res.status).toHaveBeenCalledWith(200); });
+   it("treats unknown entitlement state as a transient failure", async () => { const res = response(); mocks.access.mockResolvedValue({ eligible: false, reason: "verification_unavailable" }); await checkout(request(), res); expect(res.status).toHaveBeenCalledWith(503); expect(mocks.create).not.toHaveBeenCalled(); });
+   it("fails closed if entitlement loading throws", async () => { const res = response(); mocks.access.mockRejectedValue(new Error("offline")); await checkout(request(), res); expect(res.status).toHaveBeenCalledWith(503); expect(mocks.create).not.toHaveBeenCalled(); });
+   it("does not treat malformed access as a free account", async () => { const res = response(); mocks.access.mockResolvedValue({ reason: "no_active_grant" }); await checkout(request(), res); expect(res.status).toHaveBeenCalledWith(503); expect(mocks.create).not.toHaveBeenCalled(); });
+--- a/web/lib/integrations/yahoo/liveDraftAccess.ts
++++ b/web/lib/integrations/yahoo/liveDraftAccess.ts
+@@ -1,4 +1,5 @@
+ import type { DraftProAccess } from "lib/draft-pro/contracts";
++import type { ProviderSyncAccess } from "lib/integrations/providerSyncAccess";
+ import { loadProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
+ 
+ import {
+@@ -34,7 +35,7 @@
+ }
+ 
+ export function assertYahooLiveDraftServerAccess(args: {
+-  access: Pick<DraftProAccess, "eligible" | "reason">;
++  access: Pick<ProviderSyncAccess | DraftProAccess, "eligible" | "reason">;
+   environment?: YahooLiveDraftEnvironment;
+   userId: string;
+ }) {
+--- a/web/lib/integrations/yahoo/pickupApi.test.ts
++++ b/web/lib/integrations/yahoo/pickupApi.test.ts
+@@ -1,4 +1,4 @@
+-import { beforeEach, describe, expect, it, vi } from "vitest";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ const mocks = vi.hoisted(() => ({ user: vi.fn(), access: vi.fn(), load: vi.fn(), rate: vi.fn() }));
+ vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.user }));
+ vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: mocks.access }));
+@@ -7,7 +7,7 @@
+ vi.mock("./pickupServer", () => ({ loadYahooPickupContext: mocks.load }));
+ import handler from "pages/api/v1/account/yahoo/pickup";
+ const response = () => { const res: any = { setHeader: vi.fn(), status: vi.fn(), json: vi.fn(), end: vi.fn() }; res.status.mockReturnValue(res); return res; };
+-beforeEach(() => { vi.resetAllMocks(); mocks.user.mockResolvedValue({ id: "owner" }); mocks.access.mockResolvedValue({ eligible: true }); mocks.rate.mockReturnValue(true); mocks.load.mockResolvedValue(null); });
++beforeEach(() => { vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", "true"); vi.resetAllMocks(); mocks.user.mockResolvedValue({ id: "owner" }); mocks.access.mockResolvedValue({ eligible: true }); mocks.rate.mockReturnValue(true); mocks.load.mockResolvedValue(null); });
+ describe("Yahoo pickup API", () => {
+   it("requires sign-in before loading premium data", async () => {
+     mocks.user.mockResolvedValue(null);
+@@ -32,3 +32,5 @@
+ });
+ 
+ vi.mock("lib/in-season/server", () => ({ loadInSeasonAccess: async () => ({ eligible: false, capabilities: [], reason: "no_active_grant" }) }));
++
++afterEach(() => vi.unstubAllEnvs());
+--- a/web/components/DraftDashboard/DraftWorkspaceHeader.tsx
++++ b/web/components/DraftDashboard/DraftWorkspaceHeader.tsx
+@@ -35,7 +35,7 @@
+       >
+         <span aria-hidden="true">●</span> {healthLabel}
+       </button>
+-      <a className={styles.draftProLink} href="/account?section=draft-pro" aria-label={draftProEligible ? "Manage Draft Pro" : "Explore Draft Pro"}>
++      <a className={styles.draftProLink} href="/account?section=draft-pro" aria-label={draftProEligible ? "Manage Draft Pro" : "View existing Draft Pro access"}>
+         <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="m3 6 5 4 4-7 4 7 5-4-2 12H5L3 6Zm2 15h14" /></svg> Draft Pro
+       </a>
+       <span className={styles.toolbarDivider} aria-hidden="true" />
+--- a/web/components/DraftDashboard/DraftSettingsShell.tsx
++++ b/web/components/DraftDashboard/DraftSettingsShell.tsx
+@@ -163,7 +163,7 @@
+         <h2 id="draft-settings-title">Draft Settings</h2>
+         <span className={styles.settingsContext}>{settings.teamCount} teams · {validation.spots} spots · {settings.leagueType === "categories" ? "Categories" : "Points"}</span>
+         <a className={styles.draftProLink} href="/account?section=draft-pro">
+-          {draftProEligible ? "Manage Draft Pro" : "Explore Draft Pro"}
++          {draftProEligible ? "Manage Draft Pro" : "View existing Draft Pro access"}
+         </a>
+         <button type="button" className={styles.closeSettings} onClick={dismiss} aria-label="Close settings">×</button>
+       </div>
+--- a/web/components/DraftDashboard/GodView.tsx
++++ b/web/components/DraftDashboard/GodView.tsx
+@@ -112,7 +112,7 @@
+     </header>
+     <div id="draft-quick-settings" hidden={!settingsOpen}>{quickSettings}</div>
+     <div id="god-view-content" hidden={!open || settingsOpen}>
+-      {!allowed ? <p className={styles.explanation}>{access?.eligible ? "God View is not available yet. It is included in your season pass when enabled." : "Explore upcoming picks and each team’s open roster slots with Draft Pro."} {!access?.eligible && <a href="/account?section=draft-pro">Explore Draft Pro</a>}</p> : queue.length === 0 ? <p className={styles.explanation}>Draft complete. <button type="button" onClick={onSummary}>View draft summary</button></p> : <>
++      {!allowed ? <p className={styles.explanation}>{access?.eligible ? "God View is not available yet. It is included in your season pass when enabled." : "God View is available to existing Draft Pro accounts. New purchases are closed."} {!access?.eligible && <a href="/account?section=draft-pro">View existing Draft Pro access</a>}</p> : queue.length === 0 ? <p className={styles.explanation}>Draft complete. <button type="button" onClick={onSummary}>View draft summary</button></p> : <>
+         <div ref={track} className={styles.cards} role="region" aria-label="All draft picks" tabIndex={0} style={{ "--pick-card-width": `${cardWidth}px` } as React.CSSProperties}>
+           {queue.map(pick => <React.Fragment key={pick.pickNumber}>
+             {pick.pickInRound === 1 && <span className={styles.roundBreak} aria-label={`Round ${pick.round}`}>Round {pick.round}</span>}
+--- a/web/components/DraftDashboard/MockDraftWorkspace.tsx
++++ b/web/components/DraftDashboard/MockDraftWorkspace.tsx
+@@ -421,8 +421,8 @@
+                   )}
+                 </div>
+                 <p>
+-                  Pro adds scarcity, turn planning, and specialist strategies.{" "}
+-                  <a href="/account?section=draft-pro">Explore Draft Pro</a>
++                  Existing Draft Pro accounts include scarcity, turn planning, and specialist strategies. New purchases are closed.{" "}
++                  <a href="/account?section=draft-pro">View existing Draft Pro access</a>
+                 </p>
+               </section>
+             </div>
+--- a/web/components/DraftDashboard/SuggestedPicks.tsx
++++ b/web/components/DraftDashboard/SuggestedPicks.tsx
+@@ -780,7 +780,7 @@
+           aria-labelledby={`suggested-tab-${view}`}
+         >
+         {tierView && <div ref={tiersRef} className={`${styles.cardsRow} ${styles.tierRow}`} onScroll={updateScrollEdges} role="list" tabIndex={0}>
+-          {!draftProEligible ? <div className={styles.tierCard}><p>Positional tiers and pick advice require Draft Pro.</p><a href="/account?section=draft-pro">Explore Draft Pro</a></div> : tierError || isLoading || error ? <p className={styles.tierCard} role="status">{tierError || (isLoading ? "Loading positional tiers…" : "Tier analysis is unavailable while projections recover. Ordinary Picks remain available.")}</p> : <>
++          {!draftProEligible ? <div className={styles.tierCard}><p>Positional tiers and pick advice require existing Draft Pro access. New purchases are closed.</p><a href="/account?section=draft-pro">View existing Draft Pro access</a></div> : tierError || isLoading || error ? <p className={styles.tierCard} role="status">{tierError || (isLoading ? "Loading positional tiers…" : "Tier analysis is unavailable while projections recover. Ordinary Picks remain available.")}</p> : <>
+             <article className={styles.tierCard} role="listitem"><h3>Scoring-based tiers</h3><p>{leagueType === "categories" ? "Weighted category score" : "Custom projected fantasy points"} · {forwardGrouping === "fwd" ? "Combined forwards" : "Split forwards"}</p>
+               <details><summary>How tiers and advice work</summary><p>Automatic value bands use the full projection pool. Bands wider than 5% of the positional value range are split into tighter groups at scoring boundaries. Drafted players keep their tier. A meaningful break exceeds three times the median adjacent gap and one quarter of the positional interquartile range.</p><p>{adpSource} ADP estimates use a {availabilitySpread}-pick spread, conditional on availability now. Take now means fewer than 0.5 comparable players estimated to remain before a meaningful drop; Can wait requires at least 1.5, or consecutive picks. These are heuristics, not calibrated probabilities for the whole tier.</p><p>Automatic tiers do not overwrite manual tiers or reorder ordinary Picks.</p></details>
+             </article>
+--- a/web/__tests__/components/DraftDashboard/SuggestedPicks.test.tsx
++++ b/web/__tests__/components/DraftDashboard/SuggestedPicks.test.tsx
+@@ -309,7 +309,7 @@
+     const picks = screen.getByRole("tab", { name: "Picks" });
+     fireEvent.keyDown(picks, { key: "ArrowRight" });
+     expect(screen.getByRole("tab", { name: "Tiers · Pro" }).getAttribute("aria-selected")).toBe("true");
+-    expect(screen.getByRole("link", { name: "Explore Draft Pro" })).toBeTruthy();
++    expect(screen.getByRole("link", { name: "View existing Draft Pro access" })).toBeTruthy();
+     expect(screen.queryByRole("combobox", { name: "Sort suggested picks" })).toBeNull();
+     fireEvent.click(picks);
+     expect(screen.getAllByRole("listitem")).toHaveLength(6);
+--- a/web/__tests__/components/DraftDashboard/DraftSettingsShell.test.tsx
++++ b/web/__tests__/components/DraftDashboard/DraftSettingsShell.test.tsx
+@@ -25,6 +25,8 @@
+   const onSettings = vi.fn();
+   const onFullSettings = vi.fn();
+   render(<DraftWorkspaceHeader health="healthy" healthLabel="Draft sources ready" draftProEligible={false} settingsExpanded onSettings={onSettings} onFullSettings={onFullSettings} onHealth={vi.fn()} />);
++  expect(screen.getByRole("link", { name: "View existing Draft Pro access" })).toBeTruthy();
++  expect(screen.queryByRole("link", { name: "Explore Draft Pro" })).toBeNull();
+   const toggle = screen.getByRole("button", { name: "Toggle quick settings" });
+   expect(toggle.getAttribute("aria-expanded")).toBe("true");
+   fireEvent.click(toggle);
+--- a/web/pages/index.tsx
++++ b/web/pages/index.tsx
+@@ -187,7 +187,6 @@
+               <p>Compare projections, track every pick, and build your roster.</p>
+               <div className={styles.draftBannerActions}>
+                 <Link href="/draft-dashboard">Open Draft Dashboard</Link>
+-                <Link href="/account?section=draft-pro" className={styles.draftProPromotion}>Explore Draft Pro</Link>
+               </div>
+             </div>
+           </section>
+--- a/web/pages/draft-pro/policies.tsx
++++ b/web/pages/draft-pro/policies.tsx
+@@ -8,12 +8,13 @@
+     <Head><title>Draft Pro policies | Five Hole Fantasy Hockey</title><meta name="robots" content="noindex" /></Head>
+     <article className={styles.policies}>
+       <h1>Draft Pro policies</h1>
++      <p>New Draft Pro purchases are closed. These terms remain available for existing purchases and account support.</p>
+       <p>Last updated September 9, 2026.</p>
+       <p>Draft Pro is offered by Tim Branson, operating Five Hole Fantasy Hockey in Pennsylvania, United States. Contact <a href="mailto:tim@fhfhockey.com">tim@fhfhockey.com</a> for payment, access, privacy, and support requests.</p>
+       <nav aria-label="Policy sections"><a href="#terms">Terms</a><a href="#refunds">Refund requests</a><a href="#privacy">Privacy</a></nav>
+       <section id="terms">
+         <h2>Draft Pro terms</h2>
+-        <p>The 2026–27 pass costs US$5.99 plus applicable tax, shown before payment. It is a one-time purchase with no automatic renewal. Access ends July 1, 2027 at 12:00 a.m. America/New_York, covering all of June 30. Buying later in the season does not extend that date.</p>
++        <p>The 2026–27 pass was offered at US$5.99 plus applicable tax, shown before payment. It is a one-time purchase with no automatic renewal. Access ends July 1, 2027 at 12:00 a.m. America/New_York, covering all of June 30. Buying later in the season does not extend that date.</p>
+         <p>Sign in to your FHFH account before purchasing. Stripe hosts checkout and processes card and eligible Link payments. Access activates after successful server verification; a return from checkout alone does not confirm payment.</p>
+         <p>Review the available capabilities in your Draft Pro account panel before purchasing. Planned features, including Yahoo sync, have no guaranteed release date. Features released within the pass period are included in the same pass. Projections and draft analysis are estimates, not guarantees of results.</p>
+         <p>Verified active paid supporters of the configured FHFH Patreon campaign can also qualify. Canceling renewal does not remove benefits while paid membership remains eligible. Membership must be reverified, and a provider failure may temporarily prevent premium access. A valid purchased pass remains independent of Patreon eligibility.</p>
+--- a/web/e2e/god-view.spec.ts
++++ b/web/e2e/god-view.spec.ts
+@@ -95,7 +95,7 @@
+ test("free open preference stays locked across reload and drafting remains usable", async ({ page }) => {
+   await setup(page, 2, false);
+   const region = page.getByRole("region", { name: "God View", exact: true });
+-  await expect(region.getByRole("link", { name: "Explore Draft Pro" })).toHaveAttribute("href", "/account?section=draft-pro");
++  await expect(region.getByRole("link", { name: "View existing Draft Pro access" })).toHaveAttribute("href", "/account?section=draft-pro");
+   await expect(region.getByRole("button", { name: /^View .* roster, pick/ })).toHaveCount(0);
+   await page.reload();
+   await expect(region.getByRole("button", { name: /God View · Pro/ })).toHaveAttribute("aria-expanded", "true");
+@@ -116,7 +116,7 @@
+   expect(await region.getByLabel("Upcoming pick cards", { exact: true }).evaluate(el => el.scrollLeft)).toBe(0);
+   expire();
+   await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+-  await expect(region.getByRole("link", { name: "Explore Draft Pro" })).toBeVisible();
++  await expect(region.getByRole("link", { name: "View existing Draft Pro access" })).toBeVisible();
+   await expect(region.getByRole("button", { name: /^View .* roster, pick/ })).toHaveCount(0);
+   expect(await page.evaluate(() => JSON.parse(sessionStorage.getItem("draft.snapshot.v2") || "{}").draftedPlayers.length)).toBe(1);
+ });
+--- a/web/e2e/draft-layout.spec.ts
++++ b/web/e2e/draft-layout.spec.ts
+@@ -478,16 +478,14 @@
+     await page.setViewportSize({ width, height: 900 });
+     await banner.scrollIntoViewIfNeeded();
+     await expect(banner.getByRole("link", { name: "Open Draft Dashboard", exact: true })).toHaveAttribute("href", "/draft-dashboard");
+-    const premium = banner.getByRole("link", { name: "Explore Draft Pro", exact: true });
+-    await expect(premium).toHaveAttribute("href", "/account?section=draft-pro");
+-    expect(await premium.evaluate(el => ({ foreground: getComputedStyle(el).color, background: getComputedStyle(el).backgroundColor }))).toEqual({ foreground: "rgb(13, 15, 17)", background: "rgb(255, 200, 87)" });
++    await expect(banner.getByRole("link", { name: /Draft Pro/ })).toHaveCount(0);
+     await expect.poll(() => banner.locator("img").evaluate(img => (img as HTMLImageElement).naturalWidth)).toBeGreaterThan(0);
+     expect(await banner.evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+     await banner.screenshot({ path: testInfo.outputPath(`homepage-banner-${width}.png`) });
+   }
+ });
+ 
+-test("Draft Pro account controls use accessible marigold styling", async ({ page }, testInfo) => {
++test("Draft Pro new sales remain closed with stale availability", async ({ page }, testInfo) => {
+   await openFixture(page);
+   await page.route("**/api/v1/account/draft-pro", route => route.fulfill({ json: { data: {
+     access: { ...access, eligible: false, grantingSources: [], capabilities: [] },
+@@ -497,11 +495,9 @@
+     purchases: [], refundRequests: [], savedDrafts: [], privateImports: [],
+   } } }));
+   await page.goto("/account?section=draft-pro", { waitUntil: "domcontentloaded" });
+-  const purchase = page.getByRole("button", { name: /Get Draft Pro/ });
+-  await expect(purchase).toBeVisible();
+-  expect(await purchase.evaluate(el => [getComputedStyle(el).color, getComputedStyle(el).backgroundColor])).toEqual(["rgb(13, 15, 17)", "rgb(255, 200, 87)"]);
+-  await purchase.focus();
+-  expect(await purchase.evaluate(el => getComputedStyle(el).outlineStyle)).toBe("solid");
++  await expect(page.getByText(/New Draft Pro purchases are closed/)).toBeVisible();
++  await expect(page.getByRole("button", { name: /Get Draft Pro/ })).toHaveCount(0);
++  await expect(page.getByLabel("Draft Pro access code")).toBeVisible();
+   await page.screenshot({ path: testInfo.outputPath("draft-pro-account.png"), fullPage: true });
+ });
+ 
+--- a/web/lib/integrations/providerSyncPaywall.test.ts
++++ b/web/lib/integrations/providerSyncPaywall.test.ts
+@@ -1,4 +1,4 @@
+-import { beforeEach, describe, expect, it, vi } from "vitest";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+ const mocks = vi.hoisted(() => ({ user: vi.fn(), season: vi.fn(), draft: vi.fn(), from: vi.fn(), rpc: vi.fn(), oauth: vi.fn() }));
+ vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.user }));
+ vi.mock("lib/in-season/server", () => ({ loadInSeasonAccess: mocks.season }));
+@@ -31,7 +31,7 @@
+ ] as const;
+ const response = () => { const res: any = { statusCode: 200, body: null, setHeader: vi.fn(), end: vi.fn(), status(code: number) { this.statusCode = code; return this; }, json(body: unknown) { this.body = body; return this; } }; return res; };
+ const request = (method: string) => ({ method, headers: {}, query: { accountId: "foreign-account", externalLeagueId: "foreign-league", userId: "foreign-user" }, body: { selectedLeagueKeys: ["foreign-league"], userId: "foreign-user", externalTeamId: "foreign-team", accountId: "foreign-account", provider: "yahoo", teamId: "foreign-team", startDate: "2026-10-21", endDate: "2026-10-28" } }) as any;
+-beforeEach(() => { vi.resetAllMocks(); mocks.user.mockResolvedValue({ id: "authenticated-user" }); mocks.season.mockResolvedValue({ eligible: false, capabilities: [], reason: "no_active_grant" }); mocks.draft.mockResolvedValue({ eligible: false, reason: "no_active_grant" }); });
++beforeEach(() => { vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", "true"); vi.resetAllMocks(); mocks.user.mockResolvedValue({ id: "authenticated-user" }); mocks.season.mockResolvedValue({ eligible: false, capabilities: [], reason: "no_active_grant" }); mocks.draft.mockResolvedValue({ eligible: false, reason: "no_active_grant" }); });
+ describe.each(routes)("%s API paywall", (_name, handler, method) => {
+   it("blocks unauthenticated direct calls", async () => {
+     mocks.user.mockImplementation(async (_req, res) => { res.status(401).json({ error: "Sign in" }); return null; });
+@@ -94,3 +94,5 @@
+     if (handler === rsoAccess) expect(res.body.data.capabilities).toEqual(["rso_sync"]);
+   });
+ });
++
++afterEach(() => vi.unstubAllEnvs());
+--- a/web/lib/integrations/yahoo/liveDraftApi.test.ts
++++ b/web/lib/integrations/yahoo/liveDraftApi.test.ts
+@@ -78,6 +78,7 @@
+     expect(good.statusCode).toBe(200);
+   });
+   beforeEach(() => {
++    vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", "true");
+     vi.clearAllMocks();
+     requireYahooLiveDraftServerAccess.mockResolvedValue({});
+     delete process.env.YAHOO_LIVE_DRAFT_ENABLED;
+@@ -88,6 +89,7 @@
+   });
+ 
+   afterEach(() => {
++    vi.unstubAllEnvs();
+     vi.restoreAllMocks();
+   });
+ 
+--- /dev/null
++++ b/web/lib/integrations/providerSyncRolloutRoutes.test.ts
+@@ -0,0 +1,67 @@
++import type { NextApiRequest, NextApiResponse } from "next";
++import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
++const mocks = vi.hoisted(() => ({ auth: vi.fn(), season: vi.fn(), draft: vi.fn(), pickup: vi.fn() }));
++vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.auth }));
++vi.mock("lib/in-season/server", () => ({ loadInSeasonAccess: mocks.season }));
++vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: mocks.draft }));
++vi.mock("lib/integrations/yahoo/pickupServer", () => ({ loadYahooPickupContext: mocks.pickup }));
++vi.mock("lib/draft-pro/recommendationsRateLimit", () => ({ consumeRecommendationRequest: () => true }));
++import status from "pages/api/v1/account/provider-sync";
++import rsoAccess from "pages/api/v1/roster-schedule-optimizer/access";
++import pickup from "pages/api/v1/account/yahoo/pickup";
++import { requireYahooLiveDraftServerAccess } from "./yahoo/liveDraftAccess";
++import { requireFantraxDraftAccess } from "./fantrax/liveDraftServer";
++const req = (query = {}) => ({ method: "GET", headers: {}, query: { userId: "foreign", ...query } }) as unknown as NextApiRequest;
++const reply = () => {
++  const res = { status: vi.fn(), json: vi.fn(), setHeader: vi.fn(), end: vi.fn() };
++  res.status.mockReturnValue(res); return res as typeof res & NextApiResponse;
++};
++beforeEach(() => {
++  vi.resetAllMocks(); vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", undefined);
++  mocks.auth.mockResolvedValue({ id: "owner" });
++  mocks.season.mockResolvedValue({ eligible: false, capabilities: [], reason: "no_active_grant" });
++  mocks.draft.mockResolvedValue({ eligible: false, reason: "no_active_grant" });
++  mocks.pickup.mockResolvedValue({ fixture: true });
++});
++afterEach(() => vi.unstubAllEnvs());
++
++describe("default-off sync rollout through real route guards", () => {
++  it("returns free sync permission without inventing a billing entitlement", async () => {
++    const sync = reply(); await status(req(), sync);
++    expect(sync.json).toHaveBeenCalledWith({ data: { access: { eligible: true, expiresAt: null, nextVerificationAt: null, reason: "rollout_free" } } });
++    expect(mocks.season).not.toHaveBeenCalled(); expect(mocks.draft).not.toHaveBeenCalled();
++    const billing = reply(); await status(req({ entitlementOnly: "true" }), billing);
++    expect(billing.json).toHaveBeenCalledWith({ data: { access: expect.objectContaining({ eligible: false, reason: "no_active_grant" }) } });
++    expect(mocks.season).toHaveBeenCalledWith("owner");
++  });
++  it("keeps sync usable during a billing outage but reports the billing error truthfully", async () => {
++    mocks.season.mockRejectedValue(new Error("private")); mocks.draft.mockRejectedValue(new Error("private"));
++    const sync = reply(); await status(req(), sync); expect(sync.status).toHaveBeenCalledWith(200);
++    const billing = reply(); await status(req({ entitlementOnly: "true" }), billing); expect(billing.status).toHaveBeenCalledWith(503);
++  });
++  it("passes only the authenticated account into Yahoo pickup with no purchase gate", async () => {
++    const res = reply(); await pickup(req(), res);
++    expect(res.json).toHaveBeenCalledWith({ data: { fixture: true } });
++    expect(mocks.pickup).toHaveBeenCalledWith("owner");
++    expect(mocks.season).not.toHaveBeenCalled();
++  });
++  it("requires sign-in even with enforcement off", async () => {
++    mocks.auth.mockImplementation(async (_req, res) => { res.status(401).json({ error: "Sign in" }); return null; });
++    for (const handler of [status, pickup, rsoAccess]) { const res = reply(); await handler(req(), res); expect(res.status).toHaveBeenCalledWith(401); }
++    expect(mocks.pickup).not.toHaveBeenCalled(); expect(mocks.season).not.toHaveBeenCalled();
++  });
++  it("allows only the sync capability for a free RSO workspace", async () => {
++    const res = reply(); await rsoAccess(req(), res);
++    expect(res.json).toHaveBeenCalledWith({ data: expect.objectContaining({ eligible: true, reason: "rollout_free", capabilities: ["rso_sync"], grantingSources: [] }) });
++  });
++  it("preserves the separate Yahoo rollout and Fantrax readiness restrictions", async () => {
++    vi.stubEnv("YAHOO_LIVE_DRAFT_ENABLED", "false");
++    await expect(requireYahooLiveDraftServerAccess("owner")).rejects.toMatchObject({ code: "yahoo_live_draft_disabled" });
++    vi.stubEnv("YAHOO_LIVE_DRAFT_ENABLED", "true"); vi.stubEnv("YAHOO_LIVE_DRAFT_ROLLOUT_STAGE", "staff"); vi.stubEnv("YAHOO_LIVE_DRAFT_STAFF_USER_IDS", "11111111-1111-4111-8111-111111111111");
++    expect(await requireYahooLiveDraftServerAccess("11111111-1111-4111-8111-111111111111")).toMatchObject({ eligible: true, reason: "rollout_free" });
++    await expect(requireYahooLiveDraftServerAccess("other")).rejects.toMatchObject({ code: "yahoo_live_draft_forbidden" });
++    await expect(requireFantraxDraftAccess("owner", { enabled: false })).rejects.toMatchObject({ code: "FANTRAX_LIVE_DRAFT_DISABLED" });
++    await expect(requireFantraxDraftAccess("owner", { enabled: true })).resolves.toBeUndefined();
++    expect(mocks.season).not.toHaveBeenCalled(); expect(mocks.draft).not.toHaveBeenCalled();
++  });
++});

@@ -1,0 +1,1811 @@
+{
+  "checked_at": "2026-10-22T14:35:51+00:00",
+  "head": "67b9efda5901a5f8c25a25889572e85527056f7a",
+  "meaning": "Exact historical accepted-source manifests compared with current local bytes; hash match is not behavior acceptance. Counts overlap across packets. No tests or source executions. P07 actively editing; timestamped snapshot only.",
+  "packets": [
+    {
+      "packet": "A1-A10+NST",
+      "manifest": "tasks/artifacts/claude-audit-fixes-2026-10-22/combined-audit-nst/CANDIDATE.json",
+      "manifest_sha256": "c6511c243f6979781606b2484fa6383ab7a0735d5a2e69da99e3e93ceff936de",
+      "pin_count": 43,
+      "matching": 41,
+      "pins": [
+        {
+          "path": "web/lib/projections/queries/skater-queries.ts",
+          "expected_sha256": "9dfcff408d4cd5f9bdb266a3380a8beacc557a584002e44d5b75e0639d74606a",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "9dfcff408d4cd5f9bdb266a3380a8beacc557a584002e44d5b75e0639d74606a",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/projections/queries/skater-queries.test.ts",
+          "expected_sha256": "a417087529e6ed4319769699bb4f443c1873263fbdb738624c817c1861c732e2",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "a417087529e6ed4319769699bb4f443c1873263fbdb738624c817c1861c732e2",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/rosterScheduleData/forgeDailyBridge.ts",
+          "expected_sha256": "57f21bc5214a37d3ef5aff985ba62f0c5d30ae5f3925693f7d61f55a240abc6a",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "57f21bc5214a37d3ef5aff985ba62f0c5d30ae5f3925693f7d61f55a240abc6a",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/rosterScheduleData/forgeDailyBridge.test.ts",
+          "expected_sha256": "d3f65f3b3c63b631799cd6ccd41b6e1031ea1d1a7dbd6bc3f7506028702cea24",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "d3f65f3b3c63b631799cd6ccd41b6e1031ea1d1a7dbd6bc3f7506028702cea24",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/player-forecasts/servedForecastLedger.ts",
+          "expected_sha256": "b9f5629e291bbcbee64f40378a762b2ee85e06fffe74cd1c564d6e62989098f1",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "b9f5629e291bbcbee64f40378a762b2ee85e06fffe74cd1c564d6e62989098f1",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/player-forecasts/servedForecastLedger.test.ts",
+          "expected_sha256": "3052c97e64b16cbe03d0c8146a71f83f7516c83e3563c981a410eb56b8fd3577",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "3052c97e64b16cbe03d0c8146a71f83f7516c83e3563c981a410eb56b8fd3577",
+          "state": "matches"
+        },
+        {
+          "path": "web/pages/api/v1/db/forge-served-forecast-settle.ts",
+          "expected_sha256": "699cb851dc0bd7b8635ce8f61c156fbf30f5451241e24720f3c9623a0e76db22",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "699cb851dc0bd7b8635ce8f61c156fbf30f5451241e24720f3c9623a0e76db22",
+          "state": "matches"
+        },
+        {
+          "path": "web/pages/api/v1/db/forge-served-forecast-snapshot.ts",
+          "expected_sha256": "f77f22aabf9cfe3d5246354e5d0dd068a3286fb15e1d55c570a3b58e1f76a275",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "f77f22aabf9cfe3d5246354e5d0dd068a3286fb15e1d55c570a3b58e1f76a275",
+          "state": "matches"
+        },
+        {
+          "path": "web/pages/api/v1/forge/scoreboard.ts",
+          "expected_sha256": "260b504bdbe499e0779d6833dca4145893a7b5188f6d7174f1af4d348db21abb",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "260b504bdbe499e0779d6833dca4145893a7b5188f6d7174f1af4d348db21abb",
+          "state": "matches"
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/db/forge-served-forecast-settle.test.ts",
+          "expected_sha256": "6885092c259430091efa2e07ce8aa3afc0cf03b747f137a69e2940c7b80f0d81",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "6885092c259430091efa2e07ce8aa3afc0cf03b747f137a69e2940c7b80f0d81",
+          "state": "matches"
+        },
+        {
+          "path": "web/tests/api/forge-scoreboard.test.ts",
+          "expected_sha256": "aa58a4d16e5b2354cfaf129796ca3fde72314a52890717bc1e30b9820dec4ac5",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "aa58a4d16e5b2354cfaf129796ca3fde72314a52890717bc1e30b9820dec4ac5",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/rollingForgePipelineRunState.ts",
+          "expected_sha256": "6ce1bab745bb6fa870b7aeb717c61b2470072db3645047e48006ea53304d2d38",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "6ce1bab745bb6fa870b7aeb717c61b2470072db3645047e48006ea53304d2d38",
+          "state": "matches"
+        },
+        {
+          "path": "web/pages/api/v1/db/run-rolling-forge-pipeline.ts",
+          "expected_sha256": "ffe7e16c782987fdfec19f8b1e787a89a76aed0a2739994ec5f80eb9488f97b1",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "ffe7e16c782987fdfec19f8b1e787a89a76aed0a2739994ec5f80eb9488f97b1",
+          "state": "matches"
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/db/run-rolling-forge-pipeline.test.ts",
+          "expected_sha256": "1137a449405ec993cb8440395311cc199251fd6da87508469390ffc0ff8f8227",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "1137a449405ec993cb8440395311cc199251fd6da87508469390ffc0ff8f8227",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+          "expected_sha256": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+          "state": "changed",
+          "disposition": "P07 active consumer-intent change; source and test diff inspected against a565238f; not accepted by earlier Yahoo/combined packet"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+          "expected_sha256": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+          "state": "changed",
+          "disposition": "P07 active consumer-intent change; source and test diff inspected against a565238f; not accepted by earlier Yahoo/combined packet"
+        },
+        {
+          "path": "web/lib/stats/percentUnits.ts",
+          "expected_sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/stats/percentUnits.test.ts",
+          "expected_sha256": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/GoalieShareChart/index.tsx",
+          "expected_sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+          "expected_sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+          "state": "matches"
+        },
+        {
+          "path": "web/hooks/useShotData.ts",
+          "expected_sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+          "state": "matches"
+        },
+        {
+          "path": "web/hooks/useShotData.test.tsx",
+          "expected_sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/GameStateAnalysis/GameStateAnalysis.tsx",
+          "expected_sha256": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/GameStateAnalysis/GameStateAnalysis.test.tsx",
+          "expected_sha256": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/TeamDashboard/AdvancedL10Metrics.tsx",
+          "expected_sha256": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/TeamDashboard/AdvancedL10Metrics.test.tsx",
+          "expected_sha256": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "expected_sha256": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.test.tsx",
+          "expected_sha256": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/stats/teamCountConsumers.test.tsx",
+          "expected_sha256": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/projections/projectionPipelineState.ts",
+          "expected_sha256": "288eaf8e8add181cf23290fda001409d001980aec53f49d96d4164b49e716b8f",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "288eaf8e8add181cf23290fda001409d001980aec53f49d96d4164b49e716b8f",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/projections/projectionPipelineState.test.ts",
+          "expected_sha256": "bcfe0ea75668c7cca0d40346d8f901d123d5e7f190c2392bd4b2a5ed79e9b124",
+          "source_fields": [
+            "accepted_files"
+          ],
+          "current_sha256": "bcfe0ea75668c7cca0d40346d8f901d123d5e7f190c2392bd4b2a5ed79e9b124",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/integrations/providerSyncAccessServer.ts",
+          "expected_sha256": "6feba64d25aad65ae6322fcc812be8ad202c18545ba38eaaf4566f3379dd0bf1",
+          "source_fields": [
+            "dependency_fences"
+          ],
+          "current_sha256": "6feba64d25aad65ae6322fcc812be8ad202c18545ba38eaaf4566f3379dd0bf1",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/integrations/providerSyncAccess.ts",
+          "expected_sha256": "5e34f581be828b4f0b45cbfbb0e0851b65567f81fc35795000af4e79f7483ae5",
+          "source_fields": [
+            "dependency_fences"
+          ],
+          "current_sha256": "5e34f581be828b4f0b45cbfbb0e0851b65567f81fc35795000af4e79f7483ae5",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/integrations/providerSyncAccess.test.ts",
+          "expected_sha256": "e02a9e1efedefae017aa5259cdaadf6f9cbc5bca247201f0c1adcf1ef52b2103",
+          "source_fields": [
+            "dependency_fences"
+          ],
+          "current_sha256": "e02a9e1efedefae017aa5259cdaadf6f9cbc5bca247201f0c1adcf1ef52b2103",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/integrations/providerSyncPaywall.test.ts",
+          "expected_sha256": "d1ed5ef030e2af624fbc9029f8958bae3915f2bc3e7ae8cd34b97d7aa562637b",
+          "source_fields": [
+            "dependency_fences"
+          ],
+          "current_sha256": "d1ed5ef030e2af624fbc9029f8958bae3915f2bc3e7ae8cd34b97d7aa562637b",
+          "state": "matches"
+        },
+        {
+          "path": "web/pages/api/v1/roster-schedule-optimizer/provider.ts",
+          "expected_sha256": "7d2eaddedbf4ad6993cd41f451aaaa05a4a6fae45e80d844387ee84222bb571d",
+          "source_fields": [
+            "dependency_fences"
+          ],
+          "current_sha256": "7d2eaddedbf4ad6993cd41f451aaaa05a4a6fae45e80d844387ee84222bb571d",
+          "state": "matches"
+        },
+        {
+          "path": "web/pages/api/v1/db/update-nst-gamelog.ts",
+          "expected_sha256": "9f6b8f628f2d4be77e3bf15a3d94ee8bceef6b420618034eab5c23162d8db1d4",
+          "source_fields": [
+            "dependency_fences"
+          ],
+          "current_sha256": "9f6b8f628f2d4be77e3bf15a3d94ee8bceef6b420618034eab5c23162d8db1d4",
+          "state": "matches"
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/db/update-nst-gamelog.test.ts",
+          "expected_sha256": "098de11dd4282c779c1fc3ee404b2931b5202af5309045d4409f596cf6e75e84",
+          "source_fields": [
+            "dependency_fences"
+          ],
+          "current_sha256": "098de11dd4282c779c1fc3ee404b2931b5202af5309045d4409f596cf6e75e84",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/nst/requestBudget.ts",
+          "expected_sha256": "d19258f72183580919d26c16480287faa3f9b2fa30c9a9aa7d2982bba79b487e",
+          "source_fields": [
+            "dependency_fences"
+          ],
+          "current_sha256": "d19258f72183580919d26c16480287faa3f9b2fa30c9a9aa7d2982bba79b487e",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/nst/client.ts",
+          "expected_sha256": "712eefa3c63b3340770a4d45fb2c97428ffe7ede49a5581f36f75a9c9a3783e9",
+          "source_fields": [
+            "dependency_fences"
+          ],
+          "current_sha256": "712eefa3c63b3340770a4d45fb2c97428ffe7ede49a5581f36f75a9c9a3783e9",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/nst/gamelogProgress.ts",
+          "expected_sha256": "b0c657c0e28193384939c58fdab6321460347f149b698e8051c4211cacab9942",
+          "source_fields": [
+            "dependency_fences"
+          ],
+          "current_sha256": "b0c657c0e28193384939c58fdab6321460347f149b698e8051c4211cacab9942",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/cron/withCronJobAudit.ts",
+          "expected_sha256": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+          "source_fields": [
+            "dependency_fences"
+          ],
+          "current_sha256": "02790f98626c71accd9bdb0b01a2e9da95799a254c14b98ad82a94bfca635094",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/cron/nhlOffSeason.ts",
+          "expected_sha256": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+          "source_fields": [
+            "dependency_fences"
+          ],
+          "current_sha256": "7b3202d5d4e8006a908ae2cdbeef217949f357499456f99353fd17f902ebd77f",
+          "state": "matches"
+        }
+      ]
+    },
+    {
+      "packet": "P01",
+      "manifest": "tasks/artifacts/claude-audit-independent-review-2026-10-22/p01-calendar/hash-verification-end.json",
+      "manifest_sha256": "6b69b0cf9d70be7d65f5dcf5d970bae6801f30c4318b83992a4ae376712b2f2a",
+      "pin_count": 6,
+      "matching": 6,
+      "pins": [
+        {
+          "path": "web/components/TeamScheduleCalendar/TeamScheduleCalendar.tsx",
+          "expected_sha256": "53121a1d2666c664e326159a982ef5efe36f9f8da3c082af81eab78211debbd7",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "53121a1d2666c664e326159a982ef5efe36f9f8da3c082af81eab78211debbd7",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/TeamScheduleCalendar/TeamScheduleCalendar.test.tsx",
+          "expected_sha256": "f16767f9da1ea35bcbd4b25351715da1c24ca9c6f3c86aae516bffc5dcf3468d",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "f16767f9da1ea35bcbd4b25351715da1c24ca9c6f3c86aae516bffc5dcf3468d",
+          "state": "matches"
+        },
+        {
+          "path": "web/hooks/useTeamSchedule.ts",
+          "expected_sha256": "c526df196651bb5c94ffba17b54bbc70133754bafc77b26c3bfb27602ba47826",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "c526df196651bb5c94ffba17b54bbc70133754bafc77b26c3bfb27602ba47826",
+          "state": "matches"
+        },
+        {
+          "path": "web/hooks/useTeamStatsHeaderData.ts",
+          "expected_sha256": "1a493766a110a9f2905ebc4a6ca4251cb87dbb360de3547d643c5d8c514ed9b2",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "1a493766a110a9f2905ebc4a6ca4251cb87dbb360de3547d643c5d8c514ed9b2",
+          "state": "matches"
+        },
+        {
+          "path": "web/hooks/useTeamSchedule.test.tsx",
+          "expected_sha256": "c4e637c474dcd35b6c1a8814336f264e80d83a0822bec9326ed2fdc76283ba4a",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "c4e637c474dcd35b6c1a8814336f264e80d83a0822bec9326ed2fdc76283ba4a",
+          "state": "matches"
+        },
+        {
+          "path": "web/hooks/useTeamStatsHeaderData.test.tsx",
+          "expected_sha256": "92275341ceb17c372ef7d24f4f160496da7ddd69d13444d2baea35320d7b5646",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "92275341ceb17c372ef7d24f4f160496da7ddd69d13444d2baea35320d7b5646",
+          "state": "matches"
+        }
+      ]
+    },
+    {
+      "packet": "P03",
+      "manifest": "tasks/artifacts/claude-audit-independent-review-2026-10-22/p03-timeline/hash-verification-end.json",
+      "manifest_sha256": "351dc6a759e30d8c5edf75489241f4459e241b3613101a03ebe62481a5236a75",
+      "pin_count": 4,
+      "matching": 4,
+      "pins": [
+        {
+          "path": "web/components/MetricsTimeline/MetricsTimeline.tsx",
+          "expected_sha256": "07bb3c3919ae684504551ab05afddada6dfe9fb71b8af282ccd11ea562779ebe",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "07bb3c3919ae684504551ab05afddada6dfe9fb71b8af282ccd11ea562779ebe",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/MetricsTimeline/metricsTimelineData.ts",
+          "expected_sha256": "59ad16886a71aa2c8d0e0d555f1b426439b6b6242dcc887d187dee85eb9bd441",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "59ad16886a71aa2c8d0e0d555f1b426439b6b6242dcc887d187dee85eb9bd441",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/MetricsTimeline/metricsTimelineData.test.ts",
+          "expected_sha256": "fabc0c29b1e1e772fb6e8f9461f881584ebff7cb58ecab2b2588608ce5c13622",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "fabc0c29b1e1e772fb6e8f9461f881584ebff7cb58ecab2b2588608ce5c13622",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/MetricsTimeline/MetricsTimeline.test.tsx",
+          "expected_sha256": "83766270718f896c4d810509d1c4a6b67036c8dac65534aadc26be23720465b4",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "83766270718f896c4d810509d1c4a6b67036c8dac65534aadc26be23720465b4",
+          "state": "matches"
+        }
+      ]
+    },
+    {
+      "packet": "P04",
+      "manifest": "tasks/artifacts/claude-audit-independent-review-2026-10-22/p04-search/prefetch-correction/hash-verification-end.json",
+      "manifest_sha256": "ca96d13dd7f45b39bb1e07ad5e1bddfe26152b8f9bc495d999e9417af33d8c35",
+      "pin_count": 2,
+      "matching": 2,
+      "pins": [
+        {
+          "path": "web/components/StatsPage/PlayerSearchBar.tsx",
+          "expected_sha256": "ddd48a75a636aeba2721adf79f50bd44561c35d8399cc9e48e1b822c69bcc33f",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "ddd48a75a636aeba2721adf79f50bd44561c35d8399cc9e48e1b822c69bcc33f",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/StatsPage/PlayerSearchBar.test.tsx",
+          "expected_sha256": "33edc3fecc41818280146ed2cc6f3bec9172630418f31b3b1258a0f5366ce6e1",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "33edc3fecc41818280146ed2cc6f3bec9172630418f31b3b1258a0f5366ce6e1",
+          "state": "matches"
+        }
+      ]
+    },
+    {
+      "packet": "P02-R1",
+      "manifest": "tasks/artifacts/p02-r1-independent-review-2026-10-22/end-integrity.json",
+      "manifest_sha256": "89170e4e703125b4221d70b162b19e9d97fc57fe5892e0c7bf4169cdaf1e745a",
+      "pin_count": 64,
+      "matching": 64,
+      "pins": [
+        {
+          "path": "web/components/PlayerStats/playerStatsContract.ts",
+          "expected_sha256": "d9453373cc4b774ac61e458e616091440559399bcb1358f704c4c90abffdf242",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "d9453373cc4b774ac61e458e616091440559399bcb1358f704c4c90abffdf242",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/PlayerStats/playerStatsContract.test.ts",
+          "expected_sha256": "bf22582beb95ada6aa25daaa32c5e98a2f4a5160f99ed02e358dce8de34663d4",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "bf22582beb95ada6aa25daaa32c5e98a2f4a5160f99ed02e358dce8de34663d4",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/PlayerStats/PlayerContextualStats.tsx",
+          "expected_sha256": "7872aa27fe8c421a5e3d17be898a6ece641589e3fa2cdfb1d4a3087c57c557b9",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "7872aa27fe8c421a5e3d17be898a6ece641589e3fa2cdfb1d4a3087c57c557b9",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/PlayerStats/PlayerContextualStats.test.tsx",
+          "expected_sha256": "30c95ab42a569c8eb1fd973d390a62fb3d7728db22e85f5aef04cd5dc6988adf",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "30c95ab42a569c8eb1fd973d390a62fb3d7728db22e85f5aef04cd5dc6988adf",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/NHL/statsPageFetch.ts",
+          "expected_sha256": "1a58b8ed40a070905b3d180b8cfa1d3ae3ee6d2ecb25bff38ffa8b9834ff7f66",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "1a58b8ed40a070905b3d180b8cfa1d3ae3ee6d2ecb25bff38ffa8b9834ff7f66",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/NHL/statsPageFetch.test.ts",
+          "expected_sha256": "24433be6b0211c8d4bc923ee552964ec56f3cfa4108e2115561e6ed11ae1b4c4",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "24433be6b0211c8d4bc923ee552964ec56f3cfa4108e2115561e6ed11ae1b4c4",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/NHL/statsPageTypes.ts",
+          "expected_sha256": "486e67073a7ffe6a5efc94174772da2d0df528d2be362c0eded7b747bd9b8d09",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "486e67073a7ffe6a5efc94174772da2d0df528d2be362c0eded7b747bd9b8d09",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/StatsPage/LeaderboardCategoryGoalie.tsx",
+          "expected_sha256": "3a3dc4e7f5db7cdfafb7ccab1a3647ec893b6000fa330aaf4745d87dac433158",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "3a3dc4e7f5db7cdfafb7ccab1a3647ec893b6000fa330aaf4745d87dac433158",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/StatsPage/LeaderboardCategoryGoalie.test.tsx",
+          "expected_sha256": "f2d614977a1e8a3fce96b1b29be7196f8bf106066b3c1669bcc92064d4e471cf",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "f2d614977a1e8a3fce96b1b29be7196f8bf106066b3c1669bcc92064d4e471cf",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/stats/percentUnits.ts",
+          "expected_sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "d9db23a7f88e52d99b01792bcdb7fbffdff3f0a4391b92ed655763fa67d3dad3",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/stats/percentUnits.test.ts",
+          "expected_sha256": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "b1131e0b47df19d01a90375f291f9d378d5040242bc81e72883ca8e3364a0e4a",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/GoalieShareChart/index.tsx",
+          "expected_sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "eaf214966a91a931c5a67eba2f723f7db943a1905f2bb9f89ab26a33d07bee7b",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+          "expected_sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "8358449fbb8a3ce4b96c47afe3fc6907af1de077b04612df6874add87e04ba7a",
+          "state": "matches"
+        },
+        {
+          "path": "web/hooks/useShotData.ts",
+          "expected_sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "cc659fb7526cfd9f0ff2f1986c3dcc7a517a09e9a887e032240cd5fd2da276fb",
+          "state": "matches"
+        },
+        {
+          "path": "web/hooks/useShotData.test.tsx",
+          "expected_sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "cc4a4e3f48d4ca6a6af42e4e24e02d88fccf15e46e102882fb2ac1d7c7051b5b",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/GameStateAnalysis/GameStateAnalysis.tsx",
+          "expected_sha256": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "d0612c49ba567fba04f41f1bbc5761f4242f25b08c690d0bad776a38c1407ef2",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/GameStateAnalysis/GameStateAnalysis.test.tsx",
+          "expected_sha256": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "7eade418baa9e4a1ba18aae4e49e8ddabc25fad99d30821e081d13de1e758c88",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/TeamDashboard/AdvancedL10Metrics.tsx",
+          "expected_sha256": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "9d1143bb2bcc9d6edab3c2605121eaf66b22b647f638a10508c7fddfad43b439",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/TeamDashboard/AdvancedL10Metrics.test.tsx",
+          "expected_sha256": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "ff094834f973187cba5b29343f110a056918488e9107c7d9a9a3a01726d190f5",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.tsx",
+          "expected_sha256": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "a04e27bea27c4346e2c30e7a1f2dca21c1a092fc241e29a60a34ab6d2ae01f64",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/TeamDashboard/TeamDashboard.test.tsx",
+          "expected_sha256": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "28a540e820d4fb38b954fa9b07b6ff95ee6033b48c8239f3ae91077f39740bc7",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/stats/teamCountConsumers.test.tsx",
+          "expected_sha256": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "5b53c8e3975290074c86226ada9de60fa8c532b2a1fc496f42b6e28aab7dbbfa",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/PlayerStats/PlayerSummaryStrip.tsx",
+          "expected_sha256": "3956e59250acfa65c7d855b512268da1416825319953fda71778e0a773385b84",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "3956e59250acfa65c7d855b512268da1416825319953fda71778e0a773385b84",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/PlayerStats/PlayerStatsSummary.tsx",
+          "expected_sha256": "7dbddd62b5d1b8469b96daa2652b96d8649362d517db77ec0aec1dd65a8687d3",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "7dbddd62b5d1b8469b96daa2652b96d8649362d517db77ec0aec1dd65a8687d3",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/PlayerStats/PlayerGoalieSummaries.test.tsx",
+          "expected_sha256": "97422008b0835ac6aa8e33e9223aa42a594df8e1d461fad0ec74152aa0f97e10",
+          "source_fields": [
+            "pins",
+            "pins"
+          ],
+          "current_sha256": "97422008b0835ac6aa8e33e9223aa42a594df8e1d461fad0ec74152aa0f97e10",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/PlayerStats/types.ts",
+          "expected_sha256": "c97afe62bfb04d4ef5b6fb8c018103ba5663dafe2d5f33310e932509e628ac3d",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "c97afe62bfb04d4ef5b6fb8c018103ba5663dafe2d5f33310e932509e628ac3d",
+          "state": "matches"
+        },
+        {
+          "path": "web/utils/formattingUtils.ts",
+          "expected_sha256": "3f4b75b950cfe9832d992dcb56a7ccb6cad8640e030794f16fa821868b88383d",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "3f4b75b950cfe9832d992dcb56a7ccb6cad8640e030794f16fa821868b88383d",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/PlayerStats/PlayerStats.module.scss",
+          "expected_sha256": "2a9324e59ed2913b0ed29024b03fcd53eee8b51c8c12ebb278331f366789ecaa",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "2a9324e59ed2913b0ed29024b03fcd53eee8b51c8c12ebb278331f366789ecaa",
+          "state": "matches"
+        },
+        {
+          "path": "web/hooks/useMissedGames.ts",
+          "expected_sha256": "aa997ef5fb31b7d0c55218c67b983e0082ea3cdff10d8a42f12219a9015c27c8",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "aa997ef5fb31b7d0c55218c67b983e0082ea3cdff10d8a42f12219a9015c27c8",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/supabase/index.ts",
+          "expected_sha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "5d9cf84ffefe12c1e5e16bef005ee5c66fdbb06505a1a7d3385edb11b3642fe2",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/supabase/database-generated.types.ts",
+          "expected_sha256": "348d1a452d649ca6d4160b7611cd59a7feb30f8e7cc4f6119baabe43f0aaf6b3",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "348d1a452d649ca6d4160b7611cd59a7feb30f8e7cc4f6119baabe43f0aaf6b3",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/supabase/client.ts",
+          "expected_sha256": "818aab6190e6a3eed1f8e9b5190ba1da6db6874a05160632c6befa2d5eaf21b2",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "818aab6190e6a3eed1f8e9b5190ba1da6db6874a05160632c6befa2d5eaf21b2",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/teamsInfo.ts",
+          "expected_sha256": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/PlayerStats/PlayerPageShell.module.scss",
+          "expected_sha256": "c94ee217536e29919adf5512b24a766b50906b6c3172c0ab5d867e1b82c03cd0",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "c94ee217536e29919adf5512b24a766b50906b6c3172c0ab5d867e1b82c03cd0",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/NHL/server/index.ts",
+          "expected_sha256": "0499ac3f3fdedb228efdd2091d2c93b6e79ef35b8fa56328ed60b7201fc3d435",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "0499ac3f3fdedb228efdd2091d2c93b6e79ef35b8fa56328ed60b7201fc3d435",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/NHL/base.ts",
+          "expected_sha256": "9dea7379b52e7b562f7483de2c0c57145c6210ccd5bfe771812c1ffdedea5010",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "9dea7379b52e7b562f7483de2c0c57145c6210ccd5bfe771812c1ffdedea5010",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/NHL/types.ts",
+          "expected_sha256": "805b62b040a2e46b18e863815eeccaa175a01b9c4e770f679f2e483fb09c1fce",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "805b62b040a2e46b18e863815eeccaa175a01b9c4e770f679f2e483fb09c1fce",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/supabase/public-client.ts",
+          "expected_sha256": "93e088a695bee6f44d35161ea933b0e3b80bc0433c1a7d9d96fe1f1ab01e0a5e",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "93e088a695bee6f44d35161ea933b0e3b80bc0433c1a7d9d96fe1f1ab01e0a5e",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/cron/normalizeDependencyError.ts",
+          "expected_sha256": "6bc3d9862f9d40f4a1be277b41f225266ee80af510afc2d484e92778fcb6830a",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "6bc3d9862f9d40f4a1be277b41f225266ee80af510afc2d484e92778fcb6830a",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/cron/statsUpdateSafety.ts",
+          "expected_sha256": "ac16e18554938eb3589c4698df98d8003a464e42bc86657b0d9b8f034e91c2fe",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "ac16e18554938eb3589c4698df98d8003a464e42bc86657b0d9b8f034e91c2fe",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/supabase/pagination.ts",
+          "expected_sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "1fe2e1dc2c4f4511510bf19b4fd62024923282a1d0bb4e6a35c0505e2100f660",
+          "state": "matches"
+        },
+        {
+          "path": "web/styles/Stats.module.scss",
+          "expected_sha256": "66596f49ac1246ea9911df5cf607fa8cf4a1b2e7f90775becb9d74da6cd12312",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "66596f49ac1246ea9911df5cf607fa8cf4a1b2e7f90775becb9d74da6cd12312",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/StatsPage/LeaderboardHeadshot.tsx",
+          "expected_sha256": "33ab8e99e7818a6b6706b18dee8994ae986b310b40eb2837689f1bce35cec635",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "33ab8e99e7818a6b6706b18dee8994ae986b310b40eb2837689f1bce35cec635",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/images.ts",
+          "expected_sha256": "3cc58b704a604e2fe043dd80bb832418b15f54212b6013bdf347a1aeb8aa0dcd",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "3cc58b704a604e2fe043dd80bb832418b15f54212b6013bdf347a1aeb8aa0dcd",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/StatsPage/MobileTabInterface.test.tsx",
+          "expected_sha256": "32af318d222287c93bb3d72248e7209cb0b9ff38d3fb342ac5f326e281b03e48",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "32af318d222287c93bb3d72248e7209cb0b9ff38d3fb342ac5f326e281b03e48",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/StatsPage/MobileTabInterface.tsx",
+          "expected_sha256": "fb73fa26500c57ed2da2474491d53731b09065c46c64ab0894844ae8f1cc4117",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "fb73fa26500c57ed2da2474491d53731b09065c46c64ab0894844ae8f1cc4117",
+          "state": "matches"
+        },
+        {
+          "path": "web/__tests__/pages/stats/index.test.tsx",
+          "expected_sha256": "2ff130d4b25f5e25190d5bdc16fca12c6a41a0da07998a9cace564d23cc6dc4c",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "2ff130d4b25f5e25190d5bdc16fca12c6a41a0da07998a9cace564d23cc6dc4c",
+          "state": "matches"
+        },
+        {
+          "path": "web/pages/stats/index.tsx",
+          "expected_sha256": "f9e1252344a76d6ef621c0408c30b52bcd117d0289c56ecba3eca0e701ac86e0",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "f9e1252344a76d6ef621c0408c30b52bcd117d0289c56ecba3eca0e701ac86e0",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/StatsPage/LeaderboardCategory.tsx",
+          "expected_sha256": "ab16a645a5eb192987d700507e2f49367d4396a257810e86bf28d012ba5001e2",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "ab16a645a5eb192987d700507e2f49367d4396a257810e86bf28d012ba5001e2",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/StatsPage/Segment.tsx",
+          "expected_sha256": "17cb1473faec1cea1f6795995463604d5956f56741d0342f397d8f63521f37ce",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "17cb1473faec1cea1f6795995463604d5956f56741d0342f397d8f63521f37ce",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/StatsPage/LeaderboardCategoryBSH.tsx",
+          "expected_sha256": "175e0dd43738c2b3114b7d5ec7646da264af11470a13031330bbb9b73d29af03",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "175e0dd43738c2b3114b7d5ec7646da264af11470a13031330bbb9b73d29af03",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/StatsPage/MobileTeamList.tsx",
+          "expected_sha256": "4eac808930585218ad2563d6df56abbc2bd424015ad7378d13ac95ee932c10b3",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "4eac808930585218ad2563d6df56abbc2bd424015ad7378d13ac95ee932c10b3",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/common/OptimizedImage.tsx",
+          "expected_sha256": "8870d9c638bd598ffe08e0d9eaa26beb5d7a18ce8039d8137446152013828a1b",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "8870d9c638bd598ffe08e0d9eaa26beb5d7a18ce8039d8137446152013828a1b",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/StatsPage/MobileTeamList.module.scss",
+          "expected_sha256": "163c5b7dfd4e6181de989d6b629b79299606fd0b288b798380eb6c867e814e27",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "163c5b7dfd4e6181de989d6b629b79299606fd0b288b798380eb6c867e814e27",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/cors-fetch.ts",
+          "expected_sha256": "ea3816ce959f83e41f278b651ecc421bbfbbe1a56a6a3bd7c62161e11ca7d8f4",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "ea3816ce959f83e41f278b651ecc421bbfbbe1a56a6a3bd7c62161e11ca7d8f4",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.module.scss",
+          "expected_sha256": "54ef5a57ddd62f32cb5d9d495fb9abd89b1a17136a9924a9a45cbe83041b221c",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "54ef5a57ddd62f32cb5d9d495fb9abd89b1a17136a9924a9a45cbe83041b221c",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/StatsPage/PlayerSearchBar.tsx",
+          "expected_sha256": "ddd48a75a636aeba2721adf79f50bd44561c35d8399cc9e48e1b822c69bcc33f",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "ddd48a75a636aeba2721adf79f50bd44561c35d8399cc9e48e1b822c69bcc33f",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/NHL/client/index.ts",
+          "expected_sha256": "e98b51930c6bac8c483a18a28d9b06a823ab891b2d9917e9adbf59abe5f57b18",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "e98b51930c6bac8c483a18a28d9b06a823ab891b2d9917e9adbf59abe5f57b18",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/api/types.ts",
+          "expected_sha256": "c663ebaff73ba9b09858178da35828b6fab29ce537d8a0e7d9db9f90b46e5c2f",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "c663ebaff73ba9b09858178da35828b6fab29ce537d8a0e7d9db9f90b46e5c2f",
+          "state": "matches"
+        },
+        {
+          "path": "web/__tests__/vitest.setup.js",
+          "expected_sha256": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "e8855d945f40380bdad0a98f4e724c8abb8d4debba5dbaa3db9ee93da853cb63",
+          "state": "matches"
+        },
+        {
+          "path": "web/tsconfig.json",
+          "expected_sha256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b",
+          "state": "matches"
+        },
+        {
+          "path": "web/package.json",
+          "expected_sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "fc904bdc9e3a058e753f764166c949ca1c2ece5dd30c3336c5a996c2f32b85ba",
+          "state": "matches"
+        },
+        {
+          "path": "web/next-bootstrap.d.ts",
+          "expected_sha256": "fbbabe3d21600eac77a1bf714dfdbb22e49736840d31597ce29160c331375ada",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "fbbabe3d21600eac77a1bf714dfdbb22e49736840d31597ce29160c331375ada",
+          "state": "matches"
+        },
+        {
+          "path": "web/eslint.config.mjs",
+          "expected_sha256": "47974c70d20250ef3a11d698318026e2bd172589074956e7b89885520b623af6",
+          "source_fields": [
+            "pins"
+          ],
+          "current_sha256": "47974c70d20250ef3a11d698318026e2bd172589074956e7b89885520b623af6",
+          "state": "matches"
+        }
+      ]
+    },
+    {
+      "packet": "P05-R1",
+      "manifest": "tasks/artifacts/p05-ownership-2026-10-22/r1/FILE-HASHES.json",
+      "manifest_sha256": "f08b07d618c34a3ef0771844f16562fe2ae54f4e0460857d0c33b5414cfd451e",
+      "pin_count": 7,
+      "matching": 5,
+      "pins": [
+        {
+          "path": "web/pages/api/v1/transactions/ownership-snapshots.ts",
+          "expected_sha256": "543b02e64075715fd619faddf3223f38828cbae214f35cf7ca44ae7159cdb5c7",
+          "source_fields": [
+            "applicationFiles"
+          ],
+          "current_sha256": "543b02e64075715fd619faddf3223f38828cbae214f35cf7ca44ae7159cdb5c7",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/dashboard/playerOwnership.ts",
+          "expected_sha256": "d0070eabdfd00edf91dfc7bb810747a7c30855acf9cf4b3b935b443ae79238de",
+          "source_fields": [
+            "applicationFiles"
+          ],
+          "current_sha256": "d0070eabdfd00edf91dfc7bb810747a7c30855acf9cf4b3b935b443ae79238de",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/dashboard/playerOwnership.test.ts",
+          "expected_sha256": "407d0b90451d67200c6c112d7f4a5ed493da6a807439b82832dcf90e276a501c",
+          "source_fields": [
+            "applicationFiles"
+          ],
+          "current_sha256": "407d0b90451d67200c6c112d7f4a5ed493da6a807439b82832dcf90e276a501c",
+          "state": "matches"
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts",
+          "expected_sha256": "99b2541690ca89c7fed2b9718ac04aa2b745a6c8121b436983ff98d313cc9c70",
+          "source_fields": [
+            "applicationFiles"
+          ],
+          "current_sha256": "99b2541690ca89c7fed2b9718ac04aa2b745a6c8121b436983ff98d313cc9c70",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+          "expected_sha256": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+          "source_fields": [
+            "retainedDependencies"
+          ],
+          "current_sha256": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+          "state": "changed",
+          "disposition": "P07 active consumer-intent change; source and test diff inspected against a565238f; not accepted by earlier Yahoo/combined packet"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+          "expected_sha256": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+          "source_fields": [
+            "retainedDependencies"
+          ],
+          "current_sha256": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+          "state": "changed",
+          "disposition": "P07 active consumer-intent change; source and test diff inspected against a565238f; not accepted by earlier Yahoo/combined packet"
+        },
+        {
+          "path": "web/pages/api/v1/transactions/ownership-trends.ts",
+          "expected_sha256": "48c6d6ec40975bc96323debfa01053f61bbfc93521a4b7760616e294a400efc6",
+          "source_fields": [
+            "retainedDependencies"
+          ],
+          "current_sha256": "48c6d6ec40975bc96323debfa01053f61bbfc93521a4b7760616e294a400efc6",
+          "state": "matches"
+        }
+      ]
+    },
+    {
+      "packet": "P05-expiry",
+      "manifest": "tasks/artifacts/p05-ownership-2026-10-22/pickup-expiry/FILE-HASHES.json",
+      "manifest_sha256": "31621d3cb8958f702c4c38d568f93b7195662bdd2a6f4c1cb086b7c25c5d7caf",
+      "pin_count": 9,
+      "matching": 7,
+      "pins": [
+        {
+          "path": "web/components/PlayerPickupTable/PlayerPickupTable.tsx",
+          "expected_sha256": "169e2d681069599a9980337d8888583fcc3072932288430e6dac6ba3b1d75b77",
+          "source_fields": [
+            "applicationFiles"
+          ],
+          "current_sha256": "169e2d681069599a9980337d8888583fcc3072932288430e6dac6ba3b1d75b77",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/PlayerPickupTable/PlayerPickupTable.test.ts",
+          "expected_sha256": "bb80fb4e1642307a8c852362f71262e2a35af9cda39778b9751d4a222b0f234e",
+          "source_fields": [
+            "applicationFiles"
+          ],
+          "current_sha256": "bb80fb4e1642307a8c852362f71262e2a35af9cda39778b9751d4a222b0f234e",
+          "state": "matches"
+        },
+        {
+          "path": "web/pages/api/v1/transactions/ownership-snapshots.ts",
+          "expected_sha256": "543b02e64075715fd619faddf3223f38828cbae214f35cf7ca44ae7159cdb5c7",
+          "source_fields": [
+            "retainedDependencies"
+          ],
+          "current_sha256": "543b02e64075715fd619faddf3223f38828cbae214f35cf7ca44ae7159cdb5c7",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/dashboard/playerOwnership.ts",
+          "expected_sha256": "d0070eabdfd00edf91dfc7bb810747a7c30855acf9cf4b3b935b443ae79238de",
+          "source_fields": [
+            "retainedDependencies"
+          ],
+          "current_sha256": "d0070eabdfd00edf91dfc7bb810747a7c30855acf9cf4b3b935b443ae79238de",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/dashboard/playerOwnership.test.ts",
+          "expected_sha256": "407d0b90451d67200c6c112d7f4a5ed493da6a807439b82832dcf90e276a501c",
+          "source_fields": [
+            "retainedDependencies"
+          ],
+          "current_sha256": "407d0b90451d67200c6c112d7f4a5ed493da6a807439b82832dcf90e276a501c",
+          "state": "matches"
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/transactions/ownership-trends.test.ts",
+          "expected_sha256": "99b2541690ca89c7fed2b9718ac04aa2b745a6c8121b436983ff98d313cc9c70",
+          "source_fields": [
+            "retainedDependencies"
+          ],
+          "current_sha256": "99b2541690ca89c7fed2b9718ac04aa2b745a6c8121b436983ff98d313cc9c70",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.ts",
+          "expected_sha256": "472d5ec5fc40e17be463db1b9e2bfe0ba78119dbc0824e987952ad55ef09c462",
+          "source_fields": [
+            "retainedDependencies"
+          ],
+          "current_sha256": "9d1e205b24317b05ea4c82183e57c5c3db23ffaca31d15e793394ff01017e51c",
+          "state": "changed",
+          "disposition": "P07 active consumer-intent change; source and test diff inspected against a565238f; not accepted by earlier Yahoo/combined packet"
+        },
+        {
+          "path": "web/lib/integrations/yahoo/rosterPlanning.test.ts",
+          "expected_sha256": "3f95cb4ca8f54f442924828dbe396cc758ad23bcbdf2f205b022d6aa8696006a",
+          "source_fields": [
+            "retainedDependencies"
+          ],
+          "current_sha256": "5f0ca4765a7ac9ea729c062d4acf7fd00630127953b1560def4aff53346b2a17",
+          "state": "changed",
+          "disposition": "P07 active consumer-intent change; source and test diff inspected against a565238f; not accepted by earlier Yahoo/combined packet"
+        },
+        {
+          "path": "web/pages/api/v1/transactions/ownership-trends.ts",
+          "expected_sha256": "48c6d6ec40975bc96323debfa01053f61bbfc93521a4b7760616e294a400efc6",
+          "source_fields": [
+            "retainedDependencies"
+          ],
+          "current_sha256": "48c6d6ec40975bc96323debfa01053f61bbfc93521a4b7760616e294a400efc6",
+          "state": "matches"
+        }
+      ]
+    },
+    {
+      "packet": "CTPI",
+      "manifest": "tasks/artifacts/ctpi-independent-review-2026-10-22/REVIEWED-HASHES.json",
+      "manifest_sha256": "1a6cd7e33211281f973ba837fc9e65f14cba49d94956877ba9524fad769f6dcb",
+      "pin_count": 8,
+      "matching": 8,
+      "pins": [
+        {
+          "path": "web/pages/api/v1/db/update-team-ctpi-daily.ts",
+          "expected_sha256": "7ba8680eb056ffe7ed220d3c0955dc61569fca17050bfd516493a21377b3e7d7",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "7ba8680eb056ffe7ed220d3c0955dc61569fca17050bfd516493a21377b3e7d7",
+          "state": "matches"
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/db/update-team-ctpi-daily.test.ts",
+          "expected_sha256": "7150b3470fdd1d44848aa859206d542879c37428fe2fbf9946ea3988dd3efb59",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "7150b3470fdd1d44848aa859206d542879c37428fe2fbf9946ea3988dd3efb59",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/trends/ctpi.ts",
+          "expected_sha256": "fcb2d4080ae1e149dd859d50e02057bc6ba272999db3a665496bd85ee8619991",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "fcb2d4080ae1e149dd859d50e02057bc6ba272999db3a665496bd85ee8619991",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/trends/ctpi.test.ts",
+          "expected_sha256": "8dc6167b211e52be7dad00485c0882172c8297ecdd58622c364882446307fe83",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "8dc6167b211e52be7dad00485c0882172c8297ecdd58622c364882446307fe83",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/trends/recentTeamFormV2.ts",
+          "expected_sha256": "6e79ec9416cd56f8aea8b14cebb1d30e85a7531e38a2dced7d2d3b6e03c1d770",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "6e79ec9416cd56f8aea8b14cebb1d30e85a7531e38a2dced7d2d3b6e03c1d770",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/trends/recentTeamFormV2Provenance.ts",
+          "expected_sha256": "397cb093dbf8c7a1ebb7f680216573c86f589d00c886bcaf01d4b6a565ab27c6",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "397cb093dbf8c7a1ebb7f680216573c86f589d00c886bcaf01d4b6a565ab27c6",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/trends/recentTeamFormV2Materialization.ts",
+          "expected_sha256": "f97797c295bb3890f34d2e133f8ae4b6ce9a2f2fff4d6ee4ed4d388c7c69b314",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "f97797c295bb3890f34d2e133f8ae4b6ce9a2f2fff4d6ee4ed4d388c7c69b314",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/projections/materializationFingerprint.ts",
+          "expected_sha256": "9449439b3e9ad0737738a27da06b1c81004f5d7ba291144663e9b39a21c701fd",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "9449439b3e9ad0737738a27da06b1c81004f5d7ba291144663e9b39a21c701fd",
+          "state": "matches"
+        }
+      ]
+    },
+    {
+      "packet": "Luna-R1",
+      "manifest": "tasks/artifacts/luna-r1-independent-review-2026-10-22/verification.json",
+      "manifest_sha256": "57bb9f6bdf6b77e72bd3c2f75c98ceda79038e6b0fc47c2c15d7c2456d2396f9",
+      "pin_count": 2,
+      "matching": 2,
+      "pins": [
+        {
+          "path": "web/lib/sources/tweetIdentityReplacementReview.ts",
+          "expected_sha256": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "2be0e11a013683992ab449c6806311bd9c7bece0dce2be3a0b79e1399ee6516a",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/sources/tweetIdentityReplacementReview.test.ts",
+          "expected_sha256": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "3abe7656f8c7fae3f8474749cd9f4297ea428c8ea57efe8b83fe031028db8451",
+          "state": "matches"
+        }
+      ]
+    },
+    {
+      "packet": "Billing-cancel",
+      "manifest": "tasks/artifacts/in-season-billing-2026-10-21/cancellation-owner-refresh-2026-10-22/CHANGED-FILES.json",
+      "manifest_sha256": "01c12cb87241567ef4980cd4a7d7ebd4ace5210e72ac04243b7db9af47a39cbb",
+      "pin_count": 20,
+      "matching": 19,
+      "pins": [
+        {
+          "path": "web/components/account/InSeasonPanel.tsx",
+          "expected_sha256": "aa8b536ee039599c6d41167841b5c1a177f0350c895d03ae0b6ed0acfd76a167",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "aa8b536ee039599c6d41167841b5c1a177f0350c895d03ae0b6ed0acfd76a167",
+          "state": "matches"
+        },
+        {
+          "path": "web/components/account/InSeasonPanel.test.tsx",
+          "expected_sha256": "9111c5524568150797b0cc232e3b4f2584758102206531d9b26d408ba8abdd10",
+          "source_fields": [
+            "files"
+          ],
+          "current_sha256": "9111c5524568150797b0cc232e3b4f2584758102206531d9b26d408ba8abdd10",
+          "state": "matches"
+        },
+        {
+          "path": "web/pages/api/v1/account/in-season/checkout.ts",
+          "expected_sha256": "53508ada83a494e9ecfb9f9ddc1416eafe9c62f270b01d5081a826914c144c3f",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "53508ada83a494e9ecfb9f9ddc1416eafe9c62f270b01d5081a826914c144c3f",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/in-season/billingRoutes.test.ts",
+          "expected_sha256": "ed71429ee5e16193c280f33d570390107ac970a55dff6aa001501be078cab9aa",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "ed71429ee5e16193c280f33d570390107ac970a55dff6aa001501be078cab9aa",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/in-season/billingEntryConfig.ts",
+          "expected_sha256": "5e48b8357aea28decc729404aaaa9b73f2bffeb98eb6efda0765f3af83ff1e79",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "5e48b8357aea28decc729404aaaa9b73f2bffeb98eb6efda0765f3af83ff1e79",
+          "state": "matches"
+        },
+        {
+          "path": "web/pages/api/v1/account/in-season/subscriptions.ts",
+          "expected_sha256": "aacaafc36a1d3a67da65858f5c70ae0da12ed1c4c8b794256bdca9c71e04e2bc",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "aacaafc36a1d3a67da65858f5c70ae0da12ed1c4c8b794256bdca9c71e04e2bc",
+          "state": "matches"
+        },
+        {
+          "path": "web/pages/api/v1/internal/in-season-billing.ts",
+          "expected_sha256": "0728008fab6c0a736856a80e08432ede5b6d522474bd7ea74cb4b05c5ae8ca14",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "0728008fab6c0a736856a80e08432ede5b6d522474bd7ea74cb4b05c5ae8ca14",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/in-season/billingEntryPoints.test.ts",
+          "expected_sha256": "7d4bbf93db2d96552145c3ad2d244b6efcc034bd42a9bc163646339009cc2af8",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "7d4bbf93db2d96552145c3ad2d244b6efcc034bd42a9bc163646339009cc2af8",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/in-season-billing-2026-10-21/inactive-entrypoints-2026-10-22/DRAFT-OWNER-LOOKUP.sql",
+          "expected_sha256": "0287c08ebcec8c957409a90d9cdb3f21bb30c8c4e9068f8c8f07f6f04c459696",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "0287c08ebcec8c957409a90d9cdb3f21bb30c8c4e9068f8c8f07f6f04c459696",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/integrations/fantrax/server.ts",
+          "expected_sha256": "5b922d8a1ae72798049946ccea91f029230603e85b011f4e6ef9d24db2502eee",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "5b922d8a1ae72798049946ccea91f029230603e85b011f4e6ef9d24db2502eee",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/integrations/fantrax/server.test.ts",
+          "expected_sha256": "3526a3157f159ef3a6fef60a47cba3c83ff98a16fcffca647a18703176d2fb3d",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "3526a3157f159ef3a6fef60a47cba3c83ff98a16fcffca647a18703176d2fb3d",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/in-season/monthlyWebhook.ts",
+          "expected_sha256": "a0ade4afbca6a0ba9996f465de9ba2a87099373b31dbceee0a65cfb9f05c7cad",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "a0ade4afbca6a0ba9996f465de9ba2a87099373b31dbceee0a65cfb9f05c7cad",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/in-season/monthlyExecutor.ts",
+          "expected_sha256": "6e4b2f2288bb668d45e3952bbf6ac7446ebf878cd630cbcc5dce732b657cbc94",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "6e4b2f2288bb668d45e3952bbf6ac7446ebf878cd630cbcc5dce732b657cbc94",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/in-season/monthlyLifecycle.ts",
+          "expected_sha256": "27d93048119a08f88272bf000375026aa948cb476fd95561d53ffce2782c7489",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "27d93048119a08f88272bf000375026aa948cb476fd95561d53ffce2782c7489",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/in-season/monthlyIntegration.test.ts",
+          "expected_sha256": "cb87e47d4d2b1050577a62cba6bebccb12101df57709dbcb6773d95abb3594b5",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025",
+          "state": "changed",
+          "disposition": "Reviewed migration relocation intentionally supersedes old integration-test hash; SQL body unchanged"
+        },
+        {
+          "path": "web/lib/in-season/monthlyLifecycle.test.ts",
+          "expected_sha256": "2b37bf450bbe5ac6cd44d73bcc4bf5bf3ce8d1107ef3bd81c3f83ca1f3f99b09",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "2b37bf450bbe5ac6cd44d73bcc4bf5bf3ce8d1107ef3bd81c3f83ca1f3f99b09",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/in-season/monthlyStore.ts",
+          "expected_sha256": "bdae4bac8a1cfc1acc6de67c5b7875ca3a16a41adbf74c103bd0ab900d4d4179",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "bdae4bac8a1cfc1acc6de67c5b7875ca3a16a41adbf74c103bd0ab900d4d4179",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/in-season/monthlyStripe.ts",
+          "expected_sha256": "b5feef17b907fb4f267761ad2e3cae3362a569df04c46c5dd1488792b5331f21",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "b5feef17b907fb4f267761ad2e3cae3362a569df04c46c5dd1488792b5331f21",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/in-season/monthlyStripe.test.ts",
+          "expected_sha256": "45ea46d44fbc619b09e1b6af0737000574d5e5663bc7c2881964b40ff87a294b",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "current_sha256": "45ea46d44fbc619b09e1b6af0737000574d5e5663bc7c2881964b40ff87a294b",
+          "state": "matches"
+        },
+        {
+          "path": "supabase/migrations/20261021210000_in_season_sandbox_billing.sql",
+          "expected_sha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12",
+          "source_fields": [
+            "preservedHashes"
+          ],
+          "approved_relocation_path": "tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql",
+          "current_sha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12",
+          "state": "matches_relocated_bytes"
+        }
+      ]
+    },
+    {
+      "packet": "D4-harness",
+      "manifest": "tasks/artifacts/d4-grants-independent-review-2026-10-22/start-integrity.json",
+      "manifest_sha256": "18b294e394f957e7ffef0291c5ddaf461f1633bea4c6094ab688300ce4c59ed9",
+      "pin_count": 3,
+      "matching": 3,
+      "pins": [
+        {
+          "path": "tasks/artifacts/d4-grants-2026-10-20/harness.py",
+          "expected_sha256": "7bd2f9803c5feb42c79cb93d671ee87bd6e2c76c3b138172618e508e03e96626",
+          "source_fields": [
+            "candidate"
+          ],
+          "current_sha256": "7bd2f9803c5feb42c79cb93d671ee87bd6e2c76c3b138172618e508e03e96626",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/d4-grants-2026-10-20/test_harness.py",
+          "expected_sha256": "e73b8c77bf6acdac9d5a0a23ccc5d45f1b266ffb72e8e4cf05041df416dddc0d",
+          "source_fields": [
+            "candidate"
+          ],
+          "current_sha256": "e73b8c77bf6acdac9d5a0a23ccc5d45f1b266ffb72e8e4cf05041df416dddc0d",
+          "state": "matches"
+        },
+        {
+          "path": "supabase/tests/data_api_grants.sql",
+          "expected_sha256": "d20ca21d8c4b5a0ce1b56d7cb102a1daf36e8c601f94a210c77dd6b93341424f",
+          "source_fields": [
+            "candidate"
+          ],
+          "current_sha256": "d20ca21d8c4b5a0ce1b56d7cb102a1daf36e8c601f94a210c77dd6b93341424f",
+          "state": "matches"
+        }
+      ]
+    },
+    {
+      "packet": "Migration-R1",
+      "manifest": "tasks/artifacts/billing-migration-relocation-independent-review-2026-10-22/r1/RECEIPT.json",
+      "manifest_sha256": "8a60e60cf634b5f4aada14366e5bce138957377fe091bcb59bd3ad92d96588b3",
+      "pin_count": 18,
+      "matching": 18,
+      "pins": [
+        {
+          "path": "tasks/artifacts/in-season-billing-2026-10-21/drafts/20261021210000_in_season_sandbox_billing.sql",
+          "expected_sha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/in-season/monthlyIntegration.test.ts",
+          "expected_sha256": "778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "778fb645067f9f45830dab69f90b721ad838d26cb4023356319634d081310025",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-SQL-CHECK.cjs",
+          "expected_sha256": "2236b42e5f0fde9ac4ef184831638502bca58a160c0b5185c6e094b73ac5b454",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "2236b42e5f0fde9ac4ef184831638502bca58a160c0b5185c6e094b73ac5b454",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs",
+          "expected_sha256": "fe5e21a26ce2ac31a3bee44eb5ca45a408cca1e4b1ed3b1d72620ad58ae4bbe1",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "fe5e21a26ce2ac31a3bee44eb5ca45a408cca1e4b1ed3b1d72620ad58ae4bbe1",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/in-season-billing-2026-10-21/LOCAL-AUTH-CHECK.cjs",
+          "expected_sha256": "a786b95ff5aee13a77e682d0edfbbffe71a26ef9a5aa18f566d68dccb664c7d9",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "a786b95ff5aee13a77e682d0edfbbffe71a26ef9a5aa18f566d68dccb664c7d9",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/in-season-billing-2026-10-21/REPORT.md",
+          "expected_sha256": "4402a394a5df14dd4519f55311b7e48f083a3877eaeccc99521cbade3d6568c3",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "4402a394a5df14dd4519f55311b7e48f083a3877eaeccc99521cbade3d6568c3",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/TASKS/repository-audit-remediation/migration-authority.json",
+          "expected_sha256": "1918938309958c4cae037b83cd5a877d6fb7b4bcb972df9c74f9960969a3081d",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "1918938309958c4cae037b83cd5a877d6fb7b4bcb972df9c74f9960969a3081d",
+          "state": "matches"
+        },
+        {
+          "path": "web/lib/supabase/supportedBaselineMigration.test.ts",
+          "expected_sha256": "3747a2ab91813cc3cacdb10db02ba6bd25fc6e61fef6113b9f969b1cc36ebfc1",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "3747a2ab91813cc3cacdb10db02ba6bd25fc6e61fef6113b9f969b1cc36ebfc1",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/TASKS/super-goal/super-goal-final-summary.md",
+          "expected_sha256": "8ac0643823ed6e7ad334bc1e772ac0b5a80173e773b5ac7961713c06ba650925",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "8ac0643823ed6e7ad334bc1e772ac0b5a80173e773b5ac7961713c06ba650925",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-HASHES-BEFORE.json",
+          "expected_sha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659",
+          "source_fields": [
+            "reviewedFiles",
+            "historicalFiles"
+          ],
+          "current_sha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/billing-migration-authority-2026-10-22/PROPOSED-RELOCATION.patch",
+          "expected_sha256": "d990b7f1c8e977c05232a8bf0e01a301eee061130abc79bee6958bb82a5b34b2",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "d990b7f1c8e977c05232a8bf0e01a301eee061130abc79bee6958bb82a5b34b2",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-RELOCATION.v1.json",
+          "expected_sha256": "54b33decfb7dbf1173bb67c154665ff9c154982961be754c0eb7000b0e96efb2",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "54b33decfb7dbf1173bb67c154665ff9c154982961be754c0eb7000b0e96efb2",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/billing-migration-authority-2026-10-22/queue-preflight-fix/VERIFY-QUEUE-PREFLIGHT.test.cjs",
+          "expected_sha256": "fbe30bcb953eb18f2cb3a6d698904393c30821da045db914f5de83d705a87aad",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "fbe30bcb953eb18f2cb3a6d698904393c30821da045db914f5de83d705a87aad",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/billing-migration-authority-2026-10-22/CHANGED-FILES.json",
+          "expected_sha256": "df600ab1c920958a8c869978cd3ed1cd1aedf1744aae399b39e400ddd23b7ef1",
+          "source_fields": [
+            "reviewedFiles"
+          ],
+          "current_sha256": "df600ab1c920958a8c869978cd3ed1cd1aedf1744aae399b39e400ddd23b7ef1",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-HASHES-AFTER.json",
+          "expected_sha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659",
+          "source_fields": [
+            "historicalFiles"
+          ],
+          "current_sha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/RESULTS.json",
+          "expected_sha256": "9f3f842acb965de4bf209a7527b3a463ff8c7e82161268ee51d235116914e254",
+          "source_fields": [
+            "historicalFiles"
+          ],
+          "current_sha256": "9f3f842acb965de4bf209a7527b3a463ff8c7e82161268ee51d235116914e254",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/FAILED-RESULT.json",
+          "expected_sha256": "270644e7c59f9d8beb0dd2a474f69f7e35a400ff53a8f41167e83fc4ae32a6e2",
+          "source_fields": [
+            "historicalFiles"
+          ],
+          "current_sha256": "270644e7c59f9d8beb0dd2a474f69f7e35a400ff53a8f41167e83fc4ae32a6e2",
+          "state": "matches"
+        },
+        {
+          "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/CLEANUP.json",
+          "expected_sha256": "ca2646cfc69c7941a0b5237a6f294cec144069541e65f68ad3e1abd13b3deaa8",
+          "source_fields": [
+            "historicalFiles"
+          ],
+          "current_sha256": "ca2646cfc69c7941a0b5237a6f294cec144069541e65f68ad3e1abd13b3deaa8",
+          "state": "matches"
+        }
+      ]
+    }
+  ]
+}

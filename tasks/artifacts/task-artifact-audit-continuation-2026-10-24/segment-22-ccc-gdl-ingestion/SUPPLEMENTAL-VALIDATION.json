@@ -1,0 +1,8 @@
+{
+  "at": "2026-10-24T20:31:48.225906+00:00",
+  "status": "passed",
+  "newer_owner_next_action_prefix_preserved": true,
+  "all_eleven_child_dependencies_valid": true,
+  "children_present_in_both_markdown_blocks": true,
+  "resolved_check_issue": "Initial helper selected the first baseline row because its predicate compared a variable with itself; corrected ID lookup passes. No canonical write occurred before this passing check."
+}

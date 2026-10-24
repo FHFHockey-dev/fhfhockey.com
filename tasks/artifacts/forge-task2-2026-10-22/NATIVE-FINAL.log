@@ -1,0 +1,15 @@
+
+> web@0.1.0 test
+> vitest --run scripts/qualify-native-players-offline.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ scripts/qualify-native-players-offline.test.ts (56 tests) 5589ms
+   ✓ offline current native player qualification > reproduces current native calculations with genuine admission and zero live client/transport/writes  604ms
+
+ Test Files  1 passed (1)
+      Tests  56 passed (56)
+   Start at  12:12:55
+   Duration  5.84s (transform 280ms, setup 3ms, collect 73ms, tests 5.59s, environment 0ms, prepare 40ms)
+

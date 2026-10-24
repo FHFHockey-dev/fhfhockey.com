@@ -1,0 +1,21 @@
+{
+  "at": "2026-10-24T23:39:45.579359+00:00",
+  "checks": [
+    {
+      "log": "grid-url-tests.log",
+      "exit_code": 1,
+      "seconds": 5.756,
+      "argv": [
+        "node",
+        "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf/web/node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-coordinated-release-dlnqnorf/affected.vitest.config.mts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ]
+    }
+  ],
+  "canonical_edits": 0,
+  "hosted_requests": 0
+}

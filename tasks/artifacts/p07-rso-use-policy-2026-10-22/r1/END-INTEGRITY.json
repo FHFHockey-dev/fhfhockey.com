@@ -1,0 +1,9 @@
+{
+  "checked_at": "2026-10-22T15:41:01.280376+00:00",
+  "observed_head": "16bada8670d3d1f536cdae928f69b5294bc12e81",
+  "candidate_mismatches": {},
+  "reserved_mismatches": {},
+  "preserved_original_overlay_matches": true,
+  "preserved_combined_archive_matches": true,
+  "oracle_unchanged": true
+}

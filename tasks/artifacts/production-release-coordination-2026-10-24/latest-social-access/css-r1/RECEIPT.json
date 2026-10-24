@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-24T22:15:15.418477+00:00",
+  "scope": "Only isolated snapshot CSS intrinsic grid sizing; no canonical edit",
+  "path": "web/components/SocialShare/SocialShare.module.scss",
+  "before_sha256": "0e9d2fca16c87e3b6245c4dc9d73af536f946716173c57d64e7c4c6320296249",
+  "after_sha256": "07622368f7352872ca3dd28148552bd2424c479bc2bda43d24e95706f7d10288",
+  "patch_sha256": "7a243a2a6dab49fb1261f034ae2d96cb068c9cd54ed98986889425ed7c96f4c4",
+  "preserved": "All team/player/tier data, row budget, TSX, auth/source/export gates; no item clipping or data trim added",
+  "next": "Independent CSS review and unchanged T13 strict/widened browser/export run; reuse unchanged unit/type/access checks"
+}

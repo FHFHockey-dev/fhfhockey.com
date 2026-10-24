@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-24T20:53:33.183652+00:00",
+  "full_primary_pair": true,
+  "full_bytes": 104259,
+  "owner_partial_ranges": [
+    [
+      1,
+      80
+    ],
+    [
+      126,
+      135
+    ],
+    [
+      235,
+      266
+    ],
+    [
+      373,
+      402
+    ],
+    [
+      452,
+      542
+    ]
+  ],
+  "owner_unread_ranges": [
+    [
+      81,
+      125
+    ],
+    [
+      136,
+      234
+    ],
+    [
+      267,
+      372
+    ],
+    [
+      403,
+      451
+    ]
+  ],
+  "findings": [
+    "Known policy decisions and extensive consumer/UI/browser/race/readonly fixes are already implemented locally; old PRD policy questions are historical.",
+    "Exact News author originals recovered; candidate batch time and deployment lead do not create per-item execution linkage; earlier log lookup failed on billing bounds, not absent evidence.",
+    "Stored goalie writer/audit leads narrow producer identity; no historical screenshot/per-row/version tie or pending failure inferred.",
+    "WiGO source-window/override compatibility remains distinct from current accepted4-file fix and unapproved backfill.",
+    "Rankings labels/preset/PP-read/timeout/URL fixes closed locally; component-qualified dataset and stability/evaluation still evidence-gated.",
+    "Shared first-use/screen-reader/real-account acceptance is separate from source-scoped five-width/zoom/partial contrast proof."
+  ],
+  "group_boundary_reached": true,
+  "canonical_checkpoint": "FINAL-CHECKPOINT.json",
+  "next_cursor": "tasks/tasks-README.md",
+  "remaining_selected_owner_body_lines": 299,
+  "scope_complete": "Full requested contract pair and necessary selected decisions/gates dispositioned; no whole owner memo or pixel/content acceptance."
+}

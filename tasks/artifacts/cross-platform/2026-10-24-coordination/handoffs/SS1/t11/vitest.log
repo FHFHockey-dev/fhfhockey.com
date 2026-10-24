@@ -1,0 +1,15 @@
+ ✓ lib/socialShare/teamRates.test.ts (3 tests) 3ms
+ ✓ lib/socialShare/playerSources.test.ts (5 tests) 5ms
+ ✓ lib/socialShare/editionFetch.test.ts (3 tests) 12ms
+ ✓ lib/socialShare/mondayGrid.test.ts (6 tests) 36ms
+ ✓ lib/socialShare/matchups.test.ts (9 tests) 71ms
+ ✓ lib/socialShare/schedule.test.ts (32 tests) 70ms
+ ✓ lib/socialShare/players.test.ts (12 tests) 96ms
+ ✓ lib/socialShare/trends.test.ts (6 tests) 185ms
+ ✓ components/SocialShare/SocialShare.test.tsx (1 test) 51ms
+
+ Test Files  9 passed (9)
+      Tests  77 passed (77)
+   Start at  16:29:07
+   Duration  1.10s (transform 674ms, setup 27ms, collect 1.27s, tests 529ms, environment 3.97s, prepare 597ms)
+

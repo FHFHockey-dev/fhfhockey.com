@@ -1,0 +1,49 @@
+{
+  "at": "2026-10-24T20:56:58.651312+00:00",
+  "checks": [
+    {
+      "argv": [
+        "node",
+        "/tmp/fhfh-wigo-reader-release-xx5wxns_/web/node_modules/vitest/vitest.mjs",
+        "run",
+        "--config",
+        "/tmp/fhfh-wigo-reader-release-xx5wxns_/reader.vitest.config.mts",
+        "--maxWorkers=1",
+        "--no-file-parallelism"
+      ],
+      "cwd": "/tmp/fhfh-wigo-reader-release-xx5wxns_/web",
+      "exit_code": 0,
+      "duration_seconds": 0.55,
+      "log": "reader-tests.log"
+    },
+    {
+      "argv": [
+        "node",
+        "/tmp/fhfh-wigo-reader-release-xx5wxns_/web/node_modules/typescript/bin/tsc",
+        "--noEmit",
+        "--incremental",
+        "false",
+        "-p",
+        "/tmp/fhfh-wigo-reader-release-xx5wxns_/reader.tsconfig.json"
+      ],
+      "cwd": "/tmp/fhfh-wigo-reader-release-xx5wxns_/web",
+      "exit_code": 0,
+      "duration_seconds": 1.307,
+      "log": "reader-types.log"
+    },
+    {
+      "argv": [
+        "node",
+        "/tmp/fhfh-wigo-reader-release-xx5wxns_/web/node_modules/eslint/bin/eslint.js",
+        "utils/fetchWigoPlayerStats.ts",
+        "utils/fetchWigoPlayerStats.test.ts"
+      ],
+      "cwd": "/tmp/fhfh-wigo-reader-release-xx5wxns_/web",
+      "exit_code": 0,
+      "duration_seconds": 1.372,
+      "log": "reader-lint.log"
+    }
+  ],
+  "source_pins_unchanged": true,
+  "application_requests": 0
+}

@@ -1,0 +1,8 @@
+{
+  "web/lib/rosterScheduleOptimizer/candidatePlanMetrics.test.ts": "e30fae1be7b9d6490342445a723ec184fbd02d96c67ee6389e967a76ad30e326",
+  "web/lib/rosterScheduleData/forgeDailyBridge.test.ts": "a7b9f5447693dc29611338127942b3d25f8c4851d28c9391d6199f570e3ba0ff",
+  "web/lib/projections/goalie/leagueSavePct.ts": "38f8d7df71b03ba913416121199779a8851f8fabdca4f253697adf3c6fbf7857",
+  "web/lib/projections/goalie/leagueSavePct.test.ts": "b2340d05eb69b764aa0c6a90f71163fb2d9f7ae3900813e39aa9e5551c20dfd5",
+  "web/lib/player-forecasts/rsoUsePolicy.ts": "712730f58ba95e2890daab74b31c68e7a3f8840b9b2c1e66fe4ceae3a921455c",
+  "web/lib/integrations/yahoo/rosterPlanning.ts": "631ee6917cb67646695322d15ac280bf0b050e5a504e6cbb6d9dbf0d6e635e54"
+}

@@ -1,0 +1,33 @@
+{
+  "cutoff": "2026-10-24T20:14:35.677441+00:00",
+  "sources": {
+    "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/1ca6ce016ab2-tasks-forge-projection-audit-streamlining-2026-10-21.md",
+      "sha256": "1ca6ce016ab2043b8c90b932361759b6eec666a6f06545e9ba05faad6dd478be",
+      "original_path": "tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md",
+      "observed_at": "2026-10-24T20:14:35.677441+00:00",
+      "review_scope": "Exact hash reuse of a prior full documentary review; this segment inspects only named clauses. No application or hosted acceptance inherited."
+    },
+    "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/9946cdde6b70-VERDICT.md",
+      "sha256": "9946cdde6b7058b3018a1589340431334a8de9b3a62bb143af1b610020292acb",
+      "original_path": "tasks/artifacts/forge-task2-gate-2026-10-22/VERDICT.md",
+      "observed_at": "2026-10-24T20:14:35.677441+00:00",
+      "review_scope": "Exact hash reuse of a prior full documentary review; this segment inspects only named clauses. No application or hosted acceptance inherited."
+    },
+    "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/059fe8e750a5-tasks-rolling-player-pass-2-main-audit.md",
+      "sha256": "059fe8e750a5497c0372f3785add66d24c4ee228a65b4df3af5c23339b2c0637",
+      "original_path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/tasks-rolling-player-pass-2-main-audit.md",
+      "observed_at": "2026-10-24T20:14:35.677441+00:00",
+      "review_scope": "Full documentary content read. Dated source/author/reviewer/test/production claims retained with original provenance; no underlying application, hosted data or execution verification. Stored commands grant no authority."
+    },
+    "tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md": {
+      "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-21-rolling-player-pipeline/source-snapshots/5d8c5dc5b279-G3-rankings-rolling.md",
+      "sha256": "5d8c5dc5b279357673b380b6ed0ce711df4f65e16ee47531c5bde6c128b3adda",
+      "original_path": "tasks/artifacts/super-goal-audit-2026-10-17/findings/G3-rankings-rolling.md",
+      "observed_at": "2026-10-24T20:14:35.677441+00:00",
+      "review_scope": "Full documentary content read. Dated source/author/reviewer/test/production claims retained with original provenance; no underlying application, hosted data or execution verification. Stored commands grant no authority."
+    }
+  }
+}

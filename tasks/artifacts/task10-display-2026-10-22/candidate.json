@@ -1,0 +1,58 @@
+{
+  "status": "local-display-integrated; independent-combined-qualification-pending",
+  "head": "84cb1229cd1c1cdd037c43e660d2a181304ada51",
+  "branch": "octoberBranch",
+  "files": {
+    "web/lib/rosterScheduleOptimizer/planning.ts": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474",
+    "web/lib/rosterScheduleOptimizer/gameForecastPoints.test.ts": "817faf8598f3108c6f2b89a2a9f481bed08858df34ff0a6cc7ae098473850647",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "1c4d9ae48dabb34327a9e40f428f7c410b63e14fb397570e21f4f78e7c63742c",
+    "web/components/RosterScheduleOptimizer/SlotWeekGrid.tsx": "1a77273e69b141745e722c26baade1d1ac39c42d423a66137fcd680f468cb92b",
+    "web/components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx": "cea48f7218c4d7e6369e7013e4143625f01c1b4d1bf1a6715284a13ece058af8",
+    "web/components/RosterScheduleOptimizer/SlotWeekGrid.module.scss": "be0abf3dd8c96b7f4a10376e011d29971aae922379e4c0b94ba09e2c74a82b45",
+    "web/components/RosterScheduleOptimizer/ForecastPoints.tsx": "38ba29a3e5c2c85f7229568b3395a500c409ab0257403a1fb4930d7f3c98b9bf",
+    "web/components/RosterScheduleOptimizer/ForecastPoints.test.tsx": "ab1476e402f23dd6b4978d5ce383824849a05b8298866c52d4991e741a92cf91",
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx": "e1489242a456085626d5acb695aa273334fe15e12192b9122068b01300cde59f"
+  },
+  "p07_r2_other_30_pins_preserved": true,
+  "p07_r2_eight_file_delta_preserved": true,
+  "p07_candidate_differences": {
+    "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx": "1c4d9ae48dabb34327a9e40f428f7c410b63e14fb397570e21f4f78e7c63742c",
+    "web/lib/rosterScheduleOptimizer/planning.ts": "09918cdb16f2eeee00554448b953c16f773b2e3f42455e213dac7e4f38ec5474"
+  },
+  "planner_unchanged_during_integration": true,
+  "tests": {
+    "final_regression": 243,
+    "files": 5,
+    "post_layout_component_recheck": 15,
+    "post_layout_count_is_repeat": true
+  },
+  "typecheck": {
+    "status": "failed",
+    "own_diagnostics": 0,
+    "external_diagnostics": 2,
+    "file": "web/scripts/forge-skater-candidate-ablation.ts",
+    "lines": [
+      115,
+      136
+    ],
+    "shared_lock": "/private/tmp/fhfh-heavy.lock",
+    "lock_released": true
+  },
+  "lint": {
+    "exit": 0,
+    "errors": 0,
+    "preexisting_rso_warnings": 6
+  },
+  "browser": {
+    "offline_static_actual_grid": true,
+    "widths": [
+      700,
+      1100
+    ],
+    "mobile_cells_fit": 14,
+    "all_page_network_blocked": true,
+    "full_app_e2e": false
+  },
+  "deployments": 0,
+  "production_requests": 0
+}

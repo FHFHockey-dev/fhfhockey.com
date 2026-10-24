@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-24T15:01:18.106267+00:00",
+  "mode": "candidate",
+  "unique_ids": 205,
+  "baseline_ids_preserved": 189,
+  "original_ids_preserved": 188,
+  "legacy_blocks_byte_identical": 32,
+  "baseline_evidence_entries_preserved": 736,
+  "after_evidence_entries": 820,
+  "new_ids": 16,
+  "changed_existing_ids": 12,
+  "new_evidence_refs_hash_line_validated": 84,
+  "all_unchanged_rows_identical": true,
+  "archive_verified": true,
+  "hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "789e7edf981f50f4c4b8bfd00cda984c8061379d838191b866cdf7cb1ff80145",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "ac5fb84ee6b9c24773fdde23e6b63ab91998ef90b6270379ec30f09ed6bea877",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "14dbedf05b750723ca1f6f7e46974c6e2831e7df86c3b9950e6f3dc024ae3978"
+  }
+}

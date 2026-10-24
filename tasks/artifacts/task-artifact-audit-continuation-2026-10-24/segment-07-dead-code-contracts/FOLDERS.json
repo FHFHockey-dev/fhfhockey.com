@@ -1,0 +1,388 @@
+{
+  "at": "2026-10-24T16:55:08.068130+00:00",
+  "folders": {
+    "tasks/TASKS/dead-code-cleanup": {
+      "entries": [
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/burn-down-plan.md",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/drm-local-gates-checkpoint-2026-08-01.md",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/hidden-product-surface-ownership-matrix.md",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/prd-drm-refactor.md",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/wgo-utah-identity-repair-contract.md",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/wgo-relocation-era-identity-contract.md",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+          "status": "partially-inspected"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          "status": "partially-inspected"
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+          "status": "partially-inspected"
+        }
+      ],
+      "remaining_base_queue_items": 3
+    },
+    "tasks/TASKS": {
+      "entries": [
+        {
+          "path": "tasks/TASKS/prd-shareable-player-cards.md",
+          "status": "duplicate-by-hash"
+        }
+      ],
+      "remaining_base_queue_items": 9
+    },
+    "tasks": {
+      "entries": [
+        {
+          "path": "tasks/tasks-prd-shareable-player-cards.md",
+          "status": "content-reviewed"
+        }
+      ],
+      "remaining_base_queue_items": 27
+    },
+    "tasks/artifacts/codex-2026-10-20": {
+      "entries": [
+        {
+          "path": "tasks/artifacts/codex-2026-10-20/WGO-LABELS.md",
+          "status": "content-reviewed"
+        }
+      ],
+      "remaining_base_queue_items": 19
+    },
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic": {
+      "entries": [
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/REPORT.md",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/summary.json",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-1.sql",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2.sql",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-1-rows.json",
+          "status": "partially-inspected"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2-rows.json",
+          "status": "partially-inspected"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-1-result.json",
+          "status": "partially-inspected"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2-result.json",
+          "status": "partially-inspected"
+        }
+      ],
+      "remaining_base_queue_items": 0
+    },
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix": {
+      "entries": [
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/OWNERSHIP.json",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.json",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/typescript.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/eslint.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/02-recent-rate-authority.patch",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/focused-tests.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/typescript-result.json",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/WIGO-DATA-FIX.patch",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/SOURCE-PINS.json",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/01-builder-window-and-errors.patch",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/green-tests-1.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/red-tests.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.md",
+          "status": "content-reviewed"
+        }
+      ],
+      "remaining_base_queue_items": 0
+    },
+    "tasks/artifacts/player-cards-2026-10-24": {
+      "entries": [
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/INPUTS.json",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/REQUIREMENTS-AND-STEERS.md",
+          "status": "content-reviewed"
+        }
+      ],
+      "remaining_base_queue_items": 0
+    },
+    "tasks/artifacts/player-cards-2026-10-24/slice-01": {
+      "entries": [
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/OWNERSHIP.json",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/types.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/checks-final.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/preview.html",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-long-name.png",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-missing.png",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/preview.png",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/render-preview.mjs",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/lint.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-failure.json",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/types-final.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/serve-preview.mjs",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/checks.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/preview-entry.tsx",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-preview.mjs",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-partial.png",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-final.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-results.json",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/manifest.json",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/lint-final.log",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/tsconfig.json",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-desktop.png",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-mobile.png",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/qa-extra.png",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/HANDOFF.md",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/EVIDENCE.json",
+          "status": "content-reviewed"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/local-http.json",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/source.patch",
+          "status": "metadata-only"
+        }
+      ],
+      "remaining_base_queue_items": 0
+    },
+    "tasks/codex-sprint-2026-10-19/security": {
+      "entries": [
+        {
+          "path": "tasks/codex-sprint-2026-10-19/security/resolved-helper-closures.json",
+          "status": "partially-inspected"
+        },
+        {
+          "path": "tasks/codex-sprint-2026-10-19/security/source-inventory.json",
+          "status": "partially-inspected"
+        }
+      ],
+      "remaining_base_queue_items": 18
+    },
+    "tasks/artifacts/shift-charts-scope-2026-10-19": {
+      "entries": [
+        {
+          "path": "tasks/artifacts/shift-charts-scope-2026-10-19/R4-SHIFT-FINGERPRINT.md",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/shift-charts-scope-2026-10-19/HTML-FALLBACK-BUILD.md",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/shift-charts-scope-2026-10-19/HTML-SHIFT-FALLBACK.md",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/shift-charts-scope-2026-10-19/SKIP-ISOLATION.md",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/shift-charts-scope-2026-10-19/html-fallback-migration-pg-verify.py",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/shift-charts-scope-2026-10-19/HTML-FALLBACK-BLOCKER.md",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/shift-charts-scope-2026-10-19/OPTION-A-STORED-SNAPSHOTS.md",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/shift-charts-scope-2026-10-19/PROPOSED-gamecenter-renormalization-vs-R3.patch",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/shift-charts-scope-2026-10-19/DIAGNOSIS.md",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/shift-charts-scope-2026-10-19/R3-ROSTER-HASH.md",
+          "status": "metadata-only"
+        },
+        {
+          "path": "tasks/artifacts/shift-charts-scope-2026-10-19/html-fallback-migration-pg-result-v1.json",
+          "status": "metadata-only"
+        }
+      ],
+      "remaining_base_queue_items": 11
+    }
+  },
+  "not_traversed": [
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/candidate",
+      "status": "not-traversed",
+      "reason": "Active owner supporting baseline/subfolder; no contradiction requiring contents this segment."
+    },
+    {
+      "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/baseline",
+      "status": "not-traversed",
+      "reason": "Active owner supporting baseline/subfolder; no contradiction requiring contents this segment."
+    }
+  ],
+  "note": "Selected known folders only; initial recursive folder index remains historical. New direct discoveries are explicit metadata-only; snapshots/own outputs listed separately. No full current-tree inventory claim."
+}

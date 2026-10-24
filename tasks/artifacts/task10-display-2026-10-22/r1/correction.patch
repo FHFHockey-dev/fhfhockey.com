@@ -1,0 +1,65 @@
+--- a/web/lib/rosterScheduleOptimizer/planning.ts
++++ b/web/lib/rosterScheduleOptimizer/planning.ts
+@@ -82,7 +82,7 @@
+   return stats;
+ }
+ type Applicability = Record<"skater" | "goalie", Set<string>>;
+-const GOALIE_STATS = new Set(["SAVES_GOALIE", "GOALS_AGAINST_GOALIE", "WINS_GOALIE", "SHUTOUTS_GOALIE", "SHOTS_AGAINST_GOALIE", "GOALIE_MINUTES", "SAVES", "GOALSAGAINST", "SHOTSAGAINST", "WINS", "SHUTOUTS", "GAA", "SV%", "SAVE_PERCENTAGE"]);
++const GOALIE_STATS = new Set(["SAVES_GOALIE", "GOALS_AGAINST_GOALIE", "WINS_GOALIE", "LOSSES_GOALIE", "SHUTOUTS_GOALIE", "SHOTS_AGAINST_GOALIE", "GAMES_STARTED", "GOALIE_MINUTES", "SAVES", "GOALSAGAINST", "SHOTSAGAINST", "WINS", "SHUTOUTS", "GAA", "SV%", "SAVE_PERCENTAGE"]);
+ function statApplicability(snapshot: PlanningSnapshot): Applicability {
+   const playerClass = new Map(snapshot.players.map(player => [player.id, player.playerClass]));
+   const result: Applicability = { skater: new Set(), goalie: new Set() };
+--- a/web/lib/rosterScheduleOptimizer/gameForecastPoints.test.ts
++++ b/web/lib/rosterScheduleOptimizer/gameForecastPoints.test.ts
+@@ -41,6 +41,18 @@
+   it("ignores zero weights and the other player class, preserving genuine zero and negative FP", () => {
+     expect(score(forecast({ stats: { GOALS: 0 } }), { GOALS: 3, ASSISTS: 0, SAVES_GOALIE: 0.2 }).expected).toBe(0);
+     expect(score(forecast({ stats: { GOALS: 1, ASSISTS: 2 } }), { GOALS: -5, ASSISTS: 2 }).expected).toBe(-1);
++  });
++
++  it.each(["LOSSES_GOALIE", "GAMES_STARTED"])("requires weighted %s for goalies while preserving observed zero", key => {
++    expect(score(forecast({ stats: {} }), { [key]: -2 }, true)).toEqual({ expected: null, ifStarts: null });
++    expect(score(forecast({ stats: { [key]: 0 }, conditionalStats: { [key]: 0 } }), { [key]: -2 }, true))
++      .toEqual({ expected: 0, ifStarts: 0 });
++    expect(score(forecast({ stats: { [key]: 1 }, conditionalStats: { [key]: 2 } }), { [key]: -2 }, true))
++      .toEqual({ expected: -2, ifStarts: -4 });
++  });
++
++  it("does not infer that an unknown missing scoring key is inapplicable", () => {
++    expect(score(forecast(), { GOALS: 3, ASSISTS: 2, UNKNOWN_STAT: 1 }).expected).toBeNull();
+   });
+ 
+   it("withholds absent scoring, invalid weights and overflowing sums", () => {
+--- a/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx
++++ b/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx
+@@ -15,7 +15,7 @@
+ afterEach(() => { cleanup(); localStorage.clear(); vi.unstubAllGlobals(); vi.useRealTimers(); vi.restoreAllMocks(); });
+ 
+ const now = "2026-10-22T12:00:00.000Z";
+-type Scenario = { goalie?: boolean; stats: StatLine; conditional?: StatLine; probability?: number | null; native?: boolean };
++type Scenario = { weights?: Record<string, number>; goalie?: boolean; stats: StatLine; conditional?: StatLine; probability?: number | null; native?: boolean };
+ async function mount(scenario: Scenario) {
+   vi.useFakeTimers({ toFake: ["Date"] }); vi.setSystemTime(new Date(now)); vi.stubGlobal("Worker", undefined);
+   const workspace = defaultWorkspace(new Date(now));
+@@ -41,7 +41,7 @@
+   workspace.rules = { ...workspace.rules, lineupMode: "daily", rosterSlots: scenario.goalie ? { G: 1 } : { C: 1 },
+     acquisitionTiming: "same_day", acquisitionCost: 1,
+     periods: [{ id: "p", start: now, end: "2026-10-25T00:00:00Z", remaining: 2, source: "manager" }],
+-    scoring: { mode: "points", weights: scenario.goalie ? { SAVES_GOALIE: 0.2 } : { GOALS: 3, ASSISTS: 2 }, categories: [] } };
++    scoring: { mode: "points", weights: scenario.weights ?? (scenario.goalie ? { SAVES_GOALIE: 0.2 } : { GOALS: 3, ASSISTS: 2 }), categories: [] } };
+   workspace.lockedAssignments = [{ date: game.date, playerId: player.id, slotId: scenario.goalie ? "G#1" : "C#1", source: "manager" }];
+   writeWorkspace(localStorage, workspace);
+   const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
+@@ -60,6 +60,12 @@
+ }
+ 
+ describe("RSO live grid points callback", () => {
++  it.each(["WINS_GOALIE", "LOSSES_GOALIE", "GOALS_AGAINST_GOALIE", "SHOTS_AGAINST_GOALIE", "SAVES_GOALIE", "SHUTOUTS_GOALIE", "GAMES_STARTED"])(
++    "does not require goalie-only weighted %s to complete a skater game", async key => {
++      const { cell } = await mount({ stats: { GOALS: 1, ASSISTS: 2 }, weights: { GOALS: 3, ASSISTS: 2, [key]: -2 } });
++      expect(cell.getByLabelText("Expected fantasy points: 7.0")).toBeTruthy();
++    });
++
+   it("renders complete FP from the current admitted read", async () => {
+     const { cell, fetcher } = await mount({ stats: { GOALS: 1, ASSISTS: 2 } });
+     expect(cell.getByLabelText("Expected fantasy points: 7.0")).toBeTruthy();

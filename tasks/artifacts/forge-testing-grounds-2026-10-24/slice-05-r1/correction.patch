@@ -1,0 +1,172 @@
+--- a/web/lib/forge-testing-grounds/TestingGroundsOwnerGate.tsx
++++ b/web/lib/forge-testing-grounds/TestingGroundsOwnerGate.tsx
+@@ -8,9 +8,15 @@
+   useEffect(() => {
+     let alive = true;
+     let generation = 0;
++    let pageHidden = false;
+     let request: AbortController | undefined;
+     let unsubscribe: (() => void) | undefined;
+     let refreshSession: (() => void) | undefined;
++
++    // Auth events cannot release lifecycle withdrawal. A pagehide can occur
++    // while visibility still says visible, so it needs its own pageshow latch.
++    const foreground = () => alive && !pageHidden && document.visibilityState === "visible";
++    const currentForeground = (current: number) => foreground() && current === generation;
+ 
+     const withdraw = () => {
+       generation++;
+@@ -18,7 +24,7 @@
+       if (alive) setState("locked");
+     };
+     const verify = async (token: string | undefined, current: number) => {
+-      if (!alive || current !== generation) return;
++      if (!currentForeground(current)) return;
+       if (!token) { setState("locked"); return; }
+       setState("checking");
+       request = new AbortController();
+@@ -28,14 +34,14 @@
+           credentials: "omit", cache: "no-store", signal: request.signal,
+         });
+         const body: unknown = response.ok ? await response.json() : null;
+-        if (!alive || current !== generation) return;
++        if (!currentForeground(current)) return;
+         const granted = response.ok && typeof body === "object" && body !== null
+           && "access" in body && body.access === "owner"
+           && "workspace" in body && body.workspace === "synthetic_preview"
+           && "execution" in body && body.execution === "disabled";
+         setState(granted ? "granted" : response.status === 401 || response.status === 403 ? "denied" : "unavailable");
+       } catch {
+-        if (alive && current === generation) setState("unavailable");
++        if (currentForeground(current)) setState("unavailable");
+       }
+     };
+ 
+@@ -52,28 +58,37 @@
+       unsubscribe = () => subscription.data.subscription.unsubscribe();
+       refreshSession = () => {
+         withdraw();
++        if (!foreground()) return;
+         const current = generation;
+         void client.auth.getSession().then(({ data, error }) => {
+-          if (!alive || current !== generation) return;
++          if (!currentForeground(current)) return;
+           if (error) { setState("unavailable"); return; }
+           void verify(data.session?.access_token, current);
+         }).catch(() => {
+-          if (alive && current === generation) setState("unavailable");
++          if (currentForeground(current)) setState("unavailable");
+         });
+       };
+       refreshSession();
+-    }).catch(() => { if (alive) setState("unavailable"); });
++    }).catch(() => { if (foreground()) setState("unavailable"); });
+ 
+     const visibility = () => {
+-      if (document.visibilityState === "hidden") withdraw();
++      if (!foreground()) withdraw();
+       else refreshSession?.();
+     };
++    const pageHide = () => { pageHidden = true; withdraw(); };
++    const pageShow = () => {
++      if (!pageHidden) return;
++      pageHidden = false;
++      if (foreground()) refreshSession?.();
++    };
+     document.addEventListener("visibilitychange", visibility);
+-    window.addEventListener("pagehide", withdraw);
++    window.addEventListener("pagehide", pageHide);
++    window.addEventListener("pageshow", pageShow);
+     return () => {
+       alive = false; withdraw(); unsubscribe?.();
+       document.removeEventListener("visibilitychange", visibility);
+-      window.removeEventListener("pagehide", withdraw);
++      window.removeEventListener("pagehide", pageHide);
++      window.removeEventListener("pageshow", pageShow);
+     };
+   }, []);
+ 
+--- a/web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx
++++ b/web/lib/forge-testing-grounds/TestingGroundsOwnerGate.test.tsx
+@@ -22,7 +22,7 @@
+   auth.onAuthStateChange.mockImplementation(callback => { change = callback; return { data: { subscription: { unsubscribe: auth.unsubscribe } } }; });
+   vi.stubGlobal("fetch", vi.fn());
+ });
+-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
++afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+ 
+ describe("owner workspace lifecycle", () => {
+   it("renders only a generic locked SSR frame with no private props or data hooks", async () => {
+@@ -107,4 +107,72 @@
+     expect(fetch).not.toHaveBeenCalled();
+     view.unmount(); expect(auth.unsubscribe).toHaveBeenCalledTimes(1);
+   });
++
++  it("foreground lifecycle: waits for visible return and reads the current session instead of a hidden auth token", async () => {
++    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("hidden");
++    auth.getSession.mockResolvedValue(session("current-visible-session"));
++    vi.mocked(fetch).mockResolvedValue(grant() as Response);
++    render(<TestingGroundsOwnerGate />);
++    await waitFor(() => expect(auth.onAuthStateChange).toHaveBeenCalledTimes(1));
++    await act(async () => change("TOKEN_REFRESHED", { access_token: "hidden-session-token" }));
++    expect(auth.getSession).not.toHaveBeenCalled(); expect(fetch).not.toHaveBeenCalled();
++    expect(screen.queryByText("Synthetic preview")).toBeNull();
++    await act(async () => { visibility.mockReturnValue("visible"); document.dispatchEvent(new Event("visibilitychange")); });
++    await screen.findByText("Synthetic preview");
++    expect(auth.getSession).toHaveBeenCalledTimes(1); expect(fetch).toHaveBeenCalledTimes(1);
++    expect(fetch).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ headers: { Authorization: "Bearer current-visible-session" } }));
++  });
++
++  it("foreground lifecycle: rejects pre-hide JSON completion after return until fresh verification completes", async () => {
++    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
++    const oldBody = deferred<{ access: string; workspace: string; execution: string }>();
++    const returned = deferred<ReturnType<typeof grant>>();
++    auth.getSession.mockResolvedValueOnce(session("before-hide")).mockResolvedValueOnce(session("after-return"));
++    vi.mocked(fetch).mockResolvedValueOnce({ ok: true, status: 200, json: () => oldBody.promise } as Response)
++      .mockReturnValueOnce(returned.promise as Promise<Response>);
++    render(<TestingGroundsOwnerGate />); await screen.findByText("Checking owner access…");
++    const oldSignal = vi.mocked(fetch).mock.calls[0][1]!.signal!;
++    await act(async () => { visibility.mockReturnValue("hidden"); document.dispatchEvent(new Event("visibilitychange")); });
++    expect(oldSignal.aborted).toBe(true);
++    await act(async () => change("TOKEN_REFRESHED", { access_token: "hidden-refresh" }));
++    expect(fetch).toHaveBeenCalledTimes(1);
++    await act(async () => { visibility.mockReturnValue("visible"); document.dispatchEvent(new Event("visibilitychange")); });
++    await waitFor(() => expect(fetch).toHaveBeenCalledTimes(2));
++    await act(async () => oldBody.resolve(await grant().json()));
++    expect(screen.queryByText("Synthetic preview")).toBeNull();
++    expect(screen.getByText("Checking owner access…")).toBeTruthy();
++    await act(async () => returned.resolve(grant()));
++    await screen.findByText("Synthetic preview");
++    expect(vi.mocked(fetch).mock.calls[1][1]?.headers).toEqual({ Authorization: "Bearer after-return" });
++  });
++
++  it.each(["visible", "hidden"] as const)("foreground lifecycle: pagehide stays withdrawn until pageshow and visible return (%s)", async shownVisibility => {
++    const visibility = vi.spyOn(document, "visibilityState", "get").mockReturnValue("visible");
++    const inFlight = deferred<ReturnType<typeof grant>>();
++    auth.getSession.mockResolvedValueOnce(session("before-pagehide")).mockResolvedValueOnce(session("after-pageshow"));
++    vi.mocked(fetch).mockResolvedValueOnce(grant() as Response).mockReturnValueOnce(inFlight.promise as Promise<Response>)
++      .mockResolvedValue(grant() as Response);
++    render(<TestingGroundsOwnerGate />); await screen.findByText("Synthetic preview");
++    await act(async () => change("TOKEN_REFRESHED", { access_token: "in-flight-before-pagehide" }));
++    const signal = vi.mocked(fetch).mock.calls[1][1]!.signal!;
++    await act(async () => window.dispatchEvent(new Event("pagehide")));
++    expect(signal.aborted).toBe(true);
++    // Visibility alone remains visible and cannot undo pagehide suspension.
++    await act(async () => {
++      document.dispatchEvent(new Event("visibilitychange"));
++      change("TOKEN_REFRESHED", { access_token: "refresh-after-pagehide" });
++      inFlight.resolve(grant());
++    });
++    expect(screen.queryByText("Synthetic preview")).toBeNull();
++    expect(auth.getSession).toHaveBeenCalledTimes(1); expect(fetch).toHaveBeenCalledTimes(2);
++    await act(async () => { visibility.mockReturnValue(shownVisibility); window.dispatchEvent(new Event("pageshow")); });
++    if (shownVisibility === "hidden") {
++      await act(async () => change("TOKEN_REFRESHED", { access_token: "still-hidden-refresh" }));
++      expect(screen.queryByText("Synthetic preview")).toBeNull(); expect(fetch).toHaveBeenCalledTimes(2);
++      await act(async () => { visibility.mockReturnValue("visible"); document.dispatchEvent(new Event("visibilitychange")); });
++    }
++    await screen.findByText("Synthetic preview");
++    expect(auth.getSession).toHaveBeenCalledTimes(2); expect(fetch).toHaveBeenCalledTimes(3);
++    expect(vi.mocked(fetch).mock.calls[2][1]?.headers).toEqual({ Authorization: "Bearer after-pageshow" });
++  });
+ });

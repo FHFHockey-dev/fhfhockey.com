@@ -1,0 +1,5 @@
+pages/api/v1/db/update-line-combinations/index.ts(259,52): error TS7006: Parameter 'game' implicitly has an 'any' type.
+pages/api/v1/db/update-line-combinations/index.ts(273,8): error TS7006: Parameter 'gameId' implicitly has an 'any' type.
+pages/api/v1/db/update-line-combinations/index.ts(290,16): error TS7006: Parameter 'id' implicitly has an 'any' type.
+pages/api/v1/db/update-line-combinations/index.ts(291,13): error TS7006: Parameter 'id' implicitly has an 'any' type.
+pages/api/v1/db/update-line-combinations/index.ts(325,20): error TS7006: Parameter 'item' implicitly has an 'any' type.

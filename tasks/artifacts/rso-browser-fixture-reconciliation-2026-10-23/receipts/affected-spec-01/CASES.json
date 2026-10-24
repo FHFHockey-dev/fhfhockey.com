@@ -1,0 +1,326 @@
+[
+  {
+    "title": "connected refresh fixtures preserve nonzero intent through offline, cooldown, Undo and reopen",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "manual workspace retains reviewed intent, protections and locks through recalculation and reload",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "mobile tabs keep selection and expose the matchup and player details",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "readiness controls reach existing inputs across the required viewports",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: locator('details').filter({ has: locator(':scope > summary').getByText('Planning readiness', { exact: true }) })\nExpected substring: \u001b[32m\"Add roster players to assess player-quality coverage.\"\u001b[39m\nReceived string:    \u001b[31m\"Planning readiness \u00b7 Roster neededRoster: Add your players to begin schedule analysis. Review rosterRules: Acquisition legality, budget or scoring is unresolved. Review timing, allowances, slots and locks. Review rulesCoverage: No games in this date range. Review coveragePlan: Awaiting roster and schedule inputs. View plan\"\u001b[39m\nTimeout: 15000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for locator('details').filter({ has: locator(':scope > summary').getByText('Planning readiness', { exact: true }) })\u001b[22m\n\u001b[2m    34 \u00d7 locator resolved to <details open=\"\" class=\"RosterScheduleOptimizer_dataHealth__l28vg\">\u2026</details>\u001b[22m\n\u001b[2m       - unexpected value \"Planning readiness \u00b7 Roster neededRoster: Add your players to begin schedule analysis. Review rosterRules: Acquisition legality, budget or scoring is unresolved. Review timing, allowances, slots and locks. Review rulesCoverage: No games in this date range. Review coveragePlan: Awaiting roster and schedule inputs. View plan\"\u001b[22m\n\n\n  214 |     await expect(readiness).toContainText(\"Acquisition legality, budget or scoring is unresolved.\");\n  215 |     await expect(readiness).toContainText(\"Awaiting roster and schedule inputs.\");\n> 216 |     await expect(readiness).toContainText(\"Add roster players to assess player-quality coverage.\");\n      |                             ^\n  217 |     await expect(readiness).not.toContainText(\"Player-quality assignment evidence available\");\n  218 |     await page.keyboard.press(\"Tab\");\n  219 |     const rosterAction = page.getByRole(\"button\", { name: \"Review roster\", exact: true });\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:216:29"
+    ]
+  },
+  {
+    "title": "streams A to B to C through successive conditional acquisitions and keeps expanded desktop layout",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Plan summary' }).getByText('3', { exact: true }).first()\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Plan summary' }).getByText('3', { exact: true }).first()\u001b[22m\n\n\n  277 |   await expect(stream.getByRole(\"row\", { name: /C#1/ }).getByRole(\"cell\").nth(1)).toContainText(\"Conditional add\");\n  278 |   await expect(stream.getByRole(\"row\", { name: /C#1/ }).getByRole(\"cell\").nth(2)).toContainText(\"Conditional add\");\n> 279 |   await expect(page.getByRole(\"region\", { name: \"Plan summary\" }).getByText(\"3\", { exact: true }).first()).toBeVisible();\n      |                                                                                                            ^\n  280 |   await openPlanDetails(page);\n  281 |   await expect(page.getByRole(\"region\", { name: \"Itinerary\" }).getByText(\"ADD Bravo Center\", { exact: true })).toBeVisible();\n  282 |   await expect(page.getByRole(\"region\", { name: \"Itinerary\" }).getByText(\"ADD Charlie Center\", { exact: true })).toBeVisible();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:279:108"
+    ]
+  },
+  {
+    "title": "weekly lock keeps one fixed occupant across a window, including a confirmed midpoint assignment",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "fixture category tradeoffs use only startable post-acquisition games on desktop and mobile",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Itinerary', exact: true }).getByText(/Category alternatives \u00b7/)\nExpected pattern: \u001b[32m/Category alternatives \u00b7/\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Itinerary', exact: true }).getByText(/Category alternatives \u00b7/)\u001b[22m\n\n\n  390 |     }\n  391 |     await expect(gains).toContainText(\"not win probabilities\");\n> 392 |     await expect(itinerary.getByText(/Category alternatives \u00b7/)).toHaveText(/Category alternatives \u00b7/);\n      |                                                                  ^\n  393 |     if (width < 1101) await expect(itinerary.getByText(/Category alternatives \u00b7/)).toBeVisible();\n  394 |     await expect(itinerary.getByText(/Best found \u00b7/)).toHaveCount(0);\n  395 |     await itinerary.getByRole(\"button\", { name: \"Show category lineup comparison\" }).click();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:392:66"
+    ]
+  },
+  {
+    "title": "fixture category gains use only startable post-acquisition games on desktop and mobile",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Itinerary', exact: true }).getByText(/Category alternatives \u00b7/)\nExpected pattern: \u001b[32m/Category alternatives \u00b7/\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Itinerary', exact: true }).getByText(/Category alternatives \u00b7/)\u001b[22m\n\n\n  390 |     }\n  391 |     await expect(gains).toContainText(\"not win probabilities\");\n> 392 |     await expect(itinerary.getByText(/Category alternatives \u00b7/)).toHaveText(/Category alternatives \u00b7/);\n      |                                                                  ^\n  393 |     if (width < 1101) await expect(itinerary.getByText(/Category alternatives \u00b7/)).toBeVisible();\n  394 |     await expect(itinerary.getByText(/Best found \u00b7/)).toHaveCount(0);\n  395 |     await itinerary.getByRole(\"button\", { name: \"Show category lineup comparison\" }).click();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:392:66"
+    ]
+  },
+  {
+    "title": "fixture category unavailable baseline use only startable post-acquisition games on desktop and mobile",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Itinerary', exact: true }).getByText(/Category alternatives \u00b7/)\nExpected pattern: \u001b[32m/Category alternatives \u00b7/\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Itinerary', exact: true }).getByText(/Category alternatives \u00b7/)\u001b[22m\n\n\n  390 |     }\n  391 |     await expect(gains).toContainText(\"not win probabilities\");\n> 392 |     await expect(itinerary.getByText(/Category alternatives \u00b7/)).toHaveText(/Category alternatives \u00b7/);\n      |                                                                  ^\n  393 |     if (width < 1101) await expect(itinerary.getByText(/Category alternatives \u00b7/)).toBeVisible();\n  394 |     await expect(itinerary.getByText(/Best found \u00b7/)).toHaveCount(0);\n  395 |     await itinerary.getByRole(\"button\", { name: \"Show category lineup comparison\" }).click();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:392:66"
+    ]
+  },
+  {
+    "title": "provider refresh proposes repairs while keeping a selected move",
+    "project": "chromium",
+    "status": "timedOut",
+    "errors": [
+      "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+      "Error: locator.fill: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('searchbox', { name: 'Find candidate' })\u001b[22m\n\n\n  470 |   await expect(confirm).toBeDisabled();\n  471 |   await page.getByText(\"League rules and scoring\", { exact: true }).click();\n> 472 |   await page.getByRole(\"searchbox\", { name: \"Find candidate\" }).fill(\"Alpha\");\n      |                                                                 ^\n  473 |   await openDisclosure(page, \"Find & filter\");\n  474 |   await page.getByRole(\"button\", { name: \"All players\", exact: true }).click();\n  475 |   await page.getByRole(\"button\", { name: \"Select add\" }).click();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:472:65"
+    ]
+  },
+  {
+    "title": "connected manager bench locks constrain the worker and preserve provider authority through undo and reload",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'Plan summary' }).locator('article').filter({ has: getByText('Projected points', { exact: true }) }).locator('strong')\nExpected: \u001b[32m\"5\"\u001b[39m\nReceived: \u001b[31m\"\u2014\"\u001b[39m\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Plan summary' }).locator('article').filter({ has: getByText('Projected points', { exact: true }) }).locator('strong')\u001b[22m\n\u001b[2m    33 \u00d7 locator resolved to <strong>\u2014</strong>\u001b[22m\n\u001b[2m       - unexpected value \"\u2014\"\u001b[22m\n\n\n  559 |   await page.goto(\"/roster-schedule-optimizer\");\n  560 |   const outcome = page.getByRole(\"region\", { name: \"Plan summary\" }).locator(\"article\").filter({ has: page.getByText(\"Projected points\", { exact: true }) }).locator(\"strong\");\n> 561 |   await expect(outcome).toHaveText(\"5\");\n      |                         ^\n  562 |   await page.getByRole(\"button\", { name: \"Save to account\" }).click();\n  563 |   await expect(page.getByText(\"Saved to account.\", { exact: true })).toBeVisible();\n  564 |   expect(accountSnapshot!.lockedAssignments).toEqual([{ ...workspace.lockedAssignments[0], source: \"manager\" }]);\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:561:25"
+    ]
+  },
+  {
+    "title": "provider refresh adopts the authoritative league timezone and keeps the selected horizon and intent on reload",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "shows sequential stream occupants with real games and retains workspace layout when details expand",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Itinerary' }).getByRole('table').first()\nExpected substring: \u001b[32m\"Alpha Center\"\u001b[39m\nReceived string:    \u001b[31m\"\u24d8Mon Sep 210 NHLTue Sep 221 NHLWed Sep 231 NHLThu Sep 240 NHLFri Sep 250 NHLSat Sep 260 NHLSun Sep 270 NHLC\u2014EmptyEmpty\u2014\u2014\u2014\u2014LW\u2014EmptyEmpty\u2014\u2014\u2014\u2014\u2014EmptyEmpty\u2014\u2014\u2014\u2014RW\u2014EmptyEmpty\u2014\u2014\u2014\u2014\u2014EmptyEmpty\u2014\u2014\u2014\u2014D\u2014EmptyEmpty\u2014\u2014\u2014\u2014\u2014EmptyEmpty\u2014\u2014\u2014\u2014\u2014EmptyEmpty\u2014\u2014\u2014\u2014\u2014EmptyEmpty\u2014\u2014\u2014\u2014UTIL\u2014EmptyEmpty\u2014\u2014\u2014\u2014G\u2014EmptyEmpty\u2014\u2014\u2014\u2014\u2014EmptyEmpty\u2014\u2014\u2014\u2014BNCenterNo gameCentervsNJDCenter@CARCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameFilled0/120/12\"\u001b[39m\nTimeout: 15000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Itinerary' }).getByRole('table').first()\u001b[22m\n\u001b[2m    2 \u00d7 locator resolved to <table aria-label=\"Lineup by position\" class=\"SlotWeekGrid_grid__ebZSy\">\u2026</table>\u001b[22m\n\u001b[2m      - unexpected value \"\u24d8Mon Sep 210 NHLTue Sep 220 NHLWed Sep 230 NHLThu Sep 240 NHLFri Sep 250 NHLSat Sep 260 NHLSun Sep 270 NHLC\u2014\u2014\u2014\u2014\u2014\u2014\u2014LW\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014RW\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014D\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014UTIL\u2014\u2014\u2014\u2014\u2014\u2014\u2014G\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014BNCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameFilled\"\u001b[22m\n\u001b[2m    31 \u00d7 locator resolved to <table aria-label=\"Lineup by position\" class=\"SlotWeekGrid_grid__ebZSy\">\u2026</table>\u001b[22m\n\u001b[2m       - unexpected value \"\u24d8Mon Sep 210 NHLTue Sep 221 NHLWed Sep 231 NHLThu Sep 240 NHLFri Sep 250 NHLSat Sep 260 NHLSun Sep 270 NHLC\u2014EmptyEmpty\u2014\u2014\u2014\u2014LW\u2014EmptyEmpty\u2014\u2014\u2014\u2014\u2014EmptyEmpty\u2014\u2014\u2014\u2014RW\u2014EmptyEmpty\u2014\u2014\u2014\u2014\u2014EmptyEmpty\u2014\u2014\u2014\u2014D\u2014EmptyEmpty\u2014\u2014\u2014\u2014\u2014EmptyEmpty\u2014\u2014\u2014\u2014\u2014EmptyEmpty\u2014\u2014\u2014\u2014\u2014EmptyEmpty\u2014\u2014\u2014\u2014UTIL\u2014EmptyEmpty\u2014\u2014\u2014\u2014G\u2014EmptyEmpty\u2014\u2014\u2014\u2014\u2014EmptyEmpty\u2014\u2014\u2014\u2014BNCenterNo gameCentervsNJDCenter@CARCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameCenterNo gameFilled0/120/12\"\u001b[22m\n\n\n  648 |   await page.getByText(\"League rules and scoring\").click();\n  649 |   await page.getByLabel(\"C\", { exact: true }).fill(\"1\");\n> 650 |   await expect(page.getByRole(\"region\", { name: \"Itinerary\" }).getByRole(\"table\").first()).toContainText(\"Alpha Center\");\n      |                                                                                            ^\n  651 |   await expect(page.getByRole(\"region\", { name: \"Itinerary\" }).getByRole(\"table\").first()).toContainText(\"Bravo Center\");\n  652 |   await showScheduleView(page, \"player\");\n  653 |   await page.getByText(\"Scoring, budgets, and lock windows\", { exact: true }).click({ timeout: 10000 });\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:650:92"
+    ]
+  },
+  {
+    "title": "dense roster keeps schedule views and their scrollbars inside the desktop frame",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Itinerary', exact: true }).getByRole('table')\nExpected substring: \u001b[32m\"Roster Player 1\"\u001b[39m\nReceived string:    \u001b[31m\"\u24d8Mon Oct 51 NHLTue Oct 61 NHLWed Oct 71 NHLThu Oct 81 NHLFri Oct 91 NHLSat Oct 101 NHLSun Oct 111 NHLC1vsNYR\u20141vsNYR\u20141vsNYR\u20141vsNYR\u20141vsNYR\u20141vsNYR\u20141vsNYR\u201410vsNYR\u201410vsNYR\u201410vsNYR\u201410vsNYR\u201410vsNYR\u201410vsNYR\u201410vsNYR\u201411vsNYR\u201411vsNYR\u201411vsNYR\u201411vsNYR\u201411vsNYR\u201411vsNYR\u201411vsNYR\u201412vsNYR\u201412vsNYR\u201412vsNYR\u201412vsNYR\u201412vsNYR\u201412vsNYR\u201412vsNYR\u201413vsNYR\u201413vsNYR\u201413vsNYR\u201413vsNYR\u201413vsNYR\u201413vsNYR\u201413vsNYR\u201414vsNYR\u201414vsNYR\u201414vsNYR\u201414vsNYR\u201414vsNYR\u201414vsNYR\u201414vsNYR\u201415vsNYR\u201415vsNYR\u201415vsNYR\u201415vsNYR\u201415vsNYR\u201415vsNYR\u201415vsNYR\u201416vsNYR\u201416vsNYR\u201416vsNYR\u201416vsNYR\u201416vsNYR\u201416vsNYR\u201416vsNYR\u201417vsNYR\u201417vsNYR\u201417vsNYR\u201417vsNYR\u201417vsNYR\u201417vsNYR\u201417vsNYR\u201418vsNYR\u201418vsNYR\u201418vsNYR\u201418vsNYR\u201418vsNYR\u201418vsNYR\u201418vsNYR\u20142vsNYR\u20142vsNYR\u20142vsNYR\u20142vsNYR\u20142vsNYR\u20142vsNYR\u20142vsNYR\u20143vsNYR\u20143vsNYR\u20143vsNYR\u20143vsNYR\u20143vsNYR\u20143vsNYR\u20143vsNYR\u2014BN4vsNYR4vsNYR4vsNYR4vsNYR4vsNYR4vsNYR4vsNYR5vsNYR5vsNYR5vsNYR5vsNYR5vsNYR5vsNYR5vsNYR6vsNYR6vsNYR6vsNYR6vsNYR6vsNYR6vsNYR6vsNYR7vsNYR7vsNYR7vsNYR7vsNYR7vsNYR7vsNYR7vsNYR8vsNYR8vsNYR8vsNYR8vsNYR8vsNYR8vsNYR8vsNYR9vsNYR9vsNYR9vsNYR9vsNYR9vsNYR9vsNYR9vsNYRFilled12/1212/1212/1212/1212/1212/1212/12\"\u001b[39m\nTimeout: 15000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Itinerary', exact: true }).getByRole('table')\u001b[22m\n\u001b[2m    2 \u00d7 locator resolved to <table aria-label=\"Lineup by position\" class=\"SlotWeekGrid_grid__ebZSy\">\u2026</table>\u001b[22m\n\u001b[2m      - unexpected value \"\u24d8Mon Oct 50 NHLTue Oct 60 NHLWed Oct 70 NHLThu Oct 80 NHLFri Oct 90 NHLSat Oct 100 NHLSun Oct 110 NHLC\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014\u2014BN1No game1No game1No game1No game1No game1No game1No game2No game2No game2No game2No game2No game2No game2No game3No game3No game3No game3No game3No game3No game3No game4No game4No game4No game4No game4No game4No game4No game5No game5No game5No game5No game5No game5No game5No game+13 off+13 off+13 off+13 off+13 off+13 off+13 offFilled\"\u001b[22m\n\u001b[2m    30 \u00d7 locator resolved to <table aria-label=\"Lineup by position\" class=\"SlotWeekGrid_grid__ebZSy\">\u2026</table>\u001b[22m\n\u001b[2m       - unexpected value \"\u24d8Mon Oct 51 NHLTue Oct 61 NHLWed Oct 71 NHLThu Oct 81 NHLFri Oct 91 NHLSat Oct 101 NHLSun Oct 111 NHLC1vsNYR\u20141vsNYR\u20141vsNYR\u20141vsNYR\u20141vsNYR\u20141vsNYR\u20141vsNYR\u201410vsNYR\u201410vsNYR\u201410vsNYR\u201410vsNYR\u201410vsNYR\u201410vsNYR\u201410vsNYR\u201411vsNYR\u201411vsNYR\u201411vsNYR\u201411vsNYR\u201411vsNYR\u201411vsNYR\u201411vsNYR\u201412vsNYR\u201412vsNYR\u201412vsNYR\u201412vsNYR\u201412vsNYR\u201412vsNYR\u201412vsNYR\u201413vsNYR\u201413vsNYR\u201413vsNYR\u201413vsNYR\u201413vsNYR\u201413vsNYR\u201413vsNYR\u201414vsNYR\u201414vsNYR\u201414vsNYR\u201414vsNYR\u201414vsNYR\u201414vsNYR\u201414vsNYR\u201415vsNYR\u201415vsNYR\u201415vsNYR\u201415vsNYR\u201415vsNYR\u201415vsNYR\u201415vsNYR\u201416vsNYR\u201416vsNYR\u201416vsNYR\u201416vsNYR\u201416vsNYR\u201416vsNYR\u201416vsNYR\u201417vsNYR\u201417vsNYR\u201417vsNYR\u201417vsNYR\u201417vsNYR\u201417vsNYR\u201417vsNYR\u201418vsNYR\u201418vsNYR\u201418vsNYR\u201418vsNYR\u201418vsNYR\u201418vsNYR\u201418vsNYR\u20142vsNYR\u20142vsNYR\u20142vsNYR\u20142vsNYR\u20142vsNYR\u20142vsNYR\u20142vsNYR\u20143vsNYR\u20143vsNYR\u20143vsNYR\u20143vsNYR\u20143vsNYR\u20143vsNYR\u20143vsNYR\u2014BN4vsNYR4vsNYR4vsNYR4vsNYR4vsNYR4vsNYR4vsNYR5vsNYR5vsNYR5vsNYR5vsNYR5vsNYR5vsNYR5vsNYR6vsNYR6vsNYR6vsNYR6vsNYR6vsNYR6vsNYR6vsNYR7vsNYR7vsNYR7vsNYR7vsNYR7vsNYR7vsNYR7vsNYR8vsNYR8vsNYR8vsNYR8vsNYR8vsNYR8vsNYR8vsNYR9vsNYR9vsNYR9vsNYR9vsNYR9vsNYR9vsNYR9vsNYRFilled12/1212/1212/1212/1212/1212/1212/12\"\u001b[22m\n\n\n  668 |   await page.goto(\"/roster-schedule-optimizer\");\n  669 |   const itinerary = page.getByRole(\"region\", { name: \"Itinerary\", exact: true });\n> 670 |   await expect(itinerary.getByRole(\"table\")).toContainText(\"Roster Player 1\");\n      |                                              ^\n  671 |   for (const [width, height] of [[1440, 900], [1920, 1080]]) {\n  672 |     await page.setViewportSize({ width, height });\n  673 |     await showScheduleView(page, \"itinerary\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:670:46"
+    ]
+  },
+  {
+    "title": "Yahoo timeout retains schedule analysis and matchup-week navigation without actionable acquisitions",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByText(/Using retained roster inputs/)\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByText(/Using retained roster inputs/)\u001b[22m\n\n\n  709 |   await openPlanDetails(page);\n  710 |   await expect(page.getByText(\"Yahoo roster/settings reads timed out after retrying.\")).toBeVisible();\n> 711 |   await expect(page.getByText(/Using retained roster inputs/)).toBeVisible();\n      |                                                                ^\n  712 |   await expect(page.getByRole(\"region\", { name: \"Itinerary\", exact: true }).getByRole(\"table\")).toContainText(\"Alpha Center\");\n  713 |   await openDisclosure(page, \"Find & filter\");\n  714 |   await page.getByRole(\"button\", { name: \"All players\", exact: true }).click();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:711:64"
+    ]
+  },
+  {
+    "title": "mixed Kaprizov coverage stays unresolved until complete evidence supports the bench decision",
+    "project": "chromium",
+    "status": "timedOut",
+    "errors": [
+      "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+      "Error: locator.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Review rules', exact: true })\u001b[22m\n\n\n  768 |     await readiness.locator(\":scope > summary\").focus();\n  769 |     await page.keyboard.press(\"Enter\");\n> 770 |     await page.getByRole(\"button\", { name: \"Review rules\", exact: true }).click();\n      |                                                                           ^\n  771 |     await page.getByRole(\"button\", { name: \"Confirm planning inputs\", exact: true }).focus();\n  772 |     await page.keyboard.press(\"Space\");\n  773 |     await page.getByRole(\"button\", { name: \"View plan\", exact: true }).click();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:770:75"
+    ]
+  },
+  {
+    "title": "weekly LW/RW and UTIL bench explanations preserve midpoint locks through worker reload",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Itinerary' }).getByRole('row').filter({ hasText: 'Locked Center' }).getByRole('button', { name: 'Schedule details for Locked Center, UTIL#1, league positions C, Fantasy assigned', exact: true })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Itinerary' }).getByRole('row').filter({ hasText: 'Locked Center' }).getByRole('button', { name: 'Schedule details for Locked Center, UTIL#1, league positions C, Fantasy assigned', exact: true })\u001b[22m\n\n\n  825 |     await expect(bench.getByRole(\"list\", { name: \"Changed assignments\" })).not.toContainText(\"UTIL#1\");\n  826 |     const center = page.getByRole(\"region\", { name: \"Itinerary\" }).getByRole(\"row\").filter({ hasText: \"Locked Center\" });\n> 827 |     await expect(center.getByRole(\"button\", { name: \"Schedule details for Locked Center, UTIL#1, league positions C, Fantasy assigned\", exact: true })).toBeVisible();\n      |                                                                                                                                                         ^\n  828 |     if (pass === 0) await page.reload();\n  829 |     await openPlanDetails(page);\n  830 |   }\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:827:153"
+    ]
+  },
+  {
+    "title": "manual league eligibility must be confirmed and survives a reload",
+    "project": "chromium",
+    "status": "timedOut",
+    "errors": [
+      "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+      "Error: locator.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByText('Review evidence', { exact: true }).first()\u001b[22m\n\u001b[2m    - locator resolved to <summary>Review evidence</summary>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 \u00d7 waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 \u00d7 waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is not visible\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    114 \u00d7 waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m        - element is not visible\u001b[22m\n\u001b[2m      - retrying click action\u001b[22m\n\u001b[2m        - waiting 500ms\u001b[22m\n\n\n  847 |   const reviews = page.getByText(\"Review evidence\", { exact: true });\n  848 |   for (let index = 0; index < 2; index++) {\n> 849 |     await reviews.nth(index).click();\n      |                              ^\n  850 |     await page.getByRole(\"checkbox\", { name: \"Manager confirms league positions\" }).nth(index).check();\n  851 |     if (!index) await expectQualityReadiness(page, false);\n  852 |   }\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:849:30"
+    ]
+  },
+  {
+    "title": "goalie competition stays unresolved across the worker and evidence view",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "assignment-only forecasts preserve their allowed uses in the browser",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "totals-only forecasts preserve their allowed uses in the browser",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "legacy forecasts preserve their allowed uses in the browser",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "unproven-lineage forecasts cannot certify readiness in the browser",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "connected refresh and account save preserve forecast permissions and exclusions",
+    "project": "chromium",
+    "status": "timedOut",
+    "errors": [
+      "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m",
+      "Error: locator.click: Test timeout of 60000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'Refresh provider' })\u001b[22m\n\u001b[2m    - locator resolved to <button aria-busy=\"false\" aria-label=\"Refresh provider\" aria-describedby=\"rso-provider-refresh-status\">Refresh provider</button>\u001b[22m\n\u001b[2m  - attempting click action\u001b[22m\n\u001b[2m    2 \u00d7 waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - element is outside of the viewport\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m    - waiting 20ms\u001b[22m\n\u001b[2m    2 \u00d7 waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m      - element is visible, enabled and stable\u001b[22m\n\u001b[2m      - scrolling into view if needed\u001b[22m\n\u001b[2m      - done scrolling\u001b[22m\n\u001b[2m      - element is outside of the viewport\u001b[22m\n\u001b[2m    - retrying click action\u001b[22m\n\u001b[2m      - waiting 100ms\u001b[22m\n\u001b[2m    114 \u00d7 waiting for element to be visible, enabled and stable\u001b[22m\n\u001b[2m        - element is visible, enabled and stable\u001b[22m\n\u001b[2m        - scrolling into view if needed\u001b[22m\n\u001b[2m        - done scrolling\u001b[22m\n\u001b[2m        - element is outside of the viewport\u001b[22m\n\u001b[2m      - retrying click action\u001b[22m\n\u001b[2m        - waiting 500ms\u001b[22m\n\n\n  1011 |   refreshed = true;\n  1012 |   await openPlanningSetup(page);\n> 1013 |   await page.getByRole(\"button\", { name: \"Refresh provider\" }).click();\n       |                                                                ^\n  1014 |   await expectQualityReadiness(page, false);\n  1015 |   await page.getByRole(\"button\", { name: \"Save to account\" }).click();\n  1016 |   await expect(page.getByText(\"Saved to account.\")).toBeVisible();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1013:64"
+    ]
+  },
+  {
+    "title": "conflicting forecasts keep capacity planning and show the affected target",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Itinerary' }).getByRole('table').first()\nExpected pattern: \u001b[32m/Alpha Center|Bravo Center/\u001b[39m\nReceived string:  \u001b[31m\"\u24d8Mon Oct 52 NHLTue Oct 60 NHLWed Oct 70 NHLCCentervsNYR\u2014\u2014\u2014BNCentervsNYR+2 off+2 offFilled1/1\"\u001b[39m\nTimeout: 15000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Itinerary' }).getByRole('table').first()\u001b[22m\n\u001b[2m    33 \u00d7 locator resolved to <table aria-label=\"Lineup by position\" class=\"SlotWeekGrid_grid__ebZSy\">\u2026</table>\u001b[22m\n\u001b[2m       - unexpected value \"\u24d8Mon Oct 52 NHLTue Oct 60 NHLWed Oct 70 NHLCCentervsNYR\u2014\u2014\u2014BNCentervsNYR+2 off+2 offFilled1/1\"\u001b[22m\n\n\n  1090 |   await page.goto(\"/roster-schedule-optimizer\");\n  1091 |   await expectQualityReadiness(page, false);\n> 1092 |   await expect(page.getByRole(\"region\", { name: \"Itinerary\" }).getByRole(\"table\").first()).toContainText(/Alpha Center|Bravo Center/);\n       |                                                                                            ^\n  1093 |   await page.getByRole(\"button\", { name: \"Matchup\", exact: true }).click();\n  1094 |   await page.getByText(/Forecast coverage \u00b7/).click();\n  1095 |   await expect(page.getByText(/Alpha Center \u00b7 game alpha \u00b7 GOALS: conflicting forecast/)).toBeVisible();\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1092:92"
+    ]
+  },
+  {
+    "title": "points goalie coverage survives worker reload and benches harmful starts once credited",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Itinerary' })\nExpected substring: \u001b[32m\"G#1 \u00b7 Coverage Goalie\"\u001b[39m\nReceived string:    \u001b[31m\"2Optimized WeekBest lineup for each dayMost startsBest projected pointsOptimize lineupBy positionBy playerItineraryPlan detailsSelected lineup \u00b7 estimate sourcesBaseline estimates use reusable contribution rates. The optimized no-move plan is a lineup comparison, not a statistical source. None of these estimates imply calibrated confidence.Coverage Goalie \u00b7 game 30 \u00b7 GOALS_AGAINST_GOALIEDetailed game estimate \u00b7 Projected total and comparison useTarget source lineage unavailable. Game-estimate bundle bounds: latest input cutoff Sep 26, 12:00 AM UTC \u00b7 latest issuance Sep 26, 12:00 AM UTC \u00b7 earliest expiry Oct 5, 11:00 PM UTCSelected plan \u00b7 projected points comparisonActual startable plan totals over this date range, including displaced roster contributions and league scoring.No move -1 \u2192 plan -1Absolute point difference 0Similar projected points \u00b7 provisional 5% display ruleFive percent uses the larger absolute plan total; two supported zero totals are equal. This is not a confidence interval or an automatic decision. Review planning inputs before acting.Selected stepsPlanned adds: 0 \u00b7 Week: 2 remaining (manager)No acquisition selected. The no-move lineup is the comparison.Why players are outside this assignmentScoring explanations use provisional means and checked legal placements. They do not establish a global optimum or calibrated confidence.Oct 5 \u00b7 Lower Penalty GoalieThe selected assignment favors projected goalie coverage. Expected starts do not satisfy a minimum.Daily placement window: Oct 5.Complete-plan start/sit score: selected -1; with Lower Penalty Goalie -0.5.This assignment score is not an approved projected total or acquisition comparison.Oct 5 \u00b7 G#1: Coverage Goalie \u2192 Lower Penalty GoalieRecorded goalie minimum: 0 credited / 1 required starts. Projected progress including credited results: selected 1; with Lower Penalty Goalie 0.25. Expected starts or appearances do not establish a satisfied minimum.Coverage Goalie \u00b7 detailed game estimateGame 30 \u00b7 Start assumption: 100% \u00b7 confirmed starter evidence.Lower Penalty Goalie \u00b7 detailed game estimateGame 31 \u00b7 Start assumption: 25% \u00b7 projected, not confirmed.\"\u001b[39m\nTimeout: 15000ms\n\nCall log:\n\u001b[2m  - Expect \"toContainText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Itinerary' })\u001b[22m\n\u001b[2m    33 \u00d7 locator resolved to <section aria-label=\"Itinerary\" class=\"RosterScheduleOptimizer_panel__r8Bek RosterScheduleOptimizer_itineraryPanel__ziar6 RosterScheduleOptimizer_mobileActive__HRTOy\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"2Optimized WeekBest lineup for each dayMost startsBest projected pointsOptimize lineupBy positionBy playerItineraryPlan detailsSelected lineup \u00b7 estimate sourcesBaseline estimates use reusable contribution rates. The optimized no-move plan is a lineup comparison, not a statistical source. None of these estimates imply calibrated confidence.Coverage Goalie \u00b7 game 30 \u00b7 GOALS_AGAINST_GOALIEDetailed game estimate \u00b7 Projected total and comparison useTarget source lineage unavailable. Game-estimate bundle bounds: latest input cutoff Sep 26, 12:00 AM UTC \u00b7 latest issuance Sep 26, 12:00 AM UTC \u00b7 earliest expiry Oct 5, 11:00 PM UTCSelected plan \u00b7 projected points comparisonActual startable plan totals over this date range, including displaced roster contributions and league scoring.No move -1 \u2192 plan -1Absolute point difference 0Similar projected points \u00b7 provisional 5% display ruleFive percent uses the larger absolute plan total; two supported zero totals are equal. This is not a confidence interval or an automatic decision. Review planning inputs before acting.Selected stepsPlanned adds: 0 \u00b7 Week: 2 remaining (manager)No acquisition selected. The no-move lineup is the comparison.Why players are outside this assignmentScoring explanations use provisional means and checked legal placements. They do not establish a global optimum or calibrated confidence.Oct 5 \u00b7 Lower Penalty GoalieThe selected assignment favors projected goalie coverage. Expected starts do not satisfy a minimum.Daily placement window: Oct 5.Complete-plan start/sit score: selected -1; with Lower Penalty Goalie -0.5.This assignment score is not an approved projected total or acquisition comparison.Oct 5 \u00b7 G#1: Coverage Goalie \u2192 Lower Penalty GoalieRecorded goalie minimum: 0 credited / 1 required starts. Projected progress including credited results: selected 1; with Lower Penalty Goalie 0.25. Expected starts or appearances do not establish a satisfied minimum.Coverage Goalie \u00b7 detailed game estimateGame 30 \u00b7 Start assumption: 100% \u00b7 confirmed starter evidence.Lower Penalty Goalie \u00b7 detailed game estimateGame 31 \u00b7 Start assumption: 25% \u00b7 projected, not confirmed.\"\u001b[22m\n\n\n  1128 |     await showScheduleView(page, \"player\");\n  1129 |     await openPlanDetails(page);\n> 1130 |     await expect(itinerary).toContainText(\"G#1 \u00b7 Coverage Goalie\");\n       |                             ^\n  1131 |     const explanation = page.getByText(\"Why players are outside this assignment\", { exact: true }).locator(\"..\");\n  1132 |     if (!await explanation.evaluate(node => (node as HTMLDetailsElement).open)) await explanation.locator(\"summary\").click();\n  1133 |     const bench = explanation.getByRole(\"article\", { name: \"Lower Penalty Goalie bench decision\" });\n    at expectCoverage (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1130:29)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1141:3"
+    ]
+  },
+  {
+    "title": "unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (manual)",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'Matchup' }).locator('details').filter({ has: getByText('Selected lineup \u00b7 estimate sources', { exact: true }) }).getByRole('article', { name: 'Alpha Center game 30 GOALS evidence' }).getByText(/^Baseline rate input/)\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Matchup' }).locator('details').filter({ has: getByText('Selected lineup \u00b7 estimate sources', { exact: true }) }).getByRole('article', { name: 'Alpha Center game 30 GOALS evidence' }).getByText(/^Baseline rate input/)\u001b[22m\n\u001b[2m    33 \u00d7 locator resolved to 1 element\u001b[22m\n\u001b[2m       - unexpected value \"1\"\u001b[22m\n\n\n  1264 |     // Unapproved borrowed participation cannot select the baseline into a blended\n  1265 |     // estimate. Its immutable inputs are checked in the account-save transport.\n> 1266 |     await expect(goals.getByText(/^Baseline rate input/)).toHaveCount(0);\n       |                                                           ^\n  1267 |     if (withAssists) {\n  1268 |       const assists = sources.getByRole(\"article\", { name: \"Alpha Center game 30 ASSISTS evidence\" });\n  1269 |       await expect(assists.getByText(/^Baseline rate input/)).toContainText(\"issued Sep 29, 12:00 AM UTC\");\n    at expectSourceTimes (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1266:59)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1295:3"
+    ]
+  },
+  {
+    "title": "unapproved retained inputs stay denied across worker reload, account save and borrowed-participation expiry (connected)",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoMatchObject\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\n\u001b[32m- Expected  - 5\u001b[39m\n\u001b[31m+ Received  + 0\u001b[39m\n\n\u001b[33m@@ -8,15 +8,10 @@\u001b[39m\n\u001b[2m                \"assignment\": false,\u001b[22m\n\u001b[2m                \"comparison\": false,\u001b[22m\n\u001b[2m                \"totals\": false,\u001b[22m\n\u001b[2m              },\u001b[22m\n\u001b[2m              \"inputs\": Object {\u001b[22m\n\u001b[32m-               \"baseline\": Object {\u001b[39m\n\u001b[32m-                 \"expiresAt\": \"2026-10-09T00:00:00Z\",\u001b[39m\n\u001b[32m-                 \"issuedAt\": \"2026-09-27T01:00:00Z\",\u001b[39m\n\u001b[32m-                 \"sourceId\": \"alpha-rate\",\u001b[39m\n\u001b[32m-               },\u001b[39m\n\u001b[2m                \"detailed\": Object {\u001b[22m\n\u001b[2m                  \"issuedAt\": \"2026-09-28T01:00:00Z\",\u001b[22m\n\u001b[2m                  \"sourceWatermark\": \"captured-reads\",\u001b[22m\n\u001b[2m                },\u001b[22m\n\u001b[2m                \"participation\": Object {\u001b[22m\n\n  1236 |     await page.getByRole(\"button\", { name: \"Save to account\" }).click();\n  1237 |     await expect(page.getByText(\"Saved to account.\")).toBeVisible();\n> 1238 |     expect(saved).toMatchObject({ snapshot: { forecasts: [{ sourceWatermark: \"captured-reads\",\n       |                   ^\n  1239 |       contributions: { GOALS: { allowedUses: { assignment: false, totals: false, comparison: false }, inputs: {\n  1240 |         detailed: { sourceWatermark: \"captured-reads\", issuedAt: \"2026-09-28T01:00:00Z\" },\n  1241 |         baseline: { sourceId: \"alpha-rate\", issuedAt: \"2026-09-27T01:00:00Z\", expiresAt: \"2026-10-09T00:00:00Z\" },\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1238:19"
+    ]
+  },
+  {
+    "title": "candidate feedback views preserve eligibility, availability and planned-add semantics",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Candidate browser' }).getByText('CAR \u00b7 2 players', { exact: true })\nExpected: visible\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Candidate browser' }).getByText('CAR \u00b7 2 players', { exact: true })\u001b[22m\n\n\n  1357 |   await page.goto(\"/roster-schedule-optimizer\");\n  1358 |   const browser = page.getByRole(\"region\", { name: \"Candidate browser\" });\n> 1359 |   await expect(browser.getByText(\"CAR \u00b7 2 players\", { exact: true })).toBeVisible();\n       |                                                                       ^\n  1360 |   await expect(page.getByText(\"Selected moves are a plan. Confirm roster changes with your provider.\")).toHaveCount(0);\n  1361 |   const adds = page.getByRole(\"region\", { name: \"Plan summary\" }).locator(\"article\").filter({ hasText: \"Planned adds\" });\n  1362 |   await expect(adds.locator(\"strong\")).toHaveText(\"0\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1359:71"
+    ]
+  },
+  {
+    "title": "projected candidate fit values usable points above schedule quantity",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "planning worker measures the full typical workload and cancels superseded edits",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "candidate worker ranks the complete population without blocking filters and retains zero AGP",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m(\u001b[22m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Candidate browser' }).getByRole('button', { name: /Last Candidate Best Quality/ })\nExpected: visible\nError: strict mode violation: getByRole('region', { name: 'Candidate browser' }).getByRole('button', { name: /Last Candidate Best Quality/ }) resolved to 2 elements:\n    1) <button class=\"CandidateCard_name__aoOar\" aria-label=\"Last Candidate Best Quality, CAR, C\">Last Candidate Best Quality</button> aka getByRole('button', { name: 'Last Candidate Best Quality, CAR, C' })\n    2) <button disabled class=\"CandidateCard_action__DpVqb\" aria-label=\"Preview swap: add Last Candidate Best Quality, drop Owned Center\">Preview swap</button> aka getByRole('button', { name: 'Preview swap: add Last' })\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Candidate browser' }).getByRole('button', { name: /Last Candidate Best Quality/ })\u001b[22m\n\n\n  1575 |   await browser.getByRole(\"button\", { name: \"All players\", exact: true }).click();\n  1576 |   const best = browser.getByRole(\"button\", { name: /Last Candidate Best Quality/ });\n> 1577 |   await expect(best).toBeVisible();\n       |                      ^\n  1578 |   await expect(browser.locator('[data-rso-candidate-id=\"fhfh:1000\"]').getByText(\"Net AGP\", { exact: true }).locator(\"..\").locator(\"strong\")).toHaveText(\"0\");\n  1579 |   await expect(browser.locator('[data-rso-candidate-id=\"fhfh:1000\"]').getByText(\"Net Pts\", { exact: true }).locator(\"..\").locator(\"strong\")).toHaveText(\"+16\");\n  1580 |   await expect(browser.locator(\"[data-rso-candidate-id]\").first()).toHaveAttribute(\"data-rso-candidate-id\", \"fhfh:1000\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1577:22"
+    ]
+  },
+  {
+    "title": "Audit1 native candidate Worker finds complete swaps before any plan is selected",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "compact layout accounts for 19 slots with a maximum of 20 slot rows and internal labels",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoHaveLength\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected length: \u001b[32m7\u001b[39m\nReceived length: \u001b[31m3\u001b[39m\nReceived array:  \u001b[31m[{\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}, {\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}, {\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}]\u001b[39m\n\n  1754 |     before: getComputedStyle(node, \"::before\").content, after: getComputedStyle(node, \"::after\").content,\n  1755 |   })));\n> 1756 |   expect(articleBorders).toHaveLength(7);\n       |                          ^\n  1757 |   for (const border of articleBorders) {\n  1758 |     expect(border.width).toBe(\"10px\"); expect(border.style).toBe(\"solid\"); expect(border.topLeftRadius).toBe(\"10px\"); expect(border.bottomLeftRadius).toBe(\"10px\");\n  1759 |     expect(border.outlineColors).toEqual([border.band, border.band, border.band]); expect(border.outlineWidths).toEqual([\"1px\", \"1px\", \"1px\"]);\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1756:26"
+    ]
+  },
+  {
+    "title": "compact layout accounts for 20 slots with a maximum of 20 slot rows and internal labels",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoHaveLength\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected length: \u001b[32m7\u001b[39m\nReceived length: \u001b[31m3\u001b[39m\nReceived array:  \u001b[31m[{\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}, {\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}, {\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}]\u001b[39m\n\n  1754 |     before: getComputedStyle(node, \"::before\").content, after: getComputedStyle(node, \"::after\").content,\n  1755 |   })));\n> 1756 |   expect(articleBorders).toHaveLength(7);\n       |                          ^\n  1757 |   for (const border of articleBorders) {\n  1758 |     expect(border.width).toBe(\"10px\"); expect(border.style).toBe(\"solid\"); expect(border.topLeftRadius).toBe(\"10px\"); expect(border.bottomLeftRadius).toBe(\"10px\");\n  1759 |     expect(border.outlineColors).toEqual([border.band, border.band, border.band]); expect(border.outlineWidths).toEqual([\"1px\", \"1px\", \"1px\"]);\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1756:26"
+    ]
+  },
+  {
+    "title": "compact layout accounts for 29 slots with a maximum of 20 slot rows and internal labels",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoHaveLength\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected length: \u001b[32m7\u001b[39m\nReceived length: \u001b[31m3\u001b[39m\nReceived array:  \u001b[31m[{\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}, {\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}, {\"after\": \"none\", \"band\": \"rgba(167, 180, 192, 0.25)\", \"before\": \"\\\"\\\"\", \"bottomLeftRadius\": \"10px\", \"outlineColors\": [\"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\", \"rgba(167, 180, 192, 0.25)\"], \"outlineWidths\": [\"1px\", \"1px\", \"1px\"], \"style\": \"solid\", \"topLeftRadius\": \"10px\", \"width\": \"1px\"}]\u001b[39m\n\n  1754 |     before: getComputedStyle(node, \"::before\").content, after: getComputedStyle(node, \"::after\").content,\n  1755 |   })));\n> 1756 |   expect(articleBorders).toHaveLength(7);\n       |                          ^\n  1757 |   for (const border of articleBorders) {\n  1758 |     expect(border.width).toBe(\"10px\"); expect(border.style).toBe(\"solid\"); expect(border.topLeftRadius).toBe(\"10px\"); expect(border.bottomLeftRadius).toBe(\"10px\");\n  1759 |     expect(border.outlineColors).toEqual([border.band, border.band, border.band]); expect(border.outlineWidths).toEqual([\"1px\", \"1px\", \"1px\"]);\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1756:26"
+    ]
+  },
+  {
+    "title": "compact day and bench controls preserve saved intent and keyboard selection",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m1.7109375\u001b[39m\n\n  1681 |     const box = node.closest(\"th\")!.getBoundingClientRect(); return box.left + box.width / 2;\n  1682 |   });\n> 1683 |   expect(Math.abs(thumbCenter - headerCenter)).toBeLessThanOrEqual(1);\n       |                                                ^\n  1684 | }\n  1685 |\n  1686 | for (const count of [19, 20, 29]) test(`compact layout accounts for ${count} slots with a maximum of 20 slot rows and internal labels`, async ({ page }, testInfo) => {\n    at expectDaySliderAligned (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1683:48)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1870:5"
+    ]
+  },
+  {
+    "title": "compact short desktop and mobile retain rows, day state, reserves and unknown goalie status",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mreceived\u001b[39m\u001b[2m).\u001b[22mtoBeLessThanOrEqual\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m\n\nExpected: <= \u001b[32m1\u001b[39m\nReceived:    \u001b[31m2.0078125\u001b[39m\n\n  1681 |     const box = node.closest(\"th\")!.getBoundingClientRect(); return box.left + box.width / 2;\n  1682 |   });\n> 1683 |   expect(Math.abs(thumbCenter - headerCenter)).toBeLessThanOrEqual(1);\n       |                                                ^\n  1684 | }\n  1685 |\n  1686 | for (const count of [19, 20, 29]) test(`compact layout accounts for ${count} slots with a maximum of 20 slot rows and internal labels`, async ({ page }, testInfo) => {\n    at expectDaySliderAligned (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1683:48)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1969:5"
+    ]
+  },
+  {
+    "title": "compact future and partial weeks use league dates and retain the full horizon without saving",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('slider', { name: 'Selected planning day' })\nExpected: \u001b[32m\"Mon, Oct 5\"\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('slider', { name: 'Selected planning day' })\u001b[22m\n\n\n  2017 |   await page.goto(\"/roster-schedule-optimizer\");\n  2018 |   const slider = page.getByRole(\"slider\", { name: \"Selected planning day\" });\n> 2019 |   await expect(slider).toHaveAttribute(\"aria-valuetext\", \"Mon, Oct 5\");\n       |                        ^\n  2020 |   await setPlanningTime(page, new Date(\"2026-10-07T01:00:00Z\"));\n  2021 |   await page.reload();\n  2022 |   await expect(slider).toHaveAttribute(\"aria-valuetext\", \"Tue, Oct 6\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2019:24"
+    ]
+  },
+  {
+    "title": "compact initial future week defaults to Monday and preserves clipped horizons",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('slider', { name: 'Selected planning day' })\nExpected: \u001b[32m\"Mon, Oct 12\"\u001b[39m\nTimeout: 15000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('slider', { name: 'Selected planning day' })\u001b[22m\n\n\n  2055 |   await page.goto(\"/roster-schedule-optimizer\");\n  2056 |   const slider = page.getByRole(\"slider\", { name: \"Selected planning day\" });\n> 2057 |   await expect(slider).toHaveAttribute(\"aria-valuetext\", \"Mon, Oct 12\");\n       |                        ^\n  2058 |   await expect(slider).toHaveAttribute(\"min\", \"0\");\n  2059 |   await expect(slider).toHaveAttribute(\"max\", \"6\");\n  2060 |   await expect(page.getByRole(\"button\", { name: /^Select (Mon|Tue|Wed|Thu|Fri|Sat|Sun), Oct/ })).toHaveCount(7);\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2057:24"
+    ]
+  },
+  {
+    "title": "compact vacancies and non-playing holds survive day changes and Bench collapse",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "compact partial and unavailable evidence retain players and explicit unresolved states on desktop and mobile",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('table', { name: 'Individual player weekly schedule' }).locator('[data-player-id]')\nExpected: \u001b[32m20\u001b[39m\nReceived: \u001b[31m0\u001b[39m\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('table', { name: 'Individual player weekly schedule' }).locator('[data-player-id]')\u001b[22m\n\u001b[2m    33 \u00d7 locator resolved to 0 elements\u001b[22m\n\u001b[2m       - unexpected value \"0\"\u001b[22m\n\n\n  2199 |     await page.setViewportSize({ width: 1440, height: 900 });\n  2200 |   };\n> 2201 |   await expect(table.locator('[data-player-id]')).toHaveCount(20);\n       |                                                   ^\n  2202 |   await expect(page.getByText(\"Shared schedule: partial\", { exact: true })).toBeVisible();\n  2203 |   await expect(page.getByText(/Forecasts unavailable. Schedule planning remains usable/).first()).toBeVisible();\n  2204 |   await expect(summary.getByText(\"Roster games\").locator(\"..\")).toHaveText(\"Roster games19 known\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:2201:51"
+    ]
+  },
+  {
+    "title": "alerts on a healthy player left in IR and shows what activating him gains",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  },
+  {
+    "title": "plans tonight's goalie from Yahoo's Starting and Not Starting marks and shows them in the grid",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  }
+]

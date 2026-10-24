@@ -1,0 +1,426 @@
+{
+    "scene": "Assets/MapPrototype/Scenes/VesperBasin_v15_DistinctCompounds.unity",
+    "source": "Assets/MapPrototype/Scenes/VesperBasin_v14_StrataAscent.unity",
+    "utc": "2026-10-24T15:38:21.4942380Z",
+    "addedRenderers": 13,
+    "addedColliders": 13,
+    "addedTriangles": 4616,
+    "swappedSlots": 12,
+    "compounds": [
+        {
+            "name": "NE",
+            "block": "Northeast service block",
+            "building": "NE Cooling and service building",
+            "center": {
+                "x": 32.0,
+                "y": 13.700000762939453,
+                "z": 31.0
+            },
+            "roofTop": 13.700000762939453,
+            "roofRadius": 8.314916610717773,
+            "placementNotes": [
+                "cooling tower 1 at (28.25, 13.70, 26.05) (0.5 m from preferred)",
+                "cooling tower 2 at (34.22, 13.70, 25.18) (1.0 m from preferred)"
+            ]
+        },
+        {
+            "name": "NW",
+            "block": "Northwest comms block",
+            "building": "NW Communications building",
+            "center": {
+                "x": -46.0,
+                "y": 11.0,
+                "z": 29.0
+            },
+            "roofTop": 11.0,
+            "roofRadius": 8.314916610717773,
+            "placementNotes": [
+                "lattice mast at (-43.00, 11.00, 24.40) (0.0 m from preferred)",
+                "dish 1 at (-50.18, 11.00, 33.89) (4.8 m from preferred)",
+                "dish 2 at (-49.00, 11.00, 24.00) (0.0 m from preferred)"
+            ]
+        },
+        {
+            "name": "SE",
+            "block": "Southeast logistics block",
+            "building": "SE Logistics building",
+            "center": {
+                "x": 38.0,
+                "y": 10.700000762939453,
+                "z": -30.0
+            },
+            "roofTop": 10.700000762939453,
+            "roofRadius": 8.314916610717773,
+            "placementNotes": [
+                "jib crane mast at (36.50, 10.70, -33.75) (3.8 m from preferred)",
+                "container stack 1 at (38.00, 10.70, -24.40) (0.0 m from preferred)",
+                "container stack 2 at (38.81, 10.70, -36.06) (0.5 m from preferred)"
+            ]
+        },
+        {
+            "name": "SW",
+            "block": "Southwest loading block",
+            "building": "SW Loading building",
+            "center": {
+                "x": -29.0,
+                "y": 9.200000762939453,
+                "z": -31.0
+            },
+            "roofTop": 9.200000762939453,
+            "roofRadius": 8.776856422424316,
+            "placementNotes": [
+                "sawtooth bank (yaw 0) at (-28.77, 9.20, -25.50) (0.3 m from preferred)"
+            ]
+        }
+    ],
+    "features": [
+        {
+            "compound": "NE",
+            "name": "Cooling tower 1",
+            "center": {
+                "x": 28.24644660949707,
+                "y": 13.700000762939453,
+                "z": 26.046445846557617
+            },
+            "boundsMin": {
+                "x": 25.90644645690918,
+                "y": 13.699999809265137,
+                "z": 23.706445693969727
+            },
+            "boundsMax": {
+                "x": 30.58644676208496,
+                "y": 20.251998901367188,
+                "z": 28.386445999145508
+            },
+            "triangles": 616,
+            "collider": true
+        },
+        {
+            "compound": "NE",
+            "name": "Cooling tower 2",
+            "center": {
+                "x": 34.217315673828125,
+                "y": 13.700000762939453,
+                "z": 25.17612075805664
+            },
+            "boundsMin": {
+                "x": 31.780532836914063,
+                "y": 13.70000171661377,
+                "z": 22.739337921142578
+            },
+            "boundsMax": {
+                "x": 36.65409851074219,
+                "y": 18.572002410888672,
+                "z": 27.612903594970703
+            },
+            "triangles": 616,
+            "collider": true
+        },
+        {
+            "compound": "NW",
+            "name": "Lattice comms mast",
+            "center": {
+                "x": -43.0,
+                "y": 11.0,
+                "z": 24.399999618530273
+            },
+            "boundsMin": {
+                "x": -45.056907653808594,
+                "y": 10.977012634277344,
+                "z": 22.34324836730957
+            },
+            "boundsMax": {
+                "x": -40.943092346191406,
+                "y": 30.599998474121094,
+                "z": 26.456754684448242
+            },
+            "triangles": 768,
+            "collider": true
+        },
+        {
+            "compound": "NW",
+            "name": "Comms dish 1",
+            "center": {
+                "x": -50.182254791259766,
+                "y": 11.0,
+                "z": 33.888427734375
+            },
+            "boundsMin": {
+                "x": -52.00773239135742,
+                "y": 11.0,
+                "z": 32.86835479736328
+            },
+            "boundsMax": {
+                "x": -48.90432357788086,
+                "y": 14.339157104492188,
+                "z": 35.69048309326172
+            },
+            "triangles": 504,
+            "collider": true
+        },
+        {
+            "compound": "NW",
+            "name": "Comms dish 2",
+            "center": {
+                "x": -49.0,
+                "y": 11.0,
+                "z": 24.0
+            },
+            "boundsMin": {
+                "x": -49.981597900390625,
+                "y": 11.0,
+                "z": 22.536909103393555
+            },
+            "boundsMax": {
+                "x": -47.527503967285156,
+                "y": 13.67132568359375,
+                "z": 24.878061294555664
+            },
+            "triangles": 504,
+            "collider": true
+        },
+        {
+            "compound": "SE",
+            "name": "Rooftop jib crane",
+            "center": {
+                "x": 36.5,
+                "y": 10.700000762939453,
+                "z": -33.75
+            },
+            "boundsMin": {
+                "x": 33.9188346862793,
+                "y": 10.700000762939453,
+                "z": -38.448089599609375
+            },
+            "boundsMax": {
+                "x": 40.67814254760742,
+                "y": 24.200000762939453,
+                "z": -25.059457778930664
+            },
+            "triangles": 96,
+            "collider": true
+        },
+        {
+            "compound": "SE",
+            "name": "Container stack 1 tier 1",
+            "center": {
+                "x": 38.0,
+                "y": 10.700000762939453,
+                "z": -24.399999618530273
+            },
+            "boundsMin": {
+                "x": 34.91999816894531,
+                "y": 10.700000762939453,
+                "z": -25.670000076293945
+            },
+            "boundsMax": {
+                "x": 41.08000183105469,
+                "y": 13.30000114440918,
+                "z": -23.1299991607666
+            },
+            "triangles": 300,
+            "collider": true
+        },
+        {
+            "compound": "SE",
+            "name": "Container stack 1 tier 2",
+            "center": {
+                "x": 38.0,
+                "y": 13.30000114440918,
+                "z": -24.399999618530273
+            },
+            "boundsMin": {
+                "x": 34.83891296386719,
+                "y": 13.30000114440918,
+                "z": -25.881755828857422
+            },
+            "boundsMax": {
+                "x": 41.16108703613281,
+                "y": 15.900001525878906,
+                "z": -22.918243408203125
+            },
+            "triangles": 300,
+            "collider": true
+        },
+        {
+            "compound": "SE",
+            "name": "Container stack 1 tier 3",
+            "center": {
+                "x": 38.0,
+                "y": 15.90000057220459,
+                "z": -24.399999618530273
+            },
+            "boundsMin": {
+                "x": 34.91999816894531,
+                "y": 15.90000057220459,
+                "z": -25.670000076293945
+            },
+            "boundsMax": {
+                "x": 41.08000183105469,
+                "y": 18.5,
+                "z": -23.1299991607666
+            },
+            "triangles": 300,
+            "collider": true
+        },
+        {
+            "compound": "SE",
+            "name": "Container stack 2 tier 1",
+            "center": {
+                "x": 38.808658599853516,
+                "y": 10.700000762939453,
+                "z": -36.06193923950195
+            },
+            "boundsMin": {
+                "x": 35.6127815246582,
+                "y": 10.700000762939453,
+                "z": -37.64693069458008
+            },
+            "boundsMax": {
+                "x": 42.00453567504883,
+                "y": 13.30000114440918,
+                "z": -34.47694778442383
+            },
+            "triangles": 300,
+            "collider": true
+        },
+        {
+            "compound": "SE",
+            "name": "Container stack 2 tier 2",
+            "center": {
+                "x": 38.808658599853516,
+                "y": 13.30000114440918,
+                "z": -36.06193923950195
+            },
+            "boundsMin": {
+                "x": 35.68621063232422,
+                "y": 13.30000114440918,
+                "z": -37.438655853271484
+            },
+            "boundsMax": {
+                "x": 41.93110656738281,
+                "y": 15.900001525878906,
+                "z": -34.68522262573242
+            },
+            "triangles": 300,
+            "collider": true
+        },
+        {
+            "compound": "SW",
+            "name": "Sawtooth shed 1",
+            "center": {
+                "x": -28.76902961730957,
+                "y": 9.200000762939453,
+                "z": -26.60433006286621
+            },
+            "boundsMin": {
+                "x": -31.76902961730957,
+                "y": 9.200000762939453,
+                "z": -27.704330444335938
+            },
+            "boundsMax": {
+                "x": -25.76902961730957,
+                "y": 11.200000762939453,
+                "z": -25.504329681396484
+            },
+            "triangles": 6,
+            "collider": true
+        },
+        {
+            "compound": "SW",
+            "name": "Sawtooth shed 2",
+            "center": {
+                "x": -28.76902961730957,
+                "y": 9.200000762939453,
+                "z": -24.404329299926758
+            },
+            "boundsMin": {
+                "x": -31.76902961730957,
+                "y": 9.200000762939453,
+                "z": -25.504329681396484
+            },
+            "boundsMax": {
+                "x": -25.76902961730957,
+                "y": 11.200000762939453,
+                "z": -23.30432891845703
+            },
+            "triangles": 6,
+            "collider": true
+        }
+    ],
+    "swaps": [
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Northeast service block volume[196]",
+            "from": "Architecture pale steel",
+            "to": "Assets/MapPrototype/SprintAssets/v15/V15 NE hull teal grey.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/V12 Industrial structures[1]/NE Cooling and service building__Weathered blue steel[58]",
+            "from": "Weathered blue steel",
+            "to": "Assets/MapPrototype/SprintAssets/v15/V15 NE accent cooling teal.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/V12 Industrial structures[1]/NE Cooling and service building service detail__Weathered blue steel[65]",
+            "from": "Weathered blue steel",
+            "to": "Assets/MapPrototype/SprintAssets/v15/V15 NE accent cooling teal.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/V12 Industrial structures[1]/NW Communications building service detail__Weathered blue steel[53]",
+            "from": "Weathered blue steel",
+            "to": "Assets/MapPrototype/SprintAssets/v15/V15 NW accent signal navy.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Northwest comms block volume[190]",
+            "from": "Architecture pale steel",
+            "to": "Assets/MapPrototype/SprintAssets/v15/V15 NW hull navy.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/V12 Industrial structures[1]/NW Communications building__Weathered blue steel[48]",
+            "from": "Weathered blue steel",
+            "to": "Assets/MapPrototype/SprintAssets/v15/V15 NW accent signal navy.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/V12 Industrial structures[1]/SE Logistics building__Weathered blue steel[76]",
+            "from": "Weathered blue steel",
+            "to": "Assets/MapPrototype/SprintAssets/v15/V15 SE accent hazard ochre.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/V12 Industrial structures[1]/SE Logistics building service detail__Weathered blue steel[81]",
+            "from": "Weathered blue steel",
+            "to": "Assets/MapPrototype/SprintAssets/v15/V15 SE accent hazard ochre.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Southeast logistics block volume[208]",
+            "from": "Architecture pale steel",
+            "to": "Assets/MapPrototype/SprintAssets/v15/V15 SE hull ochre.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V02 / Reference-derived composition[2]/Southwest loading block volume[202]",
+            "from": "Architecture pale steel",
+            "to": "Assets/MapPrototype/SprintAssets/v15/V15 SW hull oxide red.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/V12 Industrial structures[1]/SW Loading building__Weathered blue steel[67]",
+            "from": "Weathered blue steel",
+            "to": "Assets/MapPrototype/SprintAssets/v15/V15 SW accent oxide.mat",
+            "slot": 0
+        },
+        {
+            "renderer": "V12 Canyon Outpost[8]/V12 Industrial structures[1]/SW Loading building service detail__Weathered blue steel[73]",
+            "from": "Weathered blue steel",
+            "to": "Assets/MapPrototype/SprintAssets/v15/V15 SW accent oxide.mat",
+            "slot": 0
+        }
+    ],
+    "note": "v14 preserved and read-only. v15 adds one root of roof-mounted features (each inside its block's roof octagon and above its roof top) and swaps hull/accent material slots on the four blocks' existing renderers only. No existing transform, collider or gameplay/HUD field changes. No Scout import, package, project-settings or main-project change."
+}

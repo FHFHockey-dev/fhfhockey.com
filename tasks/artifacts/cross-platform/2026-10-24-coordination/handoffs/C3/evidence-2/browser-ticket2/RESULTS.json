@@ -1,0 +1,100 @@
+{
+  "mode": "ticket2",
+  "at": "2026-10-24T16:15:44.891Z",
+  "results": [
+    {
+      "name": "same-owner reload reuses request ID",
+      "pass": true,
+      "first": "77f55fab-89f0-440d-ad86-ba15e46286da",
+      "second": "77f55fab-89f0-440d-ad86-ba15e46286da",
+      "storedAfterFirst": "{\"ownerId\":\"00000000-0000-4000-8000-00000000000a\",\"requests\":{\"sub_fixture\":{\"requestId\":\"77f55fab-89f0-440d-ad86-ba15e46286da\",\"savedAt\":1792858537529}}}"
+    },
+    {
+      "name": "account switch never reuses owner A ID",
+      "pass": true,
+      "foreign": "ebdb5e8c-1f4d-4ab9-9a82-661d5a06e621",
+      "storedOwner": "00000000-0000-4000-8000-00000000000b"
+    },
+    {
+      "name": "same-tab app menu sign-out clears the key although the panel unmounted first",
+      "pass": true,
+      "storedAfterSignOut": null
+    },
+    {
+      "name": "same owner after app menu sign-out gets a new request ID",
+      "pass": true,
+      "foreign": "ebdb5e8c-1f4d-4ab9-9a82-661d5a06e621",
+      "bAgain": "af06b11e-13ff-49ec-9ecf-04b8eb10ee7e"
+    },
+    {
+      "name": "next owner cannot recover the signed-out owner's ID",
+      "pass": true,
+      "aAfterB": "a76df948-ba67-46a1-91d8-176e1773deb7",
+      "storedOwner": "00000000-0000-4000-8000-00000000000a"
+    },
+    {
+      "name": "cross-tab sign-out with mounted panel clears stored request",
+      "pass": true,
+      "afterCrossTab": null
+    },
+    {
+      "name": "same owner after observed sign-out gets a new request ID",
+      "pass": true,
+      "aAfterSignOut": "e07f523a-2547-493a-9b09-8a5cb1b09fa3"
+    },
+    {
+      "name": "CHARACTERIZATION anonymous reload renders no panel and leaves entry untouched",
+      "pass": true,
+      "anonymousStored": "{\"ownerId\":\"00000000-0000-4000-8000-00000000000a\",\"requests\":{\"sub_fixture\":{\"requestId\":\"e07f523a-2547-493a-9b09-8a5cb1b09fa3\",\"savedAt\":1792858542896}}}"
+    },
+    {
+      "name": "corrupt state fails safe with a valid new ID",
+      "pass": true,
+      "afterCorrupt": "9357a771-2aa0-4a20-8152-276e31224ca5",
+      "stored": "{\"ownerId\":\"00000000-0000-4000-8000-00000000000a\",\"requests\":{\"sub_fixture\":{\"requestId\":\"9357a771-2aa0-4a20-8152-276e31224ca5\",\"savedAt\":1792858544845}}}"
+    }
+  ],
+  "cancelBodies": [
+    {
+      "subscriptionId": "sub_fixture",
+      "requestId": "77f55fab-89f0-440d-ad86-ba15e46286da",
+      "authorization": "Bearer eyJhb…"
+    },
+    {
+      "subscriptionId": "sub_fixture",
+      "requestId": "77f55fab-89f0-440d-ad86-ba15e46286da",
+      "authorization": "Bearer eyJhb…"
+    },
+    {
+      "subscriptionId": "sub_fixture",
+      "requestId": "ebdb5e8c-1f4d-4ab9-9a82-661d5a06e621",
+      "authorization": "Bearer eyJhb…"
+    },
+    {
+      "subscriptionId": "sub_fixture",
+      "requestId": "af06b11e-13ff-49ec-9ecf-04b8eb10ee7e",
+      "authorization": "Bearer eyJhb…"
+    },
+    {
+      "subscriptionId": "sub_fixture",
+      "requestId": "a76df948-ba67-46a1-91d8-176e1773deb7",
+      "authorization": "Bearer eyJhb…"
+    },
+    {
+      "subscriptionId": "sub_fixture",
+      "requestId": "e07f523a-2547-493a-9b09-8a5cb1b09fa3",
+      "authorization": "Bearer eyJhb…"
+    },
+    {
+      "subscriptionId": "sub_fixture",
+      "requestId": "9357a771-2aa0-4a20-8152-276e31224ca5",
+      "authorization": "Bearer eyJhb…"
+    }
+  ],
+  "blockedHosts": [
+    "fonts.googleapis.com",
+    "img.buymeacoffee.com",
+    "cdn.vercel-insights.com",
+    "va.vercel-scripts.com"
+  ]
+}

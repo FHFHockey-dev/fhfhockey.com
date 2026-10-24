@@ -1,0 +1,55 @@
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-luna-r1-rereview-8nj64c6s/web
+
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > stays off without reading inputs or transports 1ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > uses an explicitly retrospective S06 development fixture with scripted identity output; retains literal direction and explicit PP1 while holding every effect and claim certainty 14ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > holds reversed subject direction rather than trusting the supplied role labels 3ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > preserves a synthetic Unicode wrapper and hostile trailing source text without granting authority 2ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > rejects unmatched identity/source binding 1ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > rejects invalid-id identity/source binding 1ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > rejects duplicate-occurrence identity/source binding 1ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > rejects tampered-source identity/source binding 1ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > rejects tampered-span identity/source binding 1ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > rejects wrong-directory identity/source binding 1ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > rejects invented unit text, split offsets and cross-clause expansion 2ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > keeps a synthetic source with no unit unknown instead of recovering PP1 from memory 1ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > cannot turn identity confidence or hostile extra authority fields into permission 1ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > review-only two-subject replacement contract > rejects a consistently rebound conditional clause instead of reducing it to confirmed replacement 1ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > R1 repeated-word grammatical slots > requires the outgoing occurrence to occupy the grammatical slot, not the repeated noun 3ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > R1 repeated-word grammatical slots > requires the outgoing occurrence to occupy the grammatical slot, not the repeated predicate 1ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > R1 repeated-word grammatical slots > accepts the correct outgoing grammatical slot with repeated noun 1ms
+ ✓ lib/sources/tweetIdentityReplacementReview.test.ts > R1 repeated-word grammatical slots > accepts the correct outgoing grammatical slot with repeated predicate 1ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > uses microsecond knowledge boundaries for canonical identity 3ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > does not let backdated validity override late alias or membership knowledge 1ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > keeps effective membership half-open independently of knowledge time 0ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > does not use a current DB record interval as historical membership 10ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > requires literal true before reading any review payload 0ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > retains preceding conditional context without upgrading the literal statement or allowing effects 3ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > rejects a heading as a matched outgoing player through the existing proposal gate 1ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > rejects conflicting dated membership through the existing proposal gate 1ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > documents an integration constraint: a bare projected snapshot does not bind later request publication time 1ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > requires the outgoing occurrence to occupy the grammatical slot, not the repeated noun 1ms
+ ✓ lib/sources/review-contracts.test.ts > independent offline contract controls > requires the outgoing occurrence to occupy the grammatical slot, not the repeated predicate 0ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > keeps October-observed canonical data out of the causal September view without relabeling it 3ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > retrospectively retains canonical IDs and owner confirmation while withholding unsupported effective intervals 1ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > includes independently dated synthetic evidence at microsecond/exclusive-end boundaries 1ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > separates late knowledge from an earlier effective date, and never auto-selects evaluation mode 1ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > keeps unknown canonical knowledge unavailable even when an alias has dates 0ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > preserves scoped aliases and conflicting memberships without guessing a team 1ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > rejects foreign-link 0ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > rejects swapped-namespaces 0ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > rejects conflicting-link 0ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > rejects duplicate-player 0ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > rejects foreign-membership 0ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > withholds missing time 0ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > withholds missing verification 0ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > withholds missing scope 0ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > exposes truncation and rejects row/byte overflow and extra authority 2ms
+ ✓ lib/sources/playerIdentitySnapshotEvidence.test.ts > saved identity evidence: explicit causal-as-of and retrospective cohorts > rejects invalid dates, intervals, proof and evaluation clock order 1ms
+
+ Test Files  3 passed (3)
+      Tests  45 passed (45)
+   Start at  09:41:23
+   Duration  479ms (transform 64ms, setup 0ms, collect 108ms, tests 65ms, environment 0ms, prepare 86ms)
+
+JSON report written to /Users/tim/Code/fhfhockey.com/tasks/artifacts/luna-r1-independent-review-2026-10-22/tests.json

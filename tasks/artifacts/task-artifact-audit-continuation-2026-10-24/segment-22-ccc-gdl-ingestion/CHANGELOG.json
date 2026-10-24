@@ -1,0 +1,326 @@
+{
+  "at": "2026-10-24T20:30:45.375060+00:00",
+  "changes": {
+    "IFTTT-ACTIVATION": {
+      "fields": {
+        "implementation": "Bounded I1 source fixtures and typed gaps remain distinct from the released legacy pipeline. The September 18 source report records pipeline/prospect migrations and 1,301-player roster refresh; it does not establish current publishing. October 16/17 independent receipts accept local held/shadow claim, retention and retain-only scheduler slices. SQL9 recovery has a dated owner-tested handoff; later exact re-review is unverified here. New Luna/Decisions modules remain under the existing default-off/caller and budget gates.",
+        "acceptance": "Preserve dated local and historical-release credit. Full semantic/independent-label/source-time/deployed parity, genuine hosted intake/consumer proof and operational activation remain unestablished; no blanket acceptance from source test counts.",
+        "release": "Historical September legacy interpretation/prospect rollout is recorded. The later proposed claim/SQL6–8/retain-only candidate and newer Luna/Decisions integration have no whole-stack release or activation established by this documentary review.",
+        "verification": "Full CCC/GDL contracts/tasklists and linked classification, game-entry, paused goalie and later IFTTT receipts read. Source 233 local tests and 70 mocked handler calls are dated engineering evidence;35-post freeze is not blind, zero emitted confirmations leaves precision undefined and canonical-at-publication denominator 0. Later browser supplement resolves old missing-original-time statements for all 11 seeds within edit/context limits. Bounded JSON support checks 35/35 source hashes and 24/24 exact spans; no all-row/visual/runtime acceptance. Review-v4 accepts 41 pinned files only for local held/shadow; R21/R22 accepted separately. No app, hosted or paid action repeated.",
+        "next_action": "Parent verified owner status: new Luna/Decisions modules are local/default-off with no production caller and absent from retained Release C. Historical S06 used gpt-6-luna Responses, not Decisions. Caller/transport integration, budget admission, source-time binding and graded evaluation remain open; coordinate IFTTT paths. No paid calls or rollout authorized. Preserve the exact historical-key-retirement and signed unresolved-player review-email gates; generic cron mail or local semantic fixtures do not close them. Retain the distinct header-only receiver transition/query-secret fallback gate from R-SECURITY-MATRIX16/60-62. Reconcile newer receiver/provider compatibility receipts first; current applet/receiver state is unverified. No receiver edit, secret probe, event/capture or external action authorized. Read the eleven children for distinct existing obligations instead of treating this broad parent as one activation toggle. Reconcile later exact closures before dispatch. Keep the October 6 goalie diagnosis paused and hardening Task 8 historical inventory/repair deferred; their source suggestions do not activate work.",
+        "children": [
+          {
+            "child_id": "IFTTT-ACTIVATION/GDL-provider-retirement",
+            "title": "Retain one provider account-key retirement prerequisite",
+            "status": "Held external dependency; later direct closure unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile a later value-free provider invalidation/support receipt and direct retired-key rejection/current-key authorization. NEW13/15/16/17/18 are one root, not five new incidents. Preserve the restored applet state and checkpoint-only owner cadence; no repeated regeneration, probe or support message from this audit.",
+            "source": {
+              "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+              "line": 236
+            },
+            "approval_gate": "Reconcile later exact closure/supersession first. No implementation dispatch, original-source retrieval, account/provider/email/credential action, live processing, SQL, migration, replay, pilot, paid call or release by this documentary audit. Keep current ownership and separately approved bounds.",
+            "existing_work_credit": "Receiver-secret containment NEW20, account-identification NEW22 and retirement of the disconnected podcast NEW19 retain closure. Source owner states no known leak; do not invent a current exposure."
+          },
+          {
+            "child_id": "IFTTT-ACTIVATION/GDL-applet-and-event-proof",
+            "title": "Reconcile applet payload and source-to-consumer rollout proof",
+            "status": "Historical NEW14/10.4/10.5 remain unverified against later receiver work",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "IFTTT-ACTIVATION/GDL-provider-retirement"
+            ],
+            "next_action": "First reconcile current account/route/POST/JSON/header-only compatibility and whether the old SOURCE_ACCOUNT/TweetEmbedCode drift was repaired or superseded. Retain the three-account raw→snapshot→winner→eligible canonical-write proof separately from raw receiver success. Any eventual event proof needs its own current exact authority, not the old stored checklist.",
+            "source": {
+              "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+              "line": 228
+            },
+            "approval_gate": "Reconcile later exact closure/supersession first. No implementation dispatch, original-source retrieval, account/provider/email/credential action, live processing, SQL, migration, replay, pilot, paid call or release by this documentary audit. Keep current ownership and separately approved bounds.",
+            "existing_work_credit": "Raw-first retryability, generic/CCC error containment, first-arrival helper, schema/provenance rollout and canonical consumer compatibility are completed dated work."
+          },
+          {
+            "child_id": "IFTTT-ACTIVATION/GDL-signed-alias-email",
+            "title": "Reconcile one signed alias-review and bounded reprocess chain",
+            "status": "Historical 6.2 send/receipt/signed-link chain open; current closure unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "IFTTT-ACTIVATION/GDL-provider-retirement"
+            ],
+            "next_action": "Locate later exact email ID/receipt and signed source-agnostic review→alias save→same-event bounded reprocess evidence, retaining source/team/tweet identity and duplicate prevention. Generic cron mail and local queue tests do not establish this chain. Do not send email, open signed tokens or replay events.",
+            "source": {
+              "path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+              "line": 169
+            },
+            "approval_gate": "Reconcile later exact closure/supersession first. No implementation dispatch, original-source retrieval, account/provider/email/credential action, live processing, SQL, migration, replay, pilot, paid call or release by this documentary audit. Keep current ownership and separately approved bounds.",
+            "existing_work_credit": "Shared unresolved queue provenance, provider-neutral review logic and runbook/checklist construction retain completion."
+          },
+          {
+            "child_id": "IFTTT-ACTIVATION/HUC-deployed-parity",
+            "title": "Reconcile deployed classifier and caller parity manifest",
+            "status": "Reconciliation-first; source 1.2 remains evidence-gated",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Find existing nonsecret deployment-linked booleans/model/parser/prompt/cache/roster/alias revisions, caller identity/timezone and frozen source-selection/enrichment inputs. Bind both CCC/GDL route comparisons to the same manifest. Eight zero-row POST receipts and a READY commit do not prove the exercised source path or effective configuration.",
+            "source": {
+              "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-implementation.md",
+              "line": 141
+            },
+            "approval_gate": "Reconcile later exact closure/supersession first. No implementation dispatch, original-source retrieval, account/provider/email/credential action, live processing, SQL, migration, replay, pilot, paid call or release by this documentary audit. Keep current ownership and separately approved bounds.",
+            "existing_work_credit": "Production commit/time, bounded caller records, local pipeline map and equivalent mocked handlers retain dated credit; write-only secret values need not be exposed."
+          },
+          {
+            "child_id": "IFTTT-ACTIVATION/HUC-independent-labels",
+            "title": "Reconcile independent claims, family labels and a fresh holdout",
+            "status": "Independent labels/pre-tuning sample held; current closure unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Review later independent annotations/family splits before new tuning. All 11 seed originals now have retained browser permalink/time evidence within stated edit/context limits; source-time identities and independent labels remain separate. The 35-record post-edit freeze cannot retroactively become blind. Retain the three focused S01/S08/S09 encoding judgments as ungraded until reviewed.",
+            "source": {
+              "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-implementation.md",
+              "line": 142
+            },
+            "approval_gate": "Reconcile later exact closure/supersession first. No implementation dispatch, original-source retrieval, account/provider/email/credential action, live processing, SQL, migration, replay, pilot, paid call or release by this documentary audit. Keep current ownership and separately approved bounds.",
+            "existing_work_credit": "Exact 35-source hashes and 24 claim spans match; 19 semantic candidates/5 quarantined relatives and zero canonical-at-publication denominator remain disclosed. I1 fixtures are source evidence, not human gold."
+          },
+          {
+            "child_id": "IFTTT-ACTIVATION/HUC-source-time-binding",
+            "title": "Reconcile publication-time identity and claim-reference authority",
+            "status": "Source3.1/3.2 broader closure unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "IFTTT-ACTIVATION/HUC-independent-labels"
+            ],
+            "next_action": "Locate archived membership/alias/camp revisions available at original publication and bounded quotation/heading/reference authority. Preserve candidate conflicts, valid manual mappings and original spans; do not certify current-roster inference or invent NHL IDs. Reference prior unit evidence for substitutions/swaps and retain unsupported slots as review.",
+            "source": {
+              "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-implementation.md",
+              "line": 143
+            },
+            "approval_gate": "Reconcile later exact closure/supersession first. No implementation dispatch, original-source retrieval, account/provider/email/credential action, live processing, SQL, migration, replay, pilot, paid call or release by this documentary audit. Keep current ownership and separately approved bounds.",
+            "existing_work_credit": "Current-context ambiguity, opponent filtering, clause boundaries, compound names and narrow subject regressions retain local completion. Prospect/roster release credit is not historical as-of identity evidence."
+          },
+          {
+            "child_id": "IFTTT-ACTIVATION/HUC-claim-local-applicability",
+            "title": "Reconcile general mixed-time claim acceptance",
+            "status": "Source6.2/6.3 broad gate held; narrow today/tonight fixes complete",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "IFTTT-ACTIVATION/HUC-source-time-binding"
+            ],
+            "next_action": "Reconcile later exact expectations and receipts for tomorrow/B2B/date-boundary claims, original/relay timing, relations under temporal review and independent accepted claims in mixed posts. Keep original interpretation/text and explicit reasons; publication or requested processing date alone is not game applicability.",
+            "source": {
+              "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-implementation.md",
+              "line": 146
+            },
+            "approval_gate": "Reconcile later exact closure/supersession first. No implementation dispatch, original-source retrieval, account/provider/email/credential action, live processing, SQL, migration, replay, pilot, paid call or release by this documentary audit. Keep current ownership and separately approved bounds.",
+            "existing_work_credit": "Historical-comparison and explicit current today/tonight scopes, heading resets, source ordinals and repeat stability are already locally fixed; do not reimplement them."
+          },
+          {
+            "child_id": "IFTTT-ACTIVATION/HUC-selected-state-authority",
+            "title": "Reconcile semantic dedupe, correction authority and selected state",
+            "status": "Source7.1 remains broader than accepted local retries/FK fixes",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "IFTTT-ACTIVATION/HUC-source-time-binding"
+            ],
+            "next_action": "Locate later exact original/relay semantic equivalence, target-authorized corrections/retractions, out-of-order selected state, manual precedence and downstream invalidation receipts. Preserve held unsupported scenarios; recency or a raw tweet ID cannot supply correction authority. Require a new authorized interpretation for delayed target arrival rather than silently rewriting prior review.",
+            "source": {
+              "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-implementation.md",
+              "line": 147
+            },
+            "approval_gate": "Reconcile later exact closure/supersession first. No implementation dispatch, original-source retrieval, account/provider/email/credential action, live processing, SQL, migration, replay, pilot, paid call or release by this documentary audit. Keep current ownership and separately approved bounds.",
+            "existing_work_credit": "Immutable versions/retries, bounded conflict/partial safeguards, independent local R1–R9 acceptance, entry consumer remediation and relation-FK follow-up are closed within scope; no fresh FK defect is alleged."
+          },
+          {
+            "child_id": "IFTTT-ACTIVATION/LINES-qualified-producer",
+            "title": "Reconcile per-claim game-entry producer before enabling serving",
+            "status": "Game-entry controls remain source-reported off; later exact integration unverified",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "IFTTT-ACTIVATION/HUC-claim-local-applicability",
+              "IFTTT-ACTIVATION/HUC-selected-state-authority"
+            ],
+            "next_action": "Locate a later accepted producer for verified original publication/identity, per-key binding/phase/confirmation spans, event-time membership and persisted final claim target mapping. Source references must be actually qualified, not arbitrary strings. Coordinate S04 qualifier/S10 correction gaps without fabricating missing clocks. Reconcile real-feed/shadow and independent review gates before any Lines serving/carry-forward decision.",
+            "source": {
+              "path": "tasks/TASKS/lines-gdl-ingestion/game-line-snapshots-local-handoff.md",
+              "line": 59
+            },
+            "approval_gate": "Reconcile later exact closure/supersession first. No implementation dispatch, original-source retrieval, account/provider/email/credential action, live processing, SQL, migration, replay, pilot, paid call or release by this documentary audit. Keep current ownership and separately approved bounds.",
+            "existing_work_credit": "Consumer selector 2026-10-02.2, five review fixes and relation persistence/FK corrections retain local test/re-review credit. Observation/PP carry-forward grants no new forecast eligibility."
+          },
+          {
+            "child_id": "IFTTT-ACTIVATION/HUC-equivalent-evaluation",
+            "title": "Reconcile independently labeled equivalent-route evaluation",
+            "status": "Source7.3/evaluation gate open; no current accuracy claim",
+            "owner": "UNASSIGNED",
+            "depends_on": [
+              "IFTTT-ACTIVATION/HUC-independent-labels",
+              "IFTTT-ACTIVATION/HUC-deployed-parity",
+              "IFTTT-ACTIVATION/HUC-source-time-binding",
+              "IFTTT-ACTIVATION/HUC-claim-local-applicability",
+              "IFTTT-ACTIVATION/HUC-selected-state-authority"
+            ],
+            "next_action": "After independent expected labels and parity inputs, reconcile route-equivalent claim/identity/confirmation precision-recall, wrong-ID/false-confirmation and review/abstention denominators with heldout families separated. Source 35-post mock replay emitted zero confirmations: precision is undefined, not 100%. Existing 233 tests/179 I1 fixtures and 14/19 top-level labels are not an empirical improvement estimate.",
+            "source": {
+              "path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-implementation.md",
+              "line": 147
+            },
+            "approval_gate": "Reconcile later exact closure/supersession first. No implementation dispatch, original-source retrieval, account/provider/email/credential action, live processing, SQL, migration, replay, pilot, paid call or release by this documentary audit. Keep current ownership and separately approved bounds.",
+            "existing_work_credit": "Both actual mocked handlers, preserved positive confirmation controls, source-attributed browser evidence and bounded semantic regressions retain their tested scope."
+          },
+          {
+            "child_id": "IFTTT-ACTIVATION/retain-only-hosted-qualification",
+            "title": "Reconcile exact hosted retain-only prerequisites and natural receipt proof",
+            "status": "Historical local readiness accepted; hosted/full52 activation held",
+            "owner": "UNASSIGNED",
+            "depends_on": [],
+            "next_action": "Reconcile the current authoritative migration set, deployed raw writers/fences/ACL/transport deadline proof, exact candidate and existing natural applet→carrier evidence under any later approved policy. SQL6→7→8 and R21/R22 have local accepted receipts; old order83/84–86 and old SHA instructions are not current migration authority. Preserve per-source/window/count/stop and out-of-scope refusal consequences. A raw-retention pilot cannot close full52 or authorize processing/dispatch/publication.",
+            "source": {
+              "path": "tasks/ifttt-integration-2026-10-16/rollout-approval-2026-10-17/ROLLOUT-APPROVAL.md",
+              "line": 50
+            },
+            "approval_gate": "Reconcile later exact closure/supersession first. No implementation dispatch, original-source retrieval, account/provider/email/credential action, live processing, SQL, migration, replay, pilot, paid call or release by this documentary audit. Keep current ownership and separately approved bounds.",
+            "existing_work_credit": "Independent local held/shadow, occurrence/consumer/recovery/intake/RPC and scheduler/alias retain-only closures remain accepted at their exact historical pins. SQL9 recovery is owner-tested pending later re-review evidence, not a reopened starvation finding."
+          }
+        ]
+      },
+      "before_fields": {
+        "implementation": "Local I1 fixtures and retained SQL6–8 designs",
+        "acceptance": "full semantic and hosted gates open",
+        "release": "not established",
+        "verification": "Fixture-only semantic gaps S04/S10 remain; identity trial is separate",
+        "next_action": "Parent verified owner status: new Luna/Decisions modules are local/default-off with no production caller and absent from retained Release C. Historical S06 used gpt-6-luna Responses, not Decisions. Caller/transport integration, budget admission, source-time binding and graded evaluation remain open; coordinate IFTTT paths. No paid calls or rollout authorized. Preserve the exact historical-key-retirement and signed unresolved-player review-email gates; generic cron mail or local semantic fixtures do not close them. Retain the distinct header-only receiver transition/query-secret fallback gate from R-SECURITY-MATRIX16/60-62. Reconcile newer receiver/provider compatibility receipts first; current applet/receiver state is unverified. No receiver edit, secret probe, event/capture or external action authorized.",
+        "children": null
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/e3b6adf794d1-tasks-prd-gdl-suite-ingestion.md",
+          "original_path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+          "line": 169,
+          "sha256": "e3b6adf794d175771bfa12bdc5b5f968a10281a192fcf246bba1532d129b15a6",
+          "observed_at": "2026-10-24T20:30:45.375060+00:00",
+          "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/e3b6adf794d1-tasks-prd-gdl-suite-ingestion.md",
+          "original_path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+          "line": 210,
+          "sha256": "e3b6adf794d175771bfa12bdc5b5f968a10281a192fcf246bba1532d129b15a6",
+          "observed_at": "2026-10-24T20:30:45.375060+00:00",
+          "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/e3b6adf794d1-tasks-prd-gdl-suite-ingestion.md",
+          "original_path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+          "line": 228,
+          "sha256": "e3b6adf794d175771bfa12bdc5b5f968a10281a192fcf246bba1532d129b15a6",
+          "observed_at": "2026-10-24T20:30:45.375060+00:00",
+          "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/e3b6adf794d1-tasks-prd-gdl-suite-ingestion.md",
+          "original_path": "tasks/TASKS/lines-gdl-ingestion/tasks-prd-gdl-suite-ingestion.md",
+          "line": 236,
+          "sha256": "e3b6adf794d175771bfa12bdc5b5f968a10281a192fcf246bba1532d129b15a6",
+          "observed_at": "2026-10-24T20:30:45.375060+00:00",
+          "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/1a7d90a9ce42-TWEET-PIPELINE-RELEASE.md",
+          "original_path": "tasks/TASKS/lines-gdl-ingestion/TWEET-PIPELINE-RELEASE.md",
+          "line": 115,
+          "sha256": "1a7d90a9ce427ad4df93acf9b6f4520e12ba75e17078c6c7a6f11aa0f1c7360f",
+          "observed_at": "2026-10-24T20:30:45.375060+00:00",
+          "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/b93b9c3677e3-2026-10-01-classification-implementation.md",
+          "original_path": "tasks/TASKS/lines-gdl-ingestion/audit/2026-10-01-classification-implementation.md",
+          "line": 131,
+          "sha256": "b93b9c3677e3e81e134dffc014bd39c2c9f326c8d9fc1af3fe70e251c6fbd30f",
+          "observed_at": "2026-10-24T20:30:45.375060+00:00",
+          "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/e22fda98d7fd-game-line-snapshots-local-handoff.md",
+          "original_path": "tasks/TASKS/lines-gdl-ingestion/game-line-snapshots-local-handoff.md",
+          "line": 59,
+          "sha256": "e22fda98d7fd7f7b378ee23f63ef7f3420ff61bb427d52f62ec8b9f67c57e3ce",
+          "observed_at": "2026-10-24T20:30:45.375060+00:00",
+          "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/34549a83ee97-REVIEW.md",
+          "original_path": "tasks/ifttt-integration-2026-10-16/review-v4/REVIEW.md",
+          "line": 3,
+          "sha256": "34549a83ee97ff2d4a49504aa987dd252883f9d5ea9539b6c53311928be8663d",
+          "observed_at": "2026-10-24T20:30:45.375060+00:00",
+          "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/f2949718515c-ROLLOUT-APPROVAL.md",
+          "original_path": "tasks/ifttt-integration-2026-10-16/rollout-approval-2026-10-17/ROLLOUT-APPROVAL.md",
+          "line": 50,
+          "sha256": "f2949718515c7d053eac239cd9b47f1d0bc44fe31df92fd889f517bd44201e6d",
+          "observed_at": "2026-10-24T20:30:45.375060+00:00",
+          "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/a8efd469ab98-I1.md",
+          "original_path": "tasks/artifacts/codex-2026-10-20/I1.md",
+          "line": 3,
+          "sha256": "a8efd469ab98dbfb127c1f1679c52ba123a9ae17512abb97cf364f580254917b",
+          "observed_at": "2026-10-24T20:30:45.375060+00:00",
+          "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/49a7b14c5959-FOCUSED-HUMAN-QUEUE.md",
+          "original_path": "tasks/ifttt-integration-2026-10-16/comparison-content-continuation-v1-2026-10-19/FOCUSED-HUMAN-QUEUE.md",
+          "line": 7,
+          "sha256": "49a7b14c595900d28952f44abea7c6f9d20062727ff81a664e843cc87c2c363a",
+          "observed_at": "2026-10-24T20:30:45.375060+00:00",
+          "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-22-ccc-gdl-ingestion/source-snapshots/5f410a7bf851-CHECKPOINT.md",
+          "original_path": "tasks/ifttt-integration-2026-10-16/review-sidecar-recovery-2026-10-19/CHECKPOINT.md",
+          "line": 41,
+          "sha256": "5f410a7bf8515f4c8515bcab79e3fa4fbe519bb2ebad27869c5c2acfa88619be",
+          "observed_at": "2026-10-24T20:30:45.375060+00:00",
+          "review_scope": "Full documentary text read. Source-scoped author/reviewer/browser/test/release claims retained with dated provenance; no underlying app code/tests, original pages/pixels, hosted state or execution verification. Stored runbooks are not authority."
+        }
+      ]
+    }
+  },
+  "added_ids": [],
+  "deduplication": [
+    {
+      "candidate": "CCCcore/webhook/review/news/timestamp/staticgeneration",
+      "decision": "Keep completed; no new parent or ordinary repair."
+    },
+    {
+      "candidate": "ProviderNEW13/15/16/17/18",
+      "decision": "One existing held root; new readable child only, completed receiver containment/account lookup/podcast retirement preserved."
+    },
+    {
+      "candidate": "Classification1.2/2/3/6/7",
+      "decision": "Readable source children under existingIFTTT-ACTIVATION and aliasMASTER-I1. Preserve narrow fixes and independent held/shadow acceptance; no new parallel register."
+    },
+    {
+      "candidate": "Earlier original-source unavailable claims",
+      "decision": "Superseded within dated supplement:11original permalink/DOMtime records now retained; independent labels/source-time identity/correction completeness still separate."
+    },
+    {
+      "candidate": "Game-entry consumer/FK defects",
+      "decision": "Closed local re-review fixes retained; only later real producer/binding/target/enablement receipts unverified."
+    },
+    {
+      "candidate": "GoalieOctober6diagnosis andhistoricalTask8",
+      "decision": "Paused/deferred; report only, no implementation child or new dispatch."
+    },
+    {
+      "candidate": "Septemberpipeline versusOctoberclaims",
+      "decision": "Separate historical deployed legacy tranche from later locally accepted held/shadow/retain-only and newdefaultoffLuna modules."
+    }
+  ]
+}

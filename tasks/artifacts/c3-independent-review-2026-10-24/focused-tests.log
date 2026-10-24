@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/c3-independent-review-2026-10-24/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/tasks/artifacts/c3-independent-review-2026-10-24
+
+(node:28252) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tests/storage-boundaries.test.tsx (9 tests) 150ms
+
+ Test Files  1 passed (1)
+      Tests  9 passed (9)
+   Start at  11:31:06
+   Duration  753ms (transform 49ms, setup 4ms, collect 173ms, tests 150ms, environment 293ms, prepare 41ms)
+

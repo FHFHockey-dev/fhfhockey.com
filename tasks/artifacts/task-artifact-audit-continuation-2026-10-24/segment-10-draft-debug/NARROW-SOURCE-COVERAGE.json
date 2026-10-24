@@ -1,0 +1,47 @@
+{
+  "at": "2026-10-24T17:43:08.240080+00:00",
+  "path": "web/components/DraftDashboard/ImportCsvModal.tsx",
+  "sha256": "acade3b347f329a92e0aa096e01e3c3792e205c5d58b3a0d408c98728c3022bd",
+  "status": "partially-inspected",
+  "reviewed_ranges": [
+    [
+      240,
+      285
+    ],
+    [
+      705,
+      765
+    ],
+    [
+      973,
+      1008
+    ],
+    [
+      1052,
+      1077
+    ],
+    [
+      1150,
+      1208
+    ],
+    [
+      1518,
+      1575
+    ],
+    [
+      1588,
+      1678
+    ]
+  ],
+  "scope": "Resolve historical four-step resolver request versus later broad A-DRAFT closure; no app-wide audit.",
+  "observations": [
+    "Name-keyed state reset on import, manual-choice precedence before contextual ID matching",
+    "Automatic exact/perfect matching also writes ambiguousChoices; mapRows classifies existing choice as manual",
+    "Unmapped search shown uses lowercase substring/filter/slice, selected metadata and existing coverage/method summary already present"
+  ],
+  "not_verified": [
+    "Runtime two-same-name reproduction",
+    "No focused test run or browser/DOM/persistence/network observation",
+    "No claim every resolver branch or external helper reviewed"
+  ]
+}

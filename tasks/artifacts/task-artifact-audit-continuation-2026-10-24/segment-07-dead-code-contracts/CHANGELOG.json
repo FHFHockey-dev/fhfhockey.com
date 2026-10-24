@@ -1,0 +1,355 @@
+{
+  "at": "2026-10-24T16:53:11.550597+00:00",
+  "changed": {
+    "WGO-HISTORY": {
+      "fields": {
+        "implementation": "Preserve the accepted forward season/date guard and its separate253,257 mislabeled/105 bad-date historical proposal. A different88-row Utah team-identity repair is source-reported applied/replay-verified under NEW105; do not reopen it. NEW107 closes relocation lineage/design and forward writer evidence, while the distinct376-row ATL/PHX physical repair remains authorization-held.",
+        "acceptance": "Forward/local and exact Utah receipt credit remain limited to their named cohorts. No whole historical repair acceptance; date-label and376-row relocation mutations remain held/current-state unverified.",
+        "verification": "Full WGO-LABELS, Utah and relocation contracts read. Utah source records ledger20260730200000 and88 exact mappings; relocation source records five historical scopes/376 rows and an explicit future transaction/rollback design only. These dated counts are not fresh hosted observations. NEW107 source assertion correction28/28/full3599 is owner evidence, not new writer/data proof.",
+        "next_action": "Keep three cohorts separate within WGO-HISTORY: original season/date reconstruction and105 bad dates; completed88-row Utah identity repair; held376-row relocation-era repair design. Reconcile only retained exact receipts/current owner disposition before any proposed mutation; do not relabel NEW107 design closure as physical repair or revive the superseded sKO replacement/backfill plan.",
+        "evidence_level": "Full documentary chronology reconciled; historical production counts and future repair gates remain qualified"
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/codex-2026-10-20/WGO-LABELS.md",
+          "line": 3,
+          "sha256": "67fab2b503d834e5817f1b9fc0ba05d60a5be53be2cae6e6c23130282669be97",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/wgo-utah-identity-repair-contract.md",
+          "line": 3,
+          "sha256": "8ef777162f3fe08b9881cdf8e2f2afcd42f6b6f0f376fa4505ff284d8bb731f1",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/wgo-relocation-era-identity-contract.md",
+          "line": 7,
+          "sha256": "c9ca13726d40a722fdf24c9e13dbc29298fade4c848bddc7b2d3a279fc9f1747",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+          "line": 235,
+          "sha256": "89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Only selected NEW20/107/127 and closure lines reviewed; rest of paired task file not fully read."
+        }
+      ],
+      "before_fields": {
+        "implementation": "Forward guard exists;105-row correction not authorized/executed in receipt",
+        "acceptance": "held",
+        "verification": "Retained9 guard tests; historical proposal only",
+        "next_action": "Inventory unresolved historical records using already-retained redacted evidence",
+        "evidence_level": "inventoried only"
+      }
+    },
+    "REPO-GENERATED-TRACKING": {
+      "fields": {
+        "implementation": "CR-REL-03 and B-CLEAN NEW127/C0032/C0039/C0042 are the same generated-tracking follow-up. Earlier cleanups and158/158 July closure retain credit; the October17 recurrence is later evidence. No current index/tracking inspection or cleanup was performed by this audit.",
+        "verification": "Full cleanup/dead-code PRDs preserve their historical removals and quarantines; selected cleanup task256 records482 cached files/~79MB, retained UI outputs and eight temporary CLI-state files as the October17 recurrence. Those are dated source claims, not freshly counted tracked paths. A clean isolated candidate does not by itself prove canonical tracking cleanup.",
+        "next_action": "Existing release/repository owner reconciles NEW127 and CR-REL-03 against exact current tracking receipts when authorized; preserve local files and evidence, no history rewrite or blanket deletion. Keep completed July removals closed and do not create another generated-cache task.",
+        "source_inputs": [
+          "CR-REL-03",
+          "B-CLEAN NEW127",
+          "C0032",
+          "C0039",
+          "C0042"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-cleanup-tasks.md",
+          "line": 256,
+          "sha256": "89b939a9a2d0136f6feb49be00022102afab7d892fed99bc12813b6c1fc0fdd0",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Only selected task/closure lines inspected; no Git/index command or cache cleanup."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/prd-cleanup-tasks.md",
+          "line": 8,
+          "sha256": "537f88afae9ba557298bf2ef403aeb8f58d93478a4e575a06886683eb2abb642",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md",
+          "line": 34,
+          "sha256": "01bd01347a31b4d9044f0e03accc7b53bde1d35ed76143c698c3fd4759bbe214",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        }
+      ],
+      "before_fields": {
+        "implementation": "Open narrow follow-up; no new implementation by ledger owner",
+        "verification": "Current source and retained receipts inspected; no application tests rerun",
+        "next_action": "Parent assigns the bounded packet after prerequisite decisions and lease transfer",
+        "source_inputs": [
+          "CR-REL-03"
+        ]
+      }
+    },
+    "PIPE-DRM-NATURAL": {
+      "fields": {
+        "implementation": "Preserve accepted transaction/CAS/normalization and narrower canary/UI/wrapper credit. NEW20/23–29/32/33/37–39 retain exact history/cursor/writer/natural receipt gaps. Add the distinct October17 NEW86/C0074 same-name Yahoo position recurrence for reconciliation; the existence of a selector name in a helper inventory is not shipped-fix/natural-success proof. NEW49/50/51 historical scheduler/runtime/audit closures remain closed.",
+        "verification": "Full DRM PRD and August1 local77-case receipt read, plus all selected unchecked/NEW49/50 task clauses. NEW50 has an August4 completed/persisted natural closure; earlier open boilerplate is superseded. NEW86 source183 records the Pettersson collision and exact ship-plus-natural closure; a generated helper index names selectRelationshipYahooPosition but establishes no behavior/release. Audit ran no route, source import, test, database or natural run.",
+        "next_action": "Reconcile NEW86/C0074 against exact newer selector/candidate and natural-success receipts within this existing ID, without declaring the historical failure current or dispatching another repair. Keep broader NEW20/23–29/32/33/37–39 evidence gates and no-backfill quarantine separate; do not reopen completed49/50/51 or retired supabaseShifts.js from old PRD sections.",
+        "source_inputs": [
+          "MISS-DRM-NATURAL",
+          "MS41-041",
+          "MS41-042",
+          "MS41-047",
+          "B-DRM NEW86",
+          "C0074"
+        ]
+      },
+      "evidence": [
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/prd-drm-refactor.md",
+          "line": 3,
+          "sha256": "2985e89d54448ccd66987c653b80d7a1e32f7a497af06c7e316d2d2aaaa2b36d",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/drm-local-gates-checkpoint-2026-08-01.md",
+          "line": 45,
+          "sha256": "24e99a46251b9c02360003cbfa291718ce98bd7fe765077c4de03c5c531237fe",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          "line": 143,
+          "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Selected unchecked/NEW49/50 clauses only; full paired task file not read."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-drm-refactor.md",
+          "line": 183,
+          "sha256": "7d0cebf7d3c3646a7ef2d5ab25f765774282aa4c251f36b565e814e4377e6c01",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Selected exact NEW86 clause only; current shipped outcome remains unverified."
+        }
+      ],
+      "before_fields": {
+        "implementation": "Local transaction/CAS/normalization and newer bounded repairs retain their credit. Historical NEW20/23–29/32/33/37–39 natural cursor, input-version ownership and legacy caller/backfill gates have no whole-scope closure in inspected evidence. Completed NEW49/50 scheduling/duration gates are not reopened.",
+        "verification": "Documentary reconciliation only; dated source evidence is retained, not a fresh application, provider, database or production test.",
+        "next_action": "Reconcile the exact remaining source clauses against newer normalization/ingest receipts, separating already-closed games. Propose one bounded owner receipt gap; do not launch a historical repair.",
+        "source_inputs": [
+          "MISS-DRM-NATURAL",
+          "MS41-041",
+          "MS41-042",
+          "MS41-047"
+        ]
+      }
+    },
+    "SITE-WIGO": {
+      "fields": {
+        "implementation": "C4 workflow-link candidate/browser receipt retains its narrow credit. Separate investigator01a16eab-cefb-71a0-9a22-199c2d039009 handed back the TJ-approved four-file local data fix at patcha63ef5a4e6dde4ee1255661a612f01b79a4e4306c5822f8d4fe078f89fbb394e. Source-frame alignment, six read-error branches and recent-snapshot rate authority are implemented per owner; independent review/integration pending, no production refresh/backfill.",
+        "acceptance": "No whole WiGO/data acceptance. Retained diagnostic has two SELECTs/68rows/no writes: L5 current inputs5/5 but stored nulls, L10 matches9/10, independent L20 matches13/20. Owner reports58/58 focused tests and scoped lint passed; whole-web TypeScript exits2 on the same two pre-existing Luna errors, not a clean build. Exact correction independent review is pending. One-player/fixture evidence establishes no league coverage.",
+        "verification": "Full original offline report was reviewed in segment06; full production addendum/summary/SQL and local-fix ownership read here. Auditor parsed retained68row source groups and date/season joins, reproduced5/9/13 matching and L5 sums6313seconds/1.82ixG/35iCF without SQL/app execution. No wigo_rates row existed for this player and STD matched, so offline override/STD risks are not this demonstrated cause. Six older unmatched selected L20 dates are not proven absent deeper in source tables; chronology of L5 nulls remains unknown.",
+        "next_action": "Parent independently reviews the exact four-file correction and its invalid-frame/fail-closed behavior before acceptance/integration. Earlier written player batches are not rolled back on a later source error; population-wide legacy-frame compatibility was not tested and remains a release concern. Preserve true NST gaps as unavailable, current cross-season policy and C4 wiring credit. Stored L5 nulls remain unchanged by code edits; any bounded refresh path/execution and October5 backfill require separate authority. Card worker consumes only reviewed supplied evidence.",
+        "dispatch_class": "Existing WiGO investigator handed back local four-file candidate; independent review pending, no new worker or execution authority from audit"
+      },
+      "evidence": [
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/REPORT.md",
+          "line": 5,
+          "sha256": "12cae6a38cdae65b454fe76271a329b46759ab130654ed14691da3bc6373ed8b",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/summary.json",
+          "line": 1,
+          "sha256": "fe17c8310839e30c7bc57c725ef4db6f9f27522752b2da51b64e92397c28f8e1",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/7a8b03d3ba14-OWNERSHIP.json",
+          "line": 1,
+          "sha256": "7a8b03d3ba143d99a55dbdd99e6a3c1ce37ed703253190fec07b29889f8b2840",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor.",
+          "original_path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/OWNERSHIP.json"
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/3013dc8decf8-HANDOFF.md",
+          "line": 1,
+          "sha256": "3013dc8decf878efd428af3b6ee7662a8c1aa946cba4bbe489292bd8a68ae924",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor.",
+          "original_path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.md"
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/0721edd6d3b4-HANDOFF.json",
+          "line": 1,
+          "sha256": "0721edd6d3b4cb333c4d49ceff36e4759e0dd17470ba381b2dfac7e468376fa1",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor.",
+          "original_path": "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.json"
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/PARENT-STEERS.json",
+          "line": 1,
+          "sha256": "52f8c719fbcdf7002e23b8f16b80233c9f9d4d2637c371089b21ed61baefef8d",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Trusted parent authorization record only; no authority transferred to auditor."
+        }
+      ],
+      "before_fields": {
+        "implementation": "C4 workflow-link wiring candidate and fixture-browser handback delivered, patch2266893f0e268690ab27819aa3d2d3ab6afc3a2d8af6058cf14d79d11e4e190e. Existing shared links/components/styles remain unchanged per receipt. Broader WiGO data/rating/performance work is not completed by this narrow wiring.",
+        "acceptance": "Owner reports 6/6 tests, baseline6/6 failures, lint pass and fixture browser/keyboard/Back coverage; orchestrator rerun includes those6 in110/110. Whole-tree TS exits2 on two Luna errors, no C4 diagnostics. Independent C4 review pending; audit did not view screenshots. Browser was not wholly offline: at least5 public NHL reads, exact count unknown, are disclosed; no FHFH production Supabase contact reported.",
+        "verification": "Full C4 receipt plus CLAUDE005-007 read. Candidate pagefd3e6b7fbaa7a27f97063123b7ab03c384f2fedba07c5a69d9eb3cf35b703469 and new testee8f00a8bcd70ef2ab80b03feb831d3550bffd5b3fa0b2966553dc9508046064 identify the owner packet. The audit ran no browser/source/test checks.",
+        "next_action": "Review frozen C4 packet independently; retain unresolved source/window/unit/rating/cohort/performance clauses. C4 released3110, then C7 social used/released it per CLAUDE007; later CLAUDE010 declares SS1 holding3110. Stale shared_resources naming C1 is a coordination-document mismatch, not a current inferred holder. Do not repeat production/network checks from the audit.",
+        "dispatch_class": "C4 candidate handed back; independent review pending; latest declared3110 holder is later SS1, not C4"
+      }
+    },
+    "REPO-DOCUMENTATION": {
+      "fields": {
+        "next_action": "Retain reported C6 pointer-correction allocation and all auth/Rankings/Underlying scopes. Dead-code full reads confirm B-DEAD44/44 closure, supported FORGE/admin surfaces, retained quarantines and superseded sKO burn-down; do not revive old deletion/modernization recommendations or re-close them as new work. Reconcile stale open boilerplate to later dated CLEAN/DRM closures while preserving October recurrences and held history. Player-card inputs are now installed by their owner; cloud-copy header wording is historical. No diary/document retirement from audit."
+      },
+      "evidence": [
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/hidden-product-surface-ownership-matrix.md",
+          "line": 5,
+          "sha256": "836c5df358c30308a789141fc0568d6aec782fe65ab5b848a87763f8a49dc432",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/tasks-prd-dead-code-report.md",
+          "line": 23,
+          "sha256": "01bd01347a31b4d9044f0e03accc7b53bde1d35ed76143c698c3fd4759bbe214",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/prd-dead-code-report.md",
+          "line": 279,
+          "sha256": "6f0969a99cb341f534807383ddf6268cbc6707c60177c44c7a6fdbd17f878131",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/TASKS/dead-code-cleanup/burn-down-plan.md",
+          "line": 3,
+          "sha256": "a4333e26f591dd2f068dd20b31fed45b16067bfe575220c36ab810fb7b0b9464",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/cd884f134b29-INPUTS.json",
+          "line": 1,
+          "sha256": "cd884f134b29b7e951b364cb02ed7e78dd131ed055822b1dc750d8a4b5c83884",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor.",
+          "original_path": "tasks/artifacts/player-cards-2026-10-24/INPUTS.json"
+        }
+      ],
+      "before_fields": {
+        "next_action": "Claude013 now records C6 allocated for docs pointer correction, superseding the earlier C6-unallocated hold only. Preserve all retained auth/Rankings/Underlyings/parked scopes. Reconcile current summaries against accepted contracts and exact source receipts. Cron source prose mixes August totals and later JSON retirement/provider updates; reconcile documentary pointers without changing schedules or inferring hosted state. Broad cleanup/retirement decisions stay held; no document deletion."
+      }
+    }
+  },
+  "added": [
+    {
+      "taskID": "SITE-PLAYER-CARDS",
+      "group": "October24 bounded local player-card work",
+      "scope": "Build shareable observed player cards with honest windows, all-valid-player ranks and snapshot-consistent PNGs",
+      "user_impact": "Anonymous visitors can discover/read/export useful cards; unknown coverage and unapproved premium choices must remain explicit.",
+      "implementation": "TJ authorized task generation and bounded local implementation by one Sol in a new visible thread. Initial PRDv1/tasklistv0 installation exactly matched complete reviewed Library text; the local task list is now an owner working derivative. Worker has a coordinator-granted nine-path local slice and reports a synthetic card/PNG preview plus proposed rank convention implemented in the local task derivative. Owner frozen handoff/EVIDENCE now read after their initial references preceded file creation;10focused tests/10offline Chromium/scoped static passes are owner evidence only, with independent acceptance pending. The old unapproved/no-task-generation PRDv0 wording is superseded only by this bounded authorization.",
+      "acceptance": "Task list is parent-reviewed for dispatch; implementation acceptance pending. Free public search/basic card/PNG, curated optional metrics and premium expanded metrics/two-player comparison are confirmed. Exact allocation, season/incomplete-N policy, proposed defaults, rank convention and visual proposals remain unapproved choices.",
+      "release": "Local-only; no deployment, live-card, model/scientific, source-rights or production coverage acceptance.",
+      "owner": "CODEX-SCOUT",
+      "reviewer": "UNASSIGNED",
+      "dependencies": "Existing single Sol card owner; exact new-path ownership and protected shared files; SITE-WIGO diagnostic/local-fix dependency; SITE-SOCIAL-SHARE export work remains separately owned. Complete appearance/source/pool evidence, entitlement boundary, rights and cost/retention decisions gate affected real/premium integration.",
+      "verification": "Auditor fully read Library PRDv1(178lines/26797bytes)/tasklistv0(85lines/16503bytes), verified initial installation text, then reviewed every local task-list delta and reread the changed ownership. Local derivative reports10focused tests/scoped TS-lint/10offline Chromium checks/PNG; these are unaccepted owner claims, then the frozen HANDOFF/EVIDENCE were read after explicit new delivery evidence. Images/logs remain metadata-only; no application code or preview executed by audit. Recorded static3125/PID is an owner declaration, not observed liveness.",
+      "acceptance_release_gate": "Independent exact local review before integration. Preserve no-GP/TOI/position hidden pool filters, valid-zero/null distinction and rank suppression for unknown coverage. Product-dependent observed/premium behavior stays disabled/configurable until resolved. No new production reads/writes/refresh/backfill, shared auth/export/billing edits, dependency/spend, Git or deploy authority.",
+      "next_action": "Existing Sol owner advances independent free-card/contracts/synthetic preview work under its exact lease and brings reviewable evidence to Scout. Parent resolves only remaining dependent product/asset/source/entitlement choices. Do not create a second card worker, duplicate WiGO repair, import schedule-specific snapshots as player data or infer card capability from RSO entitlement flags.",
+      "as_of": "2026-10-24T16:53:11.550597+00:00",
+      "evidence_level": "Reviewed requirements and owner preparation; implementation/review incomplete",
+      "evidence_scope": "Bounded local player-card scope only. Schema/prototype fields, one-player diagnostic and synthetic preview are not live league coverage or public launch.",
+      "evidence_provenance": "Trusted parent continuation authorization, Library versions and exact installed source documents, owner scope records.",
+      "dispatch_class": "Authorized single-Sol bounded local implementation; parent integration/review remains separate",
+      "source_inputs": [
+        "TJ October24 task-generation/local-implementation approval",
+        "Library libfile_c30125d0825481919d792fe441de993c v1",
+        "Library libfile_9cedfb0ae3a081918e150b8b18613043 v0",
+        "SITE-WIGO",
+        "SITE-SOCIAL-SHARE",
+        "segment06 proposed alias SITE-PLAYER-CARDS-PRD"
+      ],
+      "evidence": [
+        {
+          "path": "tasks/TASKS/prd-shareable-player-cards.md",
+          "line": 3,
+          "sha256": "eba54a6abf91c29bcec0eedccb9a677b44f6e25ffb03c9bf33b26303fae0e438",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Complete Libraryv1 text read; installed exact reviewed-text duplicate, no raw-transfer hash claim."
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/6f2bc7e8f1b0-tasks-prd-shareable-player-cards.md",
+          "line": 3,
+          "sha256": "6f2bc7e8f1b0ec976fbfcf6ee04194f1b3c3fd859af7672998021056b9047e38",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Complete Libraryv0 base plus every current local delta read. Checkbox/test narrative is owner evidence, not implementation acceptance.",
+          "original_path": "tasks/tasks-prd-shareable-player-cards.md"
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/cd884f134b29-INPUTS.json",
+          "line": 1,
+          "sha256": "cd884f134b29b7e951b364cb02ed7e78dd131ed055822b1dc750d8a4b5c83884",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor.",
+          "original_path": "tasks/artifacts/player-cards-2026-10-24/INPUTS.json"
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/2412dbabed66-REQUIREMENTS-AND-STEERS.md",
+          "line": 5,
+          "sha256": "2412dbabed661fede7b867f4aad407f43a775ab01227eec4a1b31d8fd5cde291",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor.",
+          "original_path": "tasks/artifacts/player-cards-2026-10-24/REQUIREMENTS-AND-STEERS.md"
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/3b2bbc5fa66c-OWNERSHIP.json",
+          "line": 1,
+          "sha256": "3b2bbc5fa66cbb99bb7a6a4ebea3c777b165e13775e94013a8c365629cd1d88d",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor.",
+          "original_path": "tasks/artifacts/player-cards-2026-10-24/slice-01/OWNERSHIP.json"
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/bb9f859362d9-HANDOFF.md",
+          "line": 1,
+          "sha256": "bb9f859362d971ffd012b5ecc05f207769d18d25f24210bf55773859a36f8cf7",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor.",
+          "original_path": "tasks/artifacts/player-cards-2026-10-24/slice-01/HANDOFF.md"
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/source-snapshots/3e5cce84ec6d-EVIDENCE.json",
+          "line": 1,
+          "sha256": "3e5cce84ec6d9a2df02e7b16d0e01b5677f5b06c48acc3da14436683203b9feb",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Full documentary source read; historical owner/reviewer/external receipts not reproduced by auditor.",
+          "original_path": "tasks/artifacts/player-cards-2026-10-24/slice-01/EVIDENCE.json"
+        },
+        {
+          "path": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-07-dead-code-contracts/PARENT-STEERS.json",
+          "line": 1,
+          "sha256": "52f8c719fbcdf7002e23b8f16b80233c9f9d4d2637c371089b21ed61baefef8d",
+          "observed_at": "2026-10-24T16:53:11.550597+00:00",
+          "review_scope": "Trusted parent authorization record only; not a worker dispatch by auditor."
+        }
+      ]
+    }
+  ]
+}

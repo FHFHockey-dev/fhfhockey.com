@@ -1,0 +1,10 @@
+{
+  "at": "2026-10-24T18:55:53.136463+00:00",
+  "selected_reviewed_source_drift": [],
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "d6b5da4dc78ba3cf83c088603cfb796cb565bcdf44e1e187c1ba30de8410bac1",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "1c6ab83284a1448b22d48034210318482a2db3e23816f2c6b844e2aaf1b654e3",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "b7e8654b37f05d682fa29c9a2dbfeda03eedec215146afd25c4b75741472d9d4"
+  },
+  "scope": "Only selected documentary sources and changed canonical checkpoint; no new tree inventory."
+}

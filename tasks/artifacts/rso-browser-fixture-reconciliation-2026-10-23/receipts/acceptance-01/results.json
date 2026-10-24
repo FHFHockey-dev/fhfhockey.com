@@ -1,0 +1,375 @@
+{
+  "config": {
+    "configFile": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/reconciliation.config.ts",
+    "rootDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "projects": [
+      {
+        "outputDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/acceptance-01/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "desktop",
+        "name": "desktop",
+        "testDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance",
+        "testIgnore": [],
+        "testMatch": [
+          "rso-p07-acceptance.spec.ts"
+        ],
+        "timeout": 90000
+      },
+      {
+        "outputDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/acceptance-01/results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile",
+        "name": "mobile",
+        "testDir": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance",
+        "testIgnore": [],
+        "testMatch": [
+          "rso-p07-acceptance.spec.ts"
+        ],
+        "timeout": 90000
+      }
+    ],
+    "quiet": false,
+    "reporter": [
+      [
+        "line"
+      ],
+      [
+        "json"
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "shard": null,
+    "tags": [],
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.60.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "rso-p07-acceptance.spec.ts",
+      "file": "rso-p07-acceptance.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [
+        {
+          "title": "P07: a serialized forecast that claims its own allowed uses is not summed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1575,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T15:45:30.508Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8773f4f34cb3da35abed-ebfb4041b4ad5ff58bc2",
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 170,
+          "column": 5
+        },
+        {
+          "title": "current-read nonce mismatch withholds projected points; the echoed nonce restores them",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2268,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T15:45:32.154Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8773f4f34cb3da35abed-59f75909d8e5c112ec42",
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 184,
+          "column": 5
+        },
+        {
+          "title": "trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "desktop",
+              "projectName": "desktop",
+              "results": [
+                {
+                  "workerIndex": 0,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 21438,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)\nExpected: \u001b[32m\"Expected fantasy points: \u001b[7munavailable\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"Expected fantasy points: \u001b[7m5.0\u001b[27m\"\u001b[39m\nTimeout:  20000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)\u001b[22m\n\u001b[2m    44 × locator resolved to <span data-tier=\"high\" class=\"SlotWeekGrid_points__3oPUA\" aria-label=\"Expected fantasy points: 5.0\" title=\"Expected fantasy points for this game, including participation probability.\">…</span>\u001b[22m\n\u001b[2m       - unexpected value \"Expected fantasy points: 5.0\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)\nExpected: \u001b[32m\"Expected fantasy points: \u001b[7munavailable\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"Expected fantasy points: \u001b[7m5.0\u001b[27m\"\u001b[39m\nTimeout:  20000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)\u001b[22m\n\u001b[2m    44 × locator resolved to <span data-tier=\"high\" class=\"SlotWeekGrid_points__3oPUA\" aria-label=\"Expected fantasy points: 5.0\" title=\"Expected fantasy points for this game, including participation probability.\">…</span>\u001b[22m\n\u001b[2m       - unexpected value \"Expected fantasy points: 5.0\"\u001b[22m\n\n    at expectPoints (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts:125:21)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts:235:9",
+                    "location": {
+                      "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts",
+                      "column": 21,
+                      "line": 125
+                    },
+                    "snippet": "  123 | async function expectPoints(target: ReturnType<Page[\"getByRole\"]>, expected: string, ifStarts?: string) {\n  124 |   const exp = target.getByLabel(/^Expected fantasy points:/);\n> 125 |   await expect(exp).toHaveAttribute(\"aria-label\", `Expected fantasy points: ${expected === \"—\" ? \"unavailable\" : expected}`);\n      |                     ^\n  126 |   await expect(exp).toContainText(expected);\n  127 |   if (ifStarts !== undefined) {\n  128 |     const cond = target.getByLabel(/^Fantasy points if starts:/);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts",
+                        "column": 21,
+                        "line": 125
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)\nExpected: \u001b[32m\"Expected fantasy points: \u001b[7munavailable\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"Expected fantasy points: \u001b[7m5.0\u001b[27m\"\u001b[39m\nTimeout:  20000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)\u001b[22m\n\u001b[2m    44 × locator resolved to <span data-tier=\"high\" class=\"SlotWeekGrid_points__3oPUA\" aria-label=\"Expected fantasy points: 5.0\" title=\"Expected fantasy points for this game, including participation probability.\">…</span>\u001b[22m\n\u001b[2m       - unexpected value \"Expected fantasy points: 5.0\"\u001b[22m\n\n\n  123 | async function expectPoints(target: ReturnType<Page[\"getByRole\"]>, expected: string, ifStarts?: string) {\n  124 |   const exp = target.getByLabel(/^Expected fantasy points:/);\n> 125 |   await expect(exp).toHaveAttribute(\"aria-label\", `Expected fantasy points: ${expected === \"—\" ? \"unavailable\" : expected}`);\n      |                     ^\n  126 |   await expect(exp).toContainText(expected);\n  127 |   if (ifStarts !== undefined) {\n  128 |     const cond = target.getByLabel(/^Fantasy points if starts:/);\n    at expectPoints (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts:125:21)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts:235:9"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T15:45:34.426Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/acceptance-01/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-desktop/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/acceptance-01/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-desktop/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/acceptance-01/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-desktop/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts",
+                    "column": 21,
+                    "line": 125
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "8773f4f34cb3da35abed-e391af8188ebba8e5f47",
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 219,
+          "column": 5
+        },
+        {
+          "title": "P07: a serialized forecast that claims its own allowed uses is not summed",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 1371,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T15:45:56.178Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8773f4f34cb3da35abed-108e21c149477e516aae",
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 170,
+          "column": 5
+        },
+        {
+          "title": "current-read nonce mismatch withholds projected points; the echoed nonce restores them",
+          "ok": true,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "passed",
+                  "duration": 2253,
+                  "errors": [],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T15:45:57.636Z",
+                  "annotations": [],
+                  "attachments": []
+                }
+              ],
+              "status": "expected"
+            }
+          ],
+          "id": "8773f4f34cb3da35abed-627205b875fd54751c2c",
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 184,
+          "column": 5
+        },
+        {
+          "title": "trusted Yahoo server confirmations set 100/0, unknown keeps its prior, and expiry withdraws points despite saved spoofed marks",
+          "ok": false,
+          "tags": [],
+          "tests": [
+            {
+              "timeout": 90000,
+              "annotations": [],
+              "expectedStatus": "passed",
+              "projectId": "mobile",
+              "projectName": "mobile",
+              "results": [
+                {
+                  "workerIndex": 1,
+                  "parallelIndex": 0,
+                  "status": "failed",
+                  "duration": 21448,
+                  "error": {
+                    "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)\nExpected: \u001b[32m\"Expected fantasy points: \u001b[7munavailable\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"Expected fantasy points: \u001b[7m5.0\u001b[27m\"\u001b[39m\nTimeout:  20000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)\u001b[22m\n\u001b[2m    44 × locator resolved to <span data-tier=\"high\" class=\"SlotWeekGrid_points__3oPUA\" aria-label=\"Expected fantasy points: 5.0\" title=\"Expected fantasy points for this game, including participation probability.\">…</span>\u001b[22m\n\u001b[2m       - unexpected value \"Expected fantasy points: 5.0\"\u001b[22m\n",
+                    "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)\nExpected: \u001b[32m\"Expected fantasy points: \u001b[7munavailable\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"Expected fantasy points: \u001b[7m5.0\u001b[27m\"\u001b[39m\nTimeout:  20000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)\u001b[22m\n\u001b[2m    44 × locator resolved to <span data-tier=\"high\" class=\"SlotWeekGrid_points__3oPUA\" aria-label=\"Expected fantasy points: 5.0\" title=\"Expected fantasy points for this game, including participation probability.\">…</span>\u001b[22m\n\u001b[2m       - unexpected value \"Expected fantasy points: 5.0\"\u001b[22m\n\n    at expectPoints (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts:125:21)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts:235:9",
+                    "location": {
+                      "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts",
+                      "column": 21,
+                      "line": 125
+                    },
+                    "snippet": "  123 | async function expectPoints(target: ReturnType<Page[\"getByRole\"]>, expected: string, ifStarts?: string) {\n  124 |   const exp = target.getByLabel(/^Expected fantasy points:/);\n> 125 |   await expect(exp).toHaveAttribute(\"aria-label\", `Expected fantasy points: ${expected === \"—\" ? \"unavailable\" : expected}`);\n      |                     ^\n  126 |   await expect(exp).toContainText(expected);\n  127 |   if (ifStarts !== undefined) {\n  128 |     const cond = target.getByLabel(/^Fantasy points if starts:/);"
+                  },
+                  "errors": [
+                    {
+                      "location": {
+                        "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts",
+                        "column": 21,
+                        "line": 125
+                      },
+                      "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveAttribute\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)\nExpected: \u001b[32m\"Expected fantasy points: \u001b[7munavailable\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"Expected fantasy points: \u001b[7m5.0\u001b[27m\"\u001b[39m\nTimeout:  20000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveAttribute\" with timeout 20000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('table', { name: 'Lineup by position' }).getByRole('button', { name: 'Verified Starter, G, 2026-10-05' }).getByLabel(/^Expected fantasy points:/)\u001b[22m\n\u001b[2m    44 × locator resolved to <span data-tier=\"high\" class=\"SlotWeekGrid_points__3oPUA\" aria-label=\"Expected fantasy points: 5.0\" title=\"Expected fantasy points for this game, including participation probability.\">…</span>\u001b[22m\n\u001b[2m       - unexpected value \"Expected fantasy points: 5.0\"\u001b[22m\n\n\n  123 | async function expectPoints(target: ReturnType<Page[\"getByRole\"]>, expected: string, ifStarts?: string) {\n  124 |   const exp = target.getByLabel(/^Expected fantasy points:/);\n> 125 |   await expect(exp).toHaveAttribute(\"aria-label\", `Expected fantasy points: ${expected === \"—\" ? \"unavailable\" : expected}`);\n      |                     ^\n  126 |   await expect(exp).toContainText(expected);\n  127 |   if (ifStarts !== undefined) {\n  128 |     const cond = target.getByLabel(/^Fantasy points if starts:/);\n    at expectPoints (/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts:125:21)\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts:235:9"
+                    }
+                  ],
+                  "stdout": [],
+                  "stderr": [],
+                  "retry": 0,
+                  "startTime": "2026-10-23T15:45:59.892Z",
+                  "annotations": [],
+                  "attachments": [
+                    {
+                      "name": "screenshot",
+                      "contentType": "image/png",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/acceptance-01/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-mobile/test-failed-1.png"
+                    },
+                    {
+                      "name": "error-context",
+                      "contentType": "text/markdown",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/acceptance-01/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-mobile/error-context.md"
+                    },
+                    {
+                      "name": "trace",
+                      "contentType": "application/zip",
+                      "path": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/acceptance-01/results/rso-p07-acceptance-trusted-bb4e4-despite-saved-spoofed-marks-mobile/trace.zip"
+                    }
+                  ],
+                  "errorLocation": {
+                    "file": "/Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/acceptance/rso-p07-acceptance.spec.ts",
+                    "column": 21,
+                    "line": 125
+                  }
+                }
+              ],
+              "status": "unexpected"
+            }
+          ],
+          "id": "8773f4f34cb3da35abed-c2e95c889916aff0d7b6",
+          "file": "rso-p07-acceptance.spec.ts",
+          "line": 219,
+          "column": 5
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2026-10-23T15:45:30.247Z",
+    "duration": 51181.163,
+    "expected": 4,
+    "skipped": 0,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

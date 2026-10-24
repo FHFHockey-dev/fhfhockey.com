@@ -1,0 +1,310 @@
+--- a/web/components/SocialShare/SocialShare.tsx
++++ b/web/components/SocialShare/SocialShare.tsx
+@@ -3,7 +3,7 @@
+ import { SCHEDULE_FORMATS, type SharePlayerLayer, type SocialShareFormat, type SocialShareSnapshot, type ShareTeam, type ShareTeamRow } from "lib/socialShare/types";
+ import { calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
+ import { bounded, downloadSharePng, readyShareFonts, SHARE_SIZE, teamLogoDataUrl } from "lib/socialShare/export";
+-import { mondayGridRows } from "lib/socialShare/mondayGrid";
++import { editionCountTiers, mondayGridRows, type CountTier } from "lib/socialShare/mondayGrid";
+ import { fetchEdition } from "lib/socialShare/editionFetch";
+ import { editionLabel } from "lib/socialShare/edition";
+ import { easiestSchedules, opponentsReady, SOFT_DEFENSE_MAX, STREAM_TEAM_RANK_MAX, streamingNights, type MatchupGame, type RankedRate, type StreamNight } from "lib/socialShare/matchups";
+@@ -73,6 +73,18 @@
+   </div>;
+ }
+ 
++const countClasses: Record<CountTier, string> = { high: "countHigh", second: "countSecond", between: "countBetween", low: "countLow", neutral: "countNeutral" };
++/** A GP or off-night count coloured by its column tier (TJ, ticket 12); unranked editions stay neutral. */
++function Count({ value, tier }: { value: number; tier: CountTier | undefined }) {
++  return <b className={styles[countClasses[tier ?? "neutral"]]} data-count-tier={tier ?? "neutral"}>{value}</b>;
++}
++/** Per-edition GP and off-night tiers; neutral when the edition is not trusted. */
++const countsFor = (snapshot: SocialShareSnapshot, trusted: boolean) => {
++  const tiers = editionCountTiers(snapshot);
++  return { gp: (value: number) => trusted ? tiers.gp.get(value) : "neutral" as const, off: (value: number) => trusted ? tiers.off.get(value) : "neutral" as const };
++};
++const CountLegend = () => <span className={styles.countLegend}><b>GP · OFF</b><i className={styles.countHigh} /><i className={styles.countSecond} /><i className={styles.countBetween} /><i className={styles.countLow} />most → least</span>;
++
+ /** Five Week Score tiers by rank among ranked teams: best (green) → worst (red). Equal scores share a tier. */
+ const SCORE_TIERS = ["tierBest", "tierGood", "tierAverage", "tierBelow", "tierWorst"] as const;
+ const tierOf = (rank: number, ranked: number) => SCORE_TIERS[Math.min(4, Math.floor(((rank - 1) * 5) / Math.max(1, ranked)))];
+@@ -83,6 +95,7 @@
+   const scoreTier = (rank: number) => tierOf(1 + ranked.findIndex(row => row.score === ranked.find(item => item.rank === rank)!.score), ranked.length);
+   // Games picked on the Streaming Matchups card get the same gentle border here.
+   const cherryPicks = new Set(streamingNights(snapshot, trusted).map(night => `${night.team.id}:${night.id}`));
++  const counts = countsFor(snapshot, trusted);
+   return <>
+     <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={trusted ? `${editionDay(snapshot)} · ${snapshot.format === "remaining-week" ? "Rest of week" : "Streamer grid"}` : "Unranked preview"} title={trusted ? "BEST SCHEDULES" : "KNOWN SCHEDULES"} />
+     <div className={styles.grid}>{[rows.slice(0, 16), rows.slice(16)].map((half, index) => <div key={index} className={styles.gridPanel}>
+@@ -91,7 +104,7 @@
+         {snapshot.days.map(day => <span key={day.date} className={cx(day.offNight && styles.offNightDay, !day.selected && styles.dimmed)}><strong>{titleDay(day.label)}</strong><small>{day.leagueGames}</small></span>)}
+         <span>{trusted ? "SCORE" : "GP"}</span>
+       </div>
+-      {half.map(row => <div key={row.team.id} data-team={row.team.abbreviation} data-tier={row.rank !== null ? scoreTier(row.rank) : undefined} className={cx(styles.gridRow, row.rank !== null && styles.tierRail, row.rank !== null && styles[scoreTier(row.rank)])}>
++      {half.map(row => <div key={row.team.id} data-team={row.team.abbreviation} data-gp-tier={counts.gp(row.remainingGames)} data-off-tier={counts.off(row.offNightGames)} data-tier={row.rank !== null ? scoreTier(row.rank) : undefined} className={cx(styles.gridRow, row.rank !== null && styles.tierRail, row.rank !== null && styles[scoreTier(row.rank)])}>
+         <span className={styles.gridRank}>{row.rank ?? ""}</span>
+         <span className={styles.gridTeam}><TeamMark team={row.team} logo={logos[row.team.abbreviation]} size={40} /></span>
+         {row.cells.map(cell => {
+@@ -101,11 +114,11 @@
+             {game && <><TeamMark team={game.opponent} logo={logos[game.opponent.abbreviation]} size={32} />{!game.home && <i className={styles.awayMark}>@</i>}{cell.games.length > 1 && <i className={styles.doubleMark}>×{cell.games.length}</i>}</>}
+           </span>;
+         })}
+-        <span className={styles.gridGames}>{row.rank !== null && row.remainingGames > 0 ? <strong className={styles.gridScore}>{row.score.toFixed(1)}</strong> : <strong>{row.remainingGames}</strong>}<small>{row.remainingGames} GP · <span className={cx(!row.offNightGames && styles.noOff)}>{row.offNightGames} OFF</span></small></span>
++        <span className={styles.gridGames}>{row.rank !== null && row.remainingGames > 0 ? <strong className={styles.gridScore}>{row.score.toFixed(1)}</strong> : <strong>{row.remainingGames}</strong>}<small><Count value={row.remainingGames} tier={counts.gp(row.remainingGames)} /> GP · <Count value={row.offNightGames} tier={counts.off(row.offNightGames)} /> OFF</small></span>
+       </div>)}
+     </div>)}</div>
+     <footer className={styles.gridFooter}>
+-      <div className={styles.legend}><span><i className={styles.legendAway}>@</i>Away</span><span><i className={styles.legendHome} />Home</span><span><i className={styles.legendOffColumn} />Off-night (≤8 games)</span>{cherryPicks.size > 0 && <span><i className={styles.legendCherry} />Streaming pick</span>}<span className={styles.tierLegend}><b>SCORE</b><i className={styles.tierBest} /><i className={styles.tierGood} /><i className={styles.tierAverage} /><i className={styles.tierBelow} /><i className={styles.tierWorst} />best → worst</span></div>
++      <div className={styles.legend}><span><i className={styles.legendAway}>@</i>Away</span><span><i className={styles.legendHome} />Home</span><span><i className={styles.legendOffColumn} />Off-night (≤8 games)</span>{cherryPicks.size > 0 && <span><i className={styles.legendCherry} />Streaming pick</span>}{trusted && <CountLegend />}<span className={styles.tierLegend}><b>SCORE</b><i className={styles.tierBest} /><i className={styles.tierGood} /><i className={styles.tierAverage} /><i className={styles.tierBelow} /><i className={styles.tierWorst} />best → worst</span></div>
+       <p><span>{trusted ? "Ranked by Game Grid Week Score (games, off-nights, slate density)" : "Ranking unavailable · alphabetical order"} · No odds or projections · NHL schedule checked {timeLabel(snapshot.source.fetchedAt)}</span><strong className={styles.gridWatermark}>{trusted ? "SCHEDULE ONLY" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
+     </footer>
+   </>;
+@@ -169,7 +182,7 @@
+         <dt>Goals</dt><dd className={cx(goals.storm && styles.storm)}>{night.team.abbreviation} GF/GP {rateText(goals.team, 2, "most")} vs {night.opponent.abbreviation} GA/GP {rateText(goals.opponent, 2, "most")}</dd>
+         <dt>Shots</dt><dd className={cx(shots.storm && styles.storm)}>{night.team.abbreviation} SF/GP {rateText(shots.team, 1, "most")} vs {night.opponent.abbreviation} SA/GP {rateText(shots.opponent, 1, "most")}</dd>
+         <dt>Rest</dt><dd className={cx(flags.includes("tired") && styles.storm)}>{restText}</dd>
+-        <dt>Defense</dt><dd>{night.opponent.abbreviation} OPP DEF {night.oppDef === null ? "—" : Math.round(night.oppDef)} (lower = softer) · #{night.weekRank} Week Score, {night.remainingGames} GP</dd>
++        <dt>Defense</dt><dd>{night.opponent.abbreviation} OPP DEF {night.oppDef === null ? "—" : Math.round(night.oppDef)} (lower = softer) · #{night.weekRank} Week Score, <Count value={night.remainingGames} tier={countsFor(snapshot, true).gp(night.remainingGames)} /> GP</dd>
+       </dl>
+     </div>
+   </div>;
+@@ -188,13 +201,13 @@
+           <span className={styles.easyRank}>{row.rank}</span>
+           <span className={styles.easyTeam}><TeamBanner team={row.team} logo={logos[row.team.abbreviation]} size="sm" title={row.team.name} subtitle={`#${row.weekRank} Week Score · ${row.offNightGames} off-night`} /></span>
+           <span className={styles.easyOpps}>{row.games.map(game => <OpponentChip key={game.id} game={game} logos={logos} snapshot={snapshot} />)}</span>
+-          <span className={styles.easyGp}>{row.remainingGames}</span>
++          <span className={styles.easyGp}><Count value={row.remainingGames} tier={countsFor(snapshot, true).gp(row.remainingGames)} /></span>
+           <span className={styles.defMeter}><strong>{Math.round(row.def)}</strong><i><b style={{ width: `${Math.max(4, Math.round(row.def))}%` }} /></i></span>
+         </div>) : <p className={styles.matchupNone}>No teams with {easiest.floor}+ games on the selected dates</p>}
+       </div>
+       : <div className={styles.streamGrid}>{nights.length ? nights.map(night => <StreamTile key={night.id} night={night} snapshot={snapshot} logos={logos} />) : <p className={styles.matchupNone}>No soft-defense or perfect-storm nights on the selected dates</p>}</div>}
+     <footer className={styles.gridFooter}>
+-      {kind === "easiest" ? <div className={styles.legend}><span><i className={styles.legendSoft} />Soft defense (≤{SOFT_DEFENSE_MAX})</span><span><i className={styles.legendAverage} />Average</span><span><i className={styles.legendStrong} />Strong (≥{100 - SOFT_DEFENSE_MAX})</span><span><i className={styles.legendAway}>@</i>Away</span></div>
++      {kind === "easiest" ? <div className={styles.legend}><span><i className={styles.legendSoft} />Soft defense (≤{SOFT_DEFENSE_MAX})</span><span><i className={styles.legendAverage} />Average</span><span><i className={styles.legendStrong} />Strong (≥{100 - SOFT_DEFENSE_MAX})</span><span><i className={styles.legendAway}>@</i>Away</span>{ready && <CountLegend />}</div>
+         : <div className={styles.legend}><span><b>Top-{STREAM_TEAM_RANK_MAX}</b> Week Score teams</span><span><b>Storm</b> = both sides in the league&apos;s top third</span><span><b>Tired</b> = opponent&apos;s 2nd night of a back-to-back</span><span>Most signals first · one night per team</span></div>}
+       <p><span>OPP DEF = Game Grid opponent defense: 100 − percentile of opponents’ xGA/GP (NST, all situations), lower = easier{easiest ? ` · ${easiest.floor}+ games left` : ""} · NST updated {timeLabel(snapshot.opponents?.updatedAt ?? null)} · Schedule checked {timeLabel(snapshot.source.fetchedAt)}</span><strong className={styles.gridWatermark}>{ready ? "SCHEDULE + TEAM RATES" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
+     </footer>
+@@ -259,7 +272,7 @@
+     <div className={styles.playerBody}>
+       <div className={styles.playerStat}><strong>{stat}</strong><small>{label}</small></div>
+       <p className={styles.playerRecent}><b>L5 GP</b><span>{recentLine(player, focus, snapshot.players?.recentState)}</span></p>
+-      <small className={styles.playerSchedule}>#{player.weekRank} Week Score · {player.remainingGames} GP · {player.offNightGames} off-night{player.widened && <i className={styles.widened}>WIDER POOL</i>}</small>
++      <small className={styles.playerSchedule}>#{player.weekRank} Week Score · <Count value={player.remainingGames} tier={countsFor(snapshot, true).gp(player.remainingGames)} /> GP · <Count value={player.offNightGames} tier={countsFor(snapshot, true).off(player.offNightGames)} /> off-night{player.widened && <i className={styles.widened}>WIDER POOL</i>}</small>
+     </div>
+   </div>;
+ }
+@@ -296,7 +309,7 @@
+ const lineName = (slot: number | null, group: string | null) => slot === null ? null : `${group === "defense" ? "D" : "L"}${slot}`;
+ const unitName = (unit: number | null) => unit === null ? "no PP" : `PP${unit}`;
+ 
+-type TrendRowData = { key: string; team: string | null; name: string; meta: string; detail: string; value: string; label: string; tone: "up" | "down"; badges: string[] };
++type TrendRowData = { key: string; team: string | null; name: string; meta: string; weekGames?: number | null; detail: string; value: string; label: string; tone: "up" | "down"; badges: string[] };
+ type TrendColumn = { key: string; title: string; rows: TrendRowData[] };
+ 
+ function trendUnreadyReason(kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) {
+@@ -310,10 +323,10 @@
+ const trendReady = (kind: TrendKind, snapshot: SocialShareSnapshot, trusted: boolean) => trusted && (kind === "movers" ? moversReady(snapshot) : trendsReady(snapshot));
+ 
+ function trendColumns(kind: TrendKind, snapshot: SocialShareSnapshot): TrendColumn[] {
+-  const meta = (pick: TrendPick) => `${pick.team} · ${pick.position} · ${pick.weekGames ?? "?"} GP this week`;
++  const meta = (pick: TrendPick) => `${pick.team} · ${pick.position}`;
+   if (kind === "hot") {
+     const { hot, cold } = hotCold(snapshot, true);
+-    const row = (pick: TrendPick): TrendRowData => ({ key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), detail: `L${TREND_WINDOW_GAMES} ${pick.last5.toFixed(2)} · season ${pick.season.toFixed(2)} P/GP`, value: signed(pick.delta, 2), label: "P/GP", tone: pick.delta > 0 ? "up" : "down", badges: [] });
++    const row = (pick: TrendPick): TrendRowData => ({ key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames, detail: `L${TREND_WINDOW_GAMES} ${pick.last5.toFixed(2)} · season ${pick.season.toFixed(2)} P/GP`, value: signed(pick.delta, 2), label: "P/GP", tone: pick.delta > 0 ? "up" : "down", badges: [] });
+     return [{ key: "hot", title: "HOT", rows: hot.map(row) }, { key: "cold", title: "COLD", rows: cold.map(row) }];
+   }
+   if (kind === "deployment") {
+@@ -325,14 +338,14 @@
+         ...(pick.ppUnit.now !== pick.ppUnit.before && pick.ppUnit.before !== undefined ? [`${unitName(pick.ppUnit.before)} → ${unitName(pick.ppUnit.now)}`] : [unitName(pick.ppUnit.now)]),
+         ...(pick.ppSharePct.last5 !== null && pick.ppSharePct.season !== null ? [`PP share ${Math.round(pick.ppSharePct.season)}% → ${Math.round(pick.ppSharePct.last5)}%`] : []),
+       ];
+-      return { key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), detail: `L${TREND_WINDOW_GAMES} ${clock(pick.last5)} · season ${clock(pick.season)} TOI/GP`, value: signedClock(pick.delta), label: "TOI/GP", tone: pick.delta > 0 ? "up" : "down", badges };
++      return { key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames, detail: `L${TREND_WINDOW_GAMES} ${clock(pick.last5)} · season ${clock(pick.season)} TOI/GP`, value: signedClock(pick.delta), label: "TOI/GP", tone: pick.delta > 0 ? "up" : "down", badges };
+     };
+     return [{ key: "up", title: "ICE TIME UP", rows: up.map(row) }, { key: "down", title: "ICE TIME DOWN", rows: down.map(row) }];
+   }
+   if (kind === "rates") {
+     const board = rateStandouts(snapshot, true);
+     return (Object.keys(rateTitles) as RateMetric[]).map(metric => ({ key: metric, title: rateTitles[metric], rows: board[metric].map(pick => ({
+-      key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick),
++      key: String(pick.nhlId), team: pick.team, name: pick.name, meta: meta(pick), weekGames: pick.weekGames,
+       detail: `L${TREND_WINDOW_GAMES} ${pick.last5.toFixed(metric === "ixgPer60" ? 2 : 1)} · season ${pick.season.toFixed(metric === "ixgPer60" ? 2 : 1)} · ${Math.round((pick.toiSecondsLast5 ?? 0) / 60)} L${TREND_WINDOW_GAMES} min`,
+       value: signed(pick.delta, metric === "ixgPer60" ? 2 : 1), label: rateTitles[metric], tone: "up" as const, badges: [] })) }));
+   }
+@@ -347,7 +360,7 @@
+   const head = `FHFH Tuesday trends, ${trendTitles[kind].toLowerCase()}, week of ${yearDateLabel(snapshot.weekStart)}.`;
+   const tail = kind === "movers" ? `Yahoo ownership as of ${dayDate(trends?.ownershipAsOf ?? null)}; add and drop counts are not in FHFH's sources.` : `FHFH rolling game metrics, all situations, through ${dayDate(trends?.metricsThrough ?? null)}, updated ${timeLabel(trends?.metricsUpdatedAt ?? null)}. Observed rates, not projections.`;
+   if (!trendReady(kind, snapshot, trusted)) return `${head} Unranked preview; ranking unavailable because ${trendUnreadyReason(kind, snapshot, trusted)}. ${tail}`;
+-  return `${head} ${trendColumns(kind, snapshot).map(column => `${column.title}: ${column.rows.map(row => `${row.name} (${row.meta}), ${row.value} ${row.label}, ${row.detail}${row.badges.length ? `, ${row.badges.join(", ")}` : ""}`).join("; ") || "none"}`).join(". ")}. ${tail}`;
++  return `${head} ${trendColumns(kind, snapshot).map(column => `${column.title}: ${column.rows.map(row => `${row.name} (${row.meta}${row.weekGames != null ? ` · ${row.weekGames} GP this week` : ""}), ${row.value} ${row.label}, ${row.detail}${row.badges.length ? `, ${row.badges.join(", ")}` : ""}`).join("; ") || "none"}`).join(". ")}. ${tail}`;
+ }
+ 
+ const trendLegends: Record<TrendKind, string[]> = {
+@@ -369,7 +382,7 @@
+           const team = snapshot.teams.find(item => item.abbreviation === row.team) ?? { id: 0, abbreviation: row.team ?? "—", name: row.team ?? "Unknown team" };
+           return <div key={row.key} data-player={row.key} data-team={row.team ?? ""} className={cx(styles.trendRow, columns.length > 2 && styles.trendRowStacked)}>
+             <TeamMark team={team} logo={row.team ? logos[row.team] : null} size={44} />
+-            <span className={styles.trendWho}><strong>{row.name}</strong><small>{row.meta}</small><small>{row.detail}</small>{row.badges.length > 0 && <span className={styles.trendBadges}>{row.badges.map(badge => <i key={badge}>{badge}</i>)}</span>}</span>
++            <span className={styles.trendWho}><strong>{row.name}</strong><small>{row.meta}{row.weekGames != null && <> · <Count value={row.weekGames} tier={countsFor(snapshot, true).gp(row.weekGames)} /> GP this week</>}</small><small>{row.detail}</small>{row.badges.length > 0 && <span className={styles.trendBadges}>{row.badges.map(badge => <i key={badge}>{badge}</i>)}</span>}</span>
+             <span className={cx(styles.trendValue, row.tone === "down" && styles.trendDown)}><strong>{row.value}</strong><small>{row.label}</small></span>
+           </div>;
+         })}
+@@ -547,7 +560,7 @@
+                       <span className={cx(styles.cell, game && (game.home ? styles.homeCell : styles.awayCell), game && !game.counted && styles.dimmed)}>{game && <><TeamMark team={game.opponent} logo={teamLogos[game.opponent.abbreviation]} size={40} />{!game.home && <i className={styles.awayMark}>@</i>}</>}</span>
+                     </span>;
+                   })}</div>
+-                  <p className={styles.leaderMeta}><b>{row.remainingGames}</b> {trusted ? "GAMES LEFT" : "KNOWN LEFT"} · <b>{row.offNightGames}</b> {trusted ? "OFF-NIGHTS" : "KNOWN OFF-NIGHTS"} · {trusted ? `#${row.rank} by Week Score` : "unranked"}</p>
++                  <p className={styles.leaderMeta}><Count value={row.remainingGames} tier={countsFor(snapshot, trusted).gp(row.remainingGames)} /> {trusted ? "GAMES LEFT" : "KNOWN LEFT"} · <Count value={row.offNightGames} tier={countsFor(snapshot, trusted).off(row.offNightGames)} /> {trusted ? "OFF-NIGHTS" : "KNOWN OFF-NIGHTS"} · {trusted ? `#${row.rank} by Week Score` : "unranked"}</p>
+                 </div>;
+               }) : <p className={styles.noGames}>{snapshot.selectedDates.length ? "No remaining games" : "No days selected"}</p>}
+               {!!itinerary.length && <div className={styles.itinerary}><h3>SELECTED FUTURE GAMES</h3><div className={styles.itineraryGames}>{itinerary.slice(0, 8).map(game => {
+@@ -557,7 +570,7 @@
+               })}</div>{itinerary.length > 8 && <p>+{itinerary.length - 8} more selected games · Full itinerary on this page</p>}</div>}
+               </div>
+               <footer className={styles.gridFooter}>
+-                <div className={styles.legend}><span><i className={styles.legendAway}>@</i>Away</span><span><i className={styles.legendHome} />Home</span><span><i className={styles.legendOffColumn} />Off-night (≤8 games)</span><span><b>SELECTED</b> {coveredDays(snapshot)}</span></div>
++                <div className={styles.legend}><span><i className={styles.legendAway}>@</i>Away</span><span><i className={styles.legendHome} />Home</span><span><i className={styles.legendOffColumn} />Off-night (≤8 games)</span>{trusted && <CountLegend />}<span><b>SELECTED</b> {coveredDays(snapshot)}</span></div>
+                 <p><span>Remaining after {timeLabel(snapshot.generatedAt)} · NHL schedule checked {timeLabel(snapshot.source.fetchedAt)} · Score uses games, off-nights and slate density. No odds or player projections.</span><strong className={styles.gridWatermark}>{!trusted ? "PREVIEW ONLY · REFRESH / CHECK SOURCE" : "SCHEDULE ONLY"}</strong></p>
+               </footer>
+               </>}
+--- a/web/components/SocialShare/SocialShare.module.scss
++++ b/web/components/SocialShare/SocialShare.module.scss
+@@ -164,7 +164,7 @@
+ .logoFallback { display: grid; place-items: center; width: 100%; height: 100%; font-size: 13px; font-weight: 800; color: v.$color-white; letter-spacing: 0.02em; }
+ .gridGames { display: grid; justify-items: center; line-height: 1;
+   strong { font: 600 21px "Share Martian Mono", monospace; color: v.$color-white; }
+-  small { font-size: 10px; font-weight: 700; color: v.$text-secondary; margin-top: 3px; letter-spacing: 0.03em; white-space: nowrap; span { color: v.$success-color; } }
++  small { font-size: 10px; font-weight: 700; color: v.$text-secondary; margin-top: 3px; letter-spacing: 0.03em; white-space: nowrap; b { font-size: 12px; } }
+   .noOff { color: v.$text-secondary !important; }
+ }
+ // Week Score tiers by rank: green / yellow / white / orange / red.
+@@ -172,6 +172,12 @@
+ .tierRail::before { content: ""; position: absolute; inset: 4px auto 4px -9px; width: 4px; border-radius: 2px; background: var(--tier); }
+ .tierBest { --tier: #{$tier-best}; } .tierGood { --tier: #{$tier-good}; } .tierAverage { --tier: #{$tier-average}; } .tierBelow { --tier: #{$tier-below}; } .tierWorst { --tier: #{$tier-worst}; }
+ .gridScore { color: var(--tier) !important; }
++// GP and off-night counts coloured per column: most = green, 2nd = white, between = yellow, least = red (TJ, ticket 12).
++.countHigh { --count: #{$tier-best}; } .countSecond { --count: #ffffff; } .countBetween { --count: #{$tier-good}; } .countLow { --count: #{$tier-worst}; } .countNeutral { --count: #ffffff; }
++b.countHigh, b.countSecond, b.countBetween, b.countLow, b.countNeutral { color: var(--count) !important; font-weight: 800; }
++.countLegend { gap: 4px !important;
++  i { width: 12px !important; height: 12px !important; border-radius: 50% !important; border: 0 !important; background: var(--count); }
++}
+ .tierLegend { gap: 4px !important;
+   i { width: 18px !important; height: 10px !important; border-radius: 3px !important; border: 0 !important; background: var(--tier); }
+ }
+--- a/web/e2e/social-share.spec.ts
++++ b/web/e2e/social-share.spec.ts
+@@ -12,6 +12,7 @@
+ import { buildTrendLayer, deploymentChanges, hotCold, ownershipMovers, rateStandouts } from "../lib/socialShare/trends";
+ import { fictionalTrendSources } from "../lib/socialShare/trendsFixture";
+ import { editionLabel } from "../lib/socialShare/edition";
++import { countTiers } from "../lib/socialShare/mondayGrid";
+ 
+ const evidence = process.env.SOCIAL_SHARE_EVIDENCE_DIR || "/tmp/fhf-social-card-readiness-evidence-20261008";
+ const upcomingWeek = calendarWeekStart(new Date(Date.now() + 7 * 86400000).toISOString());
+@@ -349,7 +350,7 @@
+   await open(page);
+   const square = page.getByTestId("share-square"), download = page.getByRole("button", { name: "Download PNG", exact: true });
+   await expect(download).toBeEnabled();
+-  await expect(square.locator('[data-team="NJD"] b')).toHaveText("NJD");
++  await expect(square.locator('[data-team="NJD"] b:not([data-count-tier])')).toHaveText("NJD");
+   await downloadedPng(page, "monday-grid-missing-logo");
+   source.mode = "partial";
+   await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+@@ -788,3 +789,29 @@
+   await expect(tiles.first()).toContainText("No game in the last two weeks");
+   await expect(square).not.toContainText("Recent form unavailable");
+ });
++
++test("GP and off-night counts are coloured per column on Monday and Wednesday editions", async ({ page }) => {
++  const source = await install(page);
++  source.mode = "league";
++  for (const format of ["game-grid", "remaining-week"]) {
++    await open(page, format);
++    const square = page.getByTestId("share-square"), graphic = page.getByRole("combobox", { name: /^Graphic/ });
++    await expect(square.locator("[data-team][data-tier]")).toHaveCount(32);
++    const edition = source.latest!;
++    expect(edition.format).toBe(format);
++    const gp = countTiers(edition.rows.map(row => row.remainingGames)), off = countTiers(edition.rows.map(row => row.offNightGames));
++    const rows = await square.locator("[data-team][data-tier]").evaluateAll(nodes => nodes.map(node => [node.getAttribute("data-team"), node.getAttribute("data-gp-tier"), node.getAttribute("data-off-tier")]));
++    expect(rows).toEqual(edition.rows.map(row => [row.team.abbreviation, gp.get(row.remainingGames), off.get(row.offNightGames)]));
++    expect(rows.some(([, gpTier, offTier]) => gpTier !== offTier)).toBe(true);
++    expect(new Set(rows.map(([, gpTier]) => gpTier))).toContain("high");
++    expect(new Set(rows.map(([, gpTier]) => gpTier))).toContain("low");
++    await expect(square).toContainText("GP · OFF");
++    await downloadedPng(page, `counts-${format}-grid`);
++    for (const card of ["pickups-20", "easiest", "leaders"]) {
++      await graphic.selectOption(card);
++      const counts = await square.locator("[data-count-tier]").evaluateAll(nodes => nodes.map(node => node.getAttribute("data-count-tier")));
++      expect(counts.length).toBeGreaterThan(0);
++      expect(counts.every(tier => ["high", "second", "between", "low"].includes(tier!))).toBe(true);
++    }
++  }
++});
+--- a/web/lib/socialShare/mondayGrid.ts
++++ b/web/lib/socialShare/mondayGrid.ts
+@@ -45,3 +45,21 @@
+     })),
+   }));
+ }
++
++/**
++ * Count colouring for a GP or off-nights column (TJ, ticket 12). Distinct values, highest first:
++ * highest = green ("high"), second-highest = white ("second"), lowest = red ("low"), anything in
++ * between = yellow ("between"). Two distinct values: green and red. One value: neutral (white), never
++ * red. Ties share their tier. Each column is ranked on its own.
++ */
++export type CountTier = "high" | "second" | "between" | "low" | "neutral";
++export function countTiers(values: readonly number[]): Map<number, CountTier> {
++  const distinct = [...new Set(values)].sort((a, b) => b - a);
++  return new Map(distinct.map((value, index): [number, CountTier] => [value,
++    distinct.length === 1 ? "neutral" : index === 0 ? "high" : index === distinct.length - 1 ? "low" : index === 1 ? "second" : "between"]));
++}
++
++/** GP and off-night tiers over every team row in the edition (its selected dates). */
++export function editionCountTiers(snapshot: SocialShareSnapshot) {
++  return { gp: countTiers(snapshot.rows.map(row => row.remainingGames)), off: countTiers(snapshot.rows.map(row => row.offNightGames)) };
++}
+--- a/web/lib/socialShare/mondayGrid.test.ts
++++ b/web/lib/socialShare/mondayGrid.test.ts
+@@ -2,7 +2,7 @@
+ import calcWeekScore from "components/GameGrid/utils/calcWeekScore";
+ import { buildScheduleSnapshot, selectScheduleDates, weekDates } from "./schedule";
+ import { FICTIONAL_DAILY_GAMES, fictionalLeagueWeek } from "./fixtures";
+-import { mondayGridRows } from "./mondayGrid";
++import { countTiers, editionCountTiers, mondayGridRows } from "./mondayGrid";
+ import type { SocialScheduleData } from "./types";
+ 
+ const weekStart = "2026-10-26", now = "2026-10-26T12:00:00Z", dates = weekDates(weekStart);
+@@ -79,3 +79,31 @@
+     expect(rows.find(row => row.team.id === fourth.awayTeam.id)!.cells.find(cell => cell.date === fourth.gameDate)!.selected).toBe(false);
+   });
+ });
++
++describe("GP and off-night count tiers (ticket 12)", () => {
++  const tiers = (values: number[]) => [...new Set(values)].sort((a, b) => b - a).map(value => countTiers(values).get(value));
++  it("colours distinct values highest first: green, white, yellow…, red", () => {
++    expect(tiers([4, 3, 2, 1])).toEqual(["high", "second", "between", "low"]);
++    expect(tiers([4, 3, 2])).toEqual(["high", "second", "low"]);
++    expect(tiers([5, 4, 3, 2, 1])).toEqual(["high", "second", "between", "between", "low"]);
++  });
++  it("handles two values, one value and ties", () => {
++    expect(tiers([3, 2, 3])).toEqual(["high", "low"]);
++    expect(tiers([3, 3, 3])).toEqual(["neutral"]);
++    const tied = countTiers([4, 4, 3, 3, 3, 2, 1, 1]);
++    expect([tied.get(4), tied.get(3), tied.get(2), tied.get(1)]).toEqual(["high", "second", "between", "low"]);
++    expect(countTiers([])).toEqual(new Map());
++  });
++  it("ranks the GP and off-night columns independently over the edition", () => {
++    const snapshot = edition(), { gp, off } = editionCountTiers(snapshot);
++    expect(gp).toEqual(countTiers(snapshot.rows.map(row => row.remainingGames)));
++    expect(off).toEqual(countTiers(snapshot.rows.map(row => row.offNightGames)));
++    expect(snapshot.rows.some(row => gp.get(row.remainingGames) !== off.get(row.offNightGames))).toBe(true);
++    // Synthetic: A has the most games but the fewest off-nights, so it is green on GP and red on OFF.
++    const rows = [["A", 4, 0], ["B", 3, 2], ["C", 2, 1]].map(([abbreviation, remainingGames, offNightGames]) => ({ team: { abbreviation }, remainingGames, offNightGames }));
++    const split = editionCountTiers({ rows } as unknown as Parameters<typeof editionCountTiers>[0]);
++    expect([split.gp.get(4), split.off.get(0)]).toEqual(["high", "low"]);
++    expect([split.gp.get(3), split.off.get(2)]).toEqual(["second", "high"]);
++    expect([split.gp.get(2), split.off.get(1)]).toEqual(["low", "second"]);
++  });
++});

@@ -1,0 +1,18 @@
+{
+  "head": "a6e9f8b61903ed4bb2bba6b21bf8597f51ac85d0",
+  "branch": "octoberBranch",
+  "files": [
+    {
+      "file": "web/components/StatsPage/PlayerSearchBar.tsx",
+      "sha256": "ddd48a75a636aeba2721adf79f50bd44561c35d8399cc9e48e1b822c69bcc33f",
+      "matches_tested_snapshot": true
+    },
+    {
+      "file": "web/components/StatsPage/PlayerSearchBar.test.tsx",
+      "sha256": "33edc3fecc41818280146ed2cc6f3bec9172630418f31b3b1258a0f5366ce6e1",
+      "matches_tested_snapshot": true
+    }
+  ],
+  "patch_sha256": "f5a6c648b2dd0d34932a49d3c11152b72677b2dc271e17600a9af8b534c74a69",
+  "diff_check": 0
+}

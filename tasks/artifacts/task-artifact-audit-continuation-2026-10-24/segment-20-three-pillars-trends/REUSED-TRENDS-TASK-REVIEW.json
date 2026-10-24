@@ -1,0 +1,14 @@
+{
+  "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md",
+  "sha256": "3e866cc5a143fe69bad009e971550c75d7bf1bf72a6feaf0151e704439425003",
+  "bytes": 17593,
+  "lines": 99,
+  "coverage": "reused-prior-full-review",
+  "prior_review": {
+    "path": "tasks/TASKS/three-pillars-analytics/trends/tasks-prd-trends.md",
+    "sha256": "3e866cc5a143fe69bad009e971550c75d7bf1bf72a6feaf0151e704439425003",
+    "coverage": "content-reviewed"
+  },
+  "prior_coverage_record": "tasks/artifacts/task-artifact-audit-continuation-2026-10-24/segment-19-start-chart/CONTINUATION.json",
+  "scope": "Unchanged exact-hash full documentary review reused. Body not reread; no new app/runtime/production acceptance or review scope inferred."
+}

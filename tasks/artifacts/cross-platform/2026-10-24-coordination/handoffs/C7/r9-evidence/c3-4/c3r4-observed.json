@@ -1,0 +1,44 @@
+{
+  "S1": {
+    "leaks": [],
+    "copies": [
+      "200: Your refund request couldn't be confirmed right now.",
+      "201: Your refund request couldn't be confirmed right now.",
+      "204: Your refund request couldn't be confirmed right now.",
+      "301: Your refund request couldn't be confirmed right now.",
+      "400: Check your refund request: choose a purchase and reason, and write an explanation of 10 to 2,000 characters.",
+      "401: Your sign-in has expired.",
+      "402: Your refund request couldn't be confirmed right now.",
+      "403: Your refund request couldn't be confirmed right now.",
+      "404: This purchase isn't eligible for an account refund request.",
+      "405: Your refund request couldn't be confirmed right now.",
+      "409: This purchase already has an open refund request.",
+      "410: Your refund request couldn't be confirmed right now.",
+      "418: Your refund request couldn't be confirmed right now.",
+      "422: The 7-day refund request window for this purchase has closed.",
+      "429: Your refund request couldn't be confirmed right now.",
+      "500: Your refund request couldn't be confirmed right now.",
+      "502: Your refund request couldn't be confirmed right now.",
+      "503: Your refund request couldn't be confirmed right now."
+    ]
+  },
+  "S3": {
+    "infra 404 HTML": "notEligible",
+    "409 with unrelated code": "exists",
+    "422 with unrelated code": "windowClosed"
+  },
+  "S4": {
+    "calls": 2,
+    "url": "/api/v1/account/draft-pro/refund-requests",
+    "method": "POST",
+    "headers": {
+      "Authorization": "Bearer token",
+      "Content-Type": "application/json"
+    },
+    "body": {
+      "purchaseId": "purchase-1",
+      "reason": "other",
+      "explanation": "The draft board was unavailable."
+    }
+  }
+}

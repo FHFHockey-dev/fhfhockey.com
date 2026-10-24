@@ -1,0 +1,183 @@
+{
+  "path": "tasks/TASKS/three-pillars-analytics/rolling-player-metrics/rolling-player-metrics-audit-notes.md",
+  "sha256": "56d54c886d3aeebb2aabb73ba30e449378166a57d086a1821dd8b75d6eff7a1c",
+  "sections": [
+    {
+      "line": 3,
+      "text": "## 1.1 Recompute Flow Map"
+    },
+    {
+      "line": 160,
+      "text": "## 1.2 Direct Helper Responsibilities"
+    },
+    {
+      "line": 233,
+      "text": "## 1.3 Upstream Table Inventory and Classification"
+    },
+    {
+      "line": 300,
+      "text": "## 1.4 Upstream Builders That Affect Rolling Semantics"
+    },
+    {
+      "line": 419,
+      "text": "## 1.5 Draft Upstream Tables Section"
+    },
+    {
+      "line": 488,
+      "text": "## 2.1 Metric Family Inventory"
+    },
+    {
+      "line": 717,
+      "text": "## 2.2 Column-by-Column Inventory"
+    },
+    {
+      "line": 1252,
+      "text": "## 5.1 Draft Final `Metric Families` and `Column-by-Column Inventory` Sections"
+    },
+    {
+      "line": 2011,
+      "text": "## 5.2 Draft `WORKING` Section"
+    },
+    {
+      "line": 2085,
+      "text": "## 5.3 Draft `BROKEN` Section"
+    },
+    {
+      "line": 2113,
+      "text": "## 5.4 Draft `ALMOST` Section"
+    },
+    {
+      "line": 2171,
+      "text": "## 5.5 Draft `NEEDS REVIEW` Section"
+    },
+    {
+      "line": 2223,
+      "text": "## 5.6 Draft `Explanation / Rationale` Section"
+    },
+    {
+      "line": 2363,
+      "text": "## 5.7 Draft `Suggested Metric Additions` Section"
+    },
+    {
+      "line": 2608,
+      "text": "## 5.8 Draft `Remediation Plan`"
+    },
+    {
+      "line": 2920,
+      "text": "## 5.9 Draft `Final Output Structure Check`"
+    },
+    {
+      "line": 2976,
+      "text": "## 5.10 Draft `Completeness Cross-Check`"
+    },
+    {
+      "line": 3087,
+      "text": "## 2.3 Current Shorthand Formula Inventory"
+    },
+    {
+      "line": 3369,
+      "text": "## 2.4 Additive Counting Stats and Baseline Fields Audit"
+    },
+    {
+      "line": 3527,
+      "text": "## 2.5 Bounded Percentage and Ratio Metrics Audit"
+    },
+    {
+      "line": 3752,
+      "text": "## 2.6 `/60` Rate Metrics Audit"
+    },
+    {
+      "line": 3899,
+      "text": "## 2.7 PP Usage and Role-Context Metrics Audit"
+    },
+    {
+      "line": 4027,
+      "text": "## 2.8 Historical Baseline Fields Audit"
+    },
+    {
+      "line": 4207,
+      "text": "## 2.9 Actual `lastN` Window Behavior by Metric Family"
+    },
+    {
+      "line": 4382,
+      "text": "## 2.10 Canonical `lastN` Recommendation and Naming Mismatch Review"
+    },
+    {
+      "line": 4577,
+      "text": "## 3.1 Live Validation Player Set"
+    },
+    {
+      "line": 4728,
+      "text": "## 3.2 Manual Source Reconstruction by Major Metric Family"
+    },
+    {
+      "line": 4975,
+      "text": "## 3.3 Stored vs Source Comparison and Mismatch Cause Classification"
+    },
+    {
+      "line": 5209,
+      "text": "## 3.4 Targeted Recomputes to Separate Stale Rows from Current-Code Behavior"
+    },
+    {
+      "line": 5485,
+      "text": "## 3.5 Draft `Live Validation Examples` Section"
+    },
+    {
+      "line": 5645,
+      "text": "## 3.6 Evidence-Based Status Assignment for Validated Families"
+    },
+    {
+      "line": 5894,
+      "text": "## 4.1 Reverse-Engineered Current GP% and Availability Logic"
+    },
+    {
+      "line": 6121,
+      "text": "## 4.2 Current GP% Behavior vs Intended Team-Game Availability Semantics"
+    },
+    {
+      "line": 6368,
+      "text": "## 4.3 Intended GP% Model for Career, Season, and Rolling Windows"
+    },
+    {
+      "line": 6639,
+      "text": "## 4.4 Can the Current Schema Represent the Intended GP% Model Cleanly?"
+    },
+    {
+      "line": 6876,
+      "text": "## 4.5 Draft `Schema Change Recommendations` for GP% and Availability"
+    },
+    {
+      "line": 7117,
+      "text": "## Production Authorization Verification — 2026-07-30"
+    }
+  ],
+  "read_ranges": [
+    [
+      2085,
+      2222
+    ],
+    [
+      2608,
+      3086
+    ],
+    [
+      7117,
+      7129
+    ]
+  ],
+  "unreviewed_ranges": [
+    [
+      1,
+      2084
+    ],
+    [
+      2223,
+      2607
+    ],
+    [
+      3087,
+      7116
+    ]
+  ],
+  "disposition": "Partially reviewed historical precursor, not generated-only and not full content acceptance. Newer primary contracts/tasks fully read; retain lower-priority body for later optional detailed coverage."
+}

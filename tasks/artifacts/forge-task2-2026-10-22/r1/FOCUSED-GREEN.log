@@ -1,0 +1,25 @@
+
+> web@0.1.0 test
+> vitest --run lib/projections/runProjectionV2.test.ts lib/projections/queries/skater-queries.test.ts .task2-r1-adversarial.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:60061) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:60062) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:60060) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ .task2-r1-adversarial.test.ts (11 tests) 5ms
+stderr | lib/projections/queries/skater-queries.test.ts > counted rolling skater history (legacy window scan) > completes the exact bounded scope at 0 rows
+forge_latest_rolling_rows is not deployed (PGRST202); FORGE reads rolling rows by the legacy window scan.
+
+ ✓ lib/projections/queries/skater-queries.test.ts (110 tests) 88ms
+ ✓ lib/projections/runProjectionV2.test.ts (112 tests) 28ms
+
+ Test Files  3 passed (3)
+      Tests  233 passed (233)
+   Start at  12:28:57
+   Duration  1.01s (transform 370ms, setup 9ms, collect 686ms, tests 121ms, environment 939ms, prepare 138ms)
+

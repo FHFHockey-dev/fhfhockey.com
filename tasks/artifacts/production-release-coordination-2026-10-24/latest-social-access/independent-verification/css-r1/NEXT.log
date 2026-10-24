@@ -1,0 +1,13 @@
+   ▲ Next.js 15.5.22
+   - Local:        http://127.0.0.1:3140
+   - Network:      http://127.0.0.1:3140
+   - Experiments (use with caution):
+     ✓ externalDir
+
+ ✓ Starting...
+ ✓ Ready in 1123ms
+ ○ Compiling /social-share/[format] ...
+ ✓ Compiled /social-share/[format] in 1085ms (1333 modules)
+An error occurred! For more details, see the full error text at https://go.apollo.dev/c/err#%7B%22version%22%3A%223.14.0%22%2C%22message%22%3A17%2C%22args%22%3A%5B%5D%7D
+ GET /social-share/game-grid 200 in 1724ms
+[?25h

@@ -1,0 +1,191 @@
+
+ RUN  v3.2.7 /private/tmp/claude-501/-Users-tim-Code-fhfhockey-com/b948d22c-6ba8-446f-ba36-c2db70333467/scratchpad/c7/c3/web
+
+(node:55523) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/account/InSeasonPanel.test.tsx > shows the agreed price, Eastern cutoff and monthly unavailability without legacy checkout 36ms
+ ✓ components/account/InSeasonPanel.test.tsx > offers no purchase while access is idle 2ms
+ ✓ components/account/InSeasonPanel.test.tsx > offers no purchase while access is loading 2ms
+ ✓ components/account/InSeasonPanel.test.tsx > offers no purchase while access is error 3ms
+ ✓ components/account/InSeasonPanel.test.tsx > retains existing access without selling another purchase 2ms
+ ✓ components/account/InSeasonPanel.test.tsx > sends only the plan to the new authenticated checkout and displays transient failure 19ms
+ ✓ components/account/InSeasonPanel.test.tsx > routes shared premium upsells to in-season and anonymous sign-in separately 3ms
+ ✓ components/account/InSeasonPanel.test.tsx > ignores an old account's checkout response after authentication changes 65ms
+ ✓ components/account/InSeasonPanel.test.tsx > starts monthly only after availability and shows pending verification, never grants access locally 11ms
+ ✓ components/account/InSeasonPanel.test.tsx > rejects incorrect monthly payment destination https://checkout.stripe.com/legacy 9ms
+ ✓ components/account/InSeasonPanel.test.tsx > rejects incorrect monthly payment destination https://invoice.stripe.com.evil.example/path 9ms
+ ✓ components/account/InSeasonPanel.test.tsx > rejects incorrect monthly payment destination https://user:pass@invoice.stripe.com/path 8ms
+ ✓ components/account/InSeasonPanel.test.tsx > rejects incorrect monthly payment destination http://invoice.stripe.com/path 8ms
+ ✓ components/account/InSeasonPanel.test.tsx > rejects incorrect monthly payment destination https://invoice.stripe.com:444/path 9ms
+ ✓ components/account/InSeasonPanel.test.tsx > explains below-minimum unavailability without enabling monthly 5ms
+ ✓ components/account/InSeasonPanel.test.tsx > allows owner cancellation independently of entitlement state ready and preserves manual plans 12ms
+ ✓ components/account/InSeasonPanel.test.tsx > allows owner cancellation independently of entitlement state error and preserves manual plans 13ms
+ ✓ components/account/InSeasonPanel.test.tsx > reuses the cancellation request ID after an uncertain response and never claims success 20ms
+ ✓ components/account/InSeasonPanel.test.tsx > clears old billing details on account change and ignores delayed owner readback 55ms
+ ✓ components/account/InSeasonPanel.test.tsx > does not call owner lookup until management is enabled 1ms
+ ✓ components/account/InSeasonPanel.test.tsx > does not equate a billing stop request with completed provider cleanup or revoke unrelated access 3ms
+ ✓ components/account/InSeasonPanel.test.tsx > opens the verified monthly invoice destination without redirecting to the legacy checkout 8ms
+ ✓ components/account/InSeasonPanel.test.tsx > ignores an old account's accepted cancellation after sign-out 62ms
+ ✓ components/account/InSeasonPanel.test.tsx > shows completed stop readback without claiming that an accepted cancellation is still pending 15ms
+ ✓ components/account/InSeasonPanel.test.tsx > preserves an unresolved cancellation ID through same-owner TOKEN_REFRESHED 26ms
+ ✓ components/account/InSeasonPanel.test.tsx > preserves an unresolved cancellation ID through same-owner SIGNED_IN 22ms
+ ✓ components/account/InSeasonPanel.test.tsx > clears unresolved cancellation IDs on owner_change 22ms
+ ✓ components/account/InSeasonPanel.test.tsx > clears unresolved cancellation IDs on owner_change_without_event 20ms
+ ✓ components/account/InSeasonPanel.test.tsx > clears unresolved cancellation IDs on sign_out_then_same_owner 22ms
+(node:55538) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > prefers a trimmed saved avatar and preserves the broken-image initials fallback 36ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > uses metadata when the profile avatar is absent: null 6ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > uses metadata when the profile avatar is absent: {"avatar_url":null} 5ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > uses metadata when the profile avatar is absent: {"avatar_url":"   "} 4ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > retains the displayed avatar after a profile read response error 9ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > retains the displayed avatar after a profile read rejection error 6ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > uses picture metadata when there is no saved avatar or avatar_url 3ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > keeps the saved avatar during a same-user session event whose profile read fails 3ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > ignores an older refresh that finishes after the latest refresh 10ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > ignores a previous account's profile response after switching accounts 6ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > ignores a pending avatar response after local sign-out 6ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > does not let a refresh scoped to a previous user read the new user's profile 3ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > fails closed to signed out and clears only targeted auth state when local sign-out rejects 6ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > reviewer: ignores initial session resolving after account switch 1ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > reviewer: ignores initial session resolving after sign-out event 1ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > reviewer: ignores initial session rejection after account switch 1ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > ignores initial session resolution after explicit local sign-out without an auth event 2ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > reviewer: removes a previously saved avatar after a null/deleted read: null 5ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > reviewer: removes a previously saved avatar after a null/deleted read: {"avatar_url":null} 5ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > reviewer: removes a previously saved avatar after a null/deleted read: {"avatar_url":" "} 5ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > reviewer: an old same-user session response cannot replace a new session avatar 5ms
+ ✓ __tests__/contexts/AuthProviderContext.test.tsx > AuthProviderContext > reviewer: latest failed refresh retains saved avatar and rejects older success 8ms
+(node:55542) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ × ../controls/c7C3.test.tsx > X1 two subscriptions keep separate IDs across a reload; accepting one leaves the other 97ms
+   → expected { subscriptionId: 'sub_a', …(1) } to deeply equal { subscriptionId: 'sub_a', …(1) }
+ × ../controls/c7C3.test.tsx > X2 a definite server rejection (503) keeps the ID for a same-owner retry after reload 25ms
+   → expected 'dbd5d341-aa68-45f9-8266-073394924a45' to be 'cf03fb63-9f5c-4c6d-a3df-e6da6a3c66dd' // Object.is equality
+ × ../controls/c7C3.test.tsx > X3 hostile subscription keys in storage are never sent or prototype-polluting 13ms
+   → expected [ 'constructor', 'sub_a/../x' ] to deeply equal [ 'sub_a' ]
+ ✓ ../controls/c7C3.test.tsx > X4 (observation) a 36-dash request ID passes both the client and server regex and is reused 13ms
+ × ../controls/c7C3.test.tsx > X5 nothing persists before the first cancel, and no token/email is ever written 17ms
+   → .toMatch() expects to receive a string, but got object
+ × ../controls/c7C3.test.tsx > X6 resetSupabaseBrowserAuthState with no panel mounted clears only the exact key (signOut resolves) 1ms
+   → expected { session: 'x', upper: 'x', …(3) } to deeply equal { session: null, upper: null, …(3) }
+ × ../controls/c7C3.test.tsx > X6 resetSupabaseBrowserAuthState with no panel mounted clears only the exact key (signOut rejects) 0ms
+   → expected { session: 'x', upper: 'x', …(3) } to deeply equal { session: null, upper: null, …(3) }
+(node:55544) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/account/InSeasonPanel.rollout.test.tsx > explains free rollout through the actual route and hook without a disabled purchase pitch 32ms
+ ✓ components/account/InSeasonPanel.rollout.test.tsx > preserves paid membership and cancellation controls while rollout is free 26ms
+ ✓ components/account/InSeasonPanel.rollout.test.tsx > preserves grandfathered membership and cancellation controls while rollout is free 18ms
+ ✓ components/account/InSeasonPanel.rollout.test.tsx > separates a failed membership check from working free sync 6ms
+ ✓ components/account/InSeasonPanel.rollout.test.tsx > retains the purchase presentation when the server explicitly enforces premium 7ms
+ ✓ components/account/InSeasonPanel.rollout.test.tsx > withholds the purchase pitch when rollout readback fails 4ms
+ ✓ components/account/InSeasonPanel.rollout.test.tsx > removes the free-rollout and membership state on sign-out 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 6 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  ../controls/c7C3.test.tsx > X1 two subscriptions keep separate IDs across a reload; accepting one leaves the other
+AssertionError: expected { subscriptionId: 'sub_a', …(1) } to deeply equal { subscriptionId: 'sub_a', …(1) }
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "requestId": "da013c1d-02f8-47c6-aa0b-e11240a7f4c7",[39m
+[31m+   "requestId": "3df4361d-3769-4c62-937b-6f3f31643ba0",[39m
+[2m    "subscriptionId": "sub_a",[22m
+[2m  }[22m
+
+ ❯ ../controls/c7C3.test.tsx:47:16
+     45|   cleanup(); render(<InSeasonPanel />); await cancel(0); await cancel(…
+     46|   const s = sent(); observed.X1 = s.map(x => `${x.subscriptionId}:${x.…
+     47|   expect(s[2]).toEqual(s[0]); expect(s[3]).toEqual(s[1]); expect(s[0].…
+       |                ^
+     48|   cancelBehaviour = async () => ({ ok: true, json: async () => ({ data…
+     49|   fireEvent.click((await screen.findAllByRole("button", { name: "Cance…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/6]⎯
+
+ FAIL  ../controls/c7C3.test.tsx > X2 a definite server rejection (503) keeps the ID for a same-owner retry after reload
+AssertionError: expected 'dbd5d341-aa68-45f9-8266-073394924a45' to be 'cf03fb63-9f5c-4c6d-a3df-e6da6a3c66dd' // Object.is equality
+
+Expected: [32m"cf03fb63-9f5c-4c6d-a3df-e6da6a3c66dd"[39m
+Received: [31m"dbd5d341-aa68-45f9-8266-073394924a45"[39m
+
+ ❯ ../controls/c7C3.test.tsx:59:26
+     57|   cleanup(); render(<InSeasonPanel />); await cancel(0, "Cancellation …
+     58|   const s = sent(); observed.X2 = { same: s[0].requestId === s[1].requ…
+     59|   expect(s[1].requestId).toBe(s[0].requestId);
+       |                          ^
+     60| });
+     61| it("X3 hostile subscription keys in storage are never sent or prototyp…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/6]⎯
+
+ FAIL  ../controls/c7C3.test.tsx > X3 hostile subscription keys in storage are never sent or prototype-polluting
+AssertionError: expected [ 'constructor', 'sub_a/../x' ] to deeply equal [ 'sub_a' ]
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[32m-   "sub_a",[39m
+[31m+   "constructor",[39m
+[31m+   "sub_a/../x",[39m
+[2m  ][22m
+
+ ❯ ../controls/c7C3.test.tsx:66:40
+     64|   api(); render(<InSeasonPanel />); await cancel(0);
+     65|   const stored = JSON.parse(sessionStorage.getItem(KEY)!); observed.X3…
+     66|   expect(Object.keys(stored.requests)).toEqual(["sub_a"]); expect(({} …
+       |                                        ^
+     67|   expect(sent()[0].requestId).not.toBe("11111111-2222-4333-8444-555555…
+     68| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/6]⎯
+
+ FAIL  ../controls/c7C3.test.tsx > X5 nothing persists before the first cancel, and no token/email is ever written
+TypeError: .toMatch() expects to receive a string, but got object
+ ❯ ../controls/c7C3.test.tsx:79:46
+     77|   await cancel(0); const raw = sessionStorage.getItem(KEY)!;
+     78|   observed.X5 = { before, raw };
+     79|   expect(before).toBeNull(); expect(raw).not.toMatch(/"t"|access_token…
+       |                                              ^
+     80| });
+     81| it.each(["resolves", "rejects"])("X6 resetSupabaseBrowserAuthState wit…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/6]⎯
+
+ FAIL  ../controls/c7C3.test.tsx > X6 resetSupabaseBrowserAuthState with no panel mounted clears only the exact key (signOut resolves)
+ FAIL  ../controls/c7C3.test.tsx > X6 resetSupabaseBrowserAuthState with no panel mounted clears only the exact key (signOut rejects)
+AssertionError: expected { session: 'x', upper: 'x', …(3) } to deeply equal { session: null, upper: null, …(3) }
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  {[22m
+[32m-   "local": null,[39m
+[31m+   "local": "x",[39m
+[2m    "old": "keep",[22m
+[32m-   "session": null,[39m
+[32m-   "upper": null,[39m
+[31m+   "session": "x",[39m
+[31m+   "upper": "x",[39m
+[2m    "v10": "keep",[22m
+[2m  }[22m
+
+ ❯ ../controls/c7C3.test.tsx:89:17
+     87|     v10: sessionStorage.getItem("fhfh:in-season-cancellation:v10"), lo…
+     88|   observed[`X6 ${outcome}`] = state;
+     89|   expect(state).toEqual({ session: null, upper: null, old: "keep", v10…
+       |                 ^
+     90| });
+     91| 
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/6]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  6 failed | 59 passed (65)
+   Start at  12:50:15
+   Duration  2.61s (transform 202ms, setup 9ms, collect 518ms, tests 900ms, environment 694ms, prepare 128ms)
+

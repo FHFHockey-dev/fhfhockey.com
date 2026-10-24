@@ -1,0 +1,34 @@
+{
+  "retirement-only-red": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "--run",
+      "--config",
+      "vitest.offline.config.mts",
+      "lib/cron/nstCoordination.test.ts",
+      "-t",
+      "keeps retired job79 clearance advisory"
+    ],
+    "exit_code": 1
+  },
+  "candidate-tests": {
+    "command": [
+      "npm",
+      "test",
+      "--",
+      "--run",
+      "--config",
+      "vitest.offline.config.mts",
+      "lib/cron/nstCoordination.test.ts",
+      "lib/cron/nstBurstPlans.test.ts",
+      "lib/cron/nstRateLimitPolicy.test.ts",
+      "lib/nst/requestBudget.test.ts",
+      "lib/cron/cronInventory.test.ts",
+      "lib/cron/combinedCronInventory.test.ts",
+      "__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts"
+    ],
+    "exit_code": 1
+  }
+}

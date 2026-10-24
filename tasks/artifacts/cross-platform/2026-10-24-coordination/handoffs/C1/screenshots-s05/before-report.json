@@ -1,0 +1,89 @@
+[
+  {
+    "label": "all-teams-320",
+    "docOverflowPx": 0,
+    "sectionOverflowPx": 0,
+    "chartOverflowPx": 32,
+    "chartRightEdgeBeyondViewportPx": -11,
+    "charts": 1,
+    "selectValue": "ANA",
+    "alert": null,
+    "retryButtons": 0
+  },
+  {
+    "label": "all-teams-390",
+    "docOverflowPx": 0,
+    "sectionOverflowPx": 0,
+    "chartOverflowPx": 0,
+    "chartRightEdgeBeyondViewportPx": -12,
+    "charts": 1,
+    "selectValue": "ANA",
+    "alert": null,
+    "retryButtons": 0
+  },
+  {
+    "label": "all-teams-1024",
+    "docOverflowPx": 0,
+    "sectionOverflowPx": 0,
+    "chartOverflowPx": 616,
+    "chartRightEdgeBeyondViewportPx": -440,
+    "charts": 32,
+    "selectValue": null,
+    "alert": null,
+    "retryButtons": 0
+  },
+  {
+    "label": "all-teams-1440",
+    "docOverflowPx": 0,
+    "sectionOverflowPx": 0,
+    "chartOverflowPx": 200,
+    "chartRightEdgeBeyondViewportPx": -440,
+    "charts": 32,
+    "selectValue": null,
+    "alert": null,
+    "retryButtons": 0
+  },
+  {
+    "label": "no-ANA-390",
+    "docOverflowPx": 0,
+    "sectionOverflowPx": 0,
+    "chartOverflowPx": 0,
+    "chartRightEdgeBeyondViewportPx": -12,
+    "charts": 0,
+    "selectValue": "BOS",
+    "alert": null,
+    "retryButtons": 0
+  },
+  {
+    "label": "withheld-390",
+    "docOverflowPx": 0,
+    "sectionOverflowPx": 0,
+    "chartOverflowPx": 0,
+    "chartRightEdgeBeyondViewportPx": -12,
+    "charts": 0,
+    "selectValue": "",
+    "alert": "Goalie data is unavailable because the complete season could not be loaded.",
+    "retryButtons": 0
+  },
+  {
+    "label": "goalie page calls 390",
+    "untilFailure": 5,
+    "total": 5
+  },
+  {
+    "label": "withheld-1440",
+    "docOverflowPx": 0,
+    "sectionOverflowPx": 0,
+    "chartOverflowPx": 0,
+    "chartRightEdgeBeyondViewportPx": -440,
+    "charts": 0,
+    "selectValue": null,
+    "alert": "Goalie data is unavailable because the complete season could not be loaded.",
+    "retryButtons": 0
+  },
+  {
+    "label": "goalie page calls 1440",
+    "untilFailure": 5,
+    "total": 5
+  }
+]

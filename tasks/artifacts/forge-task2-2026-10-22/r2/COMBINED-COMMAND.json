@@ -1,0 +1,33 @@
+{
+  "argv": [
+    "/usr/local/bin/npm",
+    "test",
+    "--",
+    "--run",
+    "--config",
+    "review-vitest.config.mts",
+    "lib/projections/queries/skater-queries.test.ts",
+    "lib/projections/runProjectionV2.test.ts",
+    "lib/projections/nativeGoalAccounting.test.ts",
+    "scripts/qualify-native-players-offline.test.ts",
+    "adversarial.test.ts",
+    "fallback-parity.test.ts",
+    "lib/projections/utils/market-output-builders.test.ts",
+    "lib/projections/utils/devig.test.ts",
+    "lib/projections/uncertainty.test.ts",
+    "lib/projections/dispersion.test.ts",
+    "lib/projections/goalieModel.test.ts",
+    "lib/projections/goalie/goalieOutcomes.test.ts"
+  ],
+  "cwd": "/tmp/fhfh-task2-r2-d3c181zf/web",
+  "environment": {
+    "PATH": "/tmp/fhfh-task2-r2-d3c181zf/verification/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin",
+    "TMPDIR": "/tmp",
+    "CI": "true",
+    "NODE_ENV": "test",
+    "NODE_OPTIONS": "--require=/tmp/fhfh-task2-r2-d3c181zf/verification/network-fence.cjs",
+    "NO_COLOR": "1"
+  },
+  "exitCode": 1,
+  "seconds": 10.293822765350342
+}

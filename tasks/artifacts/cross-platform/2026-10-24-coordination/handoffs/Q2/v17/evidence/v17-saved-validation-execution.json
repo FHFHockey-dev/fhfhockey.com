@@ -1,0 +1,29 @@
+{
+  "startedUtc": "2026-10-24T17:45:17.561452+00:00",
+  "finishedUtc": "2026-10-24T17:45:23.954364+00:00",
+  "command": [
+    "/usr/bin/nice",
+    "-n",
+    "15",
+    "/Applications/Unity/Hub/Editor/6000.6.5f1/Unity.app/Contents/MacOS/Unity",
+    "-batchmode",
+    "-quit",
+    "-job-worker-count",
+    "2",
+    "-projectPath",
+    "/Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject",
+    "-executeMethod",
+    "VesperBasin.Editor.SprintV17Validation.Validate",
+    "-logFile",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/Q2/v17/evidence/v17-saved-validation.log"
+  ],
+  "cwd": "/Users/tim/Documents/Codex/2026-10-11/task-12/Resume20261023B/V12ValidationProject",
+  "exitCode": 0,
+  "timedOut": false,
+  "seconds": 6.39,
+  "processCountHints": {
+    "DOTNET_PROCESSOR_COUNT": "2",
+    "JAVA_TOOL_OPTIONS": "-XX:ActiveProcessorCount=2"
+  },
+  "tempDirectory": "/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/"
+}

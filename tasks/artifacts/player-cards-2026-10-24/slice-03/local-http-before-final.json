@@ -1,0 +1,9 @@
+{
+  "route": "http://127.0.0.1:3125/player-cards?player=1002&mode=calendar&start=2026-10-17&end=2026-10-23",
+  "status": 200,
+  "bytes": 317075,
+  "sha256": "e8f5d140bd7d6ee5823a836249debde8c0cee06d2be6cc715d8f25cad402715f",
+  "equalsFrozenHtml": true,
+  "applicationRequests": 1,
+  "externalRequests": 0
+}

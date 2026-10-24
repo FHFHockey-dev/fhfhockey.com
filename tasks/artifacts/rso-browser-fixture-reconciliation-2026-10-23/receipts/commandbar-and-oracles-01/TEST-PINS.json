@@ -1,0 +1,5 @@
+{
+  "web/e2e/roster-schedule-optimizer.spec.ts": "0436f6a95d871fefad6056c8c26d373d765b5714ab414d385fa3a1cb97452599",
+  "web/e2e/roster-schedule-optimizer-fixtures.ts": "19d271e27a97fe2025b8ba0e3f43ded1c34bf9c883c2be4216af939648cb3a2f",
+  "web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss": "ee4dcb45b83366ad35ed2a34a5165ae059790ff232d02af6f9482297c3f7d75d"
+}

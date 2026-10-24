@@ -1,0 +1,11 @@
+--- a/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
++++ b/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.module.scss
+@@ -205,7 +205,7 @@
+ .daySummary > div { display: flex; align-items: baseline; gap: 5px; }
+ .daySummary span { color: v.$text-secondary; }
+ .daySummary strong { font-weight: 600; }
+-.scheduleLegend { color: v.$text-secondary; font-size: 11px; padding: 1px 5px; flex-shrink: 0; }
++.scheduleLegend { color: v.$text-secondary; font-size: 11px; padding: 1px 3px; flex-shrink: 0; }
+ .compactScroll { flex: 1; min-height: 0; overflow: auto; padding: 3px; scroll-padding: calc(var(--day-control-height) + 40px) 4px; }
+ .compactTable { width: 100%; min-width: 610px; display: block; font-size: 12px; font-variant-numeric: tabular-nums; }
+ .compactTable thead { display: block; position: sticky; top: calc(var(--day-control-height) - 3px); z-index: 4; background: v.$draft-surface; }

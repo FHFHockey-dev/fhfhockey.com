@@ -1,0 +1,303 @@
+{
+  "at": "2026-10-24T16:01:57.318017+00:00",
+  "entries": [
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+      "status": "content-reviewed",
+      "bytes": 28167,
+      "lines": 388,
+      "sha256": "a562057b2cafcce30a58dacaee995a372d8409ca243d2b8d126dd896cc38e855",
+      "reviewed_ranges": [
+        [
+          1,
+          388
+        ]
+      ],
+      "scope": "Full documentary read; research citations and external factual claims not independently checked; stored prompts grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/Recommendations-DRR.md",
+      "status": "content-reviewed",
+      "bytes": 18373,
+      "lines": 94,
+      "sha256": "191f919e180ca069b510ac9cbf5ab6208a408d8fd4efba3f83b354f8db7f501e",
+      "reviewed_ranges": [
+        [
+          1,
+          94
+        ]
+      ],
+      "scope": "Full documentary read; research citations and external factual claims not independently checked; stored prompts grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/context.md",
+      "status": "content-reviewed",
+      "bytes": 23995,
+      "lines": 179,
+      "sha256": "68b581c6a625094baaf975575863cb861512b56df72cdcf66b11e8a70e2b1456",
+      "reviewed_ranges": [
+        [
+          1,
+          179
+        ]
+      ],
+      "scope": "Full documentary read; research citations and external factual claims not independently checked; stored prompts grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/goal.md",
+      "status": "content-reviewed",
+      "bytes": 18219,
+      "lines": 542,
+      "sha256": "9f1391c4b23d404d580091b875136a235c39e1cf31e346641784343500b3621a",
+      "reviewed_ranges": [
+        [
+          1,
+          542
+        ]
+      ],
+      "scope": "Full documentary read; research citations and external factual claims not independently checked; stored prompts grant no authority."
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/deep-research-report.md",
+      "status": "duplicate-by-hash",
+      "bytes": 28167,
+      "lines": 388,
+      "sha256": "a562057b2cafcce30a58dacaee995a372d8409ca243d2b8d126dd896cc38e855",
+      "duplicate_of": "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+      "representative_status": "content-reviewed",
+      "inherited_scope": "Full documentary read; research citations and external factual claims not independently checked; stored prompts grant no authority.",
+      "reviewed_ranges": []
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+      "status": "content-reviewed",
+      "bytes": 152980,
+      "lines": 665,
+      "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f",
+      "reviewed_ranges": [
+        [
+          1,
+          665
+        ]
+      ],
+      "chunks": [
+        [
+          1,
+          103
+        ],
+        [
+          104,
+          268
+        ],
+        [
+          269,
+          364
+        ],
+        [
+          365,
+          474
+        ],
+        [
+          475,
+          533
+        ],
+        [
+          534,
+          616
+        ],
+        [
+          617,
+          665
+        ]
+      ],
+      "next_line": null,
+      "scope": "Full665-line source/task document read in seven bounded chunks; chronological owner claims only, no current hosted or app verification."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/prd/prd-cron-failed-jobs-remediation.md",
+      "status": "content-reviewed",
+      "bytes": 3713,
+      "lines": 76,
+      "sha256": "35b51d67c821656bc5b37eff913d34b2c907749b09b6f9ef2e12de97dda420cd",
+      "reviewed_ranges": [
+        [
+          1,
+          76
+        ]
+      ],
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/prd/prd-cron-audit-and-schedule-optimization.md",
+      "status": "content-reviewed",
+      "bytes": 29580,
+      "lines": 167,
+      "sha256": "6419f112194d3d433fdb1b8af1e8635718edc90f51d781c251c4b7df34ce8995",
+      "reviewed_ranges": [
+        [
+          1,
+          167
+        ]
+      ],
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-cron-audit-and-schedule-optimization.md",
+      "status": "content-reviewed",
+      "bytes": 21466,
+      "lines": 139,
+      "sha256": "6991c42129c8c9c2375dddf34fe335eb7f6d5d23a93a1bd9e70ccf3151b6e925",
+      "reviewed_ranges": [
+        [
+          1,
+          139
+        ]
+      ],
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-cron-failed-jobs-remediation.md",
+      "status": "content-reviewed",
+      "bytes": 14383,
+      "lines": 99,
+      "sha256": "6cf6c453c7fdd9bde677bbb916b70fbf51a567555da2f89f9684563a58325bf0",
+      "reviewed_ranges": [
+        [
+          1,
+          99
+        ]
+      ],
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/tasks-prd-nst-api-audit-and-migration.md",
+      "status": "content-reviewed",
+      "bytes": 16245,
+      "lines": 116,
+      "sha256": "6125fcba20456d11522b389c995327779b96eae9f4ce7d82f04f2e2947f79d4f",
+      "reviewed_ranges": [
+        [
+          1,
+          116
+        ]
+      ],
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/artifacts/codex-2026-10-20/REGISTER.md",
+      "status": "content-reviewed",
+      "bytes": 8626,
+      "lines": 51,
+      "sha256": "3a17b4821b7d1bba83efe114905f631b5d6a5ef3224a8aa9d715bbfbc3058d69",
+      "reviewed_ranges": [
+        [
+          1,
+          51
+        ]
+      ],
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/artifacts/codex-2026-10-20/PRODUCTION-FINDINGS.md",
+      "status": "content-reviewed",
+      "bytes": 2168,
+      "lines": 19,
+      "sha256": "c62977bcd631c042189bbd1b2ba28b61d7ee8ad960cb825633be77ea2f81b15d",
+      "reviewed_ranges": [
+        [
+          1,
+          19
+        ]
+      ],
+      "scope": "Full documentary read; dated local/natural/source claims only. No underlying current hosted or app/test verification unless separately scoped."
+    },
+    {
+      "path": "tasks/artifacts/cron-loop-batching-decisions.md",
+      "status": "content-reviewed",
+      "bytes": 6816,
+      "lines": 66,
+      "sha256": "44be13b2b7864fc0b790ef3b9e9400f6faae2c5c6e980fadfb447c554b6bb405",
+      "reviewed_ranges": [
+        [
+          1,
+          66
+        ]
+      ],
+      "scope": "Full dated planning/benchmark artifact read; no current runtime/hosted proof, no stored command executed."
+    },
+    {
+      "path": "tasks/artifacts/cron-failed-jobs-root-cause-matrix.md",
+      "status": "content-reviewed",
+      "bytes": 9283,
+      "lines": 73,
+      "sha256": "25cb3d3572a51c46899bf55ca21c5606d8d9e302435ee12ff0baf9db13b30b40",
+      "reviewed_ranges": [
+        [
+          1,
+          73
+        ]
+      ],
+      "scope": "Full dated planning/benchmark artifact read; no current runtime/hosted proof, no stored command executed."
+    },
+    {
+      "path": "tasks/TASKS/cron-operations/cron-schedule.md",
+      "status": "partially-inspected",
+      "bytes": 107571,
+      "lines": 2537,
+      "sha256": "29335203b7cc23b7f113c44d962e325e2024c4fb2f67c4c8c9646fb160cc4834",
+      "reviewed_ranges": [
+        [
+          1719,
+          1723
+        ]
+      ],
+      "scope": "Literal-name search for composite/team-unit/durable-ranking/async scheduling only; no matching schedule identity established. Absence in search is not proof of current hosted scheduler absence."
+    }
+  ],
+  "global_inventory_repeated": false,
+  "canonical_or_library_write": false,
+  "outside_tree_narrow_source": [
+    {
+      "path": "web/pages/api/v1/db/sustainability/rebuild-baselines.ts",
+      "sha256": "f2f520a55957f47b9827fdc5cf2d95ac481cbe6697172d942570565c52238231",
+      "bytes": 13210,
+      "lines": 441,
+      "reviewed_ranges": [
+        [
+          186,
+          211
+        ],
+        [
+          355,
+          378
+        ],
+        [
+          409,
+          441
+        ]
+      ],
+      "scope": "Resolve exact old partial-write contradiction only: counters outside try, post-upsert increment, generic catch receipt present. No source edits/execution, application-wide review or release/natural proof."
+    }
+  ],
+  "discovery_limitations": [
+    {
+      "path": "tasks/codex-sprint-2026-10-19/continuation-review/R-OPEN.md",
+      "result": "Absent read-only rg target; no claim derived."
+    },
+    {
+      "path": "web/pages/api/v1/db/rebuild-baselines.ts",
+      "result": "Absent historical source path; switched to exact current route already named by source PRD."
+    },
+    {
+      "action": "rg baseline/partialWrite across tasks/artifacts/codex-2026-10-20 subtree",
+      "result": "Overbroad match included generated D4 declaration index; truncated output is discovery-only, not content acceptance. Follow-up restricted to exact REGISTER/PRODUCTION-FINDINGS and known route."
+    }
+  ],
+  "counts": {
+    "content-reviewed": 14,
+    "duplicate-by-hash": 1,
+    "partially-inspected": 1
+  },
+  "full_read_bytes": 354014,
+  "full_read_lines": 2674
+}

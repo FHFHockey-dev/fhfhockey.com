@@ -1,0 +1,28 @@
+
+> web@0.1.0 test
+> vitest --run --config audit.vitest.config.mts lib/rosterScheduleOptimizer/planning.test.ts __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts
+
+
+ RUN  v3.2.7 /private/var/folders/g2/b33dwc153kbd_vhg6cfbn8bm0000gn/T/fhfh-p07-3zc_pto9/isolation/snapshot/web
+
+(node:13586) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+stdout | lib/rosterScheduleOptimizer/planning.test.ts > planning engine > evaluates the entire 1000-player population across 2 days with exact full-plan gains
+{"candidateBenchmark":"1000 players","days":2,"forecasts":2000,"evaluated":998,"elapsedMs":189.42904099999998}
+
+stdout | lib/rosterScheduleOptimizer/planning.test.ts > planning engine > evaluates the entire 1000-player population across 13 days with exact full-plan gains
+{"candidateBenchmark":"1000 players","days":13,"forecasts":13000,"evaluated":998,"elapsedMs":738.8239169999999}
+
+ ✓ lib/rosterScheduleOptimizer/planning.test.ts (145 tests) 9436ms
+   ✓ planning engine > evaluates the entire 1000-player population across 2 days with exact full-plan gains  349ms
+   ✓ planning engine > evaluates the entire 1000-player population across 13 days with exact full-plan gains  1721ms
+   ✓ planning engine > reaches multiple acquisitions within the bounded 25/300/7/4 workload  7008ms
+(node:13586) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ __tests__/pages/api/v1/roster-schedule-optimizer/data.test.ts (8 tests) 181ms
+
+ Test Files  2 passed (2)
+      Tests  153 passed (153)
+   Start at  10:27:37
+   Duration  10.57s (transform 345ms, setup 12ms, collect 402ms, tests 9.62s, environment 362ms, prepare 57ms)
+

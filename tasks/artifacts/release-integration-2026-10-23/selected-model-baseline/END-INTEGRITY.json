@@ -1,0 +1,50 @@
+{
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "files": 15,
+  "drift": [],
+  "diffCheck": {
+    "exit_code": 0,
+    "output": ""
+  },
+  "reversePatchDryRun": {
+    "exit_code": 0,
+    "output": ""
+  },
+  "protected": {
+    "web/lib/rosterScheduleData/forgeDailyBridge.ts": {
+      "snapshot": "651eff511275b93f6f598181f3c5402c9b4d1b57d3959eb772528842910855f5",
+      "current": "651eff511275b93f6f598181f3c5402c9b4d1b57d3959eb772528842910855f5",
+      "matches": true
+    },
+    "web/lib/player-forecasts/rsoUsePolicy.ts": {
+      "snapshot": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215",
+      "current": "3130a3cfb2bd028af42d0dc4a6bdaa72935a08823dc185aceaf830f330eb3215",
+      "matches": true
+    },
+    "web/lib/player-forecasts/resolvedPlanningForecast.ts": {
+      "snapshot": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07",
+      "current": "f6304a1e1bff4a0ad20a8177b9e2cfc17a193761c0d9edce07cebd6e7a6b4d07",
+      "matches": true
+    },
+    "web/lib/projections/calibrationEligibility.ts": {
+      "snapshot": "9b93cc5cf9a80b0c695bd54f6bd6a6e232bd90170b8efdedd1e7106e3aa6e852",
+      "current": "9b93cc5cf9a80b0c695bd54f6bd6a6e232bd90170b8efdedd1e7106e3aa6e852",
+      "matches": true
+    },
+    "web/lib/projections/calculators/skater-adjustments.ts": {
+      "snapshot": "258e9b4699d01ccdc89a30d746cc6332f3c708210c4598c69fe7c8f47f2ba9b6",
+      "current": "258e9b4699d01ccdc89a30d746cc6332f3c708210c4598c69fe7c8f47f2ba9b6",
+      "matches": true
+    },
+    "web/lib/projections/stages/goalie-stage.ts": {
+      "snapshot": "894f7169f383d1aeb3124c7d25b3934eb9ae3098088af7f054879b2bb873b154",
+      "current": "894f7169f383d1aeb3124c7d25b3934eb9ae3098088af7f054879b2bb873b154",
+      "matches": true
+    },
+    "web/lib/projections/goalieModel.ts": {
+      "snapshot": "1490db7e9df805d764ac5153c86d8a7feded8c6ab0b95bf13b6c6a5d58054672",
+      "current": "1490db7e9df805d764ac5153c86d8a7feded8c6ab0b95bf13b6c6a5d58054672",
+      "matches": true
+    }
+  }
+}

@@ -1,0 +1,149 @@
+{
+  "web/node_modules/react/cjs/react.production.min.js": {
+    "sha256": "4b35e378f469c4f492c7514bb106b5833746dbbae80496bd4aa9acc6e9ac4b42"
+  },
+  "web/node_modules/react/index.js": {
+    "sha256": "a216c390bf956cbb906c66d29fdb2e2ad6999464a5ca83e476533a6f25ad0ef3"
+  },
+  "web/node_modules/scheduler/cjs/scheduler.production.min.js": {
+    "sha256": "f6cb8cf42696980c702f6b879417ab8bd489660485eb012b46f67e92e18a78ee"
+  },
+  "web/node_modules/scheduler/index.js": {
+    "sha256": "b413b3aac7bd209fd82cbe2241fda1467558daaef830744f45ed8396fac9185e"
+  },
+  "web/node_modules/react-dom/cjs/react-dom.production.min.js": {
+    "sha256": "cbf7fe6b9726ee65f8bcd5715289cc5161c8dacf74d0b8aaa0d29412516f5f47"
+  },
+  "web/node_modules/react-dom/index.js": {
+    "sha256": "f26fcb81b5d1dc32c6edea34645c75b60d259916293d3208c8be48ac33e882e4"
+  },
+  "web/node_modules/react-dom/client.js": {
+    "sha256": "a510041dfc40d69b3aa574e5e111864186c711fbeb3db41aa2f27196b27c429f"
+  },
+  "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser-r1/auth.ts": {
+    "sha256": "4209745ec14573bc6efc4738c85e531252fde006e149a27fa384c5552b84f3d1"
+  },
+  "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/lib/supabase/browser-auth.ts": {
+    "sha256": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a"
+  },
+  "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser-r1/ensure.ts": {
+    "sha256": "ce14382bee2a86152bf6e505d611fd5015589973c8bd5d81c05c61af91fd0a0a"
+  },
+  "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser-r1/server-auth.ts": {
+    "sha256": "2cbc50bd94595f74e999834119ebe868456a9e31ac8e5105a1ee7aae4b5442f4"
+  },
+  "web/lib/socialShare/access.ts": {
+    "sha256": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660"
+  },
+  "web/node_modules/react/cjs/react-jsx-runtime.production.min.js": {
+    "sha256": "76e3364c46895ed2c4a8d5cc332e5e4ef31d6f732d35b1e56826dc5895245452"
+  },
+  "web/node_modules/react/jsx-runtime.js": {
+    "sha256": "28170e60f2ff0bc045bc7d175f5849e86f68dd02d76d7255369420718b30295a"
+  },
+  "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/contexts/AuthProviderContext/index.tsx": {
+    "sha256": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc"
+  },
+  "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser-r1/link.tsx": {
+    "sha256": "2f6efe775a4eee49b9bcc5c9ee57ac32b937795c62520a4f9e32861de7d01d1c"
+  },
+  "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/components/SocialShare/SocialShareAccessGate.tsx": {
+    "sha256": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c"
+  },
+  "web/lib/socialShare/types.ts": {
+    "sha256": "bc5c27b34ae52a4e2b66025a92f9525eb28d5d5604e8de24c038f8aae2890d26"
+  },
+  "web/lib/NHL/types.ts": {
+    "sha256": "805b62b040a2e46b18e863815eeccaa175a01b9c4e770f679f2e483fb09c1fce"
+  },
+  "web/lib/teamsInfo.ts": {
+    "sha256": "645f33ed7272e728b6ac1436754a13126ee25eb2eb6bc598fcefed3acc8e1584"
+  },
+  "web/lib/rosterScheduleData/normalize.ts": {
+    "sha256": "bf6a30c1ea38903f11b66643721915543af73f61d28a8b6e3b48e8869489c4a6"
+  },
+  "web/lib/rosterScheduleOptimizer/planningDates.ts": {
+    "sha256": "b1d7454aad1238671be337b64120e33f2331ef2f8261e390d52b5ac17d9dd4c8"
+  },
+  "web/components/GameGrid/utils/calcWeekScore.ts": {
+    "sha256": "0f544a126c5e16baf08febb7c7e89aa759883b20f203ad8ae3a8ac05ff619ca8"
+  },
+  "web/components/GameGrid/utils/helper.ts": {
+    "sha256": "ebf2348fb67d87cb16579a2bac06d22825829fcfa3ca8e2c148f2987ea6c2708"
+  },
+  "web/lib/socialShare/schedule.ts": {
+    "sha256": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73"
+  },
+  "web/node_modules/html-to-image/es/util.js": {
+    "sha256": "dca823d47be217c74cc660184030f78ee1b1f9a790e2c9d073524786f2e5de2a"
+  },
+  "web/node_modules/html-to-image/es/clone-pseudos.js": {
+    "sha256": "ecde62e8800870485732d15b5f035ac0f434f81ff671150e86dc61dd21c59f22"
+  },
+  "web/node_modules/html-to-image/es/mimes.js": {
+    "sha256": "8d6a4a9d628422ff83c661444a27ab7f72de9f2cecc23a330be2289ff2198659"
+  },
+  "web/node_modules/html-to-image/es/dataurl.js": {
+    "sha256": "56604a681031b5e1be40f9b273bce304bad94ebba3946a20327cdb54fd2cc8f6"
+  },
+  "web/node_modules/html-to-image/es/clone-node.js": {
+    "sha256": "c7d5a5b734c87856cccd6c7804b33db00ccf2e856e4a2e6289db557c20546f7c"
+  },
+  "web/node_modules/html-to-image/es/embed-resources.js": {
+    "sha256": "ead3747fefac7927d5cf5ae47273c11916cfd0c53dfad8c30dadb6c365121372"
+  },
+  "web/node_modules/html-to-image/es/embed-images.js": {
+    "sha256": "2cdd7d96b558df8390b167cdf49cb0a5500caa52fdae7340aacb16836da9bb81"
+  },
+  "web/node_modules/html-to-image/es/apply-style.js": {
+    "sha256": "4196b6fe5671ab03b215a3c2e2e9bd5679d2277ba5baf34ad35830581d3aa78b"
+  },
+  "web/node_modules/html-to-image/es/embed-webfonts.js": {
+    "sha256": "e69c955e86d4e9b2d551e58148190e4d2e384a11e6a8b633fdae3b08abe91cc8"
+  },
+  "web/node_modules/html-to-image/es/index.js": {
+    "sha256": "196047f6d85e0c48dcdeb3aa3af73ba82d27a3ef5c6950d569b7fd7ac0807f28"
+  },
+  "web/lib/socialShare/export.ts": {
+    "sha256": "8dc961de8b11c6c79dc34b78c991fc51ce38eaf2cc2bbdd1a073a72bc034cabd"
+  },
+  "web/lib/socialShare/mondayGrid.ts": {
+    "sha256": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960"
+  },
+  "web/lib/socialShare/editionFetch.ts": {
+    "sha256": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3"
+  },
+  "web/lib/socialShare/edition.ts": {
+    "sha256": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0"
+  },
+  "web/components/GameGrid/utils/fourWeekMetricBands.ts": {
+    "sha256": "030066d649d9b952bf9cdd29ac654d7fa57727f0779aceb4725dbbd5ccdbf702"
+  },
+  "web/components/GameGrid/utils/scheduleOpportunity.ts": {
+    "sha256": "02198b9a732bc7b25e14e0ef285bae73b348ce5f645a26efe177ae52e773380c"
+  },
+  "web/lib/socialShare/matchups.ts": {
+    "sha256": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba"
+  },
+  "web/lib/socialShare/pickupsFixture.ts": {
+    "sha256": "8817752128236da00dfd16beaadad2cf71688b07e3f0388e1bcdd39b20a38dbf"
+  },
+  "web/lib/socialShare/players.ts": {
+    "sha256": "2f1e55d6344c3fe43791ccf69ab16606c058a2ef476a3e00f91fa4c9180fdcf7"
+  },
+  "web/lib/socialShare/trends.ts": {
+    "sha256": "03ffc190244f6657069dcaa402b5fddfe462d80029fba5e9fe0285bc6b71f943"
+  },
+  "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/components/SocialShare/SocialShare.module.scss": {
+    "sha256": "4a6f425b7e670a97c8821d9aa857d3514f62e20e93a7e9095212f808c63645d8"
+  },
+  "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/components/SocialShare/TeamBanner.tsx": {
+    "sha256": "f0aff1ab3d0139742c834d65893445ae18fb477600dc13dcfecb54901730867f"
+  },
+  "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/snapshot/web/components/SocialShare/SocialShare.tsx": {
+    "sha256": "e15e95c131dc0b4d377c6d3356ad4f7d30606fabed64e0fd7e3db9cbb348fe77"
+  },
+  "tasks/artifacts/production-release-coordination-2026-10-24/social-editor-access-independent-review/browser-r1/entry.tsx": {
+    "sha256": "1636797ceefe4f24b2355d8057c6c9865096aaebf5cc24507e81e14f3a9648f8"
+  }
+}

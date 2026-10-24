@@ -1,0 +1,125 @@
+--- a/web/components/account/DraftProPanel.tsx
++++ b/web/components/account/DraftProPanel.tsx
+@@ -64,6 +64,18 @@
+   if (!value) return "Unavailable";
+   const date = new Date(new Date(value).getTime() - 1);
+   return Number.isNaN(date.getTime()) ? "Unavailable" : date.toLocaleDateString("en-US", { timeZone: "America/New_York", month: "long", day: "numeric", year: "numeric" });
++}
++
++// Refund failures show fixed copy only. Server and browser error text can carry
++// configuration, database or identity details, so it never reaches the page.
++function refundFailureMessage(status: number | null, code: unknown) {
++  if (status === 401 || code === "authentication_required") return "Your sign-in has expired. Sign in again, then submit your refund request.";
++  if (status === 400 || code === "validation_error") return "Check your refund request: choose a purchase and reason, and write an explanation of 10 to 2,000 characters.";
++  if (status === 409 || code === "refund_request_exists") return "This purchase already has an open refund request. We'll review it case by case.";
++  if (status === 422 || code === "refund_window_closed") return "The 7-day refund request window for this purchase has closed. Contact support if you need help.";
++  if (status === 404 || code === "purchase_not_found") return "This purchase isn't eligible for an account refund request. Contact support if you think this is wrong.";
++  if (status === null) return "We couldn't reach FHFH, so your refund request wasn't confirmed. Check your connection and try again, or contact support.";
++  return "Your refund request couldn't be confirmed right now. Try again in a few minutes, or contact support if it keeps happening.";
+ }
+ 
+ export default function DraftProPanel() {
+@@ -181,9 +193,10 @@
+     const epoch = accountEpochRef.current;
+     setSubmitting(true);
+     setFeedback(null);
++    let failure: { status: number | null; code?: unknown } = { status: null };
+     try {
+       const session = (await supabase.auth.getSession()).data.session;
+-      if (!session) throw new Error("Authentication required.");
++      if (!session) { failure = { status: 401 }; throw new Error("Authentication required."); }
+       const identity = session.user?.id ?? null;
+       if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
+       const response = await fetch("/api/v1/account/draft-pro/refund-requests", {
+@@ -191,15 +204,16 @@
+         headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+         body: JSON.stringify({ purchaseId: selectedPurchase?.id, reason, explanation, improvementNotes: improvementNotes || undefined, usedDuringLiveDraft: usedDuringLiveDraft === "" ? undefined : usedDuringLiveDraft === "yes" }),
+       });
++      failure = { status: response.status };
+       const body = await response.json();
+       if (!checkoutMountedRef.current || epoch !== accountEpochRef.current || identity !== accountIdentityRef.current) return;
+-      if (!response.ok) throw new Error(body.error?.message ?? "Refund request could not be submitted.");
++      if (!response.ok || !body?.data) { failure = { status: response.ok ? 500 : response.status, code: body?.error?.code }; throw new Error("Refund request failed."); }
+       setFeedback("Your request was submitted for case-by-case review. It does not automatically refund or revoke access.");
+       setExplanation("");
+       setImprovementNotes("");
+       setAccount((current) => current ? { ...current, refundRequests: [...current.refundRequests, { ...body.data, purchaseId: selectedPurchase?.id ?? "" }] } : current);
+-    } catch (submitError) {
+-      if (checkoutMountedRef.current && epoch === accountEpochRef.current) setFeedback(submitError instanceof Error ? submitError.message : "Refund request could not be submitted.");
++    } catch {
++      if (checkoutMountedRef.current && epoch === accountEpochRef.current) setFeedback(refundFailureMessage(failure.status, failure.code));
+     } finally {
+       if (checkoutMountedRef.current && epoch === accountEpochRef.current) setSubmitting(false);
+     }
+--- a/web/components/account/DraftProPanel.test.tsx
++++ b/web/components/account/DraftProPanel.test.tsx
+@@ -359,5 +359,69 @@
+     expect(await screen.findByText("B draft")).toBeTruthy();
+     await act(async () => { resolveRedeem?.({ ok: true, json: async () => ({ redeemed: true }) }); });
+     expect(screen.queryByText(/Access code redeemed/)).toBeNull();
++  });
++});
++
++describe("DraftProPanel refund request failures", () => {
++  beforeEach(() => { getSession.mockResolvedValue({ data: { session: { access_token: "token", user: { id: "A" } } } }); });
++  afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
++  const reply = (status: number, body: unknown) => ({ ok: false, status, json: async () => body });
++  const copy = {
++    connection: "We couldn't reach FHFH, so your refund request wasn't confirmed. Check your connection and try again, or contact support.",
++    unavailable: "Your refund request couldn't be confirmed right now. Try again in a few minutes, or contact support if it keeps happening.",
++    signIn: "Your sign-in has expired. Sign in again, then submit your refund request.",
++    invalid: "Check your refund request: choose a purchase and reason, and write an explanation of 10 to 2,000 characters.",
++    notEligible: "This purchase isn't eligible for an account refund request. Contact support if you think this is wrong.",
++    windowClosed: "The 7-day refund request window for this purchase has closed. Contact support if you need help.",
++    exists: "This purchase already has an open refund request. We'll review it case by case.",
++  };
++  it.each([
++    ["network failure", () => Promise.reject(new TypeError("Failed to fetch")), copy.connection, /Failed to fetch/],
++    ["timeout", () => Promise.reject(new DOMException("The operation was aborted due to timeout", "TimeoutError")), copy.connection, /aborted|timeout/i],
++    ["outage with an HTML body", () => Promise.resolve({ ok: false, status: 503, json: () => Promise.reject(new SyntaxError("Unexpected token '<', \"<html><h1>502 Bad Gateway</h1>\" is not valid JSON")) }), copy.unavailable, /Unexpected token|Bad Gateway|JSON/],
++    ["configuration error forwarded on a 422", () => Promise.resolve(reply(422, { error: { code: "refund_window_closed", message: "RESEND_API_KEY is not configured." } })), copy.windowClosed, /RESEND_API_KEY|configured/],
++    ["server error with private details", () => Promise.resolve(reply(500, { error: { code: "refund_request_failed", message: "duplicate key value violates unique constraint \"draft_pro_refund_requests_pkey\" for tim@example.com" } })), copy.unavailable, /duplicate key|tim@example\.com|constraint/],
++    ["missing purchase with internal identifiers", () => Promise.resolve(reply(404, { error: { code: "purchase_not_found", message: "Purchase 9f1c for user 7d2a not found in draft_pro_purchases" } })), copy.notEligible, /9f1c|7d2a|draft_pro_purchases/],
++    ["expired authentication", () => Promise.resolve(reply(401, { error: { code: "authentication_required", message: "invalid JWT: unable to parse or verify signature, token is expired" } })), copy.signIn, /JWT|signature/],
++    ["validation failure", () => Promise.resolve(reply(400, { error: { code: "validation_error", message: "Expected string, received number at path explanation" } })), copy.invalid, /Expected string|path/],
++    ["existing open request", () => Promise.resolve(reply(409, { error: { code: "refund_request_exists", message: "Conflict on refund row r_8812" } })), copy.exists, /r_8812|Conflict/],
++    ["unreadable success body", () => Promise.resolve({ ok: true, status: 201, json: () => Promise.reject(new SyntaxError("Unexpected end of JSON input")) }), copy.unavailable, /Unexpected end|JSON/],
++  ])("shows plain language for a %s and keeps retry and support available", async (_, refundReply, expected, privateText) => {
++    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ data: account }) }).mockImplementationOnce(refundReply);
++    vi.stubGlobal("fetch", fetchMock);
++    render(<DraftProPanel />);
++    fireEvent.change(await screen.findByLabelText(/Explanation/), { target: { value: "The draft board was unavailable." } });
++    fireEvent.submit(screen.getByRole("button", { name: "Submit request" }).closest("form")!);
++    expect(await screen.findByText(expected)).toBeTruthy();
++    expect(document.body.textContent).not.toMatch(privateText);
++    expect(screen.queryByText(/submitted for case-by-case review/)).toBeNull();
++    expect(fetchMock).toHaveBeenCalledTimes(2);
++    expect(screen.getByRole("button", { name: "Submit request" }).hasAttribute("disabled")).toBe(false);
++    expect((screen.getByLabelText(/Explanation/) as HTMLTextAreaElement).value).toBe("The draft board was unavailable.");
++    expect(screen.getByRole("link", { name: "Support" }).getAttribute("href")).toBe("mailto:tim@fhfhockey.com");
+   });
++  it("asks the user to sign in again when the session is gone at submit time", async () => {
++    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ data: account }) });
++    vi.stubGlobal("fetch", fetchMock);
++    render(<DraftProPanel />);
++    fireEvent.change(await screen.findByLabelText(/Explanation/), { target: { value: "The draft board was unavailable." } });
++    getSession.mockResolvedValue({ data: { session: null } });
++    fireEvent.submit(screen.getByRole("button", { name: "Submit request" }).closest("form")!);
++    expect(await screen.findByText(copy.signIn)).toBeTruthy();
++    expect(fetchMock).toHaveBeenCalledTimes(1);
++  });
++  it("lets the user retry manually after a failure and then confirms the request", async () => {
++    const fetchMock = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ data: account }) })
++      .mockRejectedValueOnce(new TypeError("Failed to fetch"))
++      .mockResolvedValueOnce({ ok: true, status: 201, json: async () => ({ data: { id: "refund-1", status: "open", emailStatus: "pending" } }) });
++    vi.stubGlobal("fetch", fetchMock);
++    render(<DraftProPanel />);
++    fireEvent.change(await screen.findByLabelText(/Explanation/), { target: { value: "The draft board was unavailable." } });
++    fireEvent.submit(screen.getByRole("button", { name: "Submit request" }).closest("form")!);
++    await screen.findByText(copy.connection);
++    fireEvent.submit(screen.getByRole("button", { name: "Submit request" }).closest("form")!);
++    expect(await screen.findByText(/submitted for case-by-case review/)).toBeTruthy();
++    expect(screen.queryByText(copy.connection)).toBeNull();
++    expect(fetchMock).toHaveBeenCalledTimes(3);
++  });
+ });

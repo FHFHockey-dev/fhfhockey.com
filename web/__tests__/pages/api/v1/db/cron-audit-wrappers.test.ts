@@ -141,7 +141,6 @@ describe("Vercel cron static source coverage", () => {
     "/api/internal/starter-board",
     "/api/internal/yahoo-live-draft",
     "/api/v1/db/replay-player-aliases",
-    "/api/v1/db/update-drafted-prospects",
   ];
 
   it("represents all configured entries without merging query or schedule identities", () => {
@@ -166,10 +165,30 @@ describe("Vercel cron static source coverage", () => {
   it("keeps every unresolved audit owner explicit rather than granting an exemption", () => {
     const routes = [...new Set(findings.filter((finding) => finding.auditMode === "unqualified").map((finding) => finding.routePath))].sort();
     expect(routes).toEqual(unresolvedAuditRoutes);
-    expect(new Set(findings.filter((finding) => finding.auditMode === "shared-wrapper").map((finding) => finding.routePath)).size).toBe(17);
+    expect(new Set(findings.filter((finding) => finding.auditMode === "shared-wrapper").map((finding) => finding.routePath)).size).toBe(18);
     for (const finding of findings.filter((finding) => finding.auditMode === "unqualified")) {
       expect(finding.auditReason).toContain("manual/helper-owned auditing remains unqualified (not an exemption)");
     }
+  });
+
+  it("qualifies the drafted-prospect refresh only through adminOnly(withCronJobAudit(...))", () => {
+    const route = "/api/v1/db/update-drafted-prospects";
+    const source = fs.readFileSync(path.resolve(webRoot, `pages${route}.ts`), "utf8");
+    expect(classifyVercelCronSource(source, route)).toMatchObject({ authMode: "admin-or-cron", auditMode: "shared-wrapper" });
+    expect(classifyVercelCronSource(source.replace("adminOnly(withCronJobAudit(", "adminOnly(("), route).auditMode).toBe("unqualified");
+  });
+
+  // 2026-10-24 (C5): yahoo-live-draft returns a withCronJobAudit delegate after
+  // its exact secret prefix (plus a daily idle-heartbeat delegate), but the shared
+  // classifier reviews delegates only for espn/fantrax/patreon. It stays
+  // unqualified until that owner adds a reviewed yahoo form; no exemption.
+  it("keeps yahoo-live-draft's runtime audit delegate statically unqualified", () => {
+    const route = "/api/internal/yahoo-live-draft";
+    const source = fs.readFileSync(path.resolve(webRoot, `pages${route}.ts`), "utf8");
+    expect(source).toContain("const auditedPoll = withCronJobAudit(");
+    expect(source).toContain("const auditedIdle = withCronJobAudit(");
+    expect(source).toContain("  return auditedPoll(req, res);\n}");
+    expect(classifyVercelCronSource(source, route)).toMatchObject({ authMode: "cron-secret-only", auditMode: "unqualified" });
   });
 
   it.each(["starter-board", "yahoo-live-draft", "fantrax-sync", "espn-sync"])(
@@ -273,6 +292,7 @@ const authFirstAuditRoutes = [
   "v1/db/run-fetch-wgo-data.ts",
   "v1/db/sustainability/rebuild-baselines.ts",
   "v1/db/update-PbP.ts",
+  "v1/db/update-drafted-prospects.ts",
   "v1/db/update-entity-metric-rankings.ts",
   "v1/db/update-games.ts",
   "v1/db/update-goalie-underlying-stats.ts",

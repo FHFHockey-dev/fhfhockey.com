@@ -9,15 +9,15 @@ export function useRosterPlanning(snapshot: PlanningSnapshot | null, intent: Pla
   const [epoch, setEpoch] = useState(0);
   const previousView = useRef<PlanningSnapshot>();
   const key = JSON.stringify([options.allowRead, options.publicContext, options.refreshKey, epoch,
-    [...new Set(requestedPlayerIds)].sort(), options.yahooEligibility]);
+    [...new Set(requestedPlayerIds)].sort(), options.yahooEligibility, options.yahooPrincipalId]);
   const [state, setState] = useState<{ snapshot: PlanningSnapshot; intent: PlanIntent; key: string;
     execution?: RosterPlanningExecution; error?: string } | null>(null);
   useEffect(() => {
     if (!snapshot) return;
     let cancelled = false;
-    const [allowRead, publicContext, refreshKey, generation, ids, yahooEligibility] = JSON.parse(key);
+    const [allowRead, publicContext, refreshKey, generation, ids, yahooEligibility, yahooPrincipalId] = JSON.parse(key);
     const request = requestRosterPlanning(snapshot, intent, { allowRead: allowRead ?? undefined,
-      publicContext: publicContext ?? undefined, refreshKey: JSON.stringify([refreshKey, generation]), yahooEligibility }, ids, previousView.current);
+      publicContext: publicContext ?? undefined, refreshKey: JSON.stringify([refreshKey, generation]), yahooEligibility, yahooPrincipalId }, ids, previousView.current);
     request.promise.then(execution => { if (!cancelled) {
       if (execution.data) previousView.current = execution.displaySnapshot;
       setState({ snapshot, intent, key, execution });

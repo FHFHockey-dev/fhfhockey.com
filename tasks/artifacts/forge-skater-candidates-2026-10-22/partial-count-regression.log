@@ -1,0 +1,14 @@
+
+> web@0.1.0 test
+> vitest --run lib/projections/research/skater-candidates/accounting.test.ts
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+ ✓ lib/projections/research/skater-candidates/accounting.test.ts (8 tests) 3ms
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  12:27:37
+   Duration  206ms (transform 24ms, setup 2ms, collect 22ms, tests 3ms, environment 0ms, prepare 32ms)
+

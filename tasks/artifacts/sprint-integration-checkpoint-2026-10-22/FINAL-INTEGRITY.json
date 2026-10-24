@@ -1,0 +1,25 @@
+{
+  "checked_at": "2026-10-22T17:09:18.114722+00:00",
+  "head": "b9f993b3522376805f82eeda1c84b7df39c7129f",
+  "branch": "octoberBranch",
+  "snapshot_file_count": 3585,
+  "snapshot_mismatches": [],
+  "accepted_pin_count": 110,
+  "accepted_snapshot_mismatches": [],
+  "accepted_canonical_drift": {
+    "web/lib/projections/queries/skater-queries.ts": {
+      "expected": "9dfcff408d4cd5f9bdb266a3380a8beacc557a584002e44d5b75e0639d74606a",
+      "snapshot": "9dfcff408d4cd5f9bdb266a3380a8beacc557a584002e44d5b75e0639d74606a",
+      "canonical": "4589f8d79dd6c30be4c2653fe82af1166535b97450eaaa5fd049459c54441893"
+    },
+    "web/lib/projections/queries/skater-queries.test.ts": {
+      "expected": "a417087529e6ed4319769699bb4f443c1873263fbdb738624c817c1861c732e2",
+      "snapshot": "a417087529e6ed4319769699bb4f443c1873263fbdb738624c817c1861c732e2",
+      "canonical": "cdc0a351a4c71db1d30879c25763023fc4da36f148ab0313e317af1346ac9c15"
+    }
+  },
+  "lock_absent_at_finish": true,
+  "final_archive_sha256": "09bd763bc9b740159f2d4aa5b0c97d19ce3839872b1ac27762b21cbd6596beff",
+  "original_export_archive_sha256": "29edb4e1833fd58308738a7d586a373a84d398214e81457d5365eab252a706cc",
+  "canonical_application_edits_by_this_turn": 0
+}

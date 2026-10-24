@@ -1,0 +1,28 @@
+{
+  "at": "2026-10-23T15:31:09.808511+00:00",
+  "owner": "01a168af-30c9-71b7-af0a-f25a9d90a02a",
+  "previousCustodian": "FORGE/release01a1637a-4222-70c0-8439-cb3cc46b20c4",
+  "status": "test-only lease transferred after exact path collision check",
+  "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+  "editPaths": [
+    "web/e2e/roster-schedule-optimizer.spec.ts",
+    "web/e2e/roster-schedule-optimizer-fixtures.ts"
+  ],
+  "before": {
+    "web/e2e/roster-schedule-optimizer.spec.ts": "48d68eeedcced893df2a90c123eb3b510b4cec74b457ab1f7125b688dc9031e4",
+    "web/e2e/roster-schedule-optimizer-fixtures.ts": null
+  },
+  "newHelper": "optional; only if specifically needed",
+  "artifactNamespace": "tasks/artifacts/rso-browser-fixture-reconciliation-2026-10-23/**",
+  "originalClaudeHarness": "read-only; create versioned copy in owned artifact namespace",
+  "excluded": "all runtime application, policy/catalog, worker, source loader, shared draft-pro fixtures, Grid, news, billing, existing Claude harness, Git/index and production operations",
+  "preservedOracles": [
+    "191 projected points",
+    "+999 improvement",
+    "full workload/candidate population",
+    "cancellation/stale publication",
+    "nonce/expiry/identity denial",
+    "saved labels cannot authorize numeric change"
+  ],
+  "releaseOwnerConcurrentEdits": false
+}

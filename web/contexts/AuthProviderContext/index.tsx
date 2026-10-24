@@ -14,6 +14,7 @@ import type {
 import supabase from "lib/supabase/client";
 import { resetSupabaseBrowserAuthState } from "lib/supabase/browser-auth";
 import { ensureUserRecords } from "lib/user-settings/ensureUserRecords";
+import { isSocialShareRole } from "lib/socialShare/access";
 
 type User = {
   id: string;
@@ -24,7 +25,7 @@ type User = {
   emailConfirmedAt: string | null;
   isEmailVerified: boolean;
   providers: string[];
-  role: "admin" | null;
+  role: "admin" | "social_editor" | null;
 } | null;
 
 type AuthContextValue = {
@@ -143,12 +144,9 @@ export default function AuthProvider({ children }: Props) {
         .eq("user_id", session.user.id)
         .maybeSingle()
         .then(({ data, error }) => {
+          if (!isMounted || roleRequestRef.current !== roleRequest) return;
           finishRoleRequest();
-          if (!isMounted || error) {
-            return;
-          }
-
-          const resolvedRole = data?.role === "admin" ? "admin" : null;
+          const resolvedRole = !error && isSocialShareRole(data?.role) ? data.role : null;
           setUser((currentUser) => {
             if (!currentUser || currentUser.id !== session.user.id) {
               return currentUser;
@@ -163,7 +161,11 @@ export default function AuthProvider({ children }: Props) {
               role: resolvedRole
             };
           });
-        }, finishRoleRequest);
+        }, () => {
+          if (!isMounted || roleRequestRef.current !== roleRequest) return;
+          finishRoleRequest();
+          setUser(currentUser => currentUser?.id === session.user.id ? { ...currentUser, role: null } : currentUser);
+        });
     }
 
     const initialSessionRevision = sessionRevisionRef.current;

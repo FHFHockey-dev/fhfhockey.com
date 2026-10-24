@@ -1,0 +1,63 @@
+{
+  "F1": {
+    "state": "stale",
+    "reasons": [
+      "Most player rows are stale (297 of 298): Yahoo ownership older than a day or season totals older than 72 hours."
+    ],
+    "players": 1
+  },
+  "F1b": {
+    "state": "ready",
+    "ownershipAsOf": "2026-10-25",
+    "reasons": [
+      "Excluded 11 stale and 0 future-dated player rows."
+    ],
+    "staleIncluded": 0
+  },
+  "F1c": {
+    "kept": 149,
+    "state": "ready",
+    "reasons": [
+      "Excluded 149 stale and 0 future-dated player rows."
+    ]
+  },
+  "B1": {
+    "labels": [
+      "30–49%",
+      "20–29%",
+      "Under 20%"
+    ],
+    "bandOf": {
+      "0": "Under 20%",
+      "20": "20–29%",
+      "30": "30–49%",
+      "49.99": "30–49%",
+      "29.99": "20–29%",
+      "19.99": "Under 20%"
+    },
+    "unique": true
+  },
+  "P1": {
+    "C,D": {
+      "group": "F",
+      "positions": "C,D"
+    },
+    "D,C": {
+      "group": "D",
+      "positions": "C,D"
+    },
+    "Util,D,C": {
+      "group": "D",
+      "positions": "C,D"
+    },
+    "null": {
+      "group": "D",
+      "positions": "D,C"
+    },
+    "G": {
+      "group": "G",
+      "positions": "G"
+    },
+    "BN": null
+  }
+}

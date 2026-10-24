@@ -1,0 +1,308 @@
+{
+  "port": 3140,
+  "origin": "http://127.0.0.1:3140",
+  "cwd": "/tmp/fhfh-latest-social-access-zbjtop5e/web",
+  "cache": "/tmp/fhfh-latest-social-access-zbjtop5e/web/.next-playwright",
+  "readiness_route": "/social-share/game-grid",
+  "readiness_connection_attempts": 0,
+  "readiness_successful_responses": 0,
+  "server_started": true,
+  "server_stopped": false,
+  "external_service_permission": false,
+  "diagnostic_spec_installed": true,
+  "before_pins": {
+    "web/__tests__/contexts/AuthProviderContext.test.tsx": {
+      "expected": "c3cf3f66b7b51d992a11df5207a429ed22350bd88c03ba43993033e82ff1941b",
+      "actual": "c3cf3f66b7b51d992a11df5207a429ed22350bd88c03ba43993033e82ff1941b",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShare.module.scss": {
+      "expected": "07622368f7352872ca3dd28148552bd2424c479bc2bda43d24e95706f7d10288",
+      "actual": "07622368f7352872ca3dd28148552bd2424c479bc2bda43d24e95706f7d10288",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShare.test.tsx": {
+      "expected": "e9b2e6e3b7f0265790029577601c86c26bf4860565a5defcd3fccaf79adc11f3",
+      "actual": "e9b2e6e3b7f0265790029577601c86c26bf4860565a5defcd3fccaf79adc11f3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShare.tsx": {
+      "expected": "c16e1b3adbeebca741a883b845e295be1cbc5106aa54012acc46728032c8ed92",
+      "actual": "c16e1b3adbeebca741a883b845e295be1cbc5106aa54012acc46728032c8ed92",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShareAccessGate.test.tsx": {
+      "expected": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+      "actual": "54a88b2df3a527fbf3d65e8235e4fce9c54522edf0fd887efb8b33f366904b37",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/SocialShareAccessGate.tsx": {
+      "expected": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "actual": "aaa67d1f188a4cf094fa6005b298a17b166a8fa52074727e066986d05ee5cb5c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/SocialShare/TeamBanner.tsx": {
+      "expected": "f0aff1ab3d0139742c834d65893445ae18fb477600dc13dcfecb54901730867f",
+      "actual": "f0aff1ab3d0139742c834d65893445ae18fb477600dc13dcfecb54901730867f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/contexts/AuthProviderContext/index.tsx": {
+      "expected": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "actual": "b23762a634269bc6b69e64493b23a9fe66f3ce97041b25c8e01da0b0eb1d64bc",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/e2e/social-share.spec.ts": {
+      "expected": "6815bfcd169a462bf12b29381d9ea528d21db7dd716a8816b05639ee0d0689ab",
+      "actual": "6815bfcd169a462bf12b29381d9ea528d21db7dd716a8816b05639ee0d0689ab",
+      "matches": true,
+      "test_only_adaptation": true
+    },
+    "web/lib/socialShare/access.test.ts": {
+      "expected": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+      "actual": "420158a8375fbf566594882a91465c5a3e1aa277232f98dda27615e7fc2f6620",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/access.ts": {
+      "expected": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "actual": "217f0dcf2c7aa6b076ddebd20213c9f2dba2ffc39c53b53546a98a3e46b81660",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/edition.ts": {
+      "expected": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0",
+      "actual": "dc9a225a0d942946e47ff0549ec602f12f8210acf8fe48931bae6716842a45a0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/editionFetch.test.ts": {
+      "expected": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236",
+      "actual": "94f0d9cbbeba2755fe027ec517b84722107eabf64b4e4c52bc69ed94aa479236",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/editionFetch.ts": {
+      "expected": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "actual": "f09e756cda24dd32d0b8ac6144fb241bf90b8788d3e6bbfc6d6e5bf308b05cd3",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/export.ts": {
+      "expected": "8dc961de8b11c6c79dc34b78c991fc51ce38eaf2cc2bbdd1a073a72bc034cabd",
+      "actual": "8dc961de8b11c6c79dc34b78c991fc51ce38eaf2cc2bbdd1a073a72bc034cabd",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/fixtures.ts": {
+      "expected": "865e699e39f7d0895b3f1059327221111d7d2bc14a43e96c749ccffeb29944df",
+      "actual": "865e699e39f7d0895b3f1059327221111d7d2bc14a43e96c749ccffeb29944df",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/matchups.test.ts": {
+      "expected": "3f01ea8f7acb5fe6fe276503809b154cbe6786c03c8acd1f271b4f118061246f",
+      "actual": "3f01ea8f7acb5fe6fe276503809b154cbe6786c03c8acd1f271b4f118061246f",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/matchups.ts": {
+      "expected": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba",
+      "actual": "d41d5b906a71b75e1eafa4718aea781eb112eb6e99656b5dc65afd50a1075bba",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/mondayGrid.test.ts": {
+      "expected": "95fbb3ec80b05ebd2162c6b1d4c86a7f7da4b0585bc0507d0b6b642e8ea576eb",
+      "actual": "95fbb3ec80b05ebd2162c6b1d4c86a7f7da4b0585bc0507d0b6b642e8ea576eb",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/mondayGrid.ts": {
+      "expected": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960",
+      "actual": "bc822677df3df6713d6f978eadb4c80261c78afb7dc3d82ed5d15a6b57a2f960",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/pickupsFixture.ts": {
+      "expected": "8817752128236da00dfd16beaadad2cf71688b07e3f0388e1bcdd39b20a38dbf",
+      "actual": "8817752128236da00dfd16beaadad2cf71688b07e3f0388e1bcdd39b20a38dbf",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/playerSources.test.ts": {
+      "expected": "6f22f6f5d65ffc50eea8e82f41d3a78df0e86750a5e97fb8429573379b723d72",
+      "actual": "6f22f6f5d65ffc50eea8e82f41d3a78df0e86750a5e97fb8429573379b723d72",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/playerSources.ts": {
+      "expected": "ea09e49dc7c99bc23e81240a2cb05242cb21b6004ba8c8d26456237b756447f8",
+      "actual": "ea09e49dc7c99bc23e81240a2cb05242cb21b6004ba8c8d26456237b756447f8",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/players.test.ts": {
+      "expected": "c0ab55093f6a70e7c61531961823fe008044736fccbe9042ea965051c9f30aba",
+      "actual": "c0ab55093f6a70e7c61531961823fe008044736fccbe9042ea965051c9f30aba",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/players.ts": {
+      "expected": "2f1e55d6344c3fe43791ccf69ab16606c058a2ef476a3e00f91fa4c9180fdcf7",
+      "actual": "2f1e55d6344c3fe43791ccf69ab16606c058a2ef476a3e00f91fa4c9180fdcf7",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/schedule.test.ts": {
+      "expected": "29a8d4f8e176ac0c6d530eda71f7ee0f27b68cab6f88692c39a713105de3b052",
+      "actual": "29a8d4f8e176ac0c6d530eda71f7ee0f27b68cab6f88692c39a713105de3b052",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/schedule.ts": {
+      "expected": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73",
+      "actual": "b96f23685d276e194c4f9899dc4fb9c44e5335acb46fefd81833fca5c4356e73",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/server.ts": {
+      "expected": "49744f6f25e1cba1c6125718825bcb392be0f1397a32d8806ba7a71729c1c110",
+      "actual": "49744f6f25e1cba1c6125718825bcb392be0f1397a32d8806ba7a71729c1c110",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/teamRates.test.ts": {
+      "expected": "dcfdefa521aa64e9424da65ad9619dcc62ef41b53a048f684a2c3966b81b2913",
+      "actual": "dcfdefa521aa64e9424da65ad9619dcc62ef41b53a048f684a2c3966b81b2913",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/teamRates.ts": {
+      "expected": "b30ffcb491fc60213fc476b2cc67f41a3330a5be9e4a89d8599d446fb0f96a32",
+      "actual": "b30ffcb491fc60213fc476b2cc67f41a3330a5be9e4a89d8599d446fb0f96a32",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/tiers.test.ts": {
+      "expected": "f323fbe85feddc462ff8e993a2f11d2fe35dfba5189f7863cec0605822729e69",
+      "actual": "f323fbe85feddc462ff8e993a2f11d2fe35dfba5189f7863cec0605822729e69",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/tiers.ts": {
+      "expected": "1e99d98fbdf0481503f2d22b8bf76488b801767016fea3381365a60658328c19",
+      "actual": "1e99d98fbdf0481503f2d22b8bf76488b801767016fea3381365a60658328c19",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/trends.test.ts": {
+      "expected": "2c8f535b243a7af5fba4c28480c505242399249b163853c5106722636ddb7028",
+      "actual": "2c8f535b243a7af5fba4c28480c505242399249b163853c5106722636ddb7028",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/trends.ts": {
+      "expected": "03ffc190244f6657069dcaa402b5fddfe462d80029fba5e9fe0285bc6b71f943",
+      "actual": "03ffc190244f6657069dcaa402b5fddfe462d80029fba5e9fe0285bc6b71f943",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/trendsFixture.ts": {
+      "expected": "c431b1c687e3dfc844510a1f74b848b9bedf62638d2344cf323dcd4702839101",
+      "actual": "c431b1c687e3dfc844510a1f74b848b9bedf62638d2344cf323dcd4702839101",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/lib/socialShare/types.ts": {
+      "expected": "bc5c27b34ae52a4e2b66025a92f9525eb28d5d5604e8de24c038f8aae2890d26",
+      "actual": "bc5c27b34ae52a4e2b66025a92f9525eb28d5d5604e8de24c038f8aae2890d26",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/api/v1/social-share/[format].ts": {
+      "expected": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+      "actual": "68a09aa87f7a0333217199bd6668e8ba2fe444c07e009fce7a28459ef230b0ab",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/pages/social-share/[format].tsx": {
+      "expected": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "actual": "70ffbcceef51f4ad101b6226066aa99ae1393108c73fcad4197d494a95a76fc7",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/MartianMono-Variable.ttf": {
+      "expected": "c3467843ec1c2574b05fbcfd7147c7bfbcf63ddca8fc2bcb9d117f1bfb1b22e7",
+      "actual": "c3467843ec1c2574b05fbcfd7147c7bfbcf63ddca8fc2bcb9d117f1bfb1b22e7",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/RobotoCondensed-Variable.ttf": {
+      "expected": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0",
+      "actual": "dace262afcee68a5276f200d8026c57221735c0118ab5fda8c2c0d3dc409a8d0",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/TrainOne-Regular.ttf": {
+      "expected": "07d67ad14231a4a41f0ee501b14bd6f9c7a9beada5ee6af2924114863a034623",
+      "actual": "07d67ad14231a4a41f0ee501b14bd6f9c7a9beada5ee6af2924114863a034623",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/martianmono-OFL.txt": {
+      "expected": "00eef3688bb7b4fe6e76055ff925b6adf0ea9cb6e0b7600ddb9e0748716c1ea8",
+      "actual": "00eef3688bb7b4fe6e76055ff925b6adf0ea9cb6e0b7600ddb9e0748716c1ea8",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/robotocondensed-OFL.txt": {
+      "expected": "0b3098464626138c0e2b29b95239e9f27ffbe322c6256305852018d8a9587ede",
+      "actual": "0b3098464626138c0e2b29b95239e9f27ffbe322c6256305852018d8a9587ede",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/public/fonts/social-share/trainone-OFL.txt": {
+      "expected": "6818e49c39faebedf24e43b3601f1afa3a1fc9e960f8d3d667f8ddad432695a8",
+      "actual": "6818e49c39faebedf24e43b3601f1afa3a1fc9e960f8d3d667f8ddad432695a8",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/components/GameGrid/utils/scheduleOpportunity.ts": {
+      "expected": "02198b9a732bc7b25e14e0ef285bae73b348ce5f645a26efe177ae52e773380c",
+      "actual": "02198b9a732bc7b25e14e0ef285bae73b348ce5f645a26efe177ae52e773380c",
+      "matches": true,
+      "test_only_adaptation": false
+    },
+    "web/e2e/fixtures/socialEditorSession.ts": {
+      "expected": "ad3992ece8525016566a9e6ab3b889993a316b541305efc457abe814c96e91fa",
+      "actual": "ad3992ece8525016566a9e6ab3b889993a316b541305efc457abe814c96e91fa",
+      "matches": true,
+      "test_only_adaptation": true
+    }
+  },
+  "port_rechecked_free_immediately_before_start": true,
+  "discovery_one_test_confirmed": true,
+  "server_command": [
+    "/usr/local/bin/node",
+    "/tmp/fhfh-latest-social-access-zbjtop5e/web/node_modules/next/dist/bin/next",
+    "dev",
+    "--hostname",
+    "127.0.0.1",
+    "--port",
+    "3140"
+  ],
+  "config_before": {
+    "next.config.js": "720ea61865b3a13734c7b3a38f334c219f6dc8ab0caa55223f5499046ff60e8c",
+    "tsconfig.json": "bf729d54eb8c1f8647c54f2406025cfce9e02c0b33b2a427032a83a1a963207b"
+  },
+  "owned_server_pid": 32846,
+  "owned_process_group": 32846
+}

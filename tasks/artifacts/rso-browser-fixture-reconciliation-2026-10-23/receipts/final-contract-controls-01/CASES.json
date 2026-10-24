@@ -1,0 +1,24 @@
+[
+  {
+    "title": "Yahoo timeout retains schedule analysis and matchup-week navigation without actionable acquisitions",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveCount\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'Candidate browser' }).getByRole('button', { name: 'Select add', exact: true })\nExpected: \u001b[32m0\u001b[39m\nReceived: \u001b[31m1\u001b[39m\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveCount\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Candidate browser' }).getByRole('button', { name: 'Select add', exact: true })\u001b[22m\n\u001b[2m    34 \u00d7 locator resolved to 1 element\u001b[22m\n\u001b[2m       - unexpected value \"1\"\u001b[22m\n\n\n  722 |   await page.getByRole(\"button\", { name: \"All players\", exact: true }).click();\n  723 |   const candidateBrowser = page.getByRole(\"region\", { name: \"Candidate browser\" });\n> 724 |   await expect(candidateBrowser.getByRole(\"button\", { name: \"Select add\", exact: true })).toHaveCount(0);\n      |                                                                                           ^\n  725 |   await expect(candidateBrowser.getByRole(\"button\", { name: /^Preview swap/ })).toHaveCount(0);\n  726 |   await expect(candidateBrowser.getByText(\"Net AGP\", { exact: true })).toHaveCount(0);\n  727 |   await openDisclosure(page, /^More tools$/);\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:724:91"
+    ]
+  },
+  {
+    "title": "candidate feedback views preserve eligibility, availability and planned-add semantics",
+    "project": "chromium",
+    "status": "failed",
+    "errors": [
+      "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator:  getByRole('region', { name: 'Plan summary' }).locator('article').filter({ has: getByText('Active games', { exact: true }) }).locator('strong')\nExpected: \u001b[32m\"\u001b[7m3\u001b[27m / \u001b[7m9\u001b[27m\"\u001b[39m\nReceived: \u001b[31m\"\u001b[7m1\u001b[27m / \u001b[7m6\u001b[27m\"\u001b[39m\nTimeout:  15000ms\n\nCall log:\n\u001b[2m  - Expect \"toHaveText\" with timeout 15000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Plan summary' }).locator('article').filter({ has: getByText('Active games', { exact: true }) }).locator('strong')\u001b[22m\n\u001b[2m    2 \u00d7 locator resolved to <strong>\u2014</strong>\u001b[22m\n\u001b[2m      - unexpected value \"\u2014\"\u001b[22m\n\u001b[2m    32 \u00d7 locator resolved to <strong>1 / 6</strong>\u001b[22m\n\u001b[2m       - unexpected value \"1 / 6\"\u001b[22m\n\n\n  1436 |   await expect(adds).toContainText(\"Planned adds: 1\");\n  1437 |   await expect(adds).toContainText(\"Allowance unknown\");\n> 1438 |   await expect(page.getByRole(\"region\", { name: \"Plan summary\" }).locator(\"article\").filter({ has: page.getByText(\"Active games\", { exact: true }) }).locator(\"strong\")).toHaveText(\"3 / 9\");\n       |                                                                                                                                                                          ^\n  1439 |   await page.screenshot({ path: testInfo.outputPath(\"rso-feedback-desktop.png\"), fullPage: true });\n  1440 |   await page.reload();\n  1441 |   await openDisclosure(page, \"Find & filter\");\n    at /Users/tim/Documents/Codex/2026-10-23/task-3/rso-browser-fixture-reconciliation-2026-10-23/snapshot/web/e2e/roster-schedule-optimizer.spec.ts:1438:170"
+    ]
+  },
+  {
+    "title": "compact day and bench controls preserve saved intent and keyboard selection",
+    "project": "chromium",
+    "status": "passed",
+    "errors": []
+  }
+]

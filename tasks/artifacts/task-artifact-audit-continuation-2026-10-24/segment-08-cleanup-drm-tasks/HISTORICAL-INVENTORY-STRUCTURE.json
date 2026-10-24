@@ -1,0 +1,11 @@
+{
+  "path": "tasks/TASKS/dead-code-cleanup/prd-file-inventory.md",
+  "sha256": "0b0a198c946c4eb01fbcc9169d5d46a92db61a813937d95da0d45717c855708c",
+  "generated_tree_lines": 1025,
+  "unparsed_tree_line_numbers": [],
+  "flat_rows": 843,
+  "unique_flat_rows": 843,
+  "non_record_flat_lines": [],
+  "declared_historical_total": 845,
+  "conclusion": "Declared845 versus843 unique flat records is historical index drift, not current missing-file/task evidence. Tree/list support provenance; unique prose/closure overlays read. No current file inventory or contents of referenced paths asserted."
+}

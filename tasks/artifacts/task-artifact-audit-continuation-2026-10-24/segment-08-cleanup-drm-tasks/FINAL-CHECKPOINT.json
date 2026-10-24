@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-24T17:21:41.259851+00:00",
+  "checkpoint": "segment08 complete; overall audit unfinished",
+  "canonical_hashes": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "2e1c65b3370ad5db1d4b7d792f5998aa6d6662966f9738981356565c66702d29",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "094fad3156fb56803f64d7d80d47ab607abd046b4f8d6382f5c40f700429511a",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "815aba7fcbcb46e4ba91f9ffe2943c29a8668c6396d2802290bd4511a1df80bc"
+  },
+  "ids_before": 207,
+  "ids_after": 207,
+  "evidence_before": 955,
+  "evidence_after": 982,
+  "added_ids": [],
+  "changed_ids": [
+    "SITE-WIGO",
+    "SITE-FORGE-TESTING-GROUNDS",
+    "SITE-PLAYER-CARDS",
+    "PAID-SYNC",
+    "SITE-PRIVACY-POLICY",
+    "YAHOO-HISTORY-RETIREMENT",
+    "REPO-DOCUMENTATION"
+  ],
+  "all_207_prior_ids_scopes_evidence_prefixes_preserved": true,
+  "legacy_blocks_each_markdown_byte_identical": 32,
+  "unchanged_existing_rows_identical": 200,
+  "new_evidence_references_verified": 27,
+  "frozen_source_pins_verified": 14,
+  "coverage_counts": {
+    "content-reviewed": 13,
+    "partially-inspected": 1
+  },
+  "full_content_bytes": 240914,
+  "bounded_historical_index_disposition": 1,
+  "known_support_metadata_role_dispositions": 39,
+  "selected_unique_report_candidates_still_pending": 8,
+  "historical_unique_text_candidates_remaining": 1723,
+  "historical_raw_queue_records_remaining_not_deep_document_obligations": 12153,
+  "current_reviewed_source_drift": [],
+  "library": {
+    "library_file_id": "libfile_9987e7d9d1b8819181b366a318cc9a9c",
+    "current_version": 8,
+    "status": "succeeded",
+    "native_download": "https://chatgpt.com/api/library/files/libfile_9987e7d9d1b8819181b366a318cc9a9c/download",
+    "native_xattr_readback": [
+      {
+        "name": "user.library-file-version",
+        "matches_returned_value": true,
+        "exit_code": 0
+      }
+    ],
+    "local_bytes_unchanged_after_xattrs": true
+  },
+  "next_cursor": "tasks/TASKS/draft-dashboard-yahoo/docs/DraftDashboard_Audit.md",
+  "whole_tree_full_content_review_complete": false,
+  "application_test_git_or_production_operations": 0,
+  "pending_mutation": false,
+  "resolved_verification_issue": "Initial handback check used nonexistent coverage key; corrected to existing status schema. No writes occurred in failed check; canonical and Library were already successful, neither retried."
+}

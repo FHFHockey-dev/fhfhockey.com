@@ -1,0 +1,44 @@
+{
+  "candidateVerdict": "ACCEPT WITH LIMITS for reload continuity only; sign-out completion held",
+  "authProposalRecommendation": "correct for reset-helper boundary; parent may authorize a minimal source/test lease, not granted here",
+  "candidatePatchSha256": "c500b580b79f2bd1ce3bc00e50630ea3ac1d47bd1985843c53121cb8a9b420ff",
+  "authProposalSha256": "c0deaddc7e9421a13c3b944c37c54e1a4fb421d93452d1275eacac2538e40002",
+  "canonicalAuthBaseline": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+  "actualChangedCandidateFiles": 2,
+  "packetPinsMatched": 30,
+  "canonicalBaselinesMatched": 4,
+  "independentTests": {
+    "passed": 9,
+    "failed": 0,
+    "runs": 1
+  },
+  "retainedOwnerTests": {
+    "passed": 52,
+    "failed": 0,
+    "rerunByReviewer": false
+  },
+  "retainedOwnerAppTypecheck": "exit2; two Luna errors; not rerun or independently classified pre-existing",
+  "findings": [
+    {
+      "priority": "P2",
+      "summary": "Candidate alone leaves cancellation metadata after signout unmount; exact auth proposal fixes existing reset helper boundary in isolated tests"
+    },
+    {
+      "priority": "P2 assurance wording",
+      "summary": "24h is restore/reuse eligibility, not automatic byte deletion; raw bytes persist beyond48h while unmounted"
+    }
+  ],
+  "minimalProposedLease": [
+    "web/lib/supabase/browser-auth.ts",
+    "web/__tests__/contexts/AuthProviderContext.test.tsx"
+  ],
+  "leaseGranted": false,
+  "canonicalSharedAuthApplied": false,
+  "canonicalSourceWrites": 0,
+  "gitMutations": 0,
+  "externalRequests": 0,
+  "serversOrBrowsersStarted": 0,
+  "subagents": 0,
+  "blockedChecks": [],
+  "runningOperations": []
+}

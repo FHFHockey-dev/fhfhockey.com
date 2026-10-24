@@ -1,0 +1,79 @@
+{
+  "canonical_ids": 205,
+  "master_sha256": "9d9ac2a4f1e0d25873c01c2a929715b8e82d9d8ff79af668c0ab8bab89d9ba8c",
+  "method": "Exact clause searches plus manual comparison of nearest205row scopes; lexical absence is not a code/runtime verdict.",
+  "checks": {
+    "patreon_transaction": {
+      "master_matches": [],
+      "row_matches": []
+    },
+    "ranking_grants": {
+      "master_matches": [],
+      "row_matches": []
+    },
+    "ifttt_query_secret": {
+      "master_matches": [],
+      "row_matches": []
+    },
+    "doc_and_privacy": {
+      "master_matches": [
+        {
+          "line": 465,
+          "text": "- **Preserved original scope:** preserve dated provider/season ownership provenance and reject stale/future/mismatched ranking evidence; unknown is not zero. Propose one shared retention policy, caution for high-demand releases even with zero remaining games, and lower-ownership tie-breaking among supported equivalent legal plans. Preserve objective values, manager protection, fewer unnecessary mo"
+        },
+        {
+          "line": 467,
+          "text": "- **Retained additional requirements:** **Confirmed ownership contract (TJ, 2026-10-20 13:28 UTC):** provider-reported numeric `0` is valid 0% ownership, not missing. Absent fields, `null`, empty strings and invalid values remain unknown; do not coerce them to zero through truthiness checks, default values or numeric conversion. Preserve value, observation time, provider and availability/freshness"
+        },
+        {
+          "line": 540,
+          "text": "- **Dependencies / gate:** R1\u2013R3 legality, G1/F6 qualified category heads, league rules, R7 retention caution displayed separately; A1 is optional context, never a prerequisite or substitute for FORGE values. Approval: analysis now; review implementation scope before changing advice; Release separately. Size M for explanation-only slice. Independent exact-byte acceptance, then separate exact-candi"
+        },
+        {
+          "line": 575,
+          "text": "- **Preserved original scope:** prepare a read-only troubleshooting recipe with exact deployment/environment/request/time binding and sensitive-data redaction; inspect availability/retention before relying on it. Do not query hosted logs, add instrumentation, change credentials or expand access under this planning task. Current status and authorization above control; original scope is not new auth"
+        },
+        {
+          "line": 1747,
+          "text": "- **Implementation:** Six-file manual post-retention caller, transport, local admission and adjudicated-library packet implemented; default off, no hosted caller or publication path."
+        },
+        {
+          "line": 1799,
+          "text": "### IFTTT-ACTIVATION \u2014 Typed semantics, retention/recovery and hosted activation"
+        },
+        {
+          "line": 2036,
+          "text": "- **Verification:** Readiness found no demand/conversion/retention/uniqueness evidence."
+        },
+        {
+          "line": 2619,
+          "text": "- **Pinned references:** [web/lib/rosterScheduleOptimizer/retention.test.ts:1](../../web/lib/rosterScheduleOptimizer/retention.test.ts) SHA256 `baeeaeef625fe4e3f3e2b77bae5a7d8939b0994c247ae2e607f7fb13743ace89`; [web/lib/rosterScheduleOptimizer/lineupGaps.ts:1](../../web/lib/rosterScheduleOptimizer/lineupGaps.ts) SHA256 `ac25446d63b3343b5b826052b7609da86ba9529ed56ce7637c88bd65ea608646`; [web/lib/ro"
+        },
+        {
+          "line": 2668,
+          "text": "- **Dependencies / gate:** Coordinate BILLING/PAID-SYNC and FORGE/RSO owners; inspect existing stored league settings before new tables. Design worker assignment and independent design acceptance precede implementation. Review minimal fields and existing-storage mapping, canonical/raw/custom category semantics, format grouping, zero/null scoring, units, roster/rule configuration, temporal provenan"
+        },
+        {
+          "line": 2669,
+          "text": "- **Next:** Parent reviews consent/privacy/retention choices and proposed tables against reuse constraints, verifies provider format distinctions, then assigns disjoint implementation leases only after design acceptance."
+        },
+        {
+          "line": 2695,
+          "text": "- **Dependencies:** Installed approved requirements and exact slice01 pins; TJ-only owner/session policy. Later reported \u201cyes A\u201d selects a dedicated bounded/checkpointed Testing Grounds worker using the existing lease/CAS pattern, beginning with inert local store/state-machine proof. Hosted bounds/costs/retention/provisioning, statistical/event/reveal choices and real pilot remain gated."
+        },
+        {
+          "line": 2712,
+          "text": "- **Implementation:** September25 audit delivered an explicitly unfinished noindex draft. Operator/contact, retention/deletion/request process and actual tracking/provider facts remain owner-dependent; no later completion receipt found in inspected sources."
+        }
+      ],
+      "row_matches": [
+        "MASTER-R8",
+        "LUNA-LOCAL",
+        "IFTTT-ACTIVATION",
+        "LEAGUE-CONFIG-ANALYTICS",
+        "SITE-FORGE-TESTING-GROUNDS",
+        "SITE-PRIVACY-POLICY"
+      ]
+    }
+  }
+}

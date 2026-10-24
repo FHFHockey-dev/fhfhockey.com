@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method !== "GET") { res.setHeader("Allow", "GET"); return res.status(405).end(); }
   const user = await requireApiUser(req, res);
   if (!user) return;
-  const access = await loadProviderSyncAccess(user.id);
+  const access = await loadProviderSyncAccess(user.id, { entitlementOnly: req.query.entitlementOnly === "true" });
   if (access.reason === "verification_unavailable") return res.status(503).json({ error: { code: access.reason, message: "Premium access could not be verified. Please try again." } });
   return res.status(200).json({ data: { access } });
 }

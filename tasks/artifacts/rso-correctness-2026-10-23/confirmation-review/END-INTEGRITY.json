@@ -1,0 +1,8 @@
+{
+  "checked_at": "2026-10-23T12:46:09.942560+00:00",
+  "head": "431ffcd673b42ad4a149dc3f9dfb03005dbec75a",
+  "source_mismatches": {},
+  "fixture_sha256": "e9b32db2cafed2b5eb6a1763c78c4daa03969e37c7363e50179bff4ef45c33e2",
+  "application_edits": [],
+  "baseline_patch_preserved": true
+}

@@ -1,0 +1,22 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/player-cards-2026-10-24/slice-03-r1-review/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+(node:79725) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ web/components/player-cards/PlayerCardFlow.test.tsx (10 tests | 7 skipped) 76ms
+(node:79727) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tasks/artifacts/player-cards-2026-10-24/slice-03-review/interaction-controls.test.tsx (5 tests | 2 skipped) 82ms
+(node:79736) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tasks/artifacts/player-cards-2026-10-24/slice-03-r1-review/adjacent-controls.test.tsx (2 tests) 69ms
+
+ Test Files  3 passed (3)
+      Tests  8 passed | 9 skipped (17)
+   Start at  14:08:18
+   Duration  1.38s (transform 184ms, setup 13ms, collect 409ms, tests 228ms, environment 413ms, prepare 92ms)
+

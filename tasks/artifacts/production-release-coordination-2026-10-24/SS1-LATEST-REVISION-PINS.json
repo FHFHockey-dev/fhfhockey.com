@@ -1,0 +1,67 @@
+{
+  "patches": [
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/SS1-9.patch",
+      "sha256": "364a31189a9e76973b4e51d62aabd081be3acedefd44f121ad0e7a88c9595c8f",
+      "files": [
+        "web/components/SocialShare/SocialShare.tsx",
+        "web/e2e/social-share.spec.ts",
+        "web/lib/socialShare/editionFetch.ts",
+        "web/lib/socialShare/editionFetch.test.ts",
+        "web/lib/socialShare/edition.ts",
+        "web/components/SocialShare/SocialShare.test.tsx"
+      ]
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/SS1-10.patch",
+      "sha256": "afe52ca0ce5c3c0608d6f732b4dcd27615fdae0d437fcdcb109dea73fcab91b2",
+      "files": [
+        "web/lib/socialShare/schedule.test.ts",
+        "web/lib/socialShare/server.ts",
+        "web/lib/socialShare/types.ts",
+        "web/components/SocialShare/SocialShare.tsx",
+        "web/components/SocialShare/SocialShare.module.scss",
+        "web/e2e/social-share.spec.ts",
+        "web/lib/socialShare/fixtures.ts",
+        "web/lib/socialShare/matchups.ts",
+        "web/lib/socialShare/matchups.test.ts",
+        "web/lib/socialShare/pickupsFixture.ts",
+        "web/lib/socialShare/teamRates.ts",
+        "web/lib/socialShare/teamRates.test.ts",
+        "web/lib/socialShare/players.ts",
+        "web/lib/socialShare/players.test.ts",
+        "web/lib/socialShare/playerSources.ts",
+        "web/lib/socialShare/playerSources.test.ts",
+        "web/components/SocialShare/TeamBanner.tsx"
+      ]
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/SS1-11.patch",
+      "sha256": "c614d89176232c229038d642356750af638718df8bd9c9d7f6c6802c3a7d7eff",
+      "files": [
+        "web/lib/socialShare/schedule.test.ts",
+        "web/lib/socialShare/server.ts",
+        "web/lib/socialShare/types.ts",
+        "web/components/SocialShare/SocialShare.tsx",
+        "web/e2e/social-share.spec.ts",
+        "web/lib/socialShare/players.ts",
+        "web/lib/socialShare/players.test.ts",
+        "web/lib/socialShare/playerSources.test.ts"
+      ]
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/SS1/SS1-12.patch",
+      "sha256": "e7e5d22637aa7c1792a6fa8c4687311a9dc79c6c279558b44dbaee8b0655791c",
+      "files": [
+        "web/components/SocialShare/SocialShare.tsx",
+        "web/components/SocialShare/SocialShare.module.scss",
+        "web/e2e/social-share.spec.ts",
+        "web/lib/socialShare/mondayGrid.ts",
+        "web/lib/socialShare/mondayGrid.test.ts"
+      ]
+    }
+  ],
+  "review": "Latest mailbox confirms C7 acceptance through ticket 9 and findings on 10. Ticket 11 claims corrections and ticket 12 claims local checks; no final independent ticket 11/12 receipt in current C7 artifact listing.",
+  "expanded_live_reads": "Unrun expanded recent-form source path remains separately gated; do not replay earlier narrower live approval.",
+  "active_exception": "Social access exact 8 existing plus 4 new paths granted; no SS1 renderer/design changes."
+}

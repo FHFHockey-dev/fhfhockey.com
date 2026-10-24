@@ -1,0 +1,16 @@
+
+> web@0.1.0 test
+> vitest --run --config ../tasks/artifacts/player-cards-2026-10-24/slice-03-r1/review.vitest.config.mts --maxWorkers=1 --no-file-parallelism tasks/artifacts/player-cards-2026-10-24/slice-03-r1/interaction-controls.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com
+
+(node:76631) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ tasks/artifacts/player-cards-2026-10-24/slice-03-r1/interaction-controls.test.tsx (5 tests) 136ms
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  13:59:34
+   Duration  606ms (transform 156ms, setup 9ms, collect 217ms, tests 136ms, environment 137ms, prepare 28ms)
+

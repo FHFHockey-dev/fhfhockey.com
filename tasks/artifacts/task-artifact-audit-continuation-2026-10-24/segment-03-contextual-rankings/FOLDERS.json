@@ -1,0 +1,55 @@
+{
+  "scope": "Selected-folder additive overlay; original global FOLDERS remains unchanged.",
+  "folders": [
+    {
+      "folder": "tasks/TASKS/contextual-hockey-rankings",
+      "full": [
+        "tasks/TASKS/contextual-hockey-rankings/2026-06-07-goal.md",
+        "tasks/TASKS/contextual-hockey-rankings/gpt-codex-suggested-prompt.md",
+        "tasks/TASKS/contextual-hockey-rankings/prd-contextual-hockey-rankings.md",
+        "tasks/TASKS/contextual-hockey-rankings/prd-v2-pass-CHR.md",
+        "tasks/TASKS/contextual-hockey-rankings/prd-rankings-ecosystem-alignment-audit.md",
+        "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-ecosystem-alignment-audit.md",
+        "tasks/TASKS/contextual-hockey-rankings/prd-rankings-post-alignment-gap-audit.md",
+        "tasks/TASKS/contextual-hockey-rankings/tasks-prd-rankings-post-alignment-gap-audit.md"
+      ],
+      "partial": [
+        "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md"
+      ],
+      "remainder": "Only named documentary files were reviewed. Other source/tests/logs/bulk structured data/images retain prior coverage or are unreviewed."
+    },
+    {
+      "folder": "tasks/codex-sprint-2026-10-19/continuation-cost",
+      "full": [
+        "tasks/codex-sprint-2026-10-19/continuation-cost/R-COST-HANDOFF.md"
+      ],
+      "partial": [],
+      "remainder": "Only named documentary files were reviewed. Other source/tests/logs/bulk structured data/images retain prior coverage or are unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review",
+      "full": [
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW.md",
+        "tasks/artifacts/forge-testing-grounds-2026-10-24/slice-03-review/REVIEW-EVIDENCE.json"
+      ],
+      "partial": [],
+      "remainder": "Only named documentary files were reviewed. Other source/tests/logs/bulk structured data/images retain prior coverage or are unreviewed."
+    },
+    {
+      "folder": "tasks/artifacts/c3-independent-review-2026-10-24",
+      "full": [
+        "tasks/artifacts/c3-independent-review-2026-10-24/REVIEW.md",
+        "tasks/artifacts/c3-independent-review-2026-10-24/REVIEW-EVIDENCE.json"
+      ],
+      "partial": [],
+      "remainder": "Only named documentary files were reviewed. Other source/tests/logs/bulk structured data/images retain prior coverage or are unreviewed."
+    }
+  ],
+  "exclusions": [
+    "Ranking application implementations/tests and current hosted source rows.",
+    "Main rankings task list remaining full content; research/deep-research reports; workstation context/recommendations.",
+    "Underlying R-COST raw before/after/harness results; attribution is to full dated receipt.",
+    "C3/TG reviewer source/tests/log/pin matrices and browser images; imported verdicts only.",
+    "No new global inventory. New own namespace excluded from recursive re-audit."
+  ]
+}

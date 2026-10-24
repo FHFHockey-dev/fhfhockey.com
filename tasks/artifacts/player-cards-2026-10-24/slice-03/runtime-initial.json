@@ -1,0 +1,9 @@
+{
+  "pid": 67382,
+  "execSession": 67069,
+  "bind": "127.0.0.1:3125",
+  "script": "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-24/slice-03/serve-preview.mjs",
+  "htmlSha256": "04cd35ba6ce832ac6f2357d08c0646fa2e2f41dd0077bfaaf672cfc2fd3b3053",
+  "supersedes": 54140,
+  "status": "First S03 content handoff complete; final calendar wording clarification rebuild pending"
+}

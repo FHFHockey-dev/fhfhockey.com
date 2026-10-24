@@ -1,0 +1,193 @@
+
+> web@0.1.0 test
+> vitest --run components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx components/RosterScheduleOptimizer/ForecastPoints.test.tsx lib/rosterScheduleOptimizer/gameForecastPoints.test.ts __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx
+
+
+ RUN  v3.2.7 /Users/tim/Code/fhfhockey.com/web
+
+(node:55461) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:55460) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:55463) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:55464) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:55462) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓ components/RosterScheduleOptimizer/ForecastPoints.test.tsx (3 tests) 15ms
+ ✓ lib/rosterScheduleOptimizer/gameForecastPoints.test.ts (19 tests) 3ms
+ ✓ components/RosterScheduleOptimizer/SlotWeekGrid.test.tsx (6 tests) 173ms
+ ✓ components/RosterScheduleOptimizer/RosterScheduleOptimizer.points.test.tsx (6 tests) 1150ms
+   ✓ RSO live grid points callback > renders complete FP from the current admitted read  304ms
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:138:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:138:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:138:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:138:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:138:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for manual without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:138:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for yahoo without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:138:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for yahoo without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:138:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for yahoo without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:138:71)
+
+stderr | __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx > RosterScheduleOptimizer workspace > reloads shared schedule data for yahoo without changing the selected plan or refreshing a provider
+Warning: Encountered two children with the same key, `2026-10-15`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at span
+    at li
+    at ol
+    at details
+    at section
+    at BenchDays (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/BenchDays.tsx:9:22)
+    at div
+    at section
+    at div
+    at div
+    at RosterScheduleOptimizer (/Users/tim/Code/fhfhockey.com/web/components/RosterScheduleOptimizer/RosterScheduleOptimizer.tsx:138:71)
+
+ ✓ __tests__/components/RosterScheduleOptimizer/RosterScheduleOptimizer.test.tsx (209 tests) 27014ms
+   ✓ active provider refresh scheduling > applies actual GOALS inputs to connected category results without changing provider evidence  313ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different owner or rewriting the plan  749ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different league or rewriting the plan  720ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different team or rewriting the plan  735ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different horizon or rewriting the plan  729ms
+   ✓ RosterScheduleOptimizer workspace > resumes a display day without aliasing a different timezone or rewriting the plan  703ms
+   ✓ RosterScheduleOptimizer workspace > keeps display-preference corrupt separate from the working plan  348ms
+   ✓ RosterScheduleOptimizer workspace > keeps display-preference out-of-horizon separate from the working plan  350ms
+   ✓ RosterScheduleOptimizer workspace > keeps display-preference read-failure separate from the working plan  349ms
+   ✓ RosterScheduleOptimizer workspace > keeps display-preference write-failure separate from the working plan  408ms
+   ✓ RosterScheduleOptimizer workspace > reviews manual candidate positions explicitly without replacing selected moves or leaking another candidate's positions  668ms
+   ✓ RosterScheduleOptimizer workspace > requires input review and renews it after rule changes without certifying unknown scoring  528ms
+   ✓ RosterScheduleOptimizer workspace > reads back legal crowded-day assignments through nonzero plan refresh, Undo and reopen  848ms
+   ✓ RosterScheduleOptimizer workspace > keeps refreshed provider authority through undo and reopen without replacing selected moves  445ms
+   ✓ RosterScheduleOptimizer workspace > uses the signed-in session for access and account reads, then refreshes after account switch  331ms
+   ✓ RosterScheduleOptimizer workspace > explains disabled manual controls and invalid rule-window dates using visible descriptions  500ms
+   ✓ RosterScheduleOptimizer workspace > keeps the local plan on a stale-version save and ignores a late save after account switching  323ms
+   ✓ owner plan preservation > drains a dispatched account save before capturing the actual remote state  462ms
+   ✓ owner plan preservation > keeps nonzero intent/Undo, restores after reopen, and verifies original local and remote payloads  538ms
+   ✓ owner plan preservation > restores original provider authority including absence without remount (absent=false)  526ms
+   ✓ owner plan preservation > restores original provider authority including absence without remount (absent=true)  526ms
+   ✓ owner plan preservation > serializes a protected account acknowledgement before persisting and acknowledging a local edit  600ms
+   ✓ owner plan preservation > rejects substituted journal expectations against the server's last-own local hash  306ms
+   ✓ owner plan preservation > holds account-save testing for original absence and rejects rehashed backup substitution  303ms
+
+ Test Files  5 passed (5)
+      Tests  243 passed (243)
+   Start at  12:23:17
+   Duration  28.34s (transform 925ms, setup 17ms, collect 2.71s, tests 28.35s, environment 1.85s, prepare 207ms)
+

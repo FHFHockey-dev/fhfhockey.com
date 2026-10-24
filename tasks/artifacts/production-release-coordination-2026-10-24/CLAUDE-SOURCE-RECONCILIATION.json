@@ -1,0 +1,370 @@
+{
+  "at": "2026-10-24T20:59:22.168964+00:00",
+  "lanes": [
+    {
+      "lane": "C1",
+      "snapshot": "/tmp/fhfh-claude-c1-reconcile-ldmiuc8q",
+      "baseline": "HEAD 2a5092d37 source for only touched paths",
+      "missing_baseline": [],
+      "patch_checks": [
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C1/C1-S06.patch",
+          "sha256": "ecef9b66b9aa65eba5be10e8842c67b996bdb26e80d5744093f82ee8fd0ab7d4",
+          "apply_check": 0,
+          "diagnostic": ""
+        },
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C1/C1-S06-R1.patch",
+          "sha256": "f7c5bf62894d2e9b4ea11b951d04b34a6c73a111c29608a9519f366828b769b9",
+          "apply_check": 0,
+          "diagnostic": ""
+        },
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C1/C1-S05.patch",
+          "sha256": "66a5e41121d0da29b11aa95bf93d8065ca6f3a9a9fe0219d6e09d01d1ede9da4",
+          "apply_check": 0,
+          "diagnostic": ""
+        }
+      ],
+      "final_files": [
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.module.scss",
+          "candidate_sha256": "1352a81560e50128c75709d29ad65eed1295562834746e7cf2d18948e65d138b",
+          "canonical_sha256": "1352a81560e50128c75709d29ad65eed1295562834746e7cf2d18948e65d138b",
+          "canonical_equals_candidate": true,
+          "production_sha256": "54ef5a57ddd62f32cb5d9d495fb9abd89b1a17136a9924a9a45cbe83041b221c",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx",
+          "candidate_sha256": "fef6ef9c2b4b4fd754333d322b1ac31d5193c27a17b098c2c3d7a0b01a686536",
+          "canonical_sha256": "fef6ef9c2b4b4fd754333d322b1ac31d5193c27a17b098c2c3d7a0b01a686536",
+          "canonical_equals_candidate": true,
+          "production_sha256": null,
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/GoalieShareChart/index.tsx",
+          "candidate_sha256": "b632a0cae6a50174012264950b7a0ca1b22402811a7162024216c40ecf09949c",
+          "canonical_sha256": "b632a0cae6a50174012264950b7a0ca1b22402811a7162024216c40ecf09949c",
+          "canonical_equals_candidate": true,
+          "production_sha256": "2f424f909334725b9c3665781cec72c193a179c8ed16d473d579584d76403d62",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/LineCombinations/LineCombinationsGrid.tsx",
+          "candidate_sha256": "fb5c6a3c0d50f1c9f1abca1de82527420cc240b3ba3c4b125c466485b18c6de7",
+          "canonical_sha256": "fb5c6a3c0d50f1c9f1abca1de82527420cc240b3ba3c4b125c466485b18c6de7",
+          "canonical_equals_candidate": true,
+          "production_sha256": "6a606f4a7dec24a5525ae42da63cc39e57b2e8dbf4adf6398e9ba0937da579cd",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/ShotVisualization/ShotVisualization.tsx",
+          "candidate_sha256": "a563dadeed8e41915c11258019a0a97cbb0872622391307fa069a39daec2b921",
+          "canonical_sha256": "a563dadeed8e41915c11258019a0a97cbb0872622391307fa069a39daec2b921",
+          "canonical_equals_candidate": true,
+          "production_sha256": "65357ab5681c8b5dc11ce9cd5b51e9fd6a01c919aae79d4d0132e6da38902e1e",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/TeamTabNavigation/TeamTabNavigation.test.tsx",
+          "candidate_sha256": "6312ca9177389c01db342826b4833f99facc9729ddbacd4f737b21ae245dbae0",
+          "canonical_sha256": "6312ca9177389c01db342826b4833f99facc9729ddbacd4f737b21ae245dbae0",
+          "canonical_equals_candidate": true,
+          "production_sha256": "40ad88b2eb67298eff2d57461065c74f6aa9ad687b0536b011c10f2a4d98adbf",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/TeamTabNavigation/TeamTabNavigation.tsx",
+          "candidate_sha256": "3e9fd15559b22ec0949e176086531be5348a92ac1efc0dcd4beebc2d92730fb6",
+          "canonical_sha256": "3e9fd15559b22ec0949e176086531be5348a92ac1efc0dcd4beebc2d92730fb6",
+          "canonical_equals_candidate": true,
+          "production_sha256": "ce601088433bdfa422dabc86df20fa53b6b611e8eb461aeb34ec963711a9bed4",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/hooks/useShotData.test.tsx",
+          "candidate_sha256": "7c78ae8c32883b6c035c2ba3d12ee6f50e04b3c3b3293770f33f7d0529aee0f2",
+          "canonical_sha256": "7c78ae8c32883b6c035c2ba3d12ee6f50e04b3c3b3293770f33f7d0529aee0f2",
+          "canonical_equals_candidate": true,
+          "production_sha256": null,
+          "changed_from_production": true
+        },
+        {
+          "path": "web/hooks/useShotData.ts",
+          "candidate_sha256": "a5a77ced8be87b36e34ffe71003e4df48942f34c7af1de43608736f7074af4c1",
+          "canonical_sha256": "a5a77ced8be87b36e34ffe71003e4df48942f34c7af1de43608736f7074af4c1",
+          "canonical_equals_candidate": true,
+          "production_sha256": "3cccd2d7f6dd1a44338d760eec0b20de4fb9ccf5218d075604a95bb695834f69",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/pages/stats/team/[teamAbbreviation].tsx",
+          "candidate_sha256": "561a048fe68f4f49fb4a7bc54eb3c87be39fcb90c87eca4002dd81f7b205957c",
+          "canonical_sha256": "561a048fe68f4f49fb4a7bc54eb3c87be39fcb90c87eca4002dd81f7b205957c",
+          "canonical_equals_candidate": true,
+          "production_sha256": "6348c1d621796f13d7beec0b9a152aeea436d947e2cffae256f5c057e45704bd",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/styles/Stats.module.scss",
+          "candidate_sha256": "e0dbf85fab25a006ce4b5f7be97ef7c355c519e34edba385c5226a157f15d8d8",
+          "canonical_sha256": "e0dbf85fab25a006ce4b5f7be97ef7c355c519e34edba385c5226a157f15d8d8",
+          "canonical_equals_candidate": true,
+          "production_sha256": "66596f49ac1246ea9911df5cf607fa8cf4a1b2e7f90775becb9d74da6cd12312",
+          "changed_from_production": true
+        }
+      ],
+      "status": "Patch chain verified in isolated scratch; source selection is not release acceptance"
+    },
+    {
+      "lane": "C4",
+      "snapshot": "/tmp/fhfh-claude-c4-reconcile-bckxhkep",
+      "baseline": "HEAD 2a5092d37 source for only touched paths",
+      "missing_baseline": [],
+      "patch_checks": [
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/C4-SITE-WIGO.patch",
+          "sha256": "2266893f0e268690ab27819aa3d2d3ab6afc3a2d8af6058cf14d79d11e4e190e",
+          "apply_check": 0,
+          "diagnostic": ""
+        },
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/C4-WIGO-R1.patch",
+          "sha256": "65dddc937aa83739926b5df810a6fd2f8ed03f406c4d50955d9817314f048c7f",
+          "apply_check": 0,
+          "diagnostic": ""
+        },
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C4/C4-BLSH-DETAIL-v2.patch",
+          "sha256": "b1fa417dad912f57d9a51a201a740d21be0bf0ea7edb8220528096f3731d19ec",
+          "apply_check": 0,
+          "diagnostic": ""
+        }
+      ],
+      "final_files": [
+        {
+          "path": "web/__tests__/pages/wigoCharts.test.tsx",
+          "candidate_sha256": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b",
+          "canonical_sha256": "6ca27777fe011e1ee44d7b390fab62da882e2202446bdc5107bca1e1c81bd01b",
+          "canonical_equals_candidate": true,
+          "production_sha256": null,
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BlshPlayerDetail.module.scss",
+          "candidate_sha256": "3527dd432fb53cafdb426e69b08e395e684103fb85ca512c0743a0b37e200cff",
+          "canonical_sha256": "3527dd432fb53cafdb426e69b08e395e684103fb85ca512c0743a0b37e200cff",
+          "canonical_equals_candidate": true,
+          "production_sha256": null,
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BlshPlayerDetail.tsx",
+          "candidate_sha256": "8d599804461848e162fa566bea5e571375f45f965bbc54afbbc3b3475613fb3b",
+          "canonical_sha256": "8d599804461848e162fa566bea5e571375f45f965bbc54afbbc3b3475613fb3b",
+          "canonical_equals_candidate": true,
+          "production_sha256": null,
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BuyLowSellHighPreview.test.tsx",
+          "candidate_sha256": "6bf7a3a0e9788564ab4889b5377634be1aefccf730f0c8aa56c187ce643d86c7",
+          "canonical_sha256": "6bf7a3a0e9788564ab4889b5377634be1aefccf730f0c8aa56c187ce643d86c7",
+          "canonical_equals_candidate": true,
+          "production_sha256": null,
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/buyLowSellHigh/BuyLowSellHighPreview.tsx",
+          "candidate_sha256": "400ccb4b711560ae32168deba45d371301f79199ad704b695b678091b40135e0",
+          "canonical_sha256": "400ccb4b711560ae32168deba45d371301f79199ad704b695b678091b40135e0",
+          "canonical_equals_candidate": true,
+          "production_sha256": null,
+          "changed_from_production": true
+        },
+        {
+          "path": "web/pages/wigoCharts.tsx",
+          "candidate_sha256": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151",
+          "canonical_sha256": "7ee8ff5779ac2f686b3fa45e7f1415dcafa25879422938b7a8e0f69cd1833151",
+          "canonical_equals_candidate": true,
+          "production_sha256": "96806e645d81076869dbd9f139afa4338af6643b54c0bd7a5ac2fcac6444bb15",
+          "changed_from_production": true
+        }
+      ],
+      "status": "Patch chain verified in isolated scratch; source selection is not release acceptance"
+    },
+    {
+      "lane": "C5",
+      "snapshot": "/tmp/fhfh-claude-c5-reconcile-fnf3o2au",
+      "baseline": "HEAD 2a5092d37 source for only touched paths",
+      "missing_baseline": [],
+      "patch_checks": [
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C5/C5-cron-audit-coverage-r2.patch",
+          "sha256": "e86b43ce3ad0d62586d5c1423b79a65139ceef73e262596c5e39b537d807c062",
+          "apply_check": 0,
+          "diagnostic": ""
+        }
+      ],
+      "final_files": [
+        {
+          "path": "web/__tests__/pages/api/internal/yahoo-live-draft.test.ts",
+          "candidate_sha256": "f1d3238b68c45d43eb15c77825bed0a6e718779c8bccf34efccadafdefc6c8c6",
+          "canonical_sha256": "f1d3238b68c45d43eb15c77825bed0a6e718779c8bccf34efccadafdefc6c8c6",
+          "canonical_equals_candidate": true,
+          "production_sha256": "fba094aa3ac7f1ea4a49014e3c5f8afb56ec51b0246c102530e34fe9f353f5b1",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/db/cron-audit-wrappers.test.ts",
+          "candidate_sha256": "c2de0f7e2d86d5e26e87592428e0f112004ac1c30d5407ec0d01356513cc977e",
+          "canonical_sha256": "c2de0f7e2d86d5e26e87592428e0f112004ac1c30d5407ec0d01356513cc977e",
+          "canonical_equals_candidate": true,
+          "production_sha256": "5458bdff688a5a1c78d158b9478a170430b5037a18b3a0a88538d5ca02fb82a2",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/__tests__/pages/api/v1/db/update-drafted-prospects.test.ts",
+          "candidate_sha256": "f16fad19188630ced0a9d32c53a91b5a969cee0b4e45b6cee5c2e2ca98899b27",
+          "canonical_sha256": "f16fad19188630ced0a9d32c53a91b5a969cee0b4e45b6cee5c2e2ca98899b27",
+          "canonical_equals_candidate": true,
+          "production_sha256": "995d6da8e75b0b4d015f22a64d2f6cdf52b10788500544b37043f1da90762c1e",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/pages/api/internal/yahoo-live-draft.ts",
+          "candidate_sha256": "20c99628240be857c349a3a2b97c36fc48a58519f7a30c06cb33a71fd1f8abbe",
+          "canonical_sha256": "20c99628240be857c349a3a2b97c36fc48a58519f7a30c06cb33a71fd1f8abbe",
+          "canonical_equals_candidate": true,
+          "production_sha256": "ce7c6553d8085ea1431dbddef01a5fc5150d59e2a8648514a6eed7168ea92c69",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/pages/api/v1/db/update-drafted-prospects.ts",
+          "candidate_sha256": "e4c5e476c50e57be341498a615ad0517ccd9f918937f42d85410f8a7c1df9881",
+          "canonical_sha256": "e4c5e476c50e57be341498a615ad0517ccd9f918937f42d85410f8a7c1df9881",
+          "canonical_equals_candidate": true,
+          "production_sha256": "980b050f88509ae0f333a458d4726a4c2b32986ed630b23c27c61d5d4b2b2c9c",
+          "changed_from_production": true
+        }
+      ],
+      "status": "Patch chain verified in isolated scratch; source selection is not release acceptance"
+    },
+    {
+      "lane": "C2",
+      "snapshot": "/tmp/fhfh-claude-c2-reconcile-de0wwl0t",
+      "baseline": "Frozen release-readiness r1 inputs",
+      "missing_baseline": [
+        "web/lib/sources/tweetLunaReview.test.ts",
+        "web/lib/sources/tweetLunaReview.ts",
+        "web/lib/sources/tweetLunaTransport.ts",
+        "web/scripts/review-ifttt-luna.ts"
+      ],
+      "patch_checks": [
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C2/C2-LUNA-F1-F2-F3.patch",
+          "sha256": "b6dc017e138caaa6edc0d8cc000c7cad5fbdebae4492a648610220dce8bfc249",
+          "apply_check": 1,
+          "diagnostic": "error: web/lib/sources/tweetLunaReview.ts: No such file or directory\nerror: web/lib/sources/tweetLunaTransport.ts: No such file or directory\nerror: web/lib/sources/tweetLunaReview.test.ts: No such file or directory\nerror: web/scripts/review-ifttt-luna.ts: No such file or directory\n"
+        }
+      ],
+      "final_files": [],
+      "status": "Requires exact patch/base reconciliation"
+    },
+    {
+      "lane": "C3",
+      "snapshot": "/tmp/fhfh-claude-c3-reconcile-m8fw8h47",
+      "baseline": "Frozen release-readiness r1 inputs",
+      "missing_baseline": [],
+      "patch_checks": [
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/C3-CANCEL-RELOAD.patch",
+          "sha256": "c500b580b79f2bd1ce3bc00e50630ea3ac1d47bd1985843c53121cb8a9b420ff",
+          "apply_check": 0,
+          "diagnostic": ""
+        },
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/C3-AUTH-SIGNOUT-CLEANUP.patch",
+          "sha256": "5ad23a504c4a1892bbd5ae33d83959afedcb4aca5d3bf60039f8ffc37aae23e4",
+          "apply_check": 0,
+          "diagnostic": ""
+        },
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/C3-UUID-HARDENING.delta.patch",
+          "sha256": "a258a6ac9bbee84547a95acbb93a53ecc6a9c71245bf7517d2bf64f6e838f67e",
+          "apply_check": 0,
+          "diagnostic": ""
+        },
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/C3-REFUND-PRIVATE-ERRORS.patch",
+          "sha256": "c53cc8a71557c8f8d58681d73508823c01f0b08aed2fcbb79b2defe1e1f4d177",
+          "apply_check": 0,
+          "diagnostic": ""
+        },
+        {
+          "patch": "tasks/artifacts/cross-platform/2026-10-24-coordination/handoffs/C3/C3-PANEL-MESSAGES.delta.patch",
+          "sha256": "9f0491557d8dde968b3147defca035d905fac4e23227f0cea7a5c6d878526521",
+          "apply_check": 0,
+          "diagnostic": ""
+        }
+      ],
+      "final_files": [
+        {
+          "path": "web/__tests__/contexts/AuthProviderContext.test.tsx",
+          "candidate_sha256": "9173deb1c043c2e03e1a9de1dd7184dd66f8c3835f256263d3ed5def2b81aa8c",
+          "canonical_sha256": "7e9bb5e5f6370b1e8ffb69eca11dbcc4385fab0aa441facceb62de66758d8074",
+          "canonical_equals_candidate": false,
+          "production_sha256": "7e9bb5e5f6370b1e8ffb69eca11dbcc4385fab0aa441facceb62de66758d8074",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/account/DraftProPanel.test.tsx",
+          "candidate_sha256": "e32bd9d5f3563c529bcc5737bba6c0aef9afc0e4c5c5f537470e1b4b2f9ccbe4",
+          "canonical_sha256": "257b5053bd7612cc2994b3f5e0d4edd816fd6908841abcb19a4642bbce5c09cc",
+          "canonical_equals_candidate": false,
+          "production_sha256": "e3d4484c5bddea96dba1c46da6005238e74ba7ac219a184864fb6ea435a0d0bf",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/account/DraftProPanel.tsx",
+          "candidate_sha256": "1ffa98c5f74468845d0f4e0c71defc6132bc6783620dfe1e0577690c08a88bb5",
+          "canonical_sha256": "09f2e94b2d0ab90d15604b5d6b67dd46f8418ac5c1f55a4b7c5717fc4d586d77",
+          "canonical_equals_candidate": false,
+          "production_sha256": "750b244315753b8f04159d50d6eb1945fd492ad8a2dc9236e194fd7653bc9982",
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/account/InSeasonPanel.test.tsx",
+          "candidate_sha256": "714946518f80fda0e2e15017904e2dd68be227f64bd616f9c184fac7b59bcd60",
+          "canonical_sha256": "d21fd263ef203b557c3f34030205ff9a8fd9ce32d2fa040babb93c0f6eb8b76c",
+          "canonical_equals_candidate": false,
+          "production_sha256": null,
+          "changed_from_production": true
+        },
+        {
+          "path": "web/components/account/InSeasonPanel.tsx",
+          "candidate_sha256": "498942abc03a689680235849041146ec028bad0e002958c297473287e538b41b",
+          "canonical_sha256": "e5cde3349ee10bd4d8c9623e8051eb56853c4f72d50f7a9657fef257d4c70352",
+          "canonical_equals_candidate": false,
+          "production_sha256": null,
+          "changed_from_production": true
+        },
+        {
+          "path": "web/lib/supabase/browser-auth.ts",
+          "candidate_sha256": "6c4f86fefb3219fb310513efc85aaafe3dc5b698a2fab24b78731628255ef2b0",
+          "canonical_sha256": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+          "canonical_equals_candidate": false,
+          "production_sha256": "7f4cae98be09dd0c77da863264b61d1543f91654da3b58291df9bc016a2daf7a",
+          "changed_from_production": true
+        }
+      ],
+      "status": "Patch chain verified in isolated scratch; source selection is not release acceptance"
+    }
+  ],
+  "canonical_source_writes": 0,
+  "git_mutations": 0,
+  "tests": 0,
+  "requests": 0
+}

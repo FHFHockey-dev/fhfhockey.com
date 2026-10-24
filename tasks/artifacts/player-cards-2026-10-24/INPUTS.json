@@ -1,0 +1,18 @@
+[
+  {
+    "path": "tasks/TASKS/prd-shareable-player-cards.md",
+    "library_file_id": "libfile_c30125d0825481919d792fe441de993c",
+    "version": "1",
+    "size_bytes": 26797,
+    "sha256": "eba54a6abf91c29bcec0eedccb9a677b44f6e25ffb03c9bf33b26303fae0e438",
+    "route": "Complete Library read; has_more=false; exact size after final newline restoration; identity persisted via current helper"
+  },
+  {
+    "path": "tasks/tasks-prd-shareable-player-cards.md",
+    "library_file_id": "libfile_9cedfb0ae3a081918e150b8b18613043",
+    "version": "0",
+    "size_bytes": 16503,
+    "sha256": "cb53ab650927530e84aadf398de38068b659183ef643d72dee132c93a75453c4",
+    "route": "Complete Library read; has_more=false; exact size after final newline restoration; identity persisted via current helper"
+  }
+]

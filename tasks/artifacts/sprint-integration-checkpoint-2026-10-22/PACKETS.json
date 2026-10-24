@@ -1,0 +1,106 @@
+[
+  {
+    "packet": "A1-A10 and NST R1",
+    "manifest": "claude-audit-fixes-2026-10-22/combined-audit-nst/CANDIDATE.json",
+    "manifest_sha256": "c6511c243f6979781606b2484fa6383ab7a0735d5a2e69da99e3e93ceff936de",
+    "review": "claude-audit-fixes-2026-10-22/combined-audit-nst/REPORT.md",
+    "review_sha256": "54d9b750eb1ecfe3eb363bc3e6dcaefe8df345cefac822afbf9e81f75ef924f9",
+    "count": 31
+  },
+  {
+    "packet": "P07 R2 plus task10 R1",
+    "manifest": "task10-display-2026-10-22/r1/CANDIDATE.json",
+    "manifest_sha256": "97d26b7396c5448df16fd383b11a710ce3be1b8f9f4e33579e631d95d46dc989",
+    "review": "p07-task10-r1-independent-review-2026-10-22/REPORT.md",
+    "review_sha256": "02243124f495702bd35158dbc722e680c251c96dd2b57b79ee41b49d7ebd50f0",
+    "count": 39
+  },
+  {
+    "packet": "task1 supported scoreboard",
+    "manifest": "forge-task1-independent-review-2026-10-22/OWNER-SOURCE-PINS.json",
+    "manifest_sha256": "0dec491d94c7a8f09e1ed6c83846eb0af27a97b556bcf730b5b06c78ee9f8976",
+    "review": "forge-task1-independent-review-2026-10-22/REVIEW.md",
+    "review_sha256": "5f5fddf9d0f66232bd96e4e3416d1d0792c56469a225f0156953cc07ef6d04ea",
+    "count": 4
+  },
+  {
+    "packet": "P05 r1",
+    "manifest": "p05-ownership-2026-10-22/r1/FILE-HASHES.json",
+    "manifest_sha256": "f08b07d618c34a3ef0771844f16562fe2ae54f4e0460857d0c33b5414cfd451e",
+    "review": null,
+    "review_sha256": null,
+    "count": 4
+  },
+  {
+    "packet": "P05 pickup-expiry",
+    "manifest": "p05-ownership-2026-10-22/pickup-expiry/FILE-HASHES.json",
+    "manifest_sha256": "31621d3cb8958f702c4c38d568f93b7195662bdd2a6f4c1cb086b7c25c5d7caf",
+    "review": null,
+    "review_sha256": null,
+    "count": 2
+  },
+  {
+    "packet": "P02",
+    "manifest": "research-backlog-readiness-2026-10-22/p02-correctness/CANDIDATE.json",
+    "manifest_sha256": "ed8550bfaf63983d71bd8f203de16f3fd5ac1013409db1bae1b169d6d266a275",
+    "review": "p02-goalie-independent-review-2026-10-22/REVIEW.md",
+    "review_sha256": "3dd1c72adf92a9844ebe08e2dfddcc88cc224c579d2ca8b30367a42546a4fc14",
+    "count": 9
+  },
+  {
+    "packet": "P02/r1-extension",
+    "manifest": "research-backlog-readiness-2026-10-22/p02-correctness/r1-extension/CANDIDATE.json",
+    "manifest_sha256": "44396f7a944e44ebd6e509491fdc09a790b3e2ba95198ccee4bc069414d72190",
+    "review": "p02-r1-independent-review-2026-10-22/REVIEW.md",
+    "review_sha256": "bae0b8f2e6bd9368c4f007336ed3a4630a4d3766a58f1b7c3b85a07db2abdb19",
+    "count": 3
+  },
+  {
+    "packet": "S08 game route",
+    "manifest": "fhfh-sprint-fixes-2026-10-22/s08-game-route/CANDIDATE.json",
+    "manifest_sha256": "1ea145d67726c45bd953cbee58a22be730372ee01e33aa0742960274b39da4b3",
+    "review": "claude-audit-independent-review-2026-10-22/s08-game-route/REVIEW.md",
+    "review_sha256": "c89f3fa1d7f143121f6d6787736050f21fee4a656baa995f0016ea195f6e7bae",
+    "count": 2
+  },
+  {
+    "packet": "calendar",
+    "manifest": "claude-audit-independent-review-2026-10-22/p01-date-identity/hash-verification-end.json",
+    "manifest_sha256": "61fec49f7022e5e26948a455514f29586013e8fa30d362beb96271a0999a9179",
+    "review": "claude-audit-independent-review-2026-10-22/p01-date-identity/REVIEW.md",
+    "review_sha256": "bc5518275dae7a252387696a1c16adbb6bba541a7f67f5e8e513634b33de5f99",
+    "count": 2
+  },
+  {
+    "packet": "search",
+    "manifest": "claude-audit-independent-review-2026-10-22/p04-search/prefetch-correction/hash-verification-end.json",
+    "manifest_sha256": "ca96d13dd7f45b39bb1e07ad5e1bddfe26152b8f9bc495d999e9417af33d8c35",
+    "review": "claude-audit-independent-review-2026-10-22/p04-search/prefetch-correction/REVIEW.md",
+    "review_sha256": "9f349d57006a002ddf1b0d330df0234883907b24cf08e5c31b43a269abdb073c",
+    "count": 2
+  },
+  {
+    "packet": "Luna contracts",
+    "manifest": "luna-application-contracts-2026-10-22/CANDIDATE.json",
+    "manifest_sha256": "d348b0002e1d85efd3a969cd2e809b7162286c787823a59d4fe9aba7b2f59dca",
+    "review": "luna-application-independent-review-2026-10-22/REVIEW.md",
+    "review_sha256": "838b9cecee407b97a6d4974923d5ca864fa521b8c1ac577c7d3c8f78fcde5963",
+    "count": 5
+  },
+  {
+    "packet": "Luna correction-r1",
+    "manifest": "luna-application-correction-r1-2026-10-22/CANDIDATE.json",
+    "manifest_sha256": "35dbf84bd50ebc778e6c9d21e355407d23959d34dc34fead1c9859607764679c",
+    "review": "luna-r1-independent-review-2026-10-22/REVIEW.md",
+    "review_sha256": "e7ac3cbbbe1b59a0f81652f5cc2cef84dbbaeab085b7153a24aa106d56965798",
+    "count": 2
+  },
+  {
+    "packet": "billing relocation R1",
+    "manifest": "billing-migration-relocation-independent-review-2026-10-22/r1/RECEIPT.json",
+    "manifest_sha256": "8a60e60cf634b5f4aada14366e5bce138957377fe091bcb59bd3ad92d96588b3",
+    "review": "billing-migration-relocation-independent-review-2026-10-22/r1/REVIEW.md",
+    "review_sha256": "17798ffcb290ca6528b4440854a133d5868fe291741f639d4dece5d7564a9d21",
+    "count": 13
+  }
+]

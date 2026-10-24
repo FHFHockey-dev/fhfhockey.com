@@ -1,0 +1,356 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+type QueryCall = [operation: string, ...args: unknown[]];
+
+type QueryTrace = {
+  table: string;
+  calls: QueryCall[];
+};
+
+const { fromMock, queryTraces } = vi.hoisted(() => ({
+  fromMock: vi.fn(),
+  queryTraces: [] as QueryTrace[]
+}));
+
+vi.mock("lib/supabase", () => ({
+  default: { from: fromMock }
+}));
+
+import type { WigoCareerRow, WigoRecentRow } from "./fetchWigoPlayerStats";
+import {
+  buildPlayerAggregatedStats,
+  fetchPaginatedData,
+  fetchPlayerGameLogForStat,
+  fetchPlayerGameLogConsistencyData,
+  fetchPlayerPerGameTotals
+} from "./fetchWigoPlayerStats";
+
+describe("shared points and consistency game log", () => {
+  const game = { game_id: 2025020001, date: "2025-10-07", points: 0, shots: 0, hits: null, blocked_shots: 1 };
+
+  it("deduplicates identical game identities and preserves missing activity fields", async () => {
+    queryTraces.length = 0;
+    installGameLogQueryMock([game, { ...game }]);
+    expect(await fetchPlayerGameLogConsistencyData(1, "20252026")).toEqual([game]);
+    expect(queryTraces[0]?.calls).toContainEqual(["eq", "games_played", 1]);
+    expect(queryTraces[0]?.calls).toContainEqual(["eq", "season_id", 20252026]);
+    expect(queryTraces[0]?.calls).toContainEqual(["eq", "player_id", 1]);
+  });
+
+  it("surfaces conflicting duplicates instead of choosing a score", async () => {
+    installGameLogQueryMock([game, { ...game, points: 2 }]);
+    await expect(fetchPlayerGameLogConsistencyData(1, "20252026")).rejects.toThrow("conflicting rows");
+  });
+
+  it("rejects unknown game identities rather than silently merging them", async () => {
+    installGameLogQueryMock([{ ...game, game_id: null }]);
+    await expect(fetchPlayerGameLogConsistencyData(1, "20252026")).rejects.toThrow("invalid game identity");
+  });
+});
+
+function installGameLogQueryMock(rows: Record<string, unknown>[], error: unknown = null) {
+  fromMock.mockImplementation((table: string) => {
+    const trace: QueryTrace = { table, calls: [] };
+    queryTraces.push(trace);
+
+    const builder: any = {
+      select(...selectArgs: unknown[]) {
+        trace.calls.push(["select", ...selectArgs]);
+        return builder;
+      },
+      eq(...eqArgs: unknown[]) {
+        trace.calls.push(["eq", ...eqArgs]);
+        return builder;
+      },
+      order(...orderArgs: unknown[]) {
+        trace.calls.push(["order", ...orderArgs]);
+        return builder;
+      },
+      limit() { return builder; },
+      maybeSingle() { return Promise.resolve({ data: rows[0] ?? null, error }); },
+      then(
+        onFulfilled: (value: unknown) => unknown,
+        onRejected?: () => unknown
+      ) {
+        return Promise.resolve({ data: rows, error }).then(
+          onFulfilled,
+          onRejected
+        );
+      }
+    };
+
+    return builder;
+  });
+}
+
+function installPaginatedQueryMock(rows: Record<string, unknown>[]) {
+  fromMock.mockImplementation((table: string) => {
+    const trace: QueryTrace = { table, calls: [] };
+    queryTraces.push(trace);
+    let range = [0, 499];
+
+    const builder: any = {
+      select(...selectArgs: unknown[]) {
+        trace.calls.push(["select", ...selectArgs]);
+        return builder;
+      },
+      eq(...eqArgs: unknown[]) {
+        trace.calls.push(["eq", ...eqArgs]);
+        return builder;
+      },
+      order(...orderArgs: unknown[]) {
+        trace.calls.push(["order", ...orderArgs]);
+        return builder;
+      },
+      range(...rangeArgs: number[]) {
+        trace.calls.push(["range", ...rangeArgs]);
+        range = rangeArgs;
+        return builder;
+      },
+      then(
+        onFulfilled: (value: unknown) => unknown,
+        onRejected?: () => unknown
+      ) {
+        return Promise.resolve({
+          data: rows.slice(range[0], range[1] + 1),
+          error: null
+        }).then(onFulfilled, onRejected);
+      }
+    };
+
+    return builder;
+  });
+}
+
+beforeEach(() => {
+  fromMock.mockReset();
+  queryTraces.length = 0;
+});
+
+describe("buildPlayerAggregatedStats", () => {
+  it("normalizes aggregate values using the shared stat contract", () => {
+    const careerData = {
+      player_id: 1,
+      std_gp: 20,
+      ly_gp: 10,
+      ya3_gp: 30,
+      ca_gp: 40,
+      std_g: 10,
+      std_s_pct: 0.15,
+      std_ipp: 0.55,
+      std_atoi: 15.5,
+      std_pptoi: 75,
+      std_ixg: 8.44
+    } as WigoCareerRow;
+
+    const recentData = {
+      player_id: 1,
+      l5_gp: 5,
+      l10_gp: 10,
+      l20_gp: 20,
+      l5_atoi: 17.25,
+      l5_pptoi: 50,
+      l5_s_pct: 0.2,
+      l5_ipp: 0.5
+    } as WigoRecentRow;
+
+    const rows = buildPlayerAggregatedStats({
+      careerData,
+      recentData,
+      ratesData: null,
+      totalsData: null
+    });
+
+    expect(rows.find((row) => row.label === "Goals")?.STD).toBe(10);
+    expect(rows.find((row) => row.label === "S%")?.STD).toBeCloseTo(15);
+    expect(rows.find((row) => row.label === "IPP")?.STD).toBeCloseTo(55);
+    expect(rows.find((row) => row.label === "ATOI")?.STD).toBeCloseTo(930);
+    expect(rows.find((row) => row.label === "ATOI")?.L5).toBeCloseTo(1035);
+    expect(rows.find((row) => row.label === "PPTOI")?.STD).toBeCloseTo(75);
+    expect(rows.find((row) => row.label === "PPTOI")?.L5).toBeCloseTo(50);
+    expect(rows.find((row) => row.label === "ixG")?.STD).toBeCloseTo(8.44);
+  });
+
+  it("derives per-60 values from counts and ATOI when the rates table is missing", () => {
+    const careerData = {
+      player_id: 1,
+      std_gp: 20,
+      std_pts: 10,
+      std_atoi: 15
+    } as WigoCareerRow;
+
+    const rows = buildPlayerAggregatedStats({
+      careerData,
+      recentData: null,
+      ratesData: null,
+      totalsData: null
+    });
+
+    expect(rows.find((row) => row.label === "PTS/60")?.STD).toBeCloseTo(2);
+  });
+
+  it("does not let a rates override revive recent values with missing denominators", () => {
+    const rows = buildPlayerAggregatedStats({
+      careerData: null,
+      recentData: { player_id: 1, l5_gp: 1, l5_atoi: null, l5_pts: 2, l5_pts_per_60: 6,
+        l5_pptoi: 320, l5_ppp: 1, l5_ppp_per_60: 11.25 } as WigoRecentRow,
+      ratesData: { pts_per_60_l5: 6, ppp_per_60_l5: 11.25 },
+      totalsData: null,
+    });
+    expect(rows.find(row => row.label === "ATOI")?.L5).toBeNull();
+    expect(rows.find(row => row.label === "PTS/60")?.L5).toBeNull();
+    expect(rows.find(row => row.label === "PPP/60")?.L5).toBe(11.25);
+  });
+
+  it.each([null, undefined, NaN, 0, 3])("keeps unavailable recent source rates unavailable despite an override (%s)", (published) => {
+    const rows = buildPlayerAggregatedStats({ careerData: null,
+      recentData: { player_id: 1, l5_gp: 1, l10_gp: 1, l20_gp: 1, l5_atoi: 20, l10_atoi: 20, l20_atoi: 20,
+        l5_pts_per_60: published, l10_pts_per_60: published, l20_pts_per_60: published } as WigoRecentRow,
+      ratesData: { pts_per_60_l5: published === 0 ? 0 : 3, pts_per_60_l10: published === 0 ? 0 : 3,
+        pts_per_60_l20: published === 0 ? 0 : 3 }, totalsData: null });
+    for (const column of ["L5", "L10", "L20"] as const) {
+      expect(rows.find(row => row.label === "PTS/60")?.[column]).toBe(published === 0 || published === 3 ? published : null);
+      expect(rows.find(row => row.label === "ATOI")?.[column]).toBe(1200);
+    }
+  });
+
+  it.each([null, undefined, NaN, 0, 999])("keeps supported recent rates authoritative over legacy fields (%s)", (legacy) => {
+    const recent = { player_id: 1 } as any;
+    const rates: Record<string, number | null> = { pts_per_60_ly: 4 };
+    for (const n of [5, 10, 20]) {
+      Object.assign(recent, { [`l${n}_gp`]: 5, [`l${n}_atoi`]: 20, [`l${n}_pptoi`]: 120,
+        [`l${n}_pts_per_60`]: 6, [`l${n}_g_per_60`]: 0, [`l${n}_ppp_per_60`]: 12 });
+      if (legacy !== undefined) Object.assign(rates, { [`pts_per_60_l${n}`]: legacy, [`g_per_60_l${n}`]: legacy, [`ppp_per_60_l${n}`]: legacy });
+    }
+    const rows = buildPlayerAggregatedStats({ careerData: null, recentData: recent, ratesData: rates, totalsData: null });
+    for (const column of ["L5", "L10", "L20"] as const) {
+      expect(rows.find(row => row.label === "PTS/60")?.[column]).toBe(6);
+      expect(rows.find(row => row.label === "G/60")?.[column]).toBe(0);
+      expect(rows.find(row => row.label === "PPP/60")?.[column]).toBe(12);
+    }
+    expect(rows.find(row => row.label === "PTS/60")?.LY).toBe(4);
+  });
+
+  it("uses totals fallback for missing standard count values", () => {
+    const careerData = {
+      player_id: 1,
+      std_gp: 40
+    } as WigoCareerRow;
+
+    const rows = buildPlayerAggregatedStats({
+      careerData,
+      recentData: null,
+      ratesData: null,
+      totalsData: {
+        goals: 14,
+        assists: 20,
+        points: 34,
+        shots: 100,
+        hits: 50,
+        blocked_shots: 25,
+        penalty_minutes: 18,
+        pp_points: 10
+      }
+    });
+
+    expect(rows.find((row) => row.label === "Goals")?.STD).toBe(14);
+    expect(rows.find((row) => row.label === "Points")?.STD).toBe(34);
+    expect(rows.find((row) => row.label === "PPP")?.STD).toBe(10);
+  });
+});
+
+describe("fetchPlayerGameLogForStat query contract", () => {
+  it("preserves a source failure as an error instead of an empty game log", async () => {
+    installGameLogQueryMock([], new Error("source unavailable"));
+    await expect(fetchPlayerGameLogForStat(1, 20252026, "Goals")).rejects.toThrow("source unavailable");
+  });
+  it("uses numeric season_id and date for WGO game logs", async () => {
+    installGameLogQueryMock([{ date: "2026-01-01", goals: 2 }]);
+
+    await expect(
+      fetchPlayerGameLogForStat(8478402, 20252026, "Goals")
+    ).resolves.toEqual([{ date: "2026-01-01", value: 2 }]);
+
+    expect(queryTraces).toEqual([
+      {
+        table: "wgo_skater_stats",
+        calls: [
+          ["select", "date, goals"],
+          ["eq", "player_id", 8478402],
+          ["eq", "season_id", 20252026],
+          ["order", "date", { ascending: true }]
+        ]
+      }
+    ]);
+  });
+
+  it("uses the numeric season column and date_scraped for NST game logs", async () => {
+    installGameLogQueryMock([{ date_scraped: "2026-01-02", ixg: 0.42 }]);
+
+    await expect(
+      fetchPlayerGameLogForStat(8478402, 20252026, "ixG")
+    ).resolves.toEqual([{ date: "2026-01-02", value: 0.42 }]);
+
+    expect(queryTraces).toEqual([
+      {
+        table: "nst_gamelog_as_counts",
+        calls: [
+          ["select", "date_scraped, ixg"],
+          ["eq", "player_id", 8478402],
+          ["eq", "season", 20252026],
+          ["order", "date_scraped", { ascending: true }]
+        ]
+      }
+    ]);
+  });
+});
+
+describe("fetchPaginatedData query contract", () => {
+  it("uses stable player ordering through every page", async () => {
+    const rows = Array.from({ length: 501 }, (_, index) => ({
+      player_id: index + 1,
+      season: 20252026
+    }));
+    installPaginatedQueryMock(rows);
+
+    await expect(
+      fetchPaginatedData("nst_percentile_as_offense", "player_id, season", {
+        column: "season",
+        value: 20252026
+      })
+    ).resolves.toHaveLength(501);
+
+    expect(queryTraces).toEqual([
+      {
+        table: "nst_percentile_as_offense",
+        calls: [
+          ["select", "player_id, season"],
+          ["eq", "season", 20252026],
+          ["order", "player_id", { ascending: true }],
+          ["range", 0, 499]
+        ]
+      },
+      {
+        table: "nst_percentile_as_offense",
+        calls: [
+          ["select", "player_id, season"],
+          ["eq", "season", 20252026],
+          ["order", "player_id", { ascending: true }],
+          ["range", 500, 999]
+        ]
+      }
+    ]);
+  });
+});
+
+describe("per-game totals units", () => {
+  it.each([[0.005, 0.5], [0, 0], [1, 100], [null, null]])(
+    "converts the source fraction %s to percentage points %s",
+    async (source, expected) => {
+      installGameLogQueryMock([{ player_id: 1, shooting_percentage: source, pp_toi_pct_per_game: 0.35 }]);
+      const totals = await fetchPlayerPerGameTotals(1, 20252026);
+      expect(totals?.shooting_percentage).toBe(expected);
+      expect(totals?.pp_toi_pct_per_game).toBe(35);
+    }
+  );
+});

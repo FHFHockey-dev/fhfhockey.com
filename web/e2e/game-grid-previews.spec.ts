@@ -64,7 +64,8 @@ test('24-team keyboard disclosures survive sorting, refresh, mode and orientatio
 
 test('desktop sticky dates stay below the measured site navbar through resize and height changes', async ({ page }, testInfo) => {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await fixture(page);
+  await page.clock.setFixedTime(new Date('2026-10-07T16:00:00Z'));
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
   await page.goto('/?sticky-header=1');
   await page.addStyleTag({ content: '#root { padding-bottom: 100vh; }' });
   const navbar = page.locator('[data-site-header]');
@@ -87,6 +88,9 @@ test('desktop sticky dates stay below the measured site navbar through resize an
   await page.screenshot({ path: testInfo.outputPath('sticky-header-96px.png'), fullPage: false });
   await page.setViewportSize({ width: 1040, height: 900 });
   await navbar.evaluate(node => node.style.setProperty('--fixture-header-height', '56px'));
+  // Responsive control wrapping can move the real header back below the navbar.
+  // Re-establish the sticky precondition before checking the new offset.
+  await header.evaluate(node => window.scrollBy(0, node.getBoundingClientRect().top - 20));
   await aligned();
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(overlay).toHaveCount(0);
@@ -551,6 +555,13 @@ for (const width of [1440, 1024, 520, 390, 320]) for (const warning of [true, fa
       expect(contentFits).toBe(true);
       await summary.press('Enter');
     }
+    if (width >= 1024) {
+      const sizes = await page.evaluate(() => ({
+        header: document.querySelector('[class*="gameGridHeaderContent"]')!.getBoundingClientRect().height,
+        controls: document.querySelector('[class*="controlsBar"]')!.getBoundingClientRect().height,
+      }));
+      expect(sizes.header).toBeCloseTo(sizes.controls, 0);
+    }
     await expect(page.getByRole('button', { name: /^(Skaters|Goalies)$/ })).toHaveCount(0);
     await page.screenshot({ path: testInfo.outputPath(`legend-footer-${width}-${warning ? 'warning' : 'complete'}.png`), fullPage: false });
   });
@@ -565,13 +576,13 @@ for (const timezoneId of ['UTC', 'America/New_York', 'America/Los_Angeles', 'Asi
       await page.clock.setFixedTime(new Date('2026-11-01T23:00:00Z'));
       await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
       await page.goto('/?teams=32&opportunity=1');
-      const sparks = page.getByRole('button', { name: / 4-week value / });
+      const sparks = page.getByRole('button', { name: / 4-week opportunity / });
       await expect(sparks).toHaveCount(32);
-      const values = await sparks.evaluateAll(nodes => nodes.map(node => node.getAttribute('aria-label')!.match(/4-week value ([^,;]+)/)![1]));
+      const values = await sparks.evaluateAll(nodes => nodes.map(node => node.getAttribute('aria-label')!.match(/4-week opportunity ([^,;]+)/)![1]));
       expect(values.filter(v => v === '1.3')).toHaveLength(14);
       expect(values.filter(v => v === '0.0')).toHaveLength(18);
       expect(new Set(await sparks.locator('svg').evaluateAll(nodes => nodes.map(n => n.getAttribute('data-shared-scale'))))).toEqual(new Set(['2']));
-      const target = page.getByRole('button', { name: / 4-week value 1\.3[,;]/ }).first();
+      const target = page.getByRole('button', { name: / 4-week opportunity 1\.3[,;]/ }).first();
       await target.focus();
       const card = page.getByRole('tooltip');
       await expect(card).toBeVisible();
@@ -634,8 +645,8 @@ test('four-week opportunity preserves unknown gaps and exposes touch and keyboar
   await page.setViewportSize({ width: 390, height: 844 });
   await fixture(page);
   await page.goto('/?opportunity=1&gap=1');
-  const target = page.getByRole('button', { name: /^F1 4-week value / });
-  await expect(target).toHaveAccessibleName(/^F1 4-week value —/);
+  const target = page.getByRole('button', { name: /^F1 4-week opportunity / });
+  await expect(target).toHaveAccessibleName(/^F1 4-week opportunity —/);
   await expect(target.locator('circle')).toHaveCount(3);
   expect((await target.locator('path[stroke]:not([filter])').getAttribute('d'))!.match(/M/g)).toHaveLength(2);
   await target.click();
@@ -687,8 +698,8 @@ test('Game Grid stays responsive while the four-week reader is slow', async ({ p
   await fixture(page);
   await page.goto('/?teams=32&opportunity=1&slow-four-week=1');
   const table = page.locator('[class*="masterTableScroll"] table');
-  const spark = table.getByRole('button', { name: / 4-week value / }).first();
-  await expect(spark).toHaveAccessibleName(/ 4-week value —/);
+  const spark = table.getByRole('button', { name: / 4-week opportunity / }).first();
+  await expect(table.locator('[data-loading-placeholder][data-shape="trend"]')).toHaveCount(32);
   const daySwitch = page.getByRole('switch', { name: 'Include THU games', exact: true }).first();
   await daySwitch.click({ timeout: 1500 });
   await expect(daySwitch).toHaveAttribute('aria-checked', 'false', { timeout: 1000 });
@@ -697,4 +708,261 @@ test('Game Grid stays responsive while the four-week reader is slow', async ({ p
   await expect(spark.locator('circle')).toHaveCount(4, { timeout: 6000 });
   await expect(table.locator('tbody tr:has([id^="game-grid-master-trigger-"])')).toHaveCount(32);
   expect(errors).toEqual([]);
+});
+
+
+test('sparkline keeps the original team card while the pointer crosses the gap and reads it', async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await fixture(page);
+  await page.goto('/?teams=32&opportunity=1');
+  const target = page.getByRole('button', { name: / 4-week opportunity / }).first();
+  await target.hover();
+  const cardId = await page.getByRole('tooltip').getAttribute('id');
+  const card = page.locator(`#${cardId}`);
+  const originalText = await card.textContent();
+  const box = (await card.boundingBox())!;
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 10 });
+  await expect(card, 'The original team card must survive pointer transit').toBeVisible();
+  await expect(page.getByRole('tooltip')).toHaveCount(1);
+  await expect(card).toHaveText(originalText!);
+  await expect(card.getByText(/GP ·/).first()).toBeVisible();
+  await card.click();
+  await expect(card).toBeVisible();
+  await page.screenshot({ path: testInfo.outputPath('original-team-hover-card.png') });
+  await target.hover();
+  await expect(card).toBeVisible();
+  await page.mouse.move(4, 4);
+  await expect(card).toHaveCount(0);
+});
+
+
+test('sparkline card preserves keyboard focus and dismisses on Escape and focus away', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await fixture(page);
+  await page.goto('/?teams=32&opportunity=1');
+  const target = page.getByRole('button', { name: / 4-week opportunity / }).first();
+  await target.focus();
+  const cardId = await page.getByRole('tooltip').getAttribute('id');
+  const card = page.locator(`#${cardId}`);
+  await target.hover();
+  await page.mouse.move(4, 4);
+  await expect(card).toBeVisible();
+  await target.press('Escape');
+  await expect(card).toHaveCount(0);
+  await expect(target).toBeFocused();
+  await target.press('Enter');
+  await expect(card).toBeVisible();
+  await target.press('Tab');
+  await expect(card).toHaveCount(0);
+});
+
+test('sparkline real touch supports card reading, second-tap and outside dismissal', async ({ browser }) => {
+  const context = await browser.newContext({ baseURL: 'http://127.0.0.1:3112', viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+  const page = await context.newPage();
+  try {
+    await fixture(page);
+    await page.goto('http://127.0.0.1:3112/?opportunity=1&gap=1');
+    const target = page.getByRole('button', { name: /^F1 4-week opportunity / });
+    await target.tap();
+    const cardId = await page.getByRole('tooltip').getAttribute('id');
+    const card = page.locator(`#${cardId}`);
+    await expect(card).toBeVisible();
+    await card.tap();
+    await expect(card).toBeVisible();
+    await target.tap();
+    await expect(card).toHaveCount(0);
+    await target.tap();
+    await expect(card).toBeVisible();
+    await page.getByRole('button', { name: 'Ready schedule fixture' }).tap();
+    await expect(card).toHaveCount(0);
+  } finally { await context.close(); }
+});
+
+
+for (const width of [1440, 768, 390]) test(`loading shell keeps its footprint on cold, warm and hard refresh at ${width}px`, async ({ page }, testInfo) => {
+  await page.setViewportSize({ width, height: 900 });
+  await page.clock.setFixedTime(new Date('2026-10-07T16:00:00Z'));
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  await page.goto('/?teams=32&opportunity=1&schedule-delay=1600&four-week-delay=3200&nst-delay=2400');
+  const table = width >= 1024 ? page.locator('[class*="masterTableScroll"] table')
+    : width < 480 ? page.locator('table[class*="mobileCompactTable"]') : page.locator('[class*="centerGrid"] table').first();
+  await expect(table).toHaveAttribute('aria-busy', 'true');
+  await expect(table.locator('[data-placeholder-row="team"]')).toHaveCount(32);
+  await expect(table.locator('[data-placeholder-row]').first()).not.toHaveText(/\b0\b/);
+  await expect(page.locator('[class*="overlaySpinner"]')).toHaveCount(0);
+  if (width >= 1024) await expect(page.locator('[class*="desktopMasterSection"] [class*="titleText"]')).toHaveCount(0);
+  const secondaryHeights = async () => page.locator('[data-opponent-state], [data-four-week-state]').evaluateAll(nodes => nodes.map(el => el.getBoundingClientRect().height));
+  const secondaryBefore = await secondaryHeights();
+  const before = await table.evaluate(node => ({ x: node.getBoundingClientRect().x, top: node.getBoundingClientRect().top, width: node.getBoundingClientRect().width, columns: [...node.querySelectorAll('col')].map(c => c.getBoundingClientRect().width) }));
+  await page.screenshot({ path: testInfo.outputPath(`loading-${width}.png`) });
+  await expect(table).toHaveAttribute('aria-busy', 'false');
+  const selectedReadyAt = await page.evaluate(() => performance.now());
+  await expect(table.locator('[data-placeholder-row]')).toHaveCount(0);
+  await expect(table.locator('tbody tr')).toHaveCount(33);
+  if (width >= 1024) {
+    await expect(table.locator('[data-shape="trend"][data-loading-placeholder]')).toHaveCount(32);
+    await page.getByRole('switch', { name: 'Include THU games', exact: true }).first().click();
+  }
+  const sparklines = page.getByRole('button', { name: / 4-week opportunity / });
+  await expect(sparklines.first().locator('circle')).toHaveCount(4);
+  const ready = await table.evaluate(node => ({ x: node.getBoundingClientRect().x, top: node.getBoundingClientRect().top, width: node.getBoundingClientRect().width, columns: [...node.querySelectorAll('col')].map(c => c.getBoundingClientRect().width), rowHeight: node.querySelector('tbody tr:nth-child(2)')!.getBoundingClientRect().height }));
+  await writeFile(testInfo.outputPath(`geometry-${width}.json`), JSON.stringify({ before, ready, overflow: await page.evaluate(() => [...document.querySelectorAll('body *')].filter(el => el.getBoundingClientRect().right > innerWidth + 1).map(el => ({ tag: el.tagName, className: el.className, width: el.getBoundingClientRect().width, right: el.getBoundingClientRect().right })).slice(0, 25)) }, null, 2));
+  (await secondaryHeights()).forEach((height, index) => expect(height).toBeCloseTo(secondaryBefore[index], 0));
+  expect(ready.width).toBeCloseTo(before.width, 0);
+  expect(ready.top).toBeCloseTo(before.top, 0);
+  ready.columns.forEach((value, index) => expect(value).toBeCloseTo(before.columns[index], 0));
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath(`ready-${width}.png`) });
+  const profile = await page.evaluate(() => ({ timeline: (window as any).__fixtureTimeline, paints: performance.getEntriesByType('paint').map(e => ({ name: e.name, at: e.startTime })), commits: (window as any).__gridProfile }));
+  await writeFile(testInfo.outputPath(`profile-${width}.json`), JSON.stringify({ before, ready, selectedReadyAt, profile }, null, 2));
+  await page.getByRole('button', { name: 'Remount grid fixture' }).click();
+  await expect(table).toHaveAttribute('aria-busy', 'false');
+  await expect(table.locator('[data-placeholder-row]')).toHaveCount(0);
+  await page.reload();
+  await expect(table).toHaveAttribute('aria-busy', 'true');
+  await expect(table.locator('[data-placeholder-row="team"]')).toHaveCount(32);
+});
+
+test('loading failures settle without fake totals and reload can recover', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.clock.setFixedTime(new Date('2026-10-07T16:00:00Z'));
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  await page.goto('/?teams=32&opportunity=1&schedule-error-once=1');
+  await expect(page.getByText('Selected schedule unavailable.', { exact: false })).toBeVisible();
+  const table = page.locator('[class*="masterTableScroll"] table');
+  await expect(table).toHaveAttribute('aria-busy', 'false');
+  await expect(table.locator('[data-loading-placeholder]')).toHaveCount(0);
+  await expect(table.locator('[data-placeholder-row="team"]')).toHaveCount(32);
+  await page.getByRole('button', { name: 'Reload to retry', exact: true }).click();
+  await expect(table.locator('[data-placeholder-row]')).toHaveCount(0);
+  await expect(table.locator('tbody tr')).toHaveCount(33);
+  await page.getByRole('button', { name: 'Partial schedule fixture' }).click();
+  await expect(page.locator('[data-grid-loading-status]')).toContainText('Selected schedule incomplete');
+  await expect(table.locator('[data-loading-placeholder]')).toHaveCount(0);
+  await page.getByRole('button', { name: 'Ready schedule fixture' }).click();
+  await expect(table.locator('[data-placeholder-row]')).toHaveCount(0);
+});
+
+for (const source of ['four-week', 'nst']) test(`optional ${source} failure leaves the selected schedule usable`, async ({ page }, testInfo) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.clock.setFixedTime(new Date('2026-10-07T16:00:00Z'));
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  await page.goto(`/?teams=32&opportunity=1&${source}-error=1`);
+  const table = page.locator('[class*="masterTableScroll"] table');
+  await expect(table).toHaveAttribute('aria-busy', 'false');
+  await expect(table.locator('tbody tr')).toHaveCount(33);
+  await expect(page.locator('[data-grid-loading-status]')).toContainText('unavailable');
+  await expect(page.getByRole('button', { name: 'Reload to retry' })).toBeVisible();
+  await expect(table.locator('[data-loading-placeholder]')).toHaveCount(0);
+  await page.getByRole('switch', { name: 'Include THU games', exact: true }).first().click();
+  await expect(page.getByRole('switch', { name: 'Include THU games', exact: true }).first()).toHaveAttribute('aria-checked', 'false');
+  await page.screenshot({ path: testInfo.outputPath(`optional-${source}-error.png`) });
+});
+
+test('vertical pending grid preserves 32 unknown columns under reduced motion', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.clock.setFixedTime(new Date('2026-10-07T16:00:00Z'));
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  await page.goto('/?teams=32&opportunity=1&schedule-delay=2400');
+  await page.getByRole('button', { name: 'Open grid controls' }).click();
+  await page.getByRole('button', { name: 'Toggle orientation' }).click();
+  const table = page.locator('table[class*="transposedGrid"]');
+  await expect(table).toHaveAttribute('aria-busy', 'true');
+  await expect(table.locator('thead th')).toHaveCount(34);
+  await expect(table.locator('tbody tr').first().locator('td')).toHaveCount(34);
+  const cell = table.locator('[data-loading-placeholder]').first();
+  expect(await cell.evaluate(el => getComputedStyle(el).animationName)).toBe('none');
+  await expect(table).toHaveAttribute('aria-busy', 'false');
+  await expect(table.locator('thead th')).toHaveCount(34);
+  await expect(table.locator('[data-loading-placeholder]')).toHaveCount(0);
+});
+
+for (const width of [2048, 1440, 1024, 768, 520, 390]) test(`Game Grid visual footprint and semantic headers at ${width}px`, async ({ page }, testInfo) => {
+  await page.setViewportSize({ width, height: 900 });
+  await page.clock.setFixedTime(new Date('2026-10-07T16:00:00Z'));
+  await page.route('**/*', route => new URL(route.request().url()).hostname === '127.0.0.1' ? route.continue() : route.abort());
+  await page.goto('/?teams=32&opportunity=1');
+  await expect(page.getByRole('button', { name: / 4-week opportunity / }).first()).toBeVisible();
+  const geometry = await page.evaluate(() => {
+    const rect = (selector: string) => { const r = document.querySelector(selector)?.getBoundingClientRect(); return r && { x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom }; };
+    const header = document.querySelector('[class*="gameGridHeaderContent"]');
+    return { header: rect('[class*="gameGridHeaderContent"]'),
+      headerBorder: header && { width: getComputedStyle(header).borderBottomWidth, color: getComputedStyle(header).borderBottomColor },
+      controls:rect('[class*="controlsBar"]'), badge:rect('[class*="badgeAndWeekNav"]'), nav:rect('[aria-label="Week navigation"]'),
+      menu:rect('[class*="controlsMenuTrigger"]'), right:rect('[class*="rightControls"]'), forecast:rect('[class*="forecastControls"]'),
+      mode:rect('[aria-label="Forecast span"]'), help:rect('[aria-controls="gg-week-score-help"]'),
+      legend:rect('[aria-label="Game Grid legend"]'), info:rect('summary[aria-label="Info about Game Grid metrics"]'),
+      panel:rect('[class*="desktopMasterSection"] [class*="scheduleGridContainer"]'), table:rect('[class*="masterTableScroll"] table'), viewport:innerWidth };
+
+  });
+  await writeFile(testInfo.outputPath(`visual-${width}.json`), JSON.stringify(geometry,null,2));
+  await page.screenshot({ path: testInfo.outputPath(`visual-${width}.png`) });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+  if (width >= 480) {
+    const centerX = (r: { x: number; width: number }) => r.x + r.width / 2;
+    const centerY = (r: { y: number; height: number }) => r.y + r.height / 2;
+    expect(geometry.controls!.y - geometry.header!.bottom).toBeCloseTo(6, 0);
+    expect(geometry.headerBorder).toEqual({ width: '4px', color: 'rgba(7, 170, 226, 0.22)' });
+    expect(centerX(geometry.badge!)).toBeCloseTo(centerX(geometry.controls!), 0);
+    expect(centerX(geometry.nav!)).toBeCloseTo(centerX(geometry.controls!), 0);
+    expect(centerY(geometry.menu!)).toBeCloseTo(centerY(geometry.badge!), 0);
+    expect(geometry.forecast!.right).toBeCloseTo(geometry.right!.right, 0);
+    if (width > 900) expect(centerY(geometry.right!)).toBeCloseTo(centerY(geometry.badge!), 0);
+    if (Math.abs(centerY(geometry.mode!) - centerY(geometry.help!)) < 1) {
+      expect(centerY(geometry.mode!)).toBeCloseTo(centerY(geometry.help!), 0);
+    } else {
+      expect(geometry.mode!.right).toBeCloseTo(geometry.forecast!.right, 0);
+      expect(geometry.help!.right).toBeCloseTo(geometry.forecast!.right, 0);
+    }
+    for (const rect of [geometry.menu!, geometry.nav!, geometry.right!]) {
+      expect(rect.x).toBeGreaterThanOrEqual(geometry.controls!.x);
+      expect(rect.right).toBeLessThanOrEqual(geometry.controls!.right);
+    }
+    await page.screenshot({ path: testInfo.outputPath(`header-${width}.png`), clip: {
+      x: geometry.header!.x, y: geometry.header!.y, width: geometry.header!.width,
+      height: geometry.controls!.bottom - geometry.header!.y,
+    } });
+  } else {
+    const buttons = await page.locator('[class*="navButtonRow"] button').evaluateAll(nodes => nodes.map(node => {
+      const r = node.getBoundingClientRect(); return { y:r.y, height:r.height };
+    }));
+    expect(buttons).toHaveLength(4);
+    for (const button of buttons) expect(button.y + button.height / 2).toBeCloseTo(buttons[0].y + buttons[0].height / 2, 0);
+  }
+  if (width >= 1024) {
+    expect(geometry.header!.height).toBeCloseTo(geometry.controls!.height, 0);
+    const topSpace = geometry.forecast!.y - geometry.controls!.y;
+    const bottomSpace = geometry.controls!.bottom - geometry.legend!.bottom;
+    expect(topSpace).toBeCloseTo(bottomSpace, 0);
+    expect(topSpace).toBeCloseTo(13, 0); // 12px padding plus border, above/below actual content.
+    expect(geometry.info!.height).toBeGreaterThanOrEqual(24);
+    // A tall viewport must not stretch the equal header rows into empty space.
+    await page.setViewportSize({ width, height: 3200 });
+    expect(await page.locator('[class*="gameGridHeaderContent"]').evaluate(el => el.getBoundingClientRect().height)).toBeCloseTo(geometry.header!.height, 0);
+    await page.setViewportSize({ width, height: 900 });
+    expect(geometry.table!.y - geometry.controls!.bottom).toBeLessThanOrEqual(28);
+    expect(geometry.panel!.width).toBeLessThanOrEqual(width * .9 + 1);
+    expect(await page.locator('[class*="desktopMasterSection"] [class*="scheduleGridContainer"]').evaluate(el => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+    const table = page.locator('[class*="masterTableScroll"] table');
+    await expect(table.getByRole('button', { name: /Sort by opponent attack strength/ })).toBeVisible();
+    await expect(table.getByRole('button', { name: /Sort by opponent defense strength/ })).toBeVisible();
+    await expect(table.getByText('↑ Stronger', { exact: true })).toHaveCount(2);
+    await expect(table.getByText('4-Week Opportunity', { exact: true })).toBeVisible();
+    await expect(table.getByLabel('Line color: easier to harder skater matchups')).toBeVisible();
+  } else {
+    await page.locator('[data-opponent-state]').evaluate(el => window.scrollBy(0, el.getBoundingClientRect().top - 150));
+    await expect(page.getByRole('button', { name: /Sort by opponent attack strength/ })).toBeVisible();
+    await page.screenshot({ path: testInfo.outputPath('mobile-opponent-panel.png') });
+    await page.locator('[data-four-week-state]').evaluate(el => window.scrollBy(0, el.getBoundingClientRect().top - 150));
+    await page.screenshot({ path: testInfo.outputPath('mobile-opportunity-panel.png') });
+    const fourWeek = page.locator('[data-four-week-state]');
+    const headerBottom = await fourWeek.locator('thead').evaluate(el => el.getBoundingClientRect().bottom);
+    const averageTop = await fourWeek.locator('tbody tr').first().evaluate(el => el.getBoundingClientRect().top);
+    expect(averageTop).toBeGreaterThanOrEqual(headerBottom - .5);
+    await page.getByRole('button', { name: 'Expand four-week columns' }).click();
+    expect(await fourWeek.locator('tbody tr').first().evaluate(el => el.getBoundingClientRect().top)).toBeGreaterThanOrEqual(await fourWeek.locator('thead').evaluate(el => el.getBoundingClientRect().bottom) - .5);
+
+  }
+
 });

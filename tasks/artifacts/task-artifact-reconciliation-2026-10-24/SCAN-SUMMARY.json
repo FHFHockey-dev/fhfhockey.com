@@ -1,0 +1,291 @@
+{
+  "cutoff_utc": "2026-10-24T14:29:07.341370+00:00",
+  "entries": 15469,
+  "files": 11952,
+  "directories": 3516,
+  "bytes": 787001268,
+  "types": {
+    "": 542,
+    ".md": 1812,
+    ".jpeg": 3,
+    ".json": 3118,
+    ".png": 430,
+    ".log": 1332,
+    ".py": 182,
+    ".jpg": 16,
+    ".ts": 2752,
+    ".psql": 1,
+    ".sql": 399,
+    ".mdc": 4,
+    ".ipynb": 1,
+    ".patch": 225,
+    ".tap": 50,
+    ".cjs": 122,
+    ".before": 74,
+    ".tsx": 164,
+    ".pyc": 10,
+    ".mts": 17,
+    ".txt": 96,
+    ".sh": 30,
+    ".gz": 33,
+    ".diff": 73,
+    ".tsv": 12,
+    ".mjs": 255,
+    ".csv": 32,
+    ".sha256": 94,
+    ".zip": 7,
+    ".pdf": 1,
+    ".webm": 2,
+    ".js": 10,
+    ".html": 2,
+    ".jsonl": 7,
+    ".npmrc": 4,
+    ".z": 3,
+    ".scss": 11,
+    ".sqlite": 13,
+    ".draft": 1,
+    ".exit": 12
+  },
+  "coverage": {
+    "pending": 11950,
+    "directory-indexed": 3515,
+    "self-output-excluded": 2,
+    "sensitive-not-read": 2
+  },
+  "top_families": [
+    [
+      "tasks/ifttt-integration-2026-10-16/handoff",
+      1148
+    ],
+    [
+      "tasks/artifacts/security-audit-sprint-2026-10-15-0512",
+      528
+    ],
+    [
+      "tasks/artifacts/release-integration-2026-10-23",
+      365
+    ],
+    [
+      "tasks/artifacts/rso-mockup-match-2026-10-14",
+      339
+    ],
+    [
+      "tasks/artifacts/forge-rso-completion-2026-10-15",
+      285
+    ],
+    [
+      "tasks/artifacts/p07-rso-use-policy-2026-10-22",
+      229
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-receiver-intake-bounds-v2",
+      224
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-receiver-intake-bounds-v1",
+      220
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-v1",
+      219
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-receiver-variant-retention-v1",
+      218
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-receiver-variant-retention-v2",
+      209
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-raw-job-ack-v1",
+      207
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-full52-reconciliation-v1",
+      201
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-shadow-raw-ack-postconditions-v2",
+      200
+    ],
+    [
+      "tasks/artifacts/rso-browser-fixture-reconciliation-2026-10-23",
+      198
+    ],
+    [
+      "tasks/artifacts/rso-visual-redesign-2026-10-13",
+      179
+    ],
+    [
+      "tasks/artifacts/in-season-billing-2026-10-21",
+      173
+    ],
+    [
+      "tasks/artifacts/claude-audit-independent-review-2026-10-22",
+      161
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-consumer-binding-v2",
+      123
+    ],
+    [
+      "tasks/artifacts/claude-audit-fixes-2026-10-22",
+      114
+    ],
+    [
+      "tasks/TASKS/in-season-trust-clarity-decision-workflow",
+      113
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-consumer-binding-v1",
+      110
+    ],
+    [
+      "tasks/artifacts/d4-grants-2026-10-20",
+      107
+    ],
+    [
+      "tasks/artifacts/archive",
+      102
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-scheduler-retain-only-v1",
+      100
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/decisions-pure-integration-2026-10-19",
+      97
+    ],
+    [
+      "tasks/artifacts/schedule-refresh-recurring-2026-10-15",
+      93
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-transport-recovery-v1",
+      88
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v3",
+      87
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-durable-occurrence-v1",
+      85
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-sidecar-recovery-2026-10-19",
+      84
+    ],
+    [
+      "tasks/artifacts/billing-sales-rollout-2026-10-23",
+      83
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-sidecar-preparation-2026-10-19",
+      83
+    ],
+    [
+      "tasks/artifacts/codex-2026-10-20",
+      80
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-parent-recovery-v1",
+      80
+    ],
+    [
+      "tasks/artifacts/research-backlog-readiness-2026-10-22",
+      79
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/review-replay-aliases-retain-only-v1",
+      79
+    ],
+    [
+      "tasks/artifacts/fhfh-sprint-ledger-2026-10-22",
+      77
+    ],
+    [
+      "tasks/ifttt-integration-2026-10-16/consumer-binding-increment",
+      77
+    ],
+    [
+      "tasks/artifacts/forge-current-season-sog-admission-2026-10-15",
+      71
+    ]
+  ],
+  "oversized_gt_5mb": [
+    {
+      "path": "tasks/artifacts/claude-audit-fixes-2026-10-22/combined-audit-nst/fixed-source.tar.gz",
+      "bytes": 11651283
+    },
+    {
+      "path": "tasks/artifacts/claude-audit-fixes-2026-10-22/fixed-source.tar.gz",
+      "bytes": 11636679
+    },
+    {
+      "path": "tasks/artifacts/claude-audit-fixes-2026-10-22/nst-continuation/fixed-source.tar.gz",
+      "bytes": 11638756
+    },
+    {
+      "path": "tasks/artifacts/claude-audit-fixes-2026-10-22/nst-continuation/r1/fixed-source.tar.gz",
+      "bytes": 11643527
+    },
+    {
+      "path": "tasks/artifacts/forge-task2-2026-10-22/r2/combined-source.tar.gz",
+      "bytes": 54843095
+    },
+    {
+      "path": "tasks/artifacts/forge-task2-2026-10-22/r3-cache-recheck/combined-source.tar.gz",
+      "bytes": 54921460
+    },
+    {
+      "path": "tasks/artifacts/recoverable-cache-cleanup-2026-10-13/cache-inventory.jsonl.gz",
+      "bytes": 9011059
+    },
+    {
+      "path": "tasks/artifacts/release-integration-2026-10-23/combined-validation-v1/fixed-source.tar.gz",
+      "bytes": 11928305
+    },
+    {
+      "path": "tasks/artifacts/release-integration-2026-10-23/production-model-prototype/draft-source.tar.gz",
+      "bytes": 12543803
+    },
+    {
+      "path": "tasks/artifacts/release-integration-2026-10-23/selected-model-baseline/fixed-source.tar.gz",
+      "bytes": 11948627
+    },
+    {
+      "path": "tasks/artifacts/release-integration-2026-10-23/trusted-yahoo/fixed-source.tar.gz",
+      "bytes": 12086801
+    },
+    {
+      "path": "tasks/artifacts/release-readiness-2026-10-24/candidate-source.tar.gz",
+      "bytes": 47097870
+    },
+    {
+      "path": "tasks/artifacts/repository-commitment-audit-2026-10-15/checklists.json",
+      "bytes": 6249831
+    },
+    {
+      "path": "tasks/artifacts/security-audit-sprint-2026-10-15-0512/approved-dependency-audit/cache/_cacache/content-v2/sha512/28/0d/da88a9cd7a1121b3e69a3f1ecc1c836915c5a77fe6c0e460e3b1bac9da6ec11d4b9552108ba9c4c2ae683ef31f509600c4ebc3572d4ce901664fd136cefc",
+      "bytes": 5802331
+    },
+    {
+      "path": "tasks/artifacts/security-audit-sprint-2026-10-15-0512/approved-dependency-audit/cache/_cacache/content-v2/sha512/2e/c2/7117addfbd651a4b35b931b1960d45e2b0e8003cc1f4e0eb092cc3ef4abf624b5751d75e1d0f2f04920d66a2179b2dd391de719f765aaed24b7ead776ecc",
+      "bytes": 6225590
+    },
+    {
+      "path": "tasks/artifacts/security-audit-sprint-2026-10-15-0512/approved-dependency-audit/cache/_cacache/content-v2/sha512/77/75/fe7ac8c30322e97afe5eee71054934c29330a660522c96a2d4d8194abdd85d5d179d5e22215ef45201ce5ba4dcd505d36719b608ae598b26e705c3bb058e",
+      "bytes": 25647967
+    },
+    {
+      "path": "tasks/artifacts/sprint-integration-checkpoint-2026-10-22/export-completion/fixed-source.tar.gz",
+      "bytes": 12354972
+    },
+    {
+      "path": "tasks/artifacts/sprint-integration-checkpoint-2026-10-22/fixed-source.tar.gz",
+      "bytes": 12247221
+    }
+  ]
+}

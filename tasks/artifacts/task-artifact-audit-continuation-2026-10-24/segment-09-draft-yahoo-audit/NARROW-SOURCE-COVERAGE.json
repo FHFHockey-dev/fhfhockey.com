@@ -1,0 +1,15 @@
+{
+  "at": "2026-10-24T17:30:07.417761+00:00",
+  "path": "web/components/PlayerPickupTable/PlayerPickupTable.module.scss",
+  "sha256": "7fb516b109574d7a1dcee9cacaa4da0b2cb9ac346f5049958549b7988627881f",
+  "status": "partially-inspected",
+  "reviewed_ranges": [
+    [
+      1744,
+      1766
+    ]
+  ],
+  "original_cited_path": "web/components/GameGrid/PlayerPickupTable/PlayerPickupTable.module.scss",
+  "original_cited_path_status": "absent",
+  "reason": "Resolve actual contradiction: historical zero-raw-color completion versus October17 recurrence; no new application audit."
+}

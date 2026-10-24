@@ -1,0 +1,42 @@
+{
+  "at": "2026-10-24T15:56:20.171253+00:00",
+  "canonical_before": {
+    "tasks/handoff-2026-10-20/MASTER-TASKLIST-2026-10-20.md": "ac006c547ed467ff29951bc56e4921a25c5c3ae5922362bcf1dbbbdfd622d488",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.md": "538e4bd8230eff1b9cfb0d8613f5471216175f8b5d4f8d8b25ae1f1978a9582a",
+    "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json": "9dfd1bb0bb019ad140d42f0c811c5e6544ffc54e46d970f8fc9e2189c92f4c71"
+  },
+  "library_version": 5,
+  "scope": "Substantial coherent source-content batch; keep interim coverage/findings separate. No small status-only Library write. Same single worker, no app/tests/Git/external actions.",
+  "selected": [
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/research/deep-research-report.md",
+      "bytes": 28167,
+      "lines": 388,
+      "sha256": "a562057b2cafcce30a58dacaee995a372d8409ca243d2b8d126dd896cc38e855"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/Recommendations-DRR.md",
+      "bytes": 18373,
+      "lines": 94,
+      "sha256": "191f919e180ca069b510ac9cbf5ab6208a408d8fd4efba3f83b354f8db7f501e"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/context.md",
+      "bytes": 23995,
+      "lines": 179,
+      "sha256": "68b581c6a625094baaf975575863cb861512b56df72cdcf66b11e8a70e2b1456"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/workstation/deep-research-report.md",
+      "bytes": 28167,
+      "lines": 388,
+      "sha256": "a562057b2cafcce30a58dacaee995a372d8409ca243d2b8d126dd896cc38e855"
+    },
+    {
+      "path": "tasks/TASKS/contextual-hockey-rankings/tasks-prd-contextual-hockey-rankings.md",
+      "bytes": 152980,
+      "lines": 665,
+      "sha256": "b020222f70df640678e880203c8a0970ef94018387816eb1ebcae396f002f56f"
+    }
+  ]
+}
