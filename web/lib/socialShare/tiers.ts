@@ -119,6 +119,8 @@ export function trimEditionPlayers(snapshot: SocialShareSnapshot, layer: SharePl
   const targets = Object.values(picks).flat().map(pick => pick.player);
   const keep = new Set([...trimmed.players, ...shown, ...targets].map(player => player.nhlId));
   return { ...trimmed, players: layer.players.filter(player => keep.has(player.nhlId)), tierCounts: counts,
+    // Only shown players' ids leave the server (SS1-24).
+    ...(trimmed.recentUnavailableIds ? { recentUnavailableIds: trimmed.recentUnavailableIds.filter(id => keep.has(id)) } : {}),
     targets: Object.fromEntries(Object.entries(picks).map(([key, list]) => [key, list.map(pick => ({ id: pick.player.nhlId, roles: pick.roles }))])) };
 }
 

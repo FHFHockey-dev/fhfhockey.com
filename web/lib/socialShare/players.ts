@@ -236,13 +236,16 @@ export const RECENT_MAX_AGE_DAYS = 14;
  * Attach last-five-games evidence to the (already trimmed) players: the latest strength-all rolling row
  * for skaters, and the five most recent games played for goalies (sums only; SV% = saves ÷ shots).
  */
-export function attachRecent(layer: SharePlayerLayer, sources: { rolling: ShareRecentRollingRow[] | null; goalieGames: ShareGoalieGameRow[] | null } | null, generatedAt: string): SharePlayerLayer {
+export function attachRecent(layer: SharePlayerLayer, sources: { rolling: ShareRecentRollingRow[] | null; goalieGames: ShareGoalieGameRow[] | null; failedIds?: number[] } | null, generatedAt: string): SharePlayerLayer {
   const today = localDate(generatedAt, SHARE_TIME_ZONE), oldest = new Date(Date.parse(`${today}T00:00:00Z`) - RECENT_MAX_AGE_DAYS * 86400000).toISOString().slice(0, 10);
   // A failed read is "unavailable", never "no recent game".
   if (!sources || (!sources.rolling && !sources.goalieGames)) return { ...layer, recentState: "unavailable", players: layer.players.map(player => ({ ...player, recent: null })) };
   // One source can fail alone (SS1-17): its players get no recent form and are marked, the others keep theirs.
   const unavailable = [...(sources.rolling ? [] : ["skaters" as const]), ...(sources.goalieGames ? [] : ["goalies" as const])];
+  // A failed id chunk (SS1-24) costs only its own players their recent form.
+  const failed = new Set(sources.failedIds ?? []), failedIds = layer.players.filter(player => failed.has(player.nhlId)).map(player => player.nhlId);
   const players = layer.players.map(player => {
+    if (failed.has(player.nhlId)) return { ...player, recent: null };
     if (player.group !== "G") {
       if (!sources.rolling) return { ...player, recent: null };
       const rows = sources.rolling.filter(row => row.player_id === player.nhlId && row.season === layer.season && row.strength_state === "all" && isDate(row.game_date) && row.game_date <= today)
@@ -259,5 +262,5 @@ export function attachRecent(layer: SharePlayerLayer, sources: { rolling: ShareR
     const sum = (key: "wins" | "saves" | "shots_against" | "goals_against" | "quality_start" | "shutouts") => games.reduce((total, row) => total + (count(row[key]) ? row[key]! : 0), 0);
     return { ...player, recent: { kind: "goalie" as const, games: games.length, through: games[0].date, wins: sum("wins"), saves: sum("saves"), shotsAgainst: sum("shots_against"), goalsAgainst: sum("goals_against"), qualityStarts: sum("quality_start"), shutouts: sum("shutouts") } };
   });
-  return unavailable.length ? { ...layer, recentState: "partial", recentUnavailable: unavailable, players } : { ...layer, recentState: "ready", players };
+  return unavailable.length || failedIds.length ? { ...layer, recentState: "partial", recentUnavailable: unavailable, ...(failedIds.length ? { recentUnavailableIds: failedIds } : {}), players } : { ...layer, recentState: "ready", players };
 }
