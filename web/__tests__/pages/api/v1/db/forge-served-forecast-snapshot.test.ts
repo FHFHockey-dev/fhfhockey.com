@@ -153,6 +153,22 @@ describe("forge-served-forecast-snapshot", () => {
     }
   });
 
+  it("names the throwing stage and per-stage elapsed time on a read deadline, without writing", async () => {
+    const { PlanningReadDeadlineError } = await import("lib/rosterScheduleData/planningInputs");
+    // Planning inputs return, but only after spending 95 s of the route's 45 s budget.
+    planningMock.mockImplementationOnce(async () => {
+      vi.setSystemTime(Date.now() + 95000);
+      return { players: [], games: [] };
+    });
+    bridgeMock.mockRejectedValueOnce(new PlanningReadDeadlineError());
+    const out = res();
+    await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
+    expect(out.statusCode).toBe(500);
+    expect(out.body).toEqual({ success: false, date: "2026-10-21", error: "Planning read deadline exceeded",
+      stage: "forge_bridge", stageMs: { day_games: 0, planning_inputs: 95000, forge_bridge: 0 } });
+    expect(upsertMock).not.toHaveBeenCalled();
+  });
+
   it("reports a failed write", async () => {
     upsertMock.mockResolvedValueOnce({ error: { message: "denied" } });
     const out = res();
