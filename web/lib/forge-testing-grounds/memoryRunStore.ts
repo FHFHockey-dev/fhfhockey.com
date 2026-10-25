@@ -1,13 +1,14 @@
 import { randomUUID } from "node:crypto";
 import { boundedPayload, checkedIdentity, checkedInstant, contentHash, freezeCopy, parsePlan, parseStepResult, RUN_PHASES,
   RunnerError, workUnitId, type ExperimentPlan, type JsonValue, type RunState, type StepResult } from "./runnerContracts";
-import type { ClaimedWork, ExperimentRunStore, RunProgress, StepAcceptance, WorkerLease } from "./runStore";
+import { MAX_LISTED_RUNS, type ClaimedWork, type ExperimentRunStore, type RunEvent, type RunProgress, type StepAcceptance,
+  type WorkerLease } from "./runStore";
 
 type StoredPayload = ReturnType<typeof boundedPayload>;
 type Run = {
   id: string; owner: string; plan: ExperimentPlan; hash: string; state: RunState; revision: number; fence: number;
   created: number; updated: number; finished: number | null; heartbeat: number | null; notBefore: number;
-  lease: WorkerLease | null; event: string; bytes: number;
+  lease: WorkerLease | null; event: RunEvent; bytes: number;
   outputs: Map<string, StoredPayload>; checkpoints: Map<string, StoredPayload[]>;
   executions: Map<string, number>; outcomeChecks: Map<string, number>;
   failures: Map<string, number>; failedUnit: string | null;
@@ -34,10 +35,10 @@ export class MemoryExperimentRunStore implements ExperimentRunStore {
     checkedInstant(now);
     if (now < run.updated) throw new RunnerError("clock_before_state");
   }
-  private change(run: Run, now: number, event: string) {
+  private change(run: Run, now: number, event: RunEvent) {
     run.revision++; run.updated = now; run.event = event;
   }
-  private stop(run: Run, state: "cancelled" | "failed", now: number, event: string) {
+  private stop(run: Run, state: "cancelled" | "failed", now: number, event: RunEvent) {
     run.state = state; run.finished = now; run.lease = null; run.fence++;
     this.change(run, now, event);
   }
@@ -172,6 +173,12 @@ export class MemoryExperimentRunStore implements ExperimentRunStore {
         return [{ phase, total: ids.length, successful, failed, pending: ids.length - successful - failed, skipped: 0 as const,
           percent: phase === "fitting" ? null : (successful + failed) / ids.length * 100 }];
       }) });
+  }
+  async list(ownerUserId: string): Promise<ReadonlyArray<RunProgress>> {
+    const owner = checkedIdentity(ownerUserId);
+    const runs = [...this.runs.values()].filter(run => run.owner === owner).reverse()
+      .sort((a, b) => b.created - a.created).slice(0, MAX_LISTED_RUNS);
+    return Promise.all(runs.map(run => this.progress(owner, run.id)));
   }
   async reveal(ownerUserId: string, runId: string, nowMs: number): Promise<boolean> {
     const run = this.owned(ownerUserId, runId); this.at(run, nowMs);
