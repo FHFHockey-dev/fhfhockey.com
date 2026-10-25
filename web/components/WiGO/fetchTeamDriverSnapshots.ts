@@ -14,11 +14,19 @@ export async function fetchTeamDriverSnapshots(seasonId: number) {
   const start = dates[0];
   const today = new Date().toISOString().slice(0, 10);
   const end = dates[dates.length - 1] < today ? dates[dates.length - 1] : today;
-  const latest = await supabase.from("nst_team_5v5").select("date")
-    .gte("date", start).lte("date", end).order("date", { ascending: false }).limit(1).maybeSingle();
+  // Both sources must have reached the cutoff: a one-night lag in either writer would otherwise
+  // make every team that played that night look incomplete and blank the cards league-wide.
+  const [latest, latestTeamGame] = await Promise.all([
+    supabase.from("nst_team_5v5").select("date")
+      .gte("date", start).lte("date", end).order("date", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("wgo_team_stats").select("date")
+      .eq("season_id", seasonId).gte("date", start).lte("date", end)
+      .order("date", { ascending: false }).limit(1).maybeSingle()
+  ]);
   if (latest.error) throw latest.error;
-  if (!latest.data) return { fiveOnFiveRows: [], specialTeamsRows: [] };
-  const cutoff = latest.data.date;
+  if (latestTeamGame.error) throw latestTeamGame.error;
+  if (!latest.data || !latestTeamGame.data) return { fiveOnFiveRows: [], specialTeamsRows: [] };
+  const cutoff = latest.data.date < latestTeamGame.data.date ? latest.data.date : latestTeamGame.data.date;
   const [fiveOnFiveDailyRows, teamGames] = await Promise.all([
     fetchAllSupabasePages(({ from, to }) => supabase.from("nst_team_5v5")
       .select("team_abbreviation,date,gp,xgf,xga,gf")

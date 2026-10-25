@@ -188,7 +188,7 @@ export default function WigoComparisonMatrix({
                       ))}
                       <td
                         className={styles.matrixDiffCell}
-                        data-diff-sign={typeof row.DIFF === "number" && Number.isFinite(row.DIFF)
+                        data-diff-sign={typeof row.DIFF === "number" && Number.isFinite(row.DIFF) && row.DIFF !== 0
                           ? row.DIFF < 0 ? "negative" : "positive"
                           : undefined}
                         style={typeof row.DIFF === "number" && Number.isFinite(row.DIFF)

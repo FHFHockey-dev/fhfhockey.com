@@ -17,7 +17,8 @@ import {
   formatWigoStatValue,
   isWigoPercentStat,
   isWigoTimeStat,
-  shouldUseGpForDiff
+  shouldUseGpForDiff,
+  isWigoCountChartStat
 } from "./statMetadata";
 
 interface GameLogChartProps {
@@ -63,6 +64,17 @@ const averageColors: Record<AverageKey, string> = {
   L10: "#ffcc33", // Yellow   #ffcc33
   L20: "#cccccc" // Light Grey #cccccc
 };
+
+// The dashed line is the unweighted mean of the plotted games, not the pooled STD value
+// (rates and percentages pool numerators and denominators), so it is labelled as a game mean
+// and formatted like the stat itself; only counts read as per-game values.
+export function formatGameMeanLabel(statLabel: string, mean: number): string {
+  const value =
+    isWigoTimeStat(statLabel) || isWigoPercentStat(statLabel) || !isWigoCountChartStat(statLabel)
+      ? formatWigoStatValue(statLabel, mean)
+      : mean.toFixed(2);
+  return `Game mean: ${value}`;
+}
 
 const GameLogChart: React.FC<GameLogChartProps> = ({
   statLabel,
@@ -281,10 +293,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             <ReferenceLine
               y={seasonAverageReference}
               label={{
-                value: `Avg: ${formatDisplayValue(
-                  seasonAverageValue,
-                  isTOIStat ? "TOI" : "CountPerGame"
-                )}`,
+                value: formatGameMeanLabel(statLabel, seasonAverageValue),
                 position: "insideBottomRight",
                 fill: "#FFF", // #ff7300
                 fontSize: 16,

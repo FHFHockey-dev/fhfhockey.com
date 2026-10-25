@@ -5,7 +5,8 @@ import styles from "./TimeframeComparison.module.scss"; // Make sure this path i
 import clsx from "clsx"; // Assuming you have clsx installed for conditional class names
 
 // Define the available timeframe options
-const TIMEFRAME_OPTIONS = ["STD", "L5", "L10", "L20", "LY", "3YA", "CA"]; // Added LY based on table headers
+// Same order as the comparison matrix columns (COMPARISON_PERIODS).
+const TIMEFRAME_OPTIONS = ["STD", "LY", "CA", "3YA", "L5", "L10", "L20"];
 
 interface TimeframeComparisonProps {
   onCompare: (left: string, right: string) => void;

@@ -184,6 +184,17 @@ describe("transposed comparison matrix", () => {
         expect(cells).toEqual([...COMPARISON_PERIODS.map(period => formatCell(source, period)), formatDiffPercent(source.DIFF)]);
       });
     });
+    // A zero difference is neither an increase nor a decrease (B-21); other finite DIFFs carry their sign.
+    tables.forEach((table, half) => within(table).getAllByRole("row").slice(1).forEach((row, index) => {
+      const diff = data.find(entry => entry.label === MATRIX_HALVES[half].labels[index])!.DIFF;
+      const sign = within(row).getAllByRole("cell").at(-1)!.getAttribute("data-diff-sign");
+      expect(sign).toBe(typeof diff === "number" && Number.isFinite(diff) && diff !== 0 ? (diff < 0 ? "negative" : "positive") : null);
+    }));
+    // Both selectors list periods in the matrix's column order (B-22).
+    for (const name of ["Select left timeframe for comparison", "Select right timeframe for comparison"]) {
+      expect(Array.from((screen.getByLabelText(name) as HTMLSelectElement).options).map(option => option.value))
+        .toEqual([...COMPARISON_PERIODS]);
+    }
     expect(screen.queryByRole("button", { name: "Show GP game log" })).toBeNull();
     expect(screen.getByRole("button", { name: "Show SOG/60 game log" }).getAttribute("aria-pressed")).toBe("true");
     await waitFor(() => expect(mockFetchPlayerGameLogForStat).toHaveBeenCalledWith(1, 20252026, "SOG/60"));
@@ -194,4 +205,24 @@ describe("transposed comparison matrix", () => {
     expect(container.querySelectorAll("#wigo-selected-stat")).toHaveLength(1);
     expect(screen.getAllByRole("button", { name: /^Toggle .* reference$/ })).toHaveLength(7);
   });
+
+  it("leaves a zero difference uncoloured while signed differences keep their colour", () => {
+    mockFetchPlayerGameLogForStat.mockReset().mockResolvedValue([]);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const data = [
+      { label: "Goals", STD: 10, CA: 10, DIFF: 0 },
+      { label: "Assists", STD: 12, CA: 10, DIFF: 20 },
+      { label: "Points", STD: 8, CA: 10, DIFF: -20 }
+    ];
+    render(<QueryClientProvider client={client}><WigoComparisonMatrix
+      data={data as any} isLoadingAggData={false} aggDataError={null} playerId={1} currentSeasonId={20252026}
+      leftTimeframe="STD" rightTimeframe="CA" onCompare={vi.fn()}
+    /></QueryClientProvider>);
+    const diffCell = (label: string) => within(screen.getByRole("rowheader", { name: label }).closest("tr")!).getAllByRole("cell").at(-1)!;
+    expect(diffCell("Goals").getAttribute("data-diff-sign")).toBeNull();
+    expect(diffCell("Goals").textContent).toBe("0.0%");
+    expect(diffCell("Assists").getAttribute("data-diff-sign")).toBe("positive");
+    expect(diffCell("Points").getAttribute("data-diff-sign")).toBe("negative");
+  });
 });
+
