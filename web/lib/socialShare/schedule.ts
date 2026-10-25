@@ -19,6 +19,9 @@ export function weekDates(weekStart: string): string[] {
 export function calendarWeekStart(asOfIso: string): string {
   if (!Number.isFinite(Date.parse(asOfIso))) throw new Error("Invalid as-of timestamp.");
   const date = localDate(asOfIso, SHARE_TIME_ZONE);
+  // Years before 1000 do not format as YYYY in the local calendar (REL-SS1-LOW-YEAR-R1): fail with the same clean
+  // error instead of a RangeError from an invalid Date further down.
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Invalid as-of timestamp.");
   const time = Date.parse(`${date}T00:00:00Z`);
   const offset = (new Date(time).getUTCDay() + 6) % 7;
   return new Date(time - offset * 86400000).toISOString().slice(0, 10);

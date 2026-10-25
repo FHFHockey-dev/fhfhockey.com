@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // A fake anon client records every read; no Supabase request ever leaves this test.
-const source = vi.hoisted(() => ({ calls: [] as { table: string; columns: string; filters: [string, string, unknown][]; orders: [string, boolean][]; range: [number, number] }[], rows: {} as Record<string, Record<string, unknown>[]>, count: {} as Record<string, number | null> }));
+const source = vi.hoisted(() => ({ calls: [] as { table: string; columns: string; filters: [string, string, unknown][]; orders: [string, boolean][]; range: [number, number] }[], rows: {} as Record<string, Record<string, unknown>[]>, count: {} as Record<string, number | null>, errors: {} as Record<string, unknown> }));
 vi.mock("lib/supabase/public-client", () => ({
   default: {
     from: (table: string) => {
@@ -15,6 +15,7 @@ vi.mock("lib/supabase/public-client", () => ({
         order: (column: string, options?: { ascending?: boolean }) => { call.orders.push([column, options?.ascending ?? true]); return query; },
         range: async (from: number, to: number) => {
           call.range = [from, to]; source.calls.push(call);
+          if (source.errors[table]) return { data: null, error: source.errors[table], count: null };
           const all = table === "yahoo_nhl_player_map_read" ? (source.rows[table] ?? []).filter(row => (call.filters.find(item => item[0] === "in")![2] as string[]).includes(row.yahoo_player_id as string)) : source.rows[table] ?? [];
           return { data: all.slice(from, to + 1), error: null, count: source.count[table] === undefined ? all.length : source.count[table] };
         },
@@ -27,7 +28,7 @@ import { loadSharePlayerRecent, loadSharePlayerSources, PLAYER_SOURCE_LIMITS, RE
 
 const yahoo = (id: number, team: string) => ({ player_key: `465.p.${id}`, player_id: String(id), editorial_team_abbreviation: team, percent_ownership: 20 });
 beforeEach(() => {
-  source.calls = []; source.count = {};
+  source.calls = []; source.count = {}; source.errors = {};
   source.rows = {
     yahoo_players: [yahoo(1, "NJ"), yahoo(2, "TOR")],
     yahoo_nhl_player_map_read: [{ yahoo_player_id: "465.p.1", nhl_player_id: "8470001" }, { yahoo_player_id: "2", nhl_player_id: "8470002" }],
@@ -76,9 +77,35 @@ describe("live player source loader (mocked client)", () => {
     expect(source.calls).toHaveLength(0);
   });
 
-  it("fails closed when recent-form rows exceed the per-player limit", async () => {
-    source.rows = { rolling_player_game_metrics: Array.from({ length: 2 * RECENT_LIMITS.skaterRowsPerPlayer + 1 }, () => ({ player_id: 1 })), wgo_goalie_stats: [] };
-    await expect(loadSharePlayerRecent(20262027, [1, 3], [], "2026-10-05")).rejects.toThrow(`over its ${2 * RECENT_LIMITS.skaterRowsPerPlayer}-row limit`);
+  it("fails closed per source when recent-form rows exceed the per-player limit, logging the reason", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    source.rows = { rolling_player_game_metrics: Array.from({ length: 2 * RECENT_LIMITS.skaterRowsPerPlayer + 1 }, () => ({ player_id: 1 })), wgo_goalie_stats: [{ goalie_id: 2 }] };
+    expect(await loadSharePlayerRecent(20262027, [1, 3], [2], "2026-10-05")).toEqual({ rolling: null, goalieGames: [{ goalie_id: 2 }] });
+    expect(warn).toHaveBeenCalledWith(`[social-share] Skater recent games unavailable: Skater recent games response was incomplete or over its ${2 * RECENT_LIMITS.skaterRowsPerPlayer}-row limit.`);
+    warn.mockRestore();
+  });
+
+  it("SS1-17 reproduction: one failing source used to blank every tile; now the other source still answers", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    // Live-shaped grain: one strength-all row per skater per game date, a full 22-day window for a busy player.
+    const days = Array.from({ length: RECENT_LIMITS.lookbackDays + 1 }, (_, i) => `2026-10-${String(4 + i).padStart(2, "0")}`);
+    source.rows = { rolling_player_game_metrics: days.map(game_date => ({ player_id: 1, game_date, strength_state: "all" })), wgo_goalie_stats: [] };
+    // A PostgREST error on the goalie read (e.g. a timeout or a missing column) no longer rejects the whole load.
+    source.errors = { wgo_goalie_stats: { code: "57014", message: "canceling statement due to statement timeout" } };
+    const recent = await loadSharePlayerRecent(20262027, [1], [2], "2026-10-04");
+    expect(recent.rolling).toHaveLength(days.length);
+    expect(recent.goalieGames).toBeNull();
+    expect(warn).toHaveBeenCalledWith("[social-share] Goalie recent games unavailable: 57014 canceling statement due to statement timeout");
+    // And the reverse: a skater error leaves goalies answering.
+    source.errors = { rolling_player_game_metrics: { code: "42703", message: "column rolling_player_game_metrics.x does not exist" } };
+    source.rows.wgo_goalie_stats = [{ goalie_id: 2 }];
+    expect(await loadSharePlayerRecent(20262027, [1], [2], "2026-10-04")).toEqual({ rolling: null, goalieGames: [{ goalie_id: 2 }] });
+    warn.mockRestore();
+  });
+
+  it("derives the per-player cap from the true grain: one row per player per date over the lookback", () => {
+    expect(RECENT_LIMITS.skaterRowsPerPlayer).toBe(RECENT_LIMITS.lookbackDays + 1);
+    expect(RECENT_LIMITS.goalieRowsPerPlayer).toBe(RECENT_LIMITS.lookbackDays + 1);
   });
 
   it("makes no read without teams", async () => {

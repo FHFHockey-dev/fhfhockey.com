@@ -15,6 +15,7 @@ import { editionLabel } from "../lib/socialShare/edition";
 import { countTiers } from "../lib/socialShare/mondayGrid";
 import { streamingTiers, trimEditionPlayers } from "../lib/socialShare/tiers";
 import { SCORE_FORMULA, SPECIALIST_FORMULA } from "../lib/socialShare/score";
+import { streakOf, type StreakContext } from "../lib/socialShare/streak";
 
 const evidence = process.env.SOCIAL_SHARE_EVIDENCE_DIR || "/tmp/fhf-social-card-readiness-evidence-20261008";
 const upcomingWeek = calendarWeekStart(new Date(Date.now() + 7 * 86400000).toISOString());
@@ -25,7 +26,7 @@ test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
 type Rates = "ready" | "stale" | "missing";
 type PlayerMode = Rates | "thin";
 /** Last-five-games read outcome: rows, an answered-but-empty read, or a failed read. */
-type RecentRead = "ready" | "empty" | "failed";
+type RecentRead = "ready" | "empty" | "failed" | "goalies-failed";
 function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinnedAt?: string, rates: Rates = "ready", players: PlayerMode = "ready", trends: Rates = "ready", recentRead: RecentRead = "ready"): SocialShareSnapshot {
   const dates = weekDates(weekStart), generatedAt = pinnedAt ?? new Date().toISOString();
   const year = Number(weekStart.slice(0, 4)) - (Number(weekStart.slice(5, 7)) < 8 ? 1 : 0);
@@ -42,7 +43,7 @@ function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinne
     snapshot.players = buildPlayerLayer(sources, { season, teams: snapshot.teams.map(team => team.abbreviation), fetchedAt: generatedAt, generatedAt });
     // Fictional last-five-games evidence for every joined player, as the live server attaches for shown ones.
     const recent = fictionalPlayerRecent(snapshot.players.players, season, localDate(generatedAt, "America/New_York"));
-    snapshot.players = attachRecent(snapshot.players, recentRead === "failed" ? null : recentRead === "empty" ? { rolling: [], goalieGames: [] } : { rolling: recent.rolling as ShareRecentRollingRow[], goalieGames: recent.goalieGames as ShareGoalieGameRow[] }, generatedAt);
+    snapshot.players = attachRecent(snapshot.players, recentRead === "failed" ? null : recentRead === "empty" ? { rolling: [], goalieGames: [] } : { rolling: recent.rolling as ShareRecentRollingRow[], goalieGames: recentRead === "goalies-failed" ? null : recent.goalieGames as ShareGoalieGameRow[] }, generatedAt);
     // Fictional rolling metrics (4 h old, or 80 h when stale) and seven-day ownership timelines.
     const trendSources = trends === "missing" ? null : fictionalTrendSources(season, localDate(generatedAt, "America/New_York"), new Date(Date.parse(generatedAt) - (trends === "stale" ? 80 : 4) * 3600000).toISOString());
     snapshot.trends = buildTrendLayer(trendSources, { season, teams: snapshot.teams, fetchedAt: generatedAt, generatedAt });
@@ -533,7 +534,7 @@ test("Pickup tier and specialist cards list ranked players from top Week Score t
   for (const tier of tiers) {
     await graphic.selectOption(`pickups-${tier.max}`);
     await expect(square).toContainText(`${tier.label.toUpperCase()} ROSTERED`);
-    await expect(square).toContainText("bands 30–49% · 20–29% · under 20%");
+    await expect(square).toContainText("Bands 30–49% · 20–29% · under 20%");
     const expected = [...tier.groups.F, ...tier.groups.D, ...tier.groups.G].map(player => String(player.nhlId));
     expect(expected.length).toBeGreaterThanOrEqual(5);
     await expect(square.locator("[data-player]")).toHaveCount(expected.length);
@@ -771,7 +772,8 @@ test("the eyebrow names the real date context, not the format's posting day", as
   expect(label).toBe("Week ahead");
   await expect(square).toContainText(`${label} · Streamer grid`, { ignoreCase: true });
   await page.getByRole("combobox", { name: /^Graphic/ }).selectOption("pickups-20");
-  await expect(square).toContainText(`${label} · Pickups · top-10 schedules first`, { ignoreCase: true });
+  await expect(square).toContainText(`${label} · Pickups`, { ignoreCase: true });
+  await expect(square).not.toContainText("schedules first", { ignoreCase: true });
 });
 
 test("ticket 10 flair: striped player banners with L5 evidence, three per list, tiered grid scores and cherry picks", async ({ page }) => {
@@ -840,6 +842,12 @@ test("player tiles never claim 'no recent game' when the last-five-games read fa
   await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
   await expect(tiles.first()).toContainText("No game in the last two weeks");
   await expect(square).not.toContainText("Recent form unavailable");
+  // SS1-17: only the goalie source failed, so only goalie tiles say so; skaters keep their L5 lines.
+  source.recentRead = "goalies-failed";
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  await expect(tiles).toHaveCount(9);
+  for (let i = 0; i < 6; i++) { await expect(tiles.nth(i)).not.toContainText("Recent form unavailable"); await expect(tiles.nth(i)).toContainText("SOG"); }
+  for (let i = 6; i < 9; i++) await expect(tiles.nth(i)).toContainText("Recent form unavailable");
 });
 
 test("GP and off-night counts are coloured per column on Monday and Wednesday editions", async ({ page }) => {
@@ -877,7 +885,7 @@ test("schedule-aware tier list shows only tier teams' players as list rows, stri
   for (const [card, mode] of [["tiers", "strict"], ["tiers-wide", "widened"]] as const) {
     await graphic.selectOption(card);
     await expect(square).toContainText("STREAMING OPTIONS");
-    await expect(square).toContainText("skaters, then goalies, each by L5 score");
+    await expect(square).toContainText("Under 50% rostered");
     const tiers = streamingTiers(source.latest!, true, mode);
     expect(tiers).toHaveLength(3);
     await expect(square.locator("[data-tier-index]")).toHaveCount(3);
@@ -949,5 +957,60 @@ test("returning to the tab keeps the week, days and card: the gate's re-check re
   await expect(page.getByLabel("Week of (Monday)")).toHaveValue(upcomingWeek);
   expect(new URL(page.url()).searchParams.get("dates")).toBe(url.searchParams.get("dates"));
   expect(access.writes).toEqual([]);
+});
+
+test("cards carry no ordering or selection-rule captions (SS1-17, TJ)", async ({ page }) => {
+  const source = await install(page);
+  source.mode = "league";
+  await open(page);
+  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square");
+  await expect(square.locator("[data-team][data-tier]")).toHaveCount(32);
+  const removed = ["Ranked by Game Grid Week Score", "Most signals first", "one night per team", "Week Score teams first", "wider pool fills to three", "schedules first",
+    "ranked by L5 score", "each by L5 score", "best Week Score first", "fold in the next pair", "Strictly tier teams only", "games left ·"];
+  for (const card of ["grid", "leaders", "easiest", "stream", "pickups-50", "pickups-30", "pickups-20", "specialists", "tiers", "tiers-wide"]) {
+    await graphic.selectOption(card);
+    await expect(square.locator("footer")).toBeVisible();
+    const text = await square.innerText();
+    for (const caption of removed) expect(text, `${card}: ${caption}`).not.toContain(caption);
+  }
+  // Source and as-of lines, ownership bands and limitation disclosures stay.
+  await graphic.selectOption("pickups-50");
+  await expect(square).toContainText("Bands 30–49% · 20–29% · under 20%");
+  await expect(square).toContainText("Not projections");
+  await expect(square).toContainText("Yahoo rostered % as of");
+  await graphic.selectOption("grid");
+  await expect(square).toContainText("No odds or projections");
+});
+
+test("hot and cold streak badges sit beside the L5 line and match the streak rules (SS1-18)", async ({ page }) => {
+  const source = await install(page);
+  source.mode = "league";
+  await open(page);
+  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square");
+  await expect(square.locator("[data-team][data-tier]")).toHaveCount(32);
+  const counts = { hot: 0, cold: 0 };
+  for (const [card, context] of [["pickups-50", "pickup"], ["pickups-30", "pickup"], ["pickups-20", "pickup"], ["specialists", "specialist"], ["tiers", "tier"], ["tiers-wide", "tier"]] as [string, StreakContext][]) {
+    await graphic.selectOption(card);
+    await expect(square.locator("[data-player]").first()).toBeVisible();
+    const byId = new Map(source.latest!.players!.players.map(player => [String(player.nhlId), player]));
+    const rows = await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => ({ id: node.getAttribute("data-player")!, streak: node.querySelector("[data-streak]")?.getAttribute("data-streak") ?? null,
+      reasons: node.querySelector("[data-streak]")?.getAttribute("data-reasons") ?? null })));
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      const expected = streakOf(byId.get(row.id)!, context);
+      expect({ id: row.id, card, streak: row.streak, reasons: row.reasons }).toEqual({ id: row.id, card, streak: expected?.kind ?? null, reasons: expected ? expected.reasons.join("|") : null });
+      if (expected) counts[expected.kind]++;
+    }
+    expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
+  }
+  // The fixture exercises both kinds.
+  expect(counts.hot).toBeGreaterThan(0);
+  expect(counts.cold).toBeGreaterThan(0);
+  await graphic.selectOption("pickups-50");
+  await downloadedPng(page, "streaks-pickups-50");
+  await graphic.selectOption("specialists");
+  await downloadedPng(page, "streaks-specialists");
+  await graphic.selectOption("tiers-wide");
+  await downloadedPng(page, "streaks-tiers-wide");
 });
 

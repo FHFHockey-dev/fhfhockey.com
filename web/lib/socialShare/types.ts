@@ -78,7 +78,10 @@ export type ShareOpponentStats = {
 export type SharePlayerRecent =
   | { kind: "skater"; games: number; through: string; goals: number | null; assists: number | null; points: number | null; shots: number | null; hitsPerGame: number | null; blocksPerGame: number | null; toiSeconds: number | null; ppPoints: number | null;
       /** Latest game's role (SS1-15): even-strength line L1–L4 or pair P1–P3, PP unit, and season TOI per game for the relative-TOI note. */
-      line?: EvDeploymentBucket | null; ppUnit?: SpecialTeamsDeploymentBucket | null; toiSeasonSeconds?: number | null }
+      line?: EvDeploymentBucket | null; ppUnit?: SpecialTeamsDeploymentBucket | null; toiSeasonSeconds?: number | null;
+      /** Streak inputs (SS1-18): L5 games with a point (null unless the 6 latest rows are consecutive games), and
+       *  pre-L5 averages that exclude the L5 games ((season total − L5 total) ÷ (GP − 5)); seconds per game. */
+      pointGames?: number | null; toiPreSeconds?: number | null; ppToiSeconds?: number | null; ppToiPreSeconds?: number | null }
   | { kind: "goalie"; games: number; through: string; wins: number; saves: number; shotsAgainst: number; goalsAgainst: number; qualityStarts: number; shutouts?: number };
 
 /** One public player row joined from Yahoo ownership and NHL.com (WGO) season totals. */
@@ -130,7 +133,9 @@ export type SharePlayerLayer = {
    * (a player's `recent: null` then means no game in two weeks); "unavailable" when the read failed or
    * exceeded its limit, so no tile may claim the player has not played. Absent: no read was attempted.
    */
-  recentState?: "ready" | "unavailable";
+  recentState?: "ready" | "partial" | "unavailable";
+  /** With "partial" (SS1-17): the source that failed, so only its players say "Recent form unavailable". */
+  recentUnavailable?: ("skaters" | "goalies")[];
 };
 
 /** One skater's last-5 vs season windows from rolling_player_game_metrics (strength "all"). */

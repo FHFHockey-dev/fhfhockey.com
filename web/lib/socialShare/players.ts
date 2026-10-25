@@ -2,6 +2,7 @@ import type { Database } from "lib/supabase/database-generated.types";
 import { localDate } from "lib/rosterScheduleOptimizer/planningDates";
 import { normalizeEvDeploymentBucket, normalizePpDeploymentBucket } from "lib/rankings/skaterDeploymentAggregation";
 import { byScore, opportunityMultiplier, playerScore } from "./score";
+import { STREAK } from "./streak";
 import { PICKUP_YAHOO_TEAM_ALIASES, type PickupOwnershipRow } from "./pickupsFixture";
 import { SHARE_TIME_ZONE, type ShareDataState, type SharePlayer, type SharePlayerLayer, type SocialShareSnapshot } from "./types";
 
@@ -203,10 +204,30 @@ export function specialists(snapshot: SocialShareSnapshot, trusted: boolean, per
       byScore<Specialist>(player => player.l5PerGame === null ? null : player.l5PerGame * opportunityMultiplier(player), (a, b) => b.perGame - a.perGame || tieBreak(a, b)), perList)])) as Record<SpecialistCategory, Specialist[]>;
 }
 
+/**
+ * Streak inputs from one player's strength-all rows, latest first (SS1-18). Each row is one game, so a game's
+ * points are the difference of consecutive cumulative goals + assists (`goals_total_all` + `assists_total_all`;
+ * `points_total_all` was dropped from the table on 2026-10-21), counted only when the six
+ * latest rows are provably consecutive games (season GP steps by exactly 1); otherwise null, never guessed.
+ * Pre-L5 averages exclude the L5 games: (season average × GP − L5 total) ÷ (GP − 5).
+ */
+function streakInputs(rows: ShareRecentRollingRow[]) {
+  const latest = rows[0], gp = latest.season_games_played;
+  const six = rows.slice(0, 6), consecutive = six.length === 6 && six.every((row, i) => i === 0 || (row.season_games_played !== null && six[i - 1].season_games_played !== null && six[i - 1].season_games_played! - row.season_games_played === 1))
+    && six.every(row => typeof row.goals_total_all === "number" && typeof row.assists_total_all === "number");
+  const cumulative = (row: ShareRecentRollingRow) => row.goals_total_all! + row.assists_total_all!;
+  const pointGames = consecutive ? six.slice(0, 5).filter((row, i) => cumulative(row) - cumulative(six[i + 1]) > 0).length : null;
+  const preGames = gp === null ? 0 : gp - 5;
+  const pre = (seasonAvg: number | null | undefined, l5Total: number | null | undefined) => preGames < STREAK.minPreGames || seasonAvg == null || l5Total == null ? null : (seasonAvg * gp! - l5Total) / preGames;
+  return { pointGames, toiPreSeconds: pre(latest.toi_seconds_avg_season, latest.toi_seconds_total_last5),
+    ppToiSeconds: latest.pp_toi_seconds_total_last5 == null ? null : latest.pp_toi_seconds_total_last5 / 5, ppToiPreSeconds: pre(latest.pp_toi_seconds_avg_season, latest.pp_toi_seconds_total_last5) };
+}
+
 /** Read-only recent-game source shapes. */
 export type ShareRecentRollingRow = Pick<Tables["rolling_player_game_metrics"]["Row"], "player_id" | "season" | "game_date" | "strength_state" | "season_games_played" |
   "goals_total_last5" | "assists_total_last5" | "points_total_last5" | "shots_total_last5" | "hits_avg_last5" | "blocks_avg_last5" | "toi_seconds_avg_last5" | "pp_points_total_last5"
-  | "toi_seconds_avg_season" | "line_combo_slot" | "line_combo_group" | "pp_unit">;
+  | "toi_seconds_avg_season" | "line_combo_slot" | "line_combo_group" | "pp_unit"
+  | "goals_total_all" | "assists_total_all" | "toi_seconds_total_last5" | "pp_toi_seconds_total_last5" | "pp_toi_seconds_avg_season">;
 export type ShareGoalieGameRow = Pick<Tables["wgo_goalie_stats"]["Row"], "goalie_id" | "date" | "season_id" | "games_played" | "wins" | "saves" | "shots_against" | "goals_against" | "quality_start" | "shutouts">;
 /** A last-5 window older than this (no game in two weeks) is not shown as recent form. */
 export const RECENT_MAX_AGE_DAYS = 14;
@@ -215,24 +236,28 @@ export const RECENT_MAX_AGE_DAYS = 14;
  * Attach last-five-games evidence to the (already trimmed) players: the latest strength-all rolling row
  * for skaters, and the five most recent games played for goalies (sums only; SV% = saves ÷ shots).
  */
-export function attachRecent(layer: SharePlayerLayer, sources: { rolling: ShareRecentRollingRow[]; goalieGames: ShareGoalieGameRow[] } | null, generatedAt: string): SharePlayerLayer {
+export function attachRecent(layer: SharePlayerLayer, sources: { rolling: ShareRecentRollingRow[] | null; goalieGames: ShareGoalieGameRow[] | null } | null, generatedAt: string): SharePlayerLayer {
   const today = localDate(generatedAt, SHARE_TIME_ZONE), oldest = new Date(Date.parse(`${today}T00:00:00Z`) - RECENT_MAX_AGE_DAYS * 86400000).toISOString().slice(0, 10);
   // A failed read is "unavailable", never "no recent game".
-  if (!sources) return { ...layer, recentState: "unavailable", players: layer.players.map(player => ({ ...player, recent: null })) };
+  if (!sources || (!sources.rolling && !sources.goalieGames)) return { ...layer, recentState: "unavailable", players: layer.players.map(player => ({ ...player, recent: null })) };
+  // One source can fail alone (SS1-17): its players get no recent form and are marked, the others keep theirs.
+  const unavailable = [...(sources.rolling ? [] : ["skaters" as const]), ...(sources.goalieGames ? [] : ["goalies" as const])];
   const players = layer.players.map(player => {
     if (player.group !== "G") {
-      const latest = sources.rolling.filter(row => row.player_id === player.nhlId && row.season === layer.season && row.strength_state === "all" && isDate(row.game_date) && row.game_date <= today)
-        .sort((a, b) => b.game_date.localeCompare(a.game_date))[0];
+      if (!sources.rolling) return { ...player, recent: null };
+      const rows = sources.rolling.filter(row => row.player_id === player.nhlId && row.season === layer.season && row.strength_state === "all" && isDate(row.game_date) && row.game_date <= today)
+        .sort((a, b) => b.game_date.localeCompare(a.game_date)), latest = rows[0];
       if (!latest || latest.game_date < oldest) return { ...player, recent: null };
       return { ...player, recent: { kind: "skater" as const, games: Math.min(5, latest.season_games_played ?? 5), through: latest.game_date, goals: latest.goals_total_last5, assists: latest.assists_total_last5, points: latest.points_total_last5,
         shots: latest.shots_total_last5, hitsPerGame: latest.hits_avg_last5, blocksPerGame: latest.blocks_avg_last5, toiSeconds: latest.toi_seconds_avg_last5, ppPoints: latest.pp_points_total_last5,
-        line: normalizeEvDeploymentBucket({ lineComboGroup: latest.line_combo_group, lineComboSlot: latest.line_combo_slot }), ppUnit: normalizePpDeploymentBucket(latest.pp_unit), toiSeasonSeconds: latest.toi_seconds_avg_season ?? null } };
+        line: normalizeEvDeploymentBucket({ lineComboGroup: latest.line_combo_group, lineComboSlot: latest.line_combo_slot }), ppUnit: normalizePpDeploymentBucket(latest.pp_unit), toiSeasonSeconds: latest.toi_seconds_avg_season ?? null, ...streakInputs(rows) } };
     }
+    if (!sources.goalieGames) return { ...player, recent: null };
     const games = sources.goalieGames.filter(row => row.goalie_id === player.nhlId && row.season_id === layer.season && isDate(row.date) && row.date <= today && (row.games_played ?? 0) > 0)
       .sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
     if (!games.length || games[0].date < oldest) return { ...player, recent: null };
     const sum = (key: "wins" | "saves" | "shots_against" | "goals_against" | "quality_start" | "shutouts") => games.reduce((total, row) => total + (count(row[key]) ? row[key]! : 0), 0);
     return { ...player, recent: { kind: "goalie" as const, games: games.length, through: games[0].date, wins: sum("wins"), saves: sum("saves"), shotsAgainst: sum("shots_against"), goalsAgainst: sum("goals_against"), qualityStarts: sum("quality_start"), shutouts: sum("shutouts") } };
   });
-  return { ...layer, recentState: "ready", players };
+  return unavailable.length ? { ...layer, recentState: "partial", recentUnavailable: unavailable, players } : { ...layer, recentState: "ready", players };
 }

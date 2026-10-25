@@ -78,7 +78,7 @@ export function shareCacheControl(snapshot: SocialShareSnapshot, now = Date.now(
   if (!Number.isFinite(usable) || usable < 60) return "no-store";
   // Any attached layer that is not ready (opponents required; players when present, including a failed
   // last-five-games read) keeps the cache short.
-  const layersReady = snapshot.opponents?.state === "ready" && (!snapshot.players || (snapshot.players.state === "ready" && snapshot.players.recentState !== "unavailable"));
+  const layersReady = snapshot.opponents?.state === "ready" && (!snapshot.players || (snapshot.players.state === "ready" && (snapshot.players.recentState === undefined || snapshot.players.recentState === "ready")));
   const ceiling = layersReady ? SHARE_CACHE_MAX_SECONDS : SHARE_CACHE_UNREADY_OPPONENTS_SECONDS;
   const sMaxAge = Math.min(ceiling, usable);
   const stale = layersReady ? Math.min(SHARE_CACHE_MAX_SECONDS, usable - sMaxAge) : 0;

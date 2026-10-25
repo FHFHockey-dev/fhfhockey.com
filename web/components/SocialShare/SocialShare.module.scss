@@ -396,3 +396,15 @@ $trend-row: 140px;
 }
 .tierWho .roleChips i { font-size: 9px; padding: 1px 4px; border-width: 1px; }
 .scoreFormula { font-size: 11.5px; line-height: 1.3; color: v.$text-secondary; }
+
+// Hot / cold streak badge beside the L5 line (TJ, ticket 18): neon outline, icon and criteria in the streak colour.
+.streak { display: inline-flex; align-items: center; gap: 5px; flex: none; justify-self: start; max-width: 100%; padding: 3px 7px 3px 5px; border-radius: 5px; border: 1.5px solid currentColor;
+  font: 700 12px/1 "Share Roboto Condensed", sans-serif; letter-spacing: 0.03em; white-space: nowrap; overflow: hidden;
+  svg { flex: none; width: 15px; height: 15px; filter: drop-shadow(0 0 3px currentColor); }
+  em { font-style: normal; font-weight: 900; letter-spacing: 0.06em; }
+  span { overflow: hidden; text-overflow: ellipsis; color: #ffffff; }
+}
+.streak[data-streak="hot"] { color: v.$color-orange; background: linear-gradient(rgba(v.$color-orange, 0.16), rgba(v.$color-orange, 0.16)), rgba(#0b0d10, 0.6); box-shadow: 0 0 8px rgba(v.$color-orange, 0.35); }
+.streak[data-streak="cold"] { color: v.$color-blue-300; background: linear-gradient(rgba(v.$color-blue-300, 0.16), rgba(v.$color-blue-300, 0.16)), rgba(#0b0d10, 0.6); box-shadow: 0 0 8px rgba(v.$color-blue-300, 0.35); }
+.tierRecent .streak { margin-left: auto; padding: 1px 6px 1px 4px; font-size: 10.5px; border-width: 1px; svg { width: 12px; height: 12px; } }
+.tierRecent > span:not(.streak) { overflow: hidden; text-overflow: ellipsis; }
