@@ -7,10 +7,12 @@ import { SOCIAL_SHARE_CACHE_CONTROL } from "lib/socialShare/access";
 import { cardEvidenceVerdict, unclaimedBundle, type EvidenceVerdict } from "lib/player-cards/cardEvidenceVerdict";
 import { buildInteractionFixture } from "lib/player-cards/interactionFixtures";
 import { flowSettings, INITIAL_FLOW } from "lib/player-cards/interactionSnapshot";
+import { evidenceStatusCopy } from "lib/player-cards/evidenceVerdictCopy";
 
-// `evidence` is computed server-side and not rendered yet; showing it is a separate, reviewed UI change.
-export default function PlayerCardsSharePage(_props: { evidence: EvidenceVerdict }) {
-  return <Container contentVariant="full"><NextSeo title="Player cards | FHFH Share studio" noindex nofollow /><SocialShareAccessGate><PlayerCardShareStudio /></SocialShareAccessGate></Container>;
+// `evidence` is computed server-side; only its state selects fixed copy here (codes and reasons are never shown).
+export default function PlayerCardsSharePage({ evidence }: { evidence: EvidenceVerdict }) {
+  const status = evidenceStatusCopy(evidence);
+  return <Container contentVariant="full"><NextSeo title="Player cards | FHFH Share studio" noindex nofollow /><SocialShareAccessGate><PlayerCardShareStudio /><p role="status" data-evidence-state={evidence.state}><strong>{status.title}</strong><br />{status.detail}</p></SocialShareAccessGate></Container>;
 }
 export const getServerSideProps: GetServerSideProps<{ evidence: EvidenceVerdict }> = async ({ res }) => {
   res.setHeader("X-Robots-Tag", "noindex, nofollow"); res.setHeader("Cache-Control", SOCIAL_SHARE_CACHE_CONTROL);

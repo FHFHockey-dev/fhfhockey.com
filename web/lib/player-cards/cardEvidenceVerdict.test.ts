@@ -2,8 +2,11 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
 import type { GetServerSidePropsContext } from "next";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
-import { getServerSideProps } from "../../pages/social-share/player-cards";
+import PlayerCardsSharePage, { getServerSideProps } from "../../pages/social-share/player-cards";
+import { evidenceStatusCopy } from "./evidenceVerdictCopy";
 import type { LocalCardInput } from "./adapter";
 import { cardEvidenceVerdict, unclaimedBundle } from "./cardEvidenceVerdict";
 import type { EvidenceBundle } from "./evidenceBundle";
@@ -93,5 +96,24 @@ describe("page props carry no free text, receipt ids or bundle internals", () =>
     const json = JSON.stringify(props);
     expect(json).not.toMatch(/"(reasons?|receiptId|bundleId|card|readings|rank|value|sha256|retainedPath)"|studio-preview/);
     expect(JSON.parse(json)).toEqual(props);
+  });
+});
+
+vi.mock("components/SocialShare/SocialShareAccessGate", () => ({ default: ({ children }: { children: unknown }) => children }));
+vi.mock("components/player-cards/PlayerCardShareStudio", () => ({ default: () => null }));
+
+describe("studio evidence status line", () => {
+  it("renders fixed copy selected by state only, never codes", async () => {
+    const result = await getServerSideProps({ res: { setHeader: vi.fn() } } as unknown as GetServerSidePropsContext);
+    const { evidence } = (result as { props: { evidence: Parameters<typeof PlayerCardsSharePage>[0]["evidence"] } }).props;
+    const html = renderToStaticMarkup(createElement(PlayerCardsSharePage, { evidence }));
+    expect(html).toContain('role="status" data-evidence-state="incomplete"');
+    expect(html).toContain("Evidence check: incomplete");
+    expect(html).toContain("Fabricated preview, no admitted evidence. Ranks are illustrative.");
+    for (const code of evidence.issueCodes) expect(html).not.toContain(code);
+  });
+  it("has copy for every verdict state and falls back to rejected", () => {
+    expect(["eligible", "incomplete", "rejected"].map(state => evidenceStatusCopy({ state: state as "eligible" }).title)).toEqual(["Evidence check: admitted evidence matches", "Evidence check: incomplete", "Evidence check: rejected"]);
+    expect(evidenceStatusCopy({ state: "unknown" as "eligible" }).title).toBe("Evidence check: rejected");
   });
 });
