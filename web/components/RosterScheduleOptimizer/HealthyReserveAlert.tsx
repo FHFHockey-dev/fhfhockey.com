@@ -14,13 +14,27 @@ function gainText({ projectedPoints, activeGames }: NonNullable<HealthyReserve["
   return { known: true, text: `${parts.join(" · ")} this week` };
 }
 
-/** Healthy players still in IR/IR+ (Yahoo lists no injury), with the gain from activating each. */
-export default function HealthyReserveAlert({ reserves, nameOf, onSelect }: {
-  reserves: HealthyReserve[]; nameOf: (id: string) => string; onSelect?: (playerId: string) => void;
+/** "Only k can be activated" when the open spots and swap partners run out before the flagged players do; the helper
+ * already ranks them by projected gain, unknown gains last. */
+function contestText(reserves: HealthyReserve[], nameOf: (id: string) => string) {
+  const activated = reserves.filter(reserve => reserve.activation);
+  if (!activated.length || activated.length === reserves.length) return null;
+  const best = activated.map(({ playerId, activation }) => `${nameOf(playerId)}${activation!.projectedPoints !== null ? ` (${signed(activation!.projectedPoints)} pts)`
+    : activation!.activeGames !== null ? ` (${signed(activation!.activeGames)} active games)` : ""}`);
+  const list = best.length === 1 ? best[0] : `${best.slice(0, -1).join(", ")} and ${best[best.length - 1]}`;
+  return `Only ${best.length === 1 ? "one" : best.length} can be activated: best ${best.length === 1 ? "is" : "are"} ${list}.`;
+}
+
+/** Healthy players still in IR/IR+ (Yahoo lists no injury), with the gain from activating each, then a soft note for
+ * each DTD player in IR+ whose team plays today. */
+export default function HealthyReserveAlert({ reserves, dtd = [], nameOf, onSelect }: {
+  reserves: HealthyReserve[]; dtd?: string[]; nameOf: (id: string) => string; onSelect?: (playerId: string) => void;
 }) {
-  if (!reserves.length) return null;
-  return <section className={styles.alert} role="alert" aria-label="Healthy players in IR">
+  if (!reserves.length && !dtd.length) return null;
+  const contest = contestText(reserves, nameOf);
+  return <>{reserves.length > 0 && <section className={styles.alert} role="alert" aria-label="Healthy players in IR">
     <h3>{reserves.length === 1 ? "Healthy player in IR" : `${reserves.length} healthy players in IR`}</h3>
+    {contest && <p className={styles.action}>{contest}</p>}
     <ul>{reserves.map(reserve => {
       const name = nameOf(reserve.playerId), activation = reserve.activation, gain = activation && gainText(activation);
       return <li key={reserve.playerId}>
@@ -33,5 +47,7 @@ export default function HealthyReserveAlert({ reserves, nameOf, onSelect }: {
           {gain && <> <b className={styles.gain} data-known={gain.known}>{gain.text}</b></>}</p>
       </li>;
     })}</ul>
-  </section>;
+  </section>}
+    {dtd.map(id => <p key={id} className={styles.action} role="note">{nameOf(id)}: DTD in IR+ — may play; consider activating if you have a spot.</p>)}
+  </>;
 }

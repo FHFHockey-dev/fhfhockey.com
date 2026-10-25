@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { fixtureRsoBindings, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
-import { healthyReserves, withoutHealthyReserves } from "./healthyReserves";
+import { dtdReserves, healthyReserves, withoutHealthyReserves } from "./healthyReserves";
 import { lineupGapReport } from "./lineupGaps";
 import { evaluatePlan } from "./planning";
 import type { GameForecast, PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
@@ -39,6 +39,14 @@ function snapshot(): PlanningSnapshot {
     allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false }, startProbability: null, confirmedStart: false, limitations: [] })));
   return data;
 }
+// A second healthy D-man, f (5 per game), on d's team.
+const withF = (data: PlanningSnapshot, position: "IR" | "IR+") => {
+  const f = member("f", "D", ["D"]);
+  data.players = [...data.players, f];
+  data.roster = [...data.roster, { playerId: "f", position }];
+  data.forecasts = [...data.forecasts, ...data.forecasts.filter(row => row.playerId === "d").map(row => ({ ...row, playerId: "f", stats: { pts: 5 },
+    issuedContext: { ...row.issuedContext!, playerId: "f", nhlPlayerId: f.nhlId!, rosterRevision: f.rosterRevision! } }))];
+};
 const injured = (data: PlanningSnapshot, id: string, status: string, reserve: PlanningPlayer["reserveEligibility"]) => {
   data.players = data.players.map(row => row.id === id ? { ...row, injury: { status, label: status, note: null }, reserveEligibility: reserve } : row);
 };
@@ -126,5 +134,51 @@ describe("healthy reserve players", () => {
     expect(withoutHealthyReserves(lineupWide, healthyReserves(data, intent))).toEqual(lineupWide);
     const manual = { ...data, context: { ...data.context, provider: "manual" as const } };
     expect(withoutHealthyReserves(blockers, healthyReserves(manual, intent))).toEqual(blockers);
+  });
+
+  // TJ 2026-10-25: flagged players competing for too few spots or partners rank by projected gain, unknown gains last.
+  it("gives the open spot to the bigger gain, not roster order, and leaves the rest to a drop", () => {
+    const data = snapshot();
+    withF(data, "IR+");
+    expect(healthyReserves(data, intent)).toEqual([
+      { playerId: "f", position: "IR+", slotEligible: false, activation: { swapPlayerId: null, projectedPoints: 10, activeGames: 2 } },
+      { playerId: "d", position: "IR", slotEligible: false, activation: null }]);
+    data.forecasts = data.forecasts.filter(forecast => forecast.playerId !== "f");
+    expect(healthyReserves(data, intent).map(row => [row.playerId, row.activation?.projectedPoints])).toEqual([["d", 6], ["f", undefined]]);
+  });
+
+  it("gives a shared swap partner to the bigger gain only", () => {
+    const data = snapshot();
+    data.roster = [...data.roster, { playerId: "e", position: "active" }];
+    withF(data, "IR+");
+    injured(data, "e", "O", ["IR", "IR+"]);
+    expect(healthyReserves(data, intent)).toEqual([
+      { playerId: "f", position: "IR+", slotEligible: false, activation: { swapPlayerId: "e", projectedPoints: 10, activeGames: 2 } },
+      { playerId: "d", position: "IR", slotEligible: false, activation: null }]);
+  });
+
+  // TJ 2026-10-25: a DTD player in IR+ may play on his team's game days: a soft note, not a flag.
+  it("notes a DTD player in IR+ only when his team plays today", () => {
+    const data = snapshot();
+    data.roster = data.roster.map(row => row.playerId === "d" ? { ...row, position: "IR+" } : row);
+    injured(data, "d", "DTD", ["IR+"]);
+    data.context = { ...data.context, asOf: "2026-10-05T12:00:00Z" };
+    expect(dtdReserves(data)).toEqual(["d"]);
+    expect(healthyReserves(data, intent)).toEqual([]);
+    data.games = data.games.filter(game => !(game.teamAbbreviation === "D" && game.date === "2026-10-05"));
+    expect(dtdReserves(data)).toEqual([]);
+    const final = snapshot();
+    final.roster = final.roster.map(row => row.playerId === "d" ? { ...row, position: "IR+" } : row);
+    final.context = { ...final.context, asOf: "2026-10-05T12:00:00Z" };
+    for (const status of ["O", "IR"]) {
+      injured(final, "d", status, ["IR+"]);
+      expect(dtdReserves(final)).toEqual([]);
+    }
+    injured(final, "d", "DTD", ["IR+"]);
+    final.roster = final.roster.map(row => row.playerId === "d" ? { ...row, position: "IR" } : row);
+    expect(dtdReserves(final)).toEqual([]);
+    final.roster = final.roster.map(row => row.playerId === "d" ? { ...row, position: "IR+" } : row);
+    expect(dtdReserves({ ...final, context: { ...final.context, provider: "manual" } })).toEqual([]);
+    expect(dtdReserves(final)).toEqual(["d"]);
   });
 });

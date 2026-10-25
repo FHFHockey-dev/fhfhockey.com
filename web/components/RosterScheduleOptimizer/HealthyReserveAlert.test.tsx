@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import HealthyReserveAlert from "./HealthyReserveAlert";
 
 afterEach(cleanup);
-const names: Record<string, string> = { d: "Back Healthy", e: "Hurt Wing" };
+const names: Record<string, string> = { d: "Back Healthy", e: "Hurt Wing", f: "Fresh Legs", g: "Third Man" };
 const nameOf = (id: string) => names[id] ?? id;
 
 describe("Healthy reserve alert", () => {
@@ -36,5 +36,32 @@ describe("Healthy reserve alert", () => {
     expect(screen.queryByText(/projected pts|Gain unknown|active games/)).toBeNull();
     rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[]} />);
     expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  // TJ 2026-10-25: rank competing healthy reserves by projected gain and say how many fit.
+  it("says only the best can be activated when spots run out, and keeps unknown gains' own wording", () => {
+    const f = { playerId: "f", position: "IR+" as const, slotEligible: false, activation: { swapPlayerId: null, projectedPoints: 10, activeGames: 2 } };
+    const d = { playerId: "d", position: "IR" as const, slotEligible: false, activation: null };
+    const { rerender } = render(<HealthyReserveAlert nameOf={nameOf} reserves={[f, d]} />);
+    expect(screen.getByText("Only one can be activated: best is Fresh Legs (+10 pts).")).toBeTruthy();
+    const g = { playerId: "g", position: "IR" as const, slotEligible: true, activation: { swapPlayerId: "e", projectedPoints: null, activeGames: null } };
+    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[f, g, d]} />);
+    expect(screen.getByText("Only 2 can be activated: best are Fresh Legs (+10 pts) and Third Man.")).toBeTruthy();
+    expect(screen.getByText("Gain unknown until the lineup passes the rule check")).toBeTruthy();
+    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[f, g]} />);
+    expect(screen.queryByText(/can be activated/)).toBeNull();
+    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[d]} />);
+    expect(screen.queryByText(/can be activated/)).toBeNull();
+  });
+
+  it("adds a soft note, never a warning, for a DTD player in IR+ whose team plays today", () => {
+    const { rerender } = render(<HealthyReserveAlert nameOf={nameOf} reserves={[]} dtd={["e"]} />);
+    expect(screen.getByRole("note").textContent).toBe("Hurt Wing: DTD in IR+ — may play; consider activating if you have a spot.");
+    expect(screen.queryByRole("alert")).toBeNull();
+    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[{ playerId: "d", position: "IR", slotEligible: false, activation: null }]} dtd={["e"]} />);
+    expect(screen.getByRole("alert").textContent).not.toContain("DTD");
+    expect(screen.getByRole("note")).toBeTruthy();
+    rerender(<HealthyReserveAlert nameOf={nameOf} reserves={[]} dtd={[]} />);
+    expect(screen.queryByRole("note")).toBeNull();
   });
 });

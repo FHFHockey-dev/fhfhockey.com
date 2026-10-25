@@ -1,4 +1,5 @@
 import { evaluatePlan } from "./planning";
+import { localDate } from "./planningDates";
 import { expandActiveSlots } from "./slots";
 import type { PlanEvaluation, PlanIntent, PlanningPlayer, PlanningSnapshot, RosterEntry } from "./planningTypes";
 
@@ -11,8 +12,10 @@ export type HealthyReserve = {
   /** The no-other-move activation: onto an open bench spot, or swapped with a rostered player Yahoo lists for his
    * reserve slot. Null when neither exists (a drop must make room). Gains compare against him staying out of the
    * lineup; null when the planner can't price both lineups (points gain is points leagues only). */
-  activation: { swapPlayerId: string | null; projectedPoints: number | null; activeGames: number | null } | null;
+  activation: Activation | null;
 };
+type Activation = { swapPlayerId: string | null; projectedPoints: number | null; activeGames: number | null };
+type Reserved = RosterEntry & { position: "IR" | "IR+" };
 
 const RESERVE_POSITIONS = new Set(["IR", "IR+", "NA"]);
 const descending = (left: number | null, right: number | null) => left === right ? 0 : left === null ? 1 : right === null ? -1 : right - left;
@@ -23,6 +26,19 @@ const descending = (left: number | null, right: number | null) => left === right
 export function isHealthyReserve(snapshot: PlanningSnapshot, entry: RosterEntry, player: PlanningPlayer | undefined): entry is RosterEntry & { position: "IR" | "IR+" } {
   return (entry.position === "IR" || entry.position === "IR+") && player?.injury === null
     && snapshot.context.provider === "yahoo" && snapshot.evidence.roster?.completeness === "complete";
+}
+
+/** TJ 2026-10-25: DTD players in IR+ whose team has a game still to start today, from a live, complete Yahoo read. They
+ * may play, so the alert adds a soft note (never a warning); no note on days his team doesn't play. */
+export function dtdReserves(snapshot: PlanningSnapshot): string[] {
+  if (snapshot.context.provider !== "yahoo" || snapshot.evidence.roster?.completeness !== "complete") return [];
+  const today = localDate(snapshot.context.asOf, snapshot.context.timeZone);
+  const playing = new Set(snapshot.games.filter(game => game.date === today && game.status === "scheduled").map(game => game.teamAbbreviation));
+  const players = new Map(snapshot.players.map(player => [player.id, player]));
+  return snapshot.roster.filter(entry => {
+    const player = players.get(entry.playerId);
+    return entry.position === "IR+" && player?.injury?.status === "DTD" && !!player.teamAbbreviation && playing.has(player.teamAbbreviation);
+  }).map(entry => entry.playerId);
 }
 
 /** Lineup-gap blockers minus those naming a flagged healthy reserve: his alert already says the lineup is illegal and
@@ -52,19 +68,29 @@ export function healthyReserves(snapshot: PlanningSnapshot, intent: PlanIntent):
     return { projectedPoints: priced && points && activated.projectedValue !== null && without.projectedValue !== null
       ? activated.projectedValue - without.projectedValue : null, activeGames: priced ? activated.activeGames - without.activeGames : null };
   };
-  return healthy.map((entry, index) => {
-    const activate = (swapPlayerId: string | null) => {
-      const roster = [...base.map(row => row.playerId === swapPlayerId ? { ...row, position: entry.position } : row),
-        { playerId: entry.playerId, position: "bench" as const }];
-      return { swapPlayerId, ...gain(run(roster)) };
-    };
-    const reserve = { playerId: entry.playerId, position: entry.position,
-      slotEligible: players.get(entry.playerId)!.reserveEligibility.includes(entry.position) };
-    // Each open spot activates one flagged player directly; the rest need a swap or a drop.
-    if (index < openSpots) return { ...reserve, activation: activate(null) };
-    const swaps = base.filter(row => !RESERVE_POSITIONS.has(row.position) && players.get(row.playerId)?.reserveEligibility.includes(entry.position))
-      .map(row => row.playerId).sort();
-    const best = swaps.map(activate).sort((a, b) => descending(a.projectedPoints, b.projectedPoints) || descending(a.activeGames, b.activeGames))[0];
-    return { ...reserve, activation: best ?? null };
+  const byGain = (a: Activation, b: Activation) => descending(a.projectedPoints, b.projectedPoints) || descending(a.activeGames, b.activeGames);
+  const activate = (entry: Reserved, swapPlayerId: string | null): Activation => {
+    const roster = [...base.map(row => row.playerId === swapPlayerId ? { ...row, position: entry.position } : row),
+      { playerId: entry.playerId, position: "bench" as const }];
+    return { swapPlayerId, ...gain(run(roster)) };
+  };
+  const swaps = new Map<string, Activation[]>();
+  const bestSwap = (entry: Reserved, taken: Set<string>) => {
+    if (!swaps.has(entry.playerId)) swaps.set(entry.playerId, base.filter(row => !RESERVE_POSITIONS.has(row.position)
+      && players.get(row.playerId)?.reserveEligibility.includes(entry.position)).map(row => row.playerId).sort()
+      .map(id => activate(entry, id)).sort(byGain));
+    return swaps.get(entry.playerId)!.find(option => !taken.has(option.swapPlayerId!)) ?? null;
+  };
+  // TJ 2026-10-25: flagged players compete for the open spots and swap partners, best projected gain first
+  // (unknown gains last); each spot or partner activates one player, the rest need a drop.
+  const ranked = healthy.map(entry => ({ entry, best: openSpots > 0 ? activate(entry, null) : bestSwap(entry, new Set()) }))
+    .sort((a, b) => !a.best || !b.best ? Number(!a.best) - Number(!b.best) : byGain(a.best, b.best));
+  let spots = openSpots;
+  const taken = new Set<string>();
+  return ranked.map(({ entry, best }) => {
+    const activation = spots-- > 0 ? best : bestSwap(entry, taken);
+    if (activation?.swapPlayerId) taken.add(activation.swapPlayerId);
+    return { playerId: entry.playerId, position: entry.position,
+      slotEligible: players.get(entry.playerId)!.reserveEligibility.includes(entry.position), activation };
   });
 }
