@@ -176,6 +176,8 @@ async function fetchAllPlayerIds(
       .from("players")
       .select("id", { count: "exact", head: false })
       .neq("position", "G")
+      // Range pages are only disjoint and complete under a stable order.
+      .order("id", { ascending: true })
       .range(from, to);
     if (error) {
       console.error(`Error fetching player IDs page ${page}:`, error.message);
@@ -244,6 +246,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     let processedCount = 0;
     const rejectedPlayerIds: number[] = [];
+    const writeErrors: string[] = [];
     // Define batch arrays with non-partial types
     const allCareerUpsertData: WigoCareerData[] = [];
     const allRecentUpsertData: WigoRecentData[] = [];
@@ -1292,6 +1295,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               console.error(
                 `Error upserting ${tableName} batch: ${result.error.message}`
               );
+              writeErrors.push(`${tableName}: ${result.error.message}`);
             }
           });
         }
@@ -1336,6 +1340,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             console.error(
               `Error upserting final ${tableName} batch: ${result.error.message}`
             );
+            writeErrors.push(`${tableName}: ${result.error.message}`);
           } else {
             const tableName =
               index === 0 && finalCareerBatch.length > 0
@@ -1350,6 +1355,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`Finished player stats update in ${durationSec}s.`);
+    // A rejected upsert must fail the run; earlier batches may already be written.
+    if (writeErrors.length > 0) {
+      return res.status(500).json({
+        success: false,
+        error: `WiGO upsert failed for ${writeErrors.length} batch(es): ${writeErrors.slice(0, 5).join("; ")}`,
+        writeErrors,
+        rejectedPlayerIds,
+        message: `Processed ${processedCount} of ${uniquePlayerIds.length} players; some rows may not have been written.`,
+        duration: `${durationSec} s`
+      });
+    }
     if (rejectedPlayerIds.length > 0) {
       return res.status(207).json({
         success: false,
