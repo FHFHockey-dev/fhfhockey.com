@@ -115,4 +115,28 @@ export default [
       },
     },
   },
+  {
+    // The raw card-evidence validator trusts whatever `retained` index it is given; only the
+    // trusted loader may call it. Everyone else uses validateAdmittedEvidence from evidenceLoader.
+    files: ["**/*.{js,jsx,mjs,cjs,ts,tsx}"],
+    ignores: [
+      "lib/player-cards/evidenceLoader.ts",
+      "lib/player-cards/evidenceBundle.test.ts",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/evidenceBundle", "**/evidenceBundle.*"],
+              importNames: ["validateEvidenceBundle"],
+              message:
+                "Use validateAdmittedEvidence from player-cards/evidenceLoader; a caller-built index must never reach the raw validator.",
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];
