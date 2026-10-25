@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { StreamNight } from "./matchups";
-import { targetCandidates, targetKey, targetPicks, targetRoles } from "./targets";
+import { roleLabel, targetCandidates, targetKey, targetPicks, targetRoles } from "./targets";
 import type { SharePlayer, SocialShareSnapshot } from "./types";
 
 // Season totals over 20 GP: goals, shots, blocks per player (TJ's ticket 22 pick rules).
@@ -72,6 +72,23 @@ describe("Targeted Matchups picks (ticket 22)", () => {
     expect(live.map(pick => [pick.player.nhlId, pick.roles, pick.stat])).toEqual(full.map(pick => [pick.player.nhlId, pick.roles, pick.stat]));
     const legacy = { players: { state: "ready", selectedDates: [], players: full.map(pick => pick.player) }, selectedDates: [] } as unknown as SocialShareSnapshot;
     expect(targetPicks(legacy, night({ goals: true }), true)).toEqual([]);
+  });
+
+  it("labels one tilt by its role and several by short words, so the widest legend stays short (C7 R24 S1)", () => {
+    expect(roleLabel(["scorer"])).toBe("Scorer");
+    expect(roleLabel(["shooter", "scorer"])).toBe("Shot · Score");
+    expect(roleLabel(["scorer", "shooter", "blocker"])).toBe("Score · Shot · Block");
+  });
+
+  it("never picks a player rostered 50% or more, even if a source passes one (C7 R24 S2)", () => {
+    const star = skater(10, 20, 120, 40, { ownership: 50 }), owned = skater(11, 19, 110, 30, { ownership: 87.5 });
+    const picks = targetPicks(snapshot([...roster, star, owned]), night({ goals: true, shots: true, blocks: true }), true);
+    expect(ids(picks)).not.toContain(10);
+    expect(ids(picks)).not.toContain(11);
+    expect(picks.every(pick => pick.player.ownership < 50)).toBe(true);
+    expect(targetCandidates(snapshot([star, owned]), night({ goals: true }))).toEqual([]);
+    // 49.9% is still a target.
+    expect(ids(targetPicks(snapshot([skater(12, 20, 120, 40, { ownership: 49.9 })]), night({ goals: true }), true))).toEqual([12]);
   });
 
   it("the server pool keeps the top 3 per tilt role, enough for any pick order", () => {

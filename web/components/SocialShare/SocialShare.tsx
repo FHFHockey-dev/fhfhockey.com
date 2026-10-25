@@ -17,7 +17,7 @@ import { TeamBanner, teamBannerStyle } from "./TeamBanner";
 import { streamingTiers, tierPlayersAvailable, type TierMode } from "lib/socialShare/tiers";
 import { playerScore, SCORE_FORMULA, SPECIALIST_FORMULA } from "lib/socialShare/score";
 import { streakOf, type Streak, type StreakContext } from "lib/socialShare/streak";
-import { ROLE_LABELS, targetPicks } from "lib/socialShare/targets";
+import { ROLE_LABELS, roleLabel, targetPicks } from "lib/socialShare/targets";
 
 const labels: Record<SocialShareFormat, string> = {
   "game-grid": "Weekly schedule", "remaining-week": "Remaining week",
@@ -220,7 +220,7 @@ function StreamTile({ night, snapshot, logos, trusted }: { night: StreamNight; s
       </dl>
       {picks.length > 0 && <div className={styles.targetRow}>{picks.map(pick => <fieldset key={pick.player.nhlId} className={styles.targetCard} data-target={pick.player.nhlId} data-roles={pick.roles.join("|")}>
         {/* TJ (ticket 22): the role is a legend notched into the top border; the body holds name, position and value, never clipped. */}
-        <legend>{pick.roles.map(role => ROLE_LABELS[role]).join(" + ")}</legend>
+        <legend>{roleLabel(pick.roles)}</legend>
         <strong>{pick.player.name}</strong>
         <p><small>{pick.player.positions}</small><em>{pick.stat}</em></p>
       </fieldset>)}</div>}

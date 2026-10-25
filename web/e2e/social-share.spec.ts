@@ -16,7 +16,7 @@ import { countTiers } from "../lib/socialShare/mondayGrid";
 import { streamingTiers, trimEditionPlayers } from "../lib/socialShare/tiers";
 import { SCORE_FORMULA, SPECIALIST_FORMULA } from "../lib/socialShare/score";
 import { streakOf, type StreakContext } from "../lib/socialShare/streak";
-import { targetPicks } from "../lib/socialShare/targets";
+import { roleLabel, targetKey, targetPicks } from "../lib/socialShare/targets";
 
 const evidence = process.env.SOCIAL_SHARE_EVIDENCE_DIR || "/tmp/fhf-social-card-readiness-evidence-20261008";
 const upcomingWeek = calendarWeekStart(new Date(Date.now() + 7 * 86400000).toISOString());
@@ -101,7 +101,7 @@ async function signIn(page: Page, access: Access) {
 
 async function install(page: Page, access: Access = { role: "social_editor", signedIn: true, roleReads: 0, writes: [] }) {
   await signIn(page, access);
-  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, liveTuesday: false, latest: null as SocialShareSnapshot | null };
+  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, widestLegend: false, liveTuesday: false, latest: null as SocialShareSnapshot | null };
   await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
   await page.route("**/api/v1/social-share/**", async route => {
     controller.requests++;
@@ -128,6 +128,11 @@ async function install(page: Page, access: Access = { role: "social_editor", sig
     }
     // liveTrim replays the live server's trim: only the cards' players leave, with tier counts.
     if (controller.liveTrim && next.players) next = { ...next, players: trimEditionPlayers(next, next.players) };
+    // widestLegend (C7 R24 S1): the first night's first recorded pick covers all three tilts, the widest real legend.
+    if (controller.widestLegend && next.players?.targets) {
+      const first = streamingNights(next, true)[0], key = first && targetKey(first), list = key ? next.players.targets[key] : undefined;
+      if (list?.length) next = { ...next, players: { ...next.players, targets: { ...next.players.targets, [key!]: [{ ...list[0], roles: ["scorer", "shooter", "blocker"] }, ...list.slice(1)] } } };
+    }
     controller.latest = next;
     return route.fulfill({ json: next, headers: { "Cache-Control": "no-store" } });
   });
@@ -502,14 +507,16 @@ test("Easiest schedules and streaming matchup cards rank by Game Grid opponent D
   // TJ: fieldset cards with the role as a notched legend; the full name, position and value fit, nothing clipped.
   const cardText = () => square.locator("[data-target]").evaluateAll(nodes => nodes.map(node => {
     const box = node.getBoundingClientRect(), parts = ["legend", "strong", "small", "em"].map(tag => node.querySelector(tag) as HTMLElement);
-    return { tag: node.tagName, legend: parts[0].textContent, name: parts[1].textContent, pos: parts[2].textContent, value: parts[3].textContent,
+    // The legend sits in the border line, so "inside" can't catch it: compare its layout width with the inner width.
+    const field = node as HTMLElement, style = getComputedStyle(field), inner = field.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    return { tag: node.tagName, legend: parts[0].textContent, name: parts[1].textContent, pos: parts[2].textContent, value: parts[3].textContent, legendFits: parts[0].offsetWidth <= inner + 0.5,
       inside: parts.every(part => { const r = part.getBoundingClientRect(); return r.left >= box.left - 1 && r.right <= box.right + 1 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1; }),
       unclipped: parts.every(part => part.scrollWidth <= part.clientWidth + 1) };
   }));
   const checkCards = async () => {
     const cards = await cardText(), picks = nights.flatMap(night => targetPicks(source.latest!, night, true));
-    expect(cards.map(card => [card.tag, card.legend, card.name, card.pos, card.value])).toEqual(picks.map(pick => ["FIELDSET", pick.roles.map(role => ({ scorer: "Scorer", shooter: "Shooter", blocker: "Blocker" })[role]).join(" + "), pick.player.name, pick.player.positions, pick.stat]));
-    expect(cards.every(card => card.inside && card.unclipped)).toBe(true);
+    expect(cards.map(card => [card.tag, card.legend, card.name, card.pos, card.value])).toEqual(picks.map(pick => ["FIELDSET", roleLabel(pick.roles), pick.player.name, pick.player.positions, pick.stat]));
+    expect(cards.every(card => card.inside && card.unclipped && card.legendFits)).toBe(true);
   };
   await checkCards();
   await expect(square).toContainText("Picks = rostered <50% (Yahoo), season rates");
@@ -531,6 +538,12 @@ test("Easiest schedules and streaming matchup cards rank by Game Grid opponent D
   await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
   await expect(tiles).toHaveCount(nights.length);
   await expect.poll(targetView).toEqual(expectedTargets);
+  // The widest real legend (all three tilts) still fits inside its fieldset (C7 R24 S1).
+  source.widestLegend = true;
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  await expect(square.locator("[data-roles='scorer|shooter|blocker']")).toHaveCount(1);
+  await checkCards();
+  await downloadedPng(page, "targeted-widest-legend");
   expect(errors).toEqual([]);
 });
 

@@ -14,6 +14,8 @@ import type { SharePlayer, SocialShareSnapshot } from "./types";
  *   picked for it; fewer than 3 qualifying players means fewer cards, never filler.
  */
 export const TARGETS_PER_NIGHT = 3;
+/** Picks are low-rostered targets, as the card states ("Picks = rostered <50%"); enforced here, not only by the source read (C7 R24 S2). */
+export const MAX_TARGET_OWNERSHIP = 50;
 export type TargetRole = "scorer" | "shooter" | "blocker";
 export type TargetPick = { player: SharePlayer; roles: TargetRole[]; stat: string };
 
@@ -27,6 +29,9 @@ const statText: Record<TargetRole, (value: number) => string> = {
   scorer: value => `${value.toFixed(2)} G/GP`, shooter: value => `${value.toFixed(1)} SOG/GP`, blocker: value => `${value.toFixed(1)} BLK/GP`,
 };
 export const ROLE_LABELS: Record<TargetRole, string> = { scorer: "Scorer", shooter: "Shooter", blocker: "Blocker" };
+/** The mini-card legend: the role name for one tilt, joined role names for several (fits the card; C7 R24 S1). */
+const ROLE_SHORT: Record<TargetRole, string> = { scorer: "Score", shooter: "Shot", blocker: "Block" };
+export const roleLabel = (roles: TargetRole[]) => roles.length > 1 ? roles.map(role => ROLE_SHORT[role]).join(" · ") : roles.map(role => ROLE_LABELS[role]).join("");
 
 /** The tilt roles of a night, in storm order; with no storm, the strongest primary pairing by combined ranks. */
 export function targetRoles(night: StreamNight): TargetRole[] {
@@ -42,7 +47,7 @@ export function targetRoles(night: StreamNight): TargetRole[] {
 /** Server ranking pool: the top TARGETS_PER_NIGHT candidates for each tilt role of a night (enough for any pick order). */
 export function targetCandidates(snapshot: SocialShareSnapshot, night: StreamNight): SharePlayer[] {
   if (!playersReady(snapshot)) return [];
-  const pool = (snapshot.players?.players ?? []).filter(player => player.team === night.team.abbreviation && player.group !== "G");
+  const pool = (snapshot.players?.players ?? []).filter(player => player.team === night.team.abbreviation && player.group !== "G" && player.ownership < MAX_TARGET_OWNERSHIP);
   return targetRoles(night).flatMap(role => pool.filter(player => rate[role](player) !== null).sort((a, b) => rate[role](b)! - rate[role](a)! || a.nhlId - b.nhlId).slice(0, TARGETS_PER_NIGHT));
 }
 
@@ -55,11 +60,11 @@ export function targetPicks(snapshot: SocialShareSnapshot, night: StreamNight, t
     const byId = new Map(snapshot.players.players.map(player => [player.nhlId, player]));
     return (snapshot.players.targets?.[targetKey(night)] ?? []).flatMap(({ id, roles }) => {
       const player = byId.get(id), value = player && roles.length ? rate[roles[0]](player) : null;
-      return player && value !== null ? [{ player, roles, stat: statText[roles[0]](value) }] : [];
+      return player && player.ownership < MAX_TARGET_OWNERSHIP && value !== null ? [{ player, roles, stat: statText[roles[0]](value) }] : [];
     });
   }
   const roles = targetRoles(night);
-  const pool = (snapshot.players?.players ?? []).filter(player => player.team === night.team.abbreviation && player.group !== "G");
+  const pool = (snapshot.players?.players ?? []).filter(player => player.team === night.team.abbreviation && player.group !== "G" && player.ownership < MAX_TARGET_OWNERSHIP);
   const ranked = Object.fromEntries(roles.map(role => [role, pool.filter(player => rate[role](player) !== null)
     .sort((a, b) => rate[role](b)! - rate[role](a)! || a.nhlId - b.nhlId)])) as Record<TargetRole, SharePlayer[]>;
   const picks: TargetPick[] = [], taken = new Set<number>();
