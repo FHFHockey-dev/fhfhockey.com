@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-25T05:15:40.126730+00:00",
+  "inputPinsMatched": 16,
+  "inputChanges": [],
+  "heroSourceAndArtifactPinsMatched": 74,
+  "heroChanges": [],
+  "serverMutation": false,
+  "historicLogResolution": "Coordinator verified all48 files in recovery archive; no restoration or historical test reruns by this slice"
+}

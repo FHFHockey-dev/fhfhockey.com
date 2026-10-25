@@ -1,0 +1,14 @@
+[
+  {
+    "path": "web/lib/player-cards/nstCapture.ts",
+    "baseline": "absent",
+    "bytes": 7448,
+    "sha256": "8febc82875c998d9b89c9e8d70194ddf25f204b6fcca8ef08b32d338c16bebb5"
+  },
+  {
+    "path": "web/lib/player-cards/nstCapture.test.ts",
+    "baseline": "absent",
+    "bytes": 8377,
+    "sha256": "7c88e4a14687c325858eb4ca7b4c297368179dfedfc6d1a1837539a5829914ed"
+  }
+]

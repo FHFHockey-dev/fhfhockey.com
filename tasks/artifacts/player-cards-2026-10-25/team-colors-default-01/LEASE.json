@@ -1,0 +1,25 @@
+{
+  "id": "CODEX-PLAYER-CARDS-TEAM-COLORS-DEFAULT-20261025",
+  "at": "2026-10-25T06:11:03.446181+00:00",
+  "owner_thread": "01a16ec2-f81c-717b-8961-8c3832fdc00f",
+  "status": "Granted: exact two-file Team Colors default follow-on, subject to focused verification",
+  "source_paths": [
+    "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx"
+  ],
+  "baseline_sha256": {
+    "web/components/player-cards/PlayerCardShareStudio.tsx": "703c29716a52c18c3560606155474016351f9e080e46f5e603b9bfb71a5abfb4",
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx": "29e6d762119eb5d68eb2c241d04589f5bb1057dfa373354d224012c7eda93ba8"
+  },
+  "baseline_bytes": {
+    "web/components/player-cards/PlayerCardShareStudio.tsx": 10073,
+    "web/components/player-cards/PlayerCardShareStudio.test.tsx": 6170
+  },
+  "frozen_original_snapshots": "tasks/artifacts/player-cards-2026-10-25/portrait-treatments-01/source-files/",
+  "artifact_root": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/",
+  "source_authority": "Owner selected Team Colors at2026-10-25T06:08Z and directed default while retaining other variants, relayed by Scout and card owner. This is a local default change, not production acceptance.",
+  "scope": "Fresh sessions, invalid storage and unavailable-storage fallback default to team-colors. Preserve explicit valid saved choices and all other selectable variants. Focused tests may inject portrait preparation and cover fresh/default/fallback/saved-choice behavior.",
+  "read_only": "All portrait transforms, assets, comparison artifacts, source/math/NST/Editorial, shared navigation/auth/routes/Library and all other application files. Original hero and portrait packets immutable.",
+  "resource": "Conditional same-owned127.0.0.1:3125 handoff after focused offline browser verification. Keep served bytes until QA passes. Reverify exact current ownedPID/command/listener before stopping only that process or binding a freeport. Last reportedPID44618 is not fresh liveness evidence. Preserve historical hero/functional/editorial/comparison artifacts and routes, record PID and exact byte/hash readbacks. No otherport/process action.",
+  "excluded": "No production, uploads, Git, shared config, live/premium activation or broader styling iteration."
+}

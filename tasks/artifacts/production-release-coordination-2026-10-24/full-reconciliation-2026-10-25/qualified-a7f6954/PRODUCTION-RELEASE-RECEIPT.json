@@ -1,0 +1,89 @@
+{
+  "completed_at": "2026-10-25T05:03:05.803870+00:00",
+  "status": "Full reconciled source live; bounded credential-free smoke verification passed",
+  "full_release": {
+    "pr": 380,
+    "head": "a7f695460fad8363a8fd099fb15a06ec91b4ae09",
+    "merge": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+    "paths": 1012,
+    "original_source_manifest_rows_accounted": 969,
+    "original_source_groups": 15
+  },
+  "build_repair": {
+    "pr": 381,
+    "head": "09d1a18aa12e7034c743f32ff3fa19db43a35ff3",
+    "merge": "0619f9126872c136144c37092fb86715c7f58625",
+    "paths": [
+      "web/next.config.js",
+      "web/tsconfig.build.json"
+    ],
+    "total_paths_vs_original_production": 1014,
+    "reason": "First web deployment exhausted 6144MB heap while type-checking the full test/development program. Derived production config retains compiler strictness and all imported dependencies."
+  },
+  "deployments": {
+    "web": {
+      "id": "dpl_6o3jhLud2V47fDNZi6SzXh9VeyrM",
+      "state": "READY",
+      "sha": "0619f9126872c136144c37092fb86715c7f58625",
+      "aliases": [
+        "fhfhockey.com",
+        "fhfhockey.vercel.app",
+        "www.fhfhockey.com",
+        "fhfhockey-fhfhockeydevs-projects.vercel.app",
+        "fhfhockey-git-master-fhfhockeydevs-projects.vercel.app"
+      ]
+    },
+    "functions": {
+      "id": "dpl_87T83RYKhKFvZLHyCHNZTf8A561d",
+      "state": "READY",
+      "sha": "b3f9a7e25c5e1b82bc74aead8337302177274c9f",
+      "reason_for_prior_sha": "Corrective PR381 only changed web build configuration; unchanged companion build was ignored."
+    },
+    "entries": 8,
+    "actual_build_attempts": 3,
+    "successful_builds": 2,
+    "failed_builds": 1,
+    "ignored_canceled_entries": 5,
+    "preview_builds": 0,
+    "manual_duplicate_builds": 0,
+    "cost_dollars": "not measured"
+  },
+  "verification": {
+    "single_full_unit_run": {
+      "passed": 13520,
+      "failed": 0,
+      "skipped": 52,
+      "test_files_passed": 1114,
+      "test_files_skipped": 3
+    },
+    "full_application_typescript": "passed",
+    "lint": {
+      "paths": 872,
+      "errors": 0,
+      "warnings": 17
+    },
+    "source_pins": 1009,
+    "build_repair": "Independent source review, separate production TypeScript and compile-only local Next build passed under6144MB. Actual remote default production build READY. Full suite was not repeated for config-only repair.",
+    "github_statuses": "Four Vercel contexts success; three correspond to ignored projects, not extra builds.",
+    "production_application_requests": 5,
+    "production_smokes_passed": 5,
+    "tls_setup_failure": "One earlier Python TLS attempt stopped before HTTP response; missing default CA bundle fixed by using installed certifi bundle with validation enabled. Original failure retained.",
+    "authenticated_allen_session": "not attempted",
+    "positive_authenticated_nst_ingestion": "not attempted"
+  },
+  "preserved_boundaries": [
+    "No migration application, data repair/backfill, financial transaction or new billing activation",
+    "Real Testing Grounds runner/capture remains gated",
+    "New hero/share card packet is a separate frozen follow-on pending independent acceptance",
+    "No player-card live data or rights acceptance inferred",
+    "PR379 and remote October history untouched",
+    "Canonical octoberBranch and index preserved with active card work; no blind sync/reset"
+  ],
+  "nonblocking_observation": "Existing unchanged podfeed.tsx encountered upstreamHTTP410 during build and used existing unavailable fallback; no additional provider request or feed substitution.",
+  "card_archive_reconciliation": {
+    "missing_from_checkout": 48,
+    "verified_byte_identical_in_recovery_archive": 48,
+    "changed_or_reconstructed": 0
+  },
+  "remaining_reconciliation": "No original969source-manifest row unaccounted for; new work after source freeze remains separately owned."
+}

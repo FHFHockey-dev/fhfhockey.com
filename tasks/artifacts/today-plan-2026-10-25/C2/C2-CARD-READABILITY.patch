@@ -1,0 +1,104 @@
+diff -ruN a/web/components/player-cards/EditorialPlayerCard.test.tsx b/web/components/player-cards/EditorialPlayerCard.test.tsx
+--- a/web/components/player-cards/EditorialPlayerCard.test.tsx	2026-10-25 10:25:00
++++ b/web/components/player-cards/EditorialPlayerCard.test.tsx	2026-10-25 10:25:00
+@@ -68,6 +68,31 @@
+     expect(svg.getAttribute("aria-label")).not.toContain("null actual appearances");
+     expect(container.querySelectorAll("[data-percentile-bar]").length).toBe(0);
+   });
++  it("keeps every card label at a phone-legible minimum and the default notice beside the sample line", () => {
++    const { container } = render(<EditorialPlayerCard snapshot={fixture()} />);
++    const sizes = [...container.querySelectorAll("text")].map(node => Number(node.getAttribute("font-size") ?? node.closest("[font-size]")!.getAttribute("font-size")));
++    expect(Math.min(...sizes)).toBeGreaterThanOrEqual(17);
++    expect(container.querySelector("[data-footer-layout]")!.getAttribute("data-footer-layout")).toBe("inline-notice");
++    const svg = container.querySelector("svg")!;
++    expect(svg.textContent).toContain("Regular season · own spans may differ");
++    expect(svg.textContent).toContain("fhfhockey.com");
++    expect(svg.textContent).toContain("midrank percentile · Numeric magnitude ≠ quality");
++  });
++  it("moves a long warning notice onto its own footer line instead of colliding with the sample line", () => {
++    const { container } = render(<EditorialPlayerCard snapshot={fixture({ playerId: 1004, fullN: true })} />);
++    const footer = container.querySelector("[data-footer-layout]")!;
++    expect(footer.getAttribute("data-footer-layout")).toBe("stacked-notice");
++    const [sampleLine, notice] = [...footer.querySelectorAll("text")];
++    expect(notice.textContent).toBe("Known short season · proposed policy · Some metrics undefined");
++    expect(notice.getAttribute("x")).toBe("40");
++    expect(Number(notice.getAttribute("y"))).toBeGreaterThan(Number(sampleLine.getAttribute("y")));
++  });
++  it("splits unavailable ratio labels into two readable lines", () => {
++    const { container } = render(<EditorialPlayerCard snapshot={fixture({}, "unknown-pool")} />);
++    const label = container.querySelector('[data-metric-id="ipp"] [data-unavailable]')!;
++    expect([...label.querySelectorAll("tspan")].map(node => node.textContent)).toEqual(["Rank unavailable", "incomplete pool"]);
++    expect(Number(label.getAttribute("font-size"))).toBeGreaterThanOrEqual(19);
++  });
+   it("retains valid actuals when incomplete cohort proof blocks all rankings", () => {
+     const { container } = render(<EditorialPlayerCard snapshot={fixture({}, "unknown-pool")} />);
+     expect(container.querySelectorAll("[data-raw-rank]").length).toBe(0);
+diff -ruN a/web/components/player-cards/EditorialPlayerCard.tsx b/web/components/player-cards/EditorialPlayerCard.tsx
+--- a/web/components/player-cards/EditorialPlayerCard.tsx	2026-10-25 10:25:00
++++ b/web/components/player-cards/EditorialPlayerCard.tsx	2026-10-25 10:25:00
+@@ -43,6 +43,11 @@
+   const season = String(snapshot.settings.season);
+   const gp = sample.gp === null ? "GP unverified" : period.mode === "appearances" ? `${sample.gp}/${sample.requested} GP` : `${sample.gp} GP`;
+   const warnings = [sample.warning, EDITORIAL_METRICS.some(id => reading(id).state === "missing") ? "Missing source" : "", EDITORIAL_METRICS.some(id => reading(id).state === "undefined") ? "Some metrics undefined" : ""].filter(Boolean);
++  const sampleLine = `${gp} · ${sample.toiSeconds === null ? "TOI unavailable" : `${(sample.toiSeconds / 60).toFixed(1)} min TOI`} · ${sample.firstDate} → ${sample.lastDate}`;
++  const notice = warnings.length ? warnings.join(" · ") : "Regular season · own spans may differ";
++  // Conservative Arial advance estimate: a long notice takes its own footer line instead of colliding with the sample line.
++  const noticeInline = sampleLine.length * 22 * .53 + notice.length * 19 * .5 + 40 <= 1120;
++  const footer = noticeInline ? { size: 20, y: [830, 856, 882] } : { size: 18, y: [847, 868, 889] };
+   const description = `${snapshot.player.name}. Synthetic fixture. ${snapshot.player.team}, ${snapshot.player.position}. ${periodLabel(snapshot)}. ${strengthLabel(snapshot)}. ${sample.gp === null ? "GP unverified" : `${sample.gp} actual appearances`}. ${EDITORIAL_METRICS.map(id => {
+     const value = reading(id), metric = METRICS.find(row => row.id === id)!;
+     return `${metric.help}: actual value ${formatMetric(id, value.value)}; ${value.rank ? `${value.rank.tied ? "tied " : ""}rank ${value.rank.ordinal} of ${value.rank.population}; percentile ${value.rank.percentile.toFixed(1)}` : unavailableLabel(value)}${value.reason ? ` (${value.reason})` : ""}`;
+@@ -87,37 +92,38 @@
+             <text x="234" fontSize={row.id === "xgf60" ? 25 : 28}>{row.label}</text>
+             <text x="620" textAnchor="end" fontSize="37" fontWeight="700" data-actual-value="true">{formatMetric(row.id, value.value)}</text>
+             {rank ? <>
+-              <text x="758" textAnchor="end" fontSize="26" fill="#555D60" data-raw-rank="true">{rawRank(value)}</text>
++              <text x="758" textAnchor="end" fontSize="28" fill="#555D60" data-raw-rank="true">{rawRank(value)}</text>
+               <rect x="800" y="-22" width="274" height="17" fill="#D9DDDA" />
+               <rect x="800" y="-22" width={274 * rank.percentile / 100} height="17" fill="#07AAE2" data-percentile-bar="true" />
+               <line x1="937" x2="937" y1="-25" y2="-2" stroke="#1A1D21" strokeOpacity=".22" />
+               <text x="1160" textAnchor="end" fontSize="28" fontWeight="700" data-percentile="true">{rank.percentile.toFixed(1)}</text>
+-            </> : <text x="800" y="-5" fontSize="18" fill="#744512" data-unavailable="true"><tspan x="800">{unavailableLabel(value).split(" · ")[0]}</tspan><tspan x="800" dy="21">{unavailableLabel(value).split(" · ")[1]}</tspan></text>}
+-            {row.id === "atoi" && <text x="234" y="24" fontSize="17" fill="#555D60">minutes:seconds per appearance</text>}
++            </> : <text x="800" y="-6" fontSize="21" fill="#744512" data-unavailable="true"><tspan x="800">{unavailableLabel(value).split(" · ")[0]}</tspan><tspan x="800" dy="22">{unavailableLabel(value).split(" · ")[1]}</tspan></text>}
++            {row.id === "atoi" && <text x="234" y="24" fontSize="19" fill="#555D60">minutes:seconds per appearance</text>}
+           </g>;
+         })}
+         {[352, 558].map(y => <line key={y} x1="40" x2="1160" y1={y} y2={y} stroke="#C7C9C5" />)}
+       </g>
+ 
+-      <rect x="0" y="642" width="1200" height="140" fill="#1A1D21" />
+-      <text x="40" y="669" fontSize="17" fontWeight="700" letterSpacing="1.5" fill="#80DFFF">ACTUAL PERCENTAGES</text>
+-      <text x="1160" y="669" textAnchor="end" fontSize="16" fill="#C6C9CA">Actual ratio first · rank and percentile below</text>
++      <rect x="0" y="630" width="1200" height="148" fill="#1A1D21" />
++      <text x="40" y="654" fontSize="17" fontWeight="700" letterSpacing="1.5" fill="#80DFFF">ACTUAL PERCENTAGES</text>
++      <text x="1160" y="654" textAnchor="end" fontSize="18" fill="#C6C9CA">Actual ratio first · rank and percentile below</text>
+       {RATIO_ROWS.map((row, index) => {
+         const value = reading(row.id), x = 40 + index * 286;
+         return <g key={row.id} data-metric-id={row.id} transform={`translate(${x} 0)`}>
+           <title>{METRICS.find(metric => metric.id === row.id)!.help}. {value.reason || "Actual percentage, not a percentile."}</title>
+-          <text y="701" fontSize="19" fontWeight="700" fill="#C6C9CA">{row.label}</text>
+-          <text y="741" fontSize="40" fontWeight="700" fill="#F2F1EB" data-actual-value="true">{formatMetric(row.id, value.value)}</text>
+-          {value.rank ? <text y="768" fontSize="19" fill="#80DFFF"><tspan data-raw-rank="true">Rank {rawRank(value)}</tspan><tspan data-percentile="true"> · {value.rank.percentile.toFixed(1)} pct</tspan></text> : <text y="765" fontSize="14" fill="#FFD28D" data-unavailable="true">{unavailableLabel(value)}</text>}
++          <text y="684" fontSize="19" fontWeight="700" fill="#C6C9CA">{row.label}</text>
++          <text y="723" fontSize="40" fontWeight="700" fill="#F2F1EB" data-actual-value="true">{formatMetric(row.id, value.value)}</text>
++          {value.rank ? <text y="752" fontSize="22" fill="#80DFFF"><tspan data-raw-rank="true">Rank {rawRank(value)}</tspan><tspan data-percentile="true"> · {value.rank.percentile.toFixed(1)} pct</tspan></text> : <text y="749" fontSize="19" fill="#FFD28D" data-unavailable="true"><tspan x="0">{unavailableLabel(value).split(" · ")[0]}</tspan><tspan x="0" dy="21">{unavailableLabel(value).split(" · ")[1]}</tspan></text>}
+         </g>;
+       })}
+ 
+-      <g fill="#555D60" fontSize="18">
+-        <text x="40" y="813" fontSize="20" fontWeight="700" fill="#1A1D21">{gp} · {sample.toiSeconds === null ? "TOI unavailable" : `${(sample.toiSeconds / 60).toFixed(1)} min TOI`} · {sample.firstDate} → {sample.lastDate}</text>
+-        <text x="1160" y="813" textAnchor="end" fontSize="17" fill="#744512">{warnings.length ? warnings.join(" · ") : "Regular season · own spans may differ"}</text>
+-        <text x="40" y="838">Fabricated 18-player cohort · all valid same-definition values · no GP, TOI or position filter · N varies by metric</text>
+-        <text x="40" y="861" fontSize="17">Source: synthetic fixture · Updated {snapshot.capturedAt.slice(0, 16).replace("T", " ")} UTC · Cutoff {snapshot.settings.cutoff.slice(0, 16).replace("T", " ")} UTC</text>
+-        <text x="40" y="885" fontSize="16">Proposed: season-only, {snapshot.settings.shortSamplePolicy === "allow-known-short-proposed" ? "known-short allowed" : "full-N required"}, competition ties, midrank percentile · Numeric magnitude ≠ quality · fhfhockey.com</text>
++      <g fill="#555D60" fontSize={footer.size} data-footer-layout={noticeInline ? "inline-notice" : "stacked-notice"}>
++        <text x="40" y="804" fontSize="22" fontWeight="700" fill="#1A1D21">{sampleLine}</text>
++        <text x={noticeInline ? 1160 : 40} y={noticeInline ? 804 : 826} textAnchor={noticeInline ? "end" : "start"} fontSize="19" fill="#744512">{notice}</text>
++        <text x="40" y={footer.y[0]}>Fabricated 18-player cohort · all valid same-definition values · no GP, TOI or position filter · N varies by metric</text>
++        <text x="40" y={footer.y[1]}>Source: synthetic fixture · Updated {snapshot.capturedAt.slice(0, 16).replace("T", " ")} UTC · Cutoff {snapshot.settings.cutoff.slice(0, 16).replace("T", " ")} UTC</text>
++        <text x="1160" y={footer.y[1]} textAnchor="end" fontWeight="700" fill="#1A1D21">fhfhockey.com</text>
++        <text x="40" y={footer.y[2]}>Proposed: season-only, {snapshot.settings.shortSamplePolicy === "allow-known-short-proposed" ? "known-short allowed" : "full-N required"}, competition ties, midrank percentile · Numeric magnitude ≠ quality</text>
+       </g>
+       </g>
+     </g>

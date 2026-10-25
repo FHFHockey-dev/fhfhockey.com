@@ -1,0 +1,22 @@
+{
+  "at": "2026-10-25T05:02:28.815260+00:00",
+  "files": {
+    "web/lib/player-cards/adapter.ts": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f",
+    "web/lib/player-cards/aggregation.ts": "4ffe0ed5cbdea97ecb15b153543aace6b2d349cac10b0ff3e6de7484768b410a",
+    "web/lib/player-cards/windows.ts": "b7e989c211b8a9f5a1a91af157c69fc28cd29a409442f89365e57c662d10adb2",
+    "web/lib/player-cards/contracts.ts": "5bc0b00708a6dd9f3638f801701d3bf56dfe9a0dfcdd1484fd34d806ff8c283d",
+    "web/lib/player-cards/registry.ts": "f9c6a55ef5ee37a4e9de4cb1321ee971af5da0e3008dfdd86dfcec260c25cd29",
+    "web/pages/api/v1/db/update-nst-gamelog.ts": "9f6b8f628f2d4be77e3bf15a3d94ee8bceef6b420618034eab5c23162d8db1d4",
+    "web/pages/api/v1/db/update-stats/[gameId].ts": "bef48906227b6bc417c0009af8dac7d9439d9a517341c33c42e48591cf8d1b8c",
+    "web/lib/cron/transactionalGameStatsPersistence.ts": "731b653e99ba9d298aba313af1f2bfc5fa358cc97ee2fb9d0b6a87511c8e862b",
+    "supabase/migrations/20260716112908_production_schema_baseline.sql": "27067d2221516be147d5cf71492b1fee3f0fd377d0ccd14e49557931ad1b791d",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-1-rows.json": "38804083b42d7a8a62104bf3f881069f03754a34b899feca55edc68500506736",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/query-2-rows.json": "52ea73b19894b2d379e77230f7a7d14089548774b6f5c1411299a4f55cc7d201",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/production-diagnostic/summary.json": "fe17c8310839e30c7bc57c725ef4db6f9f27522752b2da51b64e92397c28f8e1",
+    "tasks/artifacts/wigo-player-card-investigation-2026-10-24/local-fix/HANDOFF.json": "0721edd6d3b4cb333c4d49ceff36e4759e0dd17470ba381b2dfac7e468376fa1",
+    "tasks/artifacts/player-cards-2026-10-25/hero-share-checkpoint-01/EVIDENCE.json": "692ba6587be0ebd81804bea48306c335abf84588b825566a7caf4d6b0f0b0f60",
+    "tasks/TASKS/prd-shareable-player-cards.md": "eba54a6abf91c29bcec0eedccb9a677b44f6e25ffb03c9bf33b26303fae0e438",
+    "tasks/tasks-prd-shareable-player-cards.md": "ad0b5aba690dfb7b1735beed308e924be5232bf542f068727adb66eff1db817b"
+  },
+  "unmodified": true
+}

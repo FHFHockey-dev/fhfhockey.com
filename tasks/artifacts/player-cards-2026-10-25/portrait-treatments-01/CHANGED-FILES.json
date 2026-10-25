@@ -1,0 +1,44 @@
+[
+  {
+    "path": "web/lib/player-cards/portraitTreatment.ts",
+    "beforeSha256": "absent",
+    "bytes": 6464,
+    "sha256": "12826051100dc134e0c39838909ef5ca49f18376ae3f849c99ebe21eb2b3299f"
+  },
+  {
+    "path": "web/lib/player-cards/portraitTreatment.test.ts",
+    "beforeSha256": "absent",
+    "bytes": 2913,
+    "sha256": "921177c59ca88558260fc95b0f4dee62938b49b429f1bf9f6a548747ead78116"
+  },
+  {
+    "path": "web/components/player-cards/HeroPlayerCard.tsx",
+    "beforeSha256": "97743b313e22666e6abedea9ea16b17b3ad15050e3fa72a8f8d924f98c1829fc",
+    "bytes": 5690,
+    "sha256": "4305ed15a9113022df9c8e4402d6ba2db1019871d6adfba580a7aa33c8c2e166"
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "beforeSha256": "3e8aad27ad7585170706c0a975237a8c29a055bac95e0b9d20bac75fd77e1d00",
+    "bytes": 10073,
+    "sha256": "703c29716a52c18c3560606155474016351f9e080e46f5e603b9bfb71a5abfb4"
+  },
+  {
+    "path": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "beforeSha256": "617efa35e88953c79bcbcb16308603e562edfc79f43b050852a625ae91b7ba24",
+    "bytes": 6170,
+    "sha256": "29e6d762119eb5d68eb2c241d04589f5bb1057dfa373354d224012c7eda93ba8"
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.ts",
+    "beforeSha256": "fddfd3bd89470da289ea14f8f6a8ea13b3407c1222d2e189482dee47a8d7bbde",
+    "bytes": 5255,
+    "sha256": "fd5d5081e35522cea8b33e5c8d697b0a304fe666de461f0e30967fe2eac4f435"
+  },
+  {
+    "path": "web/lib/player-cards/shareExport.test.ts",
+    "beforeSha256": "9669b12a8e4ade7e3badce18ea9cd44a29ddd4c9a5297a2cfe5fd1e862938426",
+    "bytes": 3636,
+    "sha256": "446b53b6571db6770dabfc5b762863d15850f3f0b2d0aff749c6a71b7148397e"
+  }
+]

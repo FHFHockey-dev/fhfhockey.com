@@ -1,0 +1,11 @@
+{
+  "checks": [
+    "Matthews artwork verified/embedded; nine actuals/ranks/percentiles reconcile to same manifest; real landscapePNG1200x1020",
+    "Second accepted identity and team palette; square1200x1200 with explicit fictitious-stat warning",
+    "Native share cancellation performs no download/post; unsupported-share download equals prepared PNG; formatchange invalidates prepared image",
+    "Missing-source reason survives new artwork/export; unverifiedGP announced and export blocked",
+    "Phone390px no horizontal overflow; controls44px; actual image and whole-page screenshots retained"
+  ],
+  "externalAttempts": [],
+  "pageErrors": []
+}

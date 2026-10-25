@@ -1,0 +1,37 @@
+[
+  {
+    "file": "web/lib/player-cards/portraitTreatment.ts",
+    "matchesFrozen": true,
+    "beforeMatchesLease": true
+  },
+  {
+    "file": "web/lib/player-cards/portraitTreatment.test.ts",
+    "matchesFrozen": true,
+    "beforeMatchesLease": true
+  },
+  {
+    "file": "web/components/player-cards/HeroPlayerCard.tsx",
+    "matchesFrozen": true,
+    "beforeMatchesLease": true
+  },
+  {
+    "file": "web/components/player-cards/PlayerCardShareStudio.tsx",
+    "matchesFrozen": false,
+    "beforeMatchesLease": true
+  },
+  {
+    "file": "web/components/player-cards/PlayerCardShareStudio.test.tsx",
+    "matchesFrozen": false,
+    "beforeMatchesLease": true
+  },
+  {
+    "file": "web/lib/player-cards/shareExport.ts",
+    "matchesFrozen": true,
+    "beforeMatchesLease": true
+  },
+  {
+    "file": "web/lib/player-cards/shareExport.test.ts",
+    "matchesFrozen": true,
+    "beforeMatchesLease": true
+  }
+]

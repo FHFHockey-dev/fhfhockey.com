@@ -1,0 +1,80 @@
+{
+  "at": "2026-10-25T14:43:03.016574+00:00",
+  "status": "ACCEPTED_LOCAL_WITH_LIMITS",
+  "head": "1ee5127dc22c34ef9658f96ed4d72823b1d5ea29",
+  "branch": "octoberBranch",
+  "sixSourceHashes": {
+    "web/components/GoalieShareChart/index.tsx": {
+      "expected": "1f3d4cdb91b1dddd1dc272d82ec1fa368200ce9b585f163eecea8ec8c1944b05",
+      "actual": "1f3d4cdb91b1dddd1dc272d82ec1fa368200ce9b585f163eecea8ec8c1944b05"
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.test.ts": {
+      "expected": "7010f8de122e0a2ea000aca650d890ff79d4ca15916d2bf54085dbb218e68aff",
+      "actual": "7010f8de122e0a2ea000aca650d890ff79d4ca15916d2bf54085dbb218e68aff"
+    },
+    "web/components/GoalieShareChart/GoalieShareChart.pagination.test.tsx": {
+      "expected": "90b0c79ab18d68cd649e31ec5421cbc6dc768869eb75e89ae90ac4b7d00dda06",
+      "actual": "90b0c79ab18d68cd649e31ec5421cbc6dc768869eb75e89ae90ac4b7d00dda06"
+    },
+    "web/lib/goalieWorkload.ts": {
+      "expected": "d4cbf44ffdc0a25bf020b3ed7062fe7097dfeb7d39ecd6e8ca0399cbe01b7f6f",
+      "actual": "d4cbf44ffdc0a25bf020b3ed7062fe7097dfeb7d39ecd6e8ca0399cbe01b7f6f"
+    },
+    "web/lib/projections/goalie/workloadEvidence.ts": {
+      "expected": "8d9ae620a65f7f4a528f766cd4629eeb0bf422cac57844ede384e7e4bb07fa43",
+      "actual": "8d9ae620a65f7f4a528f766cd4629eeb0bf422cac57844ede384e7e4bb07fa43"
+    },
+    "web/lib/projections/goalie/workloadEvidence.test.ts": {
+      "expected": "fcd8305829c5f0871bde6c86fb54aec8179934e9afa782c7e373c88ba5e9c167",
+      "actual": "fcd8305829c5f0871bde6c86fb54aec8179934e9afa782c7e373c88ba5e9c167"
+    }
+  },
+  "trackedTreeAndIndexClean": true,
+  "independentReview": {
+    "path": "tasks/artifacts/goalie-workload-forge-2026-10-25/acceptance/independent/REVIEW.md",
+    "sha256": "5fe138ca79051c31979373fa8e06e3a661f6fd0fa348e5d650d92eeab15c46a8",
+    "reviewer": "/root/goalie_independent_review",
+    "configuredModel": "gpt-6-astra",
+    "configuredReasoning": "medium",
+    "verdict": "recommend bounded local acceptance; no actionable introduced defects",
+    "newTestRuns": 0,
+    "evidenceReused": true
+  },
+  "leadDecision": "Accept the unchanged six-file chart-correctness/dormant-seam packet for bounded local integration; actual diff and independent report inspected. No correction warranted.",
+  "sourceEditsOnResume": 0,
+  "freshSourceWriteCustody": "not needed; no source writes; artifact-only acceptance custody recorded",
+  "checksReused": {
+    "focusedPassed": 37,
+    "controlsPassed": 299,
+    "existingControlSkipped": 1,
+    "scopedTypecheckExit": 0,
+    "scopedLintExit": 0,
+    "lintWarnings": "two existing img warnings"
+  },
+  "newSuiteRuns": 0,
+  "production": "owner-reported0619f912; not changed or independently probed",
+  "predictiveStatus": "DORMANT; authoritative historical starter/opportunity/team-season-trade/clocks and held-out calibration gates pending; no production consumer activation",
+  "unverified": [
+    "actual Chart.js/browser rendering",
+    "provider/database source authenticity and completeness",
+    "predictive accuracy/calibration"
+  ],
+  "knownPreexistingLimit": "top-five chart rendering can omit additional goalies while labels use all appearances; unchanged, outside introduced-diff acceptance",
+  "remainingBlockers": [],
+  "pendingActions": [
+    {
+      "action": "predictive source/consumer correction and model activation",
+      "target": "legacy goalie readers/writer plus FORGE/RSO/Start Chart integration",
+      "state": "not attempted; pending evidence, scoped review and separate activation authorization"
+    }
+  ],
+  "operations": {
+    "networkCallsOnResume": 0,
+    "databaseReadsWritesOnResume": 0,
+    "newBuilds": 0,
+    "pushes": 0,
+    "deployments": 0,
+    "gitMutationsByThisTask": 0
+  },
+  "recovery": "Original CHECKPOINT.json, BASELINE.json, before-* and task-only.patch retained unchanged; sources already preserved by coordinator checkpoint e5fc66e3b and reconciliation1ee5127d."
+}

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/usr/local/bin/node",
+    "/Users/tim/Code/fhfhockey.com/tasks/artifacts/player-cards-2026-10-25/observed-adapter-01-review/probes.mjs"
+  ],
+  "cwd": "/Users/tim/Code/fhfhockey.com/web",
+  "exitCode": 0,
+  "elapsedSeconds": 0.128,
+  "lockOwnedAndReleased": true
+}

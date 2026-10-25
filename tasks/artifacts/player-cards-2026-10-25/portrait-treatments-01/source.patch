@@ -1,0 +1,333 @@
+--- /dev/null
++++ b/web/lib/player-cards/portraitTreatment.ts
+@@ -0,0 +1,90 @@
++import { teamsInfo } from "../teamsInfo";
++import type { PreparedHero } from "../../components/player-cards/HeroPlayerCard";
++
++export const PORTRAIT_STYLES = ["original", "posterized", "pixelated", "team-colors"] as const;
++export type PortraitStyle = typeof PORTRAIT_STYLES[number];
++export const PORTRAIT_LABELS: Record<PortraitStyle, string> = {
++  original: "Original photo", posterized: "Posterized", pixelated: "Pixelated", "team-colors": "Team colors",
++};
++export const PORTRAIT_VERSION = "fhfh-portrait-v1";
++export const MAX_PORTRAIT_PIXELS = 2_000_000;
++export type PortraitTreatment = {
++  style: PortraitStyle; version: typeof PORTRAIT_VERSION; sourceAlphaSha256: string;
++  renderedSha256: string; width: number; height: number;
++};
++type Palette = { primaryColor: string; secondaryColor: string; darkColor?: string };
++
++export function isPortraitStyle(value: unknown): value is PortraitStyle {
++  return PORTRAIT_STYLES.some(style => style === value);
++}
++
++/** RGB-only transforms: the reviewed silhouette and every alpha byte are retained. */
++export function portraitPixels(input: Uint8ClampedArray, width: number, height: number, style: PortraitStyle, palette: Palette): Uint8ClampedArray {
++  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 1 || height < 1 || width * height > MAX_PORTRAIT_PIXELS || input.length !== width * height * 4 || !isPortraitStyle(style)) throw new Error("Unsupported portrait dimensions or treatment.");
++  const output = new Uint8ClampedArray(input);
++  if (style === "original") return output;
++  const rgb = (hex: string) => {
++    if (!/^#[\da-f]{6}$/i.test(hex)) throw new Error("Team palette is unavailable.");
++    return [1, 3, 5].map(start => parseInt(hex.slice(start, start + 2), 16));
++  };
++  const colors = [rgb(palette.darkColor || palette.primaryColor), rgb(palette.primaryColor), rgb(palette.secondaryColor), [242, 241, 235]];
++  // Seven source pixels at the reviewed 1296px width; scale with actual dimensions.
++  const block = Math.max(2, Math.round(width / 185));
++  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
++    const i = (y * width + x) * 4;
++    if (input[i + 3] === 0) continue;
++    if (style === "pixelated") {
++      const sx = Math.min(width - 1, Math.floor(x / block) * block + Math.floor(block / 2));
++      const sy = Math.min(height - 1, Math.floor(y / block) * block + Math.floor(block / 2));
++      const sample = (sy * width + sx) * 4;
++      // Never pull hidden background RGB into a visible silhouette-edge pixel.
++      const from = input[sample + 3] >= 128 ? sample : i;
++      for (let channel = 0; channel < 3; channel++) output[i + channel] = input[from + channel];
++    } else if (style === "posterized") {
++      // Quantize lightness in six bands while retaining the photographed hue.
++      const light = Math.max(input[i], input[i + 1], input[i + 2]);
++      const band = light < 34 ? 15 : light < 74 ? 52 : light < 118 ? 96 : light < 164 ? 143 : light < 210 ? 190 : 240;
++      for (let channel = 0; channel < 3; channel++) output[i + channel] = light === 0 ? 0 : Math.round(input[i + channel] / light * band / 12) * 12;
++    } else {
++      const luminance = .2126 * input[i] + .7152 * input[i + 1] + .0722 * input[i + 2];
++      const position = Math.min(3, Math.round(luminance / 255 * 6) / 2);
++      const low = Math.floor(position), high = Math.min(3, low + 1), weight = position - low;
++      for (let channel = 0; channel < 3; channel++) output[i + channel] = colors[low][channel] * (1 - weight) + colors[high][channel] * weight;
++    }
++  }
++  return output;
++}
++
++export function portraitKey(hero: PreparedHero): string {
++  return `${hero.treatment?.style || "original"}:${hero.treatment?.version || PORTRAIT_VERSION}:${hero.treatment?.renderedSha256 || hero.alphaSha256}`;
++}
++
++/** Always start from the verified original, never from a previously filtered derivative. */
++export async function preparePortrait(hero: PreparedHero, style: PortraitStyle, signal?: AbortSignal): Promise<PreparedHero> {
++  if (signal?.aborted) throw new DOMException("Portrait rendering cancelled.", "AbortError");
++  if (!isPortraitStyle(style) || hero.treatment && hero.treatment.style !== "original" || !Number.isInteger(hero.sourceWidth) || !Number.isInteger(hero.sourceHeight) || hero.sourceWidth < 1 || hero.sourceHeight < 1 || hero.sourceWidth * hero.sourceHeight > MAX_PORTRAIT_PIXELS) throw new Error("A bounded, original reviewed portrait is required.");
++  const treatment: PortraitTreatment = { style, version: PORTRAIT_VERSION, sourceAlphaSha256: hero.alphaSha256, renderedSha256: hero.alphaSha256, width: hero.sourceWidth, height: hero.sourceHeight };
++  if (style === "original") return { ...hero, treatment };
++  const palette = teamsInfo[hero.team];
++  if (!palette) throw new Error("Team palette is unavailable.");
++  const image = new Image(); image.src = hero.dataUrl; await image.decode();
++  if (signal?.aborted) throw new DOMException("Portrait rendering cancelled.", "AbortError");
++  if (image.naturalWidth !== hero.sourceWidth || image.naturalHeight !== hero.sourceHeight) throw new Error("Portrait dimensions changed.");
++  const canvas = document.createElement("canvas"); canvas.width = hero.sourceWidth; canvas.height = hero.sourceHeight;
++  try {
++    const context = canvas.getContext("2d", { willReadFrequently: true });
++    if (!context) throw new Error("Portrait rendering is unavailable.");
++    context.drawImage(image, 0, 0);
++    const frame = context.getImageData(0, 0, canvas.width, canvas.height);
++    frame.data.set(portraitPixels(frame.data, canvas.width, canvas.height, style, palette));
++    context.putImageData(frame, 0, 0);
++    const blob = await new Promise<Blob>((resolve, reject) => canvas.toBlob(value => value ? resolve(value) : reject(new Error("Portrait rendering failed.")), "image/png"));
++    if (signal?.aborted) throw new DOMException("Portrait rendering cancelled.", "AbortError");
++    const bytes = await blob.arrayBuffer();
++    treatment.renderedSha256 = [...new Uint8Array(await crypto.subtle.digest("SHA-256", bytes))].map(n => n.toString(16).padStart(2, "0")).join("");
++    const dataUrl = await new Promise<string>((resolve, reject) => {
++      const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error("Portrait could not be read.")); reader.readAsDataURL(blob);
++    });
++    return { ...hero, dataUrl, treatment };
++  } finally { canvas.width = 0; canvas.height = 0; }
++}
+--- /dev/null
++++ b/web/lib/player-cards/portraitTreatment.test.ts
+@@ -0,0 +1,41 @@
++import { expect, it } from "vitest";
++import { portraitPixels, preparePortrait, MAX_PORTRAIT_PIXELS, PORTRAIT_STYLES } from "./portraitTreatment";
++import { REVIEWED_HERO_SAMPLES } from "./reviewedHeroSamples";
++
++const palette = { primaryColor: "#154734", darkColor: "#0b2e21", secondaryColor: "#DDCBA4" };
++it("preserves every alpha byte and original input for every deterministic treatment", () => {
++  const input = new Uint8ClampedArray([19, 40, 80, 255, 240, 150, 90, 128, 66, 45, 33, 1, 220, 110, 44, 0]);
++  const before = new Uint8ClampedArray(input);
++  for (const style of PORTRAIT_STYLES) {
++    const result = portraitPixels(input, 2, 2, style, palette);
++    expect([...result].filter((_, i) => i % 4 === 3)).toEqual([255, 128, 1, 0]);
++    expect(result).toEqual(portraitPixels(input, 2, 2, style, palette));
++    expect(result).not.toBe(input);
++  }
++  expect(input).toEqual(before);
++});
++it("uses nearest source RGB within a pixel block without sampling hidden background", () => {
++  const input = new Uint8ClampedArray([10, 20, 30, 255, 40, 50, 60, 128, 70, 80, 90, 255, 100, 110, 120, 255]);
++  const pixelated = portraitPixels(input, 2, 2, "pixelated", palette);
++  expect([...pixelated.slice(0, 7)]).toEqual([100, 110, 120, 255, 100, 110, 120]);
++  input[15] = 0;
++  expect(portraitPixels(input, 2, 2, "pixelated", palette)).toEqual(input);
++});
++it("maps team-color darkest and lightest values to explicit palette endpoints", () => {
++  const input = new Uint8ClampedArray([0, 0, 0, 255, 255, 255, 255, 255]);
++  expect([...portraitPixels(input, 2, 1, "team-colors", palette)]).toEqual([11, 46, 33, 255, 242, 241, 235, 255]);
++  expect(portraitPixels(input, 2, 1, "posterized", palette)).not.toEqual(input);
++});
++it("rejects oversized or malformed buffers before processing and bounds image decoding", async () => {
++  expect(() => portraitPixels(new Uint8ClampedArray(4), MAX_PORTRAIT_PIXELS + 1, 1, "posterized", palette)).toThrow("dimensions");
++  expect(() => portraitPixels(new Uint8ClampedArray(3), 1, 1, "posterized", palette)).toThrow("dimensions");
++  await expect(preparePortrait({ ...REVIEWED_HERO_SAMPLES[0], sourceWidth: MAX_PORTRAIT_PIXELS + 1, sourceHeight: 1, dataUrl: "unread" }, "pixelated")).rejects.toThrow("bounded");
++});
++it("cancels stale work before decode and records original style without raster processing", async () => {
++  const hero = { ...REVIEWED_HERO_SAMPLES[0], dataUrl: "data:image/png;base64,AA==" };
++  const controller = new AbortController(); controller.abort();
++  await expect(preparePortrait(hero, "posterized", controller.signal)).rejects.toThrow();
++  const original = await preparePortrait(hero, "original");
++  expect(original.dataUrl).toBe(hero.dataUrl); expect(original.treatment?.renderedSha256).toBe(hero.alphaSha256);
++  await expect(preparePortrait({ ...original, treatment: { ...original.treatment!, style: "posterized" } }, "pixelated")).rejects.toThrow("original");
++});
+--- a/web/components/player-cards/HeroPlayerCard.tsx
++++ b/web/components/player-cards/HeroPlayerCard.tsx
+@@ -3,6 +3,7 @@
+ import type { FlowSnapshot } from "../../lib/player-cards/interactionSnapshot";
+ import { periodLabel, strengthLabel } from "./InteractiveCard";
+ import EditorialPlayerCard from "./EditorialPlayerCard";
++import { portraitKey, PORTRAIT_LABELS, type PortraitTreatment } from "../../lib/player-cards/portraitTreatment";
+ 
+ export type HeroSample = {
+   id: number; name: string; team: string; position: string; sweater: number;
+@@ -10,7 +11,7 @@
+   sourceSha256: string; alphaSha256: string; acceptance: "accepted";
+   localPath: string;
+ };
+-export type PreparedHero = HeroSample & { dataUrl: string };
++export type PreparedHero = HeroSample & { dataUrl: string; treatment?: PortraitTreatment };
+ export type CardShareFormat = "landscape" | "social-square";
+ 
+ export default function HeroPlayerCard({ snapshot, hero, format, svgRef }: {
+@@ -31,7 +32,7 @@
+       <path d="M700 0H850L630 338H480Z" fill={palette.secondaryColor} opacity=".35" />
+       <path d="M1040 0H1090L870 338H820Z" fill={palette.jersey} opacity=".6" />
+       <rect width="1200" height="338" fill={`url(#${uid}-shade)`} />
+-      <image data-hero-image="true" href={hero.dataUrl} x="600" y="4" width="600" height={600 * hero.sourceHeight / hero.sourceWidth} preserveAspectRatio="xMidYMin meet" />
++      <image data-hero-image="true" href={hero.dataUrl} x="600" y="4" width="600" height={600 * hero.sourceHeight / hero.sourceWidth} preserveAspectRatio="xMidYMin meet" style={{ imageRendering: hero.treatment?.style === "pixelated" ? "pixelated" : "auto" }} />
+       <rect y="299" width="1200" height="39" fill="#101214" fillOpacity=".93" />
+     </g>
+     <g fill="#F2F1EB" fontFamily="Arial, sans-serif">
+@@ -42,14 +43,14 @@
+       <text x="40" y="225" fontSize="25">{palette.name} · {hero.position} · #{hero.sweater}</text>
+       <text x="40" y="268" fontSize="23" fill="#BEEFFF">{String(snapshot.settings.season).slice(0,4)}–{String(snapshot.settings.season).slice(6)} · {periodLabel(snapshot)} · {strengthLabel(snapshot)}</text>
+       <text x="40" y="325" fontSize="19" fontWeight="700" letterSpacing="1" fill="#80DFFF">ILLUSTRATIVE STATS · NOT {hero.name.toUpperCase()}’S RESULTS</text>
+-      <text x="1160" y="325" textAnchor="end" fontSize="16">NHL photo · local cutout</text>
++      <text x="1160" y="325" textAnchor="end" fontSize="16">NHL photo · {PORTRAIT_LABELS[hero.treatment?.style || "original"]}</text>
+     </g>
+   </g>;
+   return <svg ref={svgRef} xmlns="http://www.w3.org/2000/svg" viewBox={`0 0 1200 ${height}`} width="1200" height={height} role="img"
+     aria-label={`${hero.name}. NHL action photo with locally removed background. Illustrative synthetic statistics, not this player's actual results. ${snapshot.sample.gp === null ? "GP unverified" : `${snapshot.sample.gp} fixture appearances`}. ${snapshot.readings.map(r => r.reason || "").filter(Boolean).join(". ")}`}
+-    data-snapshot-id={snapshot.id} data-artwork-hash={hero.alphaSha256} data-share-format={format}>
++    data-snapshot-id={snapshot.id} data-artwork-hash={hero.alphaSha256} data-share-format={format} data-portrait-key={portraitKey(hero)}>
+     <title>{hero.name} · FHFH artwork study · illustrative statistics</title>
+-    <desc>Source photo: {hero.sourceUrl}. Captured {hero.capturedAt}. Team and jersey identity from that captured source. No live statistics or ranking coverage claimed.</desc>
++    <desc>Source photo: {hero.sourceUrl}. Captured {hero.capturedAt}. Treatment: {PORTRAIT_LABELS[hero.treatment?.style || "original"]}; original silhouette preserved. Team and jersey identity from that captured source. No live statistics or ranking coverage claimed.</desc>
+     <rect width="1200" height={height} fill="#101214" />
+     {square && <g fill="#F2F1EB" fontFamily="Arial, sans-serif"><text x="40" y="48" fontSize="22" letterSpacing="2">FHFH / SOCIAL SHARE</text><text x="1160" y="48" textAnchor="end" fontSize="18" fill="#80DFFF">ARTWORK CHECKPOINT</text></g>}
+     <svg x="0" y={square ? 76 : 0} width="1200" height="1020" viewBox="0 0 1200 1020" aria-hidden="true">
+--- a/web/components/player-cards/PlayerCardShareStudio.tsx
++++ b/web/components/player-cards/PlayerCardShareStudio.tsx
+@@ -8,23 +8,42 @@
+ import { EDITORIAL_METRICS } from "./EditorialPlayerCard";
+ import { METRICS } from "../../lib/player-cards/registry";
+ import { formatMetric } from "./PlayerCard";
++import { preparePortrait, portraitKey, isPortraitStyle, PORTRAIT_STYLES, PORTRAIT_LABELS, type PortraitStyle } from "../../lib/player-cards/portraitTreatment";
+ import styles from "./PlayerCardShareStudio.module.scss";
+ 
+-export default function PlayerCardShareStudio({ samples = REVIEWED_HERO_SAMPLES, loadArtwork = prepareHero, rasterize = rasterizePlayerCard }: {
+-  samples?: readonly HeroSample[]; loadArtwork?: typeof prepareHero; rasterize?: typeof rasterizePlayerCard;
++const STYLE_STORAGE = "fhfh-player-card-portrait-v1";
++
++export default function PlayerCardShareStudio({ samples = REVIEWED_HERO_SAMPLES, loadArtwork = prepareHero, rasterize = rasterizePlayerCard, treatArtwork = preparePortrait }: {
++  samples?: readonly HeroSample[]; loadArtwork?: typeof prepareHero; rasterize?: typeof rasterizePlayerCard; treatArtwork?: typeof preparePortrait;
+ }) {
+   const [playerId, setPlayerId] = useState(samples[0]?.id), [format, setFormat] = useState<CardShareFormat>("landscape");
+   const [scenario, setScenario] = useState<FixtureScenario>("complete"), [hero, setHero] = useState<PreparedHero | null>(null);
++  const [portraitStyle, setPortraitStyle] = useState<PortraitStyle>("original");
++  const [styledHero, setStyledHero] = useState<PreparedHero | null>(null), [treating, setTreating] = useState(false);
+   const [error, setError] = useState(""), [retry, setRetry] = useState(0), [busy, setBusy] = useState(false), [status, setStatus] = useState("");
+   const [prepared, setPrepared] = useState<{ key: string; file: File } | null>(null);
+   const busyRef = useRef(false), svgRef = useRef<SVGSVGElement>(null);
+   const sample = samples.find(row => row.id === playerId);
++  useEffect(() => {
++    try { const saved = localStorage.getItem(STYLE_STORAGE); if (isPortraitStyle(saved)) setPortraitStyle(saved); } catch { /* Session selection works without storage. */ }
++  }, []);
+   useEffect(() => {
+     let active = true; setHero(null); setError(""); setPrepared(null);
+     if (!sample) { setError("No reviewed artwork is available."); return; }
+     loadArtwork(sample).then(value => { if (active) setHero(value); }, reason => { if (active) setError(reason instanceof Error ? reason.message : "Artwork unavailable."); });
+     return () => { active = false; };
+   }, [sample, retry, loadArtwork]);
++  useEffect(() => {
++    const controller = new AbortController(); setStyledHero(null); setPrepared(null);
++    if (!hero || hero.id !== sample?.id) { setTreating(false); return; }
++    setTreating(true); setError("");
++    treatArtwork(hero, portraitStyle, controller.signal).then(value => {
++      if (!controller.signal.aborted) { setStyledHero(value); setTreating(false); }
++    }, reason => {
++      if (!controller.signal.aborted) { setError(reason instanceof Error ? reason.message : "Portrait unavailable."); setTreating(false); }
++    });
++    return () => controller.abort();
++  }, [hero, sample, portraitStyle, treatArtwork]);
+   const snapshot = useMemo(() => {
+     if (!sample) return null;
+     const result = adaptLocalSnapshot(buildInteractionFixture(flowSettings(INITIAL_FLOW), scenario, 1001), 1001);
+@@ -32,8 +51,8 @@
+     const fixture = displaySnapshot(result);
+     return { ...fixture, id: `art-study-${sample.id}-${fixture.id}`, player: { id: String(sample.id), name: sample.name, team: sample.team, position: sample.position } };
+   }, [sample, scenario]);
+-  const readyHero = hero?.id === sample?.id ? hero : null;
+-  const key = `${snapshot?.id}:${format}:${readyHero?.alphaSha256}`;
++  const readyHero = styledHero?.id === sample?.id && styledHero?.treatment?.style === portraitStyle ? styledHero : null;
++  const key = `${snapshot?.id}:${format}:${readyHero ? portraitKey(readyHero) : "pending"}`;
+   const exportable = !!snapshot && !!readyHero && snapshot.sample.gp !== null && snapshot.sample.toiSeconds !== null && snapshot.readings.some(r => r.state === "valid");
+   function changed() { setPrepared(null); setStatus(""); }
+   async function createImage(social: boolean) {
+@@ -41,7 +60,7 @@
+     busyRef.current = true; setBusy(true); setStatus("Preparing the displayed image…");
+     try {
+       const blob = await rasterize(svgRef.current, snapshot, readyHero, format);
+-      const file = new File([blob], `fhfh-${sample!.id}-illustrative-${format}.png`, { type: "image/png" });
++      const file = new File([blob], `fhfh-${sample!.id}-illustrative-${format}-${portraitStyle}.png`, { type: "image/png" });
+       if (social) { setPrepared({ key, file }); setStatus("Image ready. Choose Share prepared image to open your device’s share options."); }
+       else { saveCardFile(file, file.name); setStatus("PNG saved from the displayed snapshot."); }
+     } catch (reason) { setStatus(reason instanceof Error ? reason.message : "Export failed. Please retry."); }
+@@ -61,12 +80,17 @@
+     <div className={styles.controls}>
+       <label>Reviewed artwork<select aria-label="Reviewed artwork" value={playerId} disabled={busy} onChange={e => { changed(); setPlayerId(Number(e.target.value)); }}>{samples.map(row => <option key={row.id} value={row.id}>{row.name} · {row.team}</option>)}</select></label>
+       <label>Image format<select aria-label="Image format" value={format} disabled={busy} onChange={e => { changed(); setFormat(e.target.value as CardShareFormat); }}><option value="landscape">Landscape card</option><option value="social-square">Social square</option></select></label>
++      <label>Portrait style<select aria-label="Portrait style" value={portraitStyle} disabled={busy || treating} onChange={e => {
++        const value = e.target.value; if (!isPortraitStyle(value)) return;
++        changed(); setPortraitStyle(value);
++        try { localStorage.setItem(STYLE_STORAGE, value); } catch { /* Session selection remains available. */ }
++      }}>{PORTRAIT_STYLES.map(style => <option key={style} value={style}>{PORTRAIT_LABELS[style]}</option>)}</select></label>
+       <label>Statistics preview<select aria-label="Statistics preview" value={scenario} disabled={busy} onChange={e => { changed(); setScenario(e.target.value as FixtureScenario); }}><option value="complete">Illustrative profile</option><option value="metric-gap">Missing metric input</option><option value="history-gap">Unverified appearance history</option></select></label>
+       <button disabled={busy || !exportable} onClick={() => void createImage(false)}>Download PNG</button>
+       <button disabled={busy || !exportable} onClick={() => void createImage(true)}>Social Share</button>
+       {prepared?.key === key && <button disabled={busy} onClick={() => void sharePrepared()}>Share prepared image</button>}
+     </div>
+-    {error ? <p role="alert">{error} <button onClick={() => setRetry(n => n + 1)}>Retry artwork</button></p> : !readyHero ? <p role="status">Preparing reviewed artwork…</p> : null}
++    {error ? <p role="alert">{error} <button onClick={() => setRetry(n => n + 1)}>Retry artwork</button></p> : !readyHero ? <p role="status">{treating ? "Applying portrait style…" : "Preparing reviewed artwork…"}</p> : null}
+     {snapshot && readyHero && <section className={styles.artwork} aria-label="Player card preview"><HeroPlayerCard snapshot={snapshot} hero={readyHero} format={format} svgRef={svgRef} /></section>}
+     <p role="status" aria-live="polite">{status || (snapshot?.sample.gp === null ? "GP unverified. Export unavailable until sample context is verified." : scenario === "metric-gap" ? "Missing metric inputs remain unavailable on the card and export." : "Live statistics and premium activation remain off.")}</p>
+     {snapshot && readyHero && <details><summary>Card values and provenance</summary><p>Photo: NHL action-image URL captured {sample!.capturedAt.slice(0, 10)}. Team and jersey identity reflect that capture. Local background removal; no generated identity. Statistical source: fabricated fixture player1001, separate from the photographed player.</p><p><a href={sample!.sourceUrl} target="_blank" rel="noreferrer">Recorded photo source</a></p><ul>{EDITORIAL_METRICS.map(id => { const row = snapshot.readings.find(v => v.id === id)!; return <li key={id}>{METRICS.find(v => v.id === id)!.help}: {formatMetric(id, row.value)} · {row.rank ? `${row.rank.tied ? "T-" : ""}${row.rank.ordinal}/${row.rank.population} · ${row.rank.percentile.toFixed(1)} percentile` : row.reason || row.rankReason}</li>; })}</ul><button disabled={busy} onClick={() => saveCardFile(new Blob([JSON.stringify({ snapshot, selectedMetrics: EDITORIAL_METRICS, format, artwork: { ...readyHero, dataUrl: undefined }, statistics: { origin: "synthetic", fixturePlayerId: 1001, representsPicturedPlayer: false }, liveActivation: false, premiumActivation: false }, null, 2)], { type: "application/json" }), "fhfh-player-card-manifest.json")}>Download manifest</button></details>}
+--- a/web/components/player-cards/PlayerCardShareStudio.test.tsx
++++ b/web/components/player-cards/PlayerCardShareStudio.test.tsx
+@@ -4,8 +4,10 @@
+ import PlayerCardShareStudio from "./PlayerCardShareStudio";
+ import { REVIEWED_HERO_SAMPLES } from "../../lib/player-cards/reviewedHeroSamples";
+ import type { HeroSample, PreparedHero } from "./HeroPlayerCard";
++import { PORTRAIT_VERSION, type PortraitStyle } from "../../lib/player-cards/portraitTreatment";
++import type { rasterizePlayerCard } from "../../lib/player-cards/shareExport";
+ 
+-afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
++afterEach(() => { cleanup(); localStorage.clear(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
+ const loaded = async (sample: HeroSample): Promise<PreparedHero> => ({ ...sample, dataUrl: "data:image/png;base64,AA==" });
+ const ready = () => waitFor(() => expect(screen.getByRole("button", { name: "Social Share" }).hasAttribute("disabled")).toBe(false));
+ 
+@@ -52,3 +54,17 @@
+   fireEvent.change(screen.getByLabelText("Image format"), { target: { value: "social-square" } });
+   expect(screen.queryByRole("button", { name: "Share prepared image" })).toBeNull();
+ });
++it("persists the chosen treatment, exports its displayed bytes and invalidates prepared sharing on change", async () => {
++  const treatment = async (hero: PreparedHero, style: PortraitStyle): Promise<PreparedHero> => ({ ...hero, dataUrl: `data:image/png;base64,${style}`, treatment: { style, version: PORTRAIT_VERSION, sourceAlphaSha256: hero.alphaSha256, renderedSha256: "a".repeat(64), width: hero.sourceWidth, height: hero.sourceHeight } });
++  const rasterize = vi.fn<typeof rasterizePlayerCard>(async () => new Blob(["styled png"], { type: "image/png" }));
++  const first = render(<PlayerCardShareStudio loadArtwork={loaded} treatArtwork={treatment} rasterize={rasterize} />); await ready();
++  fireEvent.change(screen.getByLabelText("Portrait style"), { target: { value: "posterized" } }); await ready();
++  expect(first.container.querySelector("image")!.getAttribute("href")).toBe("data:image/png;base64,posterized");
++  fireEvent.click(screen.getByRole("button", { name: "Social Share" })); await screen.findByRole("button", { name: "Share prepared image" });
++  expect(rasterize.mock.calls[0][2]).toMatchObject({ treatment: { style: "posterized" } });
++  fireEvent.change(screen.getByLabelText("Portrait style"), { target: { value: "pixelated" } }); await ready();
++  expect(screen.queryByRole("button", { name: "Share prepared image" })).toBeNull();
++  first.unmount();
++  render(<PlayerCardShareStudio loadArtwork={loaded} treatArtwork={treatment} />); await ready();
++  expect((screen.getByLabelText("Portrait style") as HTMLSelectElement).value).toBe("pixelated");
++});
+--- a/web/lib/player-cards/shareExport.ts
++++ b/web/lib/player-cards/shareExport.ts
+@@ -1,5 +1,6 @@
+ import type { FlowSnapshot } from "./interactionSnapshot";
+ import type { CardShareFormat, HeroSample, PreparedHero } from "../../components/player-cards/HeroPlayerCard";
++import { portraitKey, PORTRAIT_VERSION, isPortraitStyle } from "./portraitTreatment";
+ 
+ export async function prepareHero(sample: HeroSample): Promise<PreparedHero> {
+   if (sample.acceptance !== "accepted" || !/^\/player-cards\/hero-samples\/\d+\.png$/.test(sample.localPath)) throw new Error("Reviewed local artwork required.");
+@@ -17,7 +18,9 @@
+ }
+ 
+ export function assertCardExport(svg: SVGSVGElement, snapshot: FlowSnapshot, hero: PreparedHero, format: CardShareFormat) {
+-  if (snapshot.source !== "synthetic" || snapshot.player.id !== String(hero.id) || svg.dataset.snapshotId !== snapshot.id || svg.dataset.artworkHash !== hero.alphaSha256 || svg.dataset.shareFormat !== format) throw new Error("The displayed card changed. Retry this snapshot.");
++  if (snapshot.source !== "synthetic" || snapshot.player.id !== String(hero.id) || svg.dataset.snapshotId !== snapshot.id || svg.dataset.artworkHash !== hero.alphaSha256 || svg.dataset.shareFormat !== format || svg.dataset.portraitKey !== portraitKey(hero)) throw new Error("The displayed card changed. Retry this snapshot.");
++  const treatment = hero.treatment;
++  if (treatment && (!isPortraitStyle(treatment.style) || treatment.version !== PORTRAIT_VERSION || treatment.sourceAlphaSha256 !== hero.alphaSha256 || treatment.width !== hero.sourceWidth || treatment.height !== hero.sourceHeight || !/^[a-f0-9]{64}$/.test(treatment.renderedSha256))) throw new Error("Portrait provenance changed. Retry this snapshot.");
+   if (snapshot.sample.gp === null || snapshot.sample.toiSeconds === null || !snapshot.readings.some(r => r.state === "valid")) throw new Error("Verified sample context is required to export.");
+   const images = [...svg.querySelectorAll("image")];
+   if (images.length !== 1 || images[0].getAttribute("href") !== hero.dataUrl || !hero.dataUrl.startsWith("data:image/png;base64,")) throw new Error("Embedded reviewed artwork is required to export.");
+--- a/web/lib/player-cards/shareExport.test.ts
++++ b/web/lib/player-cards/shareExport.test.ts
+@@ -22,6 +22,9 @@
+   expect(() => assertCardExport(svg, { ...snapshot, id: "changed" }, hero, "landscape")).toThrow("changed");
+   expect(() => assertCardExport(svg, snapshot, { ...hero, id: 4 }, "landscape")).toThrow("changed");
+   expect(() => assertCardExport(svg, { ...snapshot, sample: { ...snapshot.sample, gp: null } }, hero, "landscape")).toThrow("sample context");
++  svg.dataset.portraitKey = "stale-treatment";
++  expect(() => assertCardExport(svg, snapshot, hero, "landscape")).toThrow("changed");
++  svg.dataset.portraitKey = `original:fhfh-portrait-v1:${hero.alphaSha256}`;
+   svg.querySelector("image")!.setAttribute("href", "https://example.invalid/image.png"); expect(() => assertCardExport(svg, snapshot, hero, "landscape")).toThrow("Embedded");
+ });
+ it("only permits the known local asset namespace before any artwork fetch", async () => {

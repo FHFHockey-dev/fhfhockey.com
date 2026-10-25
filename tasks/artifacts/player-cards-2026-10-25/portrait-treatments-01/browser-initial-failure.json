@@ -1,0 +1,8 @@
+{
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:\n+ actual - expected ... Lines skipped\n\n+ Buffer(614664) [Uint8Array] [\n- Buffer(614261) [Uint8Array] [\n    137,\n    80,\n...\n    180,\n    253,\n+   91,\n+   176,\n+   125,\n+   217,\n+   121,\n-   121,\n-   172,\n-   109,\n-   91,\n-   122,\n    221,\n    135,\n    141,\n    177,\n+   186,\n+   155,\n+   184,\n+   119,\n+   55,\n+   174,\n+   34,\n+   174,\n+   164,\n+   8,\n+   94,\n+   1,\n+   18,\n+   36,\n+   1,\n+   145,\n...\n-   222,\n-   171,\n-   134,\n-   85,\n-   172,\n-   215,\n-   85,\n-   199,\n-   170,\n-   34,\n-   41,\n-   146,\n-   98,\n-   21,\n-   201,\n-   34,\n...",
+  "checks": [
+    "Three actual card PNGs: identical snapshot and byte-identical analytics-region pixels; each transformed portrait hash matches manifest and displayed embedded bytes; alpha/dimensions unchanged"
+  ],
+  "network": [],
+  "errors": []
+}

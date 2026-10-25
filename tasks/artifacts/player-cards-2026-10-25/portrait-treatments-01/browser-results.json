@@ -1,0 +1,60 @@
+{
+  "checks": [
+    "Three actual card PNGs: identical snapshot and byte-identical analytics-region pixels; each transformed portrait hash matches manifest and displayed embedded bytes; alpha/dimensions unchanged",
+    "Style persists on reload; prepared social PNG equals the styled export; style change invalidates old prepared image",
+    "Styled export retains missing-source explanation; unverified GP remains accessible and cannot export",
+    "Social square exported; mobile390 has no overflow and controls at least44px"
+  ],
+  "variants": [
+    {
+      "style": "posterized",
+      "elapsedMs": 41,
+      "alphaDifferences": 0,
+      "rgbDifferences": 504492,
+      "dimensions": [
+        1296,
+        729
+      ],
+      "originalDimensions": [
+        1296,
+        729
+      ],
+      "renderedSha256": "161aa7d42c62e953053a9d8b6a715d210d311b2a1d238eb2439da24fed7c8d2f",
+      "pngBytes": 647052
+    },
+    {
+      "style": "pixelated",
+      "elapsedMs": 49,
+      "alphaDifferences": 0,
+      "rgbDifferences": 473495,
+      "dimensions": [
+        1296,
+        729
+      ],
+      "originalDimensions": [
+        1296,
+        729
+      ],
+      "renderedSha256": "ce83bd7f59ce086f25122077e27811dadcb9f9084a4488fea6016af3b059bc7a",
+      "pngBytes": 567830
+    },
+    {
+      "style": "team-colors",
+      "elapsedMs": 50,
+      "alphaDifferences": 0,
+      "rgbDifferences": 521721,
+      "dimensions": [
+        1296,
+        729
+      ],
+      "originalDimensions": [
+        1296,
+        729
+      ],
+      "renderedSha256": "886b20d3edba1faf4ceae0baf4f95aad82df7ae39c17165063297c6f6f58bf00",
+      "pngBytes": 614261
+    }
+  ],
+  "externalAttempts": [],
+  "pageErrors": []
+}

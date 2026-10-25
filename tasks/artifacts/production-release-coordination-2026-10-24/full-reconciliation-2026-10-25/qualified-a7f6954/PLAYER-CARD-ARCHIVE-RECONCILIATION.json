@@ -1,0 +1,344 @@
+{
+  "source": "hero-share-checkpoint-01/preservation-results.json",
+  "missing_in_checkout": 48,
+  "verified_in_recovery_archive": 48,
+  "rows": [
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/types.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-01/types.log",
+      "expected": "ccd0c0c7ea58e9b69f678c94e0a2e98b4ac8bbcd46ba245dba8f3d75051d1cb0",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/checks-final.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-01/checks-final.log",
+      "expected": "ca982d9c780a41748d56e708892ef8491c4e3eea9af834b345193d3ab7c4c382",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-01/browser.log",
+      "expected": "ea7378d4eefc04bad81ba3aa7d4a81315562262b55d5fbf3c609a10ce6118a29",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/lint.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-01/lint.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/types-final.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-01/types-final.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/checks.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-01/checks.log",
+      "expected": "e16f2568a292297cd04b7b267e72c149fe2a099790fe67e003649875848e5546",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/browser-final.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-01/browser-final.log",
+      "expected": "cc31c6e1ac5aa04761813d9724c46e3742acb7d18726321f8281f585e21c3ecf",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-01/lint-final.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-01/lint-final.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/local-evidence.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02/local-evidence.log",
+      "expected": "39b0d575fe067bfe3ad1a80431cade4a99139029978a9a8a33c409eb34fc8611",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/types-initial.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02/types-initial.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/types-final.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02/types-final.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/tests-initial.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02/tests-initial.log",
+      "expected": "3e7d787e3f660aa00a97c5777c3bc78dd1f0c4a3211402273dc3b7067ff3ec36",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/lint-final.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02/lint-final.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/tests-final.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02/tests-final.log",
+      "expected": "bdccb1f0eb6f0322894e32a9876ff67e949670661f67a013ac5169cb16050b9a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02/lint-initial.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02/lint-initial.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/types.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02-r1/types.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/lint.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02-r1/lint.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/capture-reconciliation.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02-r1/capture-reconciliation.log",
+      "expected": "cce40b164a742484954bd956ed92db107468b39a297cfe0797887c7a3a879de1",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/tests.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02-r1/tests.log",
+      "expected": "9e7f06c90665100e8cb9c602f514802a28e55b31e68e19e262076a7ea58306f6",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/nearby-flow.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02-r1/nearby-flow.log",
+      "expected": "9f5ed9f5ee04abc4088f1d9a411c5554e11f1ce3cec9e9adb701dd690300f84a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-02-r1/counterexamples.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-02-r1/counterexamples.log",
+      "expected": "b4b3cdde87c52cbb50df6ff736fff7e35c7a11329bfeb9294adb4f2af98ba587",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/browser-initial.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/browser-initial.log",
+      "expected": "73afdf65d2e50c80b46cbca8159fc0124b61ae729fb8e45c347a3b1543dc0c5a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/types-initial.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/types-initial.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/types-final.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/types-final.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/tests-initial.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/tests-initial.log",
+      "expected": "6e7f1b9e8bdf0be099479bf7919f5aeee1505d23a758ad2c6b6e0db49ebd093e",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/lint-current.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/lint-current.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/types-current.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/types-current.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/browser-final.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/browser-final.log",
+      "expected": "73afdf65d2e50c80b46cbca8159fc0124b61ae729fb8e45c347a3b1543dc0c5a",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/browser-current.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/browser-current.log",
+      "expected": "71bab14d653d4418a6e64b56c0395f8ed19233e95e3d5f6d6ca1a8cfc076ddfc",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/render-current.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/render-current.log",
+      "expected": "f37b63b3cc6c0100ea81abf75ce58cb4815d274f9caefa585c9ed83ead22ab75",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/lint-final.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/lint-final.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/tests-final.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/tests-final.log",
+      "expected": "fbb1387503941598367f41d9952ea69172b519264d9cb1502c9f910dcfe48634",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/render-final.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/render-final.log",
+      "expected": "91458126dd3cf97050d9dba21e62d1a33672c8f2f8f960701f8ce063642c075f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/lint-initial.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/lint-initial.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03/tests-current.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03/tests-current.log",
+      "expected": "33c4d52cdb26a9d82b70701aa4fdb41445c9558d0d27d582fbc2046c95fbc569",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/types.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03-r1/types.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03-r1/browser.log",
+      "expected": "4a34d551958e9bbe23886275576269daa41caafe49ef86191ffed2bcaf616a5f",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/owner-tests.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03-r1/owner-tests.log",
+      "expected": "669ae14e900338986646a9ad375a2302a28cf5166817c8b751ded78f09dfd0c6",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/render.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03-r1/render.log",
+      "expected": "fc578b4ac69bf6f77d93e4bbf5daee1980e127944a8a2a496f6df5bdefc023c5",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/probes-initial.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03-r1/probes-initial.log",
+      "expected": "ddc796220b563f2f07edee901527fbe14140694bf6f95c6313745acbebc010d7",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/lint.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03-r1/lint.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/probes.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03-r1/probes.log",
+      "expected": "8b5c78274e7024dc5e33448960357b3f8f948fe5ba24eda082814dff26c03545",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/slice-03-r1/banner.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/slice-03-r1/banner.log",
+      "expected": "8a692c6ebe0a7419efc76ff79ad5ed841d27f3514f16ebaf8c10a9d458f35666",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/browser.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/browser.log",
+      "expected": "446055de8485b75201e535a8731bc5d3622b6aa896f87323ae6d42377af28acd",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/lint.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/lint.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/render.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/render.log",
+      "expected": "8f3e16a58e8b14c6ed93883ef94a0b55df17628ee2a89c477c83b16c2ba39e00",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/tests.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/tests.log",
+      "expected": "7adc759c5f73463cec59fd5097caca77538a126d574ae9de7e15f306f28e291d",
+      "exists": true,
+      "matches": true
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/types.log",
+      "archive_path": "/Users/tim/Code/fhfhockey-workspace-recovery-2026-10-24/archived-output-files/tasks/artifacts/player-cards-2026-10-24/visual-checkpoint-01/types.log",
+      "expected": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exists": true,
+      "matches": true
+    }
+  ],
+  "action": "read-only hash verification; no source or historical packet restored or changed"
+}

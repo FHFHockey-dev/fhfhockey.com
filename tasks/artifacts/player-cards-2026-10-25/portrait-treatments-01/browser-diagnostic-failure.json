@@ -1,0 +1,10 @@
+{
+  "error": "AssertionError [ERR_ASSERTION]: false == true",
+  "checks": [
+    "Three actual card PNGs: identical snapshot and byte-identical analytics-region pixels; each transformed portrait hash matches manifest and displayed embedded bytes; alpha/dimensions unchanged",
+    "Style persists on reload; prepared social PNG equals the styled export; style change invalidates old prepared image",
+    "Styled export retains missing-source explanation; unverified GP remains accessible and cannot export"
+  ],
+  "network": [],
+  "errors": []
+}

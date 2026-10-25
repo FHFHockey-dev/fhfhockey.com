@@ -1,0 +1,169 @@
+{
+  "prepared_at_utc": "2026-10-25T13:38:50.007855+00:00",
+  "plan_path": "tasks/today-plan-2026-10-25.md",
+  "plan_sha256": "6cd410cd4f0c7cf478048383134d75536606ea40c22fcb821eb7f07f33e544f1",
+  "proposal_path": "tasks/artifacts/cross-platform/2026-10-24-coordination/TODAY-PROPOSALS-2026-10-25.md",
+  "proposal_sha256": "71660259e641dbd6e917075190a9367514fcaf5e7d1ff5b3d013502e4483ea7a",
+  "mailbox_path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-TO-CLAUDE.md",
+  "mailbox_entry_id": "CODEX-20261025-077",
+  "mailbox_before_sha256": "72ba651f2a2e1de54284f406246524efa8cb77b9bc28923185d304be3ade54f6",
+  "mailbox_after_sha256": "44a610d223ccc6df91e85dc4ba76b78af40eea9094c0bd3c16065b54c6ce8f99",
+  "mailbox_append_only_verified": true,
+  "source_pins": [
+    {
+      "path": "AGENTS.md",
+      "sha256": "fe2bbd877b66bf1c16e1878efac2ce299b37bbf9baab31ee5008c496e9fb8b0b",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "mise-en-place.md",
+      "sha256": "29ea87cbf4c9addcf1d6ef6225884606ea3d7f33b36dc19377d8012f2aedd9af",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/artifacts/fhfh-sprint-ledger-2026-10-22/LEDGER.json",
+      "sha256": "9f2dda051d5e3566764deb36f16cd511f1f96f1af5bdff3228aad5d9a9c02747",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CODEX-LEASES.json",
+      "sha256": "f4b84085cb06c947dea82334e510bcd09f1a2bd9e7cc586dde10c0cfffe5ea64",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-LEASES.json",
+      "sha256": "2aaa9c2667ae5be49d97584ead7282a6c347007ed9a070001614d0bf9ce44968",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/artifacts/cross-platform/2026-10-24-coordination/CLAUDE-TO-CODEX.md",
+      "sha256": "11bd88647951fa2a767e1be0ead932e0d252cf75d3edc3108d91dc55495cef10",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/diaries/2026-10-24-codex-release-coordination.md",
+      "sha256": "9257b0871c20f5e10207c3cf72814ec020a5847cfccc9df6dcb0619990e2c407",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/diaries/2026-10-24-codex-player-cards.md",
+      "sha256": "75c8e58b8fc55fd9cd1f7b8b2fdf4a89e6c83f3cb1f48cc94fab04697a0c20f0",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/diaries/2026-10-25-codex-goalie-workload-forge.md",
+      "sha256": "169c798bd01080babe8291aa049e2755fca8e2a6853dd24fd8e53ed6f8621cf9",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/diaries/2026-10-25-codex-birefnet-roster805.md",
+      "sha256": "5f30c52bc67de76d2a957db21b822bbefdd777c9b1a5be9dde8a9622ae0d324b",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/diaries/2026-10-25-codex-league-analytics-implementation.md",
+      "sha256": "b0313909b4d2a70d47c23b789f0fddf5c19d329ac72ea748f2e56c6775652327",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/team-colors-default-01/HANDOFF.md",
+      "sha256": "7e004149dd7cf48fd6fe79f001d42bea6d2dab8c7ae7946f16e9dfd84c8cb291",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01/HANDOFF.md",
+      "sha256": "aa9c0b5e7db2b5a2e99d7bab3e0afb9385c217e6c12f7fe0eb4d34e19184ab80",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/observed-adapter-01-review/REVIEW.md",
+      "sha256": "1322a20d87ae5958fad2c893433a0c5210c5a417fee183d8c699f8602303c498",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "tasks/artifacts/player-cards-2026-10-25/portrait-technical-review-01/REVIEW.md",
+      "sha256": "3d6ad81de008641b1c042b50d830c7b68126e1d835b2b24e9c2bfbcb329f7ab7",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "web/lib/player-cards/adapter.ts",
+      "sha256": "095368ab27e9a207a62b0309f0ff45f7a401e2735c609ed6481199846883c81f",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "web/lib/player-cards/nstCapture.ts",
+      "sha256": "8febc82875c998d9b89c9e8d70194ddf25f204b6fcca8ef08b32d338c16bebb5",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "web/lib/player-cards/ranking.ts",
+      "sha256": "813a18860ac97ce19bceeb01f014541644b9a4d002c34ac7a0d95c09ef6b5338",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "web/components/player-cards/EditorialPlayerCard.tsx",
+      "sha256": "f3c996c4c0cf9d75f533d1d4937a5db2474edb6a7c9b9665bbb3849df205afb5",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "web/lib/rosterScheduleOptimizer/healthyReserves.ts",
+      "sha256": "e1a203d3fa557398d60a94a2fd9dcbffbeec2890fbfca7f8ec9a83466439b5c4",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "web/components/RosterScheduleOptimizer/HealthyReserveAlert.tsx",
+      "sha256": "793e2d277551cba192d2f6595d4e91393d48c775794502e8e5e5e3e4c79f70b3",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "web/lib/rosterScheduleData/planningInputs.ts",
+      "sha256": "8193aa5d1bd22349b729e0a135f2060e847c5569312f83a84b23d2cbee498313",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    },
+    {
+      "path": "web/pages/api/v1/db/calculate-wigo-stats.ts",
+      "sha256": "f438eb129e1f70dd0691151916e78a8ea2225412ec63847ce93e334bc9ee9fa6",
+      "inspection_scope": "Bounded planning evidence; full, selected sections, schema or named symbols as described in plan. No runtime acceptance inferred."
+    }
+  ],
+  "current_context": {
+    "head": "2a5092d37cb863ec92a2a4e609999cf226bfa4a5",
+    "branch": "octoberBranch",
+    "dirty_entries_at_entry": 461,
+    "release_0619f912_local_commit_object_exists": true,
+    "live_status_evidence": "CODEX-072/final release diary and parent known-last-verified result; no fresh remote read",
+    "only_resumed_engineering": "01a1733c-05e7-74ef-8d82-929fc77040eb per trusted parent steer",
+    "quota": "Owner-reported approximately40%Claude/two quota windows/reset21UTC; no usage-meter call"
+  },
+  "checks": {
+    "six_lane_sections": true,
+    "current_named_code_pins_unchanged_by_planning": true,
+    "original_mailbox_prefix_preserved": true,
+    "no_active_lease_changed": true,
+    "no_master_or_ledger_write": true
+  },
+  "operations": {
+    "engineering_dispatches": 0,
+    "application_tests": 0,
+    "runtime_browser_requests": 0,
+    "production_or_provider_reads": 0,
+    "builds_or_deployments": 0,
+    "git_mutations": 0,
+    "uploads": 0,
+    "communication": "One owner-authorized append to established mailbox only"
+  },
+  "resolved_read_issues": [
+    "Repository .agents/skills and nearest /Users/tim/Code/.agents/skills absent; global REA skill is not applicable.",
+    "Two shell wildcard reads failed before execution because their exact paths did not exist; changed to named existing files. No blocked or uncertain mutation."
+  ],
+  "limitations": "Bounded documentary/source planning, not a new comprehensive audit or proof of actual live recovery. Historical frozen leases require fresh transfer.",
+  "original_plan_sha256_before_workspace_addendum": "975dacd63ee3d6546d734608185bebf3bea5ce8694b47e94a1c5f316d3339752",
+  "mailbox_workspace_entry_id": "CODEX-20261025-078",
+  "mailbox_after_workspace_addendum_sha256": "63171515bad7c89cc999c3099c2b6afe7562ffb71c842798add7245dba1c3104",
+  "workspace_addendum": {
+    "at": "2026-10-25T13:39:45.350157+00:00",
+    "source": "Trusted parent relay of owner Sync logs, not independent Git/network execution by planning lane",
+    "state": "Fetch then abort before merge; coordinator read-only diagnosis; source-write dispatch prerequisite",
+    "verified_append_only": true
+  }
+}
