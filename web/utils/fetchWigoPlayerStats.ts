@@ -218,6 +218,8 @@ interface BuildPlayerAggregatedStatsInput {
   recentData: WigoRecentRow | null;
   ratesData: Record<string, number | null> | null;
   totalsData: WigoTotalsFallbackData;
+  // The dashboard season. The totals fallback may only fill STD from this same season.
+  stdSeasonId?: number | null;
 }
 
 const getAggregateValue = (
@@ -235,8 +237,14 @@ export function buildPlayerAggregatedStats({
   careerData,
   recentData,
   ratesData,
-  totalsData
+  totalsData,
+  stdSeasonId = null
 }: BuildPlayerAggregatedStatsInput): TableAggregateData[] {
+  // Without a season match the latest totals row may be last season's, which must never pose as STD.
+  const seasonTotals =
+    totalsData && stdSeasonId != null && String(totalsData.season) === String(stdSeasonId)
+      ? totalsData
+      : null;
   if (!careerData && !recentData) {
     return [];
   }
@@ -346,17 +354,17 @@ export function buildPlayerAggregatedStats({
         label === "PIM" ||
         label === "PPP") &&
       (stdValue == null || Number.isNaN(stdValue)) &&
-      totalsData
+      seasonTotals
     ) {
       const totalsMap: Record<string, number | null | undefined> = {
-        Goals: totalsData.goals,
-        Assists: totalsData.assists,
-        Points: totalsData.points,
-        SOG: totalsData.shots,
-        HIT: totalsData.hits,
-        BLK: totalsData.blocked_shots,
-        PIM: totalsData.penalty_minutes,
-        PPP: totalsData.pp_points
+        Goals: seasonTotals.goals,
+        Assists: seasonTotals.assists,
+        Points: seasonTotals.points,
+        SOG: seasonTotals.shots,
+        HIT: seasonTotals.hits,
+        BLK: seasonTotals.blocked_shots,
+        PIM: seasonTotals.penalty_minutes,
+        PPP: seasonTotals.pp_points
       };
       const fallback = totalsMap[label];
       if (typeof fallback === "number" && !Number.isNaN(fallback)) {
@@ -611,7 +619,8 @@ export async function fetchPlayerGameLogForStat(
  * and transforms them into the TableAggregateData format for display.
  */
 export async function fetchPlayerAggregatedStats(
-  playerId: number
+  playerId: number,
+  stdSeasonId: number | null = null
 ): Promise<TableAggregateData[]> {
   console.log(`Workspaceing pre-aggregated stats for Player ID: ${playerId}`);
 
@@ -691,7 +700,8 @@ export async function fetchPlayerAggregatedStats(
     careerData,
     recentData,
     ratesData,
-    totalsData
+    totalsData,
+    stdSeasonId
   });
 }
 

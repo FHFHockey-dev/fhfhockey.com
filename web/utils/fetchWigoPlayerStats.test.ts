@@ -171,6 +171,23 @@ describe("buildPlayerAggregatedStats", () => {
     expect(rows.find((row) => row.label === "ixG")?.STD).toBeCloseTo(8.44);
   });
 
+  it("fills missing STD counts from totals only when the totals row is the dashboard season", () => {
+    const careerData = { player_id: 1, std_gp: 0, std_g: null } as unknown as WigoCareerRow;
+    const totals = (season: string) => ({
+      goals: 31, assists: 40, points: 71, shots: 250, hits: 20,
+      blocked_shots: 15, penalty_minutes: 12, pp_points: 25, season
+    });
+    const goalsStd = (totalsSeason: string, stdSeasonId?: number | null) =>
+      buildPlayerAggregatedStats({ careerData, recentData: null, ratesData: null,
+        totalsData: totals(totalsSeason), stdSeasonId }).find((row) => row.label === "Goals")?.STD;
+
+    // Last season's totals (the latest row for a player with no current-season games) never pose as STD.
+    expect(goalsStd("20242025", 20252026)).toBeNull();
+    // Season unknown: no fallback rather than a guess.
+    expect(goalsStd("20252026")).toBeNull();
+    expect(goalsStd("20252026", 20252026)).toBe(31);
+  });
+
   it("derives per-60 values from counts and ATOI when the rates table is missing", () => {
     const careerData = {
       player_id: 1,
@@ -249,8 +266,10 @@ describe("buildPlayerAggregatedStats", () => {
         hits: 50,
         blocked_shots: 25,
         penalty_minutes: 18,
-        pp_points: 10
-      }
+        pp_points: 10,
+        season: "20252026"
+      },
+      stdSeasonId: 20252026
     });
 
     expect(rows.find((row) => row.label === "Goals")?.STD).toBe(14);
