@@ -1365,9 +1365,12 @@ describe("planning engine", () => {
     data.opponent = { roster: [], realized: { saves: 0 }, remaining: { saves: 0 } };
     data.rules.goalieMinimum = { required: 1, credited: 1, counts: "starts", penalty: "lose_goalie_categories", periodStart: "2026-10-05", periodEnd: "2026-10-07" };
     const result = evaluatePlan(data, intent, "agp");
-    expect(result.goalie.projected).toBe(1);
-    expect(result.goalie.risk).toBe(false);
+    // The met minimum stays satisfied, but the unknown start keeps projected starts unknown, never credited + 0.
+    expect(result.goalie).toMatchObject({ credited: 1, projected: null, expectedStarts: null, minimumSatisfied: true, risk: false });
     expect(result.projectedValue).toBe(1);
+    data.forecasts[0].startProbability = 0.4;
+    expect(evaluatePlan(data, intent, "agp").goalie).toMatchObject({ credited: 1, projected: 1.4, expectedStarts: 0.4, risk: false });
+    data.forecasts[0].startProbability = null;
     data.rules.goalieMinimum.counts = "appearances";
     const appearance = evaluatePlan(data, intent, "agp");
     expect(appearance.goalie.projected).toBe(1);

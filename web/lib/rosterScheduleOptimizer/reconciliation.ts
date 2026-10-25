@@ -1,3 +1,4 @@
+import { acquisitionEffectiveAt } from "./planningTimeline";
 import type { PlanIntent, PlanningSnapshot, RevisionProposal } from "./planningTypes";
 
 /** Recheck selected intent against new authoritative inputs; repairs require explicit acceptance. */
@@ -44,8 +45,12 @@ export function reconcileIntent(snapshot: PlanningSnapshot, intent: PlanIntent, 
       }
       const period = snapshot.rules.periods.find((candidate) => actionAt >= Date.parse(candidate.start) && actionAt < Date.parse(candidate.end));
       if (!period) warn(step.id, "No current acquisition period covers this selected add.", true);
+      // Same verified earliest time the timeline enforces (next-day timing, waiver clearance); unknown timing is reported there.
+      const earliest = acquisitionEffectiveAt(snapshot, player, step.at);
+      if (earliest && Date.parse(step.effectiveAt) < Date.parse(earliest)) warn(step.id, `${player.name} cannot take effect at the selected time under current league timing or waiver clearance.`, true);
     }
     if (step.type === "drop" && (player.canDrop === false || intent.protectedPlayerIds.includes(player.id))) warn(step.id, `${player.name} cannot be dropped.`, true);
+    if (step.type === "reserve" && (!step.reservePosition || !player.reserveEligibility.includes(step.reservePosition))) warn(step.id, `${player.name} is no longer verified for ${step.reservePosition ?? "a reserve slot"}.`, true);
   }
   invalidateDependents();
   // At the same action time, charge an explicit prerequisite before its dependent move.
@@ -66,13 +71,25 @@ export function reconcileIntent(snapshot: PlanningSnapshot, intent: PlanIntent, 
     earlier.type === "add" && earlier.playerId === playerId && !invalid.has(earlier.id)
     && Date.parse(earlier.effectiveAt) <= Date.parse(step.at)
     && (Date.parse(earlier.at) < Date.parse(step.at) || step.dependsOn.includes(earlier.id)));
+  const reserveHolders = new Map<string, string>(snapshot.roster.filter(entry => ["IR", "IR+", "NA"].includes(entry.position)).map(entry => [entry.playerId, entry.position]));
   for (const step of ordered) {
     if (invalid.has(step.id)) continue;
+    if (step.type === "reserve") {
+      if (!roster.has(step.playerId) && !hasRetainedAdd(step.playerId, step)) {
+        warn(step.id, `${players.get(step.playerId)!.name} is no longer on the actual or planned roster.`, true);
+        invalidateDependents();
+      } else if ([...reserveHolders].filter(([id, position]) => id !== step.playerId && position === step.reservePosition).length
+        >= (snapshot.rules.rosterSlots[step.reservePosition!] ?? 0)) {
+        warn(step.id, `Selected moves exceed ${step.reservePosition} capacity.`, true);
+        invalidateDependents();
+      } else reserveHolders.set(step.playerId, step.reservePosition!);
+      continue;
+    }
     if (step.type === "drop") {
       if (!roster.has(step.playerId) && !hasRetainedAdd(step.playerId, step)) {
         warn(step.id, `${players.get(step.playerId)!.name} is no longer on the actual or planned roster.`, true);
         invalidateDependents();
-      }
+      } else reserveHolders.delete(step.playerId);
       continue;
     }
     if (step.type !== "add") continue;
@@ -90,6 +107,7 @@ export function reconcileIntent(snapshot: PlanningSnapshot, intent: PlanIntent, 
         invalidateDependents();
       } else spent.set(period.id, next);
     }
+    if (!invalid.has(step.id) && step.dropPlayerId) reserveHolders.delete(step.dropPlayerId);
   }
   return { snapshotId: snapshot.id, intentRevision: intent.revision, issues, suggestedSteps: invalid.size ? intent.steps.filter((step) => !invalid.has(step.id)) : null };
 }

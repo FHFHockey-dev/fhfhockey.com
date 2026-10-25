@@ -332,8 +332,8 @@ describe("RSO daily beta: manual/free acceptance packet", () => {
       expect(best.steps[0].dropPlayerId).toBeUndefined();
     });
 
-    // DEFECT D1 (MANUAL/DEFECTS.md): reconcileIntent never rechecks reserve steps. Remove `.fails` once fixed.
-    it.fails("refresh flags a selected IR move whose player is no longer reserve-eligible", () => {
+    // Regression for MANUAL D1: reconciliation rechecks selected reserve moves.
+    it("refresh flags a selected IR move whose player is no longer reserve-eligible", () => {
       const data = injured("IR");
       const reserve: PlanStep = { id: "reserve", type: "reserve", playerId: "lw2", reservePosition: "IR", at: MON_ASOF, effectiveAt: MON_ASOF, conditional: false, dependsOn: [] };
       const selected = intent({ steps: [reserve, addStep("add", "fa1", MON_ASOF, { dependsOn: ["reserve"] })] });
@@ -401,9 +401,8 @@ describe("RSO daily beta: manual/free acceptance packet", () => {
       expect(thin.limitations).toContain("Goalie minimum coverage is not verified.");
     });
 
-    // DEFECT D2 (MANUAL/DEFECTS.md): once credited meets the minimum, an unknown start probability is summed as zero
-    // into the "Projected" readout. Remove `.fails` once fixed.
-    it.fails("keeps projected starts unknown after the minimum is met when a start probability is missing", () => {
+    // Regression for MANUAL D2: a met minimum never turns an unknown start probability into zero.
+    it("keeps projected starts unknown after the minimum is met when a start probability is missing", () => {
       const data = midweek(null);
       data.rules = { ...data.rules, goalieMinimum: { ...data.rules.goalieMinimum, credited: 3 } };
       const plan = evaluatePlan(data, cover, "agp", []);
