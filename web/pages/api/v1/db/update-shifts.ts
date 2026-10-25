@@ -12,6 +12,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   return delegatedShiftChartsHandler(req, res);
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler), {
   jobName: "update-shift-charts",
-});
+}));

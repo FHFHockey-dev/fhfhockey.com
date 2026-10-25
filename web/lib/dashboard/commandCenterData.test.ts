@@ -173,7 +173,8 @@ describe("commandCenterData", () => {
     const data = await loadCommandCenterData(routeState);
 
     expect(data.modules.teamPower.status).toBe("error");
-    expect(data.modules.teamPower.error).toMatch(/Request failed/);
+    expect(data.modules.teamPower.error).toBe("Request failed.");
+    expect(data.modules.teamPower.error).not.toMatch(/500|\/api\//);
     expect(data.modules.playerInsight.status).toBe("empty");
   });
 });

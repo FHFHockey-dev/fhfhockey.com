@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { tables, upsertMock, bridgeMock, planningMock } = vi.hoisted(() => ({
+const { tables, fromMock, upsertMock, bridgeMock, planningMock, flags } = vi.hoisted(() => ({
+  flags: { market: false },
+  fromMock: vi.fn(),
   tables: {} as Record<string, Record<string, any>[]>,
   upsertMock: vi.fn(async (..._args: any[]) => ({ error: null as null | { message: string } })),
   bridgeMock: vi.fn(),
@@ -12,9 +14,14 @@ vi.mock("lib/cron/nhlOffSeason", () => ({ withNhlOffSeasonSkip: (handler: any) =
 vi.mock("utils/adminOnlyMiddleware", () => ({ default: (handler: any) => handler }));
 vi.mock("lib/rosterScheduleData/planningInputs", async importOriginal => ({ ...(await importOriginal<any>()), loadPlanningInputs: planningMock }));
 vi.mock("lib/rosterScheduleData/forgeDailyBridge", async importOriginal => ({ ...(await importOriginal<any>()), loadForgeDailyBridgeForecasts: bridgeMock }));
+vi.mock("lib/player-forecasts/servedForecastLedger", async importOriginal => {
+  const actual = await importOriginal<any>();
+  return { ...actual, get LEDGER_MARKET_ENABLED() { return flags.market; } };
+});
 vi.mock("lib/supabase/server", () => ({
   default: {
     from: (table: string) => {
+      fromMock(table);
       const filters: Array<(row: any) => boolean> = [];
       const builder: any = {
         select: () => builder, order: () => builder, range: () => builder,
@@ -47,6 +54,7 @@ const side = (id: string, team: string, opponent: string, home: boolean, startsA
 describe("forge-served-forecast-snapshot", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    flags.market = false;
     vi.useFakeTimers({ toFake: ["Date"] });
     vi.setSystemTime(new Date("2026-10-21T12:30:00Z"));
     Object.assign(tables, {
@@ -56,6 +64,9 @@ describe("forge-served-forecast-snapshot", () => {
       forge_runs: [{ run_id: "run-today", as_of_date: "2026-10-21" }],
       wgo_skater_stats: [{ player_id: 11, date: "2026-10-20", game_id: 90, season_id: 20262027, goals: 1, assists: 0, pp_points: 0, shots: 2, hits: 1, blocked_shots: 0 }],
       wgo_goalie_stats: [], nhl_team_data: [], nst_team_stats: [],
+      prop_market_prices_daily: [["over", -120], ["under", 100]].map(([outcome_key, price_american]) => ({ snapshot_date: "2026-10-21", game_id: 100, player_id: 11,
+        market_type: "player_shots_on_goal", sportsbook_key: "a", outcome_key, line_value: 2.5, price_american, source_observed_at: "2026-10-21T11:00:00Z" })),
+      market_prices_daily: [],
     });
     planningMock.mockResolvedValue({
       players: [{ id: "p11", nhlId: 11, nhlTeamId: 1, rosterRevision: "x", teamAbbreviation: "AAA", playerClass: "skater", eligiblePositions: ["C"] },
@@ -81,6 +92,34 @@ describe("forge-served-forecast-snapshot", () => {
     expect(rows.find((row: any) => row.source === "bridge_exact")).toMatchObject({ player_id: 11, game_id: 100, team_rest_days: 1, run_id: "run-today" });
   });
 
+  it("writes no market rows while the market source is off", async () => {
+    const out = res();
+    await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
+    expect(out.body.countsBySource.market).toBe(0);
+    expect(upsertMock.mock.calls.flatMap(call => call[1]).some((row: any) => row.source === "market" || "market_lines" in row)).toBe(false);
+  });
+
+  it("upserts market rows after the served sources once enabled", async () => {
+    flags.market = true;
+    const out = res();
+    await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
+    expect(out.statusCode).toBe(200);
+    expect(out.body).toMatchObject({ rowsUpserted: 4, countsBySource: { bridge_exact: 1, naive_last5: 1, naive_season: 1, market: 1 } });
+    expect(upsertMock.mock.calls[0][1].some((row: any) => "market_lines" in row)).toBe(false);
+    const [table, [market]] = upsertMock.mock.calls[1];
+    expect(table).toBe("forge_served_forecast_ledger");
+    expect(market).toMatchObject({ source: "market", player_id: 11, game_id: 100, market_lines: { props: { shots: { line: 2.5, books: 1, model_p_over: { bridge_exact: expect.any(Number) } } } } });
+  });
+
+  it("keeps the served rows when the market write fails (migration not applied)", async () => {
+    flags.market = true;
+    upsertMock.mockResolvedValueOnce({ error: null }).mockResolvedValueOnce({ error: { message: "violates check constraint" } });
+    const out = res();
+    await handler({ method: "POST", query: { date: "2026-10-21" } } as any, out);
+    expect(out.statusCode).toBe(207);
+    expect(out.body).toMatchObject({ success: false, rowsUpserted: 3, marketError: "violates check constraint" });
+  });
+
   it("rejects a malformed date and an unsupported method without reading", async () => {
     const bad = res();
     await handler({ method: "GET", query: { date: "2026-13-01" } } as any, bad);
@@ -89,6 +128,29 @@ describe("forge-served-forecast-snapshot", () => {
     await handler({ method: "PUT", query: {} } as any, put);
     expect(put.statusCode).toBe(405);
     expect(planningMock).not.toHaveBeenCalled();
+  });
+
+  it("denies an unauthorized caller before actual audit storage or business work", async () => {
+    // The ordinary business fixtures bypass wrappers. This control imports the
+    // actual exported route with both real wrappers to verify their order.
+    vi.resetModules();
+    vi.doUnmock("lib/cron/withCronJobAudit");
+    vi.doUnmock("utils/adminOnlyMiddleware");
+    try {
+      const { default: protectedHandler } = await import("pages/api/v1/db/forge-served-forecast-snapshot");
+      const out = res();
+      await protectedHandler({ method: "POST", query: { date: "2026-10-21" }, headers: {},
+        url: "/api/v1/db/forge-served-forecast-snapshot", socket: { remoteAddress: "203.0.113.1" } } as any, out);
+      expect(out.statusCode).toBe(401);
+      expect(fromMock).not.toHaveBeenCalled();
+      expect(planningMock).not.toHaveBeenCalled();
+      expect(bridgeMock).not.toHaveBeenCalled();
+      expect(upsertMock).not.toHaveBeenCalled();
+    } finally {
+      vi.doMock("lib/cron/withCronJobAudit", () => ({ withCronJobAudit: (handler: any) => handler }));
+      vi.doMock("utils/adminOnlyMiddleware", () => ({ default: (handler: any) => handler }));
+      vi.resetModules();
+    }
   });
 
   it("reports a failed write", async () => {

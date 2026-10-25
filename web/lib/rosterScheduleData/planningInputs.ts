@@ -25,7 +25,8 @@ export function normalizePlanningGames(rows: Row[], timeZone?: string): Planning
     const date = timeZone && Number.isFinite(instant)
       ? new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(instant)) : row.game_date;
     result.set(key, {
-      scheduleRevision: playerForecastSourcePayloadHash({ id, start: row.start_time, team: row.team_abbreviation, opponent: row.opponent_abbreviation, status, schedule }),
+      scheduleRevision: playerForecastSourcePayloadHash({ id, start: Number.isFinite(instant) ? new Date(instant).toISOString() : row.start_time,
+        team: row.team_abbreviation, opponent: row.opponent_abbreviation, status, schedule }),
       id, date, startsAt: Number.isFinite(instant) ? new Date(instant).toISOString() : null,
       teamAbbreviation: row.team_abbreviation, opponent: row.opponent_abbreviation ?? "?", home: row.home_away === "home",
       status: planningStatus,

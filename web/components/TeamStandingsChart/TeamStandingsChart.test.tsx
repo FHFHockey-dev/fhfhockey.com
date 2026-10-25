@@ -104,7 +104,7 @@ describe("TeamStandingsChart compact controls", () => {
         node.textContent?.trim(),
       ),
     ).toEqual(
-      expect.arrayContaining(["Atlantic", "Metro", "Central", "Pacific"]),
+      expect.arrayContaining(["Atlantic", "Metropolitan", "Central", "Pacific"]),
     );
     expect(screen.getAllByRole("combobox")).toHaveLength(3);
 
@@ -117,7 +117,7 @@ describe("TeamStandingsChart compact controls", () => {
     expect(container.querySelector("svg")?.getAttribute("width")).toBe("430");
     expect(container.querySelector("svg")?.getAttribute("height")).toBe("240");
 
-    fireEvent.click(screen.getByRole("button", { name: "Clear All" }));
+    fireEvent.click(screen.getByRole("button", { name: "Clear all" }));
     await waitFor(() => {
       expect(
         screen
@@ -126,7 +126,7 @@ describe("TeamStandingsChart compact controls", () => {
       ).toBe(true);
     });
 
-    fireEvent.click(screen.getByRole("button", { name: "Select All" }));
+    fireEvent.click(screen.getByRole("button", { name: "Select all" }));
     await waitFor(() => {
       expect(
         screen
@@ -153,10 +153,15 @@ describe("TeamStandingsChart compact controls", () => {
     }) as HTMLSelectElement;
     expect(
       Array.from(conferenceSelect.options).map((option) => option.textContent),
-    ).toEqual(["All", "Eastern", "Western"]);
+    ).toEqual(["All conferences", "Eastern", "Western"]);
     expect(
       Array.from(divisionSelect.options).map((option) => option.textContent),
-    ).toEqual(["All", "Atlantic", "Metropolitan", "Central", "Pacific"]);
+    ).toEqual(["All divisions", "Atlantic", "Metropolitan", "Central", "Pacific"]);
+
+    const rail = screen.getByRole("complementary", { name: "League separation controls" });
+    expect(rail.contains(conferenceSelect)).toBe(true);
+    expect(rail.contains(divisionSelect)).toBe(true);
+    expect(rail.contains(screen.getByRole("button", { name: "Clear all" }))).toBe(true);
 
     fireEvent.change(conferenceSelect, { target: { value: "E" } });
     await waitFor(() => {
@@ -166,7 +171,23 @@ describe("TeamStandingsChart compact controls", () => {
     fireEvent.change(divisionSelect, { target: { value: "Atlantic" } });
     await waitFor(() => {
       expect(screen.getAllByRole("checkbox")).toHaveLength(8);
+      expect(container.querySelectorAll("g.team-group")).toHaveLength(8);
     });
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "BOS" }));
+    await waitFor(() => expect(container.querySelectorAll("g.team-group")).toHaveLength(7));
+
+    fireEvent.change(conferenceSelect, { target: { value: "W" } });
+    await waitFor(() => {
+      expect(screen.queryAllByRole("checkbox")).toHaveLength(0);
+      expect(container.querySelectorAll("g.team-group")).toHaveLength(0);
+    });
+
+    fireEvent.change(divisionSelect, { target: { value: "All" } });
+    await waitFor(() => expect(screen.getAllByRole("checkbox")).toHaveLength(16));
+    fireEvent.change(screen.getByRole("combobox", { name: "Metric" }), { target: { value: "powerPlayPct" } });
+    expect((screen.getByRole("checkbox", { name: "5GM Rolling Avg" }) as HTMLInputElement).checked).toBe(true);
+    expect(rail.contains(screen.getByRole("checkbox", { name: "10GM Rolling Avg" }))).toBe(true);
 
     expect(
       supabaseMock.ranges

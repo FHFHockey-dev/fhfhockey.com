@@ -1,0 +1,119 @@
+[
+ {
+  "game_id": 1001,
+  "player_id": 101,
+  "date": "2026-10-13",
+  "goals": 0,
+  "assists": 0,
+  "pp_points": 0,
+  "shots": 3
+ },
+ {
+  "game_id": 1001,
+  "player_id": 102,
+  "date": "2026-10-13",
+  "goals": 0,
+  "assists": 0,
+  "pp_points": 0,
+  "shots": 4
+ },
+ {
+  "game_id": 1001,
+  "player_id": 103,
+  "date": "2026-10-13",
+  "goals": 1,
+  "assists": 1,
+  "pp_points": 0,
+  "shots": 2
+ },
+ {
+  "game_id": 1001,
+  "player_id": 201,
+  "date": "2026-10-13",
+  "goals": 0,
+  "assists": 0,
+  "pp_points": 0,
+  "shots": 4
+ },
+ {
+  "game_id": 1001,
+  "player_id": 202,
+  "date": "2026-10-13",
+  "goals": 0,
+  "assists": 1,
+  "pp_points": 0,
+  "shots": 2
+ },
+ {
+  "game_id": 1001,
+  "player_id": 203,
+  "date": "2026-10-13",
+  "goals": 1,
+  "assists": 0,
+  "pp_points": 0,
+  "shots": 3
+ },
+ {
+  "game_id": 1002,
+  "player_id": 301,
+  "date": "2026-10-14",
+  "goals": 0,
+  "assists": 0,
+  "pp_points": 0,
+  "shots": 3
+ },
+ {
+  "game_id": 1002,
+  "player_id": 302,
+  "date": "2026-10-14",
+  "goals": 1,
+  "assists": 0,
+  "pp_points": 0,
+  "shots": 4
+ },
+ {
+  "game_id": 1002,
+  "player_id": 303,
+  "date": "2026-10-14",
+  "goals": 0,
+  "assists": 1,
+  "pp_points": 1,
+  "shots": 2
+ },
+ {
+  "game_id": 1002,
+  "player_id": 201,
+  "date": "2026-10-14",
+  "goals": 0,
+  "assists": 1,
+  "pp_points": 0,
+  "shots": 2
+ },
+ {
+  "game_id": 1002,
+  "player_id": 202,
+  "date": "2026-10-14",
+  "goals": 1,
+  "assists": 0,
+  "pp_points": 0,
+  "shots": 3
+ },
+ {
+  "game_id": 1002,
+  "player_id": 203,
+  "date": "2026-10-14",
+  "goals": 0,
+  "assists": 0,
+  "pp_points": 1,
+  "shots": 4
+ },
+ {
+  "game_id": 1002,
+  "player_id": 304,
+  "date": "2026-10-14",
+  "goals": 0,
+  "assists": 0,
+  "pp_points": 0,
+  "shots": 3
+ }
+]

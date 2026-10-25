@@ -5,6 +5,7 @@ import { forgeRosterRevision, forgeScheduleRevision, type ForgeIssuedContextV1 }
 import { acceptedNewsSupersedes, loadAcceptedForecastNews } from "./acceptedNews";
 import type { ForgeGameRevision } from "./gameRevisions";
 import { withinDeadline } from "lib/rosterScheduleData/planningInputs";
+import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "./calibrationEligibility";
 import type { ForecastDiscoveryExclusion, ForecastExclusionReason, GameForecast, PlanningGame, PlanningIssuedContext, PlanningPlayer, StatLine } from "lib/rosterScheduleOptimizer/planningTypes";
 
 type Row = Record<string, any>;
@@ -84,6 +85,9 @@ export function publicPlanningForecasts(revisions: ForgeGameRevision[], players:
           team_abbreviation: row.teamAbbreviation, opponent_abbreviation: row.opponentAbbreviation,
           game_status: row.gameStatus, schedule_status: row.scheduleStatus }))
       || new Set(issued.schedule.map(row => row.teamId)).size !== 2) { excluded("identity_conflict", gameId); continue; }
+    if (provenance?.external_fantasy_input_contract !== FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT) {
+      excluded("use_not_approved", gameId); continue;
+    }
     const emit = (source: AdmittedConsumerSource["source"], nhlId: number, teamId: number, rowGameId: number, stats: Record<string, number | null> | null, startProbability: number | null, confirmedStart: boolean, limitations: string[], conditionalStats?: StatLine | null, appearanceProbability?: number | null, missingReason: ForecastExclusionReason = "unsupported_conditioning") => {
       const player = byNhl.get(nhlId);
       const currentGame = currentGames.find(game => game.teamAbbreviation === player?.teamAbbreviation);

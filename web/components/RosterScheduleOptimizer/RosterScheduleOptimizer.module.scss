@@ -205,7 +205,7 @@
 .daySummary > div { display: flex; align-items: baseline; gap: 5px; }
 .daySummary span { color: v.$text-secondary; }
 .daySummary strong { font-weight: 600; }
-.scheduleLegend { color: v.$text-secondary; font-size: 11px; padding: 1px 5px; flex-shrink: 0; }
+.scheduleLegend { color: v.$text-secondary; font-size: 11px; padding: 1px 3px; flex-shrink: 0; }
 .compactScroll { flex: 1; min-height: 0; overflow: auto; padding: 3px; scroll-padding: calc(var(--day-control-height) + 40px) 4px; }
 .compactTable { width: 100%; min-width: 610px; display: block; font-size: 12px; font-variant-numeric: tabular-nums; }
 .compactTable thead { display: block; position: sticky; top: calc(var(--day-control-height) - 3px); z-index: 4; background: v.$draft-surface; }
@@ -489,7 +489,7 @@ details.alternative .candidateRow button { width: auto; }
 
 // One command bar (2026-10-19): title, provider, week, search, status, actions and a settings menu in a single row,
 // so the panels below get the height. Notices sit on one line and open as an overlay on hover or keyboard focus.
-.navBar { position: relative; z-index: 20; flex-shrink: 0; display: flex; align-items: center; gap: v.$space-sm; min-height: 44px; padding: 4px v.$space-sm 4px 14px; border: 1px solid v.$draft-border; border-radius: v.$radius-card; background: v.$draft-surface; }
+.navBar { position: relative; z-index: 20; flex-shrink: 0; display: flex; flex-wrap: wrap; align-items: center; gap: v.$space-sm; min-height: 44px; padding: 4px v.$space-sm 4px 14px; border: 1px solid v.$draft-border; border-radius: v.$radius-card; background: v.$draft-surface; }
 .navBar::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 4px; border-radius: v.$radius-card 0 0 v.$radius-card; background: v.$primary-color; pointer-events: none; }
 .navTitle { margin: 0; flex-shrink: 0; color: v.$color-white; font: 900 15px/1 v.$font-family-accent; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
 .navBar .providerControl { flex-shrink: 0; gap: 6px; min-height: 32px; padding: 2px 8px 2px 3px; border: 1px solid v.$draft-border; border-radius: v.$radius-control; background: v.$draft-input; text-align: left; }
@@ -506,7 +506,7 @@ details.alternative .candidateRow button { width: auto; }
 .navStatus .notice, .navStatus .dataHealth { max-width: 100%; }
 .navStatus .notice { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-height: none; }
 .navStatus:hover .notice, .navStatus:focus-within .notice { white-space: normal; }
-.navBar .commandActions { flex-shrink: 0; flex-wrap: nowrap; max-width: none; padding: 0; border: 0; background: none; }
+.navBar .commandActions { flex-shrink: 1; flex-wrap: wrap; min-width: 0; max-width: 100%; padding: 0; border: 0; background: none; }
 .navBar .commandActions button, .navBar > button { min-height: 30px; padding: 2px 9px; font-size: 12px; white-space: nowrap; }
 .navMenu { position: relative; flex-shrink: 0; }
 .navMenu > summary { display: grid; place-items: center; width: 32px; height: 32px; list-style: none; cursor: pointer; border: 1px solid v.$draft-border; border-radius: v.$radius-control; color: v.$text-primary; font-size: 16px; }

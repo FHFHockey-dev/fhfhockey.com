@@ -53,8 +53,8 @@ vi.mock("contexts/AuthProviderContext", () => ({
   }),
 }));
 
-vi.mock("hooks/useDraftProAccess", () => ({
-  useDraftProAccess: () => ({ access: { eligible: accountState.draftProEligible } }),
+vi.mock("hooks/useProviderSyncAccess", () => ({
+  useProviderSyncAccess: () => ({ status: "ready", access: { eligible: accountState.draftProEligible }, refresh: vi.fn() }),
 }));
 
 vi.mock("lib/supabase/client", () => ({
@@ -315,14 +315,14 @@ describe("AccountSettingsPage profile section", () => {
     vi.unstubAllGlobals();
   });
 
-  it("does not load Yahoo league data without Draft Pro access", async () => {
+  it("retains saved Yahoo data and disconnect access while blocking free sync", async () => {
+    accountState.routerQuery = { section: "connected-accounts" };
     accountState.draftProEligible = false;
     accountState.profileMaybeSingle.mockResolvedValue({ data: null, error: null });
     render(<AccountSettingsPage />);
-    await screen.findByDisplayValue("Tim Tester");
-    fireEvent.click(screen.getByRole("tab", { name: "Connected Accounts" }));
-    expect(accountState.externalLeaguesOrder).not.toHaveBeenCalled();
-    expect(accountState.externalTeamsOrder).not.toHaveBeenCalled();
+    await waitFor(() => expect(accountState.externalLeaguesOrder).toHaveBeenCalled());
+    expect(accountState.externalTeamsOrder).toHaveBeenCalled();
+    expect((screen.getByRole("button", { name: "Connect Yahoo Fantasy" }) as HTMLButtonElement).disabled).toBe(true);
     expect(screen.queryByLabelText("Active Yahoo League")).toBeNull();
   });
 

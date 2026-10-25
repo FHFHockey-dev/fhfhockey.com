@@ -13,6 +13,8 @@ import { EXTENDED_DAY_ABBREVIATION } from "lib/NHL/types";
 import DateRangeTeamGrid from "./DateRangeTeamGrid";
 import DesktopMasterTable, {
   distributeMasterTableWidths,
+  sizeMasterTableColumns,
+  MASTER_COLUMNS,
 } from "./DesktopMasterTable";
 import {
   getGameGridLayout,
@@ -74,6 +76,25 @@ describe("Game Grid sortable column headers", () => {
     ]);
     expect(distributeMasterTableWidths([50, 50], 103)).toEqual([52, 51]);
     expect(distributeMasterTableWidths([], 500)).toEqual([]);
+  });
+
+  it.each([7, 10])("pins the %s-day Game Grid widths and fits the side groups around them", (dayCount) => {
+    const { rating, metric, percent } = MASTER_COLUMNS;
+    const sum = (widths: number[]) => widths.reduce((a, b) => a + b, 0);
+    for (const containerWidth of [1354, 1582, 1920]) {
+      const original = distributeMasterTableWidths([50, 50, 50, 50, 50, 50, 80, 72, ...Array(dayCount).fill(80), 72, 72, 104, 72, 72, 72, 72], containerWidth);
+      const originalGrid = original.slice(7, 8 + dayCount);
+      for (const expanded of [false, true]) for (const fourWeekCollapsed of [false, true]) {
+        const metricColumns = [rating, rating, ...(expanded ? [metric, metric, metric, metric, metric, metric, percent] : [])];
+        const widths = sizeMasterTableColumns({ metricColumns, dayCount, fourWeekCollapsed, containerWidth });
+        expect(widths).toHaveLength(metricColumns.length + 1 + dayCount + 3 + (fourWeekCollapsed ? 2 : 5));
+        expect(widths.slice(metricColumns.length, metricColumns.length + 1 + dayCount)).toEqual(originalGrid);
+        // Never stretched past the pre-redesign footprint; clipped only when the minimums cannot fit.
+        expect(sum(widths)).toBeLessThanOrEqual(Math.max(sum(original), containerWidth));
+        const minimums = sum(metricColumns.map((spec) => spec.min)) + sum(originalGrid) + 40 + 40 + 56 + (fourWeekCollapsed ? 56 + 78 : 48 + 48 + 50 + 56 + 78);
+        if (minimums <= containerWidth) expect(sum(widths)).toBeLessThanOrEqual(containerWidth);
+      }
+    }
   });
 
   it("keeps Header sorting on native columnheaders for pointer and keyboard users", () => {
@@ -343,7 +364,7 @@ describe("Game Grid sortable column headers", () => {
     expect(screen.getByRole("columnheader", { name: /NEXT WED 1\/14/ })).toBeTruthy();
   });
 
-  it("enforces the approved desktop master order and expanded four-week controls", () => {
+  it("keeps compact metric order and independent four-week controls", () => {
     vi.stubGlobal(
       "ResizeObserver",
       class {
@@ -390,27 +411,15 @@ describe("Game Grid sortable column headers", () => {
       .map((label) => label.replace(/ (ascending|descending)$/, ""));
 
     expect(sortLabels).toEqual([
-      "Sort by xGF",
-      "Sort by xGA",
-      "Sort by GF",
-      "Sort by GA",
-      "Sort by SF",
-      "Sort by SA",
-      "Sort by PTS%",
-      "Sort by Team",
-      "Sort by GP",
-      "Sort by OFF",
-      "Sort by Score",
-      "Sort by 4WK GP",
-      "Sort by 4WK OFF",
-      "Sort by Opp %",
-      "Sort by 4WK Score",
+      "Sort by opponent attack strength", "Sort by opponent defense strength", "Sort by Team", "Sort by GP", "Sort by OFF", "Sort by Score", "Sort by four-week opportunity",
     ]);
+    fireEvent.click(screen.getByRole("button", { name: "Expand opponent details" }));
+    fireEvent.click(screen.getByRole("button", { name: "Expand four-week columns" }));
     expect(screen.queryByRole("button", { name: /^Sort by MON/ })).toBeNull();
 
-    const collapse = screen.getByRole("button", {
+    const collapse = screen.getAllByRole("button", {
       name: "Collapse four-week columns",
-    });
+    })[0];
     expect(collapse.getAttribute("aria-expanded")).toBe("true");
     fireEvent.click(collapse);
 
@@ -507,7 +516,7 @@ describe("Game Grid sortable column headers", () => {
     );
     expect(screen.queryByText("provider detail must not render")).toBeNull();
     expect(screen.getByRole("link", { name: "Open Team HQ" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /^Sort by 4WK Score/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Sort by four-week opportunity/ })).toBeTruthy();
   });
 });
 
@@ -538,16 +547,21 @@ describe("public opponent and four-week cells", () => {
     />);
     expect(container.querySelectorAll("tbody small")).toHaveLength(0);
     const row = (id: number) => container.querySelector(`a[href="/stats/team/${id}"]`)!.closest("tr")!;
-    const cells = (id: number) => Array.from(row(id).cells).slice(-4);
-    expect(cells(1).map((cell) => cell.getAttribute("data-favorability"))).toEqual(["high", "high", "high", "high"]);
+    fireEvent.click(screen.getByRole("button", { name: "Expand four-week columns" }));
+    // GP · OFF · Opp% · 4WK Value · Trend
+    const cells = (id: number) => Array.from(row(id).cells).slice(-5);
+    const bands = (id: number) => cells(id).slice(0, 3).map((cell) => cell.getAttribute("data-favorability"));
+    expect(bands(1)).toEqual(["high", "high", "high"]);
     expect(cells(2).map((cell) => cell.className)).toEqual(cells(1).map((cell) => cell.className));
-    expect(cells(3).map((cell) => cell.getAttribute("data-favorability"))).toEqual(["middle", "middle", "middle", "middle"]);
-    expect(cells(4).map((cell) => cell.getAttribute("data-favorability"))).toEqual(["low", "low", "low", "low"]);
-    expect(cells(5).map((cell) => cell.getAttribute("data-favorability"))).toEqual([null, null, null, null]);
-    expect(cells(5).map((cell) => cell.textContent)).toEqual(["-", "-", "-", "-"]);
-    fireEvent.click(screen.getByRole("button", { name: "Sort by 4WK Score descending" }));
-    fireEvent.click(screen.getByRole("button", { name: "Sort by 4WK Score ascending" }));
-    expect(cells(1).map((cell) => cell.getAttribute("data-favorability"))).toEqual(["high", "high", "high", "high"]);
+    expect(bands(3)).toEqual(["middle", "middle", "middle"]);
+    expect(bands(4)).toEqual(["low", "low", "low"]);
+    expect(bands(5)).toEqual([null, null, null]);
+    expect(cells(1)[3].className).toContain("masterMetricGoodStrong");
+    expect(cells(4)[3].className).toContain("masterMetricBadStrong");
+    expect(cells(5).map((cell) => cell.textContent)).toEqual(["-", "-", "-", "-", ""]);
+    fireEvent.click(screen.getByRole("button", { name: "Sort by four-week opportunity descending" }));
+    fireEvent.click(screen.getByRole("button", { name: "Sort by four-week opportunity ascending" }));
+    expect(bands(1)).toEqual(["high", "high", "high"]);
     const info = container.querySelector("details")!;
     expect(info).toBeTruthy();
     expect(info.hasAttribute("open")).toBe(false);

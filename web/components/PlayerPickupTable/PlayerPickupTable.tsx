@@ -4,13 +4,15 @@ import styles from "./PlayerPickupTable.module.scss";
 import Image from "next/image";
 import clsx from "clsx";
 import { useCurrentSeasonQuery } from "hooks/useCurrentSeason";
-import { useDraftProAccess } from "hooks/useDraftProAccess";
+import { useProviderSyncAccess } from "hooks/useProviderSyncAccess";
+import ProviderSyncNotice from "components/account/ProviderSyncNotice";
 import supabase from "lib/supabase/client";
 import { isYahooPickupPlayer, type YahooPickupContext } from "lib/integrations/yahoo/pickup";
 import { teamsInfo } from "lib/teamsInfo";
 import PanelStatus from "components/common/PanelStatus";
 import { getLocalTeamLogoPath } from "lib/images";
 import OptimizedImage from "components/common/OptimizedImage";
+import type { PlayerOwnershipContext } from "lib/dashboard/playerOwnership";
 
 // TO DO
 // integrate week score, dynamic. if toggle turns off a day, update score
@@ -27,6 +29,7 @@ export type UnifiedPlayerData = {
   yahoo_player_name: string | null;
   yahoo_team: string | null;
   percent_ownership: number | null;
+  ownershipEvidence?: PlayerOwnershipContext["ownershipEvidence"];
   eligible_positions: string[] | null;
   off_nights: number | null;
   points: number | null;
@@ -163,7 +166,15 @@ type OwnershipTimelineEntry = {
   value?: number | string | null;
 };
 
-const getLatestOwnershipValue = (timelineRaw: unknown): number | null => {
+const OWNERSHIP_MAX_AGE_MS = 3 * 86400000;
+
+const ownershipPct = (value: unknown): number | null => {
+  const parsed = typeof value === "string" && /^\d+(\.\d+)?$/.test(value) ? Number(value)
+    : typeof value === "number" ? value : NaN;
+  return Number.isFinite(parsed) && parsed >= 0 && parsed <= 100 ? parsed : null;
+};
+
+const getLatestOwnershipEvidence = (timelineRaw: unknown): PlayerOwnershipContext["ownershipEvidence"] => {
   let entries: OwnershipTimelineEntry[] | null = null;
 
   if (Array.isArray(timelineRaw)) {
@@ -183,41 +194,43 @@ const getLatestOwnershipValue = (timelineRaw: unknown): number | null => {
     return null;
   }
 
-  let latestTimestamp: number | null = null;
-  let latestDateString: string | null = null;
-  let latestValue: number | null = null;
+  let latest: PlayerOwnershipContext["ownershipEvidence"] = null;
 
   for (const entry of entries) {
     if (!entry || typeof entry !== "object") continue;
     const entryDateRaw = typeof entry.date === "string" ? entry.date : null;
-    if (!entryDateRaw) continue;
-
+    if (!entryDateRaw || !/^\d{4}-\d{2}-\d{2}$/.test(entryDateRaw)) continue;
     const parsedTimestamp = Date.parse(entryDateRaw);
-    const numericValue =
-      typeof entry.value === "number"
-        ? entry.value
-        : entry.value != null
-          ? Number(entry.value)
-          : NaN;
-
-    if (Number.isNaN(numericValue)) continue;
-
-    if (!Number.isNaN(parsedTimestamp)) {
-      if (latestTimestamp === null || parsedTimestamp > latestTimestamp) {
-        latestTimestamp = parsedTimestamp;
-        latestValue = numericValue;
-      }
-      continue;
-    }
-
-    if (latestDateString === null || entryDateRaw > latestDateString) {
-      latestDateString = entryDateRaw;
-      latestValue = numericValue;
+    const value = ownershipPct(entry.value);
+    if (value === null || !Number.isFinite(parsedTimestamp) || new Date(parsedTimestamp).toISOString().slice(0, 10) !== entryDateRaw) continue;
+    if (!latest || entryDateRaw > latest.observedOn!) {
+      latest = { value, observedOn: entryDateRaw, provider: "yahoo", status: "unknown" };
     }
   }
 
-  return latestValue;
+  return latest;
 };
+
+function currentPickupOwnership(evidence: PlayerOwnershipContext["ownershipEvidence"], now: number): Pick<UnifiedPlayerData, "percent_ownership" | "ownershipEvidence"> {
+  if (!evidence) return { percent_ownership: null, ownershipEvidence: null };
+  const age = evidence.observedOn === null ? NaN : now - Date.parse(evidence.observedOn);
+  const status = !Number.isFinite(age) || age < 0 ? "unknown" : age <= OWNERSHIP_MAX_AGE_MS ? "fresh" : "stale";
+  return { percent_ownership: status === "fresh" ? evidence.value : null, ownershipEvidence: { ...evidence, status } };
+}
+
+function resolvePickupOwnership(timeline: unknown, seasonValue: unknown, rowValue: unknown): Pick<UnifiedPlayerData, "percent_ownership" | "ownershipEvidence"> {
+  const dated = getLatestOwnershipEvidence(timeline);
+  const value = ownershipPct(seasonValue) ?? ownershipPct(rowValue);
+  const ownershipEvidence = dated ?? (value === null ? null : { value, observedOn: null, provider: "yahoo" as const, status: "unknown" as const });
+  return currentPickupOwnership(ownershipEvidence, Date.now());
+}
+
+function pickupOwnershipLabel(player: Pick<UnifiedPlayerData, "percent_ownership" | "ownershipEvidence">): string {
+  if (player.percent_ownership !== null) return `${player.percent_ownership}%`;
+  const evidence = player.ownershipEvidence;
+  if (!evidence) return "Unknown";
+  return `Last known ${evidence.value}% · ${evidence.observedOn ? `${evidence.observedOn} (${evidence.status === "stale" ? "stale" : "unverified"})` : "date unknown"}`;
+}
 
 function summarizePlayerPickupError(error: unknown): string {
   const message =
@@ -505,6 +518,8 @@ function getRankColorStyle(
 // Filters Component
 interface FiltersProps {
   ownershipThreshold: number;
+  includeUnknownOwnership: boolean;
+  setIncludeUnknownOwnership: (value: boolean) => void;
   leagueMode?: boolean;
   setOwnershipThreshold: (value: number) => void;
   teamFilter: string;
@@ -534,6 +549,8 @@ interface FiltersProps {
 const Filters: React.FC<FiltersProps> = ({
   leagueMode = false,
   ownershipThreshold,
+  includeUnknownOwnership,
+  setIncludeUnknownOwnership,
   setOwnershipThreshold,
   teamFilter,
   setTeamFilter,
@@ -889,6 +906,13 @@ const Filters: React.FC<FiltersProps> = ({
                 </div>
               </div>
             )}
+            <div className={styles.filterRow}>
+              <label>
+                <input type="checkbox" checked={includeUnknownOwnership} disabled={leagueMode}
+                  onChange={(event) => setIncludeUnknownOwnership(event.target.checked)} />{" "}
+                Include unknown ownership
+              </label>
+            </div>
             <div className={styles.metricFilterContainer}>
               {/* Header: Label + Preset Buttons */}
               <div className={styles.metricFilterHeader}>
@@ -1236,9 +1260,9 @@ const DesktopTable: React.FC<DesktopTableProps> = ({
                     )}
                   </td>
                   <td className={styles.numCell}>
-                    {player.percent_ownership !== null
-                      ? `${player.percent_ownership}%`
-                      : "N/A"}
+                    <span title={player.ownershipEvidence?.observedOn ? `Yahoo ownership · ${player.ownershipEvidence.observedOn}` : undefined}>
+                      {pickupOwnershipLabel(player)}
+                    </span>
                   </td>
                   <td className={styles.positionsCell}>
                     {player.eligible_positions?.join(", ") ||
@@ -1525,9 +1549,9 @@ const MobileTable: React.FC<MobileTableProps> = ({
                   <td>
                     {" "}
                     {/* Own% */}
-                    {player.percent_ownership !== null
-                      ? `${player.percent_ownership}%`
-                      : "N/A"}
+                    <span title={player.ownershipEvidence?.observedOn ? `Yahoo ownership · ${player.ownershipEvidence.observedOn}` : undefined}>
+                      {pickupOwnershipLabel(player)}
+                    </span>
                   </td>
                   <td>
                     {" "}
@@ -1679,7 +1703,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   const isSidebarLayout = layoutVariant === "sidebar";
   const seasonQuery = useCurrentSeasonQuery();
   const currentSeasonInfo = seasonQuery.data;
-  const pro = useDraftProAccess();
+  const pro = useProviderSyncAccess();
   const [yahooContext, setYahooContext] = useState<YahooPickupContext | null>(null);
   const [yahooStatus, setYahooStatus] = useState<"loading" | "ready" | "error">("ready");
   const [yahooError, setYahooError] = useState<string | null>(null);
@@ -1743,10 +1767,13 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   const [ownershipThreshold, setOwnershipThreshold] = useState<number>(
     defaultOwnershipThreshold
   );
+  const [includeUnknownOwnership, setIncludeUnknownOwnership] = useState(true);
   const [teamFilter, setTeamFilter] = useState<string>(defaultTeamFilter);
   const [selectedPositions, setSelectedPositions] =
     useState<Record<string, boolean>>(defaultPositions); // State for positions
   const [playersData, setPlayersData] = useState<UnifiedPlayerData[]>([]);
+  const [, setOwnershipClock] = useState(0);
+  const ownershipNow = Date.now();
   const [loading, setLoading] = useState<boolean>(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -1763,6 +1790,37 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   const [playerGamesPlayedById, setPlayerGamesPlayedById] = useState<
     Record<string, number>
   >({});
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const recheck = () => {
+      clearTimeout(timer);
+      setOwnershipClock(value => value + 1);
+      if (document.visibilityState === "hidden") return;
+      const now = Date.now();
+      let nextTransition = Infinity;
+      for (const player of playersData) {
+        const observedAt = Date.parse(player.ownershipEvidence?.observedOn ?? "");
+        if (!Number.isFinite(observedAt)) continue;
+        // The existing policy includes the exact three-day boundary.
+        const transition = observedAt > now ? observedAt : observedAt + OWNERSHIP_MAX_AGE_MS + 1;
+        if (transition > now) nextTransition = Math.min(nextTransition, transition);
+      }
+      if (Number.isFinite(nextTransition)) {
+        timer = setTimeout(recheck, Math.min(nextTransition - now, 2147483647));
+      }
+    };
+    recheck();
+    document.addEventListener("visibilitychange", recheck);
+    window.addEventListener("focus", recheck);
+    window.addEventListener("pageshow", recheck);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", recheck);
+      window.removeEventListener("focus", recheck);
+      window.removeEventListener("pageshow", recheck);
+    };
+  }, [playersData]);
 
   // --- Calculate all possible metrics once (for filter UI, presets, state init) ---
   const allPossibleMetrics = useMemo(() => {
@@ -1834,12 +1892,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
           (seasonPlayerRows as any[]).forEach((row) => {
             const key = row?.player_key;
             const id = row?.player_id;
-            const percentFromRow =
-              typeof row?.percent_ownership === "number"
-                  ? row.percent_ownership
-                  : row?.percent_ownership != null
-                    ? Number(row.percent_ownership)
-                    : null;
+            const percentFromRow = ownershipPct(row?.percent_ownership);
 
             if (typeof key === "string" && key.length > 0) {
               allowedPlayerKeys.add(key);
@@ -1942,34 +1995,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
               return null;
             })();
 
-            const percentOwnershipFromTimeline = getLatestOwnershipValue(
-              r.ownership_timeline
-            );
-
-            const resolvedPercentOwnership = (() => {
-              if (
-                ownershipFromSeasonLookup !== null &&
-                ownershipFromSeasonLookup !== undefined &&
-                !Number.isNaN(ownershipFromSeasonLookup)
-              ) {
-                return ownershipFromSeasonLookup;
-              }
-
-              if (percentOwnershipFromTimeline !== null) {
-                return percentOwnershipFromTimeline;
-              }
-
-              if (typeof r.percent_ownership === "number") {
-                return r.percent_ownership;
-              }
-
-              if (r.percent_ownership != null) {
-                const numeric = Number(r.percent_ownership);
-                return Number.isNaN(numeric) ? null : numeric;
-              }
-
-              return null;
-            })();
+            const ownership = resolvePickupOwnership(r.ownership_timeline, ownershipFromSeasonLookup, r.percent_ownership);
 
             return {
               nhl_player_id: r.nhl_player_id ? String(r.nhl_player_id) : "",
@@ -1981,7 +2007,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
                 : null,
               yahoo_player_name: r.yahoo_player_name || null,
               yahoo_team: r.yahoo_team || null,
-              percent_ownership: resolvedPercentOwnership,
+              ...ownership,
               eligible_positions: normalizePickupPositions(r.eligible_positions),
               off_nights: r.off_nights ?? null,
               points:
@@ -2350,10 +2376,11 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
 
       return {
         ...player,
+        ...currentPickupOwnership(player.ownershipEvidence ?? null, ownershipNow),
         percent_games: computed ?? player.percent_games
       };
     });
-  }, [playersData, playerGamesPlayedById, teamGamesPlayedByAbbr]);
+  }, [playersData, playerGamesPlayedById, teamGamesPlayedByAbbr, ownershipNow]);
 
   // --- Filtered Players (Now depends on selectedPositions state) ---
   const filteredPlayers = useMemo(() => {
@@ -2361,8 +2388,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
       if (leagueContext && !isYahooPickupPlayer(player.yahoo_player_id, leagueContext, playerView)) return false;
       // League rosters determine availability regardless of global ownership.
       if (!leagueContext && (
-        player.percent_ownership !== null &&
-        player.percent_ownership > ownershipThreshold
+        player.percent_ownership === null ? !includeUnknownOwnership : player.percent_ownership > ownershipThreshold
       ))
         return false;
 
@@ -2394,7 +2420,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
     });
     return result;
     // Dependency on selectedPositions is key here!
-  }, [playersDataWithComputedGp, ownershipThreshold, teamFilter, selectedPositions, leagueContext, playerView]);
+  }, [playersDataWithComputedGp, ownershipThreshold, includeUnknownOwnership, teamFilter, selectedPositions, leagueContext, playerView]);
 
   // --- Compute Percentiles (Logic unchanged) ---
   const playersWithPercentiles: PlayerWithPercentiles[] = useMemo(() => {
@@ -2765,6 +2791,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   // --- resetFilters (Now resets selectedPositions too) ---
   const resetFilters = () => {
     setOwnershipThreshold(defaultOwnershipThreshold);
+    setIncludeUnknownOwnership(true);
     setTeamFilter(defaultTeamFilter);
     setSelectedPositions(defaultPositions); // Reset positions to default
     // Reset metric filters to all true
@@ -2783,7 +2810,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
   useEffect(() => {
     setCurrentPage(1);
     setExpanded({});
-  }, [ownershipThreshold, teamFilter, selectedPositions, selectedMetrics, leagueContext, playerView]);
+  }, [ownershipThreshold, includeUnknownOwnership, teamFilter, selectedPositions, selectedMetrics, leagueContext, playerView]);
 
   useEffect(() => {
     if (totalPages > 0 && currentPage > totalPages) {
@@ -2810,6 +2837,8 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         leagueMode={Boolean(leagueContext)}
         ownershipThreshold={ownershipThreshold}
         setOwnershipThreshold={setOwnershipThreshold}
+        includeUnknownOwnership={includeUnknownOwnership}
+        setIncludeUnknownOwnership={setIncludeUnknownOwnership}
         teamFilter={teamFilter}
         setTeamFilter={setTeamFilter}
         selectedPositions={selectedPositions} // Pass state
@@ -2859,6 +2888,7 @@ const PlayerPickupTable: React.FC<PlayerPickupTableProps> = ({
         )}
 
         {!leagueContext && <p>General candidates · filtered by global ownership. Availability in your league and waiver status are unknown.</p>}
+        <ProviderSyncNotice {...pro} />
         {pro.access?.eligible && (
           <div className={styles.yahooContext}>
             <p role="status">

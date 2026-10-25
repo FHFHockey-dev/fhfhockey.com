@@ -4,6 +4,9 @@ import { calcTotalGP } from "../TotalGamesPerDayRow";
 import { convertTeamRowToWinOddsList } from "./calcWinOdds";
 import { getRegularGamesPerDay } from "./helper";
 import { getSelectedOpponentIds, getTeamScheduleSummary, getOpponentPointPct, getFourWeekAverages, getFourWeekScore } from "./scheduleSummary";
+import { buildOpponentRatings, buildScheduleOpportunity, fourWeekStart, opportunityScale, percentileMap, remainingEligibility } from "./scheduleOpportunity";
+import type { ExtendedWeekData, TeamDataWithTotals } from "lib/NHL/types";
+import { computeOpponentMetrics, type TeamStats } from "./useOpponentMetricsData";
 
 function game(id: number, winOdds: number | null = 50, gameType = 2, opponent = 2): GameData {
   return { id, season: 20262027, gameType,
@@ -167,4 +170,109 @@ describe("selected Game Grid scoring period", () => {
     expect(pitSummary.weekScore).toBeGreaterThan(carSummary.weekScore);
     expect(getTeamScheduleSummary(pit, counts, ["MON"]).weekScore).toBeCloseTo(9.6979583333);
   });
+});
+
+const cutoff = "2026-10-25T23:00:00Z";
+const future = (overrides: Partial<GameData> = {}): GameData => ({ ...game(100), gameDate: "2026-10-25", startTimeUTC: "2026-10-26T02:00:00Z", gameState: "FUT", gameScheduleState: "OK", ...overrides });
+const universe = Array.from({ length: 32 }, (_, i) => ({ id: i + 1, abbreviation: `T${i + 1}` }));
+function opportunityRows(games: GameData[] = [future()]): ExtendedWeekData[] {
+  return universe.flatMap((team) => [1, 2, 3, 4].map((weekNumber) => ({ teamId: team.id, weekNumber, totalGamesPlayed: 0, totalOffNights: 0, weekScore: -100,
+    scheduleCoverage: { known: 7, expected: 7 }, ...(weekNumber === 4 ? Object.fromEntries(games.filter((g) => [g.homeTeam.id, g.awayTeam.id].includes(team.id)).map((g) => ["SUN", g])) : {}) })));
+}
+describe("remaining four-week opportunity", () => {
+  it("uses UTC start and known states, keeping unknowns distinct from exclusions", () => {
+    expect(remainingEligibility(future(), cutoff)).toBe("eligible");
+    for (const startTimeUTC of [cutoff, "2026-10-25T22:59:59Z"]) expect(remainingEligibility(future({ startTimeUTC }), cutoff)).toBe("excluded");
+    for (const gameState of ["LIVE", "CRIT", "FINAL", "OFF", "PPD", "CNCL"]) expect(remainingEligibility(future({ gameState }), cutoff)).toBe("excluded");
+    for (const gameState of [undefined, "UNKNOWN"]) expect(remainingEligibility(future({ gameState }), cutoff)).toBe("unknown");
+    for (const startTimeUTC of [undefined, "bad", "2026-10-26T02:00:00"]) expect(remainingEligibility(future({ startTimeUTC }), cutoff)).toBe("unknown");
+    expect(remainingEligibility(future({ gameScheduleState: undefined }), cutoff)).toBe("unknown");
+  });
+  it.each(["UTC", "America/New_York", "America/Los_Angeles", "Asia/Tokyo", "Pacific/Auckland"])("keeps upcoming Sunday in an apparently elapsed fourth bucket in %s", (timezone) => {
+    const old = process.env.TZ;
+    try {
+      process.env.TZ = timezone;
+      const result = buildScheduleOpportunity(opportunityRows(), universe, "2026-09-28", cutoff);
+      expect(Object.keys(result)).toHaveLength(32);
+      expect(result[1].weeks.map((w) => [w.start, w.gamesPlayed, w.offNights, w.opportunity, w.coverage.known])).toEqual([
+        ["2026-09-28", 0, 0, 0, 7], ["2026-10-05", 0, 0, 0, 7], ["2026-10-12", 0, 0, 0, 7], ["2026-10-19", 1, 1, 1.25, 7]
+      ]);
+      expect(result[1].opportunity).toBe(1.25);
+      expect(result[32].opportunity).toBe(0);
+      expect(opportunityScale(result)).toBe(2);
+    } finally { if (old == null) delete process.env.TZ; else process.env.TZ = old; }
+  });
+  it("retains an October 22 fixture after viewer midnight without rebucketing its UTC start", () => {
+    const rows = opportunityRows([future({ gameDate: "2026-10-22", startTimeUTC: "2026-10-23T02:00:00Z" })]);
+    expect(buildScheduleOpportunity(rows, universe, "2026-09-28", "2026-10-22T23:00:00Z")[1].weeks[3]).toMatchObject({ gamesPlayed: 1, opportunity: 1.25 });
+  });
+  it.each([7, 8])("uses full-slate density with %s completed games and deduplicates both appearances", (completed) => {
+    const other = Array.from({ length: completed }, (_, i) => future({ id: 200 + i, gameState: "FINAL", homeTeam: { id: 3 + 2 * i }, awayTeam: { id: 4 + 2 * i } }));
+    const result = buildScheduleOpportunity(opportunityRows([...other, future()]), universe, "2026-09-28", cutoff);
+    expect(result[1].opportunity).toBe(completed === 7 ? 1.25 : 1);
+  });
+  it("preserves covered zero and unknowns; missing matchup data does not suppress opportunity", () => {
+    const rows = opportunityRows([future({ gameState: "UNKNOWN" })]);
+    const result = buildScheduleOpportunity(rows, universe, "2026-09-28", cutoff);
+    expect(result[1].opportunity).toBeNull();
+    expect(result[1].weeks[3]).toMatchObject({ opportunity: null, unknown: 1 });
+    expect(result[32].opportunity).toBe(0);
+    rows.find((r) => r.teamId === 32 && r.weekNumber === 2)!.scheduleCoverage = undefined;
+    expect(buildScheduleOpportunity(rows, universe, "2026-09-28", cutoff)[32].weeks[1].opportunity).toBeNull();
+    const known = buildScheduleOpportunity(opportunityRows(), universe, "2026-09-28", cutoff)[1];
+    expect(known.opportunity).toBe(1.25);
+    expect(known.weeks[3].xgf).toBeNull();
+  });
+  it("keeps DST/year transitions on literal date boundaries", () => {
+    expect(fourWeekStart("2026-10-25")).toBe("2026-10-19");
+    expect(fourWeekStart("2026-03-08")).toBe("2026-03-02");
+    expect(fourWeekStart("2027-01-01")).toBe("2026-12-28");
+  });
+});
+describe("xG-only opponent ratings", () => {
+  it("uses average-rank ties and handles equal and singleton cohorts", () => {
+    expect([...percentileMap([0, 1, 1, 2].map((value, teamId) => ({ teamId, value }))).values()]).toEqual([0, 50, 50, 100]);
+    expect([...percentileMap([1, 1].map((value, teamId) => ({ teamId, value }))).values()]).toEqual([50, 50]);
+    expect(percentileMap([{ teamId: 1, value: 0 }]).get(1)).toBe(50);
+  });
+  it("weights repeats before ranking, retains zero, separates axes and rejects invalid observations", () => {
+    const source = (xgf: number | null, xga: number | null): TeamStats => ({ team_abbreviation: "B", team_name: "B", gp: 2, xgf, xga, sf: 0, sa: 0, gf: 0, ga: 0, points: 0 });
+    const stats = { B: source(0, 8), C: source(6, 2), BAD: source(-1, null) };
+    const entries = [["B", "B", "C"], ["C"], [], ["BAD"]].map((names, index) => {
+      const opponents = names.map((abbreviation) => ({ abbreviation, teamId: 2 }));
+      const totals = { gamesPlayed: names.length, offNights: 0, opponents, scheduleCoverage: { known: 7, expected: 7 } };
+      const team: TeamDataWithTotals = { teamId: index, teamAbbreviation: `T${index}`, weeks: [{ weekNumber: 1, ...totals }], totals, avgOpponentPointPct: null };
+      return { team, ...computeOpponentMetrics(team, stats) };
+    });
+    expect(entries[0].averages.avgXgf).toBe(1);
+    const ratings = buildOpponentRatings(entries, stats);
+    expect(ratings[0]).toMatchObject({ atk: 0, def: 0, sampleMin: 2, sampleMax: 2 });
+    expect(ratings[1]).toMatchObject({ atk: 100, def: 100 });
+    expect(ratings[2]).toMatchObject({ atk: null, def: null, reason: "No included games" });
+    expect(ratings[3]).toMatchObject({ atk: null, def: null });
+  });
+});
+
+it("adds volume and off-night opportunity once, independently of Week Score and matchup rates", () => {
+  const rows = opportunityRows();
+  rows.filter((r) => r.weekNumber === 4 && [1, 2].includes(r.teamId)).forEach((r) => { r.THU = future({ id: 101, gameDate: "2026-10-22" }); r.weekScore = 999; });
+  const result = buildScheduleOpportunity(rows, universe, "2026-09-28", cutoff);
+  expect(result[1].opportunity).toBe(2.5);
+  expect(result[1].weeks[3]).toMatchObject({ gamesPlayed: 2, offNights: 2 });
+});
+
+it("labels relative skater defense difficulty without changing opportunity, preserves ties and missingness", () => {
+  const games = Array.from({ length: 16 }, (_, index) => future({ id: 500 + index, homeTeam: { id: 2 * index + 1 }, awayTeam: { id: 2 * index + 2 } }));
+  const rows = opportunityRows(games);
+  const stats = Object.fromEntries(universe.map((team, index) => [team.abbreviation, { gp: 2, xga: 2 * index, xgf: 4 }])) as Record<string, TeamStats>;
+  const graded = buildScheduleOpportunity(rows, universe, "2026-09-28", cutoff, stats);
+  expect(graded[1].weeks[3].skaterMatchup).toBe("harder");
+  expect(graded[16].weeks[3].skaterMatchup).toBe("average");
+  expect(graded[32].weeks[3].skaterMatchup).toBe("easier");
+  expect(graded[1].weeks[0].skaterMatchup).toBe("no_games");
+  expect(Object.values(graded).every((v) => v.opportunity === 1)).toBe(true);
+  for (const stat of Object.values(stats)) stat.xga = 4;
+  expect(Object.values(buildScheduleOpportunity(rows, universe, "2026-09-28", cutoff, stats)).every((v) => v.weeks[3].skaterMatchup === "average")).toBe(true);
+  stats.T2.xga = null;
+  expect(buildScheduleOpportunity(rows, universe, "2026-09-28", cutoff, stats)[1].weeks[3]).toMatchObject({ opportunity: 1, skaterMatchup: "unknown" });
 });

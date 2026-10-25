@@ -1,0 +1,170 @@
+[
+ {
+  "run_id": "run-1013-stamped",
+  "game_id": 1001,
+  "player_id": 101,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 450,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.3
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1013-stamped",
+  "game_id": 1001,
+  "player_id": 102,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 300,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.2
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1013-stamped",
+  "game_id": 1001,
+  "player_id": 103,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 150,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.1
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1013-stamped",
+  "game_id": 1001,
+  "player_id": 201,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 450,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.3
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1013-stamped",
+  "game_id": 1001,
+  "player_id": 202,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 300,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.2
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1013-stamped",
+  "game_id": 1001,
+  "player_id": 203,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 150,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.1
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1014-null",
+  "game_id": 1002,
+  "player_id": 301,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 450,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.3
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1014-null",
+  "game_id": 1002,
+  "player_id": 302,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 300,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.2
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1014-null",
+  "game_id": 1002,
+  "player_id": 303,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 150,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.1
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1014-null",
+  "game_id": 1002,
+  "player_id": 201,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 450,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.3
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1014-null",
+  "game_id": 1002,
+  "player_id": 202,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 300,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.2
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1014-null",
+  "game_id": 1002,
+  "player_id": 203,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 150,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.1
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1014-null",
+  "game_id": 1002,
+  "player_id": 304,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 150,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.1
+  },
+  "es_role": "L2"
+ },
+ {
+  "run_id": "run-1013-null",
+  "game_id": 1001,
+  "player_id": 101,
+  "proj_toi_es_seconds": 900,
+  "proj_toi_pp_seconds": 450,
+  "pp_opportunity": {
+   "team_pp_target_seconds": 1500,
+   "allocated_player_pp_share": 0.3
+  },
+  "es_role": "L2"
+ }
+]

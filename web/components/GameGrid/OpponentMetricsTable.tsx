@@ -5,10 +5,18 @@ import styles from "./OpponentMetricsTable.module.scss";
 import clsx from "clsx";
 import PanelStatus from "components/common/PanelStatus";
 import MetricInfoDisclosure from "./MetricInfoDisclosure";
+import RatingMeter from "./RatingMeter";
+import { LoadingRows } from "./LoadingCells";
+import toggleStyles from "./DetailToggle.module.scss";
+import { buildOpponentRatings, RATING_INFO } from "./utils/scheduleOpportunity";
 import OptimizedImage from "components/common/OptimizedImage";
 import { getLocalTeamLogoPath } from "lib/images";
 import { useTeamsMap } from "hooks/useTeams";
 import { TeamNumeric, toRankMaps } from "./utils/metricRanks";
+import {
+  getOpponentViewDirections,
+  OpponentRole
+} from "./utils/opponentCategoryEffects";
 import {
   OpponentMetricAverages,
   UseOpponentMetricsDataResult
@@ -30,37 +38,48 @@ function useIsMobile() {
 }
 
 type OpponentMetricsTableProps = {
+  scheduleLoading?: boolean;
+  sourceLoading?: boolean;
   teamData: TeamDataWithTotals[];
   metricsData: UseOpponentMetricsDataResult;
 };
 
 export default function OpponentMetricsTable({
   teamData,
+  scheduleLoading = false,
+  sourceLoading = false,
   metricsData
 }: OpponentMetricsTableProps) {
   const isMobile = useIsMobile();
+  const [expanded, setExpanded] = useState(false);
   const [isMobileMinimized, setIsMobileMinimized] = useState(false);
   const teamsMap = useTeamsMap();
+  // Keep the released default while the perspective control is hidden.
+  const role: OpponentRole = "skater";
+  const directions = useMemo(() => getOpponentViewDirections(role), [role]);
   const [sortConfig, setSortConfig] = useState<{
-    key: keyof OpponentMetricAverages | "teamName";
+    key: keyof OpponentMetricAverages | "atk" | "def" | "teamName";
     direction: "ascending" | "descending";
   } | null>(null);
   const {
-    entries: teamsAverages,
-    metricColumns,
+    entries,
+    metricColumns: sourceColumns,
     leagueAverages,
     statsLoading,
     statsError,
     sourceLabel
   } = metricsData;
 
+  const ratings = useMemo(() => buildOpponentRatings(entries, metricsData.statsByAbbreviation), [entries, metricsData.statsByAbbreviation]);
+  const teamsAverages = useMemo(() => entries.map((e) => ({ ...e, averages: { ...e.averages, atk: ratings[e.team.teamId]?.atk ?? null, def: ratings[e.team.teamId]?.def ?? null } })), [entries, ratings]);
+  const metricColumns: { label: string; key: keyof OpponentMetricAverages | "atk" | "def" }[] = [{ label: "Attack", key: "atk" }, { label: "Defense", key: "def" }, ...(expanded ? sourceColumns : [])];
   const toggleMobileMinimize = () => {
     if (isMobile) {
       setIsMobileMinimized((prev) => !prev);
     }
   };
 
-  const handleSort = (key: keyof OpponentMetricAverages | "teamName") => {
+  const handleSort = (key: keyof OpponentMetricAverages | "atk" | "def" | "teamName") => {
     let direction: "ascending" | "descending" = "ascending";
     if (
       sortConfig &&
@@ -123,40 +142,33 @@ export default function OpponentMetricsTable({
   }, [teamsAverages, sortConfig, teamsMap]);
 
   const rankMaps = useMemo(() => {
-    const directions: Record<keyof OpponentMetricAverages, "asc" | "desc"> = {
-      avgXgf: "asc",
-      avgXga: "desc",
-      avgSf: "asc",
-      avgSa: "desc",
-      avgGoalFor: "asc",
-      avgGoalAgainst: "desc",
-      avgWinPct: "asc"
-    };
-
-    return metricColumns.reduce<
+    return sourceColumns.reduce<
       Record<
         keyof OpponentMetricAverages,
         { best: Map<number, number>; worst: Map<number, number> }
       >
     >((acc, { key }) => {
       const entries: TeamNumeric[] = [];
+      const direction = directions[key];
       teamsAverages.forEach(({ team, averages }) => {
         const value = averages[key];
         if (typeof value === "number") entries.push({ teamId: team.teamId, value });
       });
-      acc[key] = toRankMaps(entries, directions[key]);
+      // Mixed-sign or unrelated metrics stay uncolored for this role.
+      acc[key] = direction ? toRankMaps(entries, direction) : { best: new Map(), worst: new Map() };
       return acc;
     }, {} as Record<
       keyof OpponentMetricAverages,
       { best: Map<number, number>; worst: Map<number, number> }
     >);
-  }, [teamsAverages, metricColumns]);
+  }, [teamsAverages, sourceColumns, directions]);
 
   const getRankClass = (
-    key: keyof OpponentMetricAverages,
+    key: keyof OpponentMetricAverages | "atk" | "def",
     teamId: number,
     value: number | null
   ): string | undefined => {
+    if (key === "atk" || key === "def") return undefined;
     if (typeof value !== "number") return undefined;
     const rank = rankMaps[key]?.best.get(teamId);
     if (rank != null) return (styles as any)[`rankGood${rank}`];
@@ -167,6 +179,7 @@ export default function OpponentMetricsTable({
 
   const handleTitleClick = isMobile ? toggleMobileMinimize : undefined;
   const hasData = sortedTeamsAverages.length > 0;
+  const pending = statsLoading || scheduleLoading || sourceLoading;
 
   return (
     <div
@@ -178,6 +191,7 @@ export default function OpponentMetricsTable({
       <div
         className={styles.titleHeader}
         onClick={handleTitleClick}
+        onKeyDown={(event) => { if (isMobile && (event.key === "Enter" || event.key === " ")) { event.preventDefault(); toggleMobileMinimize(); } }}
         role={isMobile ? "button" : undefined}
         tabIndex={isMobile ? 0 : undefined}
         aria-expanded={isMobile ? !isMobileMinimized : undefined}
@@ -185,7 +199,7 @@ export default function OpponentMetricsTable({
         data-interactive={isMobile ? true : undefined}
       >
         <span className={styles.titleText}>
-          AVG OPPONENT <span className={styles.spanColorBlue}>STATS</span>
+          Opponent <span className={styles.spanColorBlue}>Strength</span> <small>↑ stronger</small>
         </span>
         {isMobile && (
           <span
@@ -204,23 +218,15 @@ export default function OpponentMetricsTable({
           ? ["Some opponent averages are unavailable. Check back after the next stats update."] : []}>
           <p>Opponent stats (Natural Stat Trick): {sourceLabel}</p>
           <p>Metrics per game; PTS% = points / (2 × GP). Missing or incomplete opponent averages show “-”.</p>
-          <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against. Lower xGF, GF, SF and PTS% are favorable; higher xGA, GA and SA are favorable.</p>
+          <p>xG = expected goals; GF/GA = goals for/against; SF/SA = shots for/against.</p>
+          <p>{RATING_INFO}</p>
         </MetricInfoDisclosure>
-        {statsLoading ? (
-          <PanelStatus state="loading" message="Loading opponent stats..." />
-        ) : statsError ? (
-          <PanelStatus state="error" message="Opponent stats could not load. Reload to retry." />
-        ) : !hasData ? (
-          <PanelStatus
-            state="empty"
-            message={
-              teamData.length === 0
-                ? "Opponent metrics will appear when schedule data is available."
-                : "No opponent data available."
-            }
-          />
-        ) : (
-          <table className={styles.table}>
+        <button type="button" className={toggleStyles.detailToggle} aria-expanded={expanded} aria-label={expanded ? "Collapse opponent details" : "Expand opponent details"} onClick={() => setExpanded((v) => !v)}>
+          {expanded ? "Hide source stats" : "Show source stats"} <span aria-hidden="true">{expanded ? "▴" : "▾"}</span>
+        </button>
+        {statsError && <PanelStatus state="error" message="Opponent stats could not load. Reload to retry." />}
+        {!pending && !statsError && !hasData && <PanelStatus state="empty" message="Opponent metrics will appear when schedule data is available." />}
+          <table className={styles.table} aria-busy={pending} data-opponent-state={pending ? "loading" : "ready"}>
             <thead>
               <tr>
                 <th>
@@ -241,12 +247,16 @@ export default function OpponentMetricsTable({
                   </button>
                 </th>
                 {metricColumns.map((metric) => (
-                  <th key={metric.key}>
+                  <th
+                    key={metric.key}
+                    data-uncolored={(metric.key === "atk" || metric.key === "def" ? null : directions[metric.key]) ? undefined : true}
+                    title={(metric.key === "atk" || metric.key === "def" ? null : directions[metric.key]) ? undefined : `${metric.label} is not colored in the ${role} view`}
+                  >
                     <button
                       type="button"
                       onClick={() => handleSort(metric.key)}
                       className={styles.sortButton}
-                      aria-label={`Sort by ${metric.label} ${
+                      aria-label={`Sort by ${metric.key === "atk" ? "opponent attack strength" : metric.key === "def" ? "opponent defense strength" : metric.label} ${
                         sortConfig?.key === metric.key &&
                         sortConfig.direction === "descending"
                           ? "ascending"
@@ -262,10 +272,11 @@ export default function OpponentMetricsTable({
               </tr>
             </thead>
             <tbody>
+              {pending || !hasData ? <LoadingRows columns={metricColumns.length + 1} waiting={pending} rowHeight={30} /> : <>
               <tr className={styles.averagesRow}>
                 <td>AVG:</td>
                 {metricColumns.map((metric) => {
-                  const value = leagueAverages[metric.key];
+                  const value = metric.key === "atk" || metric.key === "def" ? null : leagueAverages[metric.key];
                   return (
                     <td key={metric.key} title="Mean of complete displayed team averages">
                       {value != null
@@ -297,19 +308,21 @@ export default function OpponentMetricsTable({
                         key={metric.key}
                         className={getRankClass(metric.key, team.teamId, value)}
                       >
-                        {value != null
-                          ? metric.key === "avgWinPct"
-                            ? `${(value * 100).toFixed(1)}%`
-                            : value.toFixed(1)
-                          : "-"}
+                        {metric.key === "atk" || metric.key === "def"
+                          ? <RatingMeter kind={metric.key} value={value} />
+                          : value != null
+                            ? metric.key === "avgWinPct"
+                              ? `${(value * 100).toFixed(1)}%`
+                              : value.toFixed(1)
+                            : "-"}
                       </td>
                     );
                   })}
                 </tr>
               ))}
+              </>}
             </tbody>
           </table>
-        )}
       </div>
     </div>
   );

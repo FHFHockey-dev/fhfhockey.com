@@ -10,6 +10,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import NewsCard from "./NewsCard";
 import { teamsInfo } from "lib/teamsInfo";
+import { getPublicNewsSourceAttribution, sanitizePublicNewsFeedItem } from "lib/newsFeed";
+import receipt from "lib/sources/fixtures/homepageNewsReceipt.json";
+
+const UNVERIFIED = "We couldn't verify the player details in this report.";
 
 vi.mock("next/legacy/image", () => ({
   default: ({ alt, src }: { alt: string; src: string }) => (
@@ -44,11 +48,19 @@ const makeItem = (overrides: Record<string, unknown> = {}) =>
 describe("NewsCard", () => {
   afterEach(cleanup);
 
+  it.each(["GameDayLines", "GameDayGoalies", "GameDayNewsNHL", "CcCMiddleton", "DFOFantasy", "NHL_Rosters"])("does not leak ingest source %s through labels, links, titles or accessibility text", handle => {
+    const { container } = render(<NewsCard item={makeItem({ source_label: handle, source_account: handle, source_url: `https://x.com/${handle}/status/123`,
+      metadata: null })} sourceDisplayNameOverride={handle} />);
+    expect(screen.getByText("Original source pending")).toBeTruthy();
+    expect(container.innerHTML.toLowerCase()).not.toContain(handle.toLowerCase());
+    expect(screen.queryByRole("link", { name: /original post/i })).toBeNull();
+  });
+
   it("keeps observation and publication independent of creation time", () => {
     render(<NewsCard item={makeItem({ published_at: null, observed_at: "2026-07-14T18:19:20.000Z", source_label: null, source_account: "SOURCE_ACCOUNT", source_url: "not a URL", metadata: null })} />);
     expect(screen.getAllByText("Published Unavailable")).toHaveLength(2);
     expect(screen.getByText("Observed Jul 14, 2:19 PM")).toBeTruthy();
-    expect(screen.getByText("Source unavailable")).toBeTruthy();
+    expect(screen.getByText("Original source pending")).toBeTruthy();
     expect(screen.queryByRole("link", { name: /View original post/ })).toBeNull();
   });
 
@@ -331,7 +343,8 @@ describe("NewsCard", () => {
     expect(screen.queryByText("Kevin He")).toBeNull();
     expect(screen.queryByText("Kevin He injury update")).toBeNull();
     expect(screen.getByText(/Mathew Barzal is with/)).toBeTruthy();
-    expect(screen.getByText("Subject-to-claim evidence unavailable")).toBeTruthy();
+    expect(screen.getByText(UNVERIFIED)).toBeTruthy();
+    expect(screen.queryByText(/subject-to-claim/i)).toBeNull();
   });
 
   it("does not add disclosure controls to unrelated NewsCard variants", () => {
@@ -346,5 +359,102 @@ describe("NewsCard", () => {
     expect(
       screen.getByRole("heading", { name: "Source report" }),
     ).toBeTruthy();
+  });
+  // Retained sanitized receipt rows: the reader cannot say which check failed, so one plain state is shown.
+  it.each(receipt.pageProps.recentInjuryNews.matches.map(r => [r.id, r] as const))("shows plain unverified-details copy for retained card %s", (_id, row) => {
+    const item = sanitizePublicNewsFeedItem({ ...row, blurb: row.blurb_prefix, source_label: null, source_account: null,
+      metadata: { automation: { source: "tweet_news_phrase_dictionary", autoPublish: false, primaryRuleId: "manual-review" } },
+      players: row.players.map(p => ({ ...p, player_name: p.name })), card_status: "published" } as any);
+    const { container } = render(<NewsCard item={item} />);
+    expect(screen.getByRole("heading", { name: "Source report" })).toBeTruthy();
+    expect(screen.getAllByText(UNVERIFIED)).toHaveLength(1);
+    expect(container.textContent).not.toMatch(/subject-to-claim|claim evidence/i);
+    expect(container.textContent).toContain(item.blurb.replace(/^RT @\w+:\s*/, "").slice(0, 20));
+    for (const p of row.players) expect(screen.queryByText(new RegExp(`${p.name} ·`))).toBeNull();
+    const url = getPublicNewsSourceAttribution({ item }).url;
+    const link = screen.queryByRole("link", { name: /view original post/i });
+    expect(link?.getAttribute("href") ?? null).toBe(url);
+  });
+
+  it("keeps a valid original-post link beside the unverified-details copy", () => {
+    render(<NewsCard item={makeItem()} />);
+    expect(screen.getByText(UNVERIFIED)).toBeTruthy();
+    expect(screen.getByRole("link", { name: /view original post/i }).getAttribute("href")).toBe("https://x.com/FriedgeHNIC/status/2073877758803935434");
+  });
+
+  it("shows no unverified-details copy when the reader verifies a claim", () => {
+    const text = "Victor Hedman will not play tonight.";
+    render(<NewsCard item={makeItem({ category: "INJURY", subcategory: "OUT", headline: "ignored", blurb: text, metadata: { interpretation: {
+      version: "2026-10-13.1", units: [], unresolved: [], events: [{ playerId: 8475167, playerName: "Victor Hedman", kind: "injury", state: "unknown",
+        availability: "out", modality: "affirmative", evidence: { text, start: 0, end: text.length } }] } } })} />);
+    expect(screen.getByText(/Victor Hedman · Unknown report/)).toBeTruthy();
+    expect(screen.queryByText(UNVERIFIED)).toBeNull();
+  });
+
+  it("keeps lineup cards free of the unverified-details copy", () => {
+    render(<NewsCard item={makeItem({ category: "LINE COMBINATION", subcategory: "PRACTICE LINES", metadata: { lineupCard: { forwards: [["A", "B", "C"]] } } })} />);
+    expect(screen.queryByText(UNVERIFIED)).toBeNull();
+  });
+
+
+  it.each(["NYR", "TOR", "ZZZ"])("uses %s's palette for the shared full and mini snapshot grids", (abbreviation) => {
+    const item = makeItem({ team_abbreviation: abbreviation, category: "LINE COMBINATION", subcategory: "PRACTICE LINES",
+      metadata: { lineupCard: { forwards: [["Captured Player", "Second Player", "Third Player"]], defensePairs: [], goalies: [] } } });
+    const { container } = render(<><NewsCard item={item} /><NewsCard item={item} compact rail /></>);
+    const articles = container.querySelectorAll("article");
+    for (const article of articles) {
+      expect(article.style.getPropertyValue("--lineup-team-primary")).toBe(teamsInfo[abbreviation]?.primaryColor ?? "#56606c");
+      expect(article.style.getPropertyValue("--lineup-team-secondary")).toBe(teamsInfo[abbreviation]?.jersey ?? "#88939e");
+      expect(within(article).getByRole("region", { name: "Practice snapshot players" })).toBeTruthy();
+      expect(within(article).getByText("Captured Player")).toBeTruthy();
+      expect(within(article).queryByText("TBD")).toBeNull();
+      expect(within(article).queryByText("Goalies")).toBeNull();
+    }
+    expect(within(articles[0]).getAllByText("F1")).toHaveLength(3);
+    expect(within(articles[1]).queryByText("F1")).toBeNull();
+    expect(within(articles[1]).queryByText("Forwards")).toBeNull();
+    expect(within(articles[1]).getByRole("group", { name: "F1: Captured Player" }).textContent).toBe("Captured Player");
+    expect(within(articles[1]).getByText("Captured Player").getAttribute("title")).toBe("Captured Player");
+  });
+
+  it("normalizes the supplied canonical team abbreviation without changing player identities", () => {
+    const { container } = render(<NewsCard item={makeItem({ team_abbreviation: " nyr ", category: "LINE COMBINATION",
+      metadata: { lineupCard: { forwards: [["Historical Player"]] } } })} compact rail />);
+    expect(container.querySelector("article")?.style.getPropertyValue("--lineup-team-primary")).toBe(teamsInfo.NYR.primaryColor);
+    expect(screen.getByText("Historical Player")).toBeTruthy();
+    expect(screen.getByText(/Partial snapshot/)).toBeTruthy();
+  });
+
+  it("shows all five supplied PP players and preserves source/time metadata", () => {
+    render(<NewsCard compact rail item={makeItem({ category: "LINE COMBINATION", subcategory: "POWER PLAY",
+      observed_at: "2026-07-14T18:19:20.000Z", metadata: { interpretation: { context: "game", unresolved: [], units: [
+        { situation: "pp", number: 1, complete: true, players: ["A", "B", "C", "D", "E"].map((name) => ({ name })) },
+      ] } } })} />);
+    expect(screen.getByRole("group", { name: "PP1" })).toBeTruthy();
+    expect(screen.queryByText("PP1")).toBeNull();
+    expect(screen.getByRole("group", { name: "PP1: E" }).textContent).toBe("E");
+    expect(screen.queryByText("Forwards")).toBeNull();
+    expect(screen.getByText("Observed Jul 14, 2:19 PM")).toBeTruthy();
+    expect(screen.getByRole("link", { name: /original post/ })).toBeTruthy();
+  });
+
+  it("shows a missing PP snapshot honestly and leaves ordinary reports without a grid", () => {
+    const { rerender } = render(<NewsCard compact rail item={makeItem({ category: "LINE COMBINATION", subcategory: "POWER PLAY",
+      metadata: { lineupCard: { forwards: [["Do not relabel me"]] } } })} />);
+    expect(screen.getByText("Structured special-teams units unavailable for this report.")).toBeTruthy();
+    expect(screen.queryByText("Do not relabel me")).toBeNull();
+    rerender(<NewsCard compact rail item={makeItem()} />);
+    expect(screen.queryByRole("region", { name: /snapshot players/ })).toBeNull();
+    expect(screen.getByRole("heading")).toBeTruthy();
+  });
+
+  it("preserves review-only editing of missing goalie slots without creating public goalie placeholders", () => {
+    const onLineupGoalieSlotClick = vi.fn();
+    render(<NewsCard item={makeItem({ category: "LINE COMBINATION", metadata: {
+      lineupCard: { forwards: [["Supplied Forward"]], goalies: [] },
+    } })} onLineupGoalieSlotClick={onLineupGoalieSlotClick} />);
+    fireEvent.click(screen.getByRole("button", { name: "Set G2 goalie" }));
+    expect(onLineupGoalieSlotClick).toHaveBeenCalledWith(1);
+    expect(screen.queryByText("TBD")).toBeNull();
   });
 });

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import supabase from "lib/supabase";
+import supabase from "lib/supabase/public-client";
 import { getUpcomingSustainabilityPayload } from "lib/sustainability/read";
 
 function first(value: string | string[] | undefined): string | null {

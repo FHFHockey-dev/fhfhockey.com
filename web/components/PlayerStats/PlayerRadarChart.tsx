@@ -266,6 +266,18 @@ export function PlayerRadarChart({
         key: comparisonKey, values: {}, percentiles: {}, rankings: {},
       };
       try {
+        const normalizedPos = normalizePosition(player.position);
+        const positionFilter = comparisonType === "position"
+          ? [normalizedPos]
+          : comparisonType === "category"
+            ? playerCategory === "forward" ? ["C", "LW", "RW"] : ["D"]
+            : [];
+        const rankedStats = selectedStats.filter(
+          (stat) => STAT_CALCULATION_METHODS[stat],
+        );
+
+        // Read the player's row first, then every needed stat's league column
+        // together. A failed stat leaves only that stat unranked.
         const { data: playerData, error: playerError } = isGoalie
           ? await supabase
               .from("wgo_goalie_stats_per_game")
@@ -286,69 +298,64 @@ export function PlayerRadarChart({
           return;
         }
 
-        const normalizedPos = normalizePosition(player.position);
-        const positionFilter = comparisonType === "position"
-          ? [normalizedPos]
-          : comparisonType === "category"
-            ? playerCategory === "forward" ? ["C", "LW", "RW"] : ["D"]
-            : [];
-
-        for (const stat of selectedStats) {
-          if (cancelled) return;
-          const statInfo = STAT_CALCULATION_METHODS[stat];
-          if (!statInfo) continue;
-          const playerValue = finiteStatValue((playerData as any)[stat]);
-          if (playerValue === null) continue;
-          next.values[stat] = playerValue;
-
+        const readLeagueColumn = async (stat: string) => {
           try {
-            let data;
-            let error;
             if (isGoalie) {
-              const result = await supabase
+              return await supabase
                 .from("wgo_goalie_stats_per_game")
                 .select(stat)
                 .not(stat, "is", null)
                 .eq("season_id", seasonNumber);
-              data = result.data;
-              error = result.error;
-            } else {
-              let query = supabase
-                .from("wgo_skater_stats_per_game")
-                .select(stat)
-                .not(stat, "is", null)
-                .eq("season", String(seasonNumber));
-              if (positionFilter.length > 0) {
-                query = query.in("position_code", positionFilter);
-              }
-              const result = await query;
-              data = result.data;
-              error = result.error;
             }
-            if (cancelled) return;
-            if (error) {
-              console.error(`Unable to load the ${stat} radar comparison`, error);
-              continue;
+            let query = supabase
+              .from("wgo_skater_stats_per_game")
+              .select(stat)
+              .not(stat, "is", null)
+              .eq("season", String(seasonNumber));
+            if (positionFilter.length > 0) {
+              query = query.in("position_code", positionFilter);
             }
-
-            const values = (data ?? [])
-              .map((row) => finiteStatValue((row as any)[stat]))
-              .filter((value): value is number => value !== null);
-            if (values.length === 0) continue;
-
-            const isInverted = statInfo.isInverted || stat === "goals_against_avg";
-            const worseCount = values.filter((value) =>
-              isInverted ? value > playerValue : value < playerValue,
-            ).length;
-            const betterCount = values.filter((value) =>
-              isInverted ? value < playerValue : value > playerValue,
-            ).length;
-            next.percentiles[stat] = Math.round((worseCount / values.length) * 100);
-            next.rankings[stat] = { rank: betterCount + 1, total: values.length };
+            return await query;
           } catch (error) {
-            console.error(`Unable to load the ${stat} radar comparison`, error);
+            return { data: null, error };
           }
-        }
+        };
+
+        const playerValues = new Map<string, number>();
+        rankedStats.forEach((stat) => {
+          const value = finiteStatValue((playerData as any)[stat]);
+          if (value !== null) playerValues.set(stat, value);
+        });
+        const comparedStats = rankedStats.filter((stat) => playerValues.has(stat));
+        const leagueResults = await Promise.all(comparedStats.map(readLeagueColumn));
+        if (cancelled) return;
+
+        comparedStats.forEach((stat, index) => {
+          const statInfo = STAT_CALCULATION_METHODS[stat];
+          const playerValue = playerValues.get(stat) as number;
+          next.values[stat] = playerValue;
+
+          const { data, error } = leagueResults[index];
+          if (error) {
+            console.error(`Unable to load the ${stat} radar comparison`, error);
+            return;
+          }
+
+          const values = (data ?? [])
+            .map((row) => finiteStatValue((row as any)[stat]))
+            .filter((value): value is number => value !== null);
+          if (values.length === 0) return;
+
+          const isInverted = statInfo.isInverted || stat === "goals_against_avg";
+          const worseCount = values.filter((value) =>
+            isInverted ? value > playerValue : value < playerValue,
+          ).length;
+          const betterCount = values.filter((value) =>
+            isInverted ? value < playerValue : value > playerValue,
+          ).length;
+          next.percentiles[stat] = Math.round((worseCount / values.length) * 100);
+          next.rankings[stat] = { rank: betterCount + 1, total: values.length };
+        });
       } catch (error) {
         console.error("Unable to load the selected-season radar comparison", error);
       } finally {

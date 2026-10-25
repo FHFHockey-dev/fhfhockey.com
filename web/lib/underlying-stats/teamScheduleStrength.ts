@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import supabaseServer from "../supabase/server";
+import { recordPercentage } from "../trends/strengthOfScheduleContract";
 import { isValidIsoDate } from "../teamRatingsService";
 import { teamsInfo } from "../teamsInfo";
 
@@ -73,6 +74,7 @@ const SCHEDULE_LOOKBACK_DAYS = 14;
 const SCHEDULE_LOOKAHEAD_DAYS = 14;
 
 const toFiniteNumber = (value: unknown): number | null => {
+  if (value === null || value === undefined) return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 };
@@ -136,16 +138,7 @@ export const computePointPctFromRecord = (
   losses: number | null,
   otLosses: number | null
 ): number | null => {
-  const resolvedWins = wins ?? 0;
-  const resolvedLosses = losses ?? 0;
-  const resolvedOtLosses = otLosses ?? 0;
-  const gamesPlayed = resolvedWins + resolvedLosses + resolvedOtLosses;
-
-  if (gamesPlayed <= 0) {
-    return null;
-  }
-
-  return (2 * resolvedWins + resolvedOtLosses) / (2 * gamesPlayed);
+  return recordPercentage(wins, losses, otLosses, "points-pct");
 };
 
 const resolveBucketRecord = (

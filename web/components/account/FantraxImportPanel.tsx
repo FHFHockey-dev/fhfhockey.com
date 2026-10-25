@@ -1,3 +1,6 @@
+import { useProviderSyncAccess } from "hooks/useProviderSyncAccess";
+import ProviderSyncNotice from "components/account/ProviderSyncNotice";
+import { providerSyncAccessMessage } from "lib/integrations/providerSyncAccess";
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import supabase from "lib/supabase/client";
@@ -539,6 +542,13 @@ function FantraxSettingsPanel({
 }: {
   onSettingsApplied?: (settings: UserLeagueSettings) => void;
 }) {
+  const syncAccess = useProviderSyncAccess();
+  const canSync = syncAccess.status === "ready" && Boolean(syncAccess.access?.eligible);
+  const requireSync = () => {
+    if (canSync) return true;
+    setFeedback({ tone: "error", message: providerSyncAccessMessage(syncAccess.status, syncAccess.access) });
+    return false;
+  };
   const { data, isLoading, error, reload } = useFantraxConnections();
   const [secretId, setSecretId] = useState("");
   const [accountLabel, setAccountLabel] = useState("My Fantrax account");
@@ -573,6 +583,7 @@ function FantraxSettingsPanel({
 
   async function handleDiscover(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!requireSync()) return;
     setBusyAction("discover");
     setFeedback(null);
     try {
@@ -605,6 +616,7 @@ function FantraxSettingsPanel({
   }
 
   async function handlePreview() {
+    if (!requireSync()) return;
     if (!selectedKeys.length) return;
     setBusyAction("preview");
     setFeedback(null);
@@ -637,6 +649,7 @@ function FantraxSettingsPanel({
   }
 
   async function handleCommit() {
+    if (!requireSync()) return;
     if (previews.some((preview) => preview.diagnostics.status === "unsupported")) {
       setFeedback({
         tone: "error",
@@ -704,6 +717,7 @@ function FantraxSettingsPanel({
   }
 
   async function beginManage(account: FantraxConnectionAccount) {
+    if (!requireSync()) return;
     setBusyAction(`manage:${account.id}`);
     setFeedback(null);
     try {
@@ -735,6 +749,7 @@ function FantraxSettingsPanel({
   }
 
   function beginReconnect(account: FantraxConnectionAccount) {
+    if (!requireSync()) return;
     resetWorkflow();
     setTargetAccountId(account.id);
     setAccountLabel(account.label);
@@ -745,6 +760,7 @@ function FantraxSettingsPanel({
   }
 
   async function handleRefresh(accountId: string, externalLeagueId?: string) {
+    if (!requireSync()) return;
     const action = `refresh:${externalLeagueId || accountId}`;
     setBusyAction(action);
     setFeedback(null);
@@ -769,6 +785,7 @@ function FantraxSettingsPanel({
   }
 
   async function handleApply(league: FantraxConnectionLeague) {
+    if (!requireSync()) return;
     const warnings = warningText(league.settings);
     if (
       league.settings.diagnostics.status === "partial" &&
@@ -854,6 +871,7 @@ function FantraxSettingsPanel({
         </span>
       </header>
 
+      <ProviderSyncNotice {...syncAccess} />
       {!data.apiEnabled ? (
         <div className={styles.info}>
           Fantrax API linking is currently limited to the private beta. CSV/JSON
@@ -902,7 +920,7 @@ function FantraxSettingsPanel({
               value={accountLabel}
               maxLength={80}
               onChange={(event) => setAccountLabel(event.target.value)}
-              disabled={busyAction != null}
+              disabled={!canSync || busyAction != null}
             />
           </label>
           {!usingStoredCredential ? (
@@ -913,7 +931,7 @@ function FantraxSettingsPanel({
                 autoComplete="off"
                 value={secretId}
                 onChange={(event) => setSecretId(event.target.value)}
-                disabled={busyAction != null}
+                disabled={!canSync || busyAction != null}
                 required
               />
               <small>
@@ -925,7 +943,7 @@ function FantraxSettingsPanel({
             <button
               type="submit"
               className={styles.primaryButton}
-              disabled={busyAction != null}
+              disabled={!canSync || busyAction != null}
             >
               {busyAction === "discover" ? "Discovering…" : "Discover NHL leagues"}
             </button>
@@ -940,7 +958,7 @@ function FantraxSettingsPanel({
                     type="checkbox"
                     checked={selectedKeys.includes(league.externalLeagueKey)}
                     onChange={() => toggleLeague(league.externalLeagueKey)}
-                    disabled={busyAction != null}
+                    disabled={!canSync || busyAction != null}
                   />
                   <span>
                     <strong>{league.name}</strong>
@@ -956,7 +974,7 @@ function FantraxSettingsPanel({
                 type="button"
                 className={styles.secondaryButton}
                 onClick={() => void handlePreview()}
-                disabled={!selectedKeys.length || busyAction != null}
+                disabled={!canSync || !selectedKeys.length || busyAction != null}
               >
                 {busyAction === "preview" ? "Building preview…" : "Preview mappings"}
               </button>
@@ -987,7 +1005,7 @@ function FantraxSettingsPanel({
               className={styles.primaryButton}
               onClick={() => void handleCommit()}
               disabled={
-                busyAction != null ||
+                !canSync || busyAction != null ||
                 previews.some(
                   (preview) => preview.diagnostics.status === "unsupported",
                 ) ||
@@ -1021,34 +1039,28 @@ function FantraxSettingsPanel({
                     <button
                       type="button"
                       onClick={() => void beginManage(account)}
-                      disabled={busyAction != null}
+                      disabled={!canSync || busyAction != null}
                     >
                       Manage leagues
                     </button>
                     <button
                       type="button"
                       onClick={() => beginReconnect(account)}
-                      disabled={busyAction != null}
+                      disabled={!canSync || busyAction != null}
                     >
                       Reconnect
                     </button>
                     <button
                       type="button"
                       onClick={() => void handleRefresh(account.id)}
-                      disabled={busyAction != null}
+                      disabled={!canSync || busyAction != null}
                     >
                       Refresh
                     </button>
-                    <button
-                      type="button"
-                      className={styles.dangerButton}
-                      onClick={() => void handleDisconnect(account)}
-                      disabled={busyAction != null}
-                    >
-                      Disconnect
-                    </button>
                   </>
                 ) : null}
+                {account.integrationModes.includes("api") ? <button type="button" className={styles.dangerButton}
+                  onClick={() => void handleDisconnect(account)} disabled={busyAction != null}>Disconnect</button> : null}
               </div>
             </div>
             {account.leagues.map((league) => (
@@ -1074,7 +1086,7 @@ function FantraxSettingsPanel({
                   <button
                     type="button"
                     onClick={() => void handleRefresh(account.id, league.id)}
-                    disabled={busyAction != null}
+                    disabled={!canSync || busyAction != null}
                   >
                     Refresh league
                   </button>
@@ -1082,7 +1094,7 @@ function FantraxSettingsPanel({
                     type="button"
                     onClick={() => void handleApply(league)}
                     disabled={
-                      busyAction != null ||
+                      !canSync || busyAction != null ||
                       league.settings.diagnostics.status === "unsupported"
                     }
                   >

@@ -254,3 +254,107 @@ for (const surface of ["playerStats", "goalieStats"] as const) {
     });
   }
 }
+
+const LANDING_TEAMS = [
+  "ANA", "BOS", "BUF", "CAR", "CBJ", "CGY", "CHI", "COL", "DAL", "DET", "EDM",
+  "FLA", "LAK", "MIN", "MTL", "NJD", "NSH", "NYI", "NYR", "OTT", "PHI", "PIT",
+  "SEA", "SJS", "STL", "TBL", "TOR", "UTA", "VAN", "VGK", "WPG", "WSH",
+];
+
+function buildLandingFixture() {
+  const ratings = LANDING_TEAMS.map((teamAbbr, index) => ({
+    teamAbbr, date: "2026-10-17",
+    offRating: 130 - index, defRating: 125 - index, paceRating: 100,
+    ppTier: 2, pkTier: 2, trend10: index % 3 === 0 ? 1.4 : index % 3 === 1 ? -0.8 : 0,
+    components: { xgf60: 3.1, gf60: 3, sf60: 27, xga60: 3, ga60: 3, sa60: 28, pace60: 57 },
+    finishingRating: 100, goalieRating: 100, dangerRating: 100, specialRating: 100,
+    disciplineRating: 100, varianceFlag: 0, sos: 100,
+    sosPast: 0.55, sosPastRank: index + 1, sosFuture: 0.53, sosFutureRank: index + 1,
+    ppPct: 22.4, ppRank: 11, pkPct: 81.1, pkRank: 8,
+    trendSeries: [], luckSeries: [], luckStatus: "normal", luckPdo: 100.4, luckPdoZ: 0.3,
+    narrative: ["Creating chances at a high rate while suppressing high-danger shots."],
+    scheduleTexture: null,
+  }));
+  const ready = { latestSnapshotDate: "2026-10-17", rowCount: 32, status: "ready" };
+  const pending = { latestSnapshotDate: null, rowCount: 0, status: "pending" };
+  return {
+    availableDates: ["2026-10-17", "2026-10-16"],
+    routeStatus: {
+      teamRatings: ready, skaterOffenseRatings: pending, skaterDefenseRatings: pending,
+      goalieRatings: pending, gamePredictions: pending, playerPredictions: pending,
+      modelMarketFlags: pending,
+    },
+    initialSnapshot: {
+      requestedDate: "2026-10-17", resolvedDate: "2026-10-17", ratings,
+      dashboard: {
+        quadrant: { axisSubtitle: "", averageDefenseProcess: 0, averageOffenseProcess: 0, points: [] },
+        risers: [], fallers: [],
+      },
+    },
+  };
+}
+
+async function installLandingFixture(page: Page) {
+  const fixture = buildLandingFixture();
+  await page.route("**/*", async (route) => {
+    const url = new URL(route.request().url());
+    const localOrigin = new URL(test.info().project.use.baseURL as string).origin;
+    if (url.origin !== localOrigin) return route.abort();
+    if (url.pathname === "/api/underlying-stats/landing") return route.fulfill({ json: fixture });
+    if (url.pathname.startsWith("/api/")) return route.fulfill({ json: {} });
+    return route.continue();
+  });
+}
+
+test.describe("Underlying Stats landing layout", () => {
+  for (const width of [390, 1440]) {
+    test(`landing hierarchy fits without page overflow at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await installLandingFixture(page);
+      await page.goto("/underlying-stats?date=2026-10-17");
+
+      await expect(page.getByRole("heading", { name: "Underlying Stats", level: 1 })).toBeVisible();
+      await expect(page.getByRole("navigation", { name: "Underlying Stats Hub Navigation" }).getByRole("link")).toHaveCount(4);
+      const leaders = page.getByRole("region", { name: "Power leaders" }).getByRole("button", { name: /^Pin / });
+      await expect(leaders).toHaveCount(3);
+      await expect(page.getByRole("table", { name: "Detailed team table" }).locator("tbody tr")).toHaveCount(32);
+      await expect(page.getByText("Showing 1–32 of 32 teams")).toBeAttached();
+
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - innerWidth);
+      expect(overflow).toBeLessThanOrEqual(0);
+
+      const boxes = await Promise.all((await leaders.all()).map((leader) => leader.boundingBox()));
+      if (width < 768) {
+        // Mobile: one stacked ranked list, details hidden.
+        expect(boxes[1]!.y).toBeGreaterThan(boxes[0]!.y + boxes[0]!.height - 1);
+        await expect(leaders.first().getByText("Why they're here")).toBeHidden();
+      } else {
+        expect(Math.abs(boxes[1]!.y - boxes[0]!.y)).toBeLessThan(2);
+        const labelSize = await leaders.first().getByText("Offense").evaluate(
+          (element) => parseFloat(getComputedStyle(element).fontSize)
+        );
+        expect(labelSize).toBeGreaterThanOrEqual(12);
+      }
+    });
+  }
+
+  test("workspace tabs follow the keyboard and Power Leaders return to rankings", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await installLandingFixture(page);
+    await page.goto("/underlying-stats?date=2026-10-17");
+
+    const rankingsTab = page.getByRole("tab", { name: "Team Rankings" });
+    const chartTab = page.getByRole("tab", { name: "Chart" });
+    await expect(rankingsTab).toHaveAttribute("aria-selected", "true");
+    await rankingsTab.focus();
+    await page.keyboard.press("ArrowRight");
+    await expect(chartTab).toHaveAttribute("aria-selected", "true");
+    await expect(chartTab).toBeFocused();
+    await expect(page.getByRole("region", { name: "Process quadrant" })).toBeVisible();
+
+    await page.getByRole("button", { name: "View full rankings" }).click();
+    await expect(rankingsTab).toHaveAttribute("aria-selected", "true");
+    await expect(rankingsTab).toBeFocused();
+    await expect(page.getByRole("tab", { name: "Advanced" })).toHaveAttribute("aria-selected", "true");
+  });
+});

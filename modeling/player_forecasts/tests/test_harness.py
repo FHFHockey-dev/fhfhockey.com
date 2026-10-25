@@ -8,6 +8,555 @@ from pathlib import Path
 import pytest
 
 
+def pp_support_fixture(**changes):
+    values = {"row": {"sog_per_60_last5": 12, "toi_seconds_total_last5": 600},
+        "baseline_weight": 0.8, "context_multiplier": 1.1, "prior_minutes": 30,
+        "exposure_complete": True}
+    values.update(changes)
+    return values
+
+
+def test_pp_support_uses_selected_window_and_preserves_context_and_baseline():
+    from modeling.player_forecasts.pp_shot_support import pp_rate_ablation
+    fixture = pp_support_fixture()
+    fixture["row"].update(toi_seconds_total_all=30000, toi_seconds_avg_last5=120,
+                          ev_toi_seconds_total_all=600000)
+    result = pp_rate_ablation(**fixture)
+    assert result["window"] == "last5" and result["exposureMinutes"] == 10
+    assert result["candidateWeight"] == 0.25
+    assert result["baselineRate"] == pytest.approx(12.16)
+    assert result["candidateRate"] == pytest.approx(9.3)
+    fixture["row"]["toi_seconds_avg_last5"] = 999
+    fixture["row"]["ev_toi_seconds_total_all"] = 1
+    assert pp_rate_ablation(**fixture) == result
+
+
+def test_pp_support_matches_all_window_and_canonical_zero_before_legacy():
+    from modeling.player_forecasts.pp_shot_support import pp_rate_ablation
+    result = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_avg_all": 12,
+        "toi_seconds_total_all": 1800}))
+    assert result["window"] == "all" and result["candidateWeight"] == 0.5
+    zero = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_last5": 0,
+        "sog_per_60_avg_last5": 12, "toi_seconds_total_last5": 300}))
+    assert zero["rawRate"] == 0 and zero["window"] == "last5"
+    assert zero["candidateRate"] > 0 and zero["fallbackFlag"] is None
+
+
+def test_pp_support_is_cumulative_exposure_not_average_minutes_or_ev_support():
+    from modeling.player_forecasts.pp_shot_support import pp_rate_ablation
+    short = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_last5": 12,
+        "toi_seconds_total_last5": 120, "toi_seconds_avg_last5": 120}))
+    long = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_last5": 12,
+        "toi_seconds_total_last5": 600, "toi_seconds_avg_last5": 120}))
+    assert short["baselineRate"] == long["baselineRate"]
+    assert short["candidateWeight"] < long["candidateWeight"]
+    assert short["candidateRate"] < long["candidateRate"]
+
+
+@pytest.mark.parametrize("seconds,complete", [(None, True), (-1, True), (float("nan"), True),
+    (False, True), (600, False)])
+def test_pp_support_missing_or_unverified_exposure_retains_baseline(seconds, complete):
+    from modeling.player_forecasts.pp_shot_support import pp_rate_ablation
+    result = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_last5": 12,
+        "toi_seconds_total_last5": seconds, "toi_seconds_total_all": 30000}, exposure_complete=complete))
+    assert result["candidateRate"] == result["baselineRate"]
+    assert result["candidateWeight"] is None
+    assert result["fallbackFlag"] == "missing_or_unverified_pp_exposure"
+
+
+def test_pp_support_missing_rate_and_contradictory_zero_have_explicit_fallbacks():
+    from modeling.player_forecasts.pp_shot_support import pp_rate_ablation
+    missing = pp_rate_ablation(**pp_support_fixture(row={"toi_seconds_total_all": 600}))
+    assert missing["fallbackFlag"] == "missing_pp_rate"
+    assert missing["candidateRate"] == missing["baselineRate"]
+    zero = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_last5": 0,
+        "toi_seconds_total_last5": 0}))
+    assert zero["candidateWeight"] == 0 and zero["candidateRate"] == 8
+    contradiction = pp_rate_ablation(**pp_support_fixture(row={"sog_per_60_last5": 12,
+        "toi_seconds_total_last5": 0}))
+    assert contradiction["candidateRate"] == contradiction["baselineRate"]
+    assert contradiction["fallbackFlag"] == "positive_rate_without_exposure"
+
+
+@pytest.mark.parametrize("changes", [{"prior_minutes": 10}, {"prior_minutes": True},
+    {"baseline_weight": 1.1}, {"baseline_weight": float("nan")}, {"context_multiplier": -1},
+    {"exposure_complete": "true"}, {"row": {"sog_per_60_last5": float("nan")}}])
+def test_pp_support_rejects_invalid_parameters(changes):
+    from modeling.player_forecasts.pp_shot_support import pp_rate_ablation
+    with pytest.raises(ValueError):
+        pp_rate_ablation(**pp_support_fixture(**changes))
+
+
+def test_pp_support_grid_keeps_rate_bounds_and_strengthens_prior_as_kappa_grows():
+    from modeling.player_forecasts.pp_shot_support import PRIOR_MINUTES, pp_rate_ablation
+    results = [pp_rate_ablation(**pp_support_fixture(prior_minutes=k)) for k in PRIOR_MINUTES]
+    assert [r["candidateWeight"] for r in results] == sorted([r["candidateWeight"] for r in results], reverse=True)
+    assert all(2 <= r["candidateRate"] <= 28 for r in results)
+    assert results[0]["candidateRate"] > results[-1]["candidateRate"] > 8
+
+
+def test_pp_support_export_is_deterministic_and_inventory_cannot_qualify_forecasts(tmp_path):
+    from modeling.player_forecasts.pp_shot_support import export_engineering
+    inventory = tmp_path / "inventory.json"
+    inventory.write_text(json.dumps({"predictiveEvidenceQualified": True, "testSlates": 1000}))
+    first, second = tmp_path / "first", tmp_path / "second"
+    report = export_engineering(first, inventory)
+    assert export_engineering(second, inventory) == report
+    assert report["predictiveEvidenceQualified"] is False and report["decision"] == "retain_baseline"
+    assert report["predictiveTrials"] == [] and report["holdoutResults"] is None
+    assert report["selectedPriorMinutes"] is None and report["accuracyImprovement"] is None
+    for file in first.iterdir():
+        assert file.read_bytes() == (second / file.name).read_bytes()
+    protocol = json.loads((first / "protocol.json").read_text())
+    assert protocol["split"]["protectedInclusive"] == ["2026-01-03", "2026-04-16"]
+    assert protocol["split"]["dates"] is None and protocol["primaryLoss"].startswith("mean_squared_error")
+    with pytest.raises(FileExistsError):
+        export_engineering(first)
+    assert json.loads((first / "report.json").read_text()) == report
+
+
+def test_pp_support_export_refuses_baseline_drift_and_repo_output_before_writing(tmp_path, monkeypatch):
+    from modeling.player_forecasts import pp_shot_support as support
+    with pytest.raises(RuntimeError, match="outside"):
+        support.export_engineering(support.repository_root() / "output" / "pp-support")
+    first_dependency = next(iter(support.BASELINE_DEPENDENCIES))
+    monkeypatch.setitem(support.BASELINE_DEPENDENCIES, first_dependency, "0" * 64)
+    output = tmp_path / "drift"
+    with pytest.raises(ValueError, match="dependency changed"):
+        support.export_engineering(output)
+    assert not output.exists()
+
+
+def pp_capture_fixture(tmp_path, monkeypatch):
+    """Fictional producer receipts test mechanics, never forecasting accuracy."""
+    from copy import deepcopy
+    from datetime import datetime, timezone
+    from modeling.player_forecasts import pp_evidence_capture as capture
+    from modeling.player_forecasts.pp_shot_support import PROTOCOL
+
+    clock = [datetime(2026, 10, 11, 19, tzinfo=timezone.utc)]
+    monkeypatch.setattr(capture, "_now", lambda: clock[0])
+    root = tmp_path / "supplied"
+    root.mkdir()
+    files = {}
+
+    def put(name, value, pointer=""):
+        raw = (json.dumps(value, indent=2) + "\n").encode()
+        (root / name).write_bytes(raw)
+        files[name] = {"path": name, "sha256": hashlib.sha256(raw).hexdigest()}
+        return {**files[name], "pointer": pointer}
+
+    def ref(name, pointer=""):
+        return {**files[name], "pointer": pointer}
+
+    def null():
+        return {"value": None, "derivation_ref": None}
+
+    membership = {"canonicalId": 1, "nhlId": 101, "seasonId": 20262027, "teamId": 10,
+        "membershipCreatedAt": ["2026-10-01T00:00:00Z"], "identityUpdatedAt": None, "revision": "roster-original"}
+    context = {"version": "forge-issued-context-v1", "game": {"id": 2026020001, "date": "2026-10-12", "seasonId": 20262027,
+        "startTime": "2026-10-12T00:00:00Z", "homeTeamId": 10, "awayTeamId": 20}, "schedule": [], "roster": [membership],
+        "observedAt": "2026-10-11T17:59:00Z"}
+    rolling = {"player_id": 101, "game_id": 2026020000, "game_date": "2026-10-10", "season": 20262027,
+        "strength_state": "pp", "sog_per_60_last5": 12, "sog_per_60_avg_last5": None, "sog_per_60_all": None,
+        "sog_per_60_avg_all": None, "toi_seconds_total_last5": 600, "toi_seconds_total_all": None}
+    read = {"request": [{"method": "from", "args": ["rolling_player_game_metrics"]},
+        {"method": "select", "args": [",".join(rolling), {"count": "exact"}]}, {"method": "in", "args": ["player_id", [101]]},
+        {"method": "eq", "args": ["strength_state", "pp"]}, {"method": "lt", "args": ["game_date", "2026-10-12"]},
+        {"method": "gt", "args": ["game_date", "2025-10-12"]}, {"method": "order", "args": ["game_date", {"ascending": False}]},
+        {"method": "order", "args": ["player_id", {"ascending": True}]}, {"method": "order", "args": ["game_id", {"ascending": False}]},
+        {"method": "range", "args": [0, 499]}], "result": {"data": [rolling], "count": 1, "error": None}, "receivedAt": "2026-10-11T17:59:00Z"}
+    projection = {"run_id": "original-run", "player_id": 1, "game_id": 2026020001, "team_id": 10, "horizon_games": 1,
+        "proj_shots_pp": 0.5, "proj_toi_pp_seconds": 120}
+    source = {"fixture": "fictional", "game": {"id": 2026020001, "date": "2026-10-12", "type": 2, "homeTeamId": 10, "awayTeamId": 20},
+        "revision": {"id": "original-revision", "game_id": 2026020001, "run_id": "original-run", "input_snapshot_id": "original-snapshot",
+            "slate_date": "2026-10-12", "decision_as_of": "2026-10-11T18:00:00Z", "published_at": "2026-10-11T18:01:00Z",
+            "payload": {"players": [projection], "goalies": [], "codeVersion": "original-code", "modelMode": "baseline"}},
+        "observation": {"id": "original-snapshot", "provider": "forge", "dataset_key": "forge-run-inputs-v1", "entity_key": "original-run",
+            "available_at": "2026-10-11T18:00:00Z", "payload_hash": "a" * 64, "payload": {"version": "forge-inputs-v1",
+                "runId": "original-run", "slateDate": "2026-10-12", "decisionAsOf": "2026-10-11T18:00:00Z",
+                "inputCutoff": "2026-10-11T18:00:00Z", "capturedAt": "2026-10-11T18:00:00Z", "codeVersion": "original-code",
+                "modelMode": "baseline", "horizonGames": 1, "gameIds": [2026020001], "replayClassification": "captured_live",
+                "reads": [read], "outputHash": "b" * 64, "goalieStarts": [], "inputProvenance": {"issuedContexts": [context]}}}}
+    put("original.json", source)
+    protocol_ref = put("protocol.json", PROTOCOL)
+    bundle_ref = put("code.json", {"commit_sha": "c" * 40, "fixture": "fictional"})
+    config_ref = put("config.json", {})
+    proof_ref = put("proof.json", {"fixture": "fictional", "definition": "unit-test receipts only"})
+    receipt = {"source_ref": ref("original.json"), "source_revision": "original", "published_at": None,
+        "received_at": "2026-10-11T17:59:00Z", "available_at": None}
+    game = {"game_id": 2026020001, "slate_date": "2026-10-12", "season_id": 20262027, "game_type": 2, "home_team_id": 10,
+        "away_team_id": 20, "horizon_games": 1, "cutoff_at": "2026-10-11T18:00:00Z", "source_query_cutoff_at": "2026-10-11T18:00:00Z",
+        "maximum_feature_available_at": None, "issued_at": "2026-10-11T18:01:00Z", "scheduled_start_at": "2026-10-12T00:00:00Z",
+        "frozen_at": None, "run_id": "original-run", "revision_id": "original-revision", "input_snapshot_id": "original-snapshot",
+        "input_snapshot_hash": "a" * 64, "output_hash": "b" * 64, "captured_code_version": "original-code", "resolved_code_sha": "c" * 40,
+        "code_bundle_ref": bundle_ref, "nonsecret_config_ref": config_ref, "frozen_board_source_ref": None,
+        "issued_source_ref": ref("original.json"), "issued_context_ref": ref("original.json", "/observation/payload/inputProvenance/issuedContexts/0"),
+        "schedule_receipts": [receipt], "population_policy": {"id": "cutoff-roster", "definition": "all cutoff-known F/D candidates",
+            "declared_at": "2026-10-11T17:00:00Z", "candidate_player_ids": [1], "roster_receipts": [receipt],
+            "completeness": "unknown", "completeness_proof_ref": None}}
+    window = {"membership_rule_ref": proof_ref, "weighting_recipe_ref": proof_ref, "members": [{"game_id": 2026020000,
+        "team_id": 10, "source_ref": ref("original.json", "/observation/payload/reads/0/result/data/0"), "pp_seconds": 600,
+        "pp_shots": 2, "rate_weight": 1, "receipt": receipt}], "cumulative_pp_seconds": 600,
+        "original_rate_denominator_seconds": 600, "coverage": "complete", "completeness_proof_ref": proof_ref}
+    opportunity = {"key": "2026020001:10:1", "game_id": 2026020001, "team_id": 10, "opponent_team_id": 20,
+        "canonical_player_id": 1, "nhl_player_id": 101, "membership_revision": "roster-original",
+        "membership_ref": ref("original.json", "/observation/payload/inputProvenance/issuedContexts/0/roster/0"), "position": "F",
+        "pp_input": {"original_read_index": 0, "original_row_pointer": "/data/0", "supplement_ref": None,
+            "row": {key: rolling[key] for key in capture.RATE_FIELDS + capture.EXPOSURE_FIELDS}, "windows": {"last5": window, "all": None},
+            "baseline_weight": null(), "context": {key: null() for key in ("shot_quality", "on_ice", "team", "rest_schedule")}},
+        "issued_projection_ref": ref("original.json", "/revision/payload/players/0"),
+        "baseline_pp_shots": {"value": 0.5, "derivation_ref": ref("original.json", "/revision/payload/players/0/proj_shots_pp")},
+        "production_conditioning": "conditional_playing", "workload": {"conditional_pp_seconds": {"value": 120,
+            "derivation_ref": ref("original.json", "/revision/payload/players/0/proj_toi_pp_seconds")}, "conditioning": "conditional_playing", "contract_ref": None},
+        "participation": {"probability": null(), "status": "missing", "evidence_refs": [], "contract_ref": None},
+        "integration": {"basis": "unavailable", "contract_ref": None, "joint_scenarios_ref": None, "unconditional_pp_shots": null()},
+        "segments": {"rookie": None, "traded": None, "availability_changed": None, "evidence_refs": []}}
+    coverage = {"games": [{"game_id": 2026020001, "cutoff_candidate_count": 1, "opportunity_count": 1,
+        "issued_pp_count": 1, "qualified_window_count": 0, "unconditional_count": 0, "final_label_count": 0}], "exclusions": [
+            {"opportunity_key": opportunity["key"], "stage": "outcome", "reason": "not settled", "evidence_refs": []}]}
+    development = {"windows": [{"start": "2026-10-12", "end": "2026-10-12", "use": "unknown", "purpose": "original disclosure",
+        "recorded_at": "2026-10-11T17:00:00Z", "evidence_refs": []}], "retrospective_or_prospective": "prospective"}
+
+    def request():
+        def refresh(value):
+            if isinstance(value, dict):
+                if set(value) == {"path", "sha256", "pointer"}:
+                    value["sha256"] = files[value["path"]]["sha256"]
+                else:
+                    for child in value.values():
+                        refresh(child)
+            elif isinstance(value, list):
+                for child in value:
+                    refresh(child)
+        for payload in (game, opportunity, coverage, development):
+            refresh(payload)
+        game_ref = put("games.json", [game])
+        row_ref = put("opportunities.json", [opportunity])
+        coverage_ref = put("coverage.json", coverage)
+        dev_ref = put("development.json", development)
+        value = {"version": capture.REQUEST_VERSION, "packet_id": "fictional-pregame", "scopes": [{"game_id": game["game_id"], "slate_date": game["slate_date"]}],
+            "files": list(files.values()), "protocol_ref": protocol_ref, "games_ref": game_ref, "opportunities_ref": row_ref,
+            "coverage_ref": coverage_ref, "development_use_ref": dev_ref}
+        path = root / "request.json"
+        path.write_text(json.dumps(value))
+        return path
+
+    def seal_request(parent, *, nonparticipant=False, packet_id="fictional-sealed"):
+        clock[0] = datetime(2026, 10, 12, 4, tzinfo=timezone.utc)
+        frozen = deepcopy(source)
+        frozen["frozen"] = {"game_id": game["game_id"], "revision_id": game["revision_id"],
+            "scheduled_start_at": game["scheduled_start_at"], "frozen_at": "2026-10-12T00:01:00Z"}
+        frozen_ref = put("frozen.json", frozen)
+        label = {"opportunity_key": opportunity["key"], "game_id": game["game_id"], "team_id": 10, "canonical_player_id": 1,
+            "nhl_player_id": 101, "target_key": "PP_SHOTS_ON_GOAL", "target_version": "forge-pp-shots-outcome-v1",
+            "definition_ref": proof_ref, "revision_id": "outcome-v1", "supersedes_revision_id": None, "finality": "final",
+            "available_at": "2026-10-12T03:00:00Z", "receipts": [{**receipt, "source_ref": proof_ref, "source_revision": "final",
+                "received_at": "2026-10-12T03:00:00Z"}], "played": not nonparticipant, "pp_seconds": 0 if nonparticipant else 120,
+            "pp_shots": 0 if nonparticipant else 1, "total_shots": 0 if nonparticipant else 3, "coverage": "complete",
+            "completeness_proof_ref": proof_ref, "zero_basis": "certified_nonparticipation" if nonparticipant else None}
+        trace_ref = put("official-label-trace.json", {"fixture": "fictional", "played": label["played"],
+            **{key: label[key] for key in ("pp_seconds", "pp_shots", "total_shots")}})
+        if nonparticipant:
+            label["completeness_proof_ref"] = put("zero-proof.json", {"version": "forge-pp-zero-proof-v1", "opportunity_key": opportunity["key"],
+                "zero_basis": label["zero_basis"], "fields": [{"field": key, "source_ref": ref("official-label-trace.json", f"/{key}")}
+                    for key in ("pp_seconds", "pp_shots", "total_shots")], "evidence_refs": [trace_ref]})
+        outcomes_ref = put("labels-v1.json", [label])
+        final_coverage = deepcopy(coverage)
+        final_coverage["games"][0]["final_label_count"] = 1
+        final_coverage["exclusions"] = []
+        coverage_ref = put("coverage-final.json", final_coverage)
+        new_files = [files[name] for name in ("frozen.json", "labels-v1.json", "coverage-final.json", "official-label-trace.json")]
+        if nonparticipant:
+            new_files.append(files["zero-proof.json"])
+        value = {"version": capture.SEAL_VERSION, "packet_id": packet_id, "parent_manifest_sha256": hashlib.sha256(parent.read_bytes()).hexdigest(),
+            "files": new_files, "frozen_sources": [{"game_id": game["game_id"], "source_ref": frozen_ref}],
+            "outcomes_ref": outcomes_ref, "coverage_ref": coverage_ref}
+        path = root / "seal.json"
+        path.write_text(json.dumps(value))
+        return path, value, label
+
+    return capture, clock, root, source, game, opportunity, coverage, put, ref, request, seal_request
+
+
+def test_pp_capture_records_original_bytes_privately_and_never_qualifies(tmp_path, monkeypatch):
+    capture, _, root, _, _, _, _, _, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    output = tmp_path / "pregame"
+    request_path = request()
+    original_request = request_path.read_bytes()
+    result = capture.record_pregame(request_path, output)
+    manifest = json.loads((output / "manifest.json").read_text())
+    assert result["decision"] == "retain_baseline" and result["predictive_qualification"] == "pending"
+    assert result["training_run"] is False and result["serving_enabled"] is False
+    assert manifest["outcomes_ref"] is None and manifest["checkpoint_policy"] == "awaiting_frozen_final_pregame"
+    assert (output / "original.json").read_bytes() == (root / "original.json").read_bytes()
+    receipt = json.loads((output / manifest["capture_receipt_ref"]["path"]).read_text())
+    assert (output / receipt["request_ref"]["path"]).read_bytes() == original_request
+    assert output.stat().st_mode & 0o777 == 0o700
+    assert all(path.stat().st_mode & 0o777 == 0o600 for path in output.rglob("*.json"))
+    before = {str(path): path.read_bytes() for path in output.rglob("*.json")}
+    with pytest.raises(FileExistsError):
+        capture.record_pregame(request(), output)
+    assert before == {str(path): path.read_bytes() for path in output.rglob("*.json")}
+
+
+@pytest.mark.parametrize("nonparticipant", [False, True])
+def test_pp_capture_seals_freeze_and_labels_without_rewriting_pregame(tmp_path, monkeypatch, nonparticipant):
+    capture, _, _, _, _, _, _, _, _, request, seal_request = pp_capture_fixture(tmp_path, monkeypatch)
+    draft, sealed = tmp_path / "draft", tmp_path / "sealed"
+    capture.record_pregame(request(), draft)
+    before = {path.relative_to(draft): path.read_bytes() for path in draft.rglob("*.json")}
+    seal, _, _ = seal_request(draft / "manifest.json", nonparticipant=nonparticipant)
+    result = capture.seal_packet(draft / "manifest.json", seal, sealed)
+    manifest = json.loads((sealed / "manifest.json").read_text())
+    assert result["version"] == capture.PACKET_VERSION and result["predictive_qualification"] == "pending"
+    assert manifest["checkpoint_policy"] == "frozen_final_pregame"
+    assert before == {path.relative_to(draft): path.read_bytes() for path in draft.rglob("*.json")}
+    for name, raw in before.items():
+        if str(name) != "manifest.json":
+            assert (sealed / name).read_bytes() == raw
+    assert manifest["opportunities_ref"] == json.loads(before[Path("manifest.json")])["opportunities_ref"]
+    ledger = json.loads((sealed / manifest["coverage_ref"]["path"]).read_text())
+    assert ledger["exclusions"] == json.loads(before[Path("coverage.json")])["exclusions"]
+    receipt = json.loads((sealed / manifest["capture_receipt_ref"]["path"]).read_text())
+    assert (sealed / receipt["parent_manifest_ref"]["path"]).read_bytes() == before[Path("manifest.json")]
+
+
+@pytest.mark.parametrize("case", ["late", "historical", "cutoff", "population", "row", "window", "coverage", "conditioning", "availability", "hash"])
+def test_pp_capture_rejects_inconsistent_prospective_evidence(tmp_path, monkeypatch, case):
+    capture, clock, root, source, game, row, coverage, put, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    if case == "late":
+        clock[0] = capture._instant(game["scheduled_start_at"])
+    elif case == "historical":
+        source["observation"]["payload"]["replayClassification"] = "historical_reconstruction"
+        put("original.json", source)
+    elif case == "cutoff":
+        source["observation"]["payload"]["reads"][0]["receivedAt"] = "2026-10-11T18:00:01Z"
+        put("original.json", source)
+    elif case == "population":
+        game["population_policy"]["candidate_player_ids"].append(2)
+    elif case == "row":
+        row["pp_input"]["original_row_pointer"] = "/data/1"
+    elif case == "window":
+        row["pp_input"]["windows"]["last5"]["cumulative_pp_seconds"] = 601
+    elif case == "coverage":
+        coverage["games"][0]["issued_pp_count"] = 0
+    elif case == "conditioning":
+        row["integration"]["unconditional_pp_shots"] = row["baseline_pp_shots"].copy()
+    elif case == "availability":
+        game["maximum_feature_available_at"] = "2026-10-11T17:59:00Z"
+    path = request()
+    if case == "hash":
+        (root / "original.json").write_text("{}")
+    with pytest.raises(ValueError):
+        capture.record_pregame(path, tmp_path / "rejected")
+    assert not (tmp_path / "rejected").exists()
+
+
+def test_pp_capture_protects_holdout_before_loading_sources_and_refuses_repo_paths(tmp_path, monkeypatch):
+    capture, _, root, _, game, _, _, _, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    path = request()
+    (root / "original.json").unlink()
+    value = json.loads(path.read_text())
+    value["scopes"][0]["slate_date"] = "2026-02-01"
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match="protected"):
+        capture.record_pregame(path, tmp_path / "protected")
+    game["slate_date"] = "2026-02-01"
+    path = request()
+    value = json.loads(path.read_text())
+    value["scopes"][0]["slate_date"] = "2026-10-12"
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match="protected"):
+        capture.record_pregame(path, tmp_path / "false-header")
+    with pytest.raises(RuntimeError, match="outside"):
+        capture._publish(capture.repository_root() / "research-data", capture._Store(), {})
+
+
+def test_pp_capture_rejects_symlinks_traversal_and_ambiguous_json(tmp_path):
+    from modeling.player_forecasts import pp_evidence_capture as capture
+    source = tmp_path / "source.json"
+    source.write_text("{}")
+    linked = tmp_path / "linked.json"
+    linked.symlink_to(source)
+    with pytest.raises(ValueError, match="symlink"):
+        capture.record_pregame(linked, tmp_path / "packet")
+    for path in ("../secret.json", "/absolute.json", "a/./b.json", "https://example.com"):
+        with pytest.raises(ValueError):
+            capture._relative(path)
+    for raw in (b'{"a":1,"a":2}', b'{"a":NaN}', b'{"a":1e309}'):
+        with pytest.raises(ValueError):
+            capture._json(raw)
+    assert capture._pointer({"a/b": {"~key": [7]}}, "/a~1b/~0key/0") == 7
+    with pytest.raises(ValueError):
+        capture._pointer([7], "/00")
+
+
+@pytest.mark.parametrize("case", ["changed_source", "parent_hash", "zero", "identity", "totals", "missing_certificate"])
+def test_pp_capture_rejects_invalid_freezes_and_outcomes(tmp_path, monkeypatch, case):
+    capture, _, root, _, _, _, _, put, _, request, seal_request = pp_capture_fixture(tmp_path, monkeypatch)
+    draft = tmp_path / "draft"
+    capture.record_pregame(request(), draft)
+    path, value, label = seal_request(draft / "manifest.json", nonparticipant=case == "missing_certificate")
+    if case == "changed_source":
+        frozen = json.loads((root / "frozen.json").read_text())
+        frozen["revision"]["payload"]["players"][0]["proj_shots_pp"] = 9
+        value["frozen_sources"][0]["source_ref"] = put("frozen.json", frozen)
+    elif case == "parent_hash":
+        value["parent_manifest_sha256"] = "0" * 64
+    elif case == "zero":
+        label["pp_shots"] = 0
+    elif case == "identity":
+        label["nhl_player_id"] = 999
+    elif case == "totals":
+        label["pp_shots"] = 4
+    elif case == "missing_certificate":
+        label["zero_basis"] = "observed_zero_pp_exposure"
+    if case not in ("changed_source", "parent_hash"):
+        value["outcomes_ref"] = put("labels-v1.json", [label])
+    entries = {entry["path"]: entry for entry in value["files"]}
+    for reference in (value["frozen_sources"][0]["source_ref"], value["outcomes_ref"], value["coverage_ref"]):
+        entries[reference["path"]] = {key: reference[key] for key in ("path", "sha256")}
+    value["files"] = list(entries.values())
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError):
+        capture.seal_packet(draft / "manifest.json", path, tmp_path / "rejected")
+    assert not (tmp_path / "rejected").exists()
+
+
+def test_pp_capture_preserves_missing_inputs_and_forecasts_in_population(tmp_path, monkeypatch):
+    capture, _, _, source, _, row, coverage, put, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    source["revision"]["payload"]["players"] = []
+    put("original.json", source)
+    row["pp_input"], row["issued_projection_ref"] = None, None
+    row["baseline_pp_shots"] = {"value": None, "derivation_ref": None}
+    row["workload"]["conditional_pp_seconds"] = {"value": None, "derivation_ref": None}
+    coverage["games"][0]["issued_pp_count"] = 0
+    for stage in ("features", "forecast"):
+        coverage["exclusions"].append({"opportunity_key": row["key"], "stage": stage, "reason": "original missing receipt", "evidence_refs": []})
+    output = tmp_path / "missing"
+    capture.record_pregame(request(), output)
+    stored = json.loads((output / "opportunities.json").read_text())
+    assert len(stored) == 1 and stored[0]["pp_input"] is None and stored[0]["baseline_pp_shots"]["value"] is None
+
+
+@pytest.mark.parametrize("case", ["ordering", "range", "out_of_window"])
+def test_pp_capture_rejects_query_selection_changes(tmp_path, monkeypatch, case):
+    capture, _, _, source, _, _, _, put, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    read = source["observation"]["payload"]["reads"][0]
+    if case == "ordering":
+        next(op for op in read["request"] if op["method"] == "order")["args"][1]["ascending"] = True
+    elif case == "range":
+        next(op for op in read["request"] if op["method"] == "range")["args"][1] = 9
+    else:
+        read["result"]["data"][0]["game_date"] = "2026-10-12"
+    put("original.json", source)
+    with pytest.raises(ValueError, match="query|row outside"):
+        capture.record_pregame(request(), tmp_path / "rejected")
+
+
+def test_pp_capture_label_corrections_preserve_prior_revisions(tmp_path, monkeypatch):
+    capture, _, root, _, _, _, _, put, _, request, seal_request = pp_capture_fixture(tmp_path, monkeypatch)
+    draft, first, corrected = tmp_path / "draft", tmp_path / "first", tmp_path / "corrected"
+    capture.record_pregame(request(), draft)
+    seal, _, _ = seal_request(draft / "manifest.json")
+    capture.seal_packet(draft / "manifest.json", seal, first)
+    before = (first / "labels-v1.json").read_bytes()
+    path, value, label = seal_request(first / "manifest.json", packet_id="fictional-corrected")
+    label.update(revision_id="outcome-v2", supersedes_revision_id="outcome-v1", finality="corrected", pp_shots=2)
+    value["outcomes_ref"] = put("labels-v2.json", [label])
+    value["files"].append({key: value["outcomes_ref"][key] for key in ("path", "sha256")})
+    path.write_text(json.dumps(value))
+    capture.seal_packet(first / "manifest.json", path, corrected)
+    assert (corrected / "labels-v1.json").read_bytes() == before == (first / "labels-v1.json").read_bytes()
+    assert json.loads((corrected / "labels-v2.json").read_text())[0]["supersedes_revision_id"] == "outcome-v1"
+    label.update(supersedes_revision_id=None)
+    value["outcomes_ref"] = put("labels-v2.json", [label])
+    value["files"][-1]["sha256"] = value["outcomes_ref"]["sha256"]
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match="supersede"):
+        capture.seal_packet(first / "manifest.json", path, tmp_path / "bad-correction")
+
+
+def test_pp_capture_requires_per_field_zero_proof(tmp_path, monkeypatch):
+    capture, _, _, _, _, _, _, put, _, request, seal_request = pp_capture_fixture(tmp_path, monkeypatch)
+    draft = tmp_path / "draft"
+    capture.record_pregame(request(), draft)
+    path, value, label = seal_request(draft / "manifest.json", nonparticipant=True)
+    label["completeness_proof_ref"] = put("incomplete-zero-proof.json", {"version": "forge-pp-zero-proof-v1",
+        "opportunity_key": label["opportunity_key"], "zero_basis": label["zero_basis"], "fields": [], "evidence_refs": [label["definition_ref"]]})
+    value["outcomes_ref"] = put("labels-v1.json", [label])
+    for entry in value["files"]:
+        if entry["path"] == "labels-v1.json":
+            entry["sha256"] = value["outcomes_ref"]["sha256"]
+    value["files"].append({key: label["completeness_proof_ref"][key] for key in ("path", "sha256")})
+    path.write_text(json.dumps(value))
+    with pytest.raises(ValueError, match="cover every"):
+        capture.seal_packet(draft / "manifest.json", path, tmp_path / "rejected")
+
+
+def test_pp_capture_preserves_final_reread_and_first_row_ties(tmp_path, monkeypatch):
+    from copy import deepcopy
+    capture, _, _, source, _, row, _, put, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    read = source["observation"]["payload"]["reads"][0]
+    second = deepcopy(read["result"]["data"][0])
+    second["game_id"] -= 1
+    read["result"]["data"].append(second)
+    read["result"]["count"] = 2
+    reread = deepcopy(read)
+    source["observation"]["payload"]["reads"].append(reread)
+    row["pp_input"]["original_read_index"] = 1
+    put("original.json", source)
+    capture.record_pregame(request(), tmp_path / "correct-tie")
+    row["pp_input"]["original_row_pointer"] = "/data/1"
+    with pytest.raises(ValueError, match="final selected"):
+        capture.record_pregame(request(), tmp_path / "wrong-tie")
+    row["pp_input"]["original_row_pointer"] = "/data/0"
+    reread["result"]["data"].reverse()
+    put("original.json", source)
+    with pytest.raises(ValueError, match="result order"):
+        capture.record_pregame(request(), tmp_path / "wrong-order")
+
+
+def test_pp_capture_bounds_request_and_generated_receipts_before_output(tmp_path, monkeypatch):
+    capture, _, _, _, _, _, _, _, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    path = request()
+    monkeypatch.setattr(capture, "MAX_FILE_BYTES", 100)
+    with pytest.raises(ValueError, match="bounded"):
+        capture.record_pregame(path, tmp_path / "large-request")
+    monkeypatch.setattr(capture, "MAX_FILE_BYTES", 64 * 1024 * 1024)
+    monkeypatch.setattr(capture, "MAX_FILES", len(json.loads(path.read_text())["files"]))
+    with pytest.raises(ValueError, match="budget"):
+        capture.record_pregame(path, tmp_path / "generated-overflow")
+    assert not (tmp_path / "large-request").exists() and not (tmp_path / "generated-overflow").exists()
+    store = capture._Store()
+    monkeypatch.setattr(capture, "MAX_PACKET_BYTES", 2)
+    with pytest.raises(ValueError, match="budget"):
+        store.add_raw("oversize", b'{"x":1}')
+
+
+def test_pp_capture_counts_manifest_at_file_limit(tmp_path, monkeypatch):
+    capture, _, _, _, _, _, _, _, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    output = tmp_path / "recorded"
+    capture.record_pregame(request(), output)
+    manifest = json.loads((output / "manifest.json").read_text())
+    store = capture._Store()
+    store.load(output, manifest["files"], recorder_files=True)
+    monkeypatch.setattr(capture, "MAX_FILES", len(store.raw))
+    with pytest.raises(ValueError, match="complete packet file"):
+        capture._publish(tmp_path / "overflow", store, manifest)
+    assert not (tmp_path / "overflow").exists()
+
+
+def test_pp_capture_nested_source_directories_are_private(tmp_path, monkeypatch):
+    capture, _, root, _, _, _, _, put, _, request, _ = pp_capture_fixture(tmp_path, monkeypatch)
+    (root / "nested" / "receipts").mkdir(parents=True)
+    put("nested/receipts/source.json", {"fixture": "fictional"})
+    output = tmp_path / "nested-packet"
+    capture.record_pregame(request(), output)
+    assert all(path.stat().st_mode & 0o777 == 0o700 for path in output.rglob("*") if path.is_dir())
+
+
 def official_settlement_fixture():
     from modeling.player_forecasts.daily_board_settlement import normalize_settlement
     box = {"id": 1, "gameDate": "2026-10-10", "gameType": 2, "gameState": "OFF", "startTimeUTC": "2026-10-10T23:00:00Z",
@@ -3593,3 +4142,325 @@ def test_prospective_freeze_binds_fixed_artifact_and_target_season(tmp_path, mon
     assert evidence["evidenceKind"] == "untouched_prospective"
     assert evidence["tuningPermitted"] is False
     assert evidence["metrics"]["targets"]["goals"]["rows"] == 1
+
+
+def forge_walk_forward_row(day="2026-10-10", game=2026020010, player=9711, value=2, **changes):
+    from modeling.player_forecasts.forge_walk_forward import COHORT
+    row = {"playerId": player, "nhlPlayerId": COHORT[player], "gameId": game, "gameDate": day,
+           "seasonId": 20262027, "teamId": 15, "position": "C", "toiSeconds": 600,
+           "value": value, "status": "positive_TOI", "receivedAt": f"{day}T23:30:00Z",
+           "availableAt": f"{day}T23:40:00Z", "appearance": {}}
+    return {**row, **changes}
+
+
+def test_forge_walk_forward_availability_is_not_event_date_or_hindcast_clock():
+    from modeling.player_forecasts.forge_walk_forward import eligible_history
+    old = forge_walk_forward_row("2025-11-01", 2025020101,
+                                 receivedAt="2026-04-02T12:00:00Z", availableAt="2026-10-13T22:00:00Z")
+    cutoff = "2025-11-17T00:00:00-05:00"
+    assert eligible_history([old], cutoff) == []
+    assert eligible_history([old], cutoff, mode="hindcast") == [old]
+    assert eligible_history([old], "2026-10-14T18:15:00-04:00") == [old]
+    exact = forge_walk_forward_row(availableAt="2026-10-14T22:15:00Z")
+    assert eligible_history([exact], "2026-10-14T18:15:00-04:00") == []
+    same_day = forge_walk_forward_row("2026-10-14")
+    assert eligible_history([same_day], "2026-10-14T23:59:00-04:00") == []
+
+
+@pytest.mark.parametrize("day", ["2026-01-03", "2026-03-15", "2026-04-16", "2026-10-13"])
+def test_forge_walk_forward_rejects_protected_and_exposed_history(day):
+    from modeling.player_forecasts.forge_walk_forward import eligible_history
+    with pytest.raises(ValueError, match="excluded history date"):
+        eligible_history([forge_walk_forward_row(day)], "2026-10-14T18:15:00-04:00")
+
+
+def test_forge_walk_forward_duplicates_never_become_extra_weight():
+    from modeling.player_forecasts.forge_walk_forward import eligible_history
+    row = forge_walk_forward_row()
+    with pytest.raises(ValueError, match="duplicate history"):
+        eligible_history([row, dict(row)], "2026-10-14T18:15:00-04:00")
+
+
+def test_forge_walk_forward_pool_and_bands_are_train_only_and_zero_is_valid():
+    from modeling.player_forecasts.forge_walk_forward import predict
+    history = [forge_walk_forward_row(value=0), forge_walk_forward_row(game=2026020011, player=10305, value=4),
+               forge_walk_forward_row("2026-10-14", game=2026020012, value=999)]
+    candidate = {"playerId": 8157, "nhlPlayerId": 8473512, "teamId": 9}
+    native = lambda history, candidates, cutoff, mode: {c["playerId"]: {"mean": None} for c in candidates}
+    result = predict(history, [candidate], "2026-10-14T18:15:00-04:00", native=native)[0]
+    for method in ("A", "B", "C"):
+        estimate = result["estimates"][method]
+        assert estimate["mean"] == 2 and estimate["basis"] == "prior_only"
+        assert estimate["individualN"] == 0 and estimate["pooledN"] == 2
+        assert estimate["p10"] == 0 and estimate["p90"] == 4
+    empty = predict([], [candidate], "2026-10-14T18:15:00-04:00", native=native)[0]
+    assert all(x["mean"] is None for x in empty["estimates"].values())
+
+
+def test_forge_walk_forward_lagged_history_changes_only_later_predictions():
+    from modeling.player_forecasts.forge_walk_forward import predict
+    candidate = {"playerId": 9711, "nhlPlayerId": 8479400, "teamId": 15}
+    history = [forge_walk_forward_row(value=1)]
+    later = forge_walk_forward_row("2026-10-14", game=2026020110, value=5,
+                                   availableAt="2026-10-15T14:00:00Z")
+    before = "2026-10-14T18:15:00-04:00"
+    after = "2026-10-15T17:45:00-04:00"
+    predict_b = lambda rows, cut: predict(rows, [candidate], cut, methods=("B",))[0]
+    assert predict_b(history, before) == predict_b(history + [later], before)
+    assert predict_b(history, after)["estimates"]["B"]["mean"] == 1
+    assert predict_b(history + [later], after)["estimates"]["B"]["mean"] == 3
+
+
+def test_forge_walk_forward_exact_baseline_denominator_and_late_settlement():
+    from modeling.player_forecasts.forge_walk_forward import select_method
+    def forecast(game, player, a, b, c):
+        return {"playerId": player, "gameId": game, "teamId": 15, "membershipValid": True, "onTime": True,
+                "issuedAt": "2026-10-14T22:00:00Z", "estimates": {m: {"mean": v} for m, v in zip("ABC", [a, b, c])}}
+    rows = [forecast(2026020110, 9711, 2, 0, 2), forecast(2026020111, 10305, 2, None, 2)]
+    labels = [forge_walk_forward_row("2026-10-14", 2026020110, value=0),
+              forge_walk_forward_row("2026-10-14", 2026020111, player=10305, value=0)]
+    result = select_method(rows, labels, "2026-10-15T18:00:00-04:00")
+    assert result["comparisonRows"] == 2 and result["selected"] == "A"
+    assert result["methods"]["B"]["eligible"] is False
+    labels[1]["availableAt"] = "2026-10-16T14:00:00Z"
+    earlier = select_method(rows, labels, "2026-10-15T18:00:00-04:00")
+    assert earlier["selected"] == "B" and earlier["comparisonRows"] == 1
+    assert select_method(rows, labels, "2026-10-16T18:00:00-04:00")["selected"] == "A"
+    assert earlier["selected"] == "B"  # Previously returned decision remains unchanged.
+
+
+def forge_walk_forward_boxscore():
+    game = {"id": 2026020110, "gameDate": "2026-10-14", "seasonId": 20262027,
+            "homeTeamId": 15, "awayTeamId": 8, "scheduledStartAt": "2026-10-14T23:30:00Z"}
+    body = {"id": game["id"], "gameDate": game["gameDate"], "season": game["seasonId"],
+            "gameType": 2, "gameState": "OFF", "startTimeUTC": game["scheduledStartAt"],
+            "homeTeam": {"id": 15}, "awayTeam": {"id": 8}, "playerByGameStats": {
+                "homeTeam": {"forwards": [{"playerId": 8479400, "toi": "12:34", "blockedShots": 0, "position": "C"}], "defense": []},
+                "awayTeam": {"forwards": [], "defense": []}}}
+    return game, body
+
+
+def test_forge_walk_forward_boxscore_zero_missing_and_finality():
+    from modeling.player_forecasts.forge_walk_forward import normalize_blocked_shots
+    game, body = forge_walk_forward_boxscore()
+    settle = lambda: normalize_blocked_shots(body, game, "2026-10-15T14:00:00Z", "2026-10-15T14:01:00Z")
+    result = settle()
+    assert result["rows"][0]["value"] == 0 and result["rows"][0]["status"] == "positive_TOI"
+    assert 10305 in result["unknownPlayerIds"]
+    player = body["playerByGameStats"]["homeTeam"]["forwards"][0]
+    player["toi"] = "00:00"
+    assert settle()["rows"][0]["status"] == "zero_TOI" and settle()["rows"][0]["value"] is None
+    player["toi"] = "12:34"
+    del player["blockedShots"]
+    assert settle()["rows"][0]["status"] == "unknown"
+    body["gameState"] = "FINAL"
+    assert settle()["status"] == "unsettled"
+
+
+def test_forge_walk_forward_historical_team_and_duplicate_labels_are_verified():
+    from modeling.player_forecasts.forge_walk_forward import normalize_blocked_shots
+    game, body = forge_walk_forward_boxscore()
+    body["homeTeam"]["id"] = 9
+    with pytest.raises(ValueError, match="historical teams"):
+        normalize_blocked_shots(body, game, "2026-10-15T14:00:00Z", "2026-10-15T14:01:00Z")
+    body["homeTeam"]["id"] = 15
+    body["playerByGameStats"]["homeTeam"]["forwards"] *= 2
+    with pytest.raises(ValueError, match="duplicate"):
+        normalize_blocked_shots(body, game, "2026-10-15T14:00:00Z", "2026-10-15T14:01:00Z")
+
+
+def test_forge_walk_forward_artifacts_refuse_overwrite(tmp_path):
+    from modeling.player_forecasts.forge_walk_forward import exclusive_json
+    target = tmp_path / "predictions.json"
+    exclusive_json(target, {"mean": 1})
+    with pytest.raises(FileExistsError):
+        exclusive_json(target, {"mean": 2})
+    assert json.loads(target.read_text()) == {"mean": 1}
+
+
+def forge_walk_forward_issuance_fixture(tmp_path, monkeypatch):
+    from modeling.player_forecasts import forge_walk_forward as wf
+    day = {"date": "2026-10-14", "phase": "adaptive", "featureCutoffAt": "2026-10-14T22:15:00Z",
+           "selectionCutoffAt": "2026-10-14T22:15:00Z", "issueDeadlineAt": "2026-10-14T22:30:00Z"}
+    candidate = {"playerId": 9711, "nhlPlayerId": 8479400, "teamId": 15, "gameId": 2026020110,
+                 "gameDate": day["date"], "position": "C", "membershipValid": True,
+                 "membershipAvailableAt": "2026-10-14T22:10:00Z"}
+    wf.exclusive_json(tmp_path / "sources/days/2026-10-14.json", {
+        "status": "captured", "validatedAt": "2026-10-14T22:10:00Z", "candidates": [candidate], "exclusions": []})
+    wf.exclusive_json(tmp_path / "history/seed.json", [forge_walk_forward_row(value=1)])
+    monkeypatch.setattr(wf, "readiness", lambda root: {"codeState": {"fixture": True}})
+    native = lambda history, candidates, cutoff, mode: {c["playerId"]: {"mean": 1, "historyGameIds": [2026020010]} for c in candidates}
+    predictor = lambda history, candidates, cutoff, methods: wf.predict(history, candidates, cutoff, methods=methods, native=native)
+    return wf, day, predictor
+
+
+def test_forge_walk_forward_issuance_is_durable_immutable_and_scores_do_not_feed_it(tmp_path, monkeypatch):
+    wf, day, predictor = forge_walk_forward_issuance_fixture(tmp_path, monkeypatch)
+    clock = lambda: wf.stamp("2026-10-14T22:16:00Z")
+    wf.exclusive_json(tmp_path / "evaluator-sealed/scores.json", {"B": 999999})
+    first = wf.issue_day(tmp_path, {"policyHash": "fixture"}, day, clock=clock, predictor=predictor)
+    path = tmp_path / "predictions/2026-10-14.json"
+    packet = wf.issued_packet(tmp_path, path)
+    assert first["status"] == "issued" and packet["selected"] == "A"
+    before = path.read_bytes()
+    (tmp_path / "evaluator-sealed/scores.json").write_text('{"B": -999999}')
+    second = wf.issue_day(tmp_path, {"policyHash": "fixture"}, day, clock=clock,
+                          predictor=lambda *args, **kwargs: pytest.fail("issued forecast was recomputed"))
+    assert second["status"] == "already_issued" and path.read_bytes() == before
+    # A fresh issuance with identical permitted inputs also ignores the sealed file.
+    other = tmp_path / "independent-fixture"
+    wf, other_day, other_predictor = forge_walk_forward_issuance_fixture(other, monkeypatch)
+    wf.exclusive_json(other / "evaluator-sealed/scores.json", {"B": -999999})
+    wf.issue_day(other, {"policyHash": "fixture"}, other_day, clock=clock, predictor=other_predictor)
+    assert wf.issued_packet(other, other / "predictions/2026-10-14.json")["rows"] == packet["rows"]
+
+
+@pytest.mark.parametrize("late_phase", ["initial", "calculation", "write"])
+def test_forge_walk_forward_missed_deadline_never_retries_or_backdates(tmp_path, monkeypatch, late_phase):
+    wf, day, predictor = forge_walk_forward_issuance_fixture(tmp_path, monkeypatch)
+    early, late = wf.stamp("2026-10-14T22:16:00Z"), wf.stamp(day["issueDeadlineAt"])
+    clocks = {"initial": [late], "calculation": [early, late], "write": [early, early, late]}
+    instants = iter(clocks[late_phase])
+    result = wf.issue_day(tmp_path, {"policyHash": "fixture"}, day, clock=lambda: next(instants), predictor=predictor)
+    assert result["status"].startswith("missed")
+    assert wf.adaptive_rows(tmp_path) == []
+    assert wf.issued_packet(tmp_path, tmp_path / "predictions/2026-10-14.json") is None
+    again = wf.issue_day(tmp_path, {"policyHash": "fixture"}, day, clock=lambda: early,
+                         predictor=lambda *args, **kwargs: pytest.fail("missed issuance retried"))
+    assert again["status"] == "previous_attempt_terminal"
+
+
+def test_forge_walk_forward_interrupted_source_attempt_is_terminal_and_failures_use_budget(tmp_path, monkeypatch):
+    from modeling.player_forecasts import forge_walk_forward as wf
+    calls = []
+    instant = wf.stamp("2026-10-14T22:00:00Z")
+    args = (tmp_path, "schedule-2026-10-14", "schedule", "https://api-web.nhle.com/v1/score/2026-10-14",
+            "2026-10-14T21:50:00Z", "2026-10-14T22:15:00Z")
+    transport = lambda url: (calls.append(url) or (22, b"missing", "fixture failure"))
+    result = wf.source_request(*args, clock=lambda: instant, transport=transport)
+    assert result["status"] == "failed"
+    assert wf.source_request(*args, clock=lambda: instant, transport=transport) == result
+    assert len(calls) == 1
+    monkeypatch.setitem(wf.POLICY["budgets"], "schedule", 1)
+    with pytest.raises(ValueError, match="budget exhausted"):
+        wf.source_request(tmp_path, "schedule-2026-10-15", "schedule", "https://api-web.nhle.com/v1/score/2026-10-15",
+                          args[-2], args[-1], clock=lambda: instant, transport=transport)
+    (tmp_path / "sources/acquisitions/schedule-2026-10-14/receipt.json").unlink()
+    assert wf.source_request(*args, clock=lambda: instant, transport=transport)["status"] == "interrupted"
+    assert len(calls) == 1
+
+
+def test_forge_walk_forward_sealed_readout_and_locked_dependency_refuse_early_or_changed(tmp_path):
+    from modeling.player_forecasts import forge_walk_forward as wf
+    assert wf.final_report(tmp_path, {}, clock=lambda: wf.stamp("2026-10-28T15:59:59Z"))["status"] == "sealed_until_readout"
+    assert not list(tmp_path.iterdir())
+    executable = tmp_path / "executable"
+    executable.write_bytes(b"original")
+    sha = wf.file_hash(executable)
+    state = {"pythonFiles": {str(executable): sha}, "python": {"executable": str(executable), "executableHash": sha},
+             "native": {"modules": {}, "node": {"executablePath": str(executable), "sha256": sha},
+                        "packageLock": {"path": str(executable), "sha256": sha}}}
+    wf.verify_code_state(state)
+    executable.write_bytes(b"changed")
+    with pytest.raises(ValueError, match="dependency changed"):
+        wf.verify_code_state(state)
+
+
+def test_forge_walk_forward_native_band_support_and_cluster_estimand_are_exact():
+    from modeling.player_forecasts import forge_walk_forward as wf
+    rows = [forge_walk_forward_row(game=2026020001 + i, value=i) for i in range(7)]
+    candidate = {"playerId": 9711, "nhlPlayerId": 8479400, "teamId": 15}
+    native = lambda *args: {9711: {"mean": 5, "historyGameIds": [r["gameId"] for r in rows[-2:]]}}
+    prediction = wf.predict(rows, [candidate], "2026-10-14T22:15:00Z", native=native)[0]
+    assert prediction["estimates"]["A"]["individualN"] == 2
+    assert prediction["estimates"]["A"]["bandSource"] == "pool"
+    clustered = wf.cluster_difference([("d1", 1, 1), ("d2", 2, 4), ("d2", 2, 4)], "slate")
+    assert clustered["meanLossReduction"] == 3  # Matches player-game paired MAE estimand.
+
+
+def test_forge_walk_forward_partial_settlement_preserves_first_valid_zero_and_positive(tmp_path, monkeypatch):
+    from modeling.player_forecasts import forge_walk_forward as wf
+    import copy
+    game, first_body = forge_walk_forward_boxscore()
+    game["plannedPlayerIds"] = [9711, 10305, 8157]
+    players = first_body["playerByGameStats"]["homeTeam"]["forwards"]
+    players[0]["toi"] = "00:00"
+    players.extend([{"playerId": 8477949, "toi": "10:00", "blockedShots": 2, "position": "R"},
+                    {"playerId": 8473512, "toi": "10:00", "position": "C"}])
+    second_body = copy.deepcopy(first_body)
+    second_players = second_body["playerByGameStats"]["homeTeam"]["forwards"]
+    second_players[0].update(toi="10:00", blockedShots=9)
+    second_players[1]["blockedShots"] = 8
+    second_players[2]["blockedShots"] = 3
+    current = [wf.stamp("2026-10-15T14:00:00Z")]
+    bodies = iter([first_body, second_body])
+    receipts = []
+    def source(root, key, kind, url, start, end, **kwargs):
+        body = next(bodies)
+        body_path = root / "sources/acquisitions" / key / "body"
+        sha = wf.exclusive_json(body_path, body)
+        receipt = {"status": "received", "receivedAt": current[0].isoformat(), "bodyHash": sha,
+                   "bodyPath": str(body_path.relative_to(root)), "url": url}
+        receipts.append(receipt)
+        return receipt
+    monkeypatch.setattr(wf, "source_request", source)
+    monkeypatch.setattr(wf, "call_native", lambda request: {"rows": [
+        {"playerId": p["playerId"], "appearances": [{"availableAt": current[0].isoformat()}]} for p in request["players"]]})
+    wf.exclusive_json(tmp_path / "history/seed.json", [])
+    first = wf.settle_game(tmp_path, {}, game, 1, clock=lambda: current[0])
+    assert first["complete"] is False
+    first_history = {r["playerId"]: r for r in wf.load_history(tmp_path)}
+    assert first_history[9711]["status"] == "zero_TOI" and first_history[10305]["value"] == 2
+    current[0] = wf.stamp("2026-10-16T14:00:00Z")
+    second = wf.settle_game(tmp_path, {}, game, 2, clock=lambda: current[0])
+    assert second["complete"] is True and len(receipts) == 2
+    history = {r["playerId"]: r for r in wf.load_history(tmp_path)}
+    assert history[9711] == first_history[9711] and history[10305] == first_history[10305]
+    assert history[8157]["value"] == 3
+    assert len(list((tmp_path / "history/settlements").glob("*.json"))) == 2
+
+
+def test_forge_walk_forward_missed_settlement_has_receipt_without_request(tmp_path):
+    from modeling.player_forecasts import forge_walk_forward as wf
+    game, _ = forge_walk_forward_boxscore()
+    game["plannedPlayerIds"] = [9711]
+    result = wf.settle_game(tmp_path, {}, game, 1, clock=lambda: wf.stamp("2026-10-16T15:00:00Z"))
+    assert result["status"] == "unresolved"
+    receipt = wf.read(tmp_path / f'sources/settlements/{game["id"]}-1.json')
+    assert receipt["receipt"]["status"] == "missed"
+    assert not list((tmp_path / "sources/acquisitions").glob("*/attempt.json"))
+
+
+def test_forge_walk_forward_final_lock_requires_timely_evaluator_and_frozen_policy(tmp_path, monkeypatch):
+    wf, initial_day, predictor = forge_walk_forward_issuance_fixture(tmp_path, monkeypatch)
+    day = {k: v.replace("2026-10-14", "2026-10-19") if isinstance(v, str) else v for k, v in initial_day.items()}
+    day["phase"] = "final"
+    protocol = {"days": [{}, {}, {}, {}, {}, day], "policyHash": "fixture", "owners": {"evaluator": "independent-evaluator"}}
+    wf.exclusive_json(tmp_path / "protocol/experiment.json", protocol)
+    clock = lambda: wf.stamp("2026-10-19T22:16:00Z")
+    result = wf.issue_day(tmp_path, protocol, day, clock=clock, predictor=predictor)
+    assert result["status"] == "awaiting_independent_final_lock_review"
+    lock = wf.final_lock(tmp_path, protocol, wf.load_history(tmp_path), clock=clock)
+    assert lock["selected"] == "A" and lock["tuningPermitted"] is False
+    assert wf.review_final_lock(tmp_path, protocol, clock=lambda: wf.stamp(day["issueDeadlineAt"]))["status"] == "outside_final_lock_review_window"
+    assert not (tmp_path / "protocol/final-lock-review.json").exists()
+    assert wf.review_final_lock(tmp_path, protocol, clock=clock)["status"] == "accepted_final_lock"
+    reviewed = wf.read(tmp_path / "protocol/final-lock-review.json")
+    assert reviewed["reviewer"] == "independent-evaluator"
+    assert reviewed["lockHash"] == wf.file_hash(tmp_path / "protocol/final-lock.json")
+    # The fixed final method cannot be selected from changing sealed scores.
+    wf.exclusive_json(tmp_path / "evaluator-sealed/scores.json", {"selected": "B"})
+    assert wf.final_lock(tmp_path, protocol, [], clock=clock) == lock
+
+
+def test_forge_walk_forward_readout_checks_frozen_code_before_opening_labels(tmp_path, monkeypatch):
+    from modeling.player_forecasts import forge_walk_forward as wf
+    wf.exclusive_json(tmp_path / "protocol/final-lock.json", {"selected": "A", "codeState": {"frozen": True}})
+    monkeypatch.setattr(wf, "load_history", lambda root: pytest.fail("labels opened before frozen-code acceptance"))
+    def reject_changed(state):
+        assert state == {"frozen": True}
+        raise ValueError("locked executable/dependency changed")
+    monkeypatch.setattr(wf, "verify_code_state", reject_changed)
+    with pytest.raises(ValueError, match="dependency changed"):
+        wf.final_report(tmp_path, {}, clock=lambda: wf.READOUT)
+    assert not (tmp_path / "reports/final-report.json").exists()

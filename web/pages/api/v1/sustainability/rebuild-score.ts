@@ -313,4 +313,4 @@ export async function rebuildScoreHandler(
   }
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(rebuildScoreHandler as any)));
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(rebuildScoreHandler as any)));

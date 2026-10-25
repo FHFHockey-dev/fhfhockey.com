@@ -263,6 +263,10 @@ import {
   computeSkaterShotQualityAdjustments,
   computeSkaterTeamLevelContextAdjustments,
   computeStrengthSplitConversionRates,
+  resolveAssistDenominators,
+  skaterConversionPriorsAndBounds,
+  SKATER_ASSIST_DENOMINATOR_DEFAULT,
+  type SkaterAssistDenominatorOption,
 } from "../calculators/skater-adjustments";
 import {
   blendTopStarterScenarioOutputs,
@@ -1052,6 +1056,51 @@ function roleGroupKeyForTeammateCoupling(
   if (roleTag.esRole.startsWith("L")) return roleTag.esRole;
   if (roleTag.esRole.startsWith("D")) return roleTag.esRole;
   return null;
+}
+
+// Assist-rate clamps after the trend and teammate-coupling multipliers, per assist scale.
+const SKATER_ASSIST_RATE_CLAMPS = {
+  per_goal: {
+    trend: { es: [0.4, 3.4], pp: [0.6, 4] },
+    coupling: { es: [0.4, 3.6], pp: [0.6, 4.2] },
+  },
+  per_two_goals: {
+    trend: { es: [0.2, 1.7], pp: [0.3, 2] },
+    coupling: { es: [0.2, 1.8], pp: [0.3, 2.1] },
+  },
+} as const;
+
+export function clampSkaterAssistRate(
+  rate: number,
+  strength: "es" | "pp",
+  step: "trend" | "coupling",
+  assistDenominator: SkaterAssistDenominatorOption,
+): number {
+  const convention = resolveAssistDenominators(assistDenominator)[strength];
+  const [min, max] = SKATER_ASSIST_RATE_CLAMPS[convention][step][strength];
+  return clamp(rate, min, max);
+}
+
+/** Holdout benchmark: fixed league conversion priors on the live per-strength assist scales. */
+export function buildSkaterNaivePriorBaseline(args: {
+  shotsEs: number;
+  shotsPp: number;
+}) {
+  const { priors } = skaterConversionPriorsAndBounds(
+    SKATER_ASSIST_DENOMINATOR_DEFAULT,
+  );
+  const goalsEs = args.shotsEs * priors.goalRateEs;
+  const goalsPp = args.shotsPp * priors.goalRatePp;
+  return {
+    goal_rate_es: priors.goalRateEs,
+    goal_rate_pp: priors.goalRatePp,
+    assist_per_goal_es: priors.assistRateEs,
+    assist_per_goal_pp: priors.assistRatePp,
+    goals_es: goalsEs,
+    goals_pp: goalsPp,
+    assists_es: goalsEs * priors.assistRateEs,
+    assists_pp: goalsPp * priors.assistRatePp,
+  };
 }
 
 export function computeTeammateAssistCoupling(args: {
@@ -1890,6 +1939,8 @@ export async function runPerGameSkaterStage(args: {
       );
     }
     const restScheduleAdjustment = computeSkaterRestScheduleAdjustments({
+      // The Q8 tiers remain an unqualified offline candidate; preserve Release C behavior.
+      buckets: "legacy",
       teamRestDays: teamRestDaysCache.get(teamDateKey(teamId)) ?? null,
       opponentRestDays:
         teamRestDaysCache.get(teamDateKey(opponentTeamId)) ?? null,
@@ -3376,10 +3427,8 @@ export async function runPerGameSkaterStage(args: {
       shotsEs: Number(teamUpsert.proj_shots_es ?? 0),
       shotsPp: Number(teamUpsert.proj_shots_pp ?? 0),
     });
-    teamGoalsByTeamId.set(
-      teamId,
-      teamGoalAccounting.reportedEsPpMean,
-    );
+    if (teamGoalAccounting.reportedEsPpMean === null) teamGoalsByTeamId.delete(teamId);
+    else teamGoalsByTeamId.set(teamId, teamGoalAccounting.reportedEsPpMean);
 
     // Goalie: pick the highest probability starter from goalie_start_projections if available.
     const goalieOverride = goalieOverrideByTeamId.get(teamId);

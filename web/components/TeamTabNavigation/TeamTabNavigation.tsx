@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+import supabase from "lib/supabase";
 import styles from "./TeamTabNavigation.module.scss";
 import { TeamDashboard } from "../TeamDashboard/TeamDashboard";
 import { GameStateAnalysis } from "../GameStateAnalysis/GameStateAnalysis";
@@ -32,16 +33,6 @@ interface TeamTabNavigationProps {
   onFilterChange: (filters: ShotDataFilters) => void;
   // New props for stats tab
   summaries?: any[];
-  lineCombos?: {
-    forwards: string[];
-    defensemen: string[];
-    goalies: string[];
-  } | null;
-  lineCombosLoading?: boolean;
-  lineCombosError?: string | null;
-  playerMap?: Record<string, any>;
-  playerMapLoading?: boolean;
-  playerMapError?: string | null;
   showAllSeasons?: boolean;
   onToggleAllSeasons?: () => void;
 }
@@ -102,6 +93,141 @@ const TABS: Tab[] = [
 const isTabKey = (value: unknown): value is TabKey =>
   typeof value === "string" && TABS.some((tab) => tab.key === value);
 
+interface LineCombos {
+  forwards: string[];
+  defensemen: string[];
+  goalies: string[];
+}
+
+interface LineCombosResult {
+  teamId: string;
+  lineCombos: LineCombos | null;
+  playerMap: Record<string, any>;
+  lineCombosError: string | null;
+  playerMapError: string | null;
+}
+
+const toPlayerIds = (value: unknown): string[] =>
+  Array.isArray(value)
+    ? value
+        .flat()
+        .filter((id) => id != null && String(id).trim() !== "")
+        .map(String)
+    : [];
+
+const errorMessage = (error: unknown) =>
+  error instanceof Error
+    ? error.message
+    : String((error as { message?: unknown })?.message ?? error);
+
+// Latest line combination for the shown team, read only while the Season
+// Stats tab is open. A late response for a previous team is discarded.
+function useTeamLineCombos(teamId: string, enabled: boolean) {
+  const [result, setResult] = useState<LineCombosResult | null>(null);
+  const resultRef = useRef<LineCombosResult | null>(null);
+
+  useEffect(() => {
+    const cached = resultRef.current;
+    if (!enabled || !teamId) return;
+    if (
+      cached?.teamId === teamId &&
+      !cached.lineCombosError &&
+      !cached.playerMapError
+    ) {
+      return;
+    }
+
+    let active = true;
+    const finish = (next: Omit<LineCombosResult, "teamId">) => {
+      if (!active) return;
+      resultRef.current = { teamId, ...next };
+      setResult(resultRef.current);
+    };
+    resultRef.current = null;
+    setResult(null);
+
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("lineCombinations")
+          .select("forwards,defensemen,goalies,gameId")
+          .eq("teamId", Number(teamId))
+          .order("gameId", { ascending: false })
+          .limit(1);
+        if (!active) return;
+        if (error) throw error;
+        const row = data?.[0];
+        if (!row) {
+          return finish({
+            lineCombos: null,
+            playerMap: {},
+            lineCombosError: null,
+            playerMapError: null
+          });
+        }
+        const lineCombos = {
+          forwards: toPlayerIds(row.forwards),
+          defensemen: toPlayerIds(row.defensemen),
+          goalies: toPlayerIds(row.goalies)
+        };
+        const uniqueIds = Array.from(
+          new Set([
+            ...lineCombos.forwards,
+            ...lineCombos.defensemen,
+            ...lineCombos.goalies
+          ])
+        );
+        if (uniqueIds.length === 0) {
+          return finish({
+            lineCombos,
+            playerMap: {},
+            lineCombosError: null,
+            playerMapError: null
+          });
+        }
+        const { data: players, error: playerError } = await supabase
+          .from("yahoo_nhl_player_map")
+          .select(
+            "nhl_player_id, nhl_player_name, mapped_position, eligible_positions"
+          )
+          .in("nhl_player_id", uniqueIds);
+        const playerMap: Record<string, any> = {};
+        (players ?? []).forEach((player) => {
+          if (player.nhl_player_id != null) {
+            playerMap[player.nhl_player_id] = player;
+          }
+        });
+        finish({
+          lineCombos,
+          playerMap: playerError ? {} : playerMap,
+          lineCombosError: null,
+          playerMapError: playerError ? errorMessage(playerError) : null
+        });
+      } catch (error) {
+        finish({
+          lineCombos: null,
+          playerMap: {},
+          lineCombosError: errorMessage(error),
+          playerMapError: null
+        });
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [teamId, enabled]);
+
+  const current = result?.teamId === teamId ? result : null;
+  return {
+    lineCombos: current?.lineCombos ?? null,
+    playerMap: current?.playerMap ?? {},
+    lineCombosError: current?.lineCombosError ?? null,
+    playerMapError: current?.playerMapError ?? null,
+    loading: enabled && !!teamId && !current
+  };
+}
+
 export function TeamTabNavigation({
   teamId,
   teamAbbrev,
@@ -114,12 +240,6 @@ export function TeamTabNavigation({
   filters,
   onFilterChange,
   summaries = [],
-  lineCombos,
-  lineCombosLoading = false,
-  lineCombosError,
-  playerMap = {},
-  playerMapLoading = false,
-  playerMapError,
   showAllSeasons = false,
   onToggleAllSeasons
 }: TeamTabNavigationProps) {
@@ -136,6 +256,14 @@ export function TeamTabNavigation({
     standingsDetails,
     scheduleTeam
   } = useTeamSchedule(teamAbbrev, seasonId, teamId);
+
+  const {
+    lineCombos,
+    playerMap,
+    lineCombosError,
+    playerMapError,
+    loading: lineCombosLoading
+  } = useTeamLineCombos(teamId, activeTab === "stats");
 
   useEffect(() => {
     if (!router.isReady) return;
@@ -310,9 +438,7 @@ export function TeamTabNavigation({
                 <div
                   className={`${styles.lineCombinations} ${styles.lineCombinationsFixedHeight}`}
                 >
-                  {lineCombosLoading || playerMapLoading ? (
-                    <div>Loading...</div>
-                  ) : null}
+                  {lineCombosLoading ? <div>Loading...</div> : null}
                   {lineCombosError && (
                     <div style={{ color: "red" }}>{lineCombosError}</div>
                   )}
@@ -320,7 +446,6 @@ export function TeamTabNavigation({
                     <div style={{ color: "red" }}>{playerMapError}</div>
                   )}
                   {!lineCombosLoading &&
-                    !playerMapLoading &&
                     !lineCombosError &&
                     !playerMapError &&
                     lineCombos && (
@@ -333,7 +458,6 @@ export function TeamTabNavigation({
                       />
                     )}
                   {!lineCombosLoading &&
-                    !playerMapLoading &&
                     !lineCombosError &&
                     !playerMapError &&
                     !lineCombos && <div>No line combinations found.</div>}
@@ -385,17 +509,13 @@ export function TeamTabNavigation({
                 shotData={shotData}
                 opponentShotData={opponentShotData}
                 isLoading={isLoadingShotData}
+                error={shotError}
                 onFilterChange={onFilterChange}
                 filters={filters}
                 teamAbbreviation={teamAbbrev}
                 alwaysShowOpponentLegend={true}
               />
             </div>
-            {shotError && (
-              <div className={styles.errorMessage}>
-                Error loading event data: {shotError.message}
-              </div>
-            )}
           </div>
         );
 

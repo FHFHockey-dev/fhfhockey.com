@@ -136,6 +136,7 @@ describe("/api/v1/trends/player-trends rebuild authorization", () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
     vi.clearAllMocks();
     delete process.env.CRON_SECRET;
   });
@@ -209,6 +210,23 @@ describe("/api/v1/trends/player-trends rebuild authorization", () => {
       gamesProcessed: 0,
       metricsUpserted: 0,
     });
+  });
+
+  it("keeps admitted rebuild dependency details in server diagnostics", async () => {
+    const dependencyError = new Error("relation private_trends denied synthetic-sensitive-detail");
+    fetchCurrentSeasonMock.mockRejectedValueOnce(dependencyError);
+    const diagnostic = vi.spyOn(console, "error").mockImplementation(() => {});
+    const res = createMockRes();
+
+    await handler({
+      method: "POST", headers: { authorization: "Bearer current-secret" },
+      body: { playerIds: [8478402] },
+    } as any, res);
+
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toEqual({ success: false, message: "Failed to rebuild player trends" });
+    expect(JSON.stringify(res.body)).not.toContain("synthetic-sensitive-detail");
+    expect(diagnostic).toHaveBeenCalledWith("player-trends rebuild API error", dependencyError);
   });
 });
 

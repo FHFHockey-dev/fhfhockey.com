@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
 import { requireApiUser } from "lib/api/requireApiUser";
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 import { buildPersonalizedRecommendations } from "lib/draft-pro/recommendations";
 import { consumeRecommendationRequest } from "lib/draft-pro/recommendationsRateLimit";
 import { getDraftProFeatureFlags } from "lib/draft-pro/features";
@@ -42,9 +43,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: { code: "validation_error", message: error.issues[0]?.message ?? "Invalid recommendation request." } });
     }
-    const status = typeof error === "object" && error && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : 500;
+    const status = error instanceof DraftProRequestError ? error.statusCode : 500;
     if (status === 403) {
-      const code = typeof error === "object" && error && "code" in error && typeof error.code === "string" ? error.code : "draft_pro_required";
+      const code = error instanceof DraftProRequestError ? error.code ?? "draft_pro_required" : "draft_pro_required";
       return res.status(403).json({ error: { code, message: "Draft Pro access is required for this action." } });
     }
     return res.status(status >= 400 && status < 500 ? status : 500).json({ error: { code: status >= 400 && status < 500 ? "request_failed" : "recommendations_unavailable", message: status >= 400 && status < 500 ? "Unable to process this recommendation request." : "Unable to calculate recommendations." } });

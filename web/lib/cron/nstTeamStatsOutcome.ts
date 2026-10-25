@@ -9,7 +9,8 @@ export type NstTeamStatsSkip = {
 export function isNstConfigurationFailure(reason: string): boolean {
   return (
     reason.includes('"code":"missing_key"') ||
-    reason.includes("NST_KEY missing")
+    reason.includes("NST_KEY missing") ||
+    /"code"\s*:\s*"(?:caller_auth_unavailable|caller_unauthorized)"/.test(reason)
   );
 }
 

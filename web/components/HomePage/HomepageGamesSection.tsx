@@ -10,10 +10,16 @@ import {
 import { createPortal } from "react-dom";
 
 import Link from "next/link";
-import moment from "moment-timezone";
-import "moment-timezone";
+import moment from "moment";
 
 import ClientOnly from "components/ClientOnly";
+import {
+  formatClock,
+  formatMonthDayYear,
+  parseMomentLike,
+  zonedMidnight,
+  zonedParts,
+} from "./homepageTime";
 import PanelStatus from "components/common/PanelStatus";
 import OptimizedImage from "components/common/OptimizedImage";
 import { buildHomepageModulePresentation } from "lib/dashboard/freshness";
@@ -306,6 +312,38 @@ function MobileGameItem({
       aria-label={matchupLabel}
       style={getGameColorStyle(homeTeam.abbrev, awayTeam.abbrev)}
     >
+      {mode === "light" ? (
+        <span className={styles.homepageGameArtwork} aria-hidden="true">
+          <span
+            className={styles.homepageGameLogo}
+            data-side="away"
+            data-team={awayTeam.abbrev}
+          >
+            <OptimizedImage
+              src={getTeamLogoSvg(awayTeam.abbrev)}
+              alt=""
+              width={32}
+              height={32}
+              priority={false}
+              fallbackSrc={fallbackNHLLogo}
+            />
+          </span>
+          <span
+            className={styles.homepageGameLogo}
+            data-side="home"
+            data-team={homeTeam.abbrev}
+          >
+            <OptimizedImage
+              src={getTeamLogoSvg(homeTeam.abbrev)}
+              alt=""
+              width={32}
+              height={32}
+              priority={false}
+              fallbackSrc={fallbackNHLLogo}
+            />
+          </span>
+        </span>
+      ) : null}
       <span className={styles.mobileGameState}>
         <i aria-hidden="true" />
         <span>{stateLabel}</span>
@@ -342,14 +380,16 @@ function MobileGameItem({
         className={`${styles.mobileTeam} ${styles.mobileAwayTeam}`}
         title={`AWAY ${awayTeam.abbrev} record: ${awayTeam?.record ?? "n/a"}`}
       >
-        <OptimizedImage
-          src={getTeamLogoSvg(awayTeam.abbrev)}
-          alt={`${awayTeam.abbrev} logo`}
-          width={32}
-          height={32}
-          priority={false}
-          fallbackSrc={fallbackNHLLogo}
-        />
+        {mode !== "light" ? (
+          <OptimizedImage
+            src={getTeamLogoSvg(awayTeam.abbrev)}
+            alt={`${awayTeam.abbrev} logo`}
+            width={32}
+            height={32}
+            priority={false}
+            fallbackSrc={fallbackNHLLogo}
+          />
+        ) : null}
         <strong>{awayTeam.abbrev}</strong>
         {awayTeam.score != null ? <b>{awayTeam.score}</b> : null}
       </span>
@@ -362,14 +402,16 @@ function MobileGameItem({
       >
         {homeTeam.score != null ? <b>{homeTeam.score}</b> : null}
         <strong>{homeTeam.abbrev}</strong>
-        <OptimizedImage
-          src={getTeamLogoSvg(homeTeam.abbrev)}
-          alt={`${homeTeam.abbrev} logo`}
-          width={32}
-          height={32}
-          priority={false}
-          fallbackSrc={fallbackNHLLogo}
-        />
+        {mode !== "light" ? (
+          <OptimizedImage
+            src={getTeamLogoSvg(homeTeam.abbrev)}
+            alt={`${homeTeam.abbrev} logo`}
+            width={32}
+            height={32}
+            priority={false}
+            fallbackSrc={fallbackNHLLogo}
+          />
+        ) : null}
       </span>
       {probabilitiesAvailable ? (
         <span
@@ -523,13 +565,13 @@ export default function HomepageGamesSection({
     const date = openingNightDate?.slice(0, 10);
     if (!date) return null;
 
-    const scheduledStart = openingNightStartTime
-      ? moment(openingNightStartTime).tz("America/New_York")
+    // Official puck drop when known, otherwise midnight in New York.
+    const instant =
+      (openingNightStartTime ? parseMomentLike(openingNightStartTime) : null) ??
+      zonedMidnight(date, "America/New_York");
+    return instant
+      ? { instant, parts: zonedParts(instant, "America/New_York") }
       : null;
-    const target = scheduledStart?.isValid()
-      ? scheduledStart
-      : moment.tz(date, "YYYY-MM-DD", "America/New_York").startOf("day");
-    return target.isValid() ? target : null;
   }, [openingNightDate, openingNightStartTime]);
 
   useEffect(() => {
@@ -631,7 +673,7 @@ export default function HomepageGamesSection({
 
   const openingNightCountdown = useMemo(() => {
     if (!openingNightTarget || countdownNow === null) return null;
-    const remaining = Math.max(openingNightTarget.valueOf() - countdownNow, 0);
+    const remaining = Math.max(openingNightTarget.instant.getTime() - countdownNow, 0);
 
     return {
       days: Math.floor(remaining / 86_400_000),
@@ -647,8 +689,8 @@ export default function HomepageGamesSection({
     (!openingNightCountdown || !openingNightCountdown.complete),
   );
   const openingNightSeasonLabel = openingNightTarget
-    ? `${openingNightTarget.year()}-${String(
-        openingNightTarget.year() + 1,
+    ? `${openingNightTarget.parts.year}-${String(
+        openingNightTarget.parts.year + 1,
       ).slice(-2)} season`
     : "Next season";
   const displayedCalendarMonth = useMemo(
@@ -1139,10 +1181,11 @@ export default function HomepageGamesSection({
                 </h3>
                 <p>
                   The season opens on{" "}
-                  <time dateTime={openingNightTarget?.toISOString()}>
-                    {hasOfficialPuckDrop
-                      ? openingNightTarget?.format("MMM D, YYYY · h:mm A z")
-                      : openingNightTarget?.format("MMM D, YYYY")}.
+                  <time dateTime={openingNightTarget?.instant.toISOString()}>
+                    {openingNightTarget &&
+                      (hasOfficialPuckDrop
+                        ? `${formatMonthDayYear(openingNightTarget.parts)} · ${formatClock(openingNightTarget.parts)} ${openingNightTarget.parts.zoneName}`
+                        : formatMonthDayYear(openingNightTarget.parts))}.
                   </time>
                 </p>
                 <small>

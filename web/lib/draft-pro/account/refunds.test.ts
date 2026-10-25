@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const resendSend = vi.hoisted(() => vi.fn());
 vi.mock("resend", () => ({ Resend: vi.fn(() => ({ emails: { send: resendSend } })) }));
 
-import { createDraftProRefundRequest, retryDraftProRefundEmails } from "./refunds";
+import { createDraftProRefundRequest, retryDraftProRefundEmails, DraftProRefundError, getPublicDraftProRefundFailure } from "./refunds";
 
 function query(result: unknown) {
   const builder: any = {
@@ -16,13 +16,13 @@ function query(result: unknown) {
   return builder;
 }
 
-function clientFor({ purchase, inserted, insertError = null, existing }: { purchase: unknown; inserted?: unknown; insertError?: unknown; existing?: unknown }) {
+function clientFor({ purchase, inserted, insertError = null, existing, existingError = null }: { purchase: unknown; inserted?: unknown; insertError?: unknown; existing?: unknown; existingError?: unknown }) {
   const purchaseQuery = query({ data: purchase, error: null });
   const insertQuery: any = {
     insert: vi.fn(() => insertQuery),
     select: vi.fn(() => insertQuery),
     single: vi.fn(async () => ({ data: inserted, error: insertError })),
-    maybeSingle: vi.fn(async () => ({ data: existing, error: null })),
+    maybeSingle: vi.fn(async () => ({ data: existing, error: existingError })),
     update: vi.fn(() => insertQuery),
     eq: vi.fn(() => insertQuery),
     in: vi.fn(() => insertQuery),
@@ -52,8 +52,22 @@ describe("Draft Pro refund requests", () => {
     await expect(createDraftProRefundRequest({ userId: "user-1", accountEmail: "user@example.com", input, now: new Date("2026-09-12T00:00:01.000Z"), client: clientFor({ purchase }) })).rejects.toMatchObject({ statusCode: 422, code: "refund_window_closed" });
   });
 
-  it("returns a conflict for the unique open-request race", async () => {
-    await expect(createDraftProRefundRequest({ userId: "user-1", accountEmail: "user@example.com", input, client: clientFor({ purchase, insertError: { code: "23505", message: "duplicate" } }) })).rejects.toMatchObject({ statusCode: 409, code: "refund_request_exists" });
+  it("does not claim an open request for an unconfirmed unique failure", async () => {
+    const insertError = { code: "23505", message: "unrelated unique constraint" };
+    const mailer = vi.fn();
+    const result = createDraftProRefundRequest({ userId: "user-1", accountEmail: "user@example.com", input, client: clientFor({ purchase, insertError }), mailer });
+    await expect(result).rejects.toBe(insertError);
+    expect(getPublicDraftProRefundFailure(insertError)).toBeNull();
+    expect(mailer).not.toHaveBeenCalled();
+  });
+
+  it("preserves a failed duplicate lookup as an infrastructure failure", async () => {
+    const existingError = { code: "connection_failed", message: "private database detail" };
+    const mailer = vi.fn();
+    const result = createDraftProRefundRequest({ userId: "user-1", accountEmail: "user@example.com", input, client: clientFor({ purchase, insertError: { code: "23505" }, existingError }), mailer });
+    await expect(result).rejects.toBe(existingError);
+    expect(getPublicDraftProRefundFailure(existingError)).toBeNull();
+    expect(mailer).not.toHaveBeenCalled();
   });
 
   it("returns the owned open request idempotently after a unique race", async () => {
@@ -93,5 +107,16 @@ describe("Draft Pro refund requests", () => {
     if (originalKey === undefined) delete process.env.RESEND_API_KEY;
     else process.env.RESEND_API_KEY = originalKey;
     resendSend.mockReset();
+  });
+});
+
+
+describe("refund decision authenticity", () => {
+  it.each(["purchase_not_found", "refund_window_closed"] as const)("brands the real service decision %s", async code => {
+    const client = clientFor(code === "purchase_not_found" ? { purchase: null } : { purchase });
+    const now = new Date(code === "refund_window_closed" ? "2026-09-12T00:00:01Z" : "2026-09-06T00:00:00Z");
+    const result = createDraftProRefundRequest({ userId: "user-1", accountEmail: "fixture@example.invalid", input, client, now });
+    await expect(result).rejects.toBeInstanceOf(DraftProRefundError);
+    try { await result; } catch (error) { expect(getPublicDraftProRefundFailure(error)?.code).toBe(code); }
   });
 });

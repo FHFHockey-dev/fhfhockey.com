@@ -291,7 +291,7 @@ describe("/underlying-stats landing page", () => {
     const select = screen.getByLabelText("Snapshot date");
     expect(within(select).getAllByRole("option")).toHaveLength(3);
     const links = within(screen.getByRole("navigation", { name: "Underlying Stats Hub Navigation" })).getAllByRole("link");
-    expect(links.map((link) => link.textContent)).toEqual([
+    expect(links.map((link) => link.getAttribute("aria-label"))).toEqual([
       "Team Explorer", "Skater Stats", "Goalie Stats", "xG Lab"
     ]);
     expect(links.map((link) => new URL(link.getAttribute("href")!, "http://localhost").pathname)).toEqual([
@@ -308,7 +308,10 @@ describe("/underlying-stats landing page", () => {
     expect(screen.queryByText("What looks real?")).toBeNull();
     expect(screen.queryByText("Schedule texture")).toBeNull();
     expect(screen.queryByText("Under the radar")).toBeNull();
-    fireEvent.click(screen.getByText("Data readiness"));
+    expect(screen.queryByText("Latest snapshot")).toBeNull();
+    expect(screen.getByText("2 NHL Teams")).toBeTruthy();
+    fireEvent.click(screen.getByText("About this dashboard"));
+    expect(screen.getByRole("heading", { name: "Data readiness" })).toBeTruthy();
     expect(
       screen.getByText("Team snapshot").closest("article")?.textContent
     ).toContain("Apr 5, 2026");
@@ -325,7 +328,63 @@ describe("/underlying-stats landing page", () => {
     const bodyRows = within(table).getAllByRole("row").slice(1);
     expect(within(bodyRows[0]!).getByText("TOR")).toBeTruthy();
     expect(within(bodyRows[0]!).getByText("55.8%")).toBeTruthy();
-    expect(within(bodyRows[0]!).getByText("+2.3")).toBeTruthy();
+    expect(within(bodyRows[0]!).getByText("▲ 2.3")).toBeTruthy();
+    expect(
+      within(table)
+        .getAllByRole("columnheader")
+        .slice(0, 7)
+        .map((header) => header.textContent?.replace(/[↕↑↓]/g, "").trim())
+    ).toEqual([
+      "Rank", "Team", "Power Score", "Offense", "Defense", "Trend", "Why it's moving"
+    ]);
+  });
+
+  it("opens and closes real metric explanations independently through their focusable summaries", () => {
+    render(
+      <TeamPowerRankingsPage
+        availableDates={["2026-04-05"]}
+        routeStatus={routeStatus}
+        initialSnapshot={buildSnapshot([buildRating("TOR", { offRating: 110 })])}
+      />
+    );
+
+    const table = screen.getByRole("table", { name: "Detailed team table" });
+    const row = within(table).getAllByRole("row")[1]!;
+    const power = within(row).getByText("Power Score").closest("details")!;
+    const offense = within(row).getByText("Offense").closest("details")!;
+    const powerSummary = power.querySelector("summary")!;
+    const offenseSummary = offense.querySelector("summary")!;
+
+    expect(power.open).toBe(false);
+    expect(offense.open).toBe(false);
+    expect(powerSummary.textContent).toMatch(/\d/);
+    expect(offenseSummary.textContent).toBe("110.0i");
+    powerSummary.focus();
+    expect(document.activeElement).toBe(powerSummary);
+
+    fireEvent.click(powerSummary);
+    expect(power.open).toBe(true);
+    expect(offense.open).toBe(false);
+    expect(within(power).getByText(
+      "Power Score averages offense, defense, and pace, then adds a small PP/PK tier bonus."
+    )).toBeTruthy();
+    expect(within(power).getByText("Offense: 110.0")).toBeTruthy();
+
+    offenseSummary.focus();
+    expect(document.activeElement).toBe(offenseSummary);
+    fireEvent.click(offenseSummary);
+    expect(offense.open).toBe(true);
+    expect(power.open).toBe(true);
+    expect(within(offense).getByText(
+      "Higher is better. Formula: 70% xGF/60, 20% SF/60, 10% GF/60."
+    )).toBeTruthy();
+    expect(within(offense).getByText(/xGF\/60: 3\.10 vs league 3\.10/)).toBeTruthy();
+
+    fireEvent.click(powerSummary);
+    expect(power.open).toBe(false);
+    expect(offense.open).toBe(true);
+    fireEvent.click(offenseSummary);
+    expect(offense.open).toBe(false);
   });
 
   it("keeps the populated quadrant map out of server markup before mounting it on the client", async () => {
@@ -405,7 +464,7 @@ describe("/underlying-stats landing page", () => {
       const bodyRows = within(table).getAllByRole("row").slice(1);
       expect(within(bodyRows[0]!).getByText("VAN")).toBeTruthy();
       expect(within(bodyRows[0]!).getByText("58.9%")).toBeTruthy();
-      expect(within(bodyRows[0]!).getByText("+3.2")).toBeTruthy();
+      expect(within(bodyRows[0]!).getByText("▲ 3.2")).toBeTruthy();
     });
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
@@ -464,7 +523,7 @@ describe("/underlying-stats landing page", () => {
 
     const table = screen.getByRole("table", { name: "Detailed team table" });
     expect(within(table).queryByRole("columnheader", { name: /SoS Past/ })).toBeNull();
-    expect(within(table).getByRole("columnheader", { name: /Why moving/ })).toBeTruthy();
+    expect(within(table).getByRole("columnheader", { name: /Why it's moving/ })).toBeTruthy();
   });
 
   it("sorts simple mode rows by trend when the trend header is clicked", () => {
@@ -555,7 +614,7 @@ describe("/underlying-stats landing page", () => {
     ).toBeTruthy();
   });
 
-  it("shows every available team by default and can collapse to 12", () => {
+  it("shows every available team with a range footer and no row cap", () => {
     const teamAbbreviations = [
       "ANA",
       "BOS",
@@ -587,14 +646,29 @@ describe("/underlying-stats landing page", () => {
 
     const table = screen.getByRole("table", { name: "Detailed team table" });
     expect(within(table).getAllByRole("row").slice(1)).toHaveLength(14);
+    expect(screen.getByText("Showing 1–14 of 14 teams")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Show top 12/ })).toBeNull();
+  });
 
-    fireEvent.click(
-      screen.getByRole("button", { name: "Show top 12 teams" })
+  it("switches workspaces by keyboard and returns to rankings from Power Leaders", () => {
+    render(
+      <TeamPowerRankingsPage
+        availableDates={["2026-04-05"]}
+        routeStatus={routeStatus}
+        initialSnapshot={buildSnapshot([buildRating("TOR"), buildRating("VAN")])}
+      />
     );
 
-    expect(within(table).getAllByRole("row").slice(1)).toHaveLength(12);
-    expect(
-      screen.getByRole("button", { name: "View all 14 teams" })
-    ).toBeTruthy();
+    const rankingsTab = screen.getByRole("tab", { name: "Team Rankings" });
+    fireEvent.keyDown(rankingsTab, { key: "ArrowRight" });
+    const chartTab = screen.getByRole("tab", { name: "Chart" });
+    expect(chartTab.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(chartTab);
+    expect(screen.queryByRole("tab", { name: "Advanced" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: /View full rankings/ }));
+    expect(rankingsTab.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(rankingsTab);
+    expect(screen.getByRole("tab", { name: "Advanced" })).toBeTruthy();
   });
 });

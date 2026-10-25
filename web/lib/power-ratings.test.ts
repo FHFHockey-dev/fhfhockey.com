@@ -4,7 +4,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   POSTGREST_PAGE_SIZE,
   calculateEwma,
+  calculateFinalRating,
   calculateLeagueMetrics,
+  calculateRawDistribution,
+  calculateRawScores,
   calculateZScores,
   fetchGameLogs,
   fetchPaginatedRows,
@@ -136,7 +139,7 @@ describe("power-ratings missing PDO handling", () => {
     gp_to_date: 1,
   });
 
-  it("records missing provenance and assigns a neutral PDO z-score", () => {
+  it("records missing provenance and keeps the final variance flag neutral", () => {
     const missing = calculateEwma([teamGame("ANA", null)], "2026-03-10")!;
     const observed = calculateEwma([teamGame("BOS", 1.01)], "2026-03-10")!;
     const league = calculateLeagueMetrics([missing, observed]);
@@ -151,5 +154,8 @@ describe("power-ratings missing PDO handling", () => {
       pdo_missing: true,
     });
     expect(league.league_pdo_avg).toBe(1.01);
+    const raw = calculateRawScores(result);
+    const rating = calculateFinalRating(raw, calculateRawDistribution([raw]));
+    expect(rating.variance_flag).toBe(0);
   });
 });

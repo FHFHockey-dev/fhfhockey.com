@@ -3,6 +3,7 @@ import { timingSafeEqual } from "node:crypto";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { runEspnScheduledSync } from "lib/integrations/espn/server";
+import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 
 function bearerToken(req: NextApiRequest) {
   const authorization = req.headers.authorization;
@@ -20,6 +21,16 @@ function secretsMatch(received: string, expected: string) {
   );
 }
 
+const auditedSync = withCronJobAudit(async (_req: NextApiRequest, res: NextApiResponse) => {
+  try {
+    const result = await runEspnScheduledSync({});
+    return res.status(200).json({ ...result, success: Number.isFinite(result.failed) && result.failed === 0 });
+  } catch {
+    return res.status(500).json({ error: "ESPN sync failed." });
+  }
+}, { jobName: "/api/internal/espn-sync", recordRowMetrics: false,
+  responsePreviewKeys: ["success", "processed", "changed", "failed", "disabled"] });
+
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -30,9 +41,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!secretsMatch(bearerToken(req), secret)) {
     return res.status(401).json({ error: "Unauthorized" });
   }
-  try {
-    return res.status(200).json(await runEspnScheduledSync({}));
-  } catch {
-    return res.status(500).json({ error: "ESPN sync failed." });
-  }
+  return auditedSync(req, res);
 }

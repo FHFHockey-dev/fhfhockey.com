@@ -1,3 +1,4 @@
+import { requireProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { requireApiUser } from "lib/api/requireApiUser";
@@ -57,6 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const user = await requireApiUser(req, res);
   if (!user) return;
   try {
+    await requireProviderSyncAccess(user.id);
     const leagueId = typeof req.query.externalLeagueId === "string" ? req.query.externalLeagueId : "";
     const connections = await getFantraxConnections({ userId: user.id });
     const league = connections.accounts.flatMap((account) => account.leagues).find((candidate) => candidate.id === leagueId);

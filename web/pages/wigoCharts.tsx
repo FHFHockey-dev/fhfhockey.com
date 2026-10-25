@@ -12,6 +12,8 @@ import {
 } from "components/WiGO/WigoDashboardSections";
 import useWigoPlayerDashboard from "hooks/useWigoPlayerDashboard";
 import { computeDiffColumn } from "components/WiGO/tableUtils";
+import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
+import { getWigoSurfaceLinks } from "lib/navigation/siteSurfaceLinks";
 
 type TabKey = "overview" | "trends" | "percentiles" | "comparison";
 const VALID_TABS: TabKey[] = [
@@ -76,6 +78,27 @@ const WigoCharts: React.FC = () => {
     void updateUrlWith({ playerId: undefined });
     document.getElementById("wigo-player-search")?.focus();
   }, [updateUrlWith]);
+
+  // Team-scoped links appear only once the selected player's team resolves.
+  // WiGO keeps playerId/tab in the URL, so browser Back returns to this read.
+  const renderWorkflowLinks = () => (
+    <SurfaceWorkflowLinks
+      eyebrow="WiGO workflow"
+      title={
+        selectedPlayer
+          ? `Take the ${selectedPlayer.fullName} read further`
+          : "Keep exploring"
+      }
+      description={
+        teamAbbreviation
+          ? `Open ${teamAbbreviation} team context or a league-wide decision view. Back returns to this player.`
+          : selectedPlayer
+            ? "Team HQ and lines appear once this player's team is known; these league-wide views open now."
+            : "Select a player to add their team HQ and lines; these league-wide views open now."
+      }
+      links={getWigoSurfaceLinks(teamAbbreviation)}
+    />
+  );
 
   const renderTabs = () => (
     <div className={styles.mobileTabsBar}>
@@ -170,6 +193,9 @@ const WigoCharts: React.FC = () => {
           </div>}
 
         </div>}
+        {viewportWidth !== null && viewportWidth > 768 && (
+          <div style={{ marginTop: 10 }}>{renderWorkflowLinks()}</div>
+        )}
 
         {viewportWidth !== null && viewportWidth <= 768 && <div
           className={styles.mobileContainer}
@@ -238,6 +264,7 @@ const WigoCharts: React.FC = () => {
               />
             )}
           </div>
+          <div className={styles.mobilePanel}>{renderWorkflowLinks()}</div>
         </div>}
       </div>
     </div>

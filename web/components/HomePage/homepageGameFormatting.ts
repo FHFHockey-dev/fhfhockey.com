@@ -1,5 +1,4 @@
-import moment from "moment";
-import "moment-timezone";
+import { formatClock, localTimeZone, zonedParts } from "./homepageTime";
 
 const LIVE_STATES = new Set(["LIVE", "CRIT"]);
 const FINAL_STATES = new Set(["OVER", "FINAL", "OFF"]);
@@ -36,32 +35,31 @@ export const formatPeriodText = (
   return `${periodNumber}${periodSuffix} Period`;
 };
 
-export const formatLocalStartTime = (startTimeUTC: string) => {
+/** moment `h:mm A z` in the viewer's time zone. */
+export const formatLocalStartTime = (
+  startTimeUTC: string,
+  timeZone = localTimeZone(),
+) => {
   if (!startTimeUTC) return "";
+  const start = new Date(startTimeUTC);
+  if (Number.isNaN(start.getTime())) return "Invalid date";
 
-  try {
-    const timezone = moment.tz.guess();
-    return moment.tz(startTimeUTC, "UTC").tz(timezone).format("h:mm A z");
-  } catch {
-    return moment.utc(startTimeUTC).local().format("h:mm A");
-  }
+  const parts = zonedParts(start, timeZone);
+  return `${formatClock(parts)} ${parts.zoneName}`;
 };
 
-export const formatLocalPlayoffStart = (startTimeUTC: string) => {
+/** moment `M-D-YYYY | hA z`, or `h:mmA z` off the hour, in the viewer's time zone. */
+export const formatLocalPlayoffStart = (
+  startTimeUTC: string,
+  timeZone = localTimeZone(),
+) => {
   if (!startTimeUTC) return "TBD";
+  const start = new Date(startTimeUTC);
+  if (Number.isNaN(start.getTime())) return "Invalid date | Invalid date";
 
-  try {
-    const timezone = moment.tz.guess();
-    const local = moment.tz(startTimeUTC, "UTC").tz(timezone);
-    const timeFormat = local.minutes() === 0 ? "hA z" : "h:mmA z";
-
-    return `${local.format("M-D-YYYY")} | ${local.format(timeFormat)}`;
-  } catch {
-    const local = moment.utc(startTimeUTC).local();
-    const timeFormat = local.minutes() === 0 ? "hA" : "h:mmA";
-
-    return `${local.format("M-D-YYYY")} | ${local.format(timeFormat)}`;
-  }
+  const parts = zonedParts(start, timeZone);
+  const minutes = parts.minute === 0 ? "" : `:${String(parts.minute).padStart(2, "0")}`;
+  return `${parts.month}-${parts.day}-${parts.year} | ${parts.hour12}${minutes}${parts.dayPeriod} ${parts.zoneName}`;
 };
 
 export const isLiveGameState = (gameState?: string | null) =>

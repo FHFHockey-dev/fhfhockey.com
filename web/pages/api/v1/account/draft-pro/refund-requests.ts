@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 
 import { requireApiUser } from "lib/api/requireApiUser";
-import { createDraftProRefundRequest } from "lib/draft-pro/account/refunds";
+import { createDraftProRefundRequest, getPublicDraftProRefundFailure } from "lib/draft-pro/account/refunds";
 import { createDraftProRefundRequestSchema } from "lib/draft-pro/contracts";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -21,12 +21,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(201).json({ data });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ error: { code: "validation_error", message: error.issues[0]?.message ?? "Invalid refund request." } });
+      return res.status(400).json({ error: { code: "validation_error", message: "Invalid refund request." } });
     }
-    const statusCode = typeof error === "object" && error && "statusCode" in error && typeof error.statusCode === "number" ? error.statusCode : 500;
-    if (statusCode === 404 || statusCode === 422) {
-      const code = statusCode === 404 ? "purchase_not_found" : "refund_window_closed";
-      return res.status(statusCode).json({ error: { code, message: error instanceof Error ? error.message : "Refund request could not be submitted." } });
+    const failure = getPublicDraftProRefundFailure(error);
+    if (failure) {
+      return res.status(failure.statusCode).json({ error: { code: failure.code, message: failure.message } });
     }
     return res.status(500).json({ error: { code: "refund_request_failed", message: "Refund request could not be submitted." } });
   }

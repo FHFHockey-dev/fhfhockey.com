@@ -660,6 +660,88 @@ describe("train-nhl-xg-baseline", () => {
     });
   });
 
+  it("marks artifacts with forbidden post-event features as not approval-grade eligible", () => {
+    const dataset = buildEncodedBaselineDataset([
+      createShotRow({ gameId: 2025021001, eventId: 1, gameDate: "2026-01-01", isGoal: true }),
+      createShotRow({ gameId: 2025021002, eventId: 2, gameDate: "2026-01-02" }),
+      createShotRow({ gameId: 2025021003, eventId: 3, gameDate: "2026-01-03" }),
+      createShotRow({ gameId: 2025021004, eventId: 4, gameDate: "2026-01-04" }),
+    ]);
+    const leakyFeatureKeys = [
+      ...dataset.featureKeys,
+      "isShortSideMiss",
+      "missReasonBucket:wide",
+    ];
+    const splitEvaluation = {
+      exampleCount: 125,
+      goalCount: 10,
+      goalRate: 0.08,
+      averagePrediction: 0.1,
+      logLoss: 0.1,
+      brierScore: 0.01,
+      calibrationBins: [],
+    };
+
+    const { datasetArtifact, modelArtifact } = buildBaselineArtifactPayloads({
+      artifactTag: "logistic_l2-s20252026-p1-st1-f1-cfgleaky",
+      generatedAt: "2026-05-22T15:00:00.000Z",
+      sourceCommitSha: "def456",
+      seasonScope: 20252026,
+      family: "logistic_l2",
+      featureFamily: "expanded_v2",
+      parserVersion: 1,
+      strengthVersion: 1,
+      featureVersion: 1,
+      randomSeed: 42,
+      splitConfig: { trainRatio: 0.7, validationRatio: 0.15 },
+      splitStrategy: "chronological_game(train=0.7,validation=0.15,test=0.15)",
+      selectedFeatures: {
+        numeric: ["normalizedX"],
+        boolean: ["isReboundShot", "isShortSideMiss"],
+        categorical: ["shotType", "missReasonBucket"],
+      },
+      dataset: { ...dataset, featureKeys: leakyFeatureKeys },
+      fitOptions: { iterations: 800, learningRate: 0.05, l1: 0, l2: 0.01 },
+      evaluation: {
+        overall: splitEvaluation,
+        train: splitEvaluation,
+        validation: splitEvaluation,
+        test: splitEvaluation,
+      },
+      holdoutEvaluation: { ...splitEvaluation, averagePrediction: 0.15 },
+      holdoutSliceEvaluations: { strengthState: [], rebound: [], rush: [] },
+      holdoutScores: [],
+      calibrationAssessment: {
+        requiresPostCalibration: false,
+        requirementReason: "within tolerance",
+        validationStrategy: "cross_validated_holdout",
+        holdoutExampleCount: 125,
+        holdoutPositiveCount: 10,
+        reboundPositiveCount: 1,
+        rushPositiveCount: 1,
+        trustWarnings: [],
+        adoptabilityBlockingReasons: [],
+        methods: [],
+        bestObservedMethod: null,
+        adoptableMethod: null,
+      },
+      model: {
+        featureCount: leakyFeatureKeys.length,
+        weights: Array.from({ length: leakyFeatureKeys.length }, () => 0.1),
+        bias: -1.2,
+      },
+    });
+
+    const expected = {
+      isEligible: false,
+      blockingReasons: [
+        "Artifact uses forbidden post-event features: isShortSideMiss, missReasonBucket, missReasonBucket:wide.",
+      ],
+    };
+    expect(datasetArtifact.approvalGradeEligibility).toEqual(expected);
+    expect(modelArtifact.approvalGradeEligibility).toEqual(expected);
+  });
+
   it("rejects leaked shotEventType metadata during artifact generation", () => {
     const dataset = buildEncodedBaselineDataset([
       createShotRow({ gameId: 2025021001, eventId: 1, gameDate: "2026-01-01", isGoal: true }),

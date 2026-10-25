@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
+import { fixtureRsoBindings, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
 import { candidatePlanMetrics } from "./candidatePlanMetrics";
 import { lineupGapReport } from "./lineupGaps";
 import { evaluatePlan } from "./planning";
@@ -9,6 +11,7 @@ const member = (id: string, team: string, positions: string[], availability: Pla
   id, nhlId: id.charCodeAt(0), nhlTeamId: team.charCodeAt(0), rosterRevision: `roster-${id}`, name: id.toUpperCase(), teamAbbreviation: team,
   eligiblePositions: positions, playerClass: "skater", availability, eligibilityVerified: true, ownership: null, canDrop: true, holdValue: null, reserveEligibility: [] });
 const perGame: Record<string, number> = { a: 1, b: 2, c: 1.5 };
+beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixtureRsoPolicy(["fixture"], ["pts"])));
 function snapshot(): PlanningSnapshot {
   const players = [member("a", "A", ["C"], "rostered"), member("b", "B", ["C"], "rostered"), member("c", "C", ["D"], "free_agent")];
   const games = [["A", "2026-10-05"], ["A", "2026-10-06"], ["B", "2026-10-06"], ["C", "2026-10-05"], ["C", "2026-10-06"]].map(([team, date]) => ({
@@ -24,6 +27,7 @@ function snapshot(): PlanningSnapshot {
   data.forecasts = games.flatMap(game => players.filter(player => player.teamAbbreviation === game.teamAbbreviation).map((player): GameForecast => ({
     playerId: player.id, gameId: game.id, stats: { pts: perGame[player.id] }, conditioning: "unconditional", sourceKind: "detailed",
     sourceWatermark: "fixture", cutoffAt: data.context.asOf, issuedAt: data.context.asOf, expiresAt: game.startsAt, modelVersion: "fixture", revisionId: "r",
+    rsoTargetBindings: fixtureRsoBindings("fixture", data.context.asOf, ["pts"]),
     issuedContext: { version: "forge-issued-context-v1", playerId: player.id, gameId: game.id, nhlPlayerId: player.nhlId!, teamId: player.nhlTeamId!,
       seasonId: 20262027, scheduledAt: game.startsAt, scheduleRevision: game.scheduleRevision, rosterRevision: player.rosterRevision!,
       observedAt: data.context.asOf, scheduleSourceUpdatedAt: null, scheduleFetchedAt: null, identityUpdatedAt: null, membershipCreatedAt: [] },
@@ -60,6 +64,66 @@ describe("lineup gap report", () => {
     const report = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
     expect(report.bestDrop).toBeNull();
     expect(report.unprojectedDrops).toEqual(["b"]);
+  });
+
+  it("gives the missing forecast as that player's reason", () => {
+    const data = snapshot();
+    data.forecasts = data.forecasts.filter(forecast => forecast.playerId !== "b");
+    const report = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
+    expect(report.projectionBlockers).toEqual([{ playerId: "b", reason: "has unknown projected points: no FORGE projection issued for 2026-10-06" }]);
+  });
+
+  // TJ 2026-10-22: "16 players unprojected" listed every droppable star although each had complete forecasts.
+  // One roster member who is not a drop candidate blocked the lineup's points; the report blamed the others.
+  it("names a non-droppable roster player who blocks the lineup's points, not the droppable players with forecasts", () => {
+    const data = snapshot();
+    const d = { ...member("d", "C", ["D"], "rostered"), id: "d" };
+    data.players = [...data.players, d];
+    data.roster = [...data.roster, { playerId: "d", position: "active" }];
+    const kept = { ...intent, protectedPlayerIds: ["d"] };
+    const report = lineupGapReport(data, kept, evaluatePlan(data, kept, "outcome", [], false));
+    expect(report.bestDrop).toBeNull();
+    expect(report.unprojectedDrops).toEqual([]);
+    expect(report.projectionBlockers).toEqual([{ playerId: "d", reason: "has unknown projected points: no FORGE projection issued for 2026-10-05, 2026-10-06" }]);
+  });
+
+  it("says when unverified league positions, not projections, leave the lineup's points unknown", () => {
+    const data = snapshot();
+    data.players = data.players.map(row => row.id === "b" ? { ...row, eligibilityVerified: false } : row);
+    const report = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
+    expect(report.bestDrop).toBeNull();
+    expect(report.projectionBlockers).toEqual([{ playerId: "b", reason: "has unknown projected points: league positions not verified" }]);
+    expect(report.unprojectedDrops).toEqual(["b"]);
+  });
+
+  it("says the no-move lineup fails a rule check instead of calling players with forecasts unprojected", () => {
+    const data = snapshot();
+    data.rules.lineupMode = "unsupported";
+    const baseline = evaluatePlan(data, intent, "outcome", [], false);
+    expect(baseline.legal).toBe(false);
+    const report = lineupGapReport(data, intent, baseline);
+    expect(report.bestDrop).toBeNull();
+    expect(report.unprojectedDrops).toEqual([]);
+    expect(report.projectionBlockers).toEqual([{ playerId: null, reason: expect.stringMatching(/^the no-move lineup fails a rule check/) }]);
+  });
+
+  // TJ 2026-10-22: a healthy player left in IR (no Yahoo IR eligibility) made the no-move lineup illegal.
+  it("names a reserve player without verified eligibility as the reason the lineup fails its rule check", () => {
+    const data = snapshot();
+    const d = member("d", "C", ["D"], "rostered");
+    data.players = [...data.players, d];
+    data.roster = [...data.roster, { playerId: "d", position: "IR" }];
+    data.rules.rosterSlots = { ...data.rules.rosterSlots, IR: 1 };
+    const baseline = evaluatePlan(data, intent, "outcome", [], false);
+    expect(baseline.legal).toBe(false);
+    const report = lineupGapReport(data, intent, baseline);
+    expect(report.unprojectedDrops).toEqual([]);
+    expect(report.projectionBlockers).toEqual([{ playerId: "d",
+      reason: "in IR without verified IR eligibility, so the lineup fails a rule check; move him to an active or bench spot, or refresh league data" }]);
+    data.players = data.players.map(row => row.id === "d" ? { ...row, reserveEligibility: ["IR"] } : row);
+    const legal = lineupGapReport(data, intent, evaluatePlan(data, intent, "outcome", [], false));
+    expect(legal.projectionBlockers).toEqual([]);
+    expect(legal.bestDrop?.playerId).toBe("a");
   });
 
   it("never offers a protected player as the drop", () => {

@@ -9,8 +9,11 @@ import type {
   Team,
 } from "lib/NHL/types";
 import { Response } from "lib/api/types";
+import { createSharedReadCache } from "./sharedRead";
 
 const BASE_URL = "/api/v1";
+const teamReads = createSharedReadCache<Team[]>();
+const scheduleReads = createSharedReadCache<ScheduleData>();
 
 function summarizeHtmlError(value: string): string {
   const title = value.match(/<title[^>]*>([^<]+)<\/title>/i)?.[1]?.trim() ?? null;
@@ -35,10 +38,10 @@ function summarizeHtmlError(value: string): string {
  * @param path
  * @returns
  */
-async function get<T = any>(path: string): Promise<T> {
+async function get<T = any>(path: string, signal?: AbortSignal): Promise<T> {
   const url = `${BASE_URL}${path}`;
   try {
-    const res = await fetch(url);
+    const res = signal ? await fetch(url, { signal }) : await fetch(url);
     const contentType = res.headers.get("content-type") ?? "";
     const bodyText = await res.text();
     const isJson = contentType.includes("application/json");
@@ -74,7 +77,7 @@ async function get<T = any>(path: string): Promise<T> {
 
     return JSON.parse(bodyText) as T;
   } catch (e: any) {
-    console.error(url, e);
+    if (!signal?.aborted) console.error(url, e);
     throw e;
   }
 }
@@ -83,8 +86,9 @@ export async function getCurrentSeason(): Promise<Season> {
   return await get("/season");
 }
 
-export async function getTeams(seasonId?: number): Promise<Team[]> {
-  return await get(`/team/${seasonId ?? "current"}`);
+export async function getTeams(seasonId?: number, opts: { signal?: AbortSignal } = {}): Promise<Team[]> {
+  const path = `/team/${seasonId ?? "current"}`;
+  return teamReads.read(path, signal => get<Team[]>(path, signal), opts.signal);
 }
 
 /**
@@ -94,11 +98,13 @@ export async function getTeams(seasonId?: number): Promise<Team[]> {
  */
 export async function getSchedule(
   startDate: string,
-  opts: { includeOdds?: boolean } = {}
+  opts: { includeOdds?: boolean; signal?: AbortSignal } = {}
 ): Promise<ScheduleData> {
   const includeOdds = opts.includeOdds !== false;
-  const query = includeOdds ? "" : "?includeOdds=0";
-  return await get(`/schedule/${startDate}${query}`);
+  const oddsPath = `/schedule/${startDate}`;
+  // A complete odds-bearing window also serves fixture-only readers, never the reverse.
+  const path = includeOdds || scheduleReads.has(oddsPath) ? oddsPath : `${oddsPath}?includeOdds=0`;
+  return scheduleReads.read(path, signal => get<ScheduleData>(path, signal), opts.signal);
 }
 
 export async function getPlayer(id: number): Promise<Player> {

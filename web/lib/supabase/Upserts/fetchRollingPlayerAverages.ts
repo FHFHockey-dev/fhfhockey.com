@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import dotenv from "dotenv";
+import { createAlignedCountSupportBuilder, readAlignedCountSupport } from "lib/rollingPlayerCountSupport";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import { teamsInfo } from "lib/teamsInfo";
 import {
@@ -424,6 +425,7 @@ export function compactRollingUpsertRowForRankingStorage(
   row: RollingUpsertRow
 ): RollingUpsertRow {
   const compacted: RollingUpsertRow = { ...row };
+  delete compacted.aligned_count_support;
   for (const key of Object.keys(compacted)) {
     if (isPrunableRollingStorageField(key)) {
       compacted[key] = null;
@@ -465,6 +467,21 @@ export function splitRollingUpsertRowForDurableStorage(row: RollingUpsertRow): {
   const rankingRow: RollingUpsertRow = { ...row };
   const supportPayload: RollingPlayerSupportPayload = {};
   let prunedFieldCount = 0;
+  const hasAlignedCounts = Object.prototype.hasOwnProperty.call(row, "aligned_count_support");
+  delete rankingRow.aligned_count_support;
+  if (hasAlignedCounts) {
+    const value = row.aligned_count_support;
+    const validated = (row.strength_state === "ev" || row.strength_state === "pp")
+      && typeof row.player_id === "number" && typeof row.game_id === "number"
+      && typeof row.game_date === "string" && typeof row.season === "number"
+      ? readAlignedCountSupport(value, {
+          playerId: row.player_id,
+          strengthState: row.strength_state,
+          anchor: { gameId: row.game_id, gameDate: row.game_date, seasonId: row.season },
+        }) : null;
+    if (value !== null && !validated) throw new Error("Invalid aligned count storage anchor");
+    supportPayload.alignedCountSupport = validated;
+  }
 
   for (const key of Object.keys(rankingRow)) {
     const value = rankingRow[key];
@@ -483,7 +500,7 @@ export function splitRollingUpsertRowForDurableStorage(row: RollingUpsertRow): {
     appendSupportPayloadValue(supportPayload, key, value);
   }
 
-  if (prunedFieldCount === 0) {
+  if (prunedFieldCount === 0 && !hasAlignedCounts) {
     return { rankingRow, supportRow: null };
   }
 
@@ -817,6 +834,8 @@ export interface WgoSkaterRow {
 }
 
 export interface NstCountsRow {
+  id?: number;
+  player_id?: number;
   date_scraped: string;
   season: number;
   toi: number | null;
@@ -3142,7 +3161,8 @@ async function fetchCounts(
   tableName: string,
   playerId: number,
   startDate: string,
-  endDate: string
+  endDate: string,
+  db = supabase
 ): Promise<NstCountsRow[]> {
   const rows: NstCountsRow[] = [];
   const pageSize = 1000;
@@ -3151,10 +3171,10 @@ async function fetchCounts(
     const data = await executeWithRetry<NstCountsRow[]>(
       `${tableName} player:${playerId} offset:${from}`,
       async () => {
-        const { data, error } = await supabase
+        const { data, error } = await db
           .from(tableName as any)
           .select(
-            "date_scraped, season, toi, goals, total_assists, first_assists, second_assists, total_points, shots, icf, ixg, iscfs, hdcf, ipp, penalties_drawn, total_penalties, hits, shots_blocked"
+            "id, player_id, date_scraped, season, toi, goals, total_assists, first_assists, second_assists, total_points, shots, icf, ixg, iscfs, hdcf, ipp, penalties_drawn, total_penalties, hits, shots_blocked"
           )
           .eq("player_id", playerId)
           .gte("date_scraped", startDate)
@@ -3653,6 +3673,7 @@ async function processPlayer(
   playerId: number,
   ledger: TeamGameLedger,
   knownGameIds: Set<number>,
+  canonicalGames: GameRow[],
   options: FetchOptions
 ): Promise<ProcessPlayerResult> {
   const historyReadOptions = buildPlayerHistoryReadOptions(options);
@@ -3900,6 +3921,11 @@ async function processPlayer(
         historicalSupportMetricsState[metric.key] =
           createHistoricalAverageAccumulator();
       });
+      const alignedCounts = config.state === "ev" || config.state === "pp"
+        ? createAlignedCountSupportBuilder({
+            playerId, strengthState: config.state, sourceTable: config.countsTable,
+            startDate, canonicalGames, countsRows,
+          }) : null;
       const strengthOutputs: any[] = [];
       const historicalGpPctState = createHistoricalGpPctAccumulator();
       const derivePhaseStartedAt = Date.now();
@@ -3966,6 +3992,9 @@ async function processPlayer(
           teamGamesPlayed
         });
 
+        // The aligned-count builder is stateful, so it advances on every game.
+        const alignedCountSupport =
+          alignedCounts && game.wgo ? alignedCounts.push(game.wgo) : null;
         // Earlier history only feeds the accumulators above. Building output
         // rows for it would be discarded, and that work grows with career
         // length for every strength.
@@ -4024,7 +4053,8 @@ async function processPlayer(
           }),
           ...getOptionalPpContextOutputs(game),
           gp_semantic_type: getGpOutputCompatibilityMode(config.state).semanticType,
-          ...metricOutputs
+          ...metricOutputs,
+          ...(alignedCounts ? { aligned_count_support: alignedCountSupport } : {}),
         };
         outputs.push(output);
         strengthOutputs.push(output);
@@ -4095,7 +4125,7 @@ export async function recomputePlayerRowsForValidation(options: {
   const ledger = buildTeamGameLedger(games);
   const knownGameIds = new Set(games.map((game) => game.id));
 
-  return processPlayer(options.playerId, ledger, knownGameIds, {
+  return processPlayer(options.playerId, ledger, knownGameIds, games, {
     playerId: options.playerId,
     season: options.season,
     startDate: options.startDate,
@@ -4558,6 +4588,7 @@ async function runMain(
           playerId,
           ledger,
           knownGameIds,
+          games,
           options
         );
         coverageWarnings += diagnostics.coverageWarningCount;
@@ -4790,6 +4821,7 @@ async function runMain(
 }
 
 export const __testables = {
+  fetchCounts,
   fetchGames,
   buildGameRecords,
   buildRunSummary,

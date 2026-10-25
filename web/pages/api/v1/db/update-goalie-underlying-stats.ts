@@ -289,6 +289,6 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(adminOnly(handler), {
+export default adminOnly(withCronJobAudit(handler, {
   jobName: "/api/v1/db/update-goalie-underlying-stats",
-});
+}));

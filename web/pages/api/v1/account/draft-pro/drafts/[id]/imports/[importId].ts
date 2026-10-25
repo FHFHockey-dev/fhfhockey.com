@@ -1,6 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 import { requireApiUser } from "lib/api/requireApiUser";
+import { DraftProRequestError } from "lib/draft-pro/requestError";
 import { getDraftProFeatureFlags } from "lib/draft-pro/features";
 import { readPrivateImportChunk } from "lib/draft-pro/privateImportTransport";
 import { loadDraftProAccess, requireDraftProServerCapability } from "lib/draft-pro/server";
@@ -21,8 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     res.setHeader("X-Draft-Pro-Row-Count", String(chunk.rowCount));
     return res.status(200).send(Buffer.from(chunk.bytes));
   } catch (cause) {
-    const error = cause as { statusCode?: number; code?: string; message?: string };
-    if (error.statusCode) return res.status(error.statusCode).json({ error: { code: error.code ?? "draft_pro_required", message: error.message ?? "Draft Pro access is required." } });
+    if (cause instanceof DraftProRequestError) return res.status(cause.statusCode).json({ error: { code: cause.code ?? "draft_pro_required", message: cause.message ?? "Draft Pro access is required." } });
     if (cause instanceof z.ZodError) return res.status(400).json({ error: { code: "invalid_request", message: cause.issues[0]?.message ?? "Invalid private import request." } });
     return res.status(404).json({ error: { code: "private_import_unavailable", message: "Private import is unavailable." } });
   }

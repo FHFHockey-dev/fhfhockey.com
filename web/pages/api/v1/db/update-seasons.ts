@@ -3,7 +3,7 @@ import { Season } from "lib/NHL/types";
 import { restGet } from "lib/NHL/base";
 import adminOnly from "utils/adminOnlyMiddleware";
 
-export default withCronJobAudit(adminOnly(async function handler(req, res) {
+export default adminOnly(withCronJobAudit(async function handler(req, res) {
   try {
     const { supabase } = req;
     const seasons = await getSeasons();

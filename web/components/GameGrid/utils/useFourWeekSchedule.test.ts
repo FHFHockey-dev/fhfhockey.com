@@ -5,6 +5,7 @@ import { GameData, ScheduleData } from "lib/NHL/types";
 import { getSchedule, getTeams } from "lib/NHL/client";
 import useFourWeekSchedule, { normalizeCalendarWeek } from "./useFourWeekSchedule";
 import useSchedule from "./useSchedule";
+import useOpportunityClock from "./useOpportunityClock";
 
 vi.mock("lib/NHL/client", () => ({ getSchedule: vi.fn(), getTeams: vi.fn() }));
 afterEach(() => { cleanup(); vi.resetAllMocks(); });
@@ -108,9 +109,10 @@ describe("four-week calendar schedule summaries", () => {
     ["2026-03-06", "2026-03-02"], ["2026-12-30", "2026-12-28"]
   ])("anchors %s to four nonoverlapping Monday–Sunday weeks", async (selected, monday) => {
     const { result } = renderHook(() => useFourWeekSchedule(selected));
-    await waitFor(() => expect(result.current[0]).toHaveLength(8));
+    await waitFor(() => expect(result.current[0]).toHaveLength(12));
     expect(result.current[2]).toBe(false);
     expect(vi.mocked(getSchedule).mock.calls.map(([start]) => start)).toEqual([0, 7, 14, 21].map((i) => dateAt(monday, i)));
+    expect(vi.mocked(getSchedule).mock.calls.every(([, options]) => options?.includeOdds === false)).toBe(true);
     expect(result.current[3]).toMatchObject({ start: monday, end: dateAt(monday, 27), knownDays: 28, expectedDays: 28 });
     const rows = result.current[0].filter((row) => row.teamId === 1);
     expect(rows).toHaveLength(4);
@@ -160,4 +162,107 @@ describe("four-week calendar schedule summaries", () => {
     await act(async () => resolveOld(payload("2026-10-05")));
     expect(result.current[3].start).toBe("2026-11-02");
   });
+});
+
+it("shares a local clock that advances at the next start and on visibility return without fetching", async () => {
+  vi.useFakeTimers();
+  try {
+    vi.setSystemTime(new Date("2026-10-25T23:00:00Z"));
+    const rows = [{ teamId: 1, weekNumber: 1, totalGamesPlayed: 1, totalOffNights: 1, weekScore: 0,
+      SUN: game(1, "2026-10-25", { startTimeUTC: "2026-10-25T23:00:01Z" }) }];
+    const { result } = renderHook(() => useOpportunityClock(rows));
+    expect(result.current).toBe("2026-10-25T23:00:00.000Z");
+    await act(async () => { vi.advanceTimersByTime(1000); });
+    expect(result.current).toBe("2026-10-25T23:00:01.000Z");
+    vi.setSystemTime(new Date("2026-10-26T01:00:00Z"));
+    await act(async () => { document.dispatchEvent(new Event("visibilitychange")); });
+    expect(result.current).toBe("2026-10-26T01:00:00.000Z");
+    expect(getSchedule).not.toHaveBeenCalled();
+  } finally { vi.useRealTimers(); }
+});
+
+it("does not spin the opportunity clock while the real four-week reader is waiting for data", async () => {
+  vi.mocked(getTeams).mockImplementation(() => new Promise(() => {}));
+  let renders = 0;
+  let tick = Date.parse("2026-10-22T12:00:00Z");
+  const now = vi.spyOn(Date, "now").mockImplementation(() => tick++);
+  try {
+    const { result, rerender } = renderHook(() => {
+      if (++renders > 12) throw new Error("Loading the four-week reader caused a render loop");
+      const [rows, , loading] = useFourWeekSchedule("2026-10-19");
+      return { rows, loading, calculatedAt: useOpportunityClock(rows) };
+    });
+    await act(async () => {});
+    expect(result.current.loading).toBe(true);
+    expect(renders).toBeLessThan(6);
+    const previous = result.current;
+    rerender();
+    expect(result.current.rows).toBe(previous.rows);
+    expect(result.current.calculatedAt).toBe(previous.calculatedAt);
+    expect(getTeams).toHaveBeenCalledTimes(1);
+    expect(getSchedule).not.toHaveBeenCalled();
+  } finally { now.mockRestore(); }
+});
+
+it("does not advance the clock for equivalent newly allocated empty inputs", () => {
+  let tick = Date.parse("2026-10-22T12:00:00Z");
+  const now = vi.spyOn(Date, "now").mockImplementation(() => tick++);
+  try {
+    const { result, rerender } = renderHook(() => useOpportunityClock([]));
+    const previous = result.current;
+    rerender();
+    expect(result.current).toBe(previous);
+  } finally { now.mockRestore(); }
+});
+
+
+describe("request cancellation", () => {
+  it("starts no more four-week windows after unmount", async () => {
+    let finish!: (value: ScheduleData) => void;
+    vi.mocked(getSchedule).mockImplementation(async start => start === "2026-10-05" ? new Promise(resolve => { finish = resolve; }) : payload(start));
+    const view = renderHook(() => useFourWeekSchedule("2026-10-05"));
+    await waitFor(() => expect(getSchedule).toHaveBeenCalledTimes(2));
+    view.unmount();
+    await act(async () => finish(payload("2026-10-05")));
+    expect(getSchedule).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not continue an obsolete four-week chain after changing dates", async () => {
+    let finish!: (value: ScheduleData) => void;
+    vi.mocked(getSchedule).mockImplementation(async start => start === "2026-10-05"
+      ? new Promise(resolve => { finish = resolve; }) : payload(start));
+    const view = renderHook(({ start }) => useFourWeekSchedule(start), { initialProps: { start: "2026-10-05" } });
+    await waitFor(() => expect(getSchedule).toHaveBeenCalledTimes(2));
+    view.rerender({ start: "2026-11-02" });
+    await waitFor(() => expect(view.result.current[2]).toBe(false));
+    const count = vi.mocked(getSchedule).mock.calls.length;
+    await act(async () => finish(payload("2026-10-05")));
+    expect(getSchedule).toHaveBeenCalledTimes(count);
+    expect(view.result.current[3].start).toBe("2026-11-02");
+  });
+});
+
+
+it("loads four independent windows in two bounded waves", async () => {
+  vi.useFakeTimers();
+  let active = 0;
+  let maxActive = 0;
+  vi.mocked(getSchedule).mockImplementation(async start => {
+    maxActive = Math.max(maxActive, ++active);
+    await new Promise(resolve => setTimeout(resolve, 75));
+    active--;
+    return payload(start);
+  });
+  try {
+    const { result } = renderHook(() => useFourWeekSchedule("2026-10-05"));
+    await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+    expect(getSchedule).toHaveBeenCalledTimes(2);
+    await act(async () => { await vi.advanceTimersByTimeAsync(75); });
+    expect(result.current[2]).toBe(true);
+    expect(getSchedule).toHaveBeenCalledTimes(4);
+    await act(async () => { await vi.advanceTimersByTimeAsync(75); });
+    expect(result.current[2]).toBe(false);
+    expect(result.current[3].knownDays).toBe(28);
+    expect(maxActive).toBe(2);
+  } finally { vi.useRealTimers(); }
 });

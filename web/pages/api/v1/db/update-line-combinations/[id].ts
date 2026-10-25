@@ -13,8 +13,8 @@ import {
 } from "components/LinemateMatrix";
 import adminOnly from "utils/adminOnlyMiddleware";
 
-export default withCronJobAudit(
-  adminOnly(async (req, res) => {
+export default adminOnly(withCronJobAudit(
+  async (req, res) => {
     const supabase = req.supabase;
     const gameId = Number(req.query.id);
     try {
@@ -31,8 +31,8 @@ export default withCronJobAudit(
       console.error(e);
       res.status(400).json({ message: e.message, success: false });
     }
-  }),
-);
+  },
+));
 
 export async function updateLineCombos(id: number, supabase: SupabaseClient) {
   const lineCombos = await getLineCombos(id);

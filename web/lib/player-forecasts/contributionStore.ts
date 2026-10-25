@@ -1,7 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { ContributionAllowedUses, ContributionSource } from "./contributions";
-import { playerForecastSourcePayloadHash } from "./sourceSnapshot";
+import { CURRENT_SEASON_SOG_CONTRIBUTION_VERSION } from "./contributions";
+import { playerForecastSourcePayloadHash, validPlannedObservationId, verifyPlannedObservation, type PlannedSourceObservation } from "./sourceSnapshot";
+import { timestampMicros } from "../projections/evidenceTime";
 
 const PROVIDER = "fhfh";
 const DATASET = "contribution-bundle-v1";
@@ -76,12 +78,14 @@ export function contributionBundleCandidateInputHash(args: {
       teamId: source.teamId, targetKey: source.targetKey, unit: source.unit, basis: source.basis,
       mean: source.mean, cutoffAt: source.cutoffAt, sourceWatermark: source.sourceWatermark,
       scheduleRevision: source.scheduleRevision, rosterRevision: source.rosterRevision,
+      ...(source.policyVersion === CURRENT_SEASON_SOG_CONTRIBUTION_VERSION
+        ? { gameId: source.gameId, scheduledAt: source.scheduledAt } : {}),
     })).sort((a, b) => a.playerId - b.playerId || a.targetKey.localeCompare(b.targetKey)),
   });
 }
 
 function validTimestamp(value: unknown): value is string {
-  return typeof value === "string" && Number.isFinite(Date.parse(value));
+  return typeof value === "string" && timestampMicros(value) !== null;
 }
 
 function nonempty(value: unknown): value is string {
@@ -105,14 +109,14 @@ function validBundle(payload: unknown): payload is BundlePayload {
     "sourceCount", "sourceWatermarks", "rosterRevisions", "evaluationPolicyId", "reviewId", "released", "checksum"]);
   const sourceKeys = new Set(["kind", "sourceId", "policyVersion", "released", "playerId", "nhlPlayerId",
     "seasonId", "teamId", "targetKey", "unit", "basis", "mean", "participationIntegrated", "cutoffAt",
-    "issuedAt", "expiresAt", "sourceWatermark", "scheduleRevision", "rosterRevision", "limitations"]);
+    "issuedAt", "expiresAt", "sourceWatermark", "scheduleRevision", "rosterRevision", "limitations", "gameId", "scheduledAt"]);
   if (!manifest || !Array.isArray(sources) || sources.length === 0 ||
       Object.keys(manifest).some((key) => !manifestKeys.has(key)) ||
       !Number.isSafeInteger(manifest.seasonId) || manifest.seasonId <= 0 ||
       !nonempty(manifest.policyVersion) || !validTimestamp(manifest.inputCutoff) ||
       !validTimestamp(manifest.issuedAt) || !validTimestamp(manifest.expiresAt) ||
-      Date.parse(manifest.inputCutoff) > Date.parse(manifest.issuedAt) ||
-      Date.parse(manifest.issuedAt) >= Date.parse(manifest.expiresAt) ||
+      timestampMicros(manifest.inputCutoff)! > timestampMicros(manifest.issuedAt)! ||
+      timestampMicros(manifest.issuedAt)! >= timestampMicros(manifest.expiresAt)! ||
       !Number.isSafeInteger(manifest.sourceCount) || manifest.sourceCount !== sources.length ||
       typeof manifest.released !== "boolean" ||
       !(manifest.evaluationPolicyId === null || nonempty(manifest.evaluationPolicyId)) ||
@@ -121,8 +125,15 @@ function validBundle(payload: unknown): payload is BundlePayload {
         !UUID.test(manifest.reviewId ?? "")))) return false;
   const seen = new Set<string>();
   for (const source of sources) {
-    if (!source || Object.keys(source).some((key) => !sourceKeys.has(key)) ||
-        source.kind !== "baseline" || source.gameId != null ||
+    const scopedSog = source?.policyVersion === CURRENT_SEASON_SOG_CONTRIBUTION_VERSION;
+    if (!source || Object.keys(source).some((key) => !sourceKeys.has(key)
+      || !scopedSog && (key === "gameId" || key === "scheduledAt")) ||
+        source.kind !== "baseline" || (!scopedSog && (source.gameId != null || source.scheduledAt != null)) ||
+        (scopedSog && (!Number.isSafeInteger(source.gameId) || source.gameId! <= 0 || !validTimestamp(source.scheduledAt)
+          || source.targetKey !== "SHOTS_ON_GOAL" || source.unit !== "count" || source.basis !== "per_appearance"
+          || !validTimestamp(source.issuedAt) || !validTimestamp(source.expiresAt)
+          || timestampMicros(source.issuedAt)! >= timestampMicros(source.scheduledAt!)!
+          || timestampMicros(source.expiresAt)! > timestampMicros(source.scheduledAt!)!)) ||
         !nonempty(source.sourceId) || !nonempty(source.policyVersion) ||
         source.policyVersion !== manifest.policyVersion ||
         source.released !== manifest.released ||
@@ -136,9 +147,11 @@ function validBundle(payload: unknown): payload is BundlePayload {
         source.participationIntegrated !== false || source.legacyAvailabilityAdjustment === true ||
         !validTimestamp(source.cutoffAt) || !validTimestamp(source.issuedAt) ||
         !validTimestamp(source.expiresAt) ||
-        Date.parse(source.cutoffAt) > Date.parse(manifest.inputCutoff) ||
-        Date.parse(source.issuedAt) !== Date.parse(manifest.issuedAt) ||
-        Date.parse(source.expiresAt) !== Date.parse(manifest.expiresAt) ||
+        timestampMicros(source.cutoffAt)! > timestampMicros(manifest.inputCutoff)! ||
+        timestampMicros(source.cutoffAt)! > timestampMicros(source.issuedAt)! ||
+        timestampMicros(source.issuedAt)! > timestampMicros(manifest.issuedAt)! ||
+        timestampMicros(source.issuedAt)! >= timestampMicros(source.expiresAt)! ||
+        timestampMicros(manifest.expiresAt)! > timestampMicros(source.expiresAt)! ||
         !nonempty(source.sourceWatermark) || !nonempty(source.scheduleRevision) ||
         !nonempty(source.rosterRevision) ||
         (source.limitations != null && (!Array.isArray(source.limitations) ||
@@ -171,7 +184,7 @@ function validReceiptRow(row: ReceiptRow | undefined, id: string, dataset: strin
     row.entity_kind === kind && row.entity_key === String(seasonId) &&
     /^[a-f0-9]{64}$/.test(row.payload_hash) &&
     row.payload_hash === playerForecastSourcePayloadHash(row.payload) &&
-    validTimestamp(row.available_at) && Date.parse(row.available_at) <= now.getTime();
+    validTimestamp(row.available_at) && timestampMicros(row.available_at)! <= BigInt(now.getTime()) * BigInt(1000);
 }
 
 function validPolicy(value: unknown, row: ReceiptRow, bundle: BundlePayload, candidateInputHash: string): value is ContributionEvaluationPolicy {
@@ -188,9 +201,11 @@ function validPolicy(value: unknown, row: ReceiptRow, bundle: BundlePayload, can
     policy.allowedPublicUses.length > 0 &&
     new Set(policy.allowedPublicUses).size === policy.allowedPublicUses.length &&
     policy.allowedPublicUses.every((use) => validUses.includes(use)) &&
+    (policy.policyVersion !== CURRENT_SEASON_SOG_CONTRIBUTION_VERSION
+      || policy.allowedPublicUses.every(use => use === "conditionalTieBreak")) &&
     nonempty(policy.prospectiveEvidenceRef) && nonempty(policy.ownerApprovalRef) &&
-    validTimestamp(policy.approvedAt) && Date.parse(policy.approvedAt) === Date.parse(row.available_at) &&
-    Date.parse(policy.approvedAt) <= Date.parse(bundle.manifest.issuedAt);
+    validTimestamp(policy.approvedAt) && timestampMicros(policy.approvedAt) === timestampMicros(row.available_at) &&
+    timestampMicros(policy.approvedAt)! <= timestampMicros(bundle.manifest.issuedAt)!;
 }
 
 function validReview(value: unknown, row: ReceiptRow, bundle: BundlePayload,
@@ -205,20 +220,23 @@ function validReview(value: unknown, row: ReceiptRow, bundle: BundlePayload,
     review.policyHash === policyHash && review.bundleChecksum === bundle.manifest.checksum &&
     review.status === "owner_approved" && review.eligible === true &&
     nonempty(review.prospectiveEvidenceRef) && nonempty(review.ownerApprovalRef) &&
-    validTimestamp(review.reviewedAt) && Date.parse(review.reviewedAt) === Date.parse(row.available_at) &&
-    Date.parse(review.reviewedAt) >= Date.parse(bundle.manifest.issuedAt);
+    validTimestamp(review.reviewedAt) && timestampMicros(review.reviewedAt) === timestampMicros(row.available_at) &&
+    timestampMicros(review.reviewedAt)! >= timestampMicros(bundle.manifest.issuedAt)!;
 }
 
-function publicSource(source: ContributionSource, approved: ReadonlySet<keyof ContributionAllowedUses>): ContributionSource {
+function publicSource(source: ContributionSource, approved: ReadonlySet<keyof ContributionAllowedUses>,
+  catalogExpiresAt: string): ContributionSource {
   return {
     kind: source.kind, sourceId: source.sourceId, policyVersion: source.policyVersion,
     released: source.released, playerId: source.playerId, nhlPlayerId: source.nhlPlayerId,
     allowedUses: { assignment: approved.has("assignment"), totals: approved.has("totals"),
       comparison: approved.has("comparison"), conditionalTieBreak: approved.has("conditionalTieBreak") },
     seasonId: source.seasonId, teamId: source.teamId, targetKey: source.targetKey,
+    ...(source.policyVersion === CURRENT_SEASON_SOG_CONTRIBUTION_VERSION
+      ? { gameId: source.gameId, scheduledAt: source.scheduledAt } : {}),
     unit: source.unit, basis: source.basis, mean: source.mean,
     participationIntegrated: source.participationIntegrated, cutoffAt: source.cutoffAt,
-    issuedAt: source.issuedAt, expiresAt: source.expiresAt,
+    issuedAt: source.issuedAt, expiresAt: source.expiresAt, catalogExpiresAt,
     sourceWatermark: source.sourceWatermark, scheduleRevision: source.scheduleRevision,
     rosterRevision: source.rosterRevision,
     limitations: [...(source.limitations ?? [])],
@@ -230,12 +248,14 @@ export async function persistContributionBundle(db: SupabaseClient<any>, args: {
   manifest: ContributionBundleManifest;
   sources: ContributionSource[];
   dryRun?: boolean;
+  snapshotId?: string;
 }): Promise<{ dryRun: boolean; payloadHash: string; snapshotId: string | null }> {
   const payload = { manifest: args.manifest, sources: args.sources };
   if (!validBundle(payload)) throw new Error("Invalid or incomplete contribution bundle.");
   const payloadHash = playerForecastSourcePayloadHash(payload);
+  if (args.snapshotId !== undefined && !validPlannedObservationId(args.snapshotId)) throw new Error("Invalid planned snapshot ID.");
   if (args.dryRun ?? true) return { dryRun: true, payloadHash, snapshotId: null };
-  const { data, error } = await db.from("player_forecast_source_observations").insert({
+  const row = {
     provider: PROVIDER,
     dataset_key: DATASET,
     entity_kind: "seasonal_rate_bundle",
@@ -246,8 +266,14 @@ export async function persistContributionBundle(db: SupabaseClient<any>, args: {
     payload_hash: payloadHash,
     payload,
     metadata: { policyVersion: args.manifest.policyVersion, released: args.manifest.released },
-  }).select("id").single();
+    ...(args.snapshotId !== undefined ? { id: args.snapshotId } : {}),
+  };
+  const { data, error } = await db.from("player_forecast_source_observations").insert(row).select("id").single();
   if (error?.code === "23505") {
+    if (args.snapshotId) {
+      await verifyPlannedObservation(db, { ...row, id: args.snapshotId, source_url: null } as PlannedSourceObservation);
+      return { dryRun: false, payloadHash, snapshotId: args.snapshotId };
+    }
     const existing = await db.from("player_forecast_source_observations").select("id")
       .eq("provider", PROVIDER).eq("dataset_key", DATASET)
       .eq("entity_kind", "seasonal_rate_bundle").eq("entity_key", String(args.manifest.seasonId))
@@ -256,6 +282,7 @@ export async function persistContributionBundle(db: SupabaseClient<any>, args: {
     return { dryRun: false, payloadHash, snapshotId: existing.data.id };
   }
   if (error) throw error;
+  if (args.snapshotId && data?.id !== args.snapshotId) throw new Error("Planned snapshot ID mismatch.");
   return { dryRun: false, payloadHash, snapshotId: data.id };
 }
 
@@ -287,9 +314,9 @@ export async function loadApprovedContributionBundle(
         row.entity_kind !== "seasonal_rate_bundle" || row.entity_key !== String(seasonId) ||
         !validBundle(payload) || !payload.manifest.released ||
         row.payload_hash !== playerForecastSourcePayloadHash(payload) ||
-        Date.parse(row.available_at) !== Date.parse(payload.manifest.issuedAt) ||
-        Date.parse(payload.manifest.issuedAt) > now.getTime() ||
-        Date.parse(payload.manifest.expiresAt) <= now.getTime()) return empty("release_snapshot_invalid_or_stale");
+        timestampMicros(row.available_at) !== timestampMicros(payload.manifest.issuedAt) ||
+        timestampMicros(payload.manifest.issuedAt)! > BigInt(now.getTime()) * BigInt(1000) ||
+        timestampMicros(payload.manifest.expiresAt)! <= BigInt(now.getTime()) * BigInt(1000)) return empty("release_snapshot_invalid_or_stale");
     accepted.push(payload);
   }
   const receiptIds = sortedUnique(accepted.flatMap((bundle) => [
@@ -313,11 +340,13 @@ export async function loadApprovedContributionBundle(
         !validPolicy(policyRow.payload, policyRow, bundle, candidateInputHash) ||
         !validReceiptRow(reviewRow, reviewId, REVIEW_DATASET, "baseline_validation_review", seasonId, now) ||
         !validReview(reviewRow.payload, reviewRow, bundle, candidateInputHash, policyRow.payload_hash) ||
-        Date.parse(reviewRow.available_at) < Date.parse(policyRow.available_at)) return empty("baseline_review_unverified");
+        timestampMicros(reviewRow.available_at)! < timestampMicros(policyRow.available_at)!) return empty("baseline_review_unverified");
     approvedUses.set(bundle.manifest.checksum, new Set(policyRow.payload.allowedPublicUses));
   }
-  accepted.sort((a, b) => b.manifest.issuedAt.localeCompare(a.manifest.issuedAt)
-    || a.manifest.checksum.localeCompare(b.manifest.checksum));
+  accepted.sort((a, b) => {
+    const left = timestampMicros(a.manifest.issuedAt)!, right = timestampMicros(b.manifest.issuedAt)!;
+    return left === right ? a.manifest.checksum.localeCompare(b.manifest.checksum) : left > right ? -1 : 1;
+  });
   // Each policy publishes a complete bundle. Never fill holes from an older revision.
   const selected = new Map<string, BundlePayload>();
   for (const bundle of accepted) {
@@ -326,7 +355,7 @@ export async function loadApprovedContributionBundle(
   if (!selected.size) return empty("release_snapshot_missing");
   const bundles = [...selected.values()].sort((a, b) => a.manifest.policyVersion.localeCompare(b.manifest.policyVersion));
   const sources = bundles.flatMap((bundle) => bundle.sources.map((source) =>
-    publicSource(source, approvedUses.get(bundle.manifest.checksum)!))).sort((a, b) =>
+    publicSource(source, approvedUses.get(bundle.manifest.checksum)!, bundle.manifest.expiresAt))).sort((a, b) =>
     a.playerId - b.playerId || a.targetKey.localeCompare(b.targetKey));
   const keys = sources.map((source) => `${source.playerId}:${source.targetKey}`);
   if (new Set(keys).size !== keys.length) return empty("conflicting_release_policies");

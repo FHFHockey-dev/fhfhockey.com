@@ -33,6 +33,11 @@ import {
   type PlayerQuickViewId
 } from "lib/trends/trendsSurface";
 import supabase from "lib/supabase";
+import {
+  mergeRollingSupportPayloadFields,
+  ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE,
+  type RollingPlayerSupportScalar
+} from "lib/supabase/Upserts/rollingPlayerSupportPayload";
 import styles from "./playerTrendPage.module.scss";
 
 const BASELINE_OPTIONS = [
@@ -491,6 +496,16 @@ function buildSelectClause() {
 
 const SELECT_CLAUSE = buildSelectClause();
 
+// The rolling writer moves historical windows (`*_avg_*`, `*_last3`, `*_all`,
+// `*_3ya`, `*_career`) out of the wide row into this sidecar payload.
+const SUPPORT_SELECT_CLAUSE =
+  "game_date, historicalCompatibility:support_payload->historicalCompatibility";
+
+type RollingSupportRow = {
+  game_date: string;
+  historicalCompatibility: Record<string, RollingPlayerSupportScalar> | null;
+};
+
 function getTodayEt(): string {
   const now = new Date();
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -735,7 +750,7 @@ export default function PlayerTrendPage() {
       setLoading(true);
       setError("");
       try {
-        const [{ data: playerRow, error: playerError }, metricRows] =
+        const [{ data: playerRow, error: playerError }, metricRows, supportRows] =
           await Promise.all([
             supabase
               .from("players")
@@ -761,14 +776,43 @@ export default function PlayerTrendPage() {
                 from += pageSize;
               }
               return rows;
+            })(),
+            (async () => {
+              const pageSize = 1000;
+              let from = 0;
+              const rows: RollingSupportRow[] = [];
+              while (true) {
+                const { data, error } = await supabase
+                  .from(ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE)
+                  .select(SUPPORT_SELECT_CLAUSE)
+                  .eq("player_id", idNumber)
+                  .eq("strength_state", "all")
+                  .order("game_date", { ascending: true })
+                  .range(from, from + pageSize - 1);
+                if (error) throw error;
+                if (!data || data.length === 0) break;
+                rows.push(...(data as unknown as RollingSupportRow[]));
+                if (data.length < pageSize) break;
+                from += pageSize;
+              }
+              return rows;
             })()
           ]);
 
         if (!mounted) return;
         if (playerError) throw playerError;
 
+        const supportByDate = new Map(
+          supportRows.map((row) => [row.game_date, row.historicalCompatibility])
+        );
         setPlayerName(playerRow?.fullName ?? `Player #${idNumber}`);
-        setData(metricRows);
+        setData(
+          metricRows.map((row) =>
+            mergeRollingSupportPayloadFields(row, {
+              historicalCompatibility: supportByDate.get(row.game_date) ?? undefined
+            })
+          )
+        );
       } catch (err: any) {
         setError(err?.message ?? "Failed to load player metrics.");
       } finally {

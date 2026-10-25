@@ -19,15 +19,20 @@ export function PlayerStatsSummary({
 
     if (log.length === 0) return null;
 
-    // Only appearances count; ratios come from summed components and missing
-    // values stay unavailable rather than becoming zero.
+    // Check participation before filtering so unknown rows cannot disappear
+    // from goalie ratios. Known nonappearances still stay outside the totals.
+    const hasKnownParticipation = log.every((game) =>
+      typeof game.games_played === "number" && Number.isFinite(game.games_played) && game.games_played >= 0
+    );
     const appearances = log.filter((game) => Number(game.games_played) > 0);
     const totals: { [key: string]: number | null } = {};
     const gamesPlayed = countAppearances(log);
 
     selectedStats.forEach((stat) => {
       if (stat === "date" || stat === "games_played") return;
-      totals[stat] = aggregateSummaryStat(appearances, stat);
+      totals[stat] = !hasKnownParticipation && (stat === "save_pct" || stat === "goals_against_avg")
+        ? null
+        : aggregateSummaryStat(appearances, stat);
     });
 
     return { totals, gamesPlayed };

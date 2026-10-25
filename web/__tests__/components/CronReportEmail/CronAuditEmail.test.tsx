@@ -6,6 +6,53 @@ import { describe, expect, it } from "vitest";
 import { CronAuditEmail } from "components/CronReportEmail/CronAuditEmail";
 
 describe("CronAuditEmail", () => {
+  it("keeps a planned continuation visible as in progress", () => {
+    const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-10-20T00:00:00Z"
+      summary={{ auditRuns: 1, auditSuccesses: 0, auditFailures: 0, auditUnknown: 0, totalRowsUpserted: 1, totalFailedRows: 0 }}
+      audits={[{ key: "continued", label: "rolling", jobName: "rolling-in-progress", status: "continued",
+        runTimeDisplay: "UTC", method: "GET", route: "/rolling", routePath: "/rolling", targetTable: null,
+        statusCode: 207, durationMs: 180000, rowsUpserted: 1, rowsAffected: 1, failedRows: 0,
+        reason: "Resumes at the next cursor.", lastKnownSuccessDisplay: null, failedRowSamples: [] }]} />);
+    expect(html).toContain("CONTINUED / IN PROGRESS");
+    expect(html).toContain("rolling-in-progress");
+    expect(html).not.toContain(">OK</strong>");
+    expect(html).not.toContain(">FAIL</strong>");
+  });
+
+  it("groups exceptions into short sections, hides healthy rows, and keeps disabled and runtime warnings explicit", () => {
+    const base = { key: "", label: "job", jobName: "", status: "success" as const,
+      runTimeDisplay: "UTC / EDT", method: "GET", route: "/job", routePath: "/job", targetTable: null,
+      statusCode: 200, durationMs: 1000, rowsUpserted: 0, rowsAffected: 0, failedRows: 0,
+      reason: null, lastKnownSuccessDisplay: null, failedRowSamples: [] };
+    const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-03-19T12:10:00.000Z"
+      successHistory={{ since: "2026-02-18T12:10:00.000Z", until: "2026-03-20T12:10:00.000Z", complete: false, error: "page budget exceeded" }}
+      summary={{ auditRuns: 8, auditSuccesses: 4, auditFailures: 1, auditUnknown: 2, totalRowsUpserted: 0, totalFailedRows: 2 }}
+      audits={[
+        { ...base, key: "failed", jobName: "failed-job", status: "failure" },
+        { ...base, key: "missing", jobName: "missing-job", status: "unknown", missingObservationWarnings: ["No cron or audit observation matched this scheduled slot."] },
+        { ...base, key: "gap", jobName: "gap-job", status: "unknown" },
+        { ...base, key: "disabled", jobName: "disabled-job", status: "disabled" },
+        { ...base, key: "partial", jobName: "partial-job", failedRows: 2 },
+        { ...base, key: "skipped", jobName: "skipped-job", status: "unknown", missingObservationWarnings: ["Operation was skipped or produced no output"] },
+        { ...base, key: "near", jobName: "near-job", durationMs: 218000, repositoryLimitMs: 240000 },
+        { ...base, key: "healthy", jobName: "healthy-job" },
+      ]} />);
+    expect(html.match(/<h2 /g)).toHaveLength(2);
+    expect(html.indexOf("Needs attention")).toBeLessThan(html.indexOf("Worth a look"));
+    expect(html.indexOf("missing-job")).toBeLessThan(html.indexOf("disabled-job"));
+    for (const name of ["failed-job", "missing-job", "gap-job", "disabled-job", "partial-job", "skipped-job", "near-job"]) {
+      expect(html.match(new RegExp(name, "g"))).toHaveLength(1);
+    }
+    expect(html).not.toContain("healthy-job");
+    expect(html).toContain("DISABLED");
+    expect(html).toContain("NEAR LIMIT");
+    expect(html).toContain("1 healthy job;");
+    expect(html).toContain("PARTIAL");
+    expect(html).toContain("Last recorded success: Unknown;");
+    expect(html).toContain("Success lookback 2026-02-18");
+    expect(html).toContain("Lookup incomplete; latest success is unverified");
+  });
+
   it("does not present an undated static benchmark as evidence about a current receipt", () => {
     const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-10-03T15:55:00Z"
       summary={{ auditRuns: 1, auditSuccesses: 0, auditFailures: 1, auditUnknown: 0, totalRowsUpserted: 0, totalFailedRows: 0 }}
@@ -35,10 +82,9 @@ describe("CronAuditEmail", () => {
         { ...base, key: "missing", jobName: "missing-job", label: "missing", status: "unknown", missingObservationWarnings: ["No cron or audit observation matched this scheduled slot."] },
       ]} />);
     expect(html.indexOf("failed-job")).toBeLessThan(html.indexOf("near-job"));
-    expect(html.indexOf("near-job")).toBeLessThan(html.indexOf("healthy-job"));
-    expect(html.match(/healthy-job/g)).toHaveLength(1);
+    expect(html).toContain("NEAR LIMIT");
+    expect(html).not.toContain("healthy-job");
     expect(html.match(/Telemetry source unavailable: cron_job_report/g)).toHaveLength(1);
-    expect(html).toContain("&lt;1s");
     expect(html).toContain("total unknown (0 confirmed observations)");
     expect(html).not.toContain(">800<");
     expect(html).not.toContain("<th");
@@ -50,12 +96,10 @@ describe("CronAuditEmail", () => {
       summary={{ auditRuns: 2, auditSuccesses: 1, auditFailures: 1, auditUnknown: 0, totalRowsUpserted: 741, totalFailedRows: 0 }}
       audits={[
         { key: "pbp", label: "PBP", jobName: "PBP", status: "failure", runTimeDisplay: "EDT", method: "GET", route: "/api/v1/db/update-PbP", routePath: "/api/v1/db/update-PbP", targetTable: null, statusCode: 500, durationMs: null, rowsUpserted: 741, rowsAffected: 741, failedRows: null, failedOperations: 1, reason: "Shift clock/duration mismatch", lastKnownSuccessDisplay: null, failedRowSamples: [] },
-        { key: "report", label: "Report", jobName: "Report", status: "success", runTimeDisplay: "EDT", method: "GET", route: "/api/v1/db/cron-report", routePath: "/api/v1/db/cron-report", targetTable: null, statusCode: 200, durationMs: 0, rowsUpserted: null, rowsAffected: null, failedRows: null, reason: null, lastKnownSuccessDisplay: null, failedRowSamples: [] },
+        { key: "report", label: "Report", jobName: "Report", status: "unknown", observedExecutionStatus: "success", runTimeDisplay: "EDT", method: "GET", route: "/api/v1/db/cron-report", routePath: "/api/v1/db/cron-report", targetTable: null, statusCode: 200, durationMs: 0, rowsUpserted: null, rowsAffected: null, failedRows: null, reason: null, lastKnownSuccessDisplay: null, failedRowSamples: [] },
       ]} />);
-    expect(html).toContain("741");
-    expect(html).toContain("Unknown</strong>");
-    expect(html.match(/N\/A<\/strong>/g)).toHaveLength(2);
-    expect(html).toContain("0s</strong>");
+    expect(html).toContain("Upserted: 741 · Error rows: Unknown");
+    expect(html).not.toContain("N/A");
     expect(html).toContain("1 failed operations; error-row count unknown.");
   });
 
@@ -63,14 +107,14 @@ describe("CronAuditEmail", () => {
     render(<CronAuditEmail sinceDate="2026-03-20T03:00:00.000Z"
       summary={{ auditRuns: 1, auditSuccesses: 0, auditFailures: 1, auditUnknown: 0, totalRowsUpserted: 8, totalFailedRows: 2 }}
       audits={[{ key: "audit-1", label: "projection", jobName: "projection", status: "failure", runTimeDisplay: "EDT", method: "POST", route: "/projection", routePath: "/projection", targetTable: null, statusCode: 500, durationMs: 301000, repositoryLimitMs: 240000, rowsUpserted: 8, rowsAffected: 8, failedRows: 2, reason: "preflight gate failed", lastKnownSuccessDisplay: "yesterday", failedRowSamples: ["table: goalie_start_projections"] }]} />);
-    expect(screen.getByText("5m 1s")).toBeTruthy();
+    expect(screen.getByText(/Elapsed: 5m 1s/)).toBeTruthy();
     expect(screen.getByText(/NEAR LIMIT/)).toBeTruthy();
     expect(screen.getByText("preflight gate failed")).toBeTruthy();
     expect(screen.getByText(/table: goalie_start_projections/)).toBeTruthy();
-    expect(screen.getByText(/deployed override unverified/)).toBeTruthy();
+    expect(screen.queryByText(/deployed override unverified/)).toBeNull();
   });
 
-  it("includes clean successful jobs once in the briefing", () => {
+  it("summarizes clean successful jobs without listing individual receipts", () => {
     render(
       <CronAuditEmail
         sinceDate="2026-03-20T03:00:00.000Z"
@@ -106,8 +150,8 @@ describe("CronAuditEmail", () => {
       />
     );
 
-    expect(screen.getAllByText("update-teams-job")).toHaveLength(1);
-    expect(screen.getByText("OK")).toBeTruthy();
+    expect(screen.queryByText("update-teams-job")).toBeNull();
+    expect(screen.getByText(/1 healthy job; not listed individually/)).toBeTruthy();
   });
   it("renders incomplete totals as unknown and retains observed failures", () => {
     const markup = renderToStaticMarkup(<CronAuditEmail
@@ -149,14 +193,13 @@ describe("CronAuditEmail", () => {
     expect(markup).toContain("1 cron execution failure receipts");
   });
 
-  it("shows every timing limit and provenance, readable plain metrics and unknown overall row totals", async () => {
+  it("drops per-row timing boilerplate, keeps readable failure metrics and unknown overall row totals", async () => {
     const element = <CronAuditEmail sinceDate="2026-10-03T13:00:48.447Z" totalsComplete={false}
       summary={{ scheduledJobs: 56, metricRowsKnown: 3, metricErrorsKnown: 7, auditRuns: 6247, auditSuccesses: 6028, auditFailures: 212, auditUnknown: 7, totalRowsUpserted: 741, totalFailedRows: 0 }}
-      audits={[{ key: "teams", label: "teams", jobName: "teams", status: "unknown", observedExecutionStatus: "success", runTimeDisplay: "EDT", method: "GET", route: "/api/v1/db/update-teams", routePath: "/api/v1/db/update-teams", targetTable: "teams", statusCode: 200, durationMs: 351, timingProvenance: "Route audit timing receipt", repositoryLimitMs: 240000, rowsUpserted: null, rowsAffected: null, failedRows: null, reason: null, lastKnownSuccessDisplay: null, failedRowSamples: [] }]} />;
+      audits={[{ key: "teams", label: "teams", jobName: "teams", status: "failure", observedExecutionStatus: "success", runTimeDisplay: "EDT", method: "GET", route: "/api/v1/db/update-teams", routePath: "/api/v1/db/update-teams", targetTable: "teams", statusCode: 200, durationMs: 351, timingProvenance: "Route audit timing receipt", repositoryLimitMs: 240000, rowsUpserted: null, rowsAffected: null, failedRows: null, reason: null, lastKnownSuccessDisplay: null, failedRowSamples: [] }]} />;
     const html = renderToStaticMarkup(element);
-    expect(html).toContain("Repo route limit: 4m 0s");
-    expect(html).toContain("Route audit timing receipt");
-    expect(html).toContain("Observed route receipt: success; scheduled health remains unknown");
+    expect(html).not.toContain("Repo route limit");
+    expect(html).not.toContain("Route audit timing receipt");
     expect(html).toContain("Error rows: total unknown (0 observed in 7/56 applicable job receipts)");
     expect(html).not.toContain("0 explicitly reported");
     const text = await renderAsync(element, { plainText: true });
@@ -175,6 +218,24 @@ describe("CronAuditEmail", () => {
     expect(html).toContain("NEAR BUDGET");
     expect(html).toContain("Reported operation budget: 3m 30s");
     expect(html).toContain('href="https://vercel.com/fhfhockeydevs-projects/fhfhockey/logs"');
+  });
+
+  it("collapses repeat failures per job and lists recovered jobs on one line", () => {
+    const base = { label: "job", method: "GET", route: "/job", routePath: "/job", targetTable: null, statusCode: 500,
+      durationMs: 1000, rowsUpserted: null, rowsAffected: null, failedRows: null, failedRowSamples: [] };
+    const html = renderToStaticMarkup(<CronAuditEmail sinceDate="2026-10-21T13:00:00Z"
+      summary={{ auditRuns: 4, auditSuccesses: 1, auditFailures: 3, auditUnknown: 0, totalRowsUpserted: 0, totalFailedRows: 0 }}
+      audits={[
+        { ...base, key: "odds-1", jobName: "espn-odds", status: "failure", runTimeDisplay: "2026-10-22T11:34:01Z / 7:34 AM EDT", reason: "ESPN odds request failed with 403", lastKnownSuccessDisplay: null },
+        { ...base, key: "odds-2", jobName: "espn-odds", status: "failure", runTimeDisplay: "2026-10-21T21:10:18Z / 5:10 PM EDT", reason: "ESPN odds request failed with 403", lastKnownSuccessDisplay: null },
+        { ...base, key: "rolling", jobName: "rolling", status: "failure", runTimeDisplay: "2026-10-21T14:14:24Z / 10:14 AM EDT", reason: "Unauthorized.", lastKnownSuccessDisplay: "2026-10-21T14:19:15Z / 10:19 AM EDT" },
+      ]} />);
+    expect(html.match(/espn-odds/g)).toHaveLength(1);
+    expect(html).toContain("2 failures");
+    expect(html.match(/ESPN odds request failed with 403/g)).toHaveLength(1);
+    expect(html.indexOf("Needs attention")).toBeLessThan(html.indexOf("Recovered since failing"));
+    expect(html).toContain("failed 10:14 AM EDT · OK 10:19 AM EDT");
+    expect(html).toContain("Failures need attention.");
   });
 
 });

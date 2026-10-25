@@ -1,19 +1,15 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { evaluatePlan } from "lib/rosterScheduleOptimizer/planning";
 import { acquisitionEffectiveAt } from "lib/rosterScheduleOptimizer/planningTimeline";
 import { supplementProviderRules } from "lib/rosterScheduleOptimizer/providerRules";
 import { defaultIntent } from "lib/rosterScheduleOptimizer/workspace";
 import { candidatePlanMetrics } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
 
-const mocks = vi.hoisted(() => ({ user: { id: "owner-a" }, allowed: false, requireUser: vi.fn(), access: vi.fn(), snapshot: vi.fn(), planningData: vi.fn(), settings: vi.fn(), draftResource: vi.fn(), boardResource: vi.fn(), planningResource: vi.fn() }));
+const mocks = vi.hoisted(() => ({ user: { id: "owner-a" }, allowed: false, requireUser: vi.fn(), access: vi.fn(), draftAccess: vi.fn(), from: vi.fn(), snapshot: vi.fn(), planningData: vi.fn(), settings: vi.fn(), draftResource: vi.fn(), boardResource: vi.fn(), planningResource: vi.fn() }));
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser: mocks.requireUser }));
-vi.mock("lib/in-season/server", () => ({
-  loadInSeasonAccess: mocks.access,
-  requireInSeasonCapability: (access: { capabilities: string[] }, capability: string) => {
-    if (!access.capabilities.includes(capability)) throw Object.assign(new Error("Access required"), { statusCode: 403 });
-  },
-}));
-vi.mock("lib/supabase/server", () => ({ default: { from: vi.fn() } }));
+vi.mock("lib/in-season/server", () => ({ loadInSeasonAccess: mocks.access }));
+vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: mocks.draftAccess }));
+vi.mock("lib/supabase/server", () => ({ default: { from: mocks.from } }));
 vi.mock("lib/rosterScheduleData/planning", async (original) => ({ ...await original<typeof import("../../rosterScheduleData/planning")>(), loadPlanningData: mocks.planningData }));
 vi.mock("lib/integrations/yahoo/gameContext", async (original) => ({ ...await original<typeof import("./gameContext")>(), resolveYahooGameContext: async () => ({ gameKey: "453", targetSeasonId: 20262027 }), assertYahooLeagueGameContext: () => undefined }));
 vi.mock("lib/integrations/yahoo/liveDraft", async (original) => ({ ...await original<typeof import("./liveDraft")>(), parseYahooBoardSettings: mocks.settings }));
@@ -23,7 +19,7 @@ vi.mock("lib/integrations/yahoo/rosterPlanning", async (original) => ({
   loadYahooPlanningSnapshot: mocks.snapshot,
 }));
 
-import { yahooCreditedGoalieAppearances, yahooInjury, yahooPastLineupPoints, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams } from "./rosterPlanning";
+import { yahooCreditedGoalieAppearances, yahooInjury, yahooPastLineupPoints, yahooPlanningAcquisitions, yahooPlanningCategories, yahooPlanningEditable, yahooPlanningPlayers, yahooPlanningStats, yahooPlanningTeams, yahooStartingStatus } from "./rosterPlanning";
 import type { YahooProviderJsonResult } from "./providerClient";
 import { YahooLiveDraftError } from "./liveDraft";
 import providerHandler from "../../../pages/api/v1/roster-schedule-optimizer/provider";
@@ -32,12 +28,19 @@ function req(method: string, body: unknown = {}) { return { method, body, header
 function res() { return { statusCode: 200, body: null as any, status(code: number) { this.statusCode = code; return this; }, json(body: unknown) { this.body = body; return this; }, end() { return this; }, setHeader() {} } as any; }
 
 beforeEach(() => {
+  // These route controls exercise enforced premium access; default rollout remains free.
+  vi.stubEnv("PROVIDER_SYNC_PREMIUM_ENFORCEMENT_ENABLED", "true");
   mocks.allowed = false;
   mocks.requireUser.mockReset().mockResolvedValue(mocks.user);
-  mocks.access.mockReset().mockImplementation(async () => ({ capabilities: mocks.allowed ? ["rso_sync"] : [] }));
+  mocks.access.mockReset().mockImplementation(async () => ({ eligible: mocks.allowed, capabilities: mocks.allowed ? ["rso_sync"] : [],
+    reason: mocks.allowed ? "eligible" : "no_active_grant", expiresAt: null, nextVerificationAt: null }));
+  mocks.draftAccess.mockReset().mockResolvedValue({ eligible: false, reason: "no_active_grant", expiresAt: null, nextVerificationAt: null });
+  mocks.from.mockReset();
   mocks.snapshot.mockReset().mockResolvedValue({ snapshot: { id: "verified" }, capabilities: { roster: true } });
   mocks.planningData.mockReset(); mocks.settings.mockReset(); mocks.draftResource.mockReset(); mocks.boardResource.mockReset(); mocks.planningResource.mockReset();
 });
+
+afterEach(() => vi.unstubAllEnvs());
 
 describe("Yahoo planning parsers", () => {
   function acquisitionInputs() {
@@ -421,7 +424,7 @@ describe("Yahoo snapshot evidence", () => {
     const normalized = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a",
       startDate: "2026-10-01", endDate: "2026-10-03", timeZone: "UTC", now });
     expect(normalized.snapshot.context.timeZone).toBe("America/New_York");
-    expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now, forgeDailyBridge: true });
+    expect(mocks.planningData).toHaveBeenLastCalledWith(db, expect.objectContaining({ timeZone: "America/New_York" }), { now, forgeDailyBridge: true, consumer: "rso" });
     mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC", draft_status: "postdraft" }, transport });
 
     for (const mode of ["repeated", "oversized", "stale", "wrong-scope", "failed", "rate-limited", "optional-limited", "deadline", "bounded", "ownership-only"]) {
@@ -516,9 +519,11 @@ describe("provider snapshot route", () => {
     const limited = res(); await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), limited);
     expect(limited.statusCode).toBe(429);
     expect(limited.body).toMatchObject({ success: false, code: "yahoo_rate_limited", retryAfterSeconds: 3600 });
+    expect(mocks.snapshot).toHaveBeenCalledTimes(1);
     mocks.snapshot.mockResolvedValueOnce({ snapshot: { id: "partial" }, capabilities: { availability: false }, code: "yahoo_rate_limited", retryAfterSeconds: 1200 });
     const partial = res(); await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), partial);
     expect(partial.body).toMatchObject({ success: true, code: "yahoo_rate_limited", retryAfterSeconds: 1200 });
+    expect(mocks.snapshot).toHaveBeenCalledTimes(2);
   });
   it("returns curated provider diagnostics while keeping raw exceptions private", async () => {
     mocks.allowed = true;
@@ -531,22 +536,94 @@ describe("provider snapshot route", () => {
       mocks.snapshot.mockRejectedValueOnce(new Error("private upstream response"));
       const raw = res(); await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), raw);
       expect(raw.statusCode).toBe(503);
+      expect(raw.body.error).toBe("Provider inputs could not be verified. Your selected plan is preserved.");
       expect(raw.body.error).not.toContain("private upstream response");
       expect(JSON.stringify(log.mock.calls)).not.toContain("private upstream response");
+      expect(mocks.snapshot).toHaveBeenCalledTimes(2);
     } finally { log.mockRestore(); }
   });
   it("checks sync capability before any provider read", async () => {
     const response = res();
     await providerHandler(req("POST", { provider: "yahoo", teamId: "forged", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
     expect(response.statusCode).toBe(403);
+    expect(mocks.access).toHaveBeenCalledWith("owner-a");
+    expect(mocks.draftAccess).toHaveBeenCalledWith("owner-a", expect.any(Object));
     expect(mocks.snapshot).not.toHaveBeenCalled();
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+  it.each([
+    { eligible: false, capabilities: ["rso_sync"] },
+    { eligible: true, capabilities: [] },
+  ])("requires both verified eligibility and the in-season sync capability (%j)", async access => {
+    mocks.access.mockResolvedValue({ ...access, reason: "no_active_grant" });
+    const response = res();
+    await providerHandler(req("POST", { provider: "yahoo", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
+    expect(response.statusCode).toBe(403);
+    expect(mocks.snapshot).not.toHaveBeenCalled();
+    expect(mocks.from).not.toHaveBeenCalled();
+  });
+  it("fails closed on entitlement outages before provider reads and keeps errors private", async () => {
+    mocks.access.mockRejectedValue(new Error("private in-season verification detail"));
+    mocks.draftAccess.mockRejectedValue(new Error("private draft verification detail"));
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const response = res();
+      await providerHandler(req("POST", { provider: "yahoo", userId: "owner-b", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
+      expect(response.statusCode).toBe(503);
+      expect(response.body).toEqual({ success: false, error: "Provider inputs could not be verified. Your selected plan is preserved." });
+      expect(JSON.stringify(log.mock.calls)).not.toContain("private");
+      expect(mocks.access).toHaveBeenCalledWith("owner-a");
+      expect(mocks.draftAccess).toHaveBeenCalledWith("owner-a", expect.any(Object));
+      expect(mocks.snapshot).not.toHaveBeenCalled();
+      expect(mocks.from).not.toHaveBeenCalled();
+    } finally { log.mockRestore(); }
+  });
+  it("allows a verified Draft Pro fallback and forwards only authenticated identity", async () => {
+    mocks.draftAccess.mockResolvedValue({ eligible: true, reason: "eligible", expiresAt: "2027-07-01T04:00:00Z", nextVerificationAt: null });
+    const response = res();
+    await providerHandler(req("POST", { provider: "yahoo", userId: "owner-b", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
+    expect(response.body.success).toBe(true);
+    expect(mocks.access).toHaveBeenCalledWith("owner-a");
+    expect(mocks.draftAccess).toHaveBeenCalledWith("owner-a", expect.any(Object));
+    expect(mocks.snapshot).toHaveBeenCalledWith(expect.objectContaining({ userId: "owner-a", teamId: "selected" }));
   });
   it("passes only the authenticated user to the provider adapter", async () => {
     mocks.allowed = true;
     const response = res();
     await providerHandler(req("POST", { provider: "yahoo", userId: "owner-b", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
     expect(response.body.success).toBe(true);
+    expect(mocks.access).toHaveBeenCalledWith("owner-a");
+    expect(mocks.draftAccess).not.toHaveBeenCalled();
     expect(mocks.snapshot).toHaveBeenCalledWith(expect.objectContaining({ userId: "owner-a", teamId: "selected" }));
+  });
+  it("rejects another owner's team through the real adapter before provider resource reads", async () => {
+    mocks.allowed = true;
+    const actual = await vi.importActual<typeof import("./rosterPlanning")>("./rosterPlanning");
+    mocks.snapshot.mockImplementationOnce(actual.loadYahooPlanningSnapshot);
+    const foreignTeam: Record<string, unknown> = { id: "foreign-team", user_id: "owner-b", provider: "yahoo", team_metadata: { is_owned: true } };
+    const filters: Record<string, unknown> = {};
+    const query = { select: () => query, eq: (key: string, value: unknown) => { filters[key] = value; return query; },
+      maybeSingle: async () => ({ data: Object.entries(filters).every(([key, value]) => foreignTeam[key] === value) ? foreignTeam : null, error: null }) };
+    mocks.from.mockReturnValue(query);
+    const response = res();
+    await providerHandler(req("POST", { provider: "yahoo", userId: "owner-b", teamId: "foreign-team", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
+    expect(response.statusCode).toBe(404);
+    expect(response.body).toMatchObject({ success: false, code: "team_unavailable" });
+    expect(filters).toEqual({ id: "foreign-team", user_id: "owner-a", provider: "yahoo" });
+    expect(mocks.from).toHaveBeenCalledExactlyOnceWith("external_teams");
+    expect(mocks.draftResource).not.toHaveBeenCalled();
+    expect(mocks.boardResource).not.toHaveBeenCalled();
+    expect(mocks.planningResource).not.toHaveBeenCalled();
+  });
+  it("rejects unauthenticated requests before entitlement or provider reads", async () => {
+    mocks.requireUser.mockImplementation(async (_req, response) => { response.status(401).json({ error: "Sign in" }); return null; });
+    const response = res();
+    await providerHandler(req("POST", { provider: "yahoo", userId: "owner-b", teamId: "selected", startDate: "2026-10-01", endDate: "2026-10-07" }), response);
+    expect(response.statusCode).toBe(401);
+    expect(mocks.access).not.toHaveBeenCalled();
+    expect(mocks.draftAccess).not.toHaveBeenCalled();
+    expect(mocks.snapshot).not.toHaveBeenCalled();
+    expect(mocks.from).not.toHaveBeenCalled();
   });
   it("rejects non-POST requests without authentication or provider reads", async () => {
     const response = res(); await providerHandler(req("GET"), response);
@@ -574,6 +651,72 @@ describe("Yahoo injury status", () => {
     expect(yahooInjury({ status: "ir-lt" })).toEqual({ status: "IR-LT", label: "IR-LT", note: null });
     expect(yahooInjury({ status: "NA", status_full: "Not Active" })).toBeNull();
     expect(yahooInjury({})).toBeNull();
+  });
+});
+
+describe("Yahoo goalie starting status", () => {
+  // Synthetic rows in the shape Yahoo's standard-JSON roster returns: `starting_status` sits beside `selected_position`
+  // for goalies on the roster's own date, and is omitted when Yahoo has no mark yet (e.g. tomorrow's roster).
+  const read = "Thu, 01 Oct 2026 21:30:01 GMT";
+  const goalie = (key: string, status?: Array<Record<string, unknown>>) => ({ player: [
+    [{ player_key: key }, { name: { full: `Goalie ${key}` } }, { position_type: "G" }, { eligible_positions: [{ position: "G" }] }],
+    { selected_position: [{ coverage_type: "date", date: "2026-10-01" }, { position: "G" }, { is_flex: 0 }] },
+    ...(status ? [{ starting_status: status }] : []),
+    { is_editable: 1 },
+  ] });
+  const rows = yahooPlanningPlayers({ fantasy_content: { team: [[{ team_key: "453.l.1.t.1" }], { roster: { 0: { players: { count: 4,
+    0: goalie("453.p.1", [{ coverage_type: "date", date: "2026-10-01" }, { is_starting: 1 }]),
+    1: goalie("453.p.2", [{ coverage_type: "date", date: "2026-10-01" }, { is_starting: 0 }]),
+    2: goalie("453.p.3"),
+    3: goalie("453.p.4", [{ coverage_type: "date", date: "2026-09-30" }, { is_starting: 1 }]) } } } }] } });
+
+  it("reads Starting and Not Starting for the roster date, with the read time", () => {
+    expect(yahooStartingStatus(rows[0], "2026-10-01", read)).toEqual({ source: "yahoo", date: "2026-10-01", isStarting: true, observedAt: "2026-10-01T21:30:01.000Z" });
+    expect(yahooStartingStatus(rows[1], "2026-10-01", read)).toEqual({ source: "yahoo", date: "2026-10-01", isStarting: false, observedAt: "2026-10-01T21:30:01.000Z" });
+  });
+  it("keeps an absent mark, another date or an unknown read time unknown", () => {
+    expect(yahooStartingStatus(rows[2], "2026-10-01", read)).toBeNull();
+    expect(yahooStartingStatus(rows[3], "2026-10-01", read)).toBeNull();
+    expect(yahooStartingStatus(rows[0], "2026-10-01", null)).toBeNull();
+    expect(yahooStartingStatus({ starting_status: [{ coverage_type: "week", date: "2026-10-01" }, { is_starting: 1 }] }, "2026-10-01", read)).toBeNull();
+    expect(yahooStartingStatus({ starting_status: [{ coverage_type: "date", date: "2026-10-01" }, { is_starting: "maybe" }] }, "2026-10-01", read)).toBeNull();
+  });
+  it("puts the mark on the snapshot's rostered goalies only from a fresh read", async () => {
+    const network = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Unexpected network request in synthetic starting-status test"));
+    try {
+      const db = { from(table: string) {
+        const query = {
+          select() { return query; }, order() { return query; }, eq() { return query; },
+          async maybeSingle() { return { data: table === "external_teams"
+            ? { id: "team-a", team_metadata: { is_owned: true }, connected_account_id: "account-a", external_league_id: "league-a", external_team_key: "453.l.1.t.1" }
+            : { id: "league-a", connected_account_id: "account-a", external_league_key: "453.l.1" }, error: null }; },
+          async range() { return { data: [1, 2, 3].map(id => ({ nhl_player_id: id, yahoo_player_id: id })), error: null }; },
+        };
+        return query;
+      } };
+      const now = new Date("2026-10-01T21:30:01Z");
+      const transport = { responseDate: read, ageSeconds: 0 };
+      mocks.planningData.mockResolvedValue({ players: [1, 2, 3].map(id => ({ id: `player-${id}`, nhlId: id, name: `Goalie ${id}`,
+        teamAbbreviation: "TOR", eligiblePositions: ["G"], eligibilityVerified: false, playerClass: "goalie", availability: "unknown",
+        ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] })), games: [], forecasts: [], evidence: {} });
+      mocks.settings.mockReturnValue({ rosterType: "date", rosterConfig: { G: 2, BN: 1 }, scoringTypeRecognized: true,
+        unsupportedStatIds: [], unsupportedRosterSlots: [], leagueType: "points", scoringCategories: {}, categoryWeights: {}, minimumGoalieStarts: null });
+      mocks.draftResource.mockResolvedValue({ payload: { league_key: "453.l.1", time_zone: "UTC" }, transport });
+      mocks.boardResource.mockImplementation(async ({ resource }: any) => {
+        if (resource.type !== "roster") throw new Error("Synthetic optional read unavailable");
+        return { payload: { team_key: "453.l.1.t.1", is_owned_by_current_login: "1", roster: { date: "2026-10-01", coverage_type: "date", is_editable: "1",
+          players: { count: 3, 0: goalie("453.p.1", [{ coverage_type: "date", date: "2026-10-01" }, { is_starting: 1 }]),
+            1: goalie("453.p.2", [{ coverage_type: "date", date: "2026-10-01" }, { is_starting: 0 }]), 2: goalie("453.p.3") } } }, transport };
+      });
+      mocks.planningResource.mockRejectedValue(new Error("Synthetic optional read unavailable"));
+      const actual = await vi.importActual<typeof import("./rosterPlanning")>("./rosterPlanning");
+      const result = await actual.loadYahooPlanningSnapshot({ db: db as any, userId: "owner-a", teamId: "team-a", startDate: "2026-10-01", endDate: "2026-10-03", now });
+      const status = (id: string) => result.snapshot.players.find(player => player.id === id)!.startingStatus;
+      expect(status("player-1")).toEqual({ source: "yahoo", date: "2026-10-01", isStarting: true, observedAt: "2026-10-01T21:30:01.000Z" });
+      expect(status("player-2")).toMatchObject({ isStarting: false });
+      expect(status("player-3")).toBeNull();
+      expect(network).not.toHaveBeenCalled();
+    } finally { network.mockRestore(); }
   });
 });
 
@@ -629,24 +772,42 @@ describe("Actual fantasy points on recorded past lineups", () => {
     .map(id => ({ playerId: id, name: id, position: "C", slotId: null })) }];
   const scoring = { mode: "points" as const, categories: [], weights: { GOALS: 3, ASSISTS: 2, PP_POINTS: 1, SHOTS_ON_GOAL: 0.2, HITS: 0.2,
     BLOCKED_SHOTS: 0.25, WINS_GOALIE: 4, GOALS_AGAINST_GOALIE: -1, SAVES_GOALIE: 0.2, SHUTOUTS_GOALIE: 3 } };
-  const tables: Record<string, Array<Record<string, number>>> = {
+  const tables: Record<string, Array<Record<string, number | string | null | undefined>>> = {
     wgo_skater_stats: [{ player_id: 10, game_id: 201, goals: 1, assists: 1, pp_points: 1, shots: 4, hits: 2, blocked_shots: 0 },
       { player_id: 99, game_id: 201, goals: 0, assists: 0, pp_points: 0, shots: 1, hits: 0, blocked_shots: 1 }],
     wgo_goalie_stats: [{ goalie_id: 20, game_id: 202, wins: 1, goals_against: 2, saves: 30, shutouts: 0 }],
   };
-  const db = { from: (table: string) => { const query: any = { select: () => query, in: (_c: string, ids: number[]) => { query.ids = ids; return query; },
-    order: () => query, range: async () => ({ data: tables[table].filter(row => query.ids.includes(row.game_id)), error: null }) }; return query; } } as any;
-  const points = async (overrides: Partial<Parameters<typeof yahooPastLineupPoints>[1]> = {}) => Object.fromEntries((await yahooPastLineupPoints(db,
+  const db = (rows = tables) => ({ from: (table: string) => { const query: any = { select: () => query, in: (_c: string, ids: number[]) => { query.ids = ids; return query; },
+    order: () => query, range: async () => ({ data: rows[table].filter(row => query.ids.includes(row.game_id)), error: null }) }; return query; } }) as any;
+  const points = async (overrides: Partial<Parameters<typeof yahooPastLineupPoints>[1]> = {}, rows = tables) => Object.fromEntries((await yahooPastLineupPoints(db(rows),
     { pastLineups: lineup, players, games, scoring, ...overrides }))[0].entries.map(entry => [entry.playerId, entry.points]));
 
   it("scores each player's night with the league weights", async () => {
     // Larkin 3 + 2 + 1 + 0.8 + 0.4; Oettinger 4 - 2 + 6; a scratch in a landed game scores 0; no game and unlanded stats stay unknown.
     await expect(points()).resolves.toEqual({ larkin: 7.2, scratch: 0, oettinger: 8, idle: null, late: null });
   });
+  it.each([null, undefined, "", " \t ", "invalid", NaN, Infinity])("keeps an unavailable weighted actual unknown (%s) but ignores zero-weight fields", async value => {
+    const rows = {
+      wgo_skater_stats: [{ player_id: 10, game_id: 201, goals: 2, hits: value }],
+      wgo_goalie_stats: [{ goalie_id: 20, game_id: 202, wins: 1, saves: value }],
+    };
+    await expect(points({ scoring: { ...scoring, weights: { GOALS: 1, HITS: 1, WINS_GOALIE: 4, SAVES_GOALIE: 0.2 } } }, rows)).resolves
+      .toMatchObject({ larkin: null, oettinger: null });
+    await expect(points({ scoring: { ...scoring, weights: { GOALS: 1, HITS: 0, WINS_GOALIE: 4, SAVES_GOALIE: 0 } } }, rows)).resolves
+      .toMatchObject({ larkin: 2, oettinger: 4 });
+  });
+  it.each([0, "0"])("preserves a recorded numeric zero (%s)", async value => {
+    const rows = {
+      wgo_skater_stats: [{ player_id: 10, game_id: 201, hits: value }],
+      wgo_goalie_stats: [{ goalie_id: 20, game_id: 202, goals_against: value }],
+    };
+    await expect(points({ scoring: { ...scoring, weights: { HITS: 1, GOALS_AGAINST_GOALIE: -1 } } }, rows)).resolves
+      .toMatchObject({ larkin: 0, oettinger: 0 });
+  });
   it("leaves points unknown when a weighted stat can't be scored per game, or outside points leagues", async () => {
     await expect(points({ scoring: { ...scoring, weights: { ...scoring.weights, SAVE_PERCENTAGE: 5 } } })).resolves
       .toMatchObject({ larkin: 7.2, oettinger: null });
-    const categories = await yahooPastLineupPoints(db, { pastLineups: lineup, players, games, scoring: { mode: "categories", weights: {}, categories: [] } });
+    const categories = await yahooPastLineupPoints(db(), { pastLineups: lineup, players, games, scoring: { mode: "categories", weights: {}, categories: [] } });
     expect(categories).toBe(lineup);
   });
   it("does not score a game that is not final", async () => {

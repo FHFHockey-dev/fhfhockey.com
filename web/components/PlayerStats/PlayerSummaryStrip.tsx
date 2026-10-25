@@ -62,13 +62,18 @@ export function PlayerSummaryStrip({
   windowLabel
 }: PlayerSummaryStripProps) {
   const { games, values } = useMemo(() => {
+    const hasKnownParticipation = gameLog.every((game) =>
+      typeof game.games_played === "number" && Number.isFinite(game.games_played) && game.games_played >= 0
+    );
     const appearances = gameLog.filter(isAppearance);
     const metrics = isGoalie ? GOALIE_METRICS : SKATER_METRICS;
     return {
       games: appearances.length,
       values: metrics.map((metric) => ({
         metric,
-        value: aggregateSummaryStat(appearances, metric.stat)
+        value: !hasKnownParticipation && (metric.stat === "save_pct" || metric.stat === "goals_against_avg")
+          ? null
+          : aggregateSummaryStat(appearances, metric.stat)
       }))
     };
   }, [gameLog, isGoalie]);

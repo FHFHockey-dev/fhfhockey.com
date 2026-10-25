@@ -1,3 +1,4 @@
+import { ProviderSyncAccessError, requireProviderSyncAccess } from "lib/integrations/providerSyncAccessServer";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -190,3 +191,18 @@ describe("/api/v1/account/yahoo/callback", () => {
     expect(res.redirectedTo).toContain("yahoo_status=error");
   });
 });
+
+vi.mock("lib/integrations/providerSyncAccessServer", async (importOriginal) => ({ ...await importOriginal<typeof import("lib/integrations/providerSyncAccessServer")>(), requireProviderSyncAccess: vi.fn().mockResolvedValue({ eligible: true }) }));
+
+ it.each([403, 503])("rechecks callback access before token exchange or persistence (%s)", async (status) => {
+   vi.clearAllMocks();
+   consumeYahooOAuthTransactionMock.mockResolvedValue({ userId: "transaction-owner", safeNextPath: "/account", redirectUri: "https://fixture.invalid/callback", pkceCodeVerifier: "fixture" });
+   vi.mocked(requireProviderSyncAccess).mockRejectedValueOnce(new ProviderSyncAccessError(status, status === 403 ? "expired" : "verification_unavailable", status === 403 ? "Premium access required" : "Access unavailable; retry"));
+   const res: any = { setHeader: vi.fn(), redirect: vi.fn() };
+   await handler({ method: "GET", query: { code: "fixture-code", state: "fixture-state", userId: "injected-user" } } as any, res);
+   expect(requireProviderSyncAccess).toHaveBeenCalledWith("transaction-owner");
+   expect(exchangeYahooAuthorizationCodeMock).not.toHaveBeenCalled();
+   expect(syncYahooDiscoveryMock).not.toHaveBeenCalled();
+   expect(maybeSingleMock).not.toHaveBeenCalled(); expect(insertSingleMock).not.toHaveBeenCalled();
+   expect(buildYahooAccountRedirectMock).toHaveBeenCalledWith("/account", "error", status === 403 ? "Premium access required" : "Access unavailable; retry");
+ });

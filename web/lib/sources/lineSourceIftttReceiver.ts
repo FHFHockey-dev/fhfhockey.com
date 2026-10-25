@@ -4,11 +4,15 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import supabase from "lib/supabase/server";
 import { starterBoardFlags } from "lib/projections/starterBoardFlags";
+import { retainIftttRawReceipt } from "./iftttReceiptRetention";
+import { iftttIntakeConfiguration, iftttIntakePilotConfigured } from "./iftttIntakePolicy";
+import { IftttIntakeOutcomeUnknown } from "./iftttRpcDeadline";
 
 type LineSourceIftttReceiverConfig = {
   sourceGroup: string;
   sourceKey: string;
   sourceAccount: string;
+  enforceSourceAccount?: boolean;
   secretEnvVar: string;
   processorPath?: string;
   eventTable?: "lines_ccc_ifttt_events" | "line_source_ifttt_events";
@@ -19,7 +23,8 @@ type ResponseBody =
       success: true;
       sourceKey: string;
       tweetId: string | null;
-      processingStatus: "pending" | "processed_attempted";
+      processingStatus: "pending" | "processed_attempted" | "held_for_review";
+      receipt?: Awaited<ReturnType<typeof retainIftttRawReceipt>>;
       processor?: {
         success: boolean;
         status: number | null;
@@ -30,6 +35,7 @@ type ResponseBody =
   | {
       success: false;
       error: string;
+      outcome?: "unknown";
     };
 
 function getSecretFromRequest(req: NextApiRequest): string {
@@ -121,6 +127,7 @@ async function processStoredTweetEvent(args: {
     reprocess: "false",
     tweetId: args.tweetId,
     sourceKey: args.config.sourceKey,
+    sourceGroup: args.config.sourceGroup,
     // The NHL slate follows Eastern dates; UTC midnight occurs during games.
     date: moment().tz("America/New_York").format("YYYY-MM-DD"),
   });
@@ -129,11 +136,21 @@ async function processStoredTweetEvent(args: {
 
 /** Small current-day retries; historic pending reports are never a live backfill. */
 export async function retryPendingLineSourceEvents() {
+  // A controlled pilot is retain-only; its pending carriers need separate processing authority.
+  if (iftttIntakePilotConfigured()) return { attempted: 0, failed: 0, results: [], skipped: "controlled_intake" as const };
   const date = moment().tz("America/New_York").format("YYYY-MM-DD");
-  const results = await Promise.all(["gamedaylines", "gamedaygoalies", "gamedaynewsnhl", "cccmiddleton"].map(async (sourceKey) => ({
+  const sources = [
+    { sourceKey: "gamedaylines", sourceGroup: "gdl_suite" },
+    { sourceKey: "gamedaygoalies", sourceGroup: "gdl_suite" },
+    { sourceKey: "gamedaynewsnhl", sourceGroup: "gdl_suite" },
+    { sourceKey: "cccmiddleton", sourceGroup: "ccc" },
+    { sourceKey: "dfofantasy", sourceGroup: "dfo" },
+    { sourceKey: "nhl_rosters", sourceGroup: "nhl_rosters" },
+  ];
+  const results = await Promise.all(sources.map(async ({ sourceKey, sourceGroup }) => ({
     sourceKey,
     ...await requestLineSourceProcessor(sourceKey === "cccmiddleton" ? "/api/v1/db/update-lines-ccc" : "/api/v1/db/update-line-sources", new URLSearchParams({
-      sourceKey, date, limit: "5", currentDayOnly: "true",
+      sourceKey, sourceGroup, date, limit: "5", currentDayOnly: "true",
     })),
   })));
   return { attempted: results.length, failed: results.filter((result) => !result.success).length, results };
@@ -223,6 +240,15 @@ export function createLineSourceIftttReceiver(
       });
     }
 
+    const table = config.eventTable ?? "line_source_ifttt_events";
+    let intake: ReturnType<typeof iftttIntakeConfiguration>;
+    try {
+      intake = iftttIntakeConfiguration({ table, sourceGroup: config.sourceGroup,
+        sourceKey: config.sourceKey, sourceAccount: config.sourceAccount });
+    } catch {
+      return res.status(503).json({ success: false, error: "Controlled IFTTT intake is unavailable" });
+    }
+
     const text = getBodyValue(req.body, ["text", "Text"]);
     const username = getBodyValue(req.body, ["username", "UserName"]);
     const linkToTweet = getBodyValue(req.body, [
@@ -243,7 +269,17 @@ export function createLineSourceIftttReceiver(
     const sourceAccount =
       getBodyValue(req.body, ["source_account", "sourceAccount"]) ??
       config.sourceAccount;
+    if (config.enforceSourceAccount &&
+        sourceAccount.replace(/^@/, "").toLowerCase() !== config.sourceAccount.toLowerCase()) {
+      return res.status(400).json({
+        success: false,
+        error: "Unexpected source account",
+      });
+    }
     const tweetId = extractTweetId(linkToTweet);
+    if (intake.controlled && !tweetId) {
+      return res.status(400).json({ success: false, error: "Controlled IFTTT intake requires a post identity" });
+    }
     const shouldProcessImmediately = req.query.process == null
       ? starterBoardFlags().capture
       : parseBooleanQueryFlag(req.query.process);
@@ -271,13 +307,20 @@ export function createLineSourceIftttReceiver(
       updated_at: new Date().toISOString(),
     };
 
-    const query = supabase.from((config.eventTable ?? "line_source_ifttt_events") as any);
-    const { error } = tweetId
-      ? await query.upsert(row as any, {
-          onConflict: config.eventTable === "lines_ccc_ifttt_events" ? "tweet_id" : "source_key,tweet_id",
-          ignoreDuplicates: true,
-        })
-      : await query.insert(row as any);
+    let receipt: Awaited<ReturnType<typeof retainIftttRawReceipt>> | undefined;
+    let error: unknown;
+    if (intake.controlled) {
+      try { receipt = await retainIftttRawReceipt({ db: supabase as any, table, row, policy: intake.policy, scope: intake.scope }); }
+      catch (failure) { error = failure; }
+    } else {
+      const query = supabase.from(table as any);
+      ({ error } = tweetId
+        ? await query.upsert(row as any, {
+            onConflict: table === "lines_ccc_ifttt_events" ? "tweet_id" : "source_key,tweet_id",
+            ignoreDuplicates: true,
+          })
+        : await query.insert(row as any));
+    }
 
     if (error) {
       console.error(
@@ -286,12 +329,13 @@ export function createLineSourceIftttReceiver(
       );
       return res.status(500).json({
         success: false,
-        error: "Failed to store IFTTT event",
+        error: error instanceof IftttIntakeOutcomeUnknown ? error.message : "Failed to store IFTTT event",
+        ...(error instanceof IftttIntakeOutcomeUnknown ? { outcome: "unknown" as const } : {}),
       });
     }
 
     const processor =
-      shouldProcessImmediately && tweetId
+      !intake.controlled && shouldProcessImmediately && tweetId && !receipt?.requiresReview
         ? await processStoredTweetEvent({ config, tweetId })
         : undefined;
 
@@ -303,7 +347,8 @@ export function createLineSourceIftttReceiver(
       success: true,
       sourceKey: config.sourceKey,
       tweetId,
-      processingStatus: processor ? "processed_attempted" : "pending",
+      processingStatus: receipt?.requiresReview ? "held_for_review" : processor ? "processed_attempted" : "pending",
+      ...(receipt ? { receipt } : {}),
       ...(processor ? { processor } : {}),
     });
   };

@@ -425,3 +425,5 @@ describe("Yahoo Starter Board provider workflow", () => {
     expect(result.roster?.[1].value).toBeNull();
   });
 });
+
+vi.mock("lib/integrations/providerSyncAccessServer", async (importOriginal) => ({ ...await importOriginal<typeof import("lib/integrations/providerSyncAccessServer")>(), requireProviderSyncAccess: vi.fn().mockResolvedValue({ eligible: true }) }));

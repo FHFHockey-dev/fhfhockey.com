@@ -1,7 +1,6 @@
 // components/GameGrid/utils/calcWinOdds.ts
 
 import { DAYS, EXTENDED_DAY_ABBREVIATION, WeekData } from "lib/NHL/types";
-import { ScheduleArray } from "./useSchedule";
 import { isRegularScheduleGame } from "./helper";
 
 export function calculateBlendedWinOdds(
@@ -59,18 +58,6 @@ export function convertTeamRowToWinOddsList(
       ? winOdds * 0.75
       : winOdds;
   });
-}
-
-/**
- * Adjust the WinOdds for back-to-back games.
- * @param teams The whole league
- * @param dilutedFactor The penalty term for the 2nd game.
- */
-export function adjustBackToBackGames(
-  teams: ScheduleArray,
-  dilutedFactor: number = 0.75
-): void {
-  // This function is no longer needed since adjustments are applied in convertTeamRowToWinOddsList
 }
 
 /**

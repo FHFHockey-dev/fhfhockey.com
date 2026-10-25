@@ -91,7 +91,7 @@ export type ForgeInputSnapshot = {
   modelMode: "baseline" | "candidate";
   modelEnvironment?: Record<string, string | null>;
   seasonBootstrapApplied?: boolean;
-  inputProvenance?: { rolling_player_history_contract: string; issuedContexts?: ForgeIssuedContextV1[];
+  inputProvenance?: { rolling_player_history_contract: string; external_fantasy_input_contract?: string; issuedContexts?: ForgeIssuedContextV1[];
     capturedReads?: ForgeCapturedReadReceipt; issuedTargets?: ForgeIssuedTargetManifest };
   deterministicSeed?: number;
   dailyBoardEvidence?: import("./dailyBoardEvidence").DailyBoardEvidence;

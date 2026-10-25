@@ -5,6 +5,8 @@ import { renderToStaticMarkup } from "react-dom/server";
 const {
   cronJobReportSelectMock,
   cronJobAuditSelectMock,
+  cronJobAuditHistorySelectMock,
+  adminAdmissionMock,
   cronJobAuditInsertMock,
   resendSendMock,
   readFileMock,
@@ -13,6 +15,8 @@ const {
 } = vi.hoisted(() => ({
   cronJobReportSelectMock: vi.fn(),
   cronJobAuditSelectMock: vi.fn(),
+  cronJobAuditHistorySelectMock: vi.fn(),
+  adminAdmissionMock: vi.fn(() => true),
   cronJobAuditInsertMock: vi.fn(),
   resendSendMock: vi.fn(),
   readFileMock: vi.fn(),
@@ -25,15 +29,20 @@ function reportQuery(mock: ReturnType<typeof vi.fn>, args: unknown[], cron = fal
   let from = 0;
   let to = 499;
   const bounds: Record<string, string> = {};
+  let statuses: string[] | null = null;
   const query = {
     gte: (field: string, value: string) => { bounds.since = value; bounds.field = field; return query; },
     lte: (_field: string, value: string) => { bounds.until = value; return query; },
+    in: (_field: string, values: string[]) => { statuses = values; return query; },
     order: vi.fn(() => query),
     range: (start: number, end: number) => { from = start; to = end; return query; },
     abortSignal: async () => {
-      const response = await mock(...args);
+      const response = statuses
+        ? await cronJobAuditHistorySelectMock(...args, { ...bounds, statuses, from, to })
+        : await mock(...args);
       const rows = (response.data ?? []).map((row: any, index: number) => cron ? { runid: index + 1, ...row } : row)
-        .filter((row: any) => row[bounds.field] >= bounds.since && row[bounds.field] <= bounds.until);
+        .filter((row: any) => row[bounds.field] >= bounds.since && row[bounds.field] <= bounds.until &&
+          (!statuses || statuses.includes(row.status)));
       return { ...response, data: rows.slice(from, to + 1), count: response.count === undefined ? rows.length : response.count };
     },
   };
@@ -86,10 +95,12 @@ vi.mock("fs/promises", () => ({
 
 vi.mock("lib/cron/nhlOffSeason", () => ({
   loadNhlSeasonWindow: loadNhlSeasonWindowMock,
+  NHL_SEASONAL_GAME_DATA: "nhl_seasonal_game_data",
 }));
 
 vi.mock("utils/adminOnlyMiddleware", () => ({
-  default: (handler: unknown) => handler,
+  default: (handler: any) => (req: any, res: any) => adminAdmissionMock()
+    ? handler(req, res) : res.status(401).json({ success: false, message: "Unauthorized." }),
 }));
 
 import handler from "../../../../../pages/api/v1/db/cron-report";
@@ -114,6 +125,79 @@ function createMockRes() {
 }
 
 describe("/api/v1/db/cron-report", () => {
+  it("rejects admission before audit, telemetry, or email work", async () => {
+    adminAdmissionMock.mockReturnValue(false);
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.statusCode).toBe(401);
+    expect(cronJobAuditInsertMock).not.toHaveBeenCalled();
+    expect(cronJobReportSelectMock).not.toHaveBeenCalled();
+    expect(cronJobAuditSelectMock).not.toHaveBeenCalled();
+    expect(cronJobAuditHistorySelectMock).not.toHaveBeenCalled();
+    expect(resendSendMock).not.toHaveBeenCalled();
+  });
+
+  it("reads paginated success history beyond 24h without borrowing another query or method", async () => {
+    readFileMock.mockResolvedValue(`SELECT cron.schedule('h3','0 12 * * *',$$select net.http_post(url:='https://fhfhockey.com/api/v1/game-predictions/forecast?horizonDays=3&mode=daily');$$);`);
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "h3", run_time: "2026-03-20T12:01:00.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/game-predictions/forecast?horizonDays=3&mode=daily", error: "failed" },
+    }], error: null });
+    const otherSuccesses = Array.from({ length: 1000 }, (_, index) => ({
+      job_name: `other-${index}`, run_time: "2026-03-18T12:00:00.000Z", status: "success",
+      details: { method: index % 2 ? "POST" : "GET", url: index % 2
+        ? "/api/v1/game-predictions/forecast?horizonDays=1&mode=daily"
+        : "/api/v1/game-predictions/forecast?horizonDays=3&mode=daily" },
+    }));
+    cronJobAuditHistorySelectMock.mockResolvedValue({ data: [...otherSuccesses, {
+      job_name: "h3-old-name", run_time: "2026-03-17T12:00:00.000Z", status: "success",
+      details: { method: "POST", url: "/api/v1/game-predictions/forecast?mode=daily&horizonDays=3" },
+    }], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    const row = cronAuditEmailMock.mock.calls.at(-1)?.[0].audits.find((entry: any) => entry.jobName === "h3");
+    expect(row.lastKnownSuccessDisplay).toContain("2026-03-17T12:00:00.000Z");
+    expect(res.body.sources.successHistory).toMatchObject({ complete: true, pages: 2, verificationPages: 2, expectedCount: 1001 });
+    expect(cronJobAuditHistorySelectMock).toHaveBeenCalledWith(expect.anything(), expect.anything(), expect.objectContaining({
+      since: "2026-02-18T12:10:00.000Z", until: "2026-03-19T12:10:00.000Z", from: 1000, to: 1999,
+    }));
+    expect(res.body.counts).toMatchObject({ auditRuns: 1, auditFailures: 1, auditSuccesses: 0 });
+  });
+
+  it("retains observed successes with incomplete labels and never claims complete global history", async () => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:00.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2", error: "failed" },
+    }], error: null });
+    const rows = Array.from({ length: 9000 }, (_, index) => ({
+      job_name: `older-${index}`, run_time: "2026-03-18T12:00:00.000Z", status: "success",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2" },
+    }));
+    cronJobAuditHistorySelectMock.mockResolvedValue({ data: rows, error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.sources.successHistory).toMatchObject({ complete: false, pages: 8, expectedCount: 9000 });
+    expect(res.body.successHistory.complete).toBe(false);
+    const props = cronAuditEmailMock.mock.calls.at(-1)?.[0];
+    expect(props.audits[0].lastKnownSuccessDisplay).toContain("latest unverified; success-history lookup incomplete");
+    expect(props.totalsComplete).toBe(true);
+    expect(res.body.counts.auditRuns).toBe(1);
+  });
+
+  it("keeps missing historical evidence unknown when the lookup is unavailable", async () => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:00.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2", error: "failed" },
+    }], error: null });
+    cronJobAuditHistorySelectMock.mockResolvedValue({ data: null, error: { message: "statement timeout" } });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.successHistory).toMatchObject({ complete: false, error: "statement timeout" });
+    expect(cronAuditEmailMock.mock.calls.at(-1)?.[0].audits[0].lastKnownSuccessDisplay).toBeNull();
+    expect(res.body.totalsComplete).toBe(true);
+  });
+
   it("keeps historical static bottleneck context out of a fresh successful execution explanation", async () => {
     readFileMock.mockResolvedValue("SELECT cron.schedule('update-season-stats-current-season','0 12 * * *',$$select net.http_get(url:='https://fhfhockey.com/api/v1/db/update-season-stats');$$);");
     cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
@@ -134,6 +218,8 @@ describe("/api/v1/db/cron-report", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    adminAdmissionMock.mockReturnValue(true);
+    cronJobAuditHistorySelectMock.mockResolvedValue({ data: [], error: null });
     vi.stubGlobal("AbortSignal", { timeout: vi.fn(() => new AbortController().signal) });
     vi.useFakeTimers();
     vi.setSystemTime(new Date("2026-03-20T12:10:00.000Z"));
@@ -1186,7 +1272,7 @@ ${JSON.stringify(jobs)}
       expect(res.body.counts).toMatchObject({ jobsContinuedLast: 1, jobsFailingLast: 0, jobsUnknownLast: 0,
         auditFailures: 0, auditUnknown: 0, auditContinued: 2, unscheduledRuns: 0 });
       const briefing = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits[0];
-      expect(briefing.status).toBe("success");
+      expect(briefing.status).toBe("continued");
       expect(briefing.reason).toContain("In progress / continued");
       expect(briefing.reason).toContain("2 continued call(s) today");
       expect(briefing.missingObservationWarnings.join(" ")).not.toContain("Continuation incomplete");
@@ -1318,6 +1404,36 @@ ${JSON.stringify(jobs)}
     const ctpiAudit = (rowsAffected: number | null, response: Record<string, unknown>) => ({ data: [{
       job_name: "update-team-ctpi-daily", run_time: "2026-03-20T12:01:00.000Z", status: "success", rows_affected: rowsAffected,
       details: { method: "GET", url: "/api/v1/db/update-team-ctpi-daily", statusCode: 200, durationMs: 1000, response } }], error: null });
+
+    it("derives new game-data routes from canonical metadata and covers their older receipts", async () => {
+      loadNhlSeasonWindowMock.mockResolvedValueOnce({ state: "in_season", today: "2026-03-20", seasonId: 20252026, activeFrom: "2025-09-20", activeUntil: "2026-06-20" });
+      readFileMock.mockResolvedValue(ctpiSchedule.replaceAll("update-team-ctpi-daily", "new-seasonal-writer"));
+      cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+      const old = ctpiAudit(0, { success: true }).data[0];
+      old.job_name = "new-seasonal-writer";
+      old.details.url = "/api/v1/db/new-seasonal-writer";
+      cronJobAuditSelectMock.mockResolvedValue({ data: [old, { ...old,
+        run_time: "2026-03-20T11:00:00.000Z", rows_affected: 1,
+        details: { ...old.details, cronClassification: "nhl_seasonal_game_data" },
+      }], error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts.warnExpectedWork).toBe(1);
+      expect(res.body.warnings.expectedWorkJobs).toEqual(["new-seasonal-writer"]);
+    });
+
+    it("respects an explicit non-game-data classification over the legacy snapshot", async () => {
+      loadNhlSeasonWindowMock.mockResolvedValueOnce({ state: "in_season", today: "2026-03-20", seasonId: 20252026, activeFrom: "2025-09-20", activeUntil: "2026-06-20" });
+      readFileMock.mockResolvedValue(ctpiSchedule);
+      cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+      const audit = ctpiAudit(0, { success: true });
+      cronJobAuditSelectMock.mockResolvedValue({ ...audit,
+        data: audit.data.map((row) => ({ ...row, details: { ...row.details, cronClassification: null } })),
+      });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(res.body.counts.warnExpectedWork).toBe(0);
+    });
 
     it("warns, without failing, when an in-season game-data run reports 0 rows", async () => {
       loadNhlSeasonWindowMock.mockResolvedValueOnce({ state: "in_season", today: "2026-03-20", seasonId: 20252026, activeFrom: "2025-09-20", activeUntil: "2026-06-20" });
@@ -1508,6 +1624,57 @@ ${JSON.stringify(jobs)}
     expect(row.reason).not.toContain('"dependencyContract"');
   });
 
+
+  it("uses retained responseOutcome failures when the response preview is truncated", async () => {
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "ingest-projection-inputs", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/ingest-projection-inputs", statusCode: 500,
+        response: '{"success":false,"results":[…',
+        responseTruncated: true,
+        responseOutcome: { success: false, error: "INVALID_PROJECTION_RAW_SHIFT_ROWS", rowsUpserted: 0,
+          errors: { count: 15, sample: [{ gameId: 2026010056, date: "2026-09-26", message: "duplicate raw interval" }] } } },
+    }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    const row = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits.find((row: any) => row.jobName === "ingest-projection-inputs");
+    expect(row).toMatchObject({ status: "failure", reason: "INVALID_PROJECTION_RAW_SHIFT_ROWS", rowsUpserted: null, failedRows: null });
+    expect(row.failedRowSamples).toEqual(["date: 2026-09-26 | game: 2026010056 | duplicate raw interval"]);
+  });
+
+  it("uses retained responseOutcome failed preflight gates without claiming missing tail metrics", async () => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2", response: '{"success":false,"pipeline":[…',
+        responseOutcome: { success: false, error: "Preflight freshness checks failed.", preflight: {
+          status: "FAIL", gateCount: 10, failedGateCount: 3,
+          failedGates: [{ gate_key: "skater_derived_freshness", status: "FAIL", detail: "six teams missing recent rows" },
+            { gate_key: "projection_derived_v2", status: "FAIL", detail: "player_latest=none" },
+            { gate_key: "stale_goalie_game_rows", status: "FAIL", detail: "five teams missing goalie rows" }] } } },
+    }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    const row = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits.find((row: any) => row.jobName === "run-forge-projection-v2");
+    expect(row.reason).toBe("Preflight freshness checks failed.");
+    expect(row.failedRowSamples).toEqual([
+      "gate: skater_derived_freshness | six teams missing recent rows",
+      "gate: projection_derived_v2 | player_latest=none",
+      "gate: stale_goalie_game_rows | five teams missing goalie rows",
+    ]);
+    expect(row.rowsUpserted).toBeNull();
+  });
+
+  it("prefers an intact full response over a conflicting responseOutcome summary", async () => {
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{
+      job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2",
+        response: { success: false, error: "complete original failure", errors: ["complete witness"] },
+        responseOutcome: { success: false, error: "conflicting summary", errors: { sample: ["summary witness"] } } },
+    }], error: null });
+    const res = createMockRes(); await handler({ method: "GET" } as any, res);
+    const row = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits.find((row: any) => row.jobName === "run-forge-projection-v2");
+    expect(row.reason).toBe("complete original failure");
+    expect(row.failedRowSamples).toEqual(["complete witness"]);
+  });
+
   it("prefers a nested failed-stage root cause over generic summary and declaration metadata", async () => {
     cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
       details: { method: "POST", url: "/api/v1/db/run-projection-v2", response: { success: false, message: "Pipeline failed", pipeline: { stages: [{ message: "declarative contract" }] }, results: [{ status: "success", message: "healthy stage" }, { status: "failed", error: { message: "[NHL] Invalid shift roster for game 2026010001" } }] } } }], error: null });
@@ -1570,6 +1737,157 @@ ${JSON.stringify(jobs)}
     expect(res.body.counts).toMatchObject({ auditRuns: 6184, auditFailures: 83 });
     expect(res.body.totals.auditFailures).toBeNull();
     expect(resendSendMock.mock.calls[0][0].subject).toContain("incomplete telemetry");
+  });
+
+  // 2026-10-17 regression: pg_cron job 234 (21:15 UTC) was intentionally
+  // disabled, and the Vercel 13:00 UTC report warned that it was missing.
+  const reportInventory = (reportJobActive: boolean) => "```json\n" + JSON.stringify([
+    { jobid: 234, jobname: "daily-cron-report", schedule: "15 21 * * *", active: reportJobActive, method: "GET", route: "/api/v1/db/cron-report" },
+    { jobid: 326, jobname: "rebuild-sustainability-baselines", schedule: "40 10 * * *", active: true, method: "GET", route: "/api/v1/db/sustainability/rebuild-baselines" },
+    { jobid: 327, jobname: "update-predictions-sko", schedule: "45 10 * * *", active: true, method: "GET", route: "/api/v1/ml/update-predictions-sko" },
+  ]) + "\n```";
+  const baselineTimeoutAudit = {
+    job_name: "/api/v1/db/sustainability/rebuild-baselines", run_time: "2026-10-17T10:41:10.103Z", status: "failure", rows_affected: 400,
+    details: { method: "GET", url: "/api/v1/db/sustainability/rebuild-baselines", statusCode: 500, rowsUpserted: 400,
+      timing: { startedAt: "2026-10-17T10:40:00.864Z", endedAt: "2026-10-17T10:41:10.085Z", durationMs: 69221, timer: "01:09", source: "audit" },
+      response: JSON.stringify({ success: false, message: "Supabase query error on table=player_totals_unified select=* range=0-999: canceling statement due to statement timeout",
+        snapshot_date: "2026-10-17", processed: 400, rowsUpserted: 400, partialWrite: true }) },
+  };
+
+  it.each([false, true])("excludes a disabled schedule and still reports an active missing job (job 234 active: %s)", async (reportJobActive) => {
+    vi.setSystemTime(new Date("2026-10-17T13:00:30.000Z"));
+    readFileMock.mockResolvedValue(reportInventory(reportJobActive));
+    cronJobReportSelectMock.mockResolvedValue({ data: [{ jobid: 326, jobname: "rebuild-sustainability-baselines", scheduled_time: "2026-10-17T10:40:00.137Z",
+      end_time: "2026-10-17T10:40:00.150Z", status: "succeeded", return_message: "1 row",
+      sql_text: "select net.http_get(url:='https://fhfhockey.com/api/v1/db/sustainability/rebuild-baselines');" }], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [baselineTimeoutAudit,
+      // Yesterday's Vercel report self-audit is an unscheduled success, not an alert.
+      { job_name: "daily-cron-report", run_time: "2026-10-16T13:01:10.000Z", status: "success",
+        details: { method: "GET", url: "/api/v1/db/cron-report", statusCode: 200, durationMs: 40_000 } },
+    ], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    const audits = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits;
+    const missing = reportJobActive ? 2 : 1;
+    expect(res.body.counts).toMatchObject({ scheduledJobs: reportJobActive ? 3 : 2, jobsFailingLast: 1, jobsMissingLast: missing });
+    expect(audits.some((row: any) => row.jobName === "daily-cron-report" && row.observationKind === "scheduled")).toBe(reportJobActive);
+    expect(audits.find((row: any) => row.jobName === "update-predictions-sko").missingObservationWarnings)
+      .toContain("No cron or audit observation matched this scheduled slot.");
+    const baseline = audits.find((row: any) => row.jobName === "rebuild-sustainability-baselines");
+    expect(baseline).toMatchObject({ status: "failure", durationMs: 69221 });
+    expect(baseline.reason).toContain("canceling statement due to statement timeout");
+    expect(resendSendMock.mock.calls[0][0].subject).toBe(`❌ Daily Cron Report — 1 failing, ${missing} missing`);
+  });
+
+  it("computes UTC daily slots across midnight and the report hour regardless of process timezone", async () => {
+    vi.stubEnv("TZ", "America/New_York");
+    try {
+      vi.setSystemTime(new Date("2026-10-17T13:00:30.000Z"));
+      const jobs = [
+        { jobname: "evening-utc", schedule: "30 23 * * *", route: "/api/evening", ranAt: "2026-10-16T23:30:04.000Z" },
+        { jobname: "after-midnight-utc", schedule: "5 0 * * *", route: "/api/midnight", ranAt: "2026-10-17T00:05:03.000Z" },
+        // Today's 13:05 slot has not happened, so yesterday's slot is required.
+        { jobname: "after-report-hour", schedule: "5 13 * * *", route: "/api/after", ranAt: "2026-10-16T13:05:02.000Z" },
+        // Yesterday's 12:55 receipt is outside the window and cannot fill today's slot.
+        { jobname: "before-report-hour", schedule: "55 12 * * *", route: "/api/before", ranAt: "2026-10-16T12:55:01.000Z" },
+      ];
+      readFileMock.mockResolvedValue("```json\n" + JSON.stringify(jobs.map(({ ranAt: _ranAt, ...job }) => ({ ...job, active: true, method: "GET" }))) + "\n```");
+      cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+      cronJobAuditSelectMock.mockResolvedValue({ data: jobs.map((job) => ({ job_name: job.jobname, run_time: job.ranAt, status: "success",
+        details: { method: "GET", url: job.route, statusCode: 200, durationMs: 1000, response: { success: true, rowsUpserted: 5 } } })), error: null });
+      const res = createMockRes();
+      await handler({ method: "GET" } as any, res);
+      expect(new Date().getHours()).toBe(9);
+      expect(res.body.counts).toMatchObject({ scheduledJobs: 4, jobsOkLast: 3, jobsMissingLast: 1, unscheduledRuns: 0 });
+      const audits = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits;
+      expect(audits.find((row: any) => row.jobName === "before-report-hour").missingObservationWarnings)
+        .toContain("No cron or audit observation matched this scheduled slot.");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("deduplicates identical inventory rows and keeps same-name schedules distinct", async () => {
+    const dup = { jobid: 900, jobname: "dup-job", schedule: "0 8 * * *", active: true, method: "GET", route: "/api/dup" };
+    const split = [9, 11].map((hour) => ({ jobid: 900 + hour, jobname: "split-job", schedule: `0 ${hour} * * *`, active: true, method: "GET", route: "/api/split" }));
+    readFileMock.mockResolvedValue("```json\n" + JSON.stringify([dup, { ...dup }, ...split]) + "\n```");
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    const audit = (jobName: string, runTime: string, route: string, failed = false) => ({ job_name: jobName, run_time: runTime, status: failed ? "failure" : "success",
+      details: { method: "GET", url: route, statusCode: failed ? 500 : 200, durationMs: 1000, ...(failed ? { error: "11:00 slot failed" } : { response: { success: true, rowsUpserted: 1 } }) } });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [
+      audit("dup-job", "2026-03-20T08:00:20.000Z", "/api/dup"),
+      audit("split-job", "2026-03-20T09:00:20.000Z", "/api/split"),
+      audit("split-job", "2026-03-20T11:00:15.000Z", "/api/split", true),
+    ], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.counts).toMatchObject({ scheduledJobs: 3, jobsOkLast: 2, jobsFailingLast: 1, unscheduledRuns: 0 });
+    const audits = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits;
+    expect(audits.filter((row: any) => row.jobName === "dup-job")).toHaveLength(1);
+    expect(audits.find((row: any) => row.jobName === "split-job [GET 09:00 UTC]").status).toBe("success");
+    expect(audits.find((row: any) => row.jobName === "split-job [GET 11:00 UTC]")).toMatchObject({ status: "failure", reason: "11:00 slot failed" });
+  });
+
+  it.each([
+    ["rejected", () => resendSendMock.mockResolvedValue({ data: null, error: { message: "rate limited" } }), "Audit email failed: rate limited"],
+    ["thrown", () => resendSendMock.mockRejectedValue(new Error("socket hang up")), "Audit email exception: socket hang up"],
+  ])("reports a generated briefing with %s email transport as a transport failure", async (_kind, arrange, expected) => {
+    arrange();
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(cronAuditEmailMock).toHaveBeenCalledTimes(1);
+    expect(resendSendMock).toHaveBeenCalledTimes(1);
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({ message: "One or more operations failed.", auditEmailResult: { success: false } });
+    expect(res.body.errors).toContain(expected);
+    expect(res.body.code).toBeUndefined();
+  });
+
+  it("fails report generation before rendering or any transport attempt", async () => {
+    readFileMock.mockRejectedValue(new Error("ENOENT"));
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.code).toBe("CRON_SCHEDULE_INVENTORY_UNAVAILABLE");
+    expect(cronAuditEmailMock).not.toHaveBeenCalled();
+    expect(resendSendMock).not.toHaveBeenCalled();
+  });
+
+  it("bounds long plain-text diagnostics while keeping the leading cause", async () => {
+    const cause = "canceling statement due to statement timeout";
+    cronJobAuditSelectMock.mockResolvedValue({ data: [{ job_name: "run-forge-projection-v2", run_time: "2026-03-20T12:00:01.000Z", status: "failure",
+      details: { method: "POST", url: "/api/v1/db/run-projection-v2", statusCode: 500, error: `${cause}; ${"detail ".repeat(120)}` } }], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    const row = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits.find((row: any) => row.jobName === "run-forge-projection-v2");
+    expect(row.status).toBe("failure");
+    expect(row.reason.startsWith(cause)).toBe(true);
+    expect(row.reason.length).toBeLessThanOrEqual(300);
+    expect(row.reason.endsWith("…")).toBe(true);
+  });
+
+  it("keeps skipped and failed sustainability receipts distinct from success", async () => {
+    vi.setSystemTime(new Date("2026-10-17T13:00:30.000Z"));
+    readFileMock.mockResolvedValue(reportInventory(false));
+    cronJobReportSelectMock.mockResolvedValue({ data: [], error: null });
+    cronJobAuditSelectMock.mockResolvedValue({ data: [
+      baselineTimeoutAudit,
+      { job_name: "/api/v1/ml/update-predictions-sko", run_time: "2026-10-17T10:45:30.000Z", status: "success",
+        details: { method: "GET", url: "/api/v1/ml/update-predictions-sko", statusCode: 200, durationMs: 30_000, response: { success: true, rowsUpserted: 812 } } },
+      // Vercel score offsets are unscheduled here; 2026-10-17 offset 250 skipped after offset 0.
+      { job_name: "/api/v1/sustainability/rebuild-score", run_time: "2026-10-17T11:06:54.480Z", status: "success",
+        details: { method: "GET", url: "/api/v1/sustainability/rebuild-score?season=current&limit=250&offset=250", statusCode: 200, durationMs: 900,
+          response: { success: true, skipped: true, reason: "source_already_processed", snapshot_date: "2026-10-17" } } },
+    ], error: null });
+    const res = createMockRes();
+    await handler({ method: "GET" } as any, res);
+    expect(res.body.counts).toMatchObject({ scheduledJobs: 2, jobsOkLast: 1, jobsFailingLast: 1, jobsMissingLast: 0, auditFailures: 1 });
+    const audits = (cronAuditEmailMock.mock.calls.at(-1)?.[0] as any).audits;
+    const score = audits.find((row: any) => row.route?.includes("rebuild-score"));
+    expect(score).toMatchObject({ status: "unknown", lastKnownSuccessDisplay: null });
+    expect(score.missingObservationWarnings).toContain(
+      "Operation was skipped or produced no output; successful HTTP execution does not establish data refresh."
+    );
+    expect(resendSendMock.mock.calls[0][0].subject).not.toContain("✅");
   });
 
 });

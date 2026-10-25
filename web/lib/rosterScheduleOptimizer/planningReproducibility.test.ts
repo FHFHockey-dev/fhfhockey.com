@@ -1,9 +1,17 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
+import { bindFixtureForecast, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
 
 import { planRoster, scheduleFits, evaluatePlan } from "./planning";
+import { resolvePlanningContributions } from "../player-forecasts/planningContributions";
 import type { PlanIntent, PlanningPlayer, PlanningSnapshot } from "./planningTypes";
 import { forecastCalendarPolicy, type ContributionSource } from "../player-forecasts/contributions";
 
+// Fake search clocks tick from the fixture's own time, so review windows apply as they would live.
+const CLOCK = Date.parse("2026-10-04T00:00:00Z");
+// Quality fixture rows carry fictional reviews of their own targets; the production catalog stays empty.
+beforeEach(() => vi.spyOn(rsoPolicy, "currentRsoUsePolicy").mockReturnValue(fixtureRsoPolicy(["fixture-forge-v1"],
+  ["GOALS", "ASSISTS", "SAVES_GOALIE", "SHOTS_AGAINST_GOALIE", "GOALS_AGAINST_GOALIE", "GOALIE_MINUTES", "WINS_GOALIE"])));
 const intent: PlanIntent = { revision: 1, steps: [], protectedPlayerIds: [], excludedPlayerIds: [],
   goalieCoverage: "accept_risk", goalieWindow: "any", goalieSplit: "mon_thu", alternativeCount: 5 };
 
@@ -72,7 +80,7 @@ function qualityFixture(source: "detailed" | "baseline" | "blended", profile: "p
         sourceWatermark: "rate-inputs", scheduleRevision: game.scheduleRevision!, rosterRevision: player.rosterRevision! };
       snapshot.baselineSources.push(baseline);
     }
-    return { playerId: player.id, gameId: game.id, sourceKind: "detailed", sourceWatermark: "captured-inputs",
+    return bindFixtureForecast({ playerId: player.id, gameId: game.id, sourceKind: "detailed", sourceWatermark: "captured-inputs",
       issuedContext: { version: "forge-issued-context-v1", playerId: player.id, gameId: game.id,
         nhlPlayerId: player.nhlId!, seasonId: snapshot.context.seasonId, teamId: player.nhlTeamId!,
         scheduledAt: game.startsAt!, scheduleRevision: game.scheduleRevision!, rosterRevision: player.rosterRevision!,
@@ -84,7 +92,7 @@ function qualityFixture(source: "detailed" | "baseline" | "blended", profile: "p
       conditioning: "unconditional", allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: true },
       startProbability: goalie ? probability : null, confirmedStart: false,
       revisionId, issuedAt: "2026-10-03T01:00:00Z", cutoffAt: "2026-10-03T00:00:00Z",
-      expiresAt: "2026-10-15T00:00:00Z", modelVersion: "fixture-forge-v1", limitations: [] };
+      expiresAt: "2026-10-15T00:00:00Z", modelVersion: "fixture-forge-v1", limitations: [] });
   });
   snapshot.forecastManifest = { version: "planning-forecasts-v1", id: `quality-${source}-${profile}`,
     calendarPolicy: forecastCalendarPolicy(14), seasonId: snapshot.context.seasonId, asOf: snapshot.context.asOf,
@@ -116,7 +124,7 @@ describe("planning search reproducibility", () => {
     const stable = (result: ReturnType<typeof planRoster>) => ({ ...result, search: { ...result.search, elapsedMs: undefined } });
     expect(stable(planRoster(connected, intent, options))).toEqual(stable(planRoster(manual, intent, options)));
   });
-  it.each(["detailed", "baseline", "blended"] as const)("reproduces admitted %s quality decisions across scoring profiles and input order", source => {
+  const reproducesAdmittedQuality = (source: "detailed" | "baseline" | "blended") => {
     for (const profile of ["points", "categories", "goalie"] as const) {
       const snapshot = qualityFixture(source, profile);
       const before = structuredClone(snapshot);
@@ -164,6 +172,75 @@ describe("planning search reproducibility", () => {
       expect(stable(replayed)).toEqual(stable(one));
       expect(snapshot).toEqual(before);
     }
+  };
+  it.each(["detailed", "blended"] as const)("reproduces admitted %s quality decisions across scoring profiles and input order", reproducesAdmittedQuality);
+  it("reproduces admitted baseline quality decisions across scoring profiles and input order", () => reproducesAdmittedQuality("baseline"));
+
+  it.each(["points", "goalie"] as const)("keeps issued participation identity when %s baseline rates have a newer cutoff", profile => {
+    const snapshot = qualityFixture("baseline", profile);
+    snapshot.baselineSources = snapshot.baselineSources!.map(source => ({ ...source,
+      cutoffAt: "2026-10-03T02:00:00Z", issuedAt: "2026-10-03T03:00:00Z" }));
+    const target = profile === "goalie" ? "SAVES_GOALIE" : "GOALS";
+    const resolved = resolvePlanningContributions(snapshot, { consumer: "rso" });
+    const row = resolved.forecasts[0];
+    expect(row.stats[target]).not.toBeNull();
+    expect(row.contributions?.[target].sourceKind).toBe("baseline");
+    expect(row.contributions?.[target].inputs?.baseline?.policyVersion).toBe("fixture-rate-v1");
+    expect(row.modelVersion).toBe("fixture-forge-v1");
+    expect(row.cutoffAt).toBe("2026-10-03T02:00:00Z");
+    expect(row.contributions?.[target].inputs?.participation?.cutoffAt).toBe("2026-10-03T00:00:00Z");
+    const saved = JSON.parse(JSON.stringify(resolved));
+    expect(resolvePlanningContributions(saved, { consumer: "rso" }).forecasts).toEqual(resolved.forecasts);
+  });
+
+  it.each(["missing_review", "rate_review_only", "revoked_review", "expired_review", "missing_binding",
+    "changed_model", "changed_cutoff", "changed_artifact", "participation_identity", "expired_participation", "revoked_revision"])
+  ("withholds borrowed baseline participation after %s on replay", kind => {
+    const policy = fixtureRsoPolicy(["fixture-forge-v1"], ["GOALS", "ASSISTS"]);
+    const resolved = resolvePlanningContributions(qualityFixture("baseline"), { consumer: "rso", usePolicy: policy });
+    expect(resolved.forecasts[0].stats.GOALS).toBe(0.5);
+    const saved: PlanningSnapshot = JSON.parse(JSON.stringify(resolved));
+    const current = structuredClone(policy);
+    if (kind === "missing_review") current.reviews = [];
+    if (kind === "rate_review_only") current.reviews = fixtureRsoPolicy(["fixture-rate-v1"], ["GOALS", "ASSISTS"]).reviews;
+    if (kind === "revoked_review") current.revokedReviewIds = policy.reviews.map(review => review.id);
+    if (kind === "expired_review") current.reviews = current.reviews.map(review => ({ ...review, expiresAt: "2020-01-01T00:00:00Z" }));
+    if (kind === "revoked_revision") saved.forecastManifest!.issuedRevisionIds = [];
+    for (const row of saved.forecasts) {
+      if (kind === "missing_binding") row.rsoTargetBindings = undefined;
+      if (kind === "changed_model") row.modelVersion = "unreviewed-model";
+      for (const binding of Object.values(row.rsoTargetBindings ?? {})) {
+        if (kind === "changed_artifact") binding.artifactHash = "c".repeat(64);
+      }
+      for (const contribution of Object.values(row.contributions!)) {
+        const participation = contribution.inputs!.participation!;
+        if (kind === "changed_cutoff") participation.cutoffAt = "2026-10-02T12:00:00Z";
+        if (kind === "participation_identity") participation.nhlPlayerId++;
+        if (kind === "expired_participation") participation.expiresAt = saved.context.asOf;
+      }
+    }
+    const replayed = resolvePlanningContributions(saved, { consumer: "rso", usePolicy: current });
+    for (const row of replayed.forecasts) {
+      expect(row.stats).toMatchObject({ GOALS: null, ASSISTS: null });
+      expect(row.assignmentStats).toMatchObject({ GOALS: null, ASSISTS: null });
+      expect(row.contributions?.GOALS.allowedUses.comparison).toBe(false);
+    }
+  });
+
+  it("keeps borrowed baseline participation permissions specific to each target and use", () => {
+    const snapshot = qualityFixture("baseline");
+    snapshot.baselineSources = snapshot.baselineSources!.map(source => source.targetKey === "ASSISTS" ? { ...source, mean: 0 } : source);
+    const policy = fixtureRsoPolicy(["fixture-forge-v1"], ["GOALS", "ASSISTS"]);
+    policy.reviews = policy.reviews.map(review => ({ ...review, allowedUses: {
+      assignment: review.binding.targetKey === "GOALS", totals: review.binding.targetKey === "ASSISTS",
+      comparison: false, conditionalTieBreak: false,
+    } }));
+    const resolved = resolvePlanningContributions(snapshot, { consumer: "rso", usePolicy: policy });
+    expect(resolved.forecasts[0].stats).toMatchObject({ GOALS: null, ASSISTS: 0 });
+    expect(resolved.forecasts[0].assignmentStats).toMatchObject({ GOALS: 0.5, ASSISTS: null });
+    expect(resolved.forecasts[0].contributions?.GOALS.allowedUses.comparison).toBe(false);
+    expect(resolvePlanningContributions(JSON.parse(JSON.stringify(resolved)), { consumer: "rso", usePolicy: policy }).forecasts)
+      .toEqual(resolved.forecasts);
   });
 
   it.each(["daily", "weekly"] as const)("replays admitted quality forecasts with %s locks and realized results", lineupMode => {
@@ -206,7 +283,7 @@ describe("planning search reproducibility", () => {
   it("retains an eligible quality checkpoint when a deadline interrupts search", () => {
     const snapshot = qualityFixture("blended");
     let tick = 0;
-    const now = vi.spyOn(Date, "now").mockImplementation(() => ++tick * 1000);
+    const now = vi.spyOn(Date, "now").mockImplementation(() => CLOCK + ++tick * 1000);
     try {
       const completed = planRoster(snapshot, intent, { maxEvaluations: 30, maxSteps: 1 });
       expect(completed.baseline.objective).toBe("outcome");
@@ -277,7 +354,7 @@ describe("planning search reproducibility", () => {
     snapshot.roster.push({ playerId: "103", position: "bench" });
     snapshot.players[2].availability = "rostered";
     let tick = 0;
-    const now = vi.spyOn(Date, "now").mockImplementation(() => ++tick * 1000);
+    const now = vi.spyOn(Date, "now").mockImplementation(() => CLOCK + ++tick * 1000);
     try {
       const result = planRoster(snapshot, intent, { maxSteps: 0, timeBudgetMs: 1 });
       expect(result.search.benchEvidence).toMatchObject({ evaluated: 0, complete: false, timeLimitReached: true, workQuotaReached: false });

@@ -1,0 +1,21 @@
+@use "styles/vars" as v;
+
+.detail { scroll-margin-top: 80px; }
+
+/* Positions the table scroller so visually hidden button text is clipped inside it rather than widening the page. */
+.scrollContainer { position: relative; }
+
+.detailHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.heading { margin: 0; font-size: 1rem; }
+.heading:focus-visible { outline: 2px solid v.$focus-color; outline-offset: 2px; }
+
+/* Touch-sized disclosure and close controls. */
+.touchButton { min-height: 44px; min-width: 44px; }
+.touchButton:focus-visible { outline: 2px solid v.$focus-color; outline-offset: 2px; }

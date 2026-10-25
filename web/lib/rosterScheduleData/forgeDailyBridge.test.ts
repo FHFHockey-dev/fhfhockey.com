@@ -1,12 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { forecastCalendarPolicy } from "lib/player-forecasts/contributions";
 import { candidateHorizonPoints } from "lib/rosterScheduleOptimizer/planning";
-import type { PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+import { withCurrentPlanningRead } from "lib/rosterScheduleOptimizer/currentPlanningRead";
+import { currentRsoUsePolicy } from "lib/player-forecasts/rsoUsePolicy";
+import type { PlanningData, PlanningGame, PlanningPlayer, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { runHorizonFilter } from "lib/projections/releasedRunFence";
 import { STARTER_DECISION_SHARE, teamWinProbability } from "lib/projections/goalie/goalieOutcomes";
 import { buildForgeDailyBridgeForecasts, FORGE_DAILY_BRIDGE_VERSION, loadForgeDailyBridgeForecasts, opponentTilts, teamStrengthPriors, teamWinProbability as ledgerTeamWin, type ForgeDailyBridgeInputs } from "./forgeDailyBridge";
 import { compactBridgeForecasts, expandBridgeForecasts, fitBridgeWire, packPlanningSnapshots, unpackPlanningSnapshots, type BridgeForecastWire } from "./bridgeForecastWire";
 import { preservationJson } from "lib/rosterScheduleOptimizer/workspace";
+import { resolveDailyBoardEvidence, type BoardGoalieEvidence } from "lib/projections/dailyBoardEvidence";
 
 const now = new Date("2026-10-19T18:00:00Z");
 const policy = forecastCalendarPolicy(14);
@@ -60,6 +63,16 @@ describe("FORGE daily bridge", () => {
     expect(s1[0].stats.GOALS).toBe(0.35);
     expect(s1[1].stats.GOALS).toBe(0.7);
     expect(s1[1].issuedAt).toBe("2026-10-19T18:00:00.000Z");
+  });
+
+  it("keeps a complete exact-game forecast when the newer game's learned head is missing", () => {
+    const data = inputs();
+    data.runs.push({ run_id: "r3", as_of_date: "2026-10-21", created_at: "2026-10-19T17:00:00Z", git_sha: "ghi" });
+    data.skaters.push({ ...skater("r3", "2026-10-21", 2, 101, 10), proj_assists_es: null } as unknown as ReturnType<typeof skater>);
+    const { forecasts } = buildForgeDailyBridgeForecasts(data, players, games, now, 20262027, policy);
+    const rows = forecasts.filter(row => row.playerId === "s1");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ gameId: "1", revisionId: `${FORGE_DAILY_BRIDGE_VERSION}:r2`, stats: { GOALS: 0.35, ASSISTS: 0.45 } });
   });
 
   it("keeps a skater's own-game line when his team's newer run omits him, withholding only re-aimed copies", () => {
@@ -228,6 +241,33 @@ describe("FORGE daily bridge", () => {
     expect(disputed.forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!.startProbability).toBe(0.8);
   });
 
+  it.each([
+    ["confirmed", {}, 1],
+    ["ruled_out", {}, 0],
+    ["likely", {}, 0.8],
+    ["projected", {}, 0.65],
+    ["unknown", {}, 0.2],
+    ["confirmed", { accepted: false }, 0.2],
+    ["confirmed", { expires_at: now.toISOString() }, 0.2],
+    ["confirmed", { available_at: "2026-10-19T19:00:00Z" }, 0.2],
+    ["confirmed", { game_id: 99 }, 0.2],
+    ["confirmed", { team_id: 8 }, 0.2],
+    ["confirmed", { player_id: 999 }, 0.2],
+  ] as const)("scopes trusted %s evidence %j and scales participation only", (status, overrides, expected) => {
+    const observation: BoardGoalieEvidence = { id: "server-observation", game_id: 1, team_id: 10, player_id: 202,
+      observed_at: "2026-10-19T15:00:00Z", available_at: "2026-10-19T15:00:01Z", created_at: "2026-10-19T15:00:02Z",
+      expires_at: "2026-10-19T23:00:00Z", accepted: true, source_key: "accepted-server-feed", observation_status: status, ...overrides };
+    const goalieNews = resolveDailyBoardEvidence({ cutoff: now.toISOString(), goalies: [observation], lineups: [], conflicts: [] });
+    const { forecasts } = buildForgeDailyBridgeForecasts({ ...inputs(), goalieNews }, players, games, now, 20262027, policy);
+    const row = forecasts.find(row => row.playerId === "g2" && row.gameId === "1")!;
+    expect(row.startProbability).toBeCloseTo(expected);
+    expect(row.confirmedStart).toBe(expected === 1);
+    expect(row.conditionalStats).toMatchObject({ SAVES_GOALIE: 25, GOALS_AGAINST_GOALIE: 2.5 });
+    expect(row.stats.SAVES_GOALIE).toBeCloseTo(25 * expected);
+    expect(row.stats.GOALS_AGAINST_GOALIE).toBeCloseTo(2.5 * expected);
+    expect(forecasts.find(row => row.playerId === "g1" && row.gameId === "1")!.startProbability).toBeCloseTo(1 - expected);
+  });
+
   it("moves future games to their opponent with FORGE's team-strength adjustment", () => {
     const base = inputs();
     // FORGE projected s1's 10-19 game against MTL; game 2 (10-21) is against a leakier defence.
@@ -362,26 +402,92 @@ describe("FORGE daily bridge", () => {
     expect(ledgerTeamWin(undefined, even, true)).toBe(0.5);
   });
 
-  it("produces forecasts the planner accepts for league points", () => {
+  it("produces forecasts the planner accepts for league points", async () => {
+    // Season totals give s1 a faceoff rate, so every weighted skater stat has an input: (50 + 0.5 × 600) / (10 + 0.5 × 80) = 7.
+    const seasonTotals = [{ player_id: 101, season: "20262027", games_played: 10, penalty_minutes: 0, plus_minus: 0, sh_goals: 0,
+      sh_assists: 0, sh_points: 0, total_fow: 50, total_fol: 40, goals: 4, gw_goals: 0 }, { player_id: 101, season: "20252026",
+      games_played: 80, penalty_minutes: 0, plus_minus: 0, sh_goals: 0, sh_assists: 0, sh_points: 0, total_fow: 600, total_fol: 500, goals: 20, gw_goals: 0 }];
     // Team-strength priors give g1's unprojected game 2 a win probability from FORGE's win model.
     const teamPriors = [{ team_abbrev: "TOR", date: "2026-10-19", games_played: 50, xga: 145, xga_per_game: 2.9, xgf_per_game: 3.2 },
       { team_abbrev: "X", date: "2026-10-19", games_played: 50, xga: 150, xga_per_game: 3, xgf_per_game: 3 }];
     const priors = teamStrengthPriors(teamPriors), tor = priors.get("TOR")!, x = priors.get("X")!;
     const gameTwoWin = Math.round(STARTER_DECISION_SHARE * teamWinProbability((tor.xgfPerGame! + x.xgaPerGame!) / 2,
       (x.xgfPerGame! + tor.xgaPerGame!) / 2) * 10000) / 10000;
-    const { forecasts } = buildForgeDailyBridgeForecasts({ ...inputs(), teamPriors }, players, games, now, 20262027, policy);
+    const { forecasts } = buildForgeDailyBridgeForecasts({ ...inputs(), seasonTotals, teamPriors }, players, games, now, 20262027, policy);
+    const upcoming = games.filter(row => row.date >= "2026-10-19");
+    const { wire } = compactBridgeForecasts(forecasts, { players, games: upcoming }, 20262027);
+    const revisions = [...new Set(forecasts.map(row => row.revisionId))].sort();
+    // The bridge is only admitted through a current read whose manifest names its revisions.
+    const data: PlanningData = { players, games: upcoming, forecasts: [], baselineSources: [], participationSources: [],
+      evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } },
+      forecastManifest: { version: "planning-forecasts-v1", id: "current-read", seasonId: 20262027, asOf: now.toISOString(),
+        scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: revisions, baselineChecksum: null,
+        requiredOpportunities: forecasts.length, forecastedOpportunities: forecasts.length, exclusionCounts: {},
+        rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: revisions } } };
     const snapshot: PlanningSnapshot = { id: "snap", context: { provider: "manual", seasonId: 20262027, leagueId: "l", teamId: "t",
       startDate: "2026-10-19", endDate: "2026-10-25", timeZone: "UTC", asOf: now.toISOString() },
-      players, games, forecasts, roster: [], lockedAssignments: [], realized: {}, opponent: null,
+      players, games: upcoming, forecasts, roster: [], lockedAssignments: [], realized: {}, opponent: null,
       rules: { lineupMode: "daily", rosterSlots: { C: 1, G: 1, BN: 1 }, acquisitionTiming: "next_day", acquisitionCost: 1, periods: [],
         scoring: { mode: "points", weights: { GOALS: 3, ASSISTS: 2, PP_POINTS: 1, SHOTS_ON_GOAL: 0.5, FACEOFFS_WON: 0.1, SAVES_GOALIE: 0.2, WINS_GOALIE: 4 }, categories: [] },
         goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "none" }, unsupported: [] },
       evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } } };
-    const points = candidateHorizonPoints(snapshot);
-    expect(points.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2 + 0.25 + 3.1 * 0.5));
-    expect(points.get("g1")).toBeCloseTo(0.8 * (25 * 0.2 + 0.55 * 4) + 0.7 * (25 * 0.2 + gameTwoWin * 4), 3);
-    expect(points.get("s2")).toBeNull();
+    // Literal rows carry no current-read authority, so the planner withholds their value.
+    expect(candidateHorizonPoints(snapshot).get("s1")).toBeNull();
+    vi.useFakeTimers(); vi.setSystemTime(now);
+    // A JSON round trip, as over HTTP: the bridge reuses one stats line across a skater's games, which the wire unshares.
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => ({ ok: true, json: async () => JSON.parse(JSON.stringify({
+      success: true, data, bridgeForecasts: wire, read: {
+        nonce: (init.headers as Record<string, string>)["X-RSO-Read-Nonce"], evaluatedAt: now.toISOString() } })) }) as Response));
+    try {
+      const points = await withCurrentPlanningRead({ ...snapshot, forecasts: [] }, {}, currentRsoUsePolicy().revision,
+        new AbortController().signal, (input, _data, readError) => { expect(readError).toBeNull(); return candidateHorizonPoints(input); });
+      expect(points.get("s1")).toBeCloseTo(2 * (0.35 * 3 + 0.45 * 2 + 0.25 + 3.1 * 0.5 + 7 * 0.1));
+      expect(points.get("g1")).toBeCloseTo(0.8 * (25 * 0.2 + 0.55 * 4) + 0.7 * (25 * 0.2 + gameTwoWin * 4), 3);
+      expect(points.get("s2")).toBeNull();
+    } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
   });
+
+  it("preserves current bridge values when a Yahoo snapshot carries a Not Starting label", async () => {
+    const { forecasts } = buildForgeDailyBridgeForecasts(inputs(), players, games, now, 20262027, policy);
+    const upcoming = games.filter(row => row.date >= "2026-10-19");
+    const { wire } = compactBridgeForecasts(forecasts, { players, games: upcoming }, 20262027);
+    const revisions = [...new Set(forecasts.map(row => row.revisionId))].sort();
+    const data: PlanningData = { players, games: upcoming, forecasts: [], baselineSources: [], participationSources: [],
+      evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } },
+      forecastManifest: { version: "planning-forecasts-v1", id: "current-read", seasonId: 20262027, asOf: now.toISOString(),
+        scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: revisions, baselineChecksum: null,
+        requiredOpportunities: forecasts.length, forecastedOpportunities: forecasts.length, exclusionCounts: {},
+        rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: revisions } } };
+    // g1 (FORGE: 0.8 to start game 1) is on the Yahoo roster marked Not Starting tonight; g2 is his only teammate.
+    const marked = players.map(player => player.id === "g1" ? { ...player, availability: "rostered" as const,
+      startingStatus: { source: "yahoo" as const, date: "2026-10-19", isStarting: false, observedAt: "2026-10-19T17:30:00.000Z" } } : player);
+    const snapshot: PlanningSnapshot = { id: "snap", context: { provider: "yahoo", seasonId: 20262027, leagueId: "l", teamId: "t",
+      startDate: "2026-10-19", endDate: "2026-10-25", timeZone: "UTC", asOf: now.toISOString() },
+      players: marked, games: upcoming, forecasts: [], roster: [{ playerId: "g1", position: "active" }], lockedAssignments: [], realized: {}, opponent: null,
+      rules: { lineupMode: "daily", rosterSlots: { G: 1, BN: 1 }, acquisitionTiming: "next_day", acquisitionCost: 1, periods: [],
+        scoring: { mode: "points", weights: { SAVES_GOALIE: 0.2 }, categories: [] },
+        goalieMinimum: { required: null, credited: null, counts: "unknown", penalty: "none" }, unsupported: [] },
+      evidence: { schedule: { source: "fixture", asOf: now.toISOString(), seasonId: 20262027, completeness: "complete", limitations: [] } } };
+    vi.useFakeTimers(); vi.setSystemTime(now);
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, init: RequestInit) => ({ ok: true, json: async () => JSON.parse(JSON.stringify({
+      success: true, data, bridgeForecasts: wire, read: {
+        nonce: (init.headers as Record<string, string>)["X-RSO-Read-Nonce"], evaluatedAt: now.toISOString() } })) }) as Response));
+    const read = (input: PlanningSnapshot) => withCurrentPlanningRead(input, {}, currentRsoUsePolicy().revision, new AbortController().signal,
+      (current, _data, readError) => { expect(readError).toBeNull(); return { points: candidateHorizonPoints(current), rows: current.forecasts }; });
+    try {
+      const [yahoo, plain] = [await read(snapshot), await read({ ...snapshot, players })];
+      const row = (rows: typeof forecasts, id: string, gameId: string) => rows.find(item => item.playerId === id && item.gameId === gameId)!;
+      expect(row(yahoo.rows, "g1", "1")).toMatchObject({ startProbability: 0.8, confirmedStart: false, stats: { SAVES_GOALIE: 20 } });
+      expect(row(yahoo.rows, "g2", "1").startProbability).toBe(0.2);
+      expect(row(yahoo.rows, "g1", "2").startProbability).toBe(0.7);
+      // Only the unchanged current server rows receive authority; serialized labels cannot change either goalie.
+      expect(plain.points.get("g1")).toBeCloseTo(0.8 * 25 * 0.2 + 0.7 * 25 * 0.2);
+      expect(yahoo.points.get("g1")).toBeCloseTo(plain.points.get("g1")!);
+      expect(plain.points.get("g2")).toBeCloseTo(0.2 * 25 * 0.2 + 0.3 * 25 * 0.2);
+      expect(yahoo.points.get("g2")).toBeCloseTo(plain.points.get("g2")!);
+    } finally { vi.useRealTimers(); vi.unstubAllGlobals(); }
+  });
+
   it.each([
     ["only off-release runs exist", [] as string[], []],
     ["a newer null or local run shares the released run's date", ["released"], []],

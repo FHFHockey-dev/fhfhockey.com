@@ -18,6 +18,16 @@ export function serviceDatabase() {
 beforeEach(() => { vi.stubEnv("LINES_ENTRY_SERVING_ENABLED", "true"); vi.stubEnv("LINES_OBSERVATIONS_ENABLED", "true"); vi.stubEnv("LINES_PP_CARRY_FORWARD_ENABLED", "true"); });
 afterEach(() => vi.unstubAllEnvs());
 describe("shared game/team response", () => {
+  it.each(["GameDayLines", "GameDayGoalies", "GameDayNewsNHL", "CcCMiddleton", "DFOFantasy", "NHL_Rosters"])("removes relay %s from public author and fallback links, retaining internal lineage", async handle => {
+    const db = serviceDatabase();
+    const raw = db.tables.line_claim_revisions![0]!.payload;
+    raw.author = handle; raw.sourceUrl = `https://x.com/${handle}/status/123`; raw.originalIdentity = raw.sourceUrl;
+    raw.provenance = { relayTweetId: "123", originalTweetId: null, attributionStatus: "pending" };
+    const response = await readGameLines(db, { teamId: 14, now: fixtureNow });
+    const claim = response.teams[0]!.history.find(item => item.id === raw.id)!;
+    expect(claim.author).toBe("Original source pending"); expect(claim.sourceUrl).toBeNull(); expect(claim.originalIdentity).toBeNull();
+    expect(claim.provenance).toBeUndefined(); expect(raw.author).toBe(handle); expect(raw.provenance.relayTweetId).toBe("123");
+  });
   it("defaults to live, keeps teams separated and never writes on GET", async () => {
     const db = serviceDatabase();
     const response = await readGameLines(db, { teamId: 14, now: fixtureNow });

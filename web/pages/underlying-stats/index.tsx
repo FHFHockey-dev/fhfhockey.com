@@ -134,6 +134,10 @@ const formatRating = (value: number): string => value.toFixed(1);
 const formatTrend = (value: number): string =>
   `${value > 0 ? "+" : ""}${value.toFixed(1)}`;
 const formatPower = (value: number): string => value.toFixed(1);
+const formatTrendMove = (value: number): string =>
+  Math.abs(value) < 0.05
+    ? "—"
+    : `${value > 0 ? "▲" : "▼"} ${Math.abs(value).toFixed(1)}`;
 const formatSos = (value: number | null): string =>
   typeof value === "number" && !Number.isNaN(value)
     ? `${(value * 100).toFixed(1)}%`
@@ -339,7 +343,6 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
     )
   );
   const [hoveredTeamAbbr, setHoveredTeamAbbr] = useState<string | null>(null);
-  const [showAllTeams, setShowAllTeams] = useState(true);
   const [viewMode, setViewMode] = useState<TableViewMode>("advanced");
   const [sortState, setSortState] = useState<SortState>(DEFAULT_SORTS.advanced);
   const hasSelectedSnapshot = selectedDate === snapshot.resolvedDate && !error;
@@ -357,7 +360,6 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
   useEffect(() => {
     setSnapshot(initialSnapshot);
     setSelectedDate(initialSnapshot.resolvedDate ?? "");
-    setShowAllTeams(true);
   }, [initialSnapshot]);
 
   useEffect(() => {
@@ -607,11 +609,6 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
     return sorted;
   }, [powerRankByTeam, ratings, sortState]);
 
-  const visibleRatings = useMemo(
-    () => (showAllTeams ? displayedRatings : displayedRatings.slice(0, 12)),
-    [displayedRatings, showAllTeams]
-  );
-
   const getComponentBadgeClass = (value: number | null): string => {
     if (typeof value !== "number" || Number.isNaN(value)) {
       return styles.componentNeutral;
@@ -672,7 +669,6 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
     const value = event.target.value;
     setSelectedDate(value);
     setHoveredTeamAbbr(null);
-    setShowAllTeams(true);
     router.replace(
       {
         pathname: router.pathname,
@@ -1021,7 +1017,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
   return (
     <>
       <Head>
-        <title>Underlying Stats Dashboard | FHFHockey</title>
+        <title>Underlying Stats | FHFHockey</title>
         <meta
           name="description"
           content="Compare NHL team ratings and explore offensive and defensive process, recent movement, and detailed team metrics."
@@ -1043,55 +1039,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
             routeStatus={routeStatus}
             selectedDate={selectedDate}
             topTeams={topTeams}
-          >
-          <section
-            className={styles.tableSection}
-            aria-labelledby="power-rankings-table-heading"
-            aria-live="polite"
-          >
-          <div className={styles.sectionHeader}>
-            <div>
-              <p className={styles.sectionKicker}>Supporting table</p>
-              <h2
-                className={styles.sectionTitle}
-                id="power-rankings-table-heading"
-              >
-                Detailed team table
-                <span
-                  className={styles.sectionInfo}
-                  tabIndex={0}
-                  aria-label="Sortable team metrics for the selected snapshot, with simple and advanced views."
-                  title="Sortable team metrics for the selected snapshot, with simple and advanced views."
-                >
-                  i
-                </span>
-              </h2>
-              <p className={styles.sectionDescription}>
-                Compare every team, sort the available metrics, and switch to
-                the simple view when you need less detail.
-              </p>
-              <details className={styles.tableHelp}>
-                <summary className={styles.tableHelpSummary}>
-                  How to read this table
-                </summary>
-                <div className={styles.tableHelpContent}>
-                  <p>
-                    <strong>Power Score</strong> blends 5v5 offense, defense,
-                    and pace, with a small special-teams adjustment.
-                  </p>
-                  <p>
-                    <strong>Trend</strong> compares a team with its own recent
-                    baseline, not the rest of the league.
-                  </p>
-                  <p>
-                    <strong>Scoring</strong>, <strong>Goaltending</strong>, and{" "}
-                    <strong>Puck Luck</strong> are context signals showing
-                    finishing and save variance around expected play.
-                  </p>
-                </div>
-              </details>
-            </div>
-            <div className={styles.sectionTools}>
+            rankingsActions={
               <div
                 className={styles.modeToggle}
                 role="tablist"
@@ -1120,20 +1068,13 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                   Advanced
                 </button>
               </div>
-              <div className={styles.sectionMeta}>
-                <span>{displayedRatings.length} teams</span>
-                <span>
-                  {viewMode === "simple" ? "Simple view" : "Advanced view"}
-                </span>
-                <span>
-                  {selectedDate
-                    ? formatDateLabel(selectedDate)
-                    : "Latest snapshot"}
-                </span>
-              </div>
-            </div>
-          </div>
-
+            }
+          >
+          <section
+            className={styles.tableSection}
+            aria-label="Team rankings"
+            aria-live="polite"
+          >
           {isLoading && (
             <div className={styles.loadingBanner}>Loading team ratings…</div>
           )}
@@ -1158,7 +1099,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 <thead>
                   {viewMode === "simple" ? (
                     <tr>
-                      {renderSortButton({ key: "rank", label: "#" })}
+                      {renderSortButton({ key: "rank", label: "Rank" })}
                       {renderSortButton({ key: "team", label: "Team" })}
                       {renderSortButton({
                         key: "power",
@@ -1167,7 +1108,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                             className={styles.metricHeader}
                             title="Power Score blends offense, defense, and pace, then adds a small PP/PK tier bonus."
                           >
-                            Power
+                            Power Score
                           </abbr>
                         )
                       })}
@@ -1193,11 +1134,11 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                           </abbr>
                         )
                       })}
-                      <th scope="col">Why moving</th>
+                      <th scope="col">Why it&apos;s moving</th>
                     </tr>
                   ) : (
                     <tr>
-                      {renderSortButton({ key: "rank", label: "#" })}
+                      {renderSortButton({ key: "rank", label: "Rank" })}
                       {renderSortButton({ key: "team", label: "Team" })}
                       {renderSortButton({
                         key: "power",
@@ -1206,29 +1147,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                             className={styles.metricHeader}
                             title="Power Score blends offense, defense, and pace, then adds a small PP/PK tier bonus."
                           >
-                            Power
-                          </abbr>
-                        )
-                      })}
-                      {renderSortButton({
-                        key: "sosPast",
-                        label: (
-                          <abbr
-                            className={styles.metricHeader}
-                            title="SoS Past = BCS-style schedule strength from games already played."
-                          >
-                            SoS Past
-                          </abbr>
-                        )
-                      })}
-                      {renderSortButton({
-                        key: "sosFuture",
-                        label: (
-                          <abbr
-                            className={styles.metricHeader}
-                            title="SoS Future = the same BCS-style schedule formula, but for upcoming opponents."
-                          >
-                            SoS Future
+                            Power Score
                           </abbr>
                         )
                       })}
@@ -1255,17 +1174,6 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         )
                       })}
                       {renderSortButton({
-                        key: "pace",
-                        label: (
-                          <abbr
-                            className={styles.metricHeader}
-                            title="Pace reflects how fast a team's games are played based on shot-attempt volume."
-                          >
-                            Pace
-                          </abbr>
-                        )
-                      })}
-                      {renderSortButton({
                         key: "trend",
                         label: (
                           <abbr
@@ -1273,6 +1181,40 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                             title="Trend compares the current overall team rating to that team's own previous 10-snapshot average."
                           >
                             Trend
+                          </abbr>
+                        )
+                      })}
+                      <th scope="col">Why it&apos;s moving</th>
+                      {renderSortButton({
+                        key: "sosPast",
+                        label: (
+                          <abbr
+                            className={styles.metricHeader}
+                            title="SoS Past = BCS-style schedule strength from games already played."
+                          >
+                            SoS Past
+                          </abbr>
+                        )
+                      })}
+                      {renderSortButton({
+                        key: "sosFuture",
+                        label: (
+                          <abbr
+                            className={styles.metricHeader}
+                            title="SoS Future = the same BCS-style schedule formula, but for upcoming opponents."
+                          >
+                            SoS Future
+                          </abbr>
+                        )
+                      })}
+                      {renderSortButton({
+                        key: "pace",
+                        label: (
+                          <abbr
+                            className={styles.metricHeader}
+                            title="Pace reflects how fast a team's games are played based on shot-attempt volume."
+                          >
+                            Pace
                           </abbr>
                         )
                       })}
@@ -1357,7 +1299,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                   )}
                 </thead>
                 <tbody>
-                  {visibleRatings.map((team) => (
+                  {displayedRatings.map((team) => (
                     <tr
                       key={`${team.teamAbbr}-${team.date}`}
                       className={
@@ -1409,27 +1351,15 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                       </td>
                       {viewMode === "simple" ? (
                         <>
-                          <td className={styles.sparkMetricCell}>
-                            <div className={styles.sparkMetric}>
-                              <span
-                                className={`${styles.sparkMetricValue} ${getTrendClass(
-                                  team.trend10
-                                )}`}
-                              >
-                                {formatTrend(team.trend10)}
-                              </span>
-                              <OwnershipSparkline
-                                points={team.trendSeries ?? []}
-                                variant={team.trend10 >= 0 ? "rise" : "fall"}
-                                width={88}
-                                height={20}
-                                baseline
-                                svgClassName={styles.sparkline}
-                                pathClassName={styles.sparklinePath}
-                                baselineClassName={styles.sparklineBaseline}
-                                emptyClassName={styles.sparklineEmpty}
-                              />
-                            </div>
+                          <td className={styles.trendCell}>
+                            <span
+                              className={`${styles.trendMove} ${getTrendClass(
+                                team.trend10
+                              )}`}
+                              title={`Trend ${formatTrend(team.trend10)} versus the team's previous 10-snapshot average`}
+                            >
+                              {formatTrendMove(team.trend10)}
+                            </span>
                           </td>
                           <td className={styles.sosCell}>
                             <span
@@ -1459,6 +1389,36 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                         </>
                       ) : (
                         <>
+                          <td className={styles.componentCell}>
+                            {renderOffensePopover(team)}
+                          </td>
+                          <td className={styles.componentCell}>
+                            {renderDefensePopover(team)}
+                          </td>
+                          <td className={styles.trendCell}>
+                            <span
+                              className={`${styles.trendMove} ${getTrendClass(
+                                team.trend10
+                              )}`}
+                              title={`Trend ${formatTrend(team.trend10)} versus the team's previous 10-snapshot average`}
+                            >
+                              {formatTrendMove(team.trend10)}
+                            </span>
+                          </td>
+                          <td className={styles.narrativeCell}>
+                            {team.narrative.length ? (
+                              <span
+                                className={styles.narrativeLine}
+                                title={team.narrative.join(" • ")}
+                              >
+                                {team.narrative[0]}
+                              </span>
+                            ) : (
+                              <span className={styles.narrativeEmpty}>
+                                No movement note yet.
+                              </span>
+                            )}
+                          </td>
                           <td className={styles.sosCell}>
                             <span
                               className={`${styles.sosPill} ${getSosClass(team.sosPast)}`}
@@ -1481,35 +1441,7 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                             {renderScheduleTexture(team)}
                           </td>
                           <td className={styles.componentCell}>
-                            {renderOffensePopover(team)}
-                          </td>
-                          <td className={styles.componentCell}>
-                            {renderDefensePopover(team)}
-                          </td>
-                          <td className={styles.componentCell}>
                             {renderPacePopover(team)}
-                          </td>
-                          <td className={styles.sparkMetricCell}>
-                            <div className={styles.sparkMetric}>
-                              <span
-                                className={`${styles.sparkMetricValue} ${getTrendClass(
-                                  team.trend10
-                                )}`}
-                              >
-                                {formatTrend(team.trend10)}
-                              </span>
-                              <OwnershipSparkline
-                                points={team.trendSeries ?? []}
-                                variant={team.trend10 >= 0 ? "rise" : "fall"}
-                                width={88}
-                                height={20}
-                                baseline
-                                svgClassName={styles.sparkline}
-                                pathClassName={styles.sparklinePath}
-                                baselineClassName={styles.sparklineBaseline}
-                                emptyClassName={styles.sparklineEmpty}
-                              />
-                            </div>
                           </td>
                           <td className={styles.specialTeamCell}>
                             <span
@@ -1622,23 +1554,14 @@ export const TeamPowerRankingsPage: NextPage<PageProps> = ({
                 </tbody>
                 </table>
               </div>
-              {displayedRatings.length > 12 ? (
-                <div className={styles.tablePreviewFooter}>
-                  <span>
-                    Showing {visibleRatings.length} of {displayedRatings.length} teams
-                  </span>
-                  <button
-                    type="button"
-                    className={styles.viewAllButton}
-                    aria-expanded={showAllTeams}
-                    onClick={() => setShowAllTeams((current) => !current)}
-                  >
-                    {showAllTeams
-                      ? "Show top 12 teams"
-                      : `View all ${displayedRatings.length} teams`}
-                  </button>
-                </div>
-              ) : null}
+              <div className={styles.tablePreviewFooter}>
+                <span>
+                  Showing 1–{displayedRatings.length} of {displayedRatings.length} teams
+                </span>
+                <span className={styles.scrollHint} aria-hidden="true">
+                  ← Scroll horizontally for more →
+                </span>
+              </div>
             </>
           )}
           </section>
@@ -1705,7 +1628,7 @@ const UnderlyingStatsLanding: NextPage = () => {
   return (
     <>
       <Head>
-        <title>Underlying Stats Dashboard | FHFHockey</title>
+        <title>Underlying Stats | FHFHockey</title>
       </Head>
       <main
         className={styles.loadingPage}
@@ -1723,7 +1646,7 @@ const UnderlyingStatsLanding: NextPage = () => {
             </span>
           </div>
           <p className={styles.loadingEyebrow}>FHFH · Team intelligence</p>
-          <h1 className={styles.loadingTitle}>Underlying Stats Dashboard</h1>
+          <h1 className={styles.loadingTitle}>Underlying Stats</h1>
           {loadError ? (
             <div role="alert" className={styles.loadingMessage}>
               <p>{loadError}</p>

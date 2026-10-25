@@ -515,20 +515,22 @@ async function fetchMissedGames(
       scheduleGames
         .filter((game) => !game.isFuture && game.isPlayoff === playoff)
         .map((game) => game.date);
-    const regularCoverage = await fetchBoxScoreCoverage(
-      source.table,
-      source.teamColumn,
-      teamAbbrev,
-      pastDates(false)
-    );
-    const playoffCoverage = source.playoffTable
-      ? await fetchBoxScoreCoverage(
-          source.playoffTable,
-          source.teamColumn,
-          teamAbbrev,
-          pastDates(true)
-        )
-      : new Set<string>();
+    const [regularCoverage, playoffCoverage] = await Promise.all([
+      fetchBoxScoreCoverage(
+        source.table,
+        source.teamColumn,
+        teamAbbrev,
+        pastDates(false)
+      ),
+      source.playoffTable
+        ? fetchBoxScoreCoverage(
+            source.playoffTable,
+            source.teamColumn,
+            teamAbbrev,
+            pastDates(true)
+          )
+        : Promise.resolve(new Set<string>())
+    ]);
     for (const game of scheduleGames) {
       if (game.isFuture) continue;
       const coverage = game.isPlayoff ? playoffCoverage : regularCoverage;
@@ -538,6 +540,43 @@ async function fetchMissedGames(
   } catch (error) {
     console.error("[SSR] Error fetching missed games:", error);
     return null;
+  }
+}
+
+/** Skater playoff games in the selected season's playoff year. */
+async function fetchSkaterPlayoffLog(
+  playerId: number,
+  seasonId: number
+): Promise<GameLogEntry[]> {
+  try {
+    // For season 20242025 the playoff year is 2025.
+    const playoffYear = seasonId ? Math.floor(seasonId % 10000) : null;
+    let playoffQuery = supabase
+      .from("wgo_skater_stats_playoffs")
+      .select(
+        `date, games_played, goals, assists, points, plus_minus, shots, shooting_percentage, pp_points, gw_goals, fow_percentage, toi_per_game, blocked_shots, hits, takeaways, giveaways, sat_pct, zone_start_pct`
+      )
+      .eq("player_id", playerId)
+      .order("date", { ascending: true });
+
+    if (playoffYear && playoffYear >= 2020) {
+      playoffQuery = playoffQuery
+        .gte("date", `${playoffYear}-01-01`)
+        .lt("date", `${playoffYear + 1}-01-01`);
+    }
+
+    const { data: playoffData, error: playoffError } = await playoffQuery;
+    if (playoffError) {
+      console.warn("[SSR] Error fetching playoff data:", playoffError.message);
+      return [];
+    }
+    return (playoffData ?? []).map((game: any) => ({
+      ...game,
+      isPlayoff: true
+    })) as GameLogEntry[];
+  } catch (error) {
+    console.error("[SSR] Error in playoff data fetching:", error);
+    return [];
   }
 }
 
@@ -747,6 +786,30 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       }
     }
   } else if (selectedSeason) {
+    // The game log, the four NST tables and the playoff log are independent
+    // once the season is known; start them together.
+    const nstGamelog = (
+      table:
+        | "nst_gamelog_as_counts"
+        | "nst_gamelog_as_counts_oi"
+        | "nst_gamelog_as_rates"
+        | "nst_gamelog_as_rates_oi"
+    ) =>
+      supabase
+        .from(table)
+        .select("*")
+        .eq("player_id", playerIdNum)
+        .eq("season", selectedSeason as number)
+        .order("date_scraped", { ascending: true });
+    const nstReads = Promise.all([
+      nstGamelog("nst_gamelog_as_counts"),
+      nstGamelog("nst_gamelog_as_counts_oi"),
+      nstGamelog("nst_gamelog_as_rates"),
+      nstGamelog("nst_gamelog_as_rates_oi")
+    ]);
+    nstReads.catch(() => undefined); // awaited below; avoid an unhandled rejection meanwhile
+    const playoffRead = fetchSkaterPlayoffLog(playerIdNum, selectedSeason as number);
+
     // Regular season skater stats
     gameLog = await fetchSeasonLogRows(
       "wgo_skater_stats",
@@ -760,13 +823,12 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         `[SSR] Fetching NST data for player ${playerIdNum} in season ${selectedSeason}`
       );
 
-      // Fetch NST individual advanced stats (counts)
-      const { data: nstCounts, error: nstCountsError } = await supabase
-        .from("nst_gamelog_as_counts")
-        .select("*")
-        .eq("player_id", playerIdNum)
-        .eq("season", selectedSeason)
-        .order("date_scraped", { ascending: true });
+      const [
+        { data: nstCounts, error: nstCountsError },
+        { data: nstCountsOi, error: nstCountsOiError },
+        { data: nstRates, error: nstRatesError },
+        { data: nstRatesOi, error: nstRatesOiError }
+      ] = await nstReads;
 
       if (nstCountsError) {
         console.warn(
@@ -777,14 +839,6 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         nstCountsData = nstCounts || [];
         console.log(`[SSR] Fetched ${nstCountsData.length} NST counts records`);
       }
-
-      // Fetch NST on-ice advanced stats (counts)
-      const { data: nstCountsOi, error: nstCountsOiError } = await supabase
-        .from("nst_gamelog_as_counts_oi")
-        .select("*")
-        .eq("player_id", playerIdNum)
-        .eq("season", selectedSeason)
-        .order("date_scraped", { ascending: true });
 
       if (nstCountsOiError) {
         console.warn(
@@ -798,28 +852,12 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         );
       }
 
-      // Fetch NST individual rates (per 60)
-      const { data: nstRates, error: nstRatesError } = await supabase
-        .from("nst_gamelog_as_rates")
-        .select("*")
-        .eq("player_id", playerIdNum)
-        .eq("season", selectedSeason)
-        .order("date_scraped", { ascending: true });
-
       if (nstRatesError) {
         console.warn("[SSR] Error fetching NST rates:", nstRatesError.message);
       } else {
         nstRatesData = nstRates || [];
         console.log(`[SSR] Fetched ${nstRatesData.length} NST rates records`);
       }
-
-      // Fetch NST on-ice rates (per 60)
-      const { data: nstRatesOi, error: nstRatesOiError } = await supabase
-        .from("nst_gamelog_as_rates_oi")
-        .select("*")
-        .eq("player_id", playerIdNum)
-        .eq("season", selectedSeason)
-        .order("date_scraped", { ascending: true });
 
       if (nstRatesOiError) {
         console.warn(
@@ -1016,85 +1054,7 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       }
     }
 
-    // FIXED: Fetch playoff skater stats using year-based filtering
-    if (!isGoalie && playerIdNum) {
-      try {
-        console.log(
-          `[SSR] Fetching playoff data for player ${playerIdNum} in season ${selectedSeason}`
-        );
-
-        // Extract the playoff year from the season ID
-        // For season 20242025, playoff year is 2025
-        // For season 20232024, playoff year is 2024
-        const playoffYear = selectedSeason
-          ? Math.floor(selectedSeason % 10000)
-          : null;
-
-        console.log(
-          `[SSR] Playoff year calculated: ${playoffYear} from season ${selectedSeason}`
-        );
-
-        let playoffQuery = supabase
-          .from("wgo_skater_stats_playoffs")
-          .select(
-            `date, games_played, goals, assists, points, plus_minus, shots, shooting_percentage, pp_points, gw_goals, fow_percentage, toi_per_game, blocked_shots, hits, takeaways, giveaways, sat_pct, zone_start_pct`
-          )
-          .eq("player_id", playerIdNum)
-          .order("date", { ascending: true });
-
-        // Filter by playoff year if we have a valid season
-        if (playoffYear && playoffYear >= 2020) {
-          // Filter for dates that start with the playoff year (e.g., "2025-")
-          playoffQuery = playoffQuery
-            .gte("date", `${playoffYear}-01-01`)
-            .lt("date", `${playoffYear + 1}-01-01`);
-        }
-
-        const { data: playoffData, error: playoffError } = await playoffQuery;
-
-        if (playoffError) {
-          console.warn(
-            "[SSR] Error fetching playoff data:",
-            playoffError.message
-          );
-        } else if (playoffData && playoffData.length > 0) {
-          playoffGameLog = playoffData.map((game: any) => ({
-            ...game,
-            isPlayoff: true
-          }));
-          console.log(
-            `[SSR] Found ${playoffGameLog.length} playoff games for player ${playerIdNum} in year ${playoffYear}`
-          );
-          console.log(
-            `[SSR] Date range: ${playoffData[0].date} to ${playoffData[playoffData.length - 1].date}`
-          );
-        } else {
-          console.log(
-            `[SSR] No playoff data found for player ${playerIdNum} in year ${playoffYear}`
-          );
-
-          // Fallback: try to get any playoff data for this player to see what's available
-          const { data: allPlayoffData } = await supabase
-            .from("wgo_skater_stats_playoffs")
-            .select("date, goals, assists, points")
-            .eq("player_id", playerIdNum)
-            .order("date", { ascending: false })
-            .limit(3);
-
-          if (allPlayoffData && allPlayoffData.length > 0) {
-            console.log(
-              "[SSR] Available playoff data for this player:",
-              allPlayoffData.map((g) => ({
-                date: g.date,
-                points: g.points
-              }))
-            );
-          }
-        }
-      } catch (error) {
-        console.error("[SSR] Error in playoff data fetching:", error);
-      }
-    }
+    playoffGameLog = await playoffRead;
   }
 
   // Debug logging
@@ -1118,30 +1078,9 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
       .filter((game) => Number(game.games_played) > 0)
       .map((game) => String(game.date).slice(0, 10))
   );
-  const missedGamesData = usedGameLogFallback
-    ? null
-    : await fetchMissedGames(
-        Number(selectedSeason),
-        seasonWindow,
-        player.team_id ?? undefined,
-        playedDates,
-        asOfDate,
-        !isGoalie,
-        isGoalie
-          ? {
-              table: "wgo_goalie_stats",
-              playoffTable: null,
-              teamColumn: "team_abbreviation"
-            }
-          : {
-              table: "wgo_skater_stats",
-              playoffTable: "wgo_skater_stats_playoffs",
-              teamColumn: "team_abbrev"
-            }
-      );
-
-  let lineupDeploymentTallies: PlayerLineupDeploymentTally[] = [];
-  if (!isGoalie && selectedSeason) {
+  // Missed games and deployment tallies are independent reads.
+  const fetchDeploymentTallies = async (): Promise<PlayerLineupDeploymentTally[]> => {
+    if (isGoalie || !selectedSeason) return [];
     const { data: deploymentRows, error: deploymentError } = await (supabase as any)
       .from("player_lineup_deployment_tallies")
       .select(
@@ -1158,11 +1097,35 @@ export async function getServerSideProps(context: GetServerSidePropsContext) {
         "[SSR] Error fetching lineup deployment tallies:",
         deploymentError.message
       );
-    } else {
-      lineupDeploymentTallies = (deploymentRows ?? []) as PlayerLineupDeploymentTally[];
+      return [];
     }
-  }
+    return (deploymentRows ?? []) as PlayerLineupDeploymentTally[];
+  };
 
+  const [missedGamesData, lineupDeploymentTallies] = await Promise.all([
+    usedGameLogFallback
+      ? Promise.resolve(null)
+      : fetchMissedGames(
+          Number(selectedSeason),
+          seasonWindow,
+          player.team_id ?? undefined,
+          playedDates,
+          asOfDate,
+          !isGoalie,
+          isGoalie
+            ? {
+                table: "wgo_goalie_stats",
+                playoffTable: null,
+                teamColumn: "team_abbreviation"
+              }
+            : {
+                table: "wgo_skater_stats",
+                playoffTable: "wgo_skater_stats_playoffs",
+                teamColumn: "team_abbrev"
+              }
+        ),
+    fetchDeploymentTallies()
+  ]);
 
   // Calculate available seasons from season totals data
   const availableSeasons = seasonTotals.map((season) => {

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import SlotWeekGrid from "./SlotWeekGrid";
 import type { ActiveSlotInstance } from "lib/rosterScheduleOptimizer/types";
 import type { GameForecast, PlanningAssignment, PlanningGame, PlanningPlayer, RosterEntry } from "lib/rosterScheduleOptimizer/planningTypes";
+import { providerStartNote } from "lib/rosterScheduleOptimizer/providerGoalieStarts";
 
 afterEach(cleanup);
 const p = (id: string, name: string, team: string, playerClass: "skater" | "goalie" = "skater"): PlanningPlayer => ({ id, nhlId: null, name, teamAbbreviation: team,
@@ -31,7 +32,7 @@ describe("SlotWeekGrid", () => {
       { playerId: "a", name: "Sidney Crosby", position: "BN", slotId: null, points: 3.4 },
       { playerId: null, name: "Gone Player", position: "BN", slotId: null, points: null }] }];
     render(<SlotWeekGrid dates={dates} slots={slots} assignments={assignments} games={games} players={players} roster={roster}
-      forecasts={forecasts} pointsFor={() => 2.34} today="2026-10-21" pastLineups={pastLineups} onSelectPlayer={vi.fn()} />);
+      forecasts={forecasts} pointsFor={() => ({ expected: 2.34, ifStarts: null })} today="2026-10-21" pastLineups={pastLineups} onSelectPlayer={vi.fn()} />);
     const day = (name: RegExp) => screen.getByRole("button", { name });
     expect(day(/Jack Hughes, C, 2026-10-19, recorded lineup, 7\.2 actual points/).textContent).toContain("7.2");
     expect(day(/Tristan Jarry, G, 2026-10-19, recorded lineup, 0\.0 actual points/)).toBeTruthy();
@@ -43,7 +44,7 @@ describe("SlotWeekGrid", () => {
   it("renders the position-first week", () => {
     const onSelectPlayer = vi.fn();
     render(<SlotWeekGrid dates={dates} slots={slots} assignments={assignments} games={games} players={players} roster={roster}
-      forecasts={forecasts} pointsFor={() => 2.34} onSelectPlayer={onSelectPlayer} />);
+      forecasts={forecasts} pointsFor={() => ({ expected: 2.34, ifStarts: null })} onSelectPlayer={onSelectPlayer} />);
     expect(screen.getByRole("table", { name: "Lineup by position" })).toBeTruthy();
     expect(screen.getByText("C")).toBeTruthy();
     expect(screen.getByText("G")).toBeTruthy();
@@ -55,7 +56,8 @@ describe("SlotWeekGrid", () => {
     expect(screen.getAllByText("@PHI")).toHaveLength(2);
     expect(screen.getAllByText("vsMTL")).toHaveLength(1);
     expect(screen.getAllByText("Empty")).toHaveLength(2);
-    expect(screen.getAllByText("—")).toHaveLength(3);
+    expect(screen.getAllByText("—").filter(node => !node.hasAttribute("aria-label"))).toHaveLength(3);
+    expect(screen.getByLabelText("Fantasy points if starts: unavailable")).toBeTruthy();
     const benchRow = screen.getByText("BN").closest("tr")!;
     const cells = within(benchRow).getAllByRole("cell");
     expect(within(cells[0]).getByText("Hughes")).toBeTruthy();
@@ -72,8 +74,52 @@ describe("SlotWeekGrid", () => {
     expect(screen.getAllByText("2.3").every(node => ["high", "mid", "low"].includes(node.getAttribute("data-tier") ?? ""))).toBe(true);
     fireEvent.focus(screen.getByRole("button", { name: "About the lineup grid" }));
     expect(screen.getByText(/projected fantasy points for that game/)).toBeTruthy();
+    expect(screen.getByText(/if-starts FP assumes a start/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: /Sidney Crosby/ }));
     expect(onSelectPlayer).toHaveBeenCalledWith("a");
+  });
+
+  it("ranks goalie cells by complete expected FP only, separately from if-starts FP", () => {
+    const goalies = ["one", "two", "three", "missing"].map(id => p(id, `Goalie ${id}`, "PIT", "goalie"));
+    const goalieSlots: ActiveSlotInstance[] = goalies.map((_, index) => ({ id: `G${index + 1}`, type: "G", index }));
+    const values = new Map(goalies.map((player, index) => [player.id, { expected: index === 3 ? null : index + 1, ifStarts: 40 - 10 * index }]));
+    render(<SlotWeekGrid dates={[dates[0]]} slots={goalieSlots} games={[games[0]]} players={goalies}
+      roster={goalies.map(player => ({ playerId: player.id, position: "active" }))}
+      assignments={goalies.map((player, index) => ({ date: dates[0], playerId: player.id, gameId: "1", slotId: goalieSlots[index].id, locked: false }))}
+      pointsFor={playerId => values.get(playerId)!} onSelectPlayer={vi.fn()} />);
+    for (const [index, expectedTier] of ["low", "mid", "high", null].entries()) {
+      const cell = within(screen.getByRole("button", { name: `Goalie ${goalies[index].id}, G, ${dates[0]}` }));
+      expect(cell.getByLabelText(/Expected fantasy points:/).getAttribute("data-tier")).toBe(expectedTier);
+      expect(cell.getByLabelText(/Fantasy points if starts:/).getAttribute("data-tier")).toBeNull();
+    }
+  });
+
+  it("marks Yahoo's Starting and Not Starting goalies for that date, in the lineup and on the bench", () => {
+    const read = "2026-10-19T21:30:00.000Z";
+    const status = (isStarting: boolean) => ({ source: "yahoo" as const, date: "2026-10-19", isStarting, observedAt: read });
+    const starter = { ...p("g", "Tristan Jarry", "PIT", "goalie"), startingStatus: status(true) };
+    const backup = { ...p("h", "Alex Nedeljkovic", "PIT", "goalie"), startingStatus: status(false) };
+    const applied = (player: PlanningPlayer, probability: number) => ({ playerId: player.id, gameId: "1", confirmedStart: probability === 1,
+      startProbability: probability, limitations: [providerStartNote(player.name, player.startingStatus!)] } as GameForecast);
+    render(<SlotWeekGrid dates={dates} slots={[{ id: "G1", type: "G", index: 0 }]} games={games} players={[starter, backup]}
+      roster={[{ playerId: "g", position: "active" }, { playerId: "h", position: "bench" }]}
+      assignments={[{ date: "2026-10-19", playerId: "g", gameId: "1", slotId: "G1", locked: false }]}
+      forecasts={[applied(starter, 1), applied(backup, 0)]} onSelectPlayer={vi.fn()} />);
+    const on = within(screen.getByRole("button", { name: "Tristan Jarry, G, 2026-10-19" }));
+    expect(on.getByLabelText(/^Starting \(Yahoo, read .+\); start chance 100% for this game$/).textContent).toBe("✓");
+    const off = within(screen.getByRole("button", { name: "Alex Nedeljkovic, bench, has a game, 2026-10-19" }))
+      .getByLabelText(/^Not starting \(Yahoo, read .+\); start chance 0% for this game$/);
+    expect(off.textContent).toBe("✗");
+    expect(off.hasAttribute("data-out")).toBe(true);
+  });
+
+  it("says when Yahoo's mark did not change FORGE's start chance", () => {
+    const starter = { ...p("g", "Tristan Jarry", "PIT", "goalie"), startingStatus: { source: "yahoo" as const, date: "2026-10-19", isStarting: false, observedAt: "2026-10-19T21:30:00.000Z" } };
+    render(<SlotWeekGrid dates={dates} slots={[{ id: "G1", type: "G", index: 0 }]} games={games} players={[starter]}
+      roster={[{ playerId: "g", position: "active" }]} assignments={[{ date: "2026-10-19", playerId: "g", gameId: "1", slotId: "G1", locked: false }]}
+      forecasts={[{ playerId: "g", gameId: "1", confirmedStart: true, startProbability: 1, limitations: [] } as unknown as GameForecast]} onSelectPlayer={vi.fn()} />);
+    expect(within(screen.getByRole("button", { name: "Tristan Jarry, G, 2026-10-19" }))
+      .getByLabelText(/^Not starting \(Yahoo, read .+\); FORGE's start chance unchanged$/)).toBeTruthy();
   });
 
   it("replays Optimize day by day: current lineup first, then the optimized one, pulsing each day", () => {

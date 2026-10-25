@@ -78,6 +78,16 @@
       display: flex;
       align-items: center;
       gap: v.$space-sm;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: inherit;
+      font: inherit;
+
+      &:focus-visible {
+        outline: 3px solid v.$focus-color;
+        outline-offset: 2px;
+      }
 
       .small {
         display: block;

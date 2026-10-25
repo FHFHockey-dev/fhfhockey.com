@@ -1,7 +1,6 @@
 import { computeTeamPowerScore } from "../dashboard/teamContext";
 import { teamsInfo } from "../teamsInfo";
 import type { RatingComponents } from "../teamRatingsService";
-import type { UnderlyingStatsScheduleTexture } from "./teamScheduleStrength";
 
 type LandingDashboardSource = {
   components: RatingComponents;
@@ -17,8 +16,6 @@ type LandingDashboardSource = {
   paceRating: number;
   pkTier: 1 | 2 | 3;
   ppTier: 1 | 2 | 3;
-  scheduleTexture?: UnderlyingStatsScheduleTexture | null;
-  sosFuture?: number | null;
   teamAbbr: string;
   trend10: number;
 };
@@ -44,38 +41,7 @@ export type UnderlyingStatsLandingMover = {
   trend: number;
 };
 
-export type UnderlyingStatsLandingTrustItem = {
-  archetypes: string[];
-  label: "Buy low" | "Heat check" | "Process-backed";
-  note: string;
-  power: number;
-  teamAbbr: string;
-  teamName: string;
-};
-
-export type UnderlyingStatsLandingContextItem = {
-  chips: string[];
-  note: string;
-  power: number;
-  teamAbbr: string;
-  teamName: string;
-};
-
-export type UnderlyingStatsLandingInefficiencyItem = {
-  archetypes: string[];
-  gap: number;
-  note: string;
-  power: number;
-  teamAbbr: string;
-  teamName: string;
-};
-
 export type UnderlyingStatsLandingDashboard = {
-  context: UnderlyingStatsLandingContextItem[];
-  inefficiency: {
-    overvalued: UnderlyingStatsLandingInefficiencyItem[];
-    undervalued: UnderlyingStatsLandingInefficiencyItem[];
-  };
   quadrant: {
     axisSubtitle: string;
     averageDefenseProcess: number;
@@ -83,11 +49,6 @@ export type UnderlyingStatsLandingDashboard = {
     points: UnderlyingStatsLandingQuadrantPoint[];
   };
   risers: UnderlyingStatsLandingMover[];
-  sustainability: {
-    buyLow: UnderlyingStatsLandingTrustItem[];
-    heatCheck: UnderlyingStatsLandingTrustItem[];
-    processBacked: UnderlyingStatsLandingTrustItem[];
-  };
   fallers: UnderlyingStatsLandingMover[];
 };
 
@@ -98,18 +59,11 @@ type ProcessSignals = {
 
 type TeamDerivedContext = {
   archetypes: string[];
-  contextImpact: number;
-  contextNote: string;
-  processGap: number;
   processSignals: ProcessSignals;
-  resultGap: number;
-  trustNote: string;
   trustType: "buyLow" | "heatCheck" | "processBacked" | null;
 };
 
 const MAX_MODULE_ITEMS = 4;
-const SOFT_SCHEDULE_DELTA = 0.015;
-const TOUGH_SCHEDULE_DELTA = 0.015;
 
 const average = (values: number[]): number =>
   values.length
@@ -140,9 +94,6 @@ const titleize = (value: string): string =>
     .split(" ")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
-
-const formatSigned = (value: number): string =>
-  `${value > 0 ? "+" : ""}${value.toFixed(2)}`;
 
 const getTeamName = (teamAbbr: string): string =>
   teamsInfo[teamAbbr as keyof typeof teamsInfo]?.name ?? teamAbbr;
@@ -232,7 +183,7 @@ const buildQuadrantSummary = ({
   return pieces.length ? titleize(pieces.join(" • ")) : "Balanced profile";
 };
 
-const buildTrustNote = ({
+const resolveTrustType = ({
   team,
   processGap,
   power
@@ -240,7 +191,7 @@ const buildTrustNote = ({
   team: LandingDashboardSource;
   processGap: number;
   power: number;
-}): Pick<TeamDerivedContext, "trustNote" | "trustType"> => {
+}): TeamDerivedContext["trustType"] => {
   const scoringEdge = (team.finishingRating ?? 100) - 100;
   const goalieEdge = (team.goalieRating ?? 100) - 100;
   const luckZ = team.luckPdoZ ?? 0;
@@ -255,11 +206,7 @@ const buildTrustNote = ({
     processGap >= 0.12 &&
     (contextDrag >= 6 || team.luckStatus === "cold")
   ) {
-    return {
-      trustNote:
-        "Underlying play looks stronger than the recent finish and save results.",
-      trustType: "buyLow"
-    };
+    return "buyLow";
   }
 
   if (
@@ -267,11 +214,7 @@ const buildTrustNote = ({
     processGap <= -0.12 &&
     (contextInflation >= 7 || team.luckStatus === "hot")
   ) {
-    return {
-      trustNote:
-        "Surface results are running ahead of the underlying profile right now.",
-      trustType: "heatCheck"
-    };
+    return "heatCheck";
   }
 
   if (
@@ -281,124 +224,10 @@ const buildTrustNote = ({
     Math.abs(scoringEdge) <= 4 &&
     Math.abs(goalieEdge) <= 4
   ) {
-    return {
-      trustNote:
-        "Current strength looks mostly supported by process rather than finishing or save variance.",
-      trustType: "processBacked"
-    };
+    return "processBacked";
   }
 
-  return {
-    trustNote: "Context signals are mixed around the current profile.",
-    trustType: null
-  };
-};
-
-const buildScheduleChips = (
-  texture: UnderlyingStatsScheduleTexture | null | undefined
-): string[] => {
-  if (!texture || texture.gamesNext14 <= 0) {
-    return [];
-  }
-
-  const chips = [`${texture.gamesNext7} in 7d`];
-  const restDelta =
-    texture.restAdvantageGamesNext14 - texture.restDisadvantageGamesNext14;
-
-  if (texture.backToBacksNext14 > 0) {
-    chips.push(`B2B x${texture.backToBacksNext14}`);
-  }
-
-  if (texture.threeInFourNext14 > 0) {
-    chips.push(`3 in 4 x${texture.threeInFourNext14}`);
-  }
-
-  if (restDelta > 0) {
-    chips.push(`Rest +${restDelta}`);
-  } else if (restDelta < 0) {
-    chips.push(`Rest ${restDelta}`);
-  }
-
-  if (texture.roadGamesNext14 >= texture.homeGamesNext14 + 2) {
-    chips.push("Road-heavy");
-  } else if (texture.homeGamesNext14 >= texture.roadGamesNext14 + 2) {
-    chips.push("Home-heavy");
-  }
-
-  return chips.slice(0, 3);
-};
-
-const buildContextNote = ({
-  leagueAverageFutureSos,
-  team
-}: {
-  leagueAverageFutureSos: number;
-  team: LandingDashboardSource;
-}): Pick<TeamDerivedContext, "contextImpact" | "contextNote"> => {
-  const chips = buildScheduleChips(team.scheduleTexture);
-  const futureSosDelta =
-    typeof team.sosFuture === "number" ? team.sosFuture - leagueAverageFutureSos : 0;
-  const restDelta = team.scheduleTexture
-    ? team.scheduleTexture.restAdvantageGamesNext14 -
-      team.scheduleTexture.restDisadvantageGamesNext14
-    : 0;
-  const homeRoadTilt = team.scheduleTexture
-    ? Math.abs(team.scheduleTexture.homeGamesNext14 - team.scheduleTexture.roadGamesNext14)
-    : 0;
-
-  const impact =
-    Math.abs(futureSosDelta) * 100 +
-    (team.scheduleTexture?.backToBacksNext14 ?? 0) * 7 +
-    (team.scheduleTexture?.threeInFourNext14 ?? 0) * 6 +
-    Math.abs(restDelta) * 4 +
-    homeRoadTilt * 1.5;
-
-  if ((team.scheduleTexture?.threeInFourNext14 ?? 0) > 0) {
-    return {
-      contextImpact: impact,
-      contextNote: `Dense stretch ahead with ${chips.join(" · ")}.`
-    };
-  }
-
-  if (futureSosDelta >= TOUGH_SCHEDULE_DELTA) {
-    return {
-      contextImpact: impact,
-      contextNote: "Upcoming schedule looks tougher than league average."
-    };
-  }
-
-  if (futureSosDelta <= -SOFT_SCHEDULE_DELTA) {
-    return {
-      contextImpact: impact,
-      contextNote: "Upcoming runway looks softer than league average."
-    };
-  }
-
-  if (restDelta !== 0) {
-    return {
-      contextImpact: impact,
-      contextNote:
-        restDelta > 0
-          ? "Near-term schedule includes more rest-edge games than usual."
-          : "Near-term schedule includes more rest disadvantages than usual."
-    };
-  }
-
-  if (homeRoadTilt >= 2) {
-    return {
-      contextImpact: impact,
-      contextNote:
-        (team.scheduleTexture?.roadGamesNext14 ?? 0) >
-        (team.scheduleTexture?.homeGamesNext14 ?? 0)
-          ? "Next two weeks lean heavily toward road games."
-          : "Next two weeks lean heavily toward home games."
-    };
-  }
-
-  return {
-    contextImpact: impact,
-    contextNote: chips.length ? chips.join(" · ") : "Schedule context is fairly neutral."
-  };
+  return null;
 };
 
 const takeTop = <T,>(
@@ -418,8 +247,6 @@ export const buildUnderlyingStatsLandingDashboard = (
 ): UnderlyingStatsLandingDashboard => {
   if (!ratings.length) {
     return {
-      context: [],
-      inefficiency: { overvalued: [], undervalued: [] },
       quadrant: {
         axisSubtitle: "Offensive process vs defensive process",
         averageDefenseProcess: 0,
@@ -427,11 +254,6 @@ export const buildUnderlyingStatsLandingDashboard = (
         points: []
       },
       risers: [],
-      sustainability: {
-        buyLow: [],
-        heatCheck: [],
-        processBacked: []
-      },
       fallers: []
     };
   }
@@ -440,9 +262,6 @@ export const buildUnderlyingStatsLandingDashboard = (
   const sfValues = ratings.map((team) => team.components.sf60);
   const xgaValues = ratings.map((team) => team.components.xga60);
   const saValues = ratings.map((team) => team.components.sa60);
-  const futureSosValues = ratings
-    .map((team) => team.sosFuture)
-    .filter((value): value is number => typeof value === "number");
 
   const xgfAverage = average(xgfValues);
   const sfAverage = average(sfValues);
@@ -452,7 +271,6 @@ export const buildUnderlyingStatsLandingDashboard = (
   const sfStdDev = standardDeviation(sfValues);
   const xgaStdDev = standardDeviation(xgaValues);
   const saStdDev = standardDeviation(saValues);
-  const leagueAverageFutureSos = average(futureSosValues);
 
   const derivedByTeam = new Map<string, TeamDerivedContext>();
 
@@ -467,23 +285,15 @@ export const buildUnderlyingStatsLandingDashboard = (
       team.components.xgf60 -
       team.components.xga60 -
       (team.components.gf60 - team.components.ga60);
-    const resultGap = team.components.gf60 - team.components.ga60;
     const power = computeTeamPowerScore(team);
-    const trust = buildTrustNote({ power, processGap, team });
-    const context = buildContextNote({ leagueAverageFutureSos, team });
 
     derivedByTeam.set(team.teamAbbr, {
       archetypes: buildArchetypes(team, power),
-      contextImpact: context.contextImpact,
-      contextNote: context.contextNote,
-      processGap,
       processSignals: {
         defenseProcess,
         offenseProcess
       },
-      resultGap,
-      trustNote: trust.trustNote,
-      trustType: trust.trustType
+      trustType: resolveTrustType({ power, processGap, team })
     });
   });
 
@@ -535,110 +345,8 @@ export const buildUnderlyingStatsLandingDashboard = (
     (left, right) => left.trend - right.trend
   );
 
-  const processBacked = takeTop(
-    ratings
-      .filter(
-        (team) => derivedByTeam.get(team.teamAbbr)?.trustType === "processBacked"
-      )
-      .map((team) => ({
-        archetypes: derivedByTeam.get(team.teamAbbr)?.archetypes ?? [],
-        label: "Process-backed" as const,
-        note: derivedByTeam.get(team.teamAbbr)?.trustNote ?? "",
-        power: Number(computeTeamPowerScore(team).toFixed(1)),
-        teamAbbr: team.teamAbbr,
-        teamName: getTeamName(team.teamAbbr)
-      })),
-    MAX_MODULE_ITEMS,
-    (left, right) => right.power - left.power
-  );
-
-  const heatCheck = takeTop(
-    ratings
-      .filter((team) => derivedByTeam.get(team.teamAbbr)?.trustType === "heatCheck")
-      .map((team) => ({
-        archetypes: derivedByTeam.get(team.teamAbbr)?.archetypes ?? [],
-        label: "Heat check" as const,
-        note: derivedByTeam.get(team.teamAbbr)?.trustNote ?? "",
-        power: Number(computeTeamPowerScore(team).toFixed(1)),
-        teamAbbr: team.teamAbbr,
-        teamName: getTeamName(team.teamAbbr)
-      })),
-    MAX_MODULE_ITEMS,
-    (left, right) => right.power - left.power
-  );
-
-  const buyLow = takeTop(
-    ratings
-      .filter((team) => derivedByTeam.get(team.teamAbbr)?.trustType === "buyLow")
-      .map((team) => ({
-        archetypes: derivedByTeam.get(team.teamAbbr)?.archetypes ?? [],
-        label: "Buy low" as const,
-        note: derivedByTeam.get(team.teamAbbr)?.trustNote ?? "",
-        power: Number(computeTeamPowerScore(team).toFixed(1)),
-        teamAbbr: team.teamAbbr,
-        teamName: getTeamName(team.teamAbbr)
-      })),
-    MAX_MODULE_ITEMS,
-    (left, right) => right.power - left.power
-  );
-
-  const context = takeTop(
-    ratings.map((team) => ({
-      chips: buildScheduleChips(team.scheduleTexture),
-      note: derivedByTeam.get(team.teamAbbr)?.contextNote ?? "",
-      power: Number(computeTeamPowerScore(team).toFixed(1)),
-      teamAbbr: team.teamAbbr,
-      teamName: getTeamName(team.teamAbbr)
-    })),
-    MAX_MODULE_ITEMS,
-    (left, right) =>
-      (derivedByTeam.get(right.teamAbbr)?.contextImpact ?? 0) -
-      (derivedByTeam.get(left.teamAbbr)?.contextImpact ?? 0)
-  );
-
-  const undervalued = takeTop(
-    ratings
-      .filter((team) => (derivedByTeam.get(team.teamAbbr)?.processGap ?? 0) > 0)
-      .map((team) => {
-        const derived = derivedByTeam.get(team.teamAbbr)!;
-        return {
-          archetypes: derived.archetypes,
-          gap: Number(derived.processGap.toFixed(2)),
-          note: `Underlying margin is ${formatSigned(derived.processGap)} better than actual goal margin.`,
-          power: Number(computeTeamPowerScore(team).toFixed(1)),
-          teamAbbr: team.teamAbbr,
-          teamName: getTeamName(team.teamAbbr)
-        };
-      }),
-    MAX_MODULE_ITEMS,
-    (left, right) => right.gap - left.gap
-  );
-
-  const overvalued = takeTop(
-    ratings
-      .filter((team) => (derivedByTeam.get(team.teamAbbr)?.processGap ?? 0) < 0)
-      .map((team) => {
-        const derived = derivedByTeam.get(team.teamAbbr)!;
-        return {
-          archetypes: derived.archetypes,
-          gap: Number(Math.abs(derived.processGap).toFixed(2)),
-          note: `Actual goal margin is ${formatSigned(Math.abs(derived.processGap))} ahead of the underlying process margin.`,
-          power: Number(computeTeamPowerScore(team).toFixed(1)),
-          teamAbbr: team.teamAbbr,
-          teamName: getTeamName(team.teamAbbr)
-        };
-      }),
-    MAX_MODULE_ITEMS,
-    (left, right) => right.gap - left.gap
-  );
-
   return {
-    context,
     fallers,
-    inefficiency: {
-      overvalued,
-      undervalued
-    },
     quadrant: {
       axisSubtitle: "Offensive process vs defensive process",
       averageDefenseProcess: clamp(
@@ -653,11 +361,6 @@ export const buildUnderlyingStatsLandingDashboard = (
       ),
       points: quadrantPoints
     },
-    risers,
-    sustainability: {
-      buyLow,
-      heatCheck,
-      processBacked
-    }
+    risers
   };
 };

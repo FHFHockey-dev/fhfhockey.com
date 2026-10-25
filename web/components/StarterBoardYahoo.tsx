@@ -1,3 +1,5 @@
+import { useProviderSyncAccess } from "hooks/useProviderSyncAccess";
+import ProviderSyncNotice from "components/account/ProviderSyncNotice";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "contexts/AuthProviderContext";
@@ -8,10 +10,12 @@ type Result = Awaited<ReturnType<typeof loadYahooStarterBoard>>;
 
 export default function StarterBoardYahoo() {
   const { user } = useAuth();
-  return user ? <YahooTeam key={user.id} /> : <p><Link href="/account">Sign in and connect Yahoo</Link> for today’s Draft Pro lineup comparison.</p>;
+  return user ? <YahooTeam key={user.id} /> : <p><Link href="/account">Sign in to check premium sync access</Link> for today’s Yahoo lineup comparison.</p>;
 }
 
 function YahooTeam() {
+  const syncAccess = useProviderSyncAccess();
+  const canSync = syncAccess.status === "ready" && Boolean(syncAccess.access?.eligible);
   const [data, setData] = useState<Result | null>(null);
   const [teamId, setTeamId] = useState("");
   const [category, setCategory] = useState("");
@@ -20,10 +24,11 @@ function YahooTeam() {
   const active = useRef<AbortController | null>(null);
   useEffect(() => () => active.current?.abort(), []);
   async function load() {
+    if (!canSync) return;
     active.current?.abort();
     const controller = new AbortController();
     active.current = controller;
-    setBusy(true); setError(null); setData(null);
+    setBusy(true); setError(null);
     try {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Sign in to load your Yahoo team.");
@@ -43,8 +48,9 @@ function YahooTeam() {
   }
   const names = new Map(data?.roster?.map((player) => [player.id, player.name]) ?? []);
   return <details>
-    <summary>My Yahoo team · Today · Draft Pro</summary>
+    <summary>My Yahoo team · Today · Premium sync</summary>
     <p>Compare today’s eligible lineup using your league’s scoring. Recommendations do not change your Yahoo roster.</p>
+    <ProviderSyncNotice {...syncAccess} />
     <div>
       {data?.teams.length ? <label>Team <select value={teamId} onChange={(event) => setTeamId(event.target.value)}>
         <option value="">Select a team</option>
@@ -54,7 +60,7 @@ function YahooTeam() {
         <option value="">Select a category</option>
         {data.categoryOptions?.map((key) => <option key={key} value={key}>{key.replaceAll("_", " ")}</option>)}
       </select></label> : null}
-      <button type="button" onClick={load} disabled={busy}>{busy ? "Loading Yahoo…" : "Refresh today’s comparison"}</button>
+      <button type="button" onClick={load} disabled={busy || !canSync}>{busy ? "Loading Yahoo…" : "Refresh today’s comparison"}</button>
     </div>
     {error ? <p role="alert">{error} <Link href="/account">Account settings</Link></p> : null}
     {data ? <div aria-live="polite">

@@ -187,6 +187,10 @@ async function handler(
 
   // (Optional) base sinceDate on snapshot_date instead of "now"
   const start = Date.now();
+  // Each batch upsert commits independently, so a later failure leaves the
+  // earlier batches written. Report them instead of implying zero writes.
+  let processed = 0;
+  let rowsUpserted = 0;
   try {
     console.log("Starting rebuild-baselines job");
     await assertBaselinesPrerequisites(snapshot_date);
@@ -235,7 +239,6 @@ async function handler(
     }
     const playerIds = Array.from(uniquePlayers.keys()); // number[]
 
-    let processed = 0;
     const allUpsertRecords: BaselineRecord[] = [];
 
     for (let i = 0; i < playerIds.length; i += BATCH_SIZE) {
@@ -365,6 +368,7 @@ async function handler(
               e.original = upsertError;
               throw e;
             }
+            rowsUpserted += upsertRecords.length;
           } catch (err: any) {
             console.error("Caught upsert exception:", err?.message ?? err);
             if (err?.stack) console.error(err.stack);
@@ -385,6 +389,7 @@ async function handler(
       return res.status(200).json({
         success: true,
         processed,
+        rowsUpserted,
         duration: durationSec,
         snapshot_date: snapshot_date,
         dry_run: true,
@@ -397,6 +402,7 @@ async function handler(
       .json({
         success: true,
         processed,
+        rowsUpserted,
         duration: durationSec,
         snapshot_date: snapshot_date
       });
@@ -423,9 +429,13 @@ async function handler(
       .json({
         success: false,
         message: dependencyError.message,
+        snapshot_date,
+        processed,
+        rowsUpserted,
+        partialWrite: rowsUpserted > 0,
         dependencyError
       });
   }
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));

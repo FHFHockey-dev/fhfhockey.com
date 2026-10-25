@@ -7,6 +7,7 @@ const {
   createClientMock,
   serviceFromMock,
   yahooGamesUserMock,
+  replayCoverageMock,
 } = vi.hoisted(() => ({
   auditInsertMock: vi.fn(),
   authGetUserMock: vi.fn(),
@@ -14,6 +15,7 @@ const {
   createClientMock: vi.fn(),
   serviceFromMock: vi.fn(),
   yahooGamesUserMock: vi.fn(),
+  replayCoverageMock: vi.fn(),
 }));
 
 vi.mock("@supabase/supabase-js", () => ({
@@ -61,6 +63,12 @@ vi.mock("lib/supabase/utils/updateAllGoalies", () => ({
   updateAllGoaliesStats: vi.fn(),
 }));
 
+// Mock the NHL boundary so this test never imports the fenced projection fetch helper.
+vi.mock("lib/NHL/pptReplayCoverage", () => ({
+  fetchPptReplayCoverageForGame: replayCoverageMock,
+}));
+
+import replayCoverageHandler from "../../../../../pages/api/v1/db/audit-nhl-ppt-replay-coverage";
 import seasonHandler from "../../../../../pages/api/v1/db/update-season-stats";
 import wgoHandler from "../../../../../pages/api/v1/db/update-wgo-goalies";
 import refreshYahooHandler from "../../../../../pages/api/v1/db/manual-refresh-yahoo-token";
@@ -184,7 +192,7 @@ describe("season and WGO cron authorization boundaries", () => {
     }
 
     expect(createClientMock).not.toHaveBeenCalled();
-    expect(auditInsertMock).toHaveBeenCalledTimes(1);
+    expect(auditInsertMock).not.toHaveBeenCalled();
   });
 
   it("rejects missing, blank, and whitespace-only cron configuration", async () => {
@@ -209,7 +217,7 @@ describe("season and WGO cron authorization boundaries", () => {
     }
 
     expect(createClientMock).not.toHaveBeenCalled();
-    expect(auditInsertMock).toHaveBeenCalledTimes(3);
+    expect(auditInsertMock).not.toHaveBeenCalled();
   });
 
   it("rejects unauthenticated Yahoo maintenance requests before provider or database work", async () => {
@@ -330,5 +338,131 @@ describe("season and WGO cron authorization boundaries", () => {
     expect(authMaybeSingleMock).toHaveBeenCalledTimes(2);
     expect(createClientMock).toHaveBeenCalledTimes(1);
     expect(auditInsertMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+
+describe("NHL replay operator admission", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubEnv("NODE_ENV", "test");
+    vi.stubEnv("CRON_SECRET", "synthetic-cron-secret");
+    vi.stubGlobal("fetch", vi.fn(() => { throw new Error("Network forbidden in operator test"); }));
+    authGetUserMock.mockResolvedValue({ data: { user: { id: "synthetic-admin" } }, error: null });
+    authMaybeSingleMock.mockResolvedValue({ data: { role: "admin" } });
+    serviceFromMock.mockImplementation(() => { throw new Error("Unexpected privileged database operation"); });
+    replayCoverageMock.mockImplementation(async (gameId: number) => ({
+      gameId,
+      gameState: "OFF",
+      playCount: 3,
+      replayEventCount: 0,
+      nonGoalReplayEventCount: 0,
+      replayEventTypes: {},
+      events: [],
+    }));
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  function request(authorization?: string, query: Record<string, string> = {}, method = "GET") {
+    return { method, headers: { authorization }, query } as any;
+  }
+
+  function response() {
+    const res = createMockRes();
+    res.headers = {};
+    res.setHeader = (name: string, value: unknown) => { res.headers[name] = value; return res; };
+    return res;
+  }
+
+  it.each([
+    { authorization: undefined, status: 401 },
+    { authorization: "Bearer invalid-token", status: 401 },
+    { authorization: "Bearer member-token", status: 403 },
+  ])("denies $authorization before privileged selection or NHL fan-out", async ({ authorization, status }) => {
+    if (status === 401) authGetUserMock.mockResolvedValue({ data: { user: null }, error: new Error("invalid token") });
+    else authMaybeSingleMock.mockResolvedValue({ data: { role: "member" } });
+    // Omit gameIds to exercise the guarded path that would first select games.
+    const res = response();
+    await replayCoverageHandler(request(authorization), res);
+    expect(res.statusCode).toBe(status);
+    expect(res.body).toEqual({ success: false, message: status === 401 ? "Unauthorized." : "You are not an Admin." });
+    expect(serviceFromMock).not.toHaveBeenCalled();
+    expect(replayCoverageMock).not.toHaveBeenCalled();
+    expect(auditInsertMock).not.toHaveBeenCalled();
+  });
+
+  it.each(["Bearer synthetic-cron-secret", "Bearer admin-token"])("keeps admitted explicit-ID diagnostics bounded for %s", async (authorization) => {
+    const res = response();
+    await replayCoverageHandler(request(authorization, { gameIds: "1,2,3", limit: "2", seasonId: "20252026" }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true, seasonId: 20252026, gameTypes: [2, 3],
+      requestedGames: 2, processedGames: 2, failedGames: 0,
+      counts: { totalPlayCount: 6, replayEventCount: 0, gamesWithReplayUrls: 0 },
+      samples: [], errors: [],
+    });
+    expect(replayCoverageMock.mock.calls).toEqual([[1], [2]]);
+    expect(serviceFromMock).not.toHaveBeenCalled();
+    expect(auditInsertMock).not.toHaveBeenCalled();
+  });
+
+  it("retains the admitted 250-game maximum with synthetic provider replies", async () => {
+    const res = response();
+    await replayCoverageHandler(request("Bearer synthetic-cron-secret", {
+      gameIds: Array.from({ length: 251 }, (_, index) => index + 1).join(","), limit: "999",
+    }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ requestedGames: 250, processedGames: 250, failedGames: 0 });
+    expect(replayCoverageMock).toHaveBeenCalledTimes(250);
+    expect(replayCoverageMock).toHaveBeenLastCalledWith(250);
+  });
+
+  it("keeps admitted database selection and its diagnostic limits", async () => {
+    const chain: any = {};
+    for (const method of ["select", "eq", "in", "order", "range", "gte", "lte"]) {
+      chain[method] = vi.fn(() => chain);
+    }
+    chain.then = (resolve: (value: unknown) => unknown) => Promise.resolve({
+      data: [{ id: 21, date: "2026-10-01", type: 2 }, { id: 22, date: "2026-10-02", type: 2 }], error: null,
+    }).then(resolve);
+    serviceFromMock.mockReturnValue(chain);
+    const res = response();
+    await replayCoverageHandler(request("Bearer synthetic-cron-secret", {
+      seasonId: "20262027", startDate: "2026-10-01", endDate: "2026-10-02", limit: "1",
+    }), res);
+    expect(res.statusCode).toBe(200);
+    expect(serviceFromMock).toHaveBeenCalledExactlyOnceWith("games");
+    expect(chain.eq).toHaveBeenCalledWith("seasonId", 20262027);
+    expect(chain.gte).toHaveBeenCalledWith("date", "2026-10-01");
+    expect(chain.lte).toHaveBeenCalledWith("date", "2026-10-02");
+    expect(replayCoverageMock.mock.calls).toEqual([[21]]);
+    expect(res.body).toMatchObject({ requestedGames: 1, processedGames: 1 });
+  });
+
+  it("preserves partial diagnostic errors after admission", async () => {
+    replayCoverageMock.mockRejectedValueOnce(new Error("synthetic unavailable game"));
+    const res = response();
+    await replayCoverageHandler(request("Bearer synthetic-cron-secret", { gameIds: "1,2", limit: "2" }), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true, requestedGames: 2, processedGames: 1, failedGames: 1,
+      errors: [{ gameId: 1, error: "synthetic unavailable game" }],
+    });
+    expect(JSON.stringify(res.body)).not.toContain("synthetic-cron-secret");
+  });
+
+  it("retains admitted GET-only method behavior before selection or provider work", async () => {
+    const res = response();
+    await replayCoverageHandler(request("Bearer synthetic-cron-secret", {}, "POST"), res);
+    expect(res.statusCode).toBe(405);
+    expect(res.headers.Allow).toBe("GET");
+    expect(res.body).toEqual({ success: false, error: "Method not allowed." });
+    expect(serviceFromMock).not.toHaveBeenCalled();
+    expect(replayCoverageMock).not.toHaveBeenCalled();
+    expect(auditInsertMock).not.toHaveBeenCalled();
   });
 });

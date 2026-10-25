@@ -1,5 +1,11 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import moment from "moment-timezone";
+import {
+  formatClock,
+  formatMonthDay,
+  formatMonthDayYear,
+  parseMomentLike,
+  zonedParts,
+} from "./homepageTime";
 import Link from "next/link";
 
 import ExternalNewsLink from "components/common/ExternalNewsLink";
@@ -11,6 +17,7 @@ import {
   formatNewsFeedLabel,
   getPublicNewsItemDetails,
   getPublicNewsClaimPresentation,
+  getPublicNewsReportTopic,
   sanitizePublicNewsFeedItem,
   type NewsFeedItem,
 } from "lib/newsFeed";
@@ -29,22 +36,23 @@ type HomepageStandingsInjuriesSectionProps = {
 const HOMEPAGE_UPDATES_PER_PAGE = 10;
 const HOMEPAGE_TIME_ZONE = "America/New_York";
 
-function formatHomepageDate(value: string | null | undefined): string {
+export function formatHomepageDate(value: string | null | undefined): string {
   if (!value) return "N/A";
-  const parsed = moment(value);
-  return parsed.isValid()
-    ? parsed.tz(HOMEPAGE_TIME_ZONE).format("M/D/YY")
-    : "N/A";
+  const parsed = parseMomentLike(value);
+  if (!parsed) return "N/A";
+  const parts = zonedParts(parsed, HOMEPAGE_TIME_ZONE);
+  return `${parts.month}/${parts.day}/${String(parts.year).slice(-2)}`;
 }
 
-function formatHomepageTimestamp(value: string | null | undefined): string {
+export function formatHomepageTimestamp(value: string | null | undefined): string {
   if (!value) return "";
-  const parsed = moment(value);
-  if (!parsed.isValid()) return "";
+  const parsed = parseMomentLike(value);
+  if (!parsed) return "";
   const hasTime = /T\d{2}:\d{2}/.test(value);
-  return parsed
-    .tz(HOMEPAGE_TIME_ZONE)
-    .format(hasTime ? "MMM D, h:mm A" : "MMM D, YYYY");
+  const parts = zonedParts(parsed, HOMEPAGE_TIME_ZONE);
+  return hasTime
+    ? `${formatMonthDay(parts)}, ${formatClock(parts)}`
+    : formatMonthDayYear(parts);
 }
 
 export function buildHomepageTransactionTitle(_transaction: any): string {
@@ -66,10 +74,11 @@ function newsItemToHomepageInjury(item: NewsFeedItem) {
     team: item.team_abbreviation ?? "NHL",
     player: {
       id: onlyClaim?.playerId ?? null,
-      displayName: playerNames.join(", ") || "Source report",
+      displayName: playerNames.join(", ") || "—",
     },
     status: presentation.claims.length ? presentation.claims.map(claim =>
-      `${formatNewsFeedLabel(claim.kind)} ${formatNewsFeedLabel(claim.state)} report${claim.observation ? ` · ${claim.observation}` : ""}`).join("; ") : "Claim unavailable",
+      `${formatNewsFeedLabel(claim.kind)} ${formatNewsFeedLabel(claim.state)} report${claim.observation ? ` · ${claim.observation}` : ""}`).join("; ") : getPublicNewsReportTopic(item),
+    claimNote: presentation.claims.length ? null : "Source text only; player and status are not verified.",
     description: getPublicNewsItemDetails({ ...item, metadata: null, headline: "Source passage unavailable" }),
     sourceUrl: item.source_url,
     sourceAttribution: item.source_account ?? item.source_label,
@@ -164,7 +173,8 @@ export default function HomepageStandingsInjuriesSection({
         newsTimestamp: true,
         team: transaction.team_abbreviation,
         player: { displayName: buildHomepageTransactionTitle(transaction) },
-        status: "Source report",
+        status: getPublicNewsReportTopic(transaction),
+        claimNote: "Source text only; transaction completion is not verified.",
         statusState: "transaction",
         description: getPublicNewsItemDetails({ ...transaction, metadata: null, headline: "Source passage unavailable" }),
         sourceUrl: transaction.source_url,
@@ -450,7 +460,8 @@ export default function HomepageStandingsInjuriesSection({
                             playerName
                           )}
                         </td>
-                        <td className={styles.statusColumn}>
+                        <td className={styles.statusColumn} title={injury.claimNote ?? undefined}
+                          aria-label={injury.claimNote ? `${injury.status}. ${injury.claimNote}` : undefined}>
                           {injury.status ?? "N/A"}
                         </td>
                         <td className={styles.descriptionColumn}>
@@ -458,6 +469,7 @@ export default function HomepageStandingsInjuriesSection({
                             <span className={styles.descriptionContent} title={injury.description ?? undefined}>
                               {injury.description ?? "N/A"}
                             </span>
+                            {injury.sourceAttribution ? <span className={styles.descriptionContent}>{injury.sourceAttribution}</span> : null}
                             {injury.sourceUrl ? (
                               <ExternalNewsLink
                                 href={injury.sourceUrl}
@@ -490,6 +502,7 @@ export default function HomepageStandingsInjuriesSection({
                       >
                         <td colSpan={5} className={styles.expandedUpdateCell}>
                           <span>{injury.description ?? "N/A"}</span>
+                          {injury.claimNote ? <span>{injury.claimNote}</span> : null}
                           <span className={styles.expandedUpdateMeta}>
                             {injury.newsTimestamp ? `Published ${formatHomepageTimestamp(injury.date) || "unavailable"} · Observed ${formatHomepageTimestamp(injury.observedAt) || "unavailable"}` : formatHomepageTimestamp(injury.date)}
                             {injury.sourceAttribution

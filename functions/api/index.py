@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from api.fetch_team_table import fetch_team_table, missing_required_parameters_result
+from api.fetch_team_table import fetch_team_table, missing_required_parameters_result, require_team_table_caller
 from lib.sko_pipeline import trigger_sko_step_forward
 import os
 import secrets
@@ -35,6 +35,10 @@ def _check_auth() -> tuple[bool, str]:
 
 @app.route('/fetch_team_table', methods=['GET'])
 def fetch_team_table_api():
+    denied = require_team_table_caller()
+    if denied is not None:
+        return jsonify(denied.payload), denied.status_code
+
     # Get arguments from query parameters, use defaults if not provided
     from_season = request.args.get('from_season', '20242025')
     thru_season = request.args.get('thru_season', '20242025')

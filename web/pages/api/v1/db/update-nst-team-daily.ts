@@ -3,6 +3,7 @@ import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
 import adminOnly from "utils/adminOnlyMiddleware";
 import {
   NST_TEAM_DAILY_BURST_INTERVAL_MS,
+  NST_SAFE_INTERVAL_MS,
   TEAM_DAILY_URLS_PER_DATE,
   resolveTeamDailyNstRequestPlan,
 } from "lib/cron/nstBurstPlans";
@@ -10,7 +11,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import * as cheerio from "cheerio";
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
-import { fetchNstTextByUrl } from "lib/nst/client";
+import { fetchNstTextByUrl, NST_DEFAULT_RETRIES } from "lib/nst/client";
 import { addDays, format, isAfter, isBefore, parseISO } from "date-fns";
 import { toZonedTime, format as tzFormat } from "date-fns-tz";
 import { fetchCurrentSeason } from "utils/fetchCurrentSeason";
@@ -71,6 +72,10 @@ const MAX_DATE_BASED_DATES_PER_RUN = 2;
 // probe shows no games costs one request, so it cannot hold the queue in place.
 const EMPTY_DATE_PROBE_ALLOWANCE = 2;
 const PRESEASON_GAME_TYPE = 1;
+// Leave at least 20 seconds before the previously observed 240-second limit
+// for database completion and the wrapper's terminal audit insert.
+const NST_RUN_BUDGET_MS = 220_000;
+const NST_REQUEST_TIMEOUT_MS = 45_000;
 
 export const config = {
   maxDuration: 300,
@@ -367,14 +372,22 @@ function seasonIdFromDate(dateString: string): number {
   return Number(`${startYear}${endYear}`);
 }
 
-async function nstGet(url: string): Promise<string> {
+async function nstGet(url: string, deadlineAt: number): Promise<string> {
   const now = Date.now();
   const elapsed = now - lastNstRequestAt;
   if (currentRequestIntervalMs > 0 && elapsed < currentRequestIntervalMs) {
     await delay(currentRequestIntervalMs - elapsed);
   }
   lastNstRequestAt = Date.now();
-  const response = await fetchNstTextByUrl(url, { timeoutMs: 45000 });
+  const response = await fetchNstTextByUrl(url, {
+    timeoutMs: NST_REQUEST_TIMEOUT_MS,
+    requestControl: {
+      deadlineAt,
+      maxAttempts: NST_DEFAULT_RETRIES + 1,
+      attemptsStarted: 0,
+      minIntervalMs: Math.max(currentRequestIntervalMs, NST_SAFE_INTERVAL_MS),
+    },
+  });
   return response.text;
 }
 
@@ -561,7 +574,7 @@ function buildDateQueue(
     }
     let cursor = start;
     while (!isBefore(cursor, end)) {
-      dates.push(formatEstDate(cursor));
+      dates.push(format(cursor, "yyyy-MM-dd"));
       cursor = addDays(cursor, -1);
     }
     return dates;
@@ -675,12 +688,13 @@ async function resolveIncrementalStartDate(seasonFloor: string): Promise<string>
 
 async function processDatasetForDate(
   date: string,
-  dataset: DatasetConfig
+  dataset: DatasetConfig,
+  deadlineAt: number
 ): Promise<{ inserted: number; table: string; teamGames: number }> {
   const seasonId = seasonIdFromDate(date).toString();
   const url = buildDatasetUrl(date, dataset, seasonId);
   console.log(`[NST] Fetching ${dataset.description} for ${date} -> ${url}`);
-  const html = await nstGet(url);
+  const html = await nstGet(url, deadlineAt);
   const rawRows = parseTeamTable(html);
   const teamGames = rawRows.filter(
     (raw) => parseNumeric(raw["gp"]) === 1
@@ -734,6 +748,7 @@ function parseBooleanParam(
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const startedAt = Date.now();
+  const deadlineAt = startedAt + NST_RUN_BUDGET_MS;
   lastNstRequestAt = 0;
   if (req.method !== "GET" && req.method !== "POST") {
     res.setHeader("Allow", "GET,POST");
@@ -839,7 +854,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
       errors: [] as string[],
     };
 
-    for (const [index, date] of queuedDates.entries()) {
+    dateLoop: for (const [index, date] of queuedDates.entries()) {
       const datasets = overwrite ? DATASETS : await getMissingDatasets(date);
       if (datasets.length === 0) {
         summary.skippedDates += 1;
@@ -852,9 +867,15 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
       const errorsBeforeDate = summary.errors.length;
       for (const dataset of datasets) {
+        if (Date.now() + currentRequestIntervalMs + NST_REQUEST_TIMEOUT_MS > deadlineAt) {
+          // This date may have persisted some datasets; incremental mode will
+          // recheck it and fetch only those still missing on the next run.
+          deferredDates = queuedDates.slice(index);
+          break dateLoop;
+        }
         requestsUsed += 1;
         try {
-          const result = await processDatasetForDate(date, dataset);
+          const result = await processDatasetForDate(date, dataset, deadlineAt);
           if (result.inserted > 0) {
             summary.datasetResults.push({
               date,
@@ -909,4 +930,4 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));

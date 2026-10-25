@@ -6,6 +6,13 @@ import {
 } from "./nstTeamStatsOutcome";
 
 describe("NST team stats diagnostics", () => {
+  it.each(["caller_auth_unavailable", "caller_unauthorized"])("recognizes only the explicit %s caller-auth code as fatal", (code) => {
+    expect(isNstConfigurationFailure(`HTTP 503: {"error":{"code":"${code}"}}`)).toBe(true);
+    expect(isNstConfigurationFailure(`HTTP 401: { "error": { "code" : "${code}" } }`)).toBe(true);
+    expect(isNstConfigurationFailure(`HTTP 401: ${code}`)).toBe(false);
+    expect(isNstConfigurationFailure(`HTTP 401: {"error":{"code":"${code}_other"}}`)).toBe(false);
+  });
+
   it("recognizes a missing NST key as a fatal configuration failure", () => {
     expect(
       isNstConfigurationFailure(

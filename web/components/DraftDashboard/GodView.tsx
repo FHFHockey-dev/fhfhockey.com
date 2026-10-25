@@ -112,7 +112,7 @@ export default function GodView({ toolbar, quickSettings, settingsOpen = false, 
     </header>
     <div id="draft-quick-settings" hidden={!settingsOpen}>{quickSettings}</div>
     <div id="god-view-content" hidden={!open || settingsOpen}>
-      {!allowed ? <p className={styles.explanation}>{access?.eligible ? "God View is not available yet. It is included in your season pass when enabled." : "Explore upcoming picks and each team’s open roster slots with Draft Pro."} {!access?.eligible && <a href="/account?section=draft-pro">Explore Draft Pro</a>}</p> : queue.length === 0 ? <p className={styles.explanation}>Draft complete. <button type="button" onClick={onSummary}>View draft summary</button></p> : <>
+      {!allowed ? <p className={styles.explanation}>{access?.eligible ? "God View is not available yet. It is included in your season pass when enabled." : "God View is available to existing Draft Pro accounts. New purchases are closed."} {!access?.eligible && <a href="/account?section=draft-pro">View existing Draft Pro access</a>}</p> : queue.length === 0 ? <p className={styles.explanation}>Draft complete. <button type="button" onClick={onSummary}>View draft summary</button></p> : <>
         <div ref={track} className={styles.cards} role="region" aria-label="All draft picks" tabIndex={0} style={{ "--pick-card-width": `${cardWidth}px` } as React.CSSProperties}>
           {queue.map(pick => <React.Fragment key={pick.pickNumber}>
             {pick.pickInRound === 1 && <span className={styles.roundBreak} aria-label={`Round ${pick.round}`}>Round {pick.round}</span>}

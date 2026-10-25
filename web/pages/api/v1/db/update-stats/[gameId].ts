@@ -196,8 +196,8 @@ type PlayerCounts = { [playerId: number]: number };
 
 // --- API Route Logic ---
 
-export default withCronJobAudit(
-  adminOnly(async (req, res) => {
+export default adminOnly(withCronJobAudit(
+  async (req, res) => {
     const { supabase } = req;
     const gameId = Number(req.query.gameId);
 
@@ -269,8 +269,8 @@ export default withCronJobAudit(
         dependencyError,
       });
     }
-  }),
-);
+  },
+));
 
 // --- Core Stat Update Logic ---
 

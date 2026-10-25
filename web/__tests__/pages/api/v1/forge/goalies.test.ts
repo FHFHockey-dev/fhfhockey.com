@@ -1,4 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
+import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
+import { requireLatestSucceededRunId } from "lib/projections/apiHelpers";
 const { fromMock } = vi.hoisted(() => ({
   fromMock: vi.fn()
 }));
@@ -89,6 +91,59 @@ function createMockRes() {
 }
 
 describe("/api/v1/forge/goalies", () => {
+  it.each([true, false])("preserves released fallback after requested-date 404 with native-only contract=%s", async qualified => {
+    vi.mocked(requireLatestSucceededRunId).mockRejectedValueOnce(Object.assign(new Error("missing requested date"), { statusCode: 404 }));
+    const prior = fromMock.getMockImplementation()!;
+    let projectionReads = 0;
+    const summaryReads: string[] = [];
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_goalie_projections" && ++projectionReads === 1) {
+        return createQueryBuilder(() => ({ data: { run_id: "run-122", as_of_date: "2026-02-06" }, error: null }));
+      }
+      if (table === "forge_runs") {
+        let selectedRunId = "";
+        return createQueryBuilder(() => {
+          summaryReads.push(selectedRunId);
+          return { data: { run_id: selectedRunId, as_of_date: "2026-02-06", status: "succeeded",
+            metrics: { input_provenance: { external_fantasy_input_contract: qualified
+              ? FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT : undefined } } }, error: null };
+        }, (column, value) => { if (column === "run_id") selectedRunId = String(value); });
+      }
+      return prior(table);
+    });
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(summaryReads).toEqual([]);
+    expect(res.body).toMatchObject({ runId: "run-122", asOfDate: "2026-02-06", fallbackApplied: true });
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.diagnostics.requested.runId).toBeNull();
+  });
+
+  it.each(["fallback", "explicit"])("retains released legacy rows for selected %s runs without claiming native qualification", async mode => {
+    const prior = fromMock.getMockImplementation()!;
+    let projectionReads = 0;
+    fromMock.mockImplementation((table: string) => {
+      if (table === "forge_goalie_projections" && mode === "fallback") {
+        projectionReads++;
+        if (projectionReads === 1) return createQueryBuilder(() => ({ data: [], error: null }));
+        if (projectionReads === 2) return createQueryBuilder(() => ({ data: { run_id: "run-122", as_of_date: "2026-02-06" }, error: null }));
+      }
+      if (table === "forge_runs") {
+        let selectedRunId = "run-123";
+        return createQueryBuilder(() => ({ data: { run_id: selectedRunId, status: "succeeded", git_sha: "a".repeat(40),
+          metrics: { input_provenance: { external_fantasy_input_contract: "external_inputs_allowed" } } }, error: null }),
+        (column, value) => { if (column === "run_id") selectedRunId = String(value); });
+      }
+      return prior(table);
+    });
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07", ...(mode === "explicit"
+      ? { runId: "11111111-1111-4111-8111-111111111111" } : {}) } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body.data).toHaveLength(1);
+    expect(res.body.runId).toBe(mode === "explicit" ? "11111111-1111-4111-8111-111111111111" : "run-122");
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     fromMock.mockImplementation((table: string) => {
@@ -139,7 +194,8 @@ describe("/api/v1/forge/goalies", () => {
             status: "succeeded",
             created_at: "2026-02-07T10:05:00.000Z",
             metrics: {
-              goalie_rows: 32
+              goalie_rows: 32,
+              input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT }
             }
           },
           error: null
@@ -305,7 +361,7 @@ describe("/api/v1/forge/goalies", () => {
             as_of_date: "2026-02-07",
             status: "succeeded",
             created_at: "2026-02-07T10:05:00.000Z",
-            metrics: { goalie_rows: 2 }
+            metrics: { goalie_rows: 2, input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } }
           },
           error: null
         }));
@@ -356,7 +412,8 @@ describe("/api/v1/forge/goalies", () => {
       }
       if (table === "forge_runs") {
         return createQueryBuilder(() => ({ data: { run_id: "run-123", as_of_date: "2026-02-07", status: "succeeded",
-          created_at: "2026-02-07T10:05:00.000Z", metrics: { goalie_rows: 2 } }, error: null }));
+          created_at: "2026-02-07T10:05:00.000Z", metrics: { goalie_rows: 2,
+            input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } }, error: null }));
       }
       if (table === "games") return createQueryBuilder(() => ({ count: 1, error: null }));
       if (table === "forge_projection_calibration_daily") return createQueryBuilder(() => ({ data: null, error: null }));
@@ -405,16 +462,17 @@ describe("/api/v1/forge/goalies", () => {
         }));
       }
       if (table === "forge_runs") {
+        let selectedRunId = "run-123";
         return createQueryBuilder(() => ({
           data: {
-            run_id: "run-123",
-            as_of_date: "2026-02-07",
+            run_id: selectedRunId,
+            as_of_date: selectedRunId === "run-122" ? "2026-02-06" : "2026-02-07",
             status: "succeeded",
             created_at: "2026-02-07T10:05:00.000Z",
-            metrics: { goalie_rows: 0 }
+            metrics: { goalie_rows: 0, input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } }
           },
           error: null
-        }));
+        }), (column, value) => { if (column === "run_id") selectedRunId = String(value); });
       }
       if (table === "games") {
         return createQueryBuilder(() => ({ count: 6, error: null }));
@@ -519,7 +577,7 @@ describe("/api/v1/forge/goalies", () => {
       if (table === "forge_runs") {
         let selectedRunId = "";
         return createQueryBuilder(() => ({ data: { run_id: selectedRunId, status: "succeeded",
-          metrics: {} }, error: null }),
+          metrics: { input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } }, error: null }),
         (column, value) => { if (column === "run_id") selectedRunId = String(value); });
       }
       return prior(table);
@@ -536,7 +594,8 @@ describe("/api/v1/forge/goalies", () => {
     const prior = fromMock.getMockImplementation()!;
     fromMock.mockImplementation((table: string) => table === "forge_runs"
       ? createQueryBuilder(() => ({ data: { run_id: "11111111-1111-4111-8111-111111111111", as_of_date: "2026-02-07",
-        status: "succeeded", git_sha: gitSha, metrics: { goalie_rows: 32 } }, error: null }))
+        status: "succeeded", git_sha: gitSha, metrics: { goalie_rows: 32,
+          input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } }, error: null }))
       : prior(table));
     const res = createMockRes();
     await handler({ method: "GET", query: { date: "2026-02-07", runId: "11111111-1111-4111-8111-111111111111" } } as any, res);
@@ -574,6 +633,12 @@ describe("/api/v1/forge/goalies", () => {
         return createQueryBuilder(() => ({ data: [{ goalie_id: 5555, team_id: 3, opponent_team_id: 4,
           players: { fullName: "Fallback Goalie" }, starter_probability: 0.6, uncertainty: {} }], error: null }),
         (column, value) => { if (column === "run_id") readRunIds.push(String(value)); });
+      }
+      if (table === "forge_runs") {
+        let selectedRunId = "";
+        return createQueryBuilder(() => ({ data: { run_id: selectedRunId, status: "succeeded", git_sha: "a".repeat(40),
+          metrics: { input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } }, error: null }),
+        (column, value) => { if (column === "run_id") selectedRunId = String(value); });
       }
       return prior(table);
     });

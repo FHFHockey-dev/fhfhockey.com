@@ -1,8 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import type { PlanIntent, PlanningData, PlanningSnapshot, PlanningWorkspace } from "lib/rosterScheduleOptimizer/planningTypes";
-import { candidatePlanMetrics } from "lib/rosterScheduleOptimizer/candidatePlanMetrics";
-import { planRoster } from "lib/rosterScheduleOptimizer/planning";
+import { executeRosterPlanning } from "lib/rosterScheduleOptimizer/executionAdapter";
+import { currentRsoUsePolicy } from "lib/player-forecasts/rsoUsePolicy";
 import { defaultWorkspace, readWorkspace, readWorkspaceHistory, writeWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 
 const auth = vi.hoisted(() => ({ user: null as { id: string } | null }));
@@ -18,21 +18,20 @@ vi.mock("components/RosterScheduleOptimizer/canonicalSchedule", async original =
 import RosterScheduleOptimizer from "components/RosterScheduleOptimizer/RosterScheduleOptimizer";
 
 const scrollDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "scrollIntoView");
-type Packet = { snapshot: PlanningSnapshot; intent: PlanIntent };
+type Packet = { snapshot: PlanningSnapshot; intent: PlanIntent; options?: Parameters<typeof executeRosterPlanning>[2];
+  candidateOptions?: Parameters<typeof executeRosterPlanning>[3] };
+// Runs the real worker body: one current read feeds the plan and its candidate comparisons.
 class LocalPlanningWorker {
-  static packets: Array<{ candidate: boolean; packet: Packet }> = [];
+  static packets: Array<{ packet: Packet }> = [];
   onmessage: ((event: { data: unknown }) => void) | null = null;
   onerror: (() => void) | null = null;
   stopped = false;
   constructor(private url: URL) {}
   postMessage(packet: Packet) {
-    const copied = structuredClone(packet), candidate = this.url.toString().includes("candidateMetrics");
-    LocalPlanningWorker.packets.push({ candidate, packet: copied });
-    queueMicrotask(() => {
-      if (this.stopped) return;
-      this.onmessage?.({ data: candidate ? { metrics: candidatePlanMetrics(copied.snapshot, copied.intent) }
-        : { result: planRoster(copied.snapshot, copied.intent, { maxEvaluations: 12, maxBenchEvaluations: 2 }) } });
-    });
+    const copied = structuredClone(packet);
+    LocalPlanningWorker.packets.push({ packet: copied });
+    void executeRosterPlanning(copied.snapshot, copied.intent, copied.options, copied.candidateOptions)
+      .then(result => { if (!this.stopped) this.onmessage?.({ data: structuredClone(result) }); });
   }
   terminate() { this.stopped = true; }
 }
@@ -65,12 +64,17 @@ function fixture(provider: "manual" | "yahoo") {
   const data: PlanningData = { players, games: players.map(player => { const date = player.id === "c" ? "2026-10-05" : "2026-10-06";
     return { id: `game-${player.id}`, date, startsAt: `${date}T20:00:00Z`, teamAbbreviation: player.teamAbbreviation, opponent: "X", home: true, status: "scheduled" }; }),
     forecasts: [], evidence: { schedule: { source: "Complete synthetic schedule", asOf: workspace.context.asOf,
-      seasonId: workspace.context.seasonId, completeness: "complete", limitations: [] } } };
+      seasonId: workspace.context.seasonId, completeness: "complete", limitations: [] } },
+    forecastManifest: { version: "planning-forecasts-v1", id: "current-read", seasonId: workspace.context.seasonId, asOf: workspace.context.asOf,
+      scheduleRevision: "schedule", rosterRevision: "roster", issuedRevisionIds: [], baselineChecksum: null,
+      requiredOpportunities: 3, forecastedOpportunities: 0, exclusionCounts: {},
+      rsoUsePolicy: { version: "rso-target-use-v1", revision: currentRsoUsePolicy().revision, bridgeRevisionIds: [] } } };
   const snapshot: PlanningSnapshot = { ...data, id: "yahoo:synthetic-rules", context: workspace.context, roster: workspace.roster,
     rules: workspace.rules, lockedAssignments: [], realized: {}, opponent: null };
   const response = (body: unknown) => Promise.resolve({ ok: true, status: 200, json: async () => structuredClone(body) });
   const fetch = vi.fn((url: string, init?: RequestInit) => {
-    if (url.includes("/data?")) return response({ success: true, data });
+    if (url.includes("/data?")) return response({ success: true, data, read: {
+      nonce: (init?.headers as Record<string, string>)["X-RSO-Read-Nonce"], evaluatedAt: workspace.context.asOf } });
     if (url.endsWith("/access")) return response({ data: { eligible: provider === "yahoo", capabilities: provider === "yahoo" ? ["rso_sync"] : [] } });
     if (url.includes("/workspace?") && !init?.method) return response({ data: null });
     if (provider === "yahoo" && url.endsWith("/provider") && init?.method === "POST") return response({ success: true, snapshot,
@@ -89,7 +93,7 @@ it.each(["manual", "yahoo"] as const)("collects only missing %s acquisition rule
   await waitFor(() => expect(candidate()).toBeTruthy());
   // Missing add timing is explained once, in plain words, in the panel's "Why some players aren't ranked" list.
   await waitFor(() => expect(within(screen.getByRole("list", { name: "Why some players aren't ranked" })).getByText("Your league's add rules (timing or moves left) aren't set yet.")).toBeTruthy());
-  const initialEvaluations = LocalPlanningWorker.packets.filter(row => row.candidate).length;
+  const initialEvaluations = LocalPlanningWorker.packets.length;
   const initialRequests = state.fetch.mock.calls.length;
   if (provider === "manual") fireEvent.click(screen.getByRole("button", { name: /^League settings/ }));
   else {
@@ -129,10 +133,11 @@ it.each(["manual", "yahoo"] as const)("collects only missing %s acquisition rule
   expect(persisted.rules.rosterSlots).toEqual(originalRules.rosterSlots); expect(persisted.rules.scoring).toEqual(originalRules.scoring);
   if (provider === "yahoo") expect(persisted.managerRuleOverrides).not.toHaveProperty("acquisitionCost");
   expect(persisted.intent).toEqual(originalIntent); expect(readWorkspaceHistory(window.localStorage, persisted).length).toBeGreaterThan(0);
-  expect(LocalPlanningWorker.packets.filter(row => row.candidate).length).toBeGreaterThan(initialEvaluations);
+  expect(LocalPlanningWorker.packets.length).toBeGreaterThan(initialEvaluations);
   expect(LocalPlanningWorker.packets.every(row => row.packet.intent.steps.length === 0)).toBe(true);
   expect(state.fetch.mock.calls.some(([, init]) => init?.method === "PUT")).toBe(false);
-  expect(state.fetch).toHaveBeenCalledTimes(initialRequests);
+  // Rule edits send nothing; each re-plan makes only its own current-read GET.
+  expect(state.fetch.mock.calls.slice(initialRequests).every(([url, init]) => url.includes("/data?") && init?.method === "GET")).toBe(true);
   first.unmount();
   render(<RosterScheduleOptimizer />);
   await waitFor(() => expect(candidate() && within(candidate()).getByLabelText("Net plan comparison").textContent).toBe("—Net Pts+1Net AGP"));
@@ -176,7 +181,8 @@ it.each(["manual", "yahoo"] as const)("saves and reopens explicit Monday 03:00 %
   if (provider === "yahoo") expect(persisted.managerRuleOverrides).not.toHaveProperty("acquisitionCost");
   expect(persisted.intent).toEqual(originalIntent);
   expect(readWorkspaceHistory(window.localStorage, persisted).length).toBeGreaterThan(0);
-  expect(state.fetch).toHaveBeenCalledTimes(initialRequests);
+  // Rule edits send nothing; each re-plan makes only its own current-read GET.
+  expect(state.fetch.mock.calls.slice(initialRequests).every(([url, init]) => url.includes("/data?") && init?.method === "GET")).toBe(true);
   expect(state.fetch.mock.calls.some(([, init]) => init?.method === "PUT")).toBe(false);
   first.unmount(); render(<RosterScheduleOptimizer />);
   await waitFor(() => expect(candidate()).toBeTruthy());

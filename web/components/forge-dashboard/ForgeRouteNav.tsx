@@ -5,6 +5,7 @@ import styles from "styles/ForgeDashboard.module.scss";
 
 type ForgeRouteKey =
   | "commandCenter"
+  | "forecasts"
   | "dashboard"
   | "startChart"
   | "trends"
@@ -51,6 +52,11 @@ function buildNavItems({
   } as const;
 
   return [
+    {
+      key: "forecasts",
+      label: "Game Forecasts",
+      href: "/forge/forecasts"
+    },
     {
       key: "commandCenter",
       label: "Command Center",

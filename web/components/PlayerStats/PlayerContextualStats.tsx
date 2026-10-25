@@ -6,7 +6,9 @@ import {
   aggregateSummaryStat,
   computeAvailability,
   countAppearances,
-  leagueDateKey
+  isAppearance,
+  leagueDateKey,
+  summarizeQualityStarts
 } from "./playerStatsContract";
 
 interface GameLogEntry {
@@ -111,42 +113,28 @@ export function PlayerContextualStats({
         (sum, game) => sum + (Number(game.wins) || 0),
         0
       );
-      const saves = allGames.reduce(
-        (sum, game) => sum + (Number(game.saves) || 0),
-        0
-      );
-      const shotsAgainst = allGames.reduce(
-        (sum, game) => sum + (Number(game.shots_against) || 0),
-        0
-      );
       const shutouts = allGames.reduce(
         (sum, game) => sum + (Number(game.shutouts) || 0),
         0
       );
-      const qualityStarts = allGames.reduce(
-        (sum, game) => sum + (Number(game.quality_start) || 0),
-        0
-      );
+      const qualityStarts = summarizeQualityStarts(allGames);
 
       // Separate playoff performance
       const playoffWins = playoffGameLog.reduce(
         (sum, game) => sum + (Number(game.wins) || 0),
         0
       );
-      const playoffSaves = playoffGameLog.reduce(
-        (sum, game) => sum + (Number(game.saves) || 0),
-        0
+      const hasKnownParticipation = (games: GameLogEntry[]) => games.every((game) =>
+        typeof game.games_played === "number" && Number.isFinite(game.games_played) && game.games_played >= 0
       );
-      const playoffShotsAgainst = playoffGameLog.reduce(
-        (sum, game) => sum + (Number(game.shots_against) || 0),
-        0
-      );
-
-      const savePct = shotsAgainst > 0 ? saves / shotsAgainst : 0;
+      const savePct = hasKnownParticipation(allGames)
+        ? aggregateSummaryStat(allGames.filter(isAppearance), "save_pct")
+        : null;
       const winRate = gamesPlayed > 0 ? wins / gamesPlayed : 0;
-      const qsRate = gamesPlayed > 0 ? qualityStarts / gamesPlayed : 0;
-      const playoffSavePct =
-        playoffShotsAgainst > 0 ? playoffSaves / playoffShotsAgainst : 0;
+      const qsRate = qualityStarts.rate;
+      const playoffSavePct = hasKnownParticipation(playoffGameLog)
+        ? aggregateSummaryStat(playoffGameLog.filter(isAppearance), "save_pct")
+        : null;
 
       insights.push({
         label: "Overall Win Rate",
@@ -163,19 +151,23 @@ export function PlayerContextualStats({
 
       insights.push({
         label: "Save Percentage",
-        value: savePct.toFixed(3),
+        value: savePct === null ? "-" : savePct.toFixed(3),
         trend:
-          savePct >= 0.92
-            ? "positive"
-            : savePct >= 0.9
-              ? "neutral"
-              : "negative",
+          savePct === null
+            ? "neutral"
+            : savePct >= 0.92
+              ? "positive"
+              : savePct >= 0.9
+                ? "neutral"
+                : "negative",
         description:
-          savePct >= 0.92
-            ? "Elite level"
-            : savePct >= 0.9
-              ? "Solid performance"
-              : "Needs improvement"
+          savePct === null
+            ? "Complete saves and shots against are unavailable"
+            : savePct >= 0.92
+              ? "Elite level"
+              : savePct >= 0.9
+                ? "Solid performance"
+                : "Needs improvement"
       });
 
       if (playoffGames > 0) {
@@ -183,26 +175,27 @@ export function PlayerContextualStats({
           label: "Playoff Performance",
           value: `${playoffWins}W in ${playoffGames}GP`,
           trend:
-            playoffSavePct >= 0.92
-              ? "positive"
-              : playoffSavePct >= 0.9
-                ? "neutral"
-                : "negative",
-          description: `${playoffSavePct.toFixed(3)} SV% in playoffs`
+            playoffSavePct === null
+              ? "neutral"
+              : playoffSavePct >= 0.92
+                ? "positive"
+                : playoffSavePct >= 0.9
+                  ? "neutral"
+                  : "negative",
+          description: playoffSavePct === null
+            ? "Playoff save percentage unavailable"
+            : `${playoffSavePct.toFixed(3)} SV% in playoffs`
         });
       }
 
       insights.push({
         label: "Quality Start Rate",
-        value: `${(qsRate * 100).toFixed(1)}%`,
+        value: qsRate === null ? "-" : `${(qsRate * 100).toFixed(1)}%`,
         trend:
-          qsRate >= 0.6 ? "positive" : qsRate >= 0.4 ? "neutral" : "negative",
-        description:
-          qsRate >= 0.6
-            ? "Very consistent"
-            : qsRate >= 0.4
-              ? "Reasonably consistent"
-              : "Inconsistent starts"
+          qsRate === null ? "neutral" : qsRate >= 0.6 ? "positive" : qsRate >= 0.4 ? "neutral" : "negative",
+        description: qualityStarts.unknownStarts > 0
+          ? "Start participation unavailable"
+          : `${qualityStarts.classifiedStarts} of ${qualityStarts.starts} starts classified`
       });
 
       if (shutouts > 0) {

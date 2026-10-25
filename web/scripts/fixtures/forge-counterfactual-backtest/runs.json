@@ -1,0 +1,26 @@
+[
+ {
+  "run_id": "run-1013-stamped",
+  "as_of_date": "2026-10-13",
+  "git_sha": "abc1234",
+  "created_at": "2026-10-13T10:00:00Z",
+  "horizon_games": "1",
+  "scope_key": null
+ },
+ {
+  "run_id": "run-1013-null",
+  "as_of_date": "2026-10-13",
+  "git_sha": null,
+  "created_at": "2026-10-13T12:00:00Z",
+  "horizon_games": "1",
+  "scope_key": null
+ },
+ {
+  "run_id": "run-1014-null",
+  "as_of_date": "2026-10-14",
+  "git_sha": null,
+  "created_at": "2026-10-14T10:00:00Z",
+  "horizon_games": null,
+  "scope_key": "h1:2026-10-14"
+ }
+]

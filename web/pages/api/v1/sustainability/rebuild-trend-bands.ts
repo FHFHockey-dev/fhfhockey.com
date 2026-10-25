@@ -296,4 +296,4 @@ export async function rebuildTrendBandsHandler(
   }
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(rebuildTrendBandsHandler as any)));
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(rebuildTrendBandsHandler as any)));

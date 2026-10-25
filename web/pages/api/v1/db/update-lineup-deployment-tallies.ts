@@ -21,8 +21,8 @@ function parseAction(value: string | string[] | undefined): "current" | "all" {
   return rawValue === "all" ? "all" : "current";
 }
 
-export default withCronJobAudit(
-  adminOnly(withNhlOffSeasonSkip(async (req, res) => {
+export default adminOnly(withCronJobAudit(
+  withNhlOffSeasonSkip(async (req, res) => {
     const action = parseAction(req.query.action);
     const explicitSeasonId = parsePositiveInteger(req.query.seasonId);
     const playerId = parsePositiveInteger(req.query.playerId);
@@ -68,6 +68,6 @@ export default withCronJobAudit(
         playerId
       }
     });
-  })),
+  }),
   { jobName: "update-lineup-deployment-tallies" }
-);
+));

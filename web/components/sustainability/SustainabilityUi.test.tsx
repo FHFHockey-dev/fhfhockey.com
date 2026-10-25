@@ -1,5 +1,5 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
 
 import SustainabilityBadge from "./SustainabilityBadge";
 import SustainabilitySparkline from "./SustainabilitySparkline";
@@ -10,11 +10,46 @@ import {
 } from "./formatting";
 
 describe("Sustainability UI", () => {
+  afterEach(cleanup);
+
   it("uses dynamic tiers and announces provisional scores", () => {
     const thresholds = buildSustainabilityThresholds([20, 40, 60, 80]);
     render(<SustainabilityBadge score={80} thresholds={thresholds} status="provisional" />);
-    expect(screen.getByLabelText(/Sustainability Durable.*provisional/)).toBeTruthy();
+    expect(screen.getByLabelText("Sustainability High index, score 80.0, provisional")).toBeTruthy();
+    expect(screen.getByText("provisional")).toBeTruthy();
     expect(formatSustainabilityScore(null)).toBe("—");
+  });
+
+  it.each([
+    [80, "High index", "durable"],
+    [60, "High index", "durable"],
+    [50, "Mid index", "balanced"],
+    [40, "Low index", "volatile"],
+    [20, "Low index", "volatile"],
+  ] as const)("describes finite score %s using index tiers and the existing style token", (score, label, styleToken) => {
+    const thresholds = buildSustainabilityThresholds([20, 40, 60, 80]);
+    render(<SustainabilityBadge score={score} thresholds={thresholds} />);
+    const badge = screen.getByLabelText(`Sustainability ${label}, score ${score.toFixed(1)}`);
+    expect(badge.textContent).toBe(`${label} ${score.toFixed(1)}`);
+    expect(badge.className).toContain(styleToken);
+    expect(badge.title).toContain("Descriptive process support index");
+    expect(badge.textContent).not.toMatch(/Durable|Volatile|Balanced/);
+  });
+
+  it.each([null, undefined, NaN, Infinity, -Infinity])("keeps missing/nonfinite score %s unavailable", (score) => {
+    render(<SustainabilityBadge score={score} thresholds={{ lower: 40, upper: 60 }} />);
+    const badge = screen.getByLabelText("Sustainability Index unavailable");
+    expect(badge.textContent).toBe("Index unavailable");
+    expect(badge.className).not.toMatch(/durable|volatile|balanced/);
+    expect(badge.title).toContain("missing or nonfinite");
+  });
+
+  it("retains the provisional marker when the score is omitted", () => {
+    render(<SustainabilityBadge thresholds={{ lower: 40, upper: 60 }} status="provisional" />);
+    const badge = screen.getByLabelText("Sustainability Index unavailable, provisional");
+    expect(badge.textContent).toBe("Index unavailable provisional");
+    expect(badge.className).toContain("provisional");
+    expect(badge.textContent).not.toContain("Mid index");
   });
 
   it("renders an accessible trend and a truthful insufficient-data fallback", () => {

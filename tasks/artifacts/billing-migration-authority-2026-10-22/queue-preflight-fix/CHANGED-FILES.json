@@ -1,0 +1,36 @@
+{
+  "head": "0b6ef82e2a7223c25a9e75ddd1cb5db0a343c9f7",
+  "runner": {
+    "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/VERIFY-QUEUE.cjs",
+    "beforeSha256": "ce68ce9a2e137e6d6769a61994fa163f2f1da2a08334473d4ae26f1121669b14",
+    "afterSha256": "fe5e21a26ce2ac31a3bee44eb5ca45a408cca1e4b1ed3b1d72620ad58ae4bbe1",
+    "patch": "VERIFY-QUEUE.cjs.patch"
+  },
+  "added": [
+    {
+      "path": "tasks/artifacts/in-season-billing-2026-10-21/queue-sql-verification/SOURCE-RELOCATION.v1.json",
+      "sha256": "54b33decfb7dbf1173bb67c154665ff9c154982961be754c0eb7000b0e96efb2"
+    },
+    {
+      "path": "tasks/artifacts/billing-migration-authority-2026-10-22/queue-preflight-fix/VERIFY-QUEUE-PREFLIGHT.test.cjs",
+      "sha256": "fbe30bcb953eb18f2cb3a6d698904393c30821da045db914f5de83d705a87aad"
+    }
+  ],
+  "preservedHistoricalManifestSha256": "f2c438904c06caaacbcdfd65b6ab47b35cf5c232ddf65bb20c36f99d06224659",
+  "preservedRelocationReceiptSha256": "df600ab1c920958a8c869978cd3ed1cd1aedf1744aae399b39e400ddd23b7ef1",
+  "preservedSqlSha256": "d78b385ec6b8acfbfcc6ba2909d5f558765cd90e8e4a18a2febab68bf146db12",
+  "checks": {
+    "offlinePreflight": "passed, seven source hashes",
+    "regressionsPassed": 14,
+    "regressionsFailed": 0,
+    "postRunHashGuardCovered": true,
+    "targetRead": false,
+    "databaseClientLoaded": false,
+    "sqlExecuted": false,
+    "syntax": "passed",
+    "gitDiffCheck": "passed",
+    "priorAuthorityAndNonRunnerPinsPreserved": true,
+    "fourHistoricalQueueReceiptsUnchanged": true
+  },
+  "limits": "No full queue/DB run; historical SQL results are not rerun acceptance."
+}

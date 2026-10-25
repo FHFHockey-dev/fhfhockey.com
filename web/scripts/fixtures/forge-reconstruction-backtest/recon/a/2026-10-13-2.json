@@ -1,0 +1,82 @@
+{
+ "payload": {},
+ "payload_hash": "x",
+ "intendedWrites": [
+  [
+   {
+    "method": "from",
+    "args": [
+     "forge_player_projections"
+    ]
+   },
+   {
+    "method": "upsert",
+    "args": [
+     [
+      {
+       "run_id": "00000000-0000-4000-8000-000000000001",
+       "as_of_date": "2026-10-13",
+       "game_id": 2,
+       "player_id": 21,
+       "team_id": 2,
+       "opponent_team_id": 1,
+       "horizon_games": 1,
+       "proj_goals_es": 0.5,
+       "proj_goals_pp": 0,
+       "proj_assists_es": 0.2,
+       "proj_assists_pp": 0.1,
+       "proj_shots_es": 2,
+       "proj_shots_pp": 0.5,
+       "proj_hits": 1,
+       "proj_blocks": 0.5,
+       "proj_toi_es_seconds": 900,
+       "proj_toi_pp_seconds": 60
+      },
+      {
+       "run_id": "00000000-0000-4000-8000-000000000001",
+       "as_of_date": "2026-10-13",
+       "game_id": 2,
+       "player_id": 22,
+       "team_id": 2,
+       "opponent_team_id": 1,
+       "horizon_games": 1,
+       "proj_goals_es": 0.5,
+       "proj_goals_pp": 0,
+       "proj_assists_es": 0.2,
+       "proj_assists_pp": 0.1,
+       "proj_shots_es": 2,
+       "proj_shots_pp": 0.5,
+       "proj_hits": 1,
+       "proj_blocks": 0.5,
+       "proj_toi_es_seconds": 900,
+       "proj_toi_pp_seconds": 60
+      }
+     ],
+     {
+      "onConflict": "run_id,game_id,player_id,horizon_games"
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "method": "from",
+    "args": [
+     "forge_team_projections"
+    ]
+   },
+   {
+    "method": "upsert",
+    "args": [
+     [
+      {
+       "team_id": 1
+      }
+     ]
+    ]
+   }
+  ]
+ ],
+ "codeFiles": [],
+ "diagnostics": {}
+}

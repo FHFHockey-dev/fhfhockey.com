@@ -491,6 +491,49 @@ describe("/api/v1/db/cron/update-stats-cron", () => {
     expect(from).not.toHaveBeenCalledWith("statsUpdateStatus");
   });
 
+  it("defers a game still in progress today instead of failing the run", async () => {
+    const gameId = 2026020153;
+    updateStatsMock.mockRejectedValue(
+      new StatsPreWriteQuarantineError({
+        kind: "stats_pre_write_quarantine_failure",
+        code: "STATS_PRE_WRITE_QUARANTINE_ELIGIBLE",
+        phase: "pre_write_validation",
+        gameId,
+        requestedRows: 1,
+        reason: "game_not_finished",
+        message: "Game 2026020153 is not finished. gameState: CRIT",
+      }),
+    );
+    const gamesIn = vi.fn().mockResolvedValue({
+      data: [{ id: gameId, date: new Date().toISOString().slice(0, 10) }],
+      error: null,
+    });
+    const from = vi.fn(() => ({
+      select() {
+        return this;
+      },
+      in: gamesIn,
+    }));
+    const req: any = {
+      method: "GET",
+      query: { count: "1" },
+      supabase: { rpc: createRpc(gameId), from },
+    };
+    const res = createMockRes();
+
+    await handler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      success: true,
+      operationStatus: "success",
+      deferredGameIds: [gameId],
+      quarantinedGameIds: [],
+      pendingRetryGameIds: [],
+      failedRows: 0,
+    });
+  });
+
   it("treats updateStats success as already committed and never writes status directly", async () => {
     const gameId = 2025020010;
     updateStatsMock.mockResolvedValue(undefined);

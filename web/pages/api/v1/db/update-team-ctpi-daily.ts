@@ -210,7 +210,21 @@ async function resolveStartDate(
   return lastDate.slice(0, 10);
 }
 
+const hasTeamIdentity = (team: unknown): team is string =>
+  typeof team === "string" && team.length > 0 && team === team.trim();
+
 async function upsertRows(rows: CtpiRow[]) {
+  const identities = new Set<string>();
+  for (const row of rows) {
+    if (!hasTeamIdentity(row.team)) {
+      throw new Error("Invalid CTPI destination identity");
+    }
+    const identity = JSON.stringify([row.season_id, row.team, row.date]);
+    if (identities.has(identity)) {
+      throw new Error("Duplicate CTPI destination identity");
+    }
+    identities.add(identity);
+  }
   const chunkSize = 500;
   for (let i = 0; i < rows.length; i += chunkSize) {
     const slice = rows.slice(i, i + chunkSize);
@@ -273,13 +287,18 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const insertRows: CtpiRow[] = [];
     for (const date of dates) {
-      const metrics = Array.from(teamMap.values()).map((games) =>
-        computeTrendMetrics(
-          games.filter((g) => g.date <= date),
-          undefined,
-          10,
-        ),
-      );
+      const metrics = Array.from(teamMap.values())
+        .map((games) =>
+          computeTrendMetrics(
+            games.filter((g) => g.date <= date),
+            undefined,
+            10,
+          ),
+        )
+        // Empty histories must not contribute a blank team or skew league normalization.
+        .filter((metric) =>
+          metric.source_game_count > 0 && hasTeamIdentity(metric.team),
+        );
       const ctpi = computeCtpi(metrics);
       const computedAt = new Date().toISOString();
       ctpi.forEach((c) => {
@@ -339,6 +358,6 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 };
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
   jobName: "/api/v1/db/update-team-ctpi-daily",
-});
+}));

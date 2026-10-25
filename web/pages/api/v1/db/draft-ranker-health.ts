@@ -145,6 +145,6 @@ export async function draftRankerHealthHandler(
   }
 }
 
-export default withCronJobAudit(adminOnly(draftRankerHealthHandler as any), {
+export default adminOnly(withCronJobAudit(draftRankerHealthHandler as any, {
   jobName: "draft-ranker-health-operations",
-});
+}));

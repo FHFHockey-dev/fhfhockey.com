@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   buildPatreonAuthorizationUrl,
+  buildPatreonAccountRedirect,
   createPatreonOAuthState,
   fetchPatreonIdentity,
   normalizePatreonIdentity,
@@ -112,6 +113,56 @@ describe("Patreon OAuth v2", () => {
     expect(authorizationUrl.searchParams.get("redirect_uri")).toBe(
       "https://fhfhockey.com/api/v1/account/patreon/callback",
     );
+  });
+
+  it("rejects offsite paths and every ASCII control before URL normalization", () => {
+    const unsafePaths = [
+      "https://attacker.invalid/path",
+      "//attacker.invalid/path",
+      "/\\attacker.invalid/path",
+      "/.//attacker.invalid/path",
+      "/safe/..//attacker.invalid/path",
+      "/%2e%2e//attacker.invalid/path",
+      " /account",
+      "javascript:alert(1)",
+      ...Array.from({ length: 32 }, (_, index) =>
+        `/${String.fromCharCode(index)}/attacker.invalid`,
+      ),
+      "/\u007f/account",
+    ];
+    for (const next of unsafePaths) {
+      expect(sanitizePatreonNextPath(next)).toBe("/account?section=patreon");
+      const redirect = new URL(
+        buildPatreonAccountRedirect(next, "error", "Please reconnect."),
+        "https://fhfhockey.com",
+      );
+      expect(redirect.origin).toBe("https://fhfhockey.com");
+      expect(redirect.pathname).toBe("/account");
+      expect(redirect.searchParams.get("section")).toBe("patreon");
+    }
+    expect(sanitizePatreonNextPath(undefined)).toBe("/account?section=patreon");
+    expect(sanitizePatreonNextPath({} as any)).toBe("/account?section=patreon");
+  });
+
+  it("preserves internal paths, query parameters, and fragments through state and redirect", () => {
+    for (const next of ["/", "/account?section=patreon", "/account?tab=links#patreon", "/tools/a%20b"]) {
+      expect(sanitizePatreonNextPath(next)).toBe(next);
+      expect(verifyPatreonOAuthState(createPatreonOAuthState("user-1", next)).next).toBe(next);
+      const original = new URL(next, "https://fhfhockey.com");
+      const redirect = new URL(
+        buildPatreonAccountRedirect(next, "connected", "Patreon linked."),
+        original.origin,
+      );
+      expect(redirect.origin).toBe(original.origin);
+      expect(redirect.pathname).toBe(original.pathname);
+      expect(redirect.hash).toBe(original.hash);
+      for (const [key, value] of original.searchParams) {
+        expect(redirect.searchParams.get(key)).toBe(value);
+      }
+      expect(redirect.searchParams.get("patreon_status")).toBe("connected");
+      expect(redirect.searchParams.get("patreon_message")).toBe("Patreon linked.");
+    }
+    expect(sanitizePatreonNextPath(["/account#patreon", "//attacker.invalid"])).toBe("/account#patreon");
   });
 
   it("selects only the configured campaign membership and tier metadata", () => {

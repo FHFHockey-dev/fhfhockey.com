@@ -1,0 +1,44 @@
+@use "styles/vars" as v;
+
+/* --- Skater/goalie perspective --- */
+.roleToggle {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  margin: 4px auto 6px;
+  width: fit-content;
+  border: 1px solid rgba(v.$color-white, 0.08);
+  border-radius: v.$border-radius-sm;
+  background-color: rgba(v.$background-dark, 0.9);
+}
+
+.roleButton {
+  cursor: pointer;
+  min-height: 28px;
+  padding: 0 v.$space-md;
+  border: 1px solid transparent;
+  border-radius: v.$border-radius-sm;
+  background-color: transparent;
+  color: v.$secondary-color;
+  font-family: v.$font-family-accent, sans-serif;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+
+  &:hover {
+    color: v.$primary-color;
+    background-color: rgba(v.$primary-color, 0.1);
+  }
+
+  &:focus-visible {
+    outline: 2px solid v.$primary-color;
+    outline-offset: 2px;
+  }
+}
+
+.roleButtonActive {
+  border-color: v.$primary-color;
+  background-color: v.$primary-color-opaque;
+  color: v.$color-white;
+}

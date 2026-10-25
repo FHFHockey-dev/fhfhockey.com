@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } from "lib/projections/calibrationEligibility";
 
 const {
   fromMock,
@@ -124,6 +125,20 @@ function createMockRes() {
 let projectionSelectQueries: string[] = [];
 
 describe("/api/v1/forge/players", () => {
+  it.each([undefined, "external_inputs_allowed"])("preserves released legacy fallback rows without native-only contract %s", async contract => {
+    requireLatestSucceededRunIdMock.mockRejectedValueOnce(Object.assign(new Error("missing"), { statusCode: 404 }));
+    const prior = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => table === "forge_runs" ? createQueryBuilder(() => ({
+      data: [{ run_id: "fallback-external", as_of_date: "2026-02-06",
+        metrics: { input_provenance: { external_fantasy_input_contract: contract } } }], error: null,
+    })) : prior(table));
+    const res = createMockRes();
+    await handler({ method: "GET", query: { date: "2026-02-07" } } as any, res);
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({ runId: "fallback-external", asOfDate: "2026-02-06", fallbackApplied: true });
+    expect(res.body.data.length).toBeGreaterThan(0);
+    expect(fromMock.mock.calls.some(([table]) => table === "forge_player_projections")).toBe(true);
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     projectionSelectQueries = [];
@@ -589,6 +604,7 @@ describe("/api/v1/forge/players", () => {
             {
               run_id: "run-122",
               as_of_date: "2024-04-06",
+              metrics: { input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } },
             },
           ],
           error: null,
@@ -752,8 +768,8 @@ describe("/api/v1/forge/players", () => {
       if (table === "forge_runs") {
         return createQueryBuilder(() => ({
           data: [
-            { run_id: "daily-run", as_of_date: "2026-02-07" },
-            { run_id: "weekly-run", as_of_date: "2026-02-07" },
+            { run_id: "daily-run", as_of_date: "2026-02-07", metrics: { input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } },
+            { run_id: "weekly-run", as_of_date: "2026-02-07", metrics: { input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } },
           ],
           error: null,
         }));
@@ -810,7 +826,7 @@ describe("/api/v1/forge/players", () => {
       }
       if (table === "forge_runs") {
         return createQueryBuilder(() => ({
-          data: [{ run_id: "daily-run", as_of_date: "2026-02-07" }],
+          data: [{ run_id: "daily-run", as_of_date: "2026-02-07", metrics: { input_provenance: { external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT } } }],
           error: null,
         }));
       }
@@ -857,7 +873,7 @@ describe("/api/v1/forge/players", () => {
   describe("legacy fallback run selection (A-02)", () => {
     const qualified = {
       input_provenance: {
-        external_fantasy_input_contract: "excluded_from_native_inputs_v1",
+        external_fantasy_input_contract: FORGE_EXTERNAL_FANTASY_INPUT_CONTRACT,
       },
     };
     type RunRow = {

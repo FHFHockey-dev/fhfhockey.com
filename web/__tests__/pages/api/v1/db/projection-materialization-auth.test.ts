@@ -23,13 +23,13 @@ const legacyShiftWriterPath = resolve(
 
 describe("projection materialization route authorization", () => {
   it.each(routeSources)(
-    "keeps $fileName behind the shared cron/admin boundary inside auditing",
+    "keeps $fileName behind the shared cron/admin boundary before auditing",
     ({ source }) => {
       expect(source).toContain(
         'import adminOnly from "utils/adminOnlyMiddleware"',
       );
       expect(source).toMatch(
-        /export default withCronJobAudit\(\s*adminOnly\((?:withNhlOffSeasonSkip\([A-Za-z][A-Za-z0-9]* as any\)|[A-Za-z][A-Za-z0-9]* as any)\),\s*\{/,
+        /export default adminOnly\(\s*withCronJobAudit\(\s*(?:withNhlOffSeasonSkip\([A-Za-z][A-Za-z0-9]* as any\)|[A-Za-z][A-Za-z0-9]* as any),\s*\{/,
       );
     },
   );

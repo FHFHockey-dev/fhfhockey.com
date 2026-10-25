@@ -1100,6 +1100,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   return runNhlEdgeStatsSnapshot(req, res);
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
   jobName: "update-nhl-edge-stats"
-});
+}));

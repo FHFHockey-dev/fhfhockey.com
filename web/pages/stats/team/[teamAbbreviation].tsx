@@ -1,11 +1,11 @@
 import { GetServerSidePropsContext } from "next";
+import { useRouter } from "next/router";
 import supabase from "lib/supabase";
 import styles from "styles/TeamStatsPage.module.scss";
 import React, { useEffect, useState, useRef } from "react";
 import { useShotData, ShotDataFilters } from "hooks/useShotData";
 import { useTeamStatsHeaderData } from "hooks/useTeamStatsHeaderData";
 import { teamsInfo } from "lib/teamsInfo";
-import { LineCombinationsGrid } from "components/LineCombinations/LineCombinationsGrid";
 import { TeamTabNavigation } from "components/TeamTabNavigation/TeamTabNavigation";
 import TeamDropdown from "components/TeamDropdown";
 import { getTeams } from "lib/NHL/server";
@@ -95,20 +95,6 @@ export default function TeamStatsPage({
     gameTypes: ["02"] // Regular season by default
   });
 
-  // State for line combinations
-  const [lineCombos, setLineCombos] = useState<{
-    forwards: string[];
-    defensemen: string[];
-    goalies: string[];
-  } | null>(null);
-  const [lineCombosLoading, setLineCombosLoading] = useState(false);
-  const [lineCombosError, setLineCombosError] = useState<string | null>(null);
-
-  // State for player info map
-  const [playerMap, setPlayerMap] = useState<Record<string, any>>({});
-  const [playerMapLoading, setPlayerMapLoading] = useState(false);
-  const [playerMapError, setPlayerMapError] = useState<string | null>(null);
-
   const {
     data: standingsData,
     loading: standingsLoading,
@@ -131,79 +117,20 @@ export default function TeamStatsPage({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => {
-    if (!teamId) return;
-    setLineCombosLoading(true);
-    setLineCombosError(null);
-    supabase
-      .from("lineCombinations")
-      .select("forwards,defensemen,goalies,gameId")
-      .eq("teamId", teamId)
-      .order("gameId", { ascending: false })
-      .limit(1)
-      .then(({ data, error }) => {
-        if (error) {
-          setLineCombosError(error.message);
-          setLineCombos(null);
-        } else if (data && data.length > 0) {
-          setLineCombos({
-            forwards: (data[0].forwards || []).map(String),
-            defensemen: (data[0].defensemen || []).map(String),
-            goalies: (data[0].goalies || []).map(String)
-          });
-        } else {
-          setLineCombos(null);
-        }
-        setLineCombosLoading(false);
-      });
-  }, [teamId]);
-
-  // Fetch player info for all unique player IDs in the lineCombos
-  useEffect(() => {
-    if (!lineCombos) return;
-    const allIds = [
-      ...lineCombos.forwards,
-      ...lineCombos.defensemen,
-      ...lineCombos.goalies
-    ].filter(Boolean);
-    const uniqueIds = Array.from(new Set(allIds));
-    if (uniqueIds.length === 0) return;
-    setPlayerMapLoading(true);
-    setPlayerMapError(null);
-    supabase
-      .from("yahoo_nhl_player_map")
-      .select(
-        "nhl_player_id, nhl_player_name, mapped_position, eligible_positions"
-      )
-      .in("nhl_player_id", uniqueIds)
-      .then(({ data, error }) => {
-        if (error) {
-          setPlayerMapError(error.message);
-          setPlayerMap({});
-        } else if (data) {
-          const map: Record<string, any> = {};
-          data.forEach((row) => {
-            if (row.nhl_player_id != null) {
-              map[row.nhl_player_id] = row;
-            }
-          });
-          setPlayerMap(map);
-        }
-        setPlayerMapLoading(false);
-      });
-  }, [lineCombos]);
-
   // Show more/less for stats table
   const [showAllSeasons, setShowAllSeasons] = useState(false);
   const displayedSummaries = showAllSeasons
     ? summaries
     : summaries.slice(0, 10);
 
-  // Use our custom hook to fetch shot data with filters
+  // Shot data is only read once the Shot Map tab is opened.
+  const router = useRouter();
+  const shotMapActive = router.query.tab === "visualization";
   const { shotData, opponentShotData, isLoading, error } = useShotData(
     teamId,
     pageSeasonId?.toString(),
-    filters
+    filters,
+    shotMapActive
   );
 
   // Handle filter changes from the visualization component
@@ -318,12 +245,6 @@ export default function TeamStatsPage({
           filters={filters}
           onFilterChange={handleFilterChange}
           summaries={summaries}
-          lineCombos={lineCombos}
-          lineCombosLoading={lineCombosLoading}
-          lineCombosError={lineCombosError}
-          playerMap={playerMap}
-          playerMapLoading={playerMapLoading}
-          playerMapError={playerMapError}
           showAllSeasons={showAllSeasons}
           onToggleAllSeasons={() => setShowAllSeasons((v) => !v)}
         />

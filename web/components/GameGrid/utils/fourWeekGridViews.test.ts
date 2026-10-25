@@ -13,7 +13,7 @@ const team = (
 ): TeamDataWithTotals => ({
   teamId,
   teamAbbreviation: `T${teamId}`,
-  weeks,
+  weeks: weeks.map((week) => ({ ...week, scheduleCoverage: week.scheduleCoverage ?? { known: 7, expected: 7 } })),
   totals: {
     gamesPlayed: weeks.reduce((sum, week) => sum + week.gamesPlayed, 0),
     offNights: weeks.reduce((sum, week) => sum + week.offNights, 0),
@@ -59,6 +59,7 @@ describe("four-week grid alternate view", () => {
         gamesPlayed: 5,
         offNights: 3,
         opponents: [],
+        coverage: { known: 7, expected: 7 },
       },
       {
         weekNumber: 2,

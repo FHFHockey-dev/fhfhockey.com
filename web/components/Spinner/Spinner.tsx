@@ -7,12 +7,15 @@ type SpinnerProps = {
   className?: string;
   center?: boolean;
   size?: "small" | "medium";
+  /** Announced loading text, for callers that have no other loading status. */
+  label?: string;
 };
 
 function Spinner({
   className,
   center,
   size = "medium",
+  label,
   ...props
 }: SpinnerProps) {
   return (
@@ -20,6 +23,7 @@ function Spinner({
       className={classNames(styles.spinnerContainer, className, {
         [styles.center]: center,
       })}
+      role={label ? "status" : undefined}
       {...props}
     >
       <div
@@ -27,7 +31,9 @@ function Spinner({
           [styles.small]: size === "small",
           [styles.medium]: size === "medium",
         })}
+        aria-hidden="true"
       ></div>
+      {label ? <span className={styles.visuallyHidden}>{label}</span> : null}
     </div>
   );
 }

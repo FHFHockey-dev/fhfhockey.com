@@ -724,13 +724,287 @@
     },
     {
       "order": 72,
+      "path": "supabase/migrations/20260919005608_tweet_pipeline_reports_and_review.sql",
+      "sha256": "114e48167426f464f20116c51b017f07fb721797118a5ff28412ed7d4f6abd27",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 73,
+      "path": "supabase/migrations/20260919005622_nhl_draft_identity_ingestion.sql",
+      "sha256": "06545c5cb77cfc67c3936a60a0edf46fa1acaa621bc843c242ed4307f983003e",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 74,
+      "path": "supabase/migrations/20260919005852_nhl_prospect_verification_actor.sql",
+      "sha256": "e9fcea6cc6bb9bca54f7fe58ac330051d11aa8097ce2a0d11dba38946cfaa77f",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 75,
+      "path": "supabase/migrations/20260923184653_fantrax_live_draft_sessions.sql",
+      "sha256": "32f6db7ea409d0fd18084b54684d315d25288f27506dfb04aa92aa1d420dbad3",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 76,
+      "path": "supabase/migrations/20260927104934_in_season_access_workspace.sql",
+      "sha256": "c905c8fc37a3c5da2260acf6293efbce9dc670f1debe195d074ac49426f201fa",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 77,
       "path": "supabase/migrations/20261002021651_forge_local_execution_fence.sql",
-      "sha256": "753c59c1232987796fd56edd86b23d31a8f14f3db3a3765c0ccb8eb955e76341",
+      "sha256": "ce793d99684a59d4ee06190dc1bb8327d3e99dc4180a33ba8995bb28769c5d56",
       "sourceStatus": "source-authorized",
       "deploymentState": "pending",
       "migrationClass": "feature",
       "rolloutGate": "FE-05f local attempt/recovery contract only; hosted apply, horizon generation and serving retain the existing scope, capacity and release gates. No hosted migration command was run.",
-      "stateEvidence": "tasks/tasks-prd-roster-schedule-optimizer.md#shared-forecasting-implementation--full-plan-re-audit-october-1-2026; isolated PostgreSQL 17.11 tests and local CLI tests verify source semantics; no hosted ledger/apply receipt."
+      "stateEvidence": "tasks/tasks-prd-roster-schedule-optimizer.md#shared-forecasting-implementation--full-plan-re-audit-october-1-2026; isolated PostgreSQL 17.11 tests and local CLI tests verify source semantics; no hosted ledger/apply receipt. Source checksum reconciled to the retained 3311967f1 candidate during 2026-10-12 repository consolidation; hosted application remains pending."
+    },
+    {
+      "order": 78,
+      "path": "supabase/migrations/20261002134400_game_line_snapshots.sql",
+      "sha256": "041a78fd056c53f1624706f18a9f239f05b460456ba0da2fd3f7c4323fd0866a",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 79,
+      "path": "supabase/migrations/20261002140500_resolve_goalie_unified_game_team.sql",
+      "sha256": "a7beadc4c08f93dbcc4240f67be9c8d54f1cbcc5e37242230a5be6884fdbc872",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 80,
+      "path": "supabase/migrations/20261004181455_forge_public_revision_reader.sql",
+      "sha256": "dbf2f1cc43adbf79a497e81ae7bff0ef2d2b8d194dc63451b78aa28571edf46a",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 81,
+      "path": "supabase/migrations/20261011115124_preserve_projection_raw_shift_occurrences.sql",
+      "sha256": "5a04e00d6141697a9408165f8451385543fcbba16f258df225cc9c9aa946ebad",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "Production ledger supabase_migrations.schema_migrations version 20261019172738 name preserve_projection_raw_shift_occurrences (applied 2026-10-19 by explicit user approval; the file keeps its authored 20261011115124 name so the chain order is unchanged). Read-only preflight: hosted capture_projection_raw_source_snapshots_v1 prosrc md5 990b756c... equalled the 20260720105524 body; post-apply md5 f3b89dd8... equals this file's body; EXECUTE service_role only, SECURITY INVOKER and search_path/lock/statement settings unchanged; session lock_timeout back to 0. Local body equals applied body apart from BEGIN/COMMIT and SET LOCAL. Effect: drops the raw duplicate-row check (a relaxation)."
+    },
+    {
+      "order": 82,
+      "path": "supabase/migrations/20261011160000_preserve_nst_pk_fractional_start_rates.sql",
+      "sha256": "57b812b94b41b352a4c709c89622fe9b43480c6e0b9dd2699006d1f14f0140b2",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "unknown",
+      "migrationClass": "feature",
+      "rolloutGate": "Retained source under the 2026-10-12 repository reconciliation authorization. Separate explicit migration approval is required; no hosted migration is authorized or run.",
+      "stateEvidence": "No exact hosted applied-state receipt was inspected during repository reconciliation. Source presence does not establish deployment state."
+    },
+    {
+      "order": 83,
+      "path": "supabase/migrations/20261017183611_native_forecast_catalog_heads.sql",
+      "sha256": "e0776d8c20fce6bbff1f6fc225b1707d4258fb30148feaf31724129b6592772e",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Native FORGE catalog head and service-role CAS selector. Applied 2026-10-17 by explicit user approval as one targeted migration; no head row, selection, scheduler or public activation was created.",
+      "stateEvidence": "Production ledger supabase_migrations.schema_migrations version 20261017183611 name native_forecast_catalog_heads (read back 2026-10-17). Read-only post-apply check: table and RPC present; RLS enabled and forced, 0 policies, 0 rows; only service_role SELECT and EXECUTE; owner postgres (BYPASSRLS), SECURITY DEFINER, search_path=public, pg_temp. Local body equals applied body apart from BEGIN/COMMIT. Body is the reviewed native-catalog-head-review.sql (4149d89d...) plus SET LOCAL timeouts; disposable PostgreSQL 17 harness passed 6 cases (tasks/artifacts/forge-continuation-2026-10-17/catalog-head-migration-pg-result-v1.json)."
+    },
+    {
+      "order": 84,
+      "path": "supabase/migrations/20261019052934_restrict_provider_linkage_browser_writes.sql",
+      "sha256": "e3a90e1a3bfd45424c9714f2232fdc1880f6ec25e11196270beb0a1bb89148f7",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "security",
+      "rolloutGate": "Drafted 2026-10-18 from the Super Goal audit (G1 problem 5). Removes anon/authenticated writes, TRUNCATE and write policies on connected_accounts, external_leagues, external_teams and provider_sync_runs; authenticated keeps owner-scoped SELECT. Applied 2026-10-19 by explicit user approval as one targeted migration.",
+      "stateEvidence": "Production ledger supabase_migrations.schema_migrations version 20261019052934 name restrict_provider_linkage_browser_writes (read back 2026-10-19). Read-only preflight showed anon/authenticated with all table privileges and insert/update/delete own policies; read-only post-apply check: authenticated SELECT only, anon none, service_role unchanged, only the four *_select_own policies remain, session lock_timeout back to 0. Local body equals applied body apart from BEGIN/COMMIT. Disposable PostgreSQL 17.11 harness passed 23 cases before apply (tasks/artifacts/security-audit-fixes-2026-10-18/provider-linkage-pg-result-v1.json, which names the pre-rename file 20261018184229_...)."
+    },
+    {
+      "order": 85,
+      "path": "supabase/migrations/20261019053348_restore_private_token_vault.sql",
+      "sha256": "30fce724d3eedbd887126116226a1fa6b227fce2bfd4f1c16fd141478d4ba422",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "security",
+      "rolloutGate": "Drafted 2026-10-18 from the Super Goal audit (G1 problem 3). Restores the private token vault (schema, private.connected_account_tokens, the eleventh composite owner FK, the upsert/get/cleanup routines and trigger) that the baseline public *_secure wrappers call, so a fresh replay can store provider tokens. Guarded and replace-style; it never reads or writes token rows. Applied 2026-10-19 by explicit user approval as one targeted migration after a hosted parity check.",
+      "stateEvidence": "Production ledger supabase_migrations.schema_migrations version 20261019053348 name restore_private_token_vault (read back 2026-10-19). Read-only preflight: the hosted private routines matched this file byte for byte (prosrc md5 cad87b6e.../984b2c3a.../4ba768f3..., identical arguments, defaults, SECURITY DEFINER, search_path, EXECUTE grants, trigger, 7 indexes, both FKs, schema usage), so the apply re-stated identical definitions; read-only post-apply check showed the same values and session lock_timeout back to 0. Local body equals applied body apart from BEGIN/COMMIT. Disposable PostgreSQL 17.11 harness with a stub Vault passed 20 cases before apply (tasks/artifacts/security-audit-fixes-2026-10-18/token-vault-pg-result-v1.json, which names the pre-rename file 20261018190022_...)."
+    },
+    {
+      "order": 86,
+      "path": "supabase/migrations/20261019172842_accept_html_report_projection_shift_snapshots.sql",
+      "sha256": "60039c29fd5c98e27d60414d9bbb5eb550c787744f67448deba371c2cba8ccbb",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Drafted 2026-10-19 for the projection HTML shift-report fallback (TJ approved building it). Additive: capture_projection_raw_source_snapshots_v1 keeps its name, signature, defaults and grants; the shift envelope source may now be 'json-api' or 'htmlreports', and every row-identity, lock, collision and head check is unchanged, so JSON captures behave identically. Apply before the fallback code; hosted apply needs TJ's separate explicit approval and no migration command was run.",
+      "stateEvidence": "Production ledger version 20261019172842 name accept_html_report_projection_shift_snapshots (applied 2026-10-19 by explicit user approval, immediately after 20261011115124). Read-only preflight: hosted body equalled the 20261011115124 base; post-apply prosrc md5 4750518d... equals this file's body; grants, SECURITY INVOKER and function settings unchanged; session lock_timeout back to 0. Only change: the accepted shift-payload source set widens to json-api and htmlreports. Local body equals applied body apart from BEGIN/COMMIT and SET LOCAL. Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL harness evidence is recorded in tasks/artifacts/shift-charts-scope-2026-10-19/HTML-FALLBACK-BUILD.md."
+    },
+    {
+      "order": 87,
+      "path": "supabase/migrations/20261019211444_opponent_skater_allowed_by_position.sql",
+      "sha256": "70c8fe8ca884da8a4686eac99c289bb82f253fc18d367b65349ee56697afbdfe",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Drafted 2026-10-19 at TJ's request by session local_08a0bf1c: materialized view public.opponent_skater_allowed_by_position (regular-season points and shots allowed to F vs D per opponent, current and last season; service_role select only) plus fhfh_internal.register_opponent_allowed_refresh_cron(), which the migration does not call. Hosted apply and cron registration are separate explicit approvals. The register function schedules the refresh at 09:42 UTC ('42 9 * * *'), clear of the */5, */10, */20 and */25 jobs that fire at 09:40.",
+      "stateEvidence": "Production ledger version 20261019211444 name opponent_skater_allowed_by_position (applied 2026-10-19 by explicit TJ approval via session local_08a0bf1c; file renamed from its draft timestamp 20261019213000 to the ledger version). Chef read-only readback: it is the only ledger row after 20261019172842; materialized view has 128 rows; SELECT for service_role only (anon/authenticated false); fhfh_internal.register_opponent_allowed_refresh_cron() was called once by approval and cron.job 'opponent-skater-allowed-refresh' is active at '42 9 * * *'. IFTTT SQL6-SQL8 drafts take orders 88-90 when added."
+    },
+    {
+      "order": 88,
+      "path": "supabase/migrations/20261020211500_forge_league_skater_physical_totals.sql",
+      "sha256": "b5f86c6bd990d28d5fe31c60782ca8888b0f9248735b2c370fc6e4935ff107a2",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "feature",
+      "rolloutGate": "Drafted 2026-10-20 at TJ's request (FORGE hits/blocks league-to-date rescale): read-only STABLE SECURITY INVOKER function public.forge_league_skater_physical_totals(p_season_id, p_cutoff) returning league all-situation hits, blocks and TOI by F/D for this season to date and the two prior seasons from wgo_skater_stats, every scope bounded by game date as well as season_id; EXECUTE for service_role only. FORGE falls back to constant priors if the function is absent, so code may ship first. Hosted apply needs TJ's separate explicit approval; no migration command was run.",
+      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL 17.11 harness (synthetic wgo_skater_stats with 16,041 planted 2012-dated rows labelled 20242025): applied twice cleanly; output matched a direct aggregate; planted rows excluded; an invalid season id returned four zero rows; anon was refused EXECUTE. Takes order 88, so the IFTTT SQL6-SQL8 drafts noted on order 87 move to 89-91."
+    },
+    {
+      "order": 89,
+      "path": "supabase/migrations/20261020224500_data_api_explicit_default_privileges.sql",
+      "sha256": "60e0ee8f6004d07182c6999fbe34534a2cceb9530cafbd1a0bb868b0fd5ff51c",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "security",
+      "rolloutGate": "Drafted 2026-10-20 for ticket D4 (Supabase stops auto-granting new public objects on 2026-10-30). Revokes the baseline's replayable ALTER DEFAULT PRIVILEGES for postgres in public (ALL on tables, sequences and functions to anon, authenticated and service_role) and postgres's global PUBLIC EXECUTE default on new functions. Existing objects are unchanged; every later migration must grant explicitly (the IFTTT SQL6-SQL8 drafts already do). Apply before or with 20261020224600; hosted apply needs TJ's separate explicit approval and no migration command was run.",
+      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL 17.11 Unix-socket replay of the full ledger chain with Supabase role/extension stand-ins: tasks/artifacts/d4-grants-2026-10-20/ (harness, receipts). Takes order 89 because authority orders must be contiguous, so the IFTTT SQL6-SQL8 drafts noted on orders 87-88 move to 91-93."
+    },
+    {
+      "order": 90,
+      "path": "supabase/migrations/20261020224600_data_api_reviewed_object_grants.sql",
+      "sha256": "d6639171292547f1884c8e5f4d23be3dc2998f6e05425c5d95bdb6ce33173c0c",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "pending",
+      "migrationClass": "security",
+      "rolloutGate": "Drafted 2026-10-20 for ticket D4. Resets and re-grants the ACLs of the 76 reviewed tables, one identity sequence and 46 RPCs to exactly the operations traced callers use: browser access stays only on the owner-scoped provider-linkage SELECT and the deliberate public-read RSO schedule; service_role loses unused TRUNCATE/REFERENCES/TRIGGER everywhere, unused DELETE on Draft Pro/in-season/provider_sync_runs, the ALL grants on three forecast tables, and EXECUTE on the uncalled promote_player_forecast_model_atomic. Narrows privileges only; no RLS, policy or body change. Hosted apply needs TJ's separate explicit approval and no migration command was run.",
+      "stateEvidence": "Local source only; no hosted ledger or apply receipt. Disposable PostgreSQL 17.11 replay receipts and the per-grant caller list are in tasks/artifacts/d4-grants-2026-10-20/."
+    },
+    {
+      "order": 91,
+      "path": "supabase/migrations/20261021145154_drop_rolling_support_payload_gin.sql",
+      "sha256": "31d817e79c4258ce406f686e47d9199e91f60eb0f17dfce8b58b2b801b0789aa",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Recorded 2026-10-21 at TJ's request (FORGE pipeline repair): drops the unused GIN index idx_rolling_player_metric_support_payloads_payload_gin (jsonb_path_ops on support_payload, ~1.5 GB). No code queries support_payload by containment; the index made 5-row support-payload upserts hit the 8 s PostgREST statement timeout and stalled the scheduled rolling stage. The production drop itself was run by direct SQL on 2026-10-21 (about 14:16-14:20Z) with TJ's explicit approval; this file records it, idempotently, so baseline-built environments match. Rollback: CREATE INDEX CONCURRENTLY idx_rolling_player_metric_support_payloads_payload_gin ON public.rolling_player_metric_support_payloads USING gin (support_payload jsonb_path_ops).",
+      "stateEvidence": "Production ledger version 20261021145154 name drop_rolling_support_payload_gin (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c; a no-op because the index was already dropped). Readback: rolling_player_metric_support_payloads keeps only rolling_player_metric_support_payloads_pkey and idx_rolling_player_metric_support_payloads_snapshot. After the drop the 10-20 rolling tail ran about 3 players/s versus about 1/s before (pipeline repair diary 2026-10-21)."
+    },
+    {
+      "order": 92,
+      "path": "supabase/migrations/20261021165413_forge_projection_results_source_run_fence.sql",
+      "sha256": "6d48dad663ee976ff53ea4cf7273040b594c046fdcfe9d114490326b60928299",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Drafted 2026-10-21 (FORGE projection audit, proposal Q3). Re-creates replace_forge_projection_results_atomic so its 'latest succeeded run' check matches the readers' selection in web/lib/projections/releasedRunFence.ts: released runs only (git_sha not null and not local:%) and horizon-1 runs only (metrics->>'horizon_games' = '1', falling back to the resume scope key or h1 for unstamped runs). Without it the accuracy write raises when a fenced local run or the 10:12Z horizon-5 cron run is the newest succeeded run for a date (observed 10-15..10-19 422s). Security, search_path, grants and the rest of the body are byte-identical to 20260723121407. Hosted apply was approved by TJ on 2026-10-21 after release R15 (master 42eb9fd80) shipped the matching reader change; file renamed from its draft timestamp 20261021170000 to the ledger version.",
+      "stateEvidence": "Production ledger version 20261021165413 name forge_projection_results_source_run_fence (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c, after R15). Readback: the live function definition contains the released-h1 fence; service_role keeps EXECUTE and anon has none. Before applying, the live definition matched 20260723121407 apart from the new clause. Evidence: tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md (finding 3, Q3)."
+    },
+    {
+      "order": 93,
+      "path": "supabase/migrations/20261021172444_rolling_tables_autovacuum_tuning.sql",
+      "sha256": "6e0184424a266bbe48318605a001413090b5b41399a9b5720018d60dc0f04a70",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "FORGE projection audit 2026-10-21, proposal Q4 (TJ approved Claude running it): per-table autovacuum_analyze_scale_factor 0.002 and autovacuum_vacuum_scale_factor 0.01 on rolling_player_game_metrics, wgo_skater_stats and rolling_player_metric_support_payloads, which had never been auto-analyzed or auto-vacuumed. Rollback: ALTER TABLE ... RESET (autovacuum_analyze_scale_factor, autovacuum_vacuum_scale_factor).",
+      "stateEvidence": "Production ledger version 20261021172444 name rolling_tables_autovacuum_tuning (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c). Readback: all three tables carry both reloptions. A one-time ANALYZE ran first (17:23-17:24Z): rolling_player_game_metrics n_live_tup 891,302 (planner had estimated ~2,370), n_dead_tup 154,932; wgo_skater_stats 2,250,701 / 417,341; support payloads 69,522 / 5,624. Evidence: tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md (Q4)."
+    },
+    {
+      "order": 94,
+      "path": "supabase/migrations/20261021172445_drop_rpgm_player_date_duplicate_index.sql",
+      "sha256": "b3582780f6265d028ad4e527bc194334e2a905c187f58206008b0903355f13ec",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "FORGE projection audit 2026-10-21, proposal Q5 (TJ approved Claude running it): drops idx_rpgm_player_date (player_id, game_date desc), a duplicate of the primary key's leading columns. Other 0-scan indexes on the table stay until a longer idx_scan observation. Rollback: CREATE INDEX CONCURRENTLY idx_rpgm_player_date ON public.rolling_player_game_metrics (player_id, game_date desc).",
+      "stateEvidence": "Production ledger version 20261021172445 name drop_rpgm_player_date_duplicate_index (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c). Pre-check: definition (player_id, game_date DESC) vs rolling_player_game_metrics_pkey (player_id, game_date, strength_state); idx_scan 0 vs 15,973 on the primary key; pg_stat_database.stats_reset null; 21 MB. Readback: the index no longer exists. Evidence: tasks/artifacts/forge-projection-audit-2026-10-21/REPORT.md (Q5)."
+    },
+    {
+      "order": 95,
+      "path": "supabase/migrations/20261021182129_forge_latest_rolling_rows.sql",
+      "sha256": "7f1ef23da246a8f535e4e00a5a3aef33e70f7772f7d502d1baef5e233da70fce",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "FORGE projection audit 2026-10-21, proposal S-F / Q-3 (TJ approved Claude applying it): read-only STABLE SECURITY INVOKER function forge_latest_rolling_rows(bigint[], text, date, text[]) returning the latest rolling_player_game_metrics row per requested player for one strength before a cutoff, with only the sidecar keys FORGE hydrates. EXECUTE for service_role only (public, anon, authenticated revoked). The reader (web/lib/projections/queries/skater-queries.ts fetchRollingRows, octoberBranch 0ff219d25) falls back to its legacy window scan while the function is absent (PGRST202). File renamed from its draft timestamp 20261021180242 to the ledger version. Rollback: DROP FUNCTION public.forge_latest_rolling_rows(bigint[], text, date, text[]) (the reader falls back).",
+      "stateEvidence": "Production ledger version 20261021182129 name forge_latest_rolling_rows (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c). EXPLAIN (no ANALYZE) of the body with 20 ids: nested loop with Index Only Scan Backward using rolling_player_game_metrics_pkey (Limit 1 per player) and a Memoize + rolling_player_metric_support_payloads_pkey lookup, total cost about 17. Evidence: tasks/TASKS/forge-projections/tasks-forge-projection-audit-streamlining-2026-10-21.md (3.6)."
+    },
+    {
+      "order": 96,
+      "path": "supabase/migrations/20261021185034_drop_unread_rolling_columns.sql",
+      "sha256": "4f392329a0f9e2113e2b5d598e0eafbdc90394f7ae6293ec62fedc2eed651ea4",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "FORGE projection audit 2026-10-21, S-G (TJ decision: drop all 491): drops the 491 rolling_player_game_metrics columns no runtime code reads (rolling-column-inventory.json: wide_unread + pruned_unread + diag_sweep_only), matching web/lib/supabase/Upserts/rollingDroppedColumns.ts. Applied only after release R17 (master 8b99c22d2) shipped the writer that omits them. DROP COLUMN marks columns dropped; heap space returns on rewrite (pg_repack). Rollback: data is gone; columns can be re-added empty and refilled by a rolling recompute. File moved from its draft at tasks/artifacts/forge-projection-audit-2026-10-21/drafts/ to the ledger version.",
+      "stateEvidence": "Production ledger version 20261021185034 name drop_unread_rolling_columns (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c, after R17 was READY and smoke-tested). Pre-check: no views, triggers or publications depend on the table; the two functions that reference it (truncate_rolling_player_game_metrics, forge_latest_rolling_rows) name none of the 491 columns. Readback: 623 live and 491 dropped attributes (was 1,114 live)."
+    },
+    {
+      "order": 97,
+      "path": "supabase/migrations/20261021230025_forge_served_forecast_ledger.sql",
+      "sha256": "825b9d5290c540e0505ba12bee13a39b578c21dfaf8a75e50b1fcbabbb9c6efe",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "FORGE projection audit 2026-10-21, S-B (TJ approved in session local_08a0bf1c: apply before the R19 deploy): table forge_served_forecast_ledger (served forecasts and naive controls, settled against WGO actuals; PK served_date, player_id, game_id, source) and the optional view forge_served_forecast_scoreboard_daily (security_invoker). RLS on, no policies; all privileges revoked from public, anon, authenticated and service_role, then select/insert/update on the table and select on the view granted to service_role (D4 pattern). Readers/writers: forge-served-forecast-snapshot, forge-served-forecast-settle, /api/v1/forge/scoreboard (release R19). SQL from tasks/artifacts/forge-projection-audit-2026-10-21/s-b-served-forecast-ledger-design.md section 7, with its begin/commit wrappers removed. Rollback: drop view, then drop table (no other object depends on them).",
+      "stateEvidence": "Production ledger version 20261021230025 name forge_served_forecast_ledger (applied 2026-10-21 by explicit TJ approval via session local_08a0bf1c). Readback: relrowsecurity true; table grants service_role INSERT/SELECT/UPDATE (plus owner postgres), view grant service_role SELECT; no anon or authenticated grants; 0 rows."
+    },
+    {
+      "order": 98,
+      "path": "supabase/migrations/20261022133743_route_runner_tables.sql",
+      "sha256": "bf8425edd040182d2f2b87092c934e32572a893d429cef18d4a4315ad3c4a109",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "Long-run route runner (TJ approved 2026-10-22 in this session: apply migration 98, push R21, then schedule the route-runner-tick pg_cron job): tables route_runner_jobs (queue: route, initial/next query, contract, status, lease, expiry, step/kill/row counters, progress) and route_runner_events (terminal lines, cascade on job delete). RLS on, no policies; all privileges revoked from public, anon, authenticated and service_role, then select/insert/update on both tables and usage on route_runner_events_id_seq granted to service_role (D4 pattern). Readers/writers: lib/routeRunner/store.ts via route-runner-tick and the route-runner jobs APIs, all adminOnly (release R21). SQL is the tables block of tasks/artifacts/route-runner/route_runner_tables.sql; its commented pg_cron block is scheduled separately after the deploy. Rollback: unschedule route-runner-tick, then drop route_runner_events, then route_runner_jobs.",
+      "stateEvidence": "Production ledger version 20261022133743 name route_runner_tables (applied 2026-10-22 by explicit TJ approval, before the R21 deploy). Pre-check: public.update_updated_at_column exists; neither table nor a route-runner-tick job existed. Readback: relrowsecurity true on both tables, 0 policies; grants service_role INSERT/SELECT/UPDATE on both tables and USAGE on the sequence (plus owner postgres); no anon or authenticated grants."
+    },
+    {
+      "order": 99,
+      "path": "supabase/migrations/20261022181002_forge_served_forecast_ledger_market_source.sql",
+      "sha256": "8a4cdcb3d58afcf1ca36cb6cfecebdc9455109bbb8f05695389a8f6a734b6fa3",
+      "sourceStatus": "source-authorized",
+      "deploymentState": "applied",
+      "migrationClass": "feature",
+      "rolloutGate": "FORGE improvements task 6.3 (TJ approved 2026-10-22 in Ledger lane session, Chef local_08a0bf1c: apply migration 99, then turn LEDGER_MARKET_ENABLED on for the next release): widens forge_served_forecast_ledger's source check to add 'market' and adds the nullable jsonb column market_lines. Readers/writers: forge-served-forecast-snapshot (market rows, upserted after the other sources) and /api/v1/forge/scoreboard (select of market_lines), both behind LEDGER_MARKET_ENABLED (lib/player-forecasts/servedForecastLedger.ts). Grants are table-level from migration 97; the scoreboard view is unaffected. Rollback: delete market rows, drop market_lines, restore the five-source check.",
+      "stateEvidence": "Production ledger version 20261022181002 name forge_served_forecast_ledger_market_source (applied 2026-10-22 by explicit TJ approval). Pre-check: check constraint forge_served_forecast_ledger_source_check held the five sources; market_lines absent; 1,596 rows. Readback: six-source check including 'market'; market_lines jsonb nullable; 1,596 rows; grants service_role INSERT/SELECT/UPDATE only, no anon or authenticated."
     }
-  ]
+  ],
+  "sourceExtensionApproval": {
+    "date": "2026-10-12",
+    "receipt": "TJ approved reconciliation and pushing existing unreleased repository work at 16:21 UTC. This extends source inventory only, not permission to apply migrations."
+  }
 }

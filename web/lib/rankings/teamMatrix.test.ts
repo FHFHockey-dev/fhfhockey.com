@@ -1,11 +1,83 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { supabaseFromMock, rangeCalls, pagingFixture } = vi.hoisted(() => {
+  type QueryState = {
+    table: string;
+    from?: number;
+    to?: number;
+    orders: Array<{ key: string; ascending: boolean }>;
+  };
+  const rangeCalls: QueryState[] = [];
+  const pagingFixture = {
+    rows: {} as Record<string, Record<string, any>[]>,
+    omitOrder: null as string | null,
+  };
+
+  function resolvePage(state: QueryState) {
+    const orders = state.orders.filter((order) => order.key !== pagingFixture.omitOrder);
+    const data = [...(pagingFixture.rows[state.table] ?? [])].sort((left, right) => {
+      for (const { key, ascending } of orders) {
+        if (left[key] === right[key]) continue;
+        return (left[key] < right[key] ? -1 : 1) * (ascending ? 1 : -1);
+      }
+      // A legal backend plan change reverses unresolved ties on later pages.
+      return state.from ? right.fixtureIndex - left.fixtureIndex : left.fixtureIndex - right.fixtureIndex;
+    });
+    return { data: state.from == null ? data : data.slice(state.from, state.to! + 1), error: null };
+  }
+
+  function createQuery(table: string) {
+    const state: QueryState = { table, orders: [] };
+    const query: Record<string, unknown> = {};
+    for (const method of ["select", "eq", "gte", "lte", "in", "limit"]) {
+      query[method] = () => query;
+    }
+    query.order = (key: string, options?: { ascending?: boolean }) => {
+      state.orders.push({ key, ascending: options?.ascending ?? true });
+      return query;
+    };
+    query.range = (from: number, to: number) => {
+      state.from = from;
+      state.to = to;
+      rangeCalls.push(state);
+      return query;
+    };
+    query.maybeSingle = () =>
+      Promise.resolve({
+        data: SNAPSHOT_ROWS[table] ?? null,
+        error: null,
+      });
+    query.then = (
+      resolve: (value: ReturnType<typeof resolvePage>) => unknown,
+      reject?: (reason: unknown) => unknown,
+    ) => Promise.resolve(resolvePage(state)).then(resolve, reject);
+    return query;
+  }
+
+  const SNAPSHOT_ROWS: Record<string, unknown> = {
+    team_power_ratings_daily: { date: "2026-04-16" },
+    team_unit_toi: { snapshot_date: "2026-04-16" },
+  };
+
+  return {
+    rangeCalls,
+    pagingFixture,
+    supabaseFromMock: vi.fn((table: string) => createQuery(table)),
+  };
+});
+
+vi.mock("lib/supabase/server", () => ({
+  default: { from: supabaseFromMock },
+}));
 
 import { buildContextualRankingsAvailableFilters } from "./availableFilters";
 import {
   aggregateTeamGameContextRows,
   aggregateTeamStyleRows,
   aggregateTeamUnitToiRows,
+  buildTeamMatrixSurface,
   buildTeamUnitMetricInterpretation,
+  clearTeamMatrixSurfaceCachesForTests,
   parseTeamMatrixRequest,
   rankTeamMetricValues,
 } from "./teamMatrix";
@@ -326,5 +398,52 @@ describe("teamMatrix", () => {
       qualifiedPeerCount: 3,
     });
     expect(ranks.has("UTA")).toBe(false);
+  });
+
+  describe("paged source reads", () => {
+    beforeEach(() => {
+      rangeCalls.length = 0;
+      pagingFixture.rows = {};
+      pagingFixture.omitOrder = null;
+      clearTeamMatrixSurfaceCachesForTests();
+    });
+
+    it("retains both teams when a tied game spans the 1,000-row boundary", async () => {
+      const sourceRows = [{ fixtureIndex: 0, game_id: 1, team_id: 1, game_date: "2026-04-16" }];
+      for (let game = 2; game <= 501; game += 1) {
+        for (const team_id of [1, 2]) {
+          sourceRows.push({ fixtureIndex: sourceRows.length, game_id: game, team_id, game_date: new Date(Date.UTC(2026, 3, 17 - game)).toISOString().slice(0, 10) });
+        }
+      }
+      pagingFixture.rows = {
+        team_underlying_stats_summary: sourceRows,
+        teams: [1, 2].map((id) => ({ id, abbreviation: `T${id}`, name: `Team ${id}` })),
+        team_power_ratings_daily: [1, 2].map((id) => ({ team_abbreviation: `T${id}`, off_rating: 100, def_rating: 100, pace_rating: 100 })),
+      };
+      const request = parseTeamMatrixRequest({ season: "20252026" });
+      const response = await buildTeamMatrixSurface(request);
+      const counts = (rows: typeof response.rows) => Object.fromEntries(rows.map((row) => [row.team.id, row.record.styleGames]));
+      expect(counts(response.rows)).toEqual({ 1: 501, 2: 500 });
+      expect(rangeCalls.filter((call) => call.table === "team_underlying_stats_summary").map((call) => [call.from, call.to])).toEqual([[0, 999], [1000, 1999]]);
+
+      // In-memory omission models the old query; no runtime source is edited.
+      pagingFixture.omitOrder = "team_id";
+      clearTeamMatrixSurfaceCachesForTests();
+      const unstable = await buildTeamMatrixSurface(request);
+      expect(counts(unstable.rows)).toEqual({ 1: 501, 2: 499 });
+    });
+
+    it("orders every paged source read by a unique key", async () => {
+      await buildTeamMatrixSurface(parseTeamMatrixRequest({ season: "20252026" }));
+
+      const ordersByTable = new Map(
+        rangeCalls.map((call) => [call.table, call.orders.map((order) => order.key)]),
+      );
+      expect(Object.fromEntries(ordersByTable)).toEqual({
+        team_underlying_stats_summary: ["game_date", "game_id", "team_id"],
+        wgo_team_stats: ["date", "id"],
+        team_unit_toi: ["game_date", "id"],
+      });
+    });
   });
 });

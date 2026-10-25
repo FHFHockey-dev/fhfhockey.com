@@ -1,3 +1,4 @@
+import type { CurrentPlanningOptions } from "lib/rosterScheduleOptimizer/currentPlanningRead";
 import { useEffect, useMemo, useState } from "react";
 import { useCandidateMetrics } from "hooks/useCandidateMetrics";
 import { normalizeEligibility } from "lib/rosterScheduleOptimizer/eligibility";
@@ -11,6 +12,7 @@ type Candidate = { player: PlanningPlayer; activeGames: number | null; points: n
   eligibilityKnown?: boolean; availabilityKnown?: boolean;
   plan?: CandidatePlan; comparison?: CandidateComparison; diagnostic?: CandidateDiagnostic; upcomingGames?: number | null };
 type Props = {
+  executionOptions?: CurrentPlanningOptions;
   /** Follows the lineup goal (most starts → schedule, best projected points → points); the manager can still switch. */
   preferredSort?: "points" | "schedule";
   searchQuery?: string;
@@ -36,7 +38,7 @@ const compareDiscovery = (a: Candidate, b: Candidate) => Number(knownInputs(b)) 
 export const compareCandidateFits = (a: Candidate, b: Candidate, sort: "points" | "schedule") => sort === "schedule"
   ? byFit(a, b) : (b.activePoints ?? -Infinity) - (a.activePoints ?? -Infinity) || byFit(a, b);
 
-export default function CandidateBrowser({ preferredSort, searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, markAvailable }: Props) {
+export default function CandidateBrowser({ executionOptions, preferredSort, searchQuery, changeSearch, calendar, players, rosterIds, snapshot, intent, manual, select, add, selectPlan, canSelectPlan, markAvailable }: Props) {
   const [view, setView] = useState<"team" | "all">("all");
   const [localQuery, setLocalQuery] = useState("");
   const query = searchQuery ?? localQuery;
@@ -56,7 +58,7 @@ export default function CandidateBrowser({ preferredSort, searchQuery, changeSea
   const [requested, setRequested] = useState<{ snapshotId: string | null; ids: string[] }>({ snapshotId: null, ids: [] });
   const requestedIds = requested.snapshotId === (snapshot?.id ?? null) ? requested.ids : [];
   const compare = (id: string) => setRequested({ snapshotId: snapshot?.id ?? null, ids: [...new Set([...requestedIds, id])] });
-  const { metrics, loading, error } = useCandidateMetrics(snapshot, intent, requestedIds);
+  const { metrics, loading, error } = useCandidateMetrics(snapshot, intent, requestedIds, executionOptions);
   const goalieBoost = metrics?.goalieBoost === true;
   // Discovery uses this render's clock; saved planning cutoffs remain immutable.
   const discoveryAsOf = Date.now();

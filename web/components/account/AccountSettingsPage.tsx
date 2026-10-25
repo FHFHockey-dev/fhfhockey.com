@@ -30,7 +30,10 @@ import FantraxImportPanel from "./FantraxImportPanel";
 import EspnImportPanel from "./EspnImportPanel";
 import PatreonConnectionPanel from "./PatreonConnectionPanel";
 import DraftProPanel from "./DraftProPanel";
-import { useDraftProAccess } from "hooks/useDraftProAccess";
+import InSeasonPanel from "./InSeasonPanel";
+import { useProviderSyncAccess } from "hooks/useProviderSyncAccess";
+import ProviderSyncNotice from "components/account/ProviderSyncNotice";
+import { providerSyncAccessMessage } from "lib/integrations/providerSyncAccess";
 
 import styles from "./AccountSettingsPage.module.scss";
 
@@ -52,6 +55,7 @@ type AccountSection =
   | "saved-teams"
   | "connected-accounts"
   | "patreon"
+  | "in-season"
   | "draft-pro";
 
 type LeagueSettingsView = "scoring" | "categories" | "roster" | "context";
@@ -137,6 +141,12 @@ const SECTION_CONFIG: Record<
     description: "Membership and supporter access",
     title: "Patreon",
     body: "Link Patreon and review your supporter status.",
+  },
+  "in-season": {
+    label: "Premium sync",
+    description: "Monthly and season-pass access",
+    title: "Premium sync",
+    body: "Review your in-season access and available plans.",
   },
   "draft-pro": {
     label: "Draft Pro",
@@ -296,6 +306,7 @@ function resolveSection(
     rawSection === "saved-teams" ||
     rawSection === "connected-accounts" ||
     rawSection === "patreon" ||
+    rawSection === "in-season" ||
     rawSection === "draft-pro"
   ) {
     return rawSection;
@@ -586,9 +597,11 @@ function getSettingLabel(key: string) {
 export default function AccountSettingsPage() {
   const router = useRouter();
   const { user, refreshProfileAvatar } = useAuth();
-  const { access: draftProAccess } = useDraftProAccess();
-  const draftProEligible = Boolean(draftProAccess?.eligible);
+  const syncAccess = useProviderSyncAccess();
+  const providerSyncEligible = syncAccess.status === "ready" && Boolean(syncAccess.access?.eligible);
   const userId = user?.id ?? null;
+  const yahooStateUserRef = useRef(userId);
+  yahooStateUserRef.current = userId;
   const userDisplayName = user?.displayName ?? "";
   const userAvatarUrl = user?.avatarUrl ?? "";
   const profileUserIdRef = useRef(userId);
@@ -662,14 +675,14 @@ export default function AccountSettingsPage() {
     useState<ConnectedAccountsView>("yahoo");
   const timezoneInputRef = useRef<HTMLInputElement>(null);
 
-  const requireDraftProForYahoo = useCallback(() => {
-    if (draftProEligible) return true;
+  const requirePremiumForYahoo = useCallback(() => {
+    if (providerSyncEligible) return true;
     setYahooFeedback({
       tone: "info",
-      message: "Yahoo league sync and Yahoo league settings require Draft Pro. Your manual league settings remain available.",
+      message: providerSyncAccessMessage(syncAccess.status, syncAccess.access),
     });
     return false;
-  }, [draftProEligible]);
+  }, [providerSyncEligible, syncAccess.status, syncAccess.access]);
 
   const activeSection = useMemo(
     () => resolveSection(router.query.section),
@@ -1004,6 +1017,11 @@ export default function AccountSettingsPage() {
     };
   }, [activeSection, editingSavedTeamId, userId]);
 
+  useEffect(() => {
+    setYahooConnectedAccount(null); setYahooLeagues([]); setYahooTeams([]);
+    setYahooPreferences(null); setYahooLatestSyncRun(null);
+  }, [userId]);
+
   const reloadYahooState = useCallback(async () => {
     if (!userId) {
       setYahooConnectedAccount(null);
@@ -1071,6 +1089,7 @@ export default function AccountSettingsPage() {
       throw syncRunResponse.error;
     }
 
+    if (yahooStateUserRef.current !== userId) return;
     setYahooConnectedAccount(accountResponse.data);
     setYahooLeagues(leagueResponse.data || []);
     setYahooTeams(teamResponse.data || []);
@@ -1081,7 +1100,6 @@ export default function AccountSettingsPage() {
   useEffect(() => {
     if (
       !userId ||
-      !draftProEligible ||
       (activeSection !== "connected-accounts" &&
         activeSection !== "league-settings" &&
         activeSection !== "saved-teams")
@@ -1136,7 +1154,6 @@ export default function AccountSettingsPage() {
     };
   }, [
     activeSection,
-    draftProEligible,
     router.query.yahoo_message,
     router.query.yahoo_status,
     reloadYahooState,
@@ -1497,7 +1514,7 @@ export default function AccountSettingsPage() {
   }
 
   async function handleYahooConnect() {
-    if (!requireDraftProForYahoo()) return;
+    if (!requirePremiumForYahoo()) return;
     setYahooFeedback(null);
     setIsYahooActionLoading(true);
 
@@ -1585,7 +1602,7 @@ export default function AccountSettingsPage() {
   }
 
   async function handleYahooRefresh() {
-    if (!requireDraftProForYahoo()) return;
+    if (!requirePremiumForYahoo()) return;
     setYahooFeedback(null);
     setIsYahooActionLoading(true);
 
@@ -1627,7 +1644,7 @@ export default function AccountSettingsPage() {
   }
 
   async function handleYahooTeamRoster(team: ExternalTeamRow) {
-    if (!requireDraftProForYahoo()) return;
+    if (!requirePremiumForYahoo()) return;
     if (expandedYahooRosterTeamId === team.id) {
       setExpandedYahooRosterTeamId(null);
       return;
@@ -1691,7 +1708,7 @@ export default function AccountSettingsPage() {
   }
 
   async function handleSetYahooDefaultTeam(team: ExternalTeamRow) {
-    if (!requireDraftProForYahoo()) return;
+    if (!requirePremiumForYahoo()) return;
     if (!user?.id || !yahooConnectedAccount) {
       return;
     }
@@ -1767,7 +1784,7 @@ export default function AccountSettingsPage() {
   }
 
   async function handleSaveYahooTeam(team: ExternalTeamRow) {
-    if (!requireDraftProForYahoo()) return;
+    if (!requirePremiumForYahoo()) return;
     if (!user?.id) {
       return;
     }
@@ -1889,7 +1906,7 @@ export default function AccountSettingsPage() {
     nextLeagueId: string,
     nextTeamId?: string,
   ) {
-    if (!requireDraftProForYahoo()) return;
+    if (!requirePremiumForYahoo()) return;
     if (!user?.id || !yahooConnectedAccount) {
       return;
     }
@@ -3334,13 +3351,14 @@ export default function AccountSettingsPage() {
                       </span>
                     </div>
 
-                    {!draftProEligible ? (
+                    {!providerSyncEligible ? (
                       <div className={styles.infoMessage} role="status">
-                        Yahoo league sync and imported Yahoo league settings are a Draft Pro feature. Upgrade to connect or refresh Yahoo; manual league settings remain available on the free tier.
+                        <ProviderSyncNotice {...syncAccess} />
+                        Manual league settings remain available on the free tier.
                       </div>
                     ) : null}
 
-                    {draftProEligible && !yahooConnectedAccount ? (
+                    {providerSyncEligible && !yahooConnectedAccount ? (
                       <div className={styles.infoMessage} role="status">
                         <strong>Connect in three steps:</strong> Click Connect Yahoo Fantasy, sign in on Yahoo and approve access, then return here to choose your NHL league and team. Open the Draft Dashboard to start live draft sync.
                       </div>
@@ -3378,7 +3396,7 @@ export default function AccountSettingsPage() {
                           type="button"
                           className={styles.saveButton}
                           onClick={() => void handleYahooConnect()}
-                          disabled={isYahooActionLoading || !draftProEligible}
+                          disabled={isYahooActionLoading || !providerSyncEligible}
                         >
                           Connect Yahoo Fantasy
                         </button>
@@ -3389,7 +3407,7 @@ export default function AccountSettingsPage() {
                             className={styles.secondaryButton}
                             onClick={() => void handleYahooRefresh()}
                             disabled={
-                              isYahooActionLoading || yahooRefreshBlocked || !draftProEligible
+                              isYahooActionLoading || yahooRefreshBlocked || !providerSyncEligible
                             }
                           >
                             {yahooLatestSyncRun?.status === "running"
@@ -3532,7 +3550,7 @@ export default function AccountSettingsPage() {
                                       }
                                       disabled={
                                         isYahooActionLoading ||
-                                        Boolean(yahooRosterLoadingTeamId)
+                                        Boolean(yahooRosterLoadingTeamId) || !providerSyncEligible
                                       }
                                       aria-label={`${
                                         isRosterExpanded ? "Hide" : "View"
@@ -3658,6 +3676,10 @@ export default function AccountSettingsPage() {
 
                 <PatreonConnectionPanel />
               </div>
+            ) : null}
+
+            {activeSection === "in-season" ? (
+              <div className={styles.panel}><InSeasonPanel /></div>
             ) : null}
 
             {activeSection === "draft-pro" ? (

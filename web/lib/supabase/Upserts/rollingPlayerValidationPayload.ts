@@ -1,4 +1,9 @@
 import supabase from "lib/supabase/server";
+import {
+  mergeRollingSupportPayloadFields,
+  ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE,
+  type RollingPlayerSupportPayload
+} from "lib/supabase/Upserts/rollingPlayerSupportPayload";
 import type { Database } from "lib/supabase/database-generated.types";
 import { isRollingDroppedColumn } from "./rollingDroppedColumns";
 import {
@@ -645,7 +650,7 @@ function getRowGameDate(row: Record<string, unknown>): string | null {
 
 function getRowStrength(row: Record<string, unknown>): StrengthState | null {
   const value = row.strength_state ?? row.strength;
-  return value === "all" || value === "ev" || value === "pp" || value === "pk"
+  return value === "all" || value === "ev" || value === "pp" || value === "pk" || value === "5v5"
     ? value
     : null;
 }
@@ -2216,10 +2221,45 @@ async function fetchStoredRows(
   if (error) {
     throw error;
   }
+  const rows = (data as RollingMetricRow[] | null) ?? [];
 
-  return ((data as RollingMetricRow[] | null) ?? []).sort((left, right) =>
-    left.game_date.localeCompare(right.game_date)
-  );
+  // The writer prunes historical windows from the wide row into the support
+  // payload sidecar; restore them so stored values compare like for like.
+  const supportPayloadByDate = new Map<string, RollingPlayerSupportPayload>();
+  if (rows.length > 0) {
+    let supportQuery = supabase
+      .from(ROLLING_PLAYER_SUPPORT_PAYLOAD_TABLE)
+      .select("game_date, support_payload")
+      .eq("player_id", request.playerId)
+      .eq("season", request.season)
+      .eq("strength_state", request.strength)
+      .order("game_date", { ascending: true });
+    if (request.startDate) {
+      supportQuery = supportQuery.gte("game_date", request.startDate);
+    }
+    if (request.endDate) {
+      supportQuery = supportQuery.lte("game_date", request.endDate);
+    }
+    const { data: supportData, error: supportError } = await supportQuery;
+    if (supportError) {
+      throw supportError;
+    }
+    for (const supportRow of supportData ?? []) {
+      supportPayloadByDate.set(
+        supportRow.game_date,
+        supportRow.support_payload as RollingPlayerSupportPayload
+      );
+    }
+  }
+
+  return rows
+    .map((row) =>
+      mergeRollingSupportPayloadFields(
+        row as unknown as Record<string, unknown>,
+        supportPayloadByDate.get(row.game_date)
+      ) as unknown as RollingMetricRow
+    )
+    .sort((left, right) => left.game_date.localeCompare(right.game_date));
 }
 
 export async function buildRollingPlayerValidationPayload(
@@ -2466,6 +2506,7 @@ export async function buildRollingPlayerValidationPayload(
 }
 
 export const __testables = {
+  fetchStoredRows,
   filterRowsForRequest,
   pickFocusedRow,
   inferMetricMetadata,

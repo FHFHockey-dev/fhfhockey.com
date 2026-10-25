@@ -265,17 +265,19 @@ SELECT cron.schedule(
 
     expect(
       inventory.jobs.filter((job) => job.provider === "pg_cron"),
-    ).toHaveLength(56);
+    ).toHaveLength(57);
     expect(
       inventory.jobs.filter((job) => job.provider === "vercel"),
     ).toHaveLength(30);
-    expect(inventory.jobs).toHaveLength(86);
-    // Isolated job79/job399 overlay: one retired, one added; other records unchanged.
-    expect(inventory.jobs.some((job) => job.provider === "pg_cron" && job.name === "update-nst-gamelog")).toBe(false);
-    expect(inventory.jobs).toContainEqual(expect.objectContaining({
-      provider: "pg_cron", name: "route-runner-tick",
-      routePath: "/api/v1/db/route-runner-tick", normalizedCronExpression: "* * * * *",
-    }));
+    expect(inventory.jobs).toHaveLength(87);
+    // pg_cron job 234 was intentionally disabled; the Vercel 13:00 UTC cron
+    // is the sole daily report. Live SQL jobs 394/396/397 were added 2026-10-18.
+    // Job 393 (horizon-5 projection run) was unscheduled 2026-10-21.
+    expect(
+      inventory.jobs.filter((job) => job.routePath === "/api/v1/db/cron-report"),
+    ).toEqual([
+      expect.objectContaining({ provider: "vercel", normalizedCronExpression: "0 13 * * *" }),
+    ]);
     expect(inventory.jobs).toContainEqual(
       expect.objectContaining({
         provider: "vercel",

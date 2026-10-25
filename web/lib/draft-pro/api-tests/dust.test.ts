@@ -25,6 +25,7 @@ vi.mock("lib/rosterScheduleData", async () => {
 vi.mock("lib/supabase/server", () => ({ default: { from: mocks.from } }));
 
 import handler from "../../../pages/api/v1/draft-pro/dust";
+import { DraftProRequestError } from "../requestError";
 
 function response() {
   const state = { status: 0, body: null as unknown, headers: new Map<string, string>() };
@@ -96,8 +97,7 @@ describe("Draft Pro DUST API", () => {
   });
 
   it("returns a capability 403 before parsing or reading schedule data", async () => {
-    const denied = new Error("Draft Pro access is required for this action.");
-    Object.assign(denied, { statusCode: 403, code: "no_active_grant" });
+    const denied = new DraftProRequestError(403, "Draft Pro access is required for this action.", "no_active_grant");
     mocks.requireDraftProServerCapability.mockImplementation(() => { throw denied; });
     const res = response();
     await handler({ method: "POST", body: {} } as any, res.api as any);
@@ -177,5 +177,22 @@ describe("Draft Pro DUST API", () => {
     const res = response();
     await handler({ method: "POST", body: requestBody } as any, res.api as any);
     expect(res.state).toMatchObject({ status: 503, body: { success: false, error: { code: "schedule_season_unavailable" } } });
+  });
+
+  it.each([403, 503, 700, "403"])("sanitizes dependency statusCode %s and backend text", async (statusCode) => {
+    const dependencyError = Object.assign(new Error("synthetic-private-database-detail"), { statusCode, code: "synthetic-backend-code" });
+    mocks.from().range.mockRejectedValue(dependencyError);
+    const res = response();
+    await handler({ method: "POST", body: requestBody } as any, res.api as any);
+    expect(res.state).toMatchObject({ status: 500, body: { success: false, error: { code: "dust_calculation_failed", message: "DUST could not be calculated." } } });
+  });
+
+  it("preserves the authored DUST rate-limit status and retry header", async () => {
+    const rateLimit = Object.assign(new DraftProRequestError(429, "Too many DUST calculations. Try again shortly.", "rate_limited"), { retryAfterSeconds: 37 });
+    mocks.enforceDraftProDustRateLimit.mockRejectedValue(rateLimit);
+    const res = response();
+    await handler({ method: "POST", body: requestBody } as any, res.api as any);
+    expect(res.state).toMatchObject({ status: 429, body: { success: false, error: { code: "rate_limited", message: "Too many DUST calculations. Try again shortly." } } });
+    expect(res.state.headers.get("Retry-After")).toBe("37");
   });
 });

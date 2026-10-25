@@ -25,7 +25,8 @@ export function getDraftProFeatureFlags(
     env[DRAFT_PRO_FEATURE_ENV_NAMES[name]] === "true";
   const savedDrafts = enabled("saved_drafts");
   return {
-    checkout: enabled("checkout"),
+    // New sales are closed. Historical grants and capabilities remain independent.
+    checkout: false,
     recommendations: enabled("recommendations"),
     dust: enabled("dust"),
     blended_csv: enabled("blended_csv"),

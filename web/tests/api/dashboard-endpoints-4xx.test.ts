@@ -129,4 +129,37 @@ describe("Dashboard Endpoint 4xx Behavior", () => {
     expect(res.statusCode).toBe(400);
     expect(res.body?.error).toMatch(/invalid query parameters/i);
   });
+
+  it.each([
+    ["empty", []],
+    ["all-zero", [{ date: "2026-03-04", accuracy_avg: 0 }]]
+  ])("returns 200 empty for /api/v1/forge/accuracy when the series is %s", async (_label, rows) => {
+    fromMock.mockReturnValueOnce({
+      select: () => ({
+        eq: () => ({
+          lte: () => ({
+            order: () => ({
+              limit: async () => ({ data: rows, error: null })
+            })
+          })
+        })
+      })
+    });
+    const req: any = {
+      method: "GET",
+      query: { endDate: "2026-03-04", days: "30", scope: "overall" }
+    };
+    const res = createMockRes();
+
+    await forgeAccuracyHandler(req, res);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.body).toMatchObject({
+      scope: "overall",
+      endDate: "2026-03-04",
+      days: 30,
+      data: [],
+      empty: true
+    });
+  });
 });

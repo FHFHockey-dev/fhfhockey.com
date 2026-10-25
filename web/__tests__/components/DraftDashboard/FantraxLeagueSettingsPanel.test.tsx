@@ -87,6 +87,7 @@ describe("Draft Dashboard Fantrax settings picker", () => {
     render(
       <FantraxLeagueSettingsPanel
         enabled
+        canSync
         disabled={false}
         onApply={onApply}
       />,
@@ -111,6 +112,17 @@ describe("Draft Dashboard Fantrax settings picker", () => {
       externalTeamId: "team-row-1",
       settingsHash: "hash-1",
     });
+  });
+
+  it("does not apply linked settings without provider sync permission", async () => {
+    useFantraxConnections.mockReturnValue(hookData());
+    const onApply = vi.fn();
+    render(<FantraxLeagueSettingsPanel enabled canSync={false} disabled={false} onApply={onApply} />);
+    await screen.findByText(/points · 2 scoring mappings/);
+    const apply = screen.getByRole("button", { name: "Apply to this draft" }) as HTMLButtonElement;
+    expect(apply.disabled).toBe(true);
+    fireEvent.click(apply);
+    expect(onApply).not.toHaveBeenCalled();
   });
 
   it("shows Fantrax player-data warnings and unmatched names inside Integrations", async () => {
@@ -157,6 +169,7 @@ describe("Draft Dashboard Fantrax settings picker", () => {
     const { rerender } = render(
       <FantraxLeagueSettingsPanel
         enabled
+        canSync
         disabled={false}
         onApply={onApply}
       />,
@@ -180,7 +193,7 @@ describe("Draft Dashboard Fantrax settings picker", () => {
   it("keeps settings apply available when live sync is rolled off", async () => {
     useFantraxConnections.mockReturnValue(hookData());
     const onApply = vi.fn();
-    render(<FantraxLeagueSettingsPanel enabled disabled={false} onApply={onApply} liveSync={{
+    render(<FantraxLeagueSettingsPanel enabled canSync disabled={false} onApply={onApply} liveSync={{
       enabled: false, eligible: false, state: null, error: null, isLoading: false,
       isPolling: false, blocked: false, onStart: vi.fn(), onStop: vi.fn(), onPoll: vi.fn(),
     }} />);

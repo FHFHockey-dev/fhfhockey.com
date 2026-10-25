@@ -3,7 +3,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { withCronJobAudit } from "lib/cron/withCronJobAudit";
 import { withNhlOffSeasonSkip } from "lib/cron/nhlOffSeason";
-import { generatePregamePredictionsForWindow } from "lib/game-predictions/workflow";
+import {
+  generatePregamePredictionsForWindow,
+  summarizePredictionWindowOutcome,
+} from "lib/game-predictions/workflow";
 import type { Database } from "lib/supabase/database-generated.types";
 import adminOnly from "utils/adminOnlyMiddleware";
 
@@ -80,12 +83,17 @@ async function handler(req: RequestWithSupabase, res: NextApiResponse) {
     dryRun: readSingleQueryValue(req.query.dryRun) === "true",
   });
 
+  // Expected skips (past cutoff, no production model to serve) keep the cron
+  // audit healthy; only per-game errors fail it. `status` and the counts say
+  // what was actually written.
+  const outcome = summarizePredictionWindowOutcome(result);
   return res.status(200).json({
-    success: true,
+    success: outcome.failedGames === 0,
+    ...outcome,
     result,
   });
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any), {
   jobName: "game-predictions-forecast",
-});
+}));

@@ -1,5 +1,7 @@
 import fs from "fs";
 import path from "path";
+import ts from "typescript";
+import { createHash } from "node:crypto";
 
 import { parseCronInventoryFromMarkdown } from "lib/cron/cronInventory";
 
@@ -389,4 +391,225 @@ export function inspectScheduledCronAuthCoverage(args: {
             : null,
       };
     });
+}
+
+export type VercelCronCoverageFinding = {
+  entryIndex: number;
+  configuredPath: string | null;
+  schedule: string | null;
+  routePath: string | null;
+  queryString: string | null;
+  filePath: string | null;
+  inputReason: string | null;
+  authMode: "admin-or-cron" | "cron-secret-only" | "unqualified";
+  auditMode: "shared-wrapper" | "unqualified";
+  authReason: string;
+  auditReason: string;
+};
+
+// AST signatures ignore formatting/comments, but preserve operators, literals
+// and statement order. These are deliberately narrow reviewed source contracts,
+// not a general authorization or control-flow analyzer.
+function sourceSignature(source: string) {
+  const ast = ts.createSourceFile("contract.ts", source, ts.ScriptTarget.Latest, true);
+  const signature: (number | string)[] = [];
+  function visit(node: ts.Node) {
+    signature.push(node.kind);
+    let hasChildren = false;
+    ts.forEachChild(node, (child) => { hasChildren = true; visit(child); });
+    if (!hasChildren) signature.push(node.getText(ast));
+  }
+  visit(ast);
+  return JSON.stringify(signature);
+}
+
+const directBearerPrefixes: Readonly<Record<string, string>> = {
+  "/api/internal/starter-board": `
+    res.setHeader("Cache-Control", "no-store");
+    if (req.method !== "GET") { res.setHeader("Allow", "GET"); return res.status(405).end(); }
+    const secret = process.env.CRON_SECRET;
+    if (!secret?.trim()) return res.status(503).json({ error: "Scheduler not configured" });
+    if (req.headers.authorization !== \`Bearer \${secret}\`) return res.status(401).end();`,
+  "/api/internal/yahoo-live-draft": `
+    res.setHeader("Cache-Control", "no-store");
+    if (req.method !== "GET") {
+      res.setHeader("Allow", "GET");
+      return res.status(405).json({ error: "Method Not Allowed" });
+    }
+    const secret = process.env.CRON_SECRET;
+    if (!secret?.trim()) return res.status(503).json({ error: "Scheduler not configured" });
+    if (req.headers.authorization !== \`Bearer \${secret}\`) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }`,
+};
+
+const constantTimeBearerHelper = `function bearerToken(req: NextApiRequest) {
+  const authorization = req.headers.authorization;
+  return typeof authorization === "string" && authorization.startsWith("Bearer ")
+    ? authorization.slice("Bearer ".length) : "";
+}`;
+const constantTimeMatchHelper = `function secretsMatch(received: string, expected: string) {
+  const receivedBytes = Buffer.from(received);
+  const expectedBytes = Buffer.from(expected);
+  return (receivedBytes.length === expectedBytes.length &&
+    timingSafeEqual(Uint8Array.from(receivedBytes), Uint8Array.from(expectedBytes)));
+}`;
+const constantTimePrefix = `
+  if (req.method !== "GET") {
+    res.setHeader("Allow", "GET");
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+  const secret = process.env.CRON_SECRET?.trim();
+  if (!secret) return res.status(503).json({ error: "CRON_SECRET is not configured" });
+  if (!secretsMatch(bearerToken(req), secret)) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }`;
+
+export function classifyVercelCronSource(source: string, routePath: string) {
+  const ast = ts.createSourceFile("cron-route.ts", source, ts.ScriptTarget.Latest, true);
+  function imported(name: string, module: string, defaultImport = false) {
+    return ast.statements.some((statement) => {
+      if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier) ||
+          statement.moduleSpecifier.text !== module || statement.importClause?.isTypeOnly) return false;
+      if (defaultImport) return statement.importClause?.name?.text === name;
+      const bindings = statement.importClause?.namedBindings;
+      return bindings && ts.isNamedImports(bindings) && bindings.elements.some((element) =>
+        !element.isTypeOnly && element.name.text === name && (element.propertyName?.text ?? name) === name);
+    });
+  }
+  const exported = ast.statements.find(ts.isExportAssignment)?.expression;
+  let current = exported;
+  let admin = false;
+  let audited = false;
+  // Only traverse the actual exported first-argument wrapper chain. Unused
+  // imports, comments, strings and calls elsewhere do not qualify a route.
+  while (current) {
+    if (ts.isAsExpression(current) || ts.isParenthesizedExpression(current)) {
+      current = current.expression;
+      continue;
+    }
+    if (!ts.isCallExpression(current) || !ts.isIdentifier(current.expression) || !current.arguments[0]) break;
+    const name = current.expression.text;
+    if (name === "adminOnly" && imported(name, "utils/adminOnlyMiddleware", true)) admin = true;
+    else if (name === "withCronJobAudit" && imported(name, "lib/cron/withCronJobAudit")) audited = true;
+    else if (!(name === "withNhlOffSeasonSkip" && imported(name, "lib/cron/nhlOffSeason"))) break;
+    current = current.arguments[0];
+  }
+  const defaultHandler = ast.statements.find((statement): statement is ts.FunctionDeclaration =>
+    ts.isFunctionDeclaration(statement) && !!statement.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.DefaultKeyword));
+  function prefixMatches(expected: string, count: number, handler: ts.FunctionDeclaration | ts.ArrowFunction | undefined = defaultHandler) {
+    const body = handler?.body;
+    const actual = body && ts.isBlock(body)
+      ? body.statements.slice(0, count).map((statement) => statement.getText(ast)).join("\n") : null;
+    return actual != null && sourceSignature(actual) === sourceSignature(expected);
+  }
+  let bespoke = false;
+  const directPrefix = directBearerPrefixes[routePath];
+  if (directPrefix) bespoke = prefixMatches(directPrefix, 5);
+  if (routePath === "/api/internal/espn-sync" || routePath === "/api/internal/fantrax-sync") {
+    const functionMatches = (name: string, expected: string) => {
+      const functions = ast.statements.filter((statement): statement is ts.FunctionDeclaration =>
+        ts.isFunctionDeclaration(statement) && statement.name?.text === name);
+      return functions.length === 1 && sourceSignature(functions[0].getText(ast)) === sourceSignature(expected);
+    };
+    // The two reviewed handlers differ only in braces around this early return.
+    const prefix = routePath.endsWith("fantrax-sync")
+      ? constantTimePrefix.replace('if (!secret) return res.status(503).json({ error: "CRON_SECRET is not configured" });',
+          'if (!secret) { return res.status(503).json({ error: "CRON_SECRET is not configured" }); }')
+      : constantTimePrefix;
+    // Fantrax's reviewed timingSafeEqual call has a trailing comma.
+    const matchHelper = routePath.endsWith("fantrax-sync")
+      ? constantTimeMatchHelper.replace("Uint8Array.from(expectedBytes))", "Uint8Array.from(expectedBytes),)")
+      : constantTimeMatchHelper;
+    bespoke = imported("timingSafeEqual", "node:crypto") && prefixMatches(prefix, 4) &&
+      functionMatches("bearerToken", constantTimeBearerHelper) && functionMatches("secretsMatch", matchHelper);
+  }
+  function returnsAuditDelegate(handler: ts.FunctionDeclaration | ts.ArrowFunction | undefined, prefixLength: number) {
+    const body = handler?.body;
+    if (!body || !ts.isBlock(body) || body.statements.length !== prefixLength + 1) return false;
+    const returned = body.statements[prefixLength];
+    const call = ts.isReturnStatement(returned) ? returned.expression : null;
+    if (!call || !ts.isCallExpression(call) || !ts.isIdentifier(call.expression) ||
+        sourceSignature(call.getText(ast)) !== sourceSignature(`${call.expression.text}(req, res)`)) return false;
+    const delegateName = call.expression.text;
+    const declarations = ast.statements.filter(ts.isVariableStatement)
+      .filter((statement) => !!(statement.declarationList.flags & ts.NodeFlags.Const))
+      .flatMap((statement) => [...statement.declarationList.declarations])
+      .filter((declaration) => ts.isIdentifier(declaration.name) && declaration.name.text === delegateName);
+    const initializer = declarations.length === 1 ? declarations[0].initializer : null;
+    return initializer != null && ts.isCallExpression(initializer) &&
+      ts.isIdentifier(initializer.expression) && initializer.expression.text === "withCronJobAudit" &&
+      imported("withCronJobAudit", "lib/cron/withCronJobAudit") &&
+      initializer.arguments[0] != null && ts.isArrowFunction(initializer.arguments[0]);
+  }
+  // Only these reviewed providers use an auth-first early-guard/delegate form.
+  // An unused audited function, a bypassed guard or extra work before the
+  // returned delegate cannot qualify this source contract.
+  const patreonHandler = routePath === "/api/internal/patreon-reconcile" && admin && current && ts.isArrowFunction(current)
+    ? current : undefined;
+  // C5 r2: pin the complete reviewed Yahoo AST, including both audit bodies,
+  // admission order, idle-state helper, preview keys and 12:00 UTC predicate.
+  // Comments/formatting may vary; any semantic change needs a new review/pin.
+  const yahooIdleAudit = routePath === "/api/internal/yahoo-live-draft" && bespoke &&
+    imported("withCronJobAudit", "lib/cron/withCronJobAudit") &&
+    createHash("sha256").update(sourceSignature(source)).digest("hex") ===
+      "24a6f790f51d2835b6ec914a831c39890e738fbc5038d6f5f230f878c15a1f48";
+  const delegatedAudit = ((routePath === "/api/internal/espn-sync" || routePath === "/api/internal/fantrax-sync") &&
+      bespoke && returnsAuditDelegate(defaultHandler, 4)) ||
+    (patreonHandler != null && prefixMatches(`if (req.method !== "GET") {
+      res.setHeader("Allow", "GET");
+      return res.status(405).json({ error: "Method Not Allowed" });
+    }`, 1, patreonHandler) && returnsAuditDelegate(patreonHandler, 1));
+  audited = audited || delegatedAudit || yahooIdleAudit;
+  return {
+    authMode: admin ? "admin-or-cron" as const : bespoke ? "cron-secret-only" as const : "unqualified" as const,
+    auditMode: audited ? "shared-wrapper" as const : "unqualified" as const,
+    authReason: admin ? "Reviewed adminOnly import occurs in the exported wrapper chain." : bespoke
+      ? "Reviewed route-specific nonempty-secret rejection and exact bearer guard precede work."
+      : "No supported reviewed authorization source contract matched.",
+    auditReason: yahooIdleAudit ? "Reviewed polling audit plus a 12:00 UTC idle heartbeat; other disabled/suspended exits intentionally write no row."
+      : delegatedAudit ? "Reviewed withCronJobAudit delegate is returned immediately after the exact admission/method prefix."
+      : audited ? "Reviewed withCronJobAudit import occurs in the exported wrapper chain."
+      : "No direct reviewed audit wrapper; manual/helper-owned auditing remains unqualified (not an exemption).",
+  };
+}
+
+/** Static local source evidence only; never imports or invokes a scheduled route. */
+export function inspectVercelCronCoverage(args: { crons: unknown; webRoot: string }): VercelCronCoverageFinding[] {
+  if (!Array.isArray(args.crons) || args.crons.length > 512) {
+    throw new Error("Vercel crons must be a bounded array of at most 512 entries.");
+  }
+  return Array.from(args.crons, (entry: unknown, entryIndex) => {
+    const record = entry != null && typeof entry === "object" && !Array.isArray(entry)
+      ? entry as Record<string, unknown> : null;
+    const configuredPath = typeof record?.path === "string" ? record.path : null;
+    const schedule = typeof record?.schedule === "string" ? record.schedule : null;
+    const [pathname, ...queryParts] = configuredPath?.split("?") ?? [];
+    const queryString = queryParts.length ? queryParts.join("?") : "";
+    const validPath = configuredPath != null && configuredPath.length <= 2048 &&
+      /^\/api\/[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)*$/.test(pathname) &&
+      !/[\s#]/.test(queryString) && !/%(?![\da-f]{2})/i.test(queryString);
+    const limits = [[0, 59], [0, 23], [1, 31], [1, 12], [0, 7]];
+    const fields = schedule?.split(" ");
+    const validSchedule = schedule != null && schedule.length <= 128 && fields?.length === 5 &&
+      fields.every((field, index) => field.split(",").every((part) => {
+        const match = /^(\*|\d+(?:-\d+)?)(?:\/([1-9]\d*))?$/.exec(part);
+        if (!match) return false;
+        if (match[1] === "*") return true;
+        const [start, end = start] = match[1].split("-").map(Number);
+        return start >= limits[index][0] && end <= limits[index][1] && start <= end;
+      }));
+    const inputReason = !record || Object.keys(record).some((key) => key !== "path" && key !== "schedule") || !validPath || !validSchedule
+      ? "Unsupported Vercel entry: expected a bounded local /api path/query and five numeric cron fields, with only path/schedule keys."
+      : null;
+    const routePath = validPath ? pathname : null;
+    const filePath = !inputReason && routePath ? resolveCronRouteFile(args.webRoot, routePath) : null;
+    const qualification = filePath && routePath
+      ? classifyVercelCronSource(fs.readFileSync(filePath, "utf8"), routePath)
+      : { authMode: "unqualified" as const, auditMode: "unqualified" as const,
+          authReason: inputReason ?? "No Pages API route file resolves from this Vercel entry.",
+          auditReason: inputReason ?? "No Pages API route file resolves from this Vercel entry." };
+    return { entryIndex, configuredPath, schedule, routePath, queryString: configuredPath == null ? null : queryString,
+      filePath, inputReason, ...qualification };
+  });
 }

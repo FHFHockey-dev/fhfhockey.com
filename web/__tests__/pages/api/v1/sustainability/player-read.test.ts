@@ -19,6 +19,14 @@ vi.mock("lib/sustainability/read", () => ({
   getUpcomingSustainabilityPayload: upcomingReadMock
 }));
 
+vi.mock("lib/supabase", () => {
+  throw new Error("Public API reads must not load the browser session client");
+});
+
+vi.mock("lib/supabase/public-client", () => ({
+  default: { publicRead: true }
+}));
+
 vi.mock("utils/adminOnlyMiddleware", () => ({
   default: (handler: any) => async (req: any, res: any) => {
     if (req.headers?.authorization !== "Bearer allowed") {
@@ -60,6 +68,9 @@ describe("sustainability read routes", () => {
     await playerHandler({ method: "GET", query: { playerId: "1", window: "10", horizon: "5" } } as any, res);
     expect(res.statusCode).toBe(200);
     expect(res.body).toMatchObject({ success: true, player_id: 1 });
+    expect(playerReadMock).toHaveBeenCalledWith(
+      expect.objectContaining({ client: { publicRead: true } })
+    );
   });
 
   it("validates upcoming game counts and returns 404 for missing data", async () => {
@@ -71,6 +82,9 @@ describe("sustainability read routes", () => {
     const res = createRes();
     await upcomingHandler({ method: "GET", query: { playerId: "1", games: "5" } } as any, res);
     expect(res.statusCode).toBe(404);
+    expect(upcomingReadMock).toHaveBeenCalledWith(
+      expect.objectContaining({ client: { publicRead: true } })
+    );
   });
 
   it("returns the canonical l3/l5/l10/l20 summary without changing the single-window contract", async () => {

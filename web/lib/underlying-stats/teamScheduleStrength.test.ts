@@ -12,6 +12,8 @@ describe("computePointPctFromRecord", () => {
 
   it("returns null when no games are present", () => {
     expect(computePointPctFromRecord(0, 0, 0)).toBeNull();
+    expect(computePointPctFromRecord(2, null, 1)).toBeNull();
+    expect(computePointPctFromRecord(0, 2, 0)).toBe(0);
   });
 });
 
@@ -85,19 +87,19 @@ describe("computeUnderlyingStatsTeamScheduleStrength", () => {
     expect(result.get("MTL")?.past.rank).toBe(3);
   });
 
-  it("falls back to neutral scores when schedule history is missing", () => {
+  it("keeps partial and missing schedule history unavailable", () => {
     const result = computeUnderlyingStatsTeamScheduleStrength({
       date: "2026-04-05",
       scheduleRows: [
         {
           game_date: "2026-04-05",
           team_abbrev: "SEA",
-          past_opponent_total_wins: 0,
-          past_opponent_total_losses: 0,
+          past_opponent_total_wins: 7,
+          past_opponent_total_losses: null,
           past_opponent_total_ot_losses: 0,
-          future_opponent_total_wins: 0,
-          future_opponent_total_losses: 0,
-          future_opponent_total_ot_losses: 0,
+          future_opponent_total_wins: null,
+          future_opponent_total_losses: null,
+          future_opponent_total_ot_losses: null,
           future_opponents: [],
           past_opponents: []
         }

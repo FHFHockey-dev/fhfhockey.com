@@ -1,3 +1,4 @@
+import { ProviderSyncAccessError } from "lib/integrations/providerSyncAccessServer";
 import type { NextApiRequest, NextApiResponse } from "next";
 
 import { requireApiUser } from "lib/api/requireApiUser";
@@ -33,6 +34,7 @@ export default async function handler(
       ...result,
     });
   } catch (error) {
+    if (error instanceof ProviderSyncAccessError) return res.status(error.statusCode).json({ error: error.message, code: error.code });
     if (error instanceof YahooRefreshError && error.statusCode < 500) {
       if (error.retryAfterSeconds) {
         res.setHeader("Retry-After", String(error.retryAfterSeconds));

@@ -19,6 +19,8 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
   const scenario = {
     rows: null as Array<Record<string, unknown>> | null,
     rollingRows: [] as Array<Record<string, unknown>>,
+    players: null as Array<Record<string, unknown>> | null,
+    teams: null as Array<Record<string, unknown>> | null,
   };
 
   function resolveQuery(state: QueryState) {
@@ -26,8 +28,8 @@ const { queryCalls, scenario, supabaseMock } = vi.hoisted(() => {
       let rows: Array<Record<string, unknown>> = state.table === "entity_metric_rankings" ? scenario.rows
         : state.table === "rolling_player_game_metrics" ? scenario.rollingRows
           : state.table === "games" ? scenario.rollingRows.map(row => ({ date: row.game_date, seasonId: row.season }))
-            : state.table === "players" ? scenario.rows.map(row => ({ id: row.entity_id, fullName: `Fixture ${row.entity_id}`, position: row.position_group === "defense" ? "D" : "C", team_id: row.team_id }))
-              : state.table === "teams" ? [{ id: 10, abbreviation: "TST", name: "Fictional team" }] : [];
+            : state.table === "players" ? scenario.players ?? scenario.rows.map(row => ({ id: row.entity_id, fullName: `Fixture ${row.entity_id}`, position: row.position_group === "defense" ? "D" : "C", team_id: row.team_id }))
+              : state.table === "teams" ? scenario.teams ?? [{ id: 10, abbreviation: "TST", name: "Fictional team" }] : [];
       rows = rows.filter(row => Object.entries(state.filters).every(([key, value]) =>
         key in state.cutoffs || (Array.isArray(value) ? value.includes(row[key]) : row[key] === value),
       ) && Object.entries(state.cutoffs).every(([key, value]) => String(row[key]) <= String(value)));
@@ -187,6 +189,7 @@ import {
   clearEntityMetricRankingReaderCachesForTests,
 } from "./entityMetricRankingReader";
 import type { ContextualRankingsRequest } from "./rankingTypes";
+import * as rankingCalculator from "./rankingCalculator";
 import { buildContextualRankingsSurface, clearContextualRankingsQueryCachesForTests } from "./rankingQueries";
 import { DEFAULT_RANKINGS_FILTERS, FANTASY_RANKINGS_PRESET } from "./rankingUrlState";
 import { getContextualRankingMetricDefinition, type ContextualRankingMetricKey } from "./metricDefinitions";
@@ -222,6 +225,8 @@ describe("entityMetricRankingReader", () => {
     queryCalls.length = 0;
     scenario.rows = null;
     scenario.rollingRows = [];
+    scenario.players = null;
+    scenario.teams = null;
     vi.useRealTimers();
     clearEntityMetricRankingReaderCachesForTests();
     clearContextualRankingsQueryCachesForTests();
@@ -241,6 +246,62 @@ describe("entityMetricRankingReader", () => {
     scenario.rows = [snapshotRow(1), snapshotRow(2), snapshotRow(3)];
     const surfaces = await buildEntityMetricRankingSurfaces(request({ entityIds: [3] }), ["points_per_60"]);
     expect(surfaces.get("points_per_60")?.rankings[0]?.metric).toMatchObject({ rawRank: 2, percentile: 0, qualifiedPeerCount: 2 });
+  });
+
+  it("reads the full cohort but hydrates metadata only for returned rows", async () => {
+    scenario.rows = [snapshotRow(1), snapshotRow(2), snapshotRow(3, { team_id: 11 })];
+    const surfaces = await buildEntityMetricRankingSurfaces(request({ entityIds: [3], limit: 1 }), ["points_per_60"]);
+    expect(surfaces.get("points_per_60")?.rankings).toMatchObject([
+      { entity: { id: 3, name: "Fixture 3" }, metric: { rawRank: 2, qualifiedPeerCount: 2 } },
+    ]);
+    const rankingCall = queryCalls.find(call => call.table === "entity_metric_rankings" && call.selectFields !== "snapshot_date");
+    expect(rankingCall?.filters).not.toHaveProperty("entity_id");
+    expect(rankingCall?.limitCount).toBeNull();
+    expect(queryCalls.find(call => call.table === "players")?.filters.id).toEqual([3]);
+    expect(queryCalls.find(call => call.table === "teams")?.filters.id).toEqual([11]);
+  });
+
+  it("hydrates returned metadata without repeating cohort ranking or changing other response fields", async () => {
+    scenario.rows = ["points_per_60", "goals_per_60"].flatMap(metric_key => [
+      snapshotRow(1, { metric_key }),
+      snapshotRow(2, { metric_key }),
+      snapshotRow(3, { metric_key, team_id: 11 }),
+    ]);
+    // Metadata may disagree with historical team identity, contain nulls, or be missing.
+    scenario.players = [{ id: 2, fullName: null, position: "D", team_id: 999, image_url: "/fixture-player.png" }];
+    scenario.teams = [{ id: 10, abbreviation: "TST", name: null }];
+    const calculate = vi.spyOn(rankingCalculator, "buildContextualRankingRows");
+    const normalize = (value: unknown) => JSON.parse(JSON.stringify(value, (key, field) => key === "generatedAt" ? undefined : field));
+    try {
+      for (const overrides of [{ entityIds: [2, 3], limit: 2 }, { limit: null }, { minGp: 100 }]) {
+        const selectedRequest = request(overrides);
+        const unhydrated = await buildEntityMetricRankingSurfaces(selectedRequest, ["points_per_60", "goals_per_60"], { hydrateMetadata: false });
+        calculate.mockClear();
+        const hydrated = await buildEntityMetricRankingSurfaces(selectedRequest, ["points_per_60", "goals_per_60"]);
+        expect(calculate).toHaveBeenCalledTimes(2);
+        expect(calculate.mock.calls.map(([args]) => args.candidates.length)).toEqual([3, 3]);
+        for (const [metricKey, before] of unhydrated) {
+          const expected = {
+            ...before,
+            rankings: before.rankings.map(row => ({
+              ...row,
+              entity: {
+                ...row.entity,
+                name: null,
+                position: row.entity.id === 2 ? "D" : null,
+                imageUrl: row.entity.id === 2 ? "/fixture-player.png" : null,
+              },
+              team: { ...row.team, abbreviation: row.team.id === 10 ? "TST" : null, name: null },
+            })),
+          };
+          expect(normalize(hydrated.get(metricKey))).toEqual(normalize(expected));
+          expect(before.rankings.every(row => row.entity.name === null && row.entity.position === null && row.entity.imageUrl === null)).toBe(true);
+          expect(hydrated.get(metricKey)?.rankings.find(row => row.entity.id === 2)?.team.id).toBe(10);
+        }
+      }
+    } finally {
+      calculate.mockRestore();
+    }
   });
 
   it("ranks newly qualified rows when a selected minimum is relaxed", async () => {

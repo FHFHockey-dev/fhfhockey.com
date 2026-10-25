@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+import { sumModeledHeads } from "lib/projections/modeledHeadTotals";
 import type { Database, Json } from "lib/supabase/database-generated.types";
 import {
   buildPredictionMetadataContract,
@@ -48,7 +49,7 @@ export type TeamPowerRow = Pick<
   | "ga60"
   | "sf60"
   | "sa60"
->;
+> & Partial<Pick<Tables<"team_power_ratings_daily">, "calculation_version" | "source_through_date">>;
 
 export type StandingsRow = Pick<
   Tables<"nhl_standings_details">,
@@ -432,6 +433,17 @@ export type TeamCtpiFeatures = {
 export type TeamScheduleStrengthFeatures = {
   sourceMaxDate: string | null;
   pastOpponentGames: number;
+  requestedOpponentGames: number;
+  missingSnapshotGameIds: number[];
+  ambiguousSnapshotGameIds: number[];
+  incompleteRatingGameIds: number[];
+  ratingUnits: typeof TEAM_POWER_RATING_UNITS;
+  ratingProvenance: Array<{
+    gameId: number;
+    snapshotDate: string | null;
+    calculationVersion: string | null;
+    sourceThroughDate: string | null;
+  }>;
   pastOpponentAvgOffRating: number | null;
   pastOpponentAvgDefRating: number | null;
   pastOpponentAvgGoalieRating: number | null;
@@ -442,6 +454,9 @@ export type TeamScheduleStrengthFeatures = {
   last5MinusLast10OpponentCompositeRating: number | null;
 };
 
+// Compatibility contract: producer ratings are centered at 100 (100 + 15*z),
+// but v1 consumers retain neutral50 until a separately qualified model migration.
+export const TEAM_POWER_RATING_UNITS = "power_ratings_center100_scale15";
 export const SOS_ADJUSTED_FORM_VERSION =
   "sos_adjusted_form_v1_neutral50_goal_diff_div50_xgf_scale_0_05";
 
@@ -1079,13 +1094,41 @@ function averageNullable(values: Array<number | null>): number | null {
   );
 }
 
+function completeAverage(values: Array<number | null>): number | null {
+  return values.length === 0 || values.some((value) => value == null)
+    ? null
+    : averageNullable(values);
+}
+
 function teamPowerComposite(row: TeamPowerRow): number | null {
-  return averageNullable([
+  return completeAverage([
     toNumber(row.off_rating),
     toNumber(row.def_rating),
     toNumber(row.goalie_rating),
     toNumber(row.special_rating),
   ]);
+}
+
+function priorOpponentGames(args: {
+  teamId: number;
+  game: GameRow;
+  sourceAsOfDate: string;
+  priorGames: GameRow[];
+}): GameRow[] {
+  const games = new Map<number, GameRow>();
+  for (const game of args.priorGames) {
+    if (game.date >= args.sourceAsOfDate || game.date >= args.game.date ||
+        (game.homeTeamId !== args.teamId && game.awayTeamId !== args.teamId)) continue;
+    const previous = games.get(game.id);
+    if (previous && (previous.date !== game.date ||
+        previous.homeTeamId !== game.homeTeamId || previous.awayTeamId !== game.awayTeamId)) {
+      throw new Error(`Conflicting prior game identity ${game.id}.`);
+    }
+    games.set(game.id, game);
+  }
+  return [...games.values()]
+    .sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id)
+    .slice(0, 10);
 }
 
 function buildTeamScheduleStrengthFeatures(args: {
@@ -1096,58 +1139,58 @@ function buildTeamScheduleStrengthFeatures(args: {
   teams: TeamRow[];
   teamPowerRows: TeamPowerRow[];
 }): TeamScheduleStrengthFeatures | null {
+  const games = priorOpponentGames(args);
+  if (games.length === 0) return null;
   const teamAbbreviationById = new Map(
     args.teams.map((team) => [team.id, team.abbreviation]),
   );
-  const opponentRows = args.priorGames
-    .filter(
-      (game) =>
-        game.date < args.sourceAsOfDate &&
-        game.date < args.game.date &&
-        (game.homeTeamId === args.teamId || game.awayTeamId === args.teamId),
-    )
-    .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 10)
-    .map((game) => {
-      const opponentId =
-        game.homeTeamId === args.teamId ? game.awayTeamId : game.homeTeamId;
-      const opponentAbbreviation = teamAbbreviationById.get(opponentId);
-      if (!opponentAbbreviation) return null;
-      return latestBefore(
-        args.teamPowerRows,
-        game.date,
-        (row) => row.team_abbreviation === opponentAbbreviation,
-      );
-    })
-    .filter((row): row is TeamPowerRow => row != null);
-
-  if (opponentRows.length === 0) return null;
-
-  const last5OpponentCompositeRating = averageNullable(
-    opponentRows.slice(0, 5).map(teamPowerComposite),
-  );
-  const last10OpponentCompositeRating = averageNullable(
-    opponentRows.slice(0, 10).map(teamPowerComposite),
-  );
-
+  const missingSnapshotGameIds: number[] = [];
+  const ambiguousSnapshotGameIds: number[] = [];
+  const incompleteRatingGameIds: number[] = [];
+  // Preserve game slots: a missing latest opponent cannot be replaced by game six.
+  const opponentRows = games.map((game) => {
+    const opponentId = game.homeTeamId === args.teamId ? game.awayTeamId : game.homeTeamId;
+    const abbreviation = teamAbbreviationById.get(opponentId);
+    const candidates = args.teamPowerRows.filter((row) =>
+      row.team_abbreviation === abbreviation && row.date < game.date,
+    ).sort((a, b) => b.date.localeCompare(a.date));
+    const latest = candidates[0];
+    if (!latest) {
+      missingSnapshotGameIds.push(game.id);
+      return null;
+    }
+    if (candidates.filter((row) => row.date === latest.date).length !== 1) {
+      ambiguousSnapshotGameIds.push(game.id);
+      return null;
+    }
+    if (teamPowerComposite(latest) == null) incompleteRatingGameIds.push(game.id);
+    return latest;
+  });
+  const resolvedRows = opponentRows.filter((row): row is TeamPowerRow => row != null);
+  const composites = opponentRows.map((row) => row ? teamPowerComposite(row) : null);
+  const last5OpponentCompositeRating = completeAverage(composites.slice(0, 5));
+  const last10OpponentCompositeRating = completeAverage(composites);
+  const componentAverage = (key: "off_rating" | "def_rating" | "goalie_rating" | "special_rating") =>
+    completeAverage(opponentRows.map((row) => row ? toNumber(row[key]) : null));
   return {
-    sourceMaxDate: latestDateOnly(opponentRows.map((row) => row.date)),
-    pastOpponentGames: opponentRows.length,
-    pastOpponentAvgOffRating: averageNullable(
-      opponentRows.map((row) => toNumber(row.off_rating)),
-    ),
-    pastOpponentAvgDefRating: averageNullable(
-      opponentRows.map((row) => toNumber(row.def_rating)),
-    ),
-    pastOpponentAvgGoalieRating: averageNullable(
-      opponentRows.map((row) => toNumber(row.goalie_rating)),
-    ),
-    pastOpponentAvgSpecialRating: averageNullable(
-      opponentRows.map((row) => toNumber(row.special_rating)),
-    ),
-    pastOpponentCompositeRating: averageNullable(
-      opponentRows.map(teamPowerComposite),
-    ),
+    sourceMaxDate: latestDateOnly(resolvedRows.map((row) => row.date)),
+    pastOpponentGames: resolvedRows.length,
+    requestedOpponentGames: games.length,
+    missingSnapshotGameIds,
+    ambiguousSnapshotGameIds,
+    incompleteRatingGameIds,
+    ratingUnits: TEAM_POWER_RATING_UNITS,
+    ratingProvenance: games.map((game, index) => ({
+      gameId: game.id,
+      snapshotDate: opponentRows[index]?.date ?? null,
+      calculationVersion: opponentRows[index]?.calculation_version ?? null,
+      sourceThroughDate: opponentRows[index]?.source_through_date ?? null,
+    })),
+    pastOpponentAvgOffRating: componentAverage("off_rating"),
+    pastOpponentAvgDefRating: componentAverage("def_rating"),
+    pastOpponentAvgGoalieRating: componentAverage("goalie_rating"),
+    pastOpponentAvgSpecialRating: componentAverage("special_rating"),
+    pastOpponentCompositeRating: last10OpponentCompositeRating,
     last5OpponentCompositeRating,
     last10OpponentCompositeRating,
     last5MinusLast10OpponentCompositeRating: subtractNullable(
@@ -1230,14 +1273,8 @@ function buildForgeTeamProjectionFeatures(
   return {
     runId: row.run_id,
     updatedAt: row.updated_at ?? null,
-    projectedGoals:
-      goalsEs == null && goalsPp == null
-        ? null
-        : (goalsEs ?? 0) + (goalsPp ?? 0),
-    projectedShots:
-      shotsEs == null && shotsPp == null
-        ? null
-        : (shotsEs ?? 0) + (shotsPp ?? 0),
+    projectedGoals: sumModeledHeads(goalsEs, goalsPp),
+    projectedShots: sumModeledHeads(shotsEs, shotsPp),
   };
 }
 
@@ -2228,6 +2265,19 @@ function buildTeamSideFeatures(args: {
     );
   }
 
+  if (scheduleStrength && (
+    scheduleStrength.missingSnapshotGameIds.length ||
+    scheduleStrength.ambiguousSnapshotGameIds.length ||
+    scheduleStrength.incompleteRatingGameIds.length
+  )) {
+    missingFeatures.push(`${args.side}.schedule_strength_coverage`);
+    warnings.push({
+      code: "incomplete_schedule_strength_coverage",
+      source: "team_power_ratings_daily",
+      message: `${args.side} opponent history has missing, ambiguous, or incomplete ratings; affected fixed-window aggregates are withheld.`,
+    });
+  }
+
   if (!forgeProjection) {
     fallbackFlags[`${args.side}_forge_projection_fallback`] = true;
   }
@@ -2616,6 +2666,44 @@ async function fetchLatestPlayerImpactRows(
   return (data ?? []) as PlayerImpactRatingInput[];
 }
 
+export type TeamPowerHistoryRequest = { teamAbbreviation: string; beforeDate: string };
+
+/** At most 22 identity/cutoff requests: current pair plus ten opponents per team. */
+export async function fetchRequestedTeamPowerHistory(
+  client: SupabaseClient<Database>,
+  requests: TeamPowerHistoryRequest[],
+): Promise<{ data: TeamPowerRow[]; error: null }> {
+  const unique = [...new Map(requests.map((request) =>
+    [`${request.teamAbbreviation}:${request.beforeDate}`, request],
+  )).values()];
+  if (unique.length > 22) throw new Error("Team power history exceeds 22 requested cutoffs.");
+  const rows = new Map<string, TeamPowerRow>();
+  // Bound concurrency as well as total queries; no league-wide recency cap.
+  for (let offset = 0; offset < unique.length; offset += 4) {
+    const results = await Promise.all(unique.slice(offset, offset + 4).map(async (request) => {
+      const result = await client.from("team_power_ratings_daily")
+        .select("team_abbreviation,date,calculation_version,source_through_date,off_rating,def_rating,goalie_rating,special_rating,pace_rating,xgf60,xga60,gf60,ga60,sf60,sa60")
+        .eq("team_abbreviation", request.teamAbbreviation)
+        .lt("date", request.beforeDate)
+        .order("date", { ascending: false })
+        .limit(2);
+      if (result.error) throw result.error;
+      const eligible = ((result.data ?? []) as TeamPowerRow[]).filter((row) =>
+        row.team_abbreviation === request.teamAbbreviation && row.date < request.beforeDate,
+      ).sort((a, b) => b.date.localeCompare(a.date));
+      const latest = eligible[0];
+      if (latest && eligible[1]?.date === latest.date) {
+        throw new Error(`Ambiguous team power snapshot ${request.teamAbbreviation}:${latest.date}.`);
+      }
+      return latest;
+    }));
+    for (const row of results) {
+      if (row) rows.set(`${row.team_abbreviation}:${row.date}`, row);
+    }
+  }
+  return { data: [...rows.values()], error: null };
+}
+
 export async function fetchGamePredictionFeatureInputs(
   client: SupabaseClient<Database>,
   gameId: number,
@@ -2693,6 +2781,17 @@ export async function fetchGamePredictionFeatureInputs(
   const sourceEligiblePriorGames = priorGames.filter(
     (priorGame) => priorGame.date < sourceAsOfDate,
   );
+  const teamAbbreviationById = new Map(teamRows.map((team) => [team.id, team.abbreviation]));
+  const powerHistoryRequests: TeamPowerHistoryRequest[] = teamAbbreviations.map((teamAbbreviation) =>
+    ({ teamAbbreviation, beforeDate: sourceAsOfDate }),
+  );
+  for (const teamId of teamIds) {
+    for (const priorGame of priorOpponentGames({ teamId, game: typedGame, sourceAsOfDate, priorGames })) {
+      const opponentId = priorGame.homeTeamId === teamId ? priorGame.awayTeamId : priorGame.homeTeamId;
+      const teamAbbreviation = teamAbbreviationById.get(opponentId);
+      if (teamAbbreviation) powerHistoryRequests.push({ teamAbbreviation, beforeDate: priorGame.date });
+    }
+  }
   const lineCombinationGameIds = Array.from(
     new Set([
       ...(hasExplicitSourceAsOfDate ? [] : [typedGame.id]),
@@ -2727,14 +2826,7 @@ export async function fetchGamePredictionFeatureInputs(
     skaterDefenseRatingRows,
     goalieRatingRows,
   ] = await Promise.all([
-    client
-      .from("team_power_ratings_daily")
-      .select(
-        "team_abbreviation,date,off_rating,def_rating,goalie_rating,special_rating,pace_rating,xgf60,xga60,gf60,ga60,sf60,sa60",
-      )
-      .lt("date", sourceAsOfDate)
-      .order("date", { ascending: false })
-      .limit(100),
+    fetchRequestedTeamPowerHistory(client, powerHistoryRequests),
     client
       .from("nhl_standings_details")
       .select(

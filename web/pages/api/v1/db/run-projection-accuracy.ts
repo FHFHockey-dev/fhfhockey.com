@@ -1726,7 +1726,7 @@ async function runAccuracyForDate(
   );
   if (!calibrationEligibility.eligible) {
     const error = new Error(
-      "Latest succeeded projection run is excluded from calibration because repaired rolling-history provenance is absent.",
+      "Latest succeeded projection run is excluded from calibration because native input provenance is missing or legacy.",
     );
     (error as any).statusCode = 422;
     (error as any).details = calibrationEligibility;

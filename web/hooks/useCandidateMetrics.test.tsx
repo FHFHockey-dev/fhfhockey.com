@@ -1,73 +1,66 @@
 import { act, cleanup, renderHook } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
-import type { PlanIntent, PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
+import type { PlanningSnapshot } from "lib/rosterScheduleOptimizer/planningTypes";
 import { useCandidateMetrics } from "./useCandidateMetrics";
+import { useRosterPlanning } from "./useRosterPlanning";
 import { defaultWorkspace } from "lib/rosterScheduleOptimizer/workspace";
 
 class MockWorker {
   static instances: MockWorker[] = [];
   onmessage: ((event: { data: unknown }) => void) | null = null;
   onerror: (() => void) | null = null;
-  postMessage = vi.fn();
-  terminate = vi.fn();
+  postMessage = vi.fn(); terminate = vi.fn();
   constructor() { MockWorker.instances.push(this); }
-  finish(value: number) { this.onmessage?.({ data: { metrics: { points: [["c", value]], activePoints: [["c", value]], activeGames: [["c", 0]] } } }); }
+  finish(value: number) { this.onmessage?.({ data: { result: { snapshotId: "one" },
+    metrics: { points: [["c", value]], activePoints: [["c", value]], activeGames: [["c", 0]] }, expiresAt: null } }); }
 }
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); MockWorker.instances = []; });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); MockWorker.instances = []; });
 const snapshot = { id: "one" } as PlanningSnapshot;
 const intent = defaultWorkspace().intent;
-it("delegates without synchronous fallback, reuses irrelevant-intent work, and cancels stale results", () => {
+
+it("coalesces plan and candidate work into one generation and refreshes changed intent", async () => {
   vi.stubGlobal("Worker", MockWorker);
-  const { result, rerender, unmount } = renderHook(({ data, plan }: { data: PlanningSnapshot | null; plan: PlanIntent }) => useCandidateMetrics(data, plan),
-    { initialProps: { data: snapshot as PlanningSnapshot | null, plan: intent } });
-  const first = MockWorker.instances[0];
-  expect(first.postMessage).toHaveBeenCalledOnce();
-  expect(first.postMessage).toHaveBeenCalledWith({ snapshot, intent: { ...intent, steps: [], revision: 0, alternativeCount: 5 } });
-  expect(intent.steps).toEqual([]);
-  expect(result.current.loading).toBe(true);
-  rerender({ data: snapshot, plan: { ...intent, revision: 20, alternativeCount: 20, steps: [{ id: "s" } as PlanIntent["steps"][number]] } });
+  const { result, rerender, unmount } = renderHook(({ data, selected }) => ({
+    plan: useRosterPlanning(data, selected), candidates: useCandidateMetrics(data, selected),
+  }), { initialProps: { data: snapshot, selected: intent } });
   expect(MockWorker.instances).toHaveLength(1);
-  expect(first.postMessage).toHaveBeenCalledOnce();
-  const changed = { ...snapshot, id: "other-account" };
-  rerender({ data: changed, plan: intent });
-  expect(first.terminate).toHaveBeenCalledOnce();
-  act(() => first.finish(99));
-  expect(result.current.metrics).toBeUndefined();
+  const first = MockWorker.instances[0]; expect(first.postMessage).toHaveBeenCalledOnce();
+  expect(first.postMessage.mock.calls[0][0]).toMatchObject({ snapshot, intent, candidateOptions: { requestedPlayerIds: [] } });
+  await act(async () => first.finish(16));
+  expect(result.current.candidates.metrics?.activePoints).toEqual([["c", 16]]);
+  expect(result.current.plan.result?.snapshotId).toBe("one");
+  // Strict permission refresh per later quantitative generation supersedes old
+  // reuse across selected-intent changes; there is no invented revocation TTL.
+  rerender({ data: snapshot, selected: { ...intent, revision: 20, alternativeCount: 20 } });
+  expect(MockWorker.instances).toHaveLength(2);
+  expect(result.current.plan.result).toBeNull(); expect(result.current.candidates.metrics).toBeUndefined();
+  await act(async () => first.finish(99));
+  expect(result.current.candidates.metrics).toBeUndefined();
   const second = MockWorker.instances[1];
-  act(() => second.finish(16));
-  expect(result.current.metrics?.activePoints).toEqual([["c", 16]]);
-  rerender({ data: changed, plan: { ...intent, excludedPlayerIds: ["c"] } });
-  expect(result.current.metrics).toBeUndefined();
-  expect(second.terminate).toHaveBeenCalledOnce();
-  rerender({ data: null, plan: intent });
-  expect(result.current.loading).toBe(false);
-  expect(result.current.metrics).toBeUndefined();
-  unmount();
-  expect(MockWorker.instances[2].terminate).toHaveBeenCalledOnce();
+  await act(async () => second.finish(20));
+  expect(result.current.candidates.metrics?.activePoints).toEqual([["c", 20]]);
+  rerender({ data: { ...snapshot, id: "other-account" }, selected: intent });
+  expect(result.current.candidates.metrics).toBeUndefined();
+  expect(MockWorker.instances).toHaveLength(3);
+  unmount(); expect(MockWorker.instances[2].terminate).toHaveBeenCalledOnce();
 });
-it("reports Worker failure or absence without evaluating on the main thread", () => {
+it("reports an obsolete worker failure without restoring older candidate results", async () => {
   vi.stubGlobal("Worker", MockWorker);
-  const { result, unmount } = renderHook(() => useCandidateMetrics(snapshot, intent));
-  act(() => MockWorker.instances[0].onerror?.());
-  expect(result.current.error).toContain("unavailable");
-  expect(result.current.loading).toBe(false);
-  unmount();
-  vi.stubGlobal("Worker", undefined);
-  const unavailable = renderHook(() => useCandidateMetrics(snapshot, intent));
-  expect(unavailable.result.current.error).toContain("unavailable");
-  expect(MockWorker.instances).toHaveLength(1);
+  const { result } = renderHook(() => useCandidateMetrics(snapshot, intent));
+  await act(async () => MockWorker.instances[0].onerror?.());
+  expect(result.current.error).toContain("could not complete");
+  expect(result.current.metrics).toBeUndefined(); expect(result.current.loading).toBe(false);
 });
-it("forwards manager-requested candidates as a distinct calculation without reusing bounded results", () => {
+it("forwards distinct requested candidates as a new bounded generation", async () => {
   vi.stubGlobal("Worker", MockWorker);
   const { result, rerender, unmount } = renderHook(({ ids }: { ids: string[] }) => useCandidateMetrics(snapshot, intent, ids),
     { initialProps: { ids: [] as string[] } });
-  act(() => MockWorker.instances[0].finish(1));
+  await act(async () => MockWorker.instances[0].finish(1));
   expect(result.current.metrics?.activePoints).toEqual([["c", 1]]);
   rerender({ ids: ["z", "c", "z"] });
   expect(result.current.metrics).toBeUndefined();
-  expect(MockWorker.instances[1].postMessage).toHaveBeenCalledWith({ snapshot,
-    intent: { ...intent, steps: [], revision: 0, alternativeCount: 5 }, options: { requestedPlayerIds: ["c", "z"] } });
-  rerender({ ids: ["c", "z"] });
-  expect(MockWorker.instances).toHaveLength(2);
+  expect(MockWorker.instances[1].postMessage.mock.calls[0][0]).toMatchObject({ snapshot, intent,
+    candidateOptions: { requestedPlayerIds: ["c", "z"] } });
+  rerender({ ids: ["c", "z"] }); expect(MockWorker.instances).toHaveLength(2);
   unmount();
 });

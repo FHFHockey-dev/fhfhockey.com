@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { Profiler, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import GameGrid, { GameGridMode } from 'components/GameGrid/GameGrid';
 import TeamDetails from 'components/GameGrid/TeamDetails';
 import GameGridContext from 'components/GameGrid/contexts/GameGridContext';
 import { TEAM_FORECAST_CREDITS, TeamForecastContext, TeamForecastRecord } from 'components/GameGrid/utils/teamForecasts';
 import { setFixtureState } from './data';
+const profile: unknown[] = [];
+(window as any).__gridProfile = profile;
 
 const context: TeamForecastContext = { seasonId: 20262027, scheduleRevision: 'fixture-schedule', rosterRevision: 'fixture-roster', rosterScope: 'skaters', games: [
   { gameId: 103, startsAt: '2026-10-08T23:00:00Z', state: 'scheduled' },
@@ -26,11 +28,13 @@ const dates = ['2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-
 function App() {
   const [mode, setMode] = useState<GameGridMode>('7-Day-Forecast');
   const [previewState, setPreviewState] = useState('qualified');
+  const [mountKey, setMountKey] = useState(0);
   const details = new URLSearchParams(location.search).has('details');
   const stickyHeader = new URLSearchParams(location.search).has('sticky-header');
   return <>
     {stickyHeader && <header data-site-header style={{ position: 'sticky', top: 0, zIndex: 1000, height: 'var(--fixture-header-height, 68px)', background: '#141719' }}>Site navbar fixture</header>}
     <main>
+    <button onClick={() => setMountKey(k => k + 1)}>Remount grid fixture</button>
     <p>Isolated synthetic fixtures. The real public-reader consumer uses isolated local HTTP fixtures. No production data is connected.</p>
     {details ? <>
       <h1>Game Grid preview fixture</h1><h2>Upcoming team forecasts</h2>
@@ -47,9 +51,16 @@ function App() {
       <button onClick={() => setFixtureState('refreshed')}>Refresh schedule fixture</button>
       <button onClick={() => setFixtureState('partial')}>Partial schedule fixture</button>
       <button onClick={() => setFixtureState('empty')}>Empty schedule fixture</button>
-      <GameGrid mode={mode} setMode={setMode} />
+      <button onClick={() => setFixtureState('postponed')}>Postponed schedule fixture</button>
+      <button onClick={() => setFixtureState('stale')}>Stale schedule fixture</button>
+      <button onClick={() => setFixtureState('ready')}>Ready schedule fixture</button>
+      <Profiler id="GameGrid" onRender={(_, phase, duration, baseDuration, start, commit) => profile.push({ phase, duration, baseDuration, start, commit })}><GameGrid key={mountKey} mode={mode} setMode={setMode} /></Profiler>
     </>}
   </main></>;
 }
+// Match the app's global box model without requesting its external font imports.
+const reset = document.createElement('style');
+reset.textContent = '* { box-sizing: border-box; }';
+document.head.append(reset);
 document.body.style.cssText = 'margin:0;background:#101115;color:#fff;font-family:Arial,sans-serif';
 createRoot(document.getElementById('root')!).render(<App />);

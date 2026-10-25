@@ -11,6 +11,7 @@ vi.mock("lib/draft-pro/server", () => ({ loadDraftProAccess: mocks.loadDraftProA
 vi.mock("lib/draft-pro/features", () => ({ getDraftProFeatureFlags: vi.fn(() => ({})) }));
 
 import handler from "../../../pages/api/v1/draft-pro/export";
+import { DraftProRequestError } from "../requestError";
 
 function response() {
   const state = { status: 0, body: null as unknown, headers: new Map<string, string>() };
@@ -41,7 +42,7 @@ describe("Draft Pro export API", () => {
   });
 
   it("returns 403 when the blended_csv capability is denied", async () => {
-    const denied = Object.assign(new Error("denied"), { statusCode: 403 });
+    const denied = new DraftProRequestError(403, "denied", "draft_pro_required");
     mocks.requireDraftProServerCapability.mockImplementation(() => { throw denied; });
     const res = response();
     await handler({ method: "POST", body } as any, res.api as any);
@@ -72,5 +73,13 @@ describe("Draft Pro export API", () => {
     expect(String(res.state.body)).toContain("categories");
     expect(String(res.state.body)).toContain("'  =Alex");
     expect(String(res.state.body)).toContain("20262027");
+  });
+
+  it.each([403, 503, 700, "403"])("sanitizes dependency statusCode %s and backend text", async (statusCode) => {
+    mocks.loadDraftProAccess.mockRejectedValue(Object.assign(new Error("synthetic-private-database-detail"), { statusCode, code: "synthetic-backend-code" }));
+    const res = response();
+    await handler({ method: "POST", body } as any, res.api as any);
+    expect(res.state.status).toBe(500);
+    expect(res.state.body).toEqual({ error: { code: "export_unavailable", message: "Unable to create the CSV export." } });
   });
 });

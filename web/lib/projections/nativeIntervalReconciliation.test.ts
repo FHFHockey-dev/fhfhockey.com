@@ -3,10 +3,28 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { runNativeIntervalReconciliation } from "../../scripts/reconcile-native-intervals";
 import { projectionInputHash } from "./inputCapture";
 import { intervalClockSeconds, reconcileNativeIntervalGame, verifyIntervalRevision } from "./nativeIntervalReconciliation";
+
+// Copied-source CLI controls can use preserved source revision metadata only.
+// Fixture dirty/tree labels are synthetic; receipts are mechanics, not acceptance.
+vi.mock("node:child_process", async importOriginal => {
+  const actual = await importOriginal<typeof import("node:child_process")>();
+  return { ...actual, execFileSync: (...args: unknown[]) => {
+    const root = process.env.FHFH_TEST_SOURCE_GIT_ROOT;
+    if (args[0] === "git" && root) {
+      const command = (args[1] as string[]).join(" ");
+      if (command === "rev-parse HEAD") return actual.execFileSync("git", ["-C", root, "rev-parse", "HEAD"], args[2] as object);
+      if (command === "status --porcelain") return "?? synthetic-gitless-fixture\n";
+      if (command === "ls-tree -r HEAD web") return "synthetic-gitless-fixture-tree\n";
+      throw new Error("Only read-only source revision metadata is allowed by this test adapter.");
+    }
+    return Reflect.apply(actual.execFileSync, undefined, args);
+  } };
+});
+
 
 const digest = (bytes: string | Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 const clock = (seconds: number) => `${String(Math.floor(seconds / 60)).padStart(2, "0")}:${String(seconds % 60).padStart(2, "0")}`;

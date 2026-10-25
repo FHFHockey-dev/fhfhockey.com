@@ -7,6 +7,7 @@ import {
   refreshPlayerUnderlyingSummarySnapshotsForGameIds,
 } from "lib/underlying-stats/playerStatsSummaryRefresh";
 import { resolvePlayerStatsIncrementalSelection } from "lib/underlying-stats/playerStatsRefreshWindow";
+import { refreshTeamUnderlyingSummaryRowsForGameIds } from "lib/underlying-stats/teamStatsSummaryRefresh";
 import { resolveRequestedGameIds } from "lib/supabase/Upserts/nhlRawGamecenterRoute";
 import { ingestNhlApiRawGamesBestEffort } from "lib/supabase/Upserts/nhlRawGamecenter.mjs";
 import { summarizeNhlRawGamecenterIngestResults } from "lib/supabase/Upserts/nhlRawGamecenterTelemetry";
@@ -36,6 +37,7 @@ type UpdatePlayerUnderlyingStatsResponse =
       gameIds: number[];
       rawRowsUpserted: number;
       summaryRowsUpserted: number;
+      teamSummaryRowsUpserted: number;
       summaryWriteBusyRetries?: number;
       rowsUpserted: number;
       warmedLandingCache: boolean;
@@ -175,6 +177,7 @@ async function handler(
         gameIds: [],
         rawRowsUpserted: 0,
         summaryRowsUpserted: 0,
+        teamSummaryRowsUpserted: 0,
         rowsUpserted: 0,
         warmedLandingCache: false,
         results: [],
@@ -197,6 +200,7 @@ async function handler(
     const processedGameIds: number[] = [];
     let rawRowsUpserted = 0;
     let summaryRowsUpserted = 0;
+    let teamSummaryRowsUpserted = 0;
     let summaryWriteBusyRetries = 0;
 
     for (let batchIndex = 0; batchIndex < gameIdBatches.length; batchIndex += 1) {
@@ -217,20 +221,33 @@ async function handler(
         continue;
       }
 
+      const shouldWarmBatchCache =
+        shouldWarmLandingCache &&
+        batchIndex === gameIdBatches.length - 1 &&
+        failures.length === 0;
       const summaryRefresh = await refreshPlayerUnderlyingSummarySnapshotsForGameIds({
         gameIds: successfulGameIds,
         seasonId: selection.seasonId,
         requestedGameType,
-        shouldWarmLandingCache:
-          shouldWarmLandingCache &&
-          batchIndex === gameIdBatches.length - 1 &&
-          failures.length === 0,
+        shouldWarmLandingCache: shouldWarmBatchCache,
         shouldMigrateLegacySummaries: false,
         supabase: serviceRoleClient,
       });
 
       summaryRowsUpserted += summaryRefresh.rowsUpserted;
       summaryWriteBusyRetries += summaryRefresh.summaryWriteBusyRetries ?? 0;
+
+      // Team Explorer summaries are built from the same native inputs; no
+      // other scheduled job writes them.
+      const teamSummaryRefresh = await refreshTeamUnderlyingSummaryRowsForGameIds({
+        gameIds: successfulGameIds,
+        seasonId: selection.seasonId,
+        requestedGameType,
+        shouldWarmLandingCache: shouldWarmBatchCache,
+        supabase: serviceRoleClient,
+      });
+
+      teamSummaryRowsUpserted += teamSummaryRefresh.rowsUpserted;
     }
 
     if (processedGameIds.length === 0 && failures.length > 0) {
@@ -273,13 +290,14 @@ async function handler(
       gameIds: selection.gameIds,
       rawRowsUpserted,
       summaryRowsUpserted,
+      teamSummaryRowsUpserted,
       ...(summaryWriteBusyRetries > 0 ? { summaryWriteBusyRetries } : {}),
-      rowsUpserted: rawRowsUpserted + summaryRowsUpserted,
+      rowsUpserted: rawRowsUpserted + summaryRowsUpserted + teamSummaryRowsUpserted,
       warmedLandingCache: shouldWarmLandingCache && failures.length === 0,
       results: aggregatedResults,
       message:
         failures.length === 0
-          ? "Player underlying stats ingest completed. Raw NHL gamecenter payloads were refreshed first, then per-game player underlying summaries were rebuilt."
+          ? "Player underlying stats ingest completed. Raw NHL gamecenter payloads were refreshed first, then per-game player and team underlying summaries were rebuilt."
           : "Player underlying stats ingest completed with partial failures. Successful games were refreshed and summarized; failed games can be retried with the same URL.",
     });
   } catch (error) {
@@ -323,6 +341,6 @@ async function handler(
   }
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler)), {
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler), {
   jobName: "/api/v1/db/update-player-underlying-stats",
-});
+}));

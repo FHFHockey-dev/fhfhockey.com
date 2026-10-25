@@ -43,6 +43,8 @@ type SelectedNstOnIceCounts = Pick<
 >;
 type SelectedWgoGamelog = Pick<
   WgoGamelog,
+  | "game_id"
+  | "games_played"
   | "date"
   | "season_id"
   | "goals"
@@ -272,37 +274,83 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             .eq("strength", "all")
         ]);
 
+      for (const [table, result] of [
+        ["wgo_skater_stats_totals", wgoTotalsRes],
+        ["nst_seasonal_individual_counts", nstIndCountsRes],
+        ["nst_seasonal_on_ice_counts", nstOnIceCountsRes]
+      ] as const) {
+        if (result.error) {
+          throw new Error(`Failed to fetch ${table} for player ${playerId}: ${result.error.message}`);
+        }
+      }
+
       // --- Fetch Game Log Data (Last 20) ---
       const wgoGamelogSelect =
-        "date, season_id, goals, assists, points, total_primary_assists, shots, pp_goals, pp_assists, pp_points, hits, blocked_shots, penalty_minutes, pp_toi_pct_per_game, pp_toi";
+        "game_id, games_played, date, season_id, goals, assists, points, total_primary_assists, shots, pp_goals, pp_assists, pp_points, hits, blocked_shots, penalty_minutes, pp_toi_pct_per_game, pp_toi";
       const nstIndGamelogSelect = "date_scraped, season, toi, ixg, icf, iscfs, hdcf";
       const nstOiGamelogSelect =
         "date_scraped, season, gf, sf, off_zone_starts, def_zone_starts";
-      const [wgoGamelogRes, nstIndGamelogRes, nstOiGamelogRes] =
-        await Promise.all([
-          supabase
-            .from("wgo_skater_stats")
-            .select(wgoGamelogSelect)
-            .eq("player_id", playerId)
-            .order("date", { ascending: false })
-            .limit(20),
+      const wgoGamelogRes = await supabase
+        .from("wgo_skater_stats")
+        .select(wgoGamelogSelect)
+        .eq("player_id", playerId)
+        .eq("games_played", 1)
+        .order("date", { ascending: false })
+        .order("game_id", { ascending: false })
+        .limit(20);
+      if (wgoGamelogRes.error) {
+        throw new Error(`Failed to fetch wgo_skater_stats for player ${playerId}: ${wgoGamelogRes.error.message}`);
+      }
+      const wgoLogs = (wgoGamelogRes.data || []) as SelectedWgoGamelog[];
+      const gameIds = new Set<number>();
+      const recentSeasons = new Set<number>();
+      for (const game of wgoLogs) {
+        const seasonStart = Math.floor((game.season_id ?? 0) / 10000);
+        if (
+          game.game_id == null || game.season_id == null ||
+          !Number.isSafeInteger(game.game_id) ||
+          !new RegExp(`^${seasonStart}02\\d{4}$`).test(String(game.game_id)) ||
+          !Number.isSafeInteger(game.season_id) ||
+          game.season_id !== seasonStart * 10000 + seasonStart + 1 ||
+          game.games_played !== 1 ||
+          gameIds.has(game.game_id)
+        ) {
+          throw new Error(`Invalid or duplicate regular-season NHL appearance for player ${playerId}.`);
+        }
+        gameIds.add(game.game_id);
+        recentSeasons.add(game.season_id);
+      }
+
+      // Keep the existing cross-season NHL window; NST must match its exact dates
+      // and seasons, without unrelated postseason rows consuming a separate limit.
+      const recentDates = wgoLogs.map(game => game.date);
+      const [nstIndGamelogRes, nstOiGamelogRes] = wgoLogs.length > 0
+        ? await Promise.all([
           supabase
             .from("nst_gamelog_as_counts")
             .select(nstIndGamelogSelect)
             .eq("player_id", playerId)
-            .order("date_scraped", { ascending: false })
-            .limit(20),
+            .in("season", [...recentSeasons])
+            .in("date_scraped", recentDates),
           supabase
             .from("nst_gamelog_as_counts_oi")
             .select(nstOiGamelogSelect)
             .eq("player_id", playerId)
-            .order("date_scraped", { ascending: false })
-            .limit(20)
-        ]);
+            .in("season", [...recentSeasons])
+            .in("date_scraped", recentDates)
+        ])
+        : [{ data: [], error: null }, { data: [], error: null }];
+      for (const [table, result] of [
+        ["nst_gamelog_as_counts", nstIndGamelogRes],
+        ["nst_gamelog_as_counts_oi", nstOiGamelogRes]
+      ] as const) {
+        if (result.error) {
+          throw new Error(`Failed to fetch ${table} for player ${playerId}: ${result.error.message}`);
+        }
+      }
 
       // --- Combine Game Log Data ---
       const combinedGames: CombinedGameData[] = [];
-      const wgoLogs = (wgoGamelogRes.data || []) as SelectedWgoGamelog[];
       const nstIndLogs = (nstIndGamelogRes.data ||
         []) as SelectedNstIndGamelog[];
       const nstOiLogs = (nstOiGamelogRes.data || []) as SelectedNstOiGamelog[];
@@ -1315,4 +1363,4 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
   }
 }
 
-export default withCronJobAudit(adminOnly(withNhlOffSeasonSkip(handler as any)));
+export default adminOnly(withCronJobAudit(withNhlOffSeasonSkip(handler as any)));

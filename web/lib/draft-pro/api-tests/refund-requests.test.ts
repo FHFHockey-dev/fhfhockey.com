@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 const requireApiUser = vi.hoisted(() => vi.fn());
 const createRefund = vi.hoisted(() => vi.fn());
 vi.mock("lib/api/requireApiUser", () => ({ requireApiUser }));
-vi.mock("lib/draft-pro/account/refunds", () => ({ createDraftProRefundRequest: createRefund }));
+vi.mock("lib/draft-pro/account/refunds", async original => ({ ...await original<object>(), createDraftProRefundRequest: createRefund }));
 
 import handler from "../../../pages/api/v1/account/draft-pro/refund-requests";
 
