@@ -24,6 +24,8 @@ import { fictionalLeagueWeek, fictionalTeamStats } from "./fixtures";
 import { fictionalPlayerSources } from "./pickupsFixture";
 import { buildPlayerLayer, pickupTiers, specialists } from "./players";
 import { RANK_POOL_MAX, streamingTiers, TRIMMED_PLAYERS_MAX } from "./tiers";
+import { streamingNights } from "./matchups";
+import { targetPicks } from "./targets";
 import { shareCacheControl, SHARE_CACHE_EXPIRY_MARGIN_SECONDS } from "./server";
 import handler from "pages/api/v1/social-share/[format]";
 import type { NextApiRequest, NextApiResponse } from "next";
@@ -35,6 +37,16 @@ function snapshot(games: GameData[] = [], overrides: Partial<ScheduleData> = {},
   return buildScheduleSnapshot({ format, weekStart, generatedAt: now, schedule: { data: {}, numGamesPerDay: dates.map(date => new Set(games.filter(game => game.gameDate === date).map(game => game.id)).size), coveredDates: dates, fetchedAt: now, games, ...overrides } });
 }
 describe("schedule share calendar", () => {
+  it("rejects years 0000–0999 with the clean as-of error and keeps the year-1000 boundary (REL-SS1-LOW-YEAR-R1)", () => {
+    for (const low of ["0000-01-03", "0001-01-01", "0099-01-05", "0999-01-07", "0999-12-31"]) {
+      expect(() => calendarWeekStart(`${low}T16:00:00Z`)).toThrow(new Error("Invalid as-of timestamp."));
+    }
+    // 1000-01-01 is a Wednesday whose Monday falls in 0999; the first Monday of year 1000 is 1000-01-06.
+    expect(calendarWeekStart("1000-01-01T16:00:00Z")).toBe("0999-12-30");
+    expect(calendarWeekStart("1000-01-06T16:00:00Z")).toBe("1000-01-06");
+    expect(calendarWeekStart("1000-01-07T16:00:00Z")).toBe("1000-01-06");
+    expect(calendarWeekStart("9999-12-31T16:00:00Z")).toBe("9999-12-27");
+  });
   it("uses New York Monday boundaries across DST and year changes", () => {
     expect(calendarWeekStart("2026-03-09T03:59:00Z")).toBe("2026-03-02");
     expect(calendarWeekStart("2026-03-09T04:00:00Z")).toBe("2026-03-09");
@@ -331,7 +343,10 @@ describe("social editor schedule API", () => {
     expect(ok.body.players).toMatchObject({ state: "ready", selectedDates: dates });
     // Only the players the cards show leave the server: pickups, specialists and both tier-list modes (SS1-14).
     const tierShown = (["strict", "widened"] as const).flatMap(mode => streamingTiers(ok.body, true, mode).flatMap(tier => tier.shown));
-    const shown = new Set([...pickupTiers(ok.body, true).flatMap(tier => Object.values(tier.groups).flat()), ...Object.values(specialists(ok.body, true)).flat(), ...tierShown].map(player => player.nhlId));
+    // Targeted Matchups picks (ticket 22) are shown players too.
+    const targetShown = streamingNights(ok.body, true).flatMap(night => targetPicks(ok.body, night, true).map(pick => pick.player));
+    expect(targetShown.length).toBeGreaterThan(0);
+    const shown = new Set([...pickupTiers(ok.body, true).flatMap(tier => Object.values(tier.groups).flat()), ...Object.values(specialists(ok.body, true)).flat(), ...tierShown, ...targetShown].map(player => player.nhlId));
     expect(new Set(ok.body.players.players.map((player: { nhlId: number }) => player.nhlId))).toEqual(shown);
     expect(ok.body.players.players.length).toBeLessThanOrEqual(TRIMMED_PLAYERS_MAX);
     // The live tier list matches the one built from the untrimmed layer, including "+N more".
@@ -420,6 +435,16 @@ describe("social editor schedule API", () => {
       expect(JSON.stringify(failed.body)).not.toMatch(/offline|420-row/);
       expect(failed.headers["Cache-Control"]).toBe(SOCIAL_SHARE_CACHE_CONTROL);
     }
+    // SS1-17: a failed goalie source leaves the skaters' recent form in place (and the reverse).
+    const rows = (ids: number[]) => ids.map(id => ({ player_id: id, season: 20252026, game_date: "2026-01-04", strength_state: "all", season_games_played: 20, goals_total_last5: 1, assists_total_last5: 1, points_total_last5: 2,
+      shots_total_last5: 9, hits_avg_last5: 1, blocks_avg_last5: 0.5, toi_seconds_avg_last5: 1000, pp_points_total_last5: 0, toi_seconds_avg_season: 1000, line_combo_slot: 2, line_combo_group: "forward", pp_unit: 1 }));
+    playerSource.loadSharePlayerRecent.mockImplementationOnce(async (...args: unknown[]) => ({ rolling: rows(args[1] as number[]), goalieGames: null }));
+    const partial = await request({ format: "game-grid", weekStart });
+    expect(partial.body.players).toMatchObject({ state: "ready", recentState: "partial", recentUnavailable: ["goalies"] });
+    const players = partial.body.players.players as { group: string; recent: unknown }[];
+    expect(players.filter(player => player.group !== "G").every(player => player.recent !== null)).toBe(true);
+    expect(players.filter(player => player.group === "G").every(player => player.recent === null)).toBe(true);
+    expect(players.some(player => player.group === "G")).toBe(true);
   });
   it("never reads players after a failed or partial schedule", async () => {
     upstream.getSchedule.mockReset(); playerSource.loadSharePlayerSources.mockReset();

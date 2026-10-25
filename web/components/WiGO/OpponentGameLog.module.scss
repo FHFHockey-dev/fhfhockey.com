@@ -99,6 +99,13 @@
 
 // Add styles for loading/error states if needed
 
-@media (min-width: 1600px) {
-  .scheduleTable { overflow: visible; th, td, th:not(:first-child), td:not(:first-child), thead th { font-size: 12px; letter-spacing: 0; padding: 2px; white-space: normal; } thead th { position: static; } }
+:global(.wigo-one-page) {
+  .scheduleTable {
+    overflow: visible;
+    th, td, th:not(:first-child), td:not(:first-child), thead th { font-size: var(--wigo-data-size, 11px); line-height: 1.15; letter-spacing: 0; padding: 0 3px; white-space: nowrap; }
+    th:first-child { width: 40%; }
+    th:nth-child(2) { width: 27%; }
+    th:nth-child(3) { width: 33%; }
+    thead th { position: static; text-transform: none; }
+  }
 }

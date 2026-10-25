@@ -1,5 +1,7 @@
 import { pickupTiers, playersReady, scoreOrder, specialists, trimPlayerLayer, type RankedPlayer } from "./players";
 import type { SharePlayerLayer, ShareTeam, ShareTeamRow, SocialShareSnapshot } from "./types";
+import { STREAM_LIMIT, streamingNights } from "./matchups";
+import { TARGETS_PER_NIGHT, targetCandidates, targetKey, targetPicks } from "./targets";
 
 /**
  * Schedule-aware streaming tiers (TJ, ticket 13). Teams with games are grouped by their exact
@@ -91,8 +93,8 @@ export function streamingTiers(snapshot: SocialShareSnapshot, trusted: boolean, 
   });
 }
 
-/** Largest trimmed live layer: 27 pickup + 9 specialist players, plus both tier modes' 15 rows. */
-export const TRIMMED_PLAYERS_MAX = 36 + 2 * TIER_LIST_ROWS;
+/** Largest trimmed live layer: 27 pickup + 9 specialist players, both tier modes' 15 rows, and 3 targets per matchup night. */
+export const TRIMMED_PLAYERS_MAX = 36 + 2 * TIER_LIST_ROWS + STREAM_LIMIT * TARGETS_PER_NIGHT;
 
 /** Each tier's full eligible-player count per mode, from the untrimmed layer. */
 export function tierCountsOf(snapshot: SocialShareSnapshot, layer: SharePlayerLayer) {
@@ -109,16 +111,22 @@ export function trimEditionPlayers(snapshot: SocialShareSnapshot, layer: SharePl
   const trimmed = trimPlayerLayer(snapshot, layer);
   if (trimmed.state !== "ready") return trimmed;
   const recorded = { ...snapshot, players: { ...layer, selectedDates: [...snapshot.selectedDates], tierCounts: counts } };
+  // Picks come from the untrimmed layer (no selectedDates), then are recorded for the client.
+  const untrimmed = { ...snapshot, players: { ...layer, selectedDates: null } };
   const shown = (["strict", "widened"] as const).flatMap(mode => streamingTiers(recorded, true, mode).flatMap(tier => tier.shown));
-  const keep = new Set([...trimmed.players, ...shown].map(player => player.nhlId));
-  return { ...trimmed, players: layer.players.filter(player => keep.has(player.nhlId)), tierCounts: counts };
+  // Targeted Matchups picks (ticket 22), from the same layer, so the client recomputes the same three per night.
+  const picks = Object.fromEntries(streamingNights(untrimmed, true).map(night => [targetKey(night), targetPicks(untrimmed, night, true)]));
+  const targets = Object.values(picks).flat().map(pick => pick.player);
+  const keep = new Set([...trimmed.players, ...shown, ...targets].map(player => player.nhlId));
+  return { ...trimmed, players: layer.players.filter(player => keep.has(player.nhlId)), tierCounts: counts,
+    targets: Object.fromEntries(Object.entries(picks).map(([key, list]) => [key, list.map(pick => ({ id: pick.player.nhlId, roles: pick.roles }))])) };
 }
 
 /** Ranking pool depth (ticket 15): candidates per card list, and extra tier rows, read for L5 before the final rank. */
 export const RANK_POOL_PER_LIST = 6;
 export const RANK_POOL_TIER_EXTRA = 5;
 /** Most players the L5 read can cover: 9 pickup and 3 specialist lists, plus both tier modes' rows and extras. */
-export const RANK_POOL_MAX = 12 * RANK_POOL_PER_LIST + 2 * (TIER_LIST_ROWS + TIER_COUNT * RANK_POOL_TIER_EXTRA);
+export const RANK_POOL_MAX = 12 * RANK_POOL_PER_LIST + 2 * (TIER_LIST_ROWS + TIER_COUNT * RANK_POOL_TIER_EXTRA) + STREAM_LIMIT * 3 * TARGETS_PER_NIGHT;
 
 /**
  * Server-side ranking pool: the L5 score needs last-five-games rows, which are read only for a bounded
@@ -134,6 +142,8 @@ export function rankingPool(snapshot: SocialShareSnapshot, layer: SharePlayerLay
     const candidates = tierCandidates(unscored, mode, true), allocation = allocateRows(candidates.map(tier => tier.players.length));
     return candidates.flatMap((tier, i) => tier.players.slice(0, allocation[i] + RANK_POOL_TIER_EXTRA));
   });
-  const keep = new Set([...lists, ...tiers].map(player => player.nhlId));
+  // Each matchup night's tilt-team candidates (top 3 per tilt role), so the final picks match the full layer.
+  const targets = streamingNights(full, true).flatMap(night => targetCandidates(full, night));
+  const keep = new Set([...lists, ...tiers, ...targets].map(player => player.nhlId));
   return { ...layer, players: layer.players.filter(player => keep.has(player.nhlId)) };
 }

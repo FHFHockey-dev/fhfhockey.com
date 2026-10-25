@@ -9,6 +9,8 @@ import {
   PLAYER_STATS_SUMMARY_PARTITION_SOURCE_URL_PREFIX,
 } from "./playerStatsSummaryRefresh";
 
+const UNCOVERED_LOOKBACK_DAYS = 7;
+
 type GameRow = {
   id: number | string | null;
   date: string | null;
@@ -127,18 +129,25 @@ export async function resolvePlayerStatsIncrementalSelection(args?: {
     }
   }
 
-  const startDate = latestCoveredDate ?? finishedGames[finishedGames.length - 1]?.date ?? null;
+  const watermarkStart = latestCoveredDate ?? finishedGames[finishedGames.length - 1]?.date ?? null;
   const endDate = finishedGames[0]?.date ?? null;
+  // A failed game behind a newer covered game is otherwise never reselected.
+  // Retry only those uncovered games, back to the latest finished game's date
+  // minus UNCOVERED_LOOKBACK_DAYS (inclusive); without a watermark nothing changes.
+  const holeFloor = latestCoveredDate != null && endDate != null
+    ? new Date(Date.parse(`${endDate}T12:00:00Z`) - UNCOVERED_LOOKBACK_DAYS * 86400000).toISOString().slice(0, 10)
+    : null;
 
   const selectedGames = finishedGames
-    .filter((game) => startDate != null && game.date >= startDate)
+    .filter((game) => watermarkStart != null && (game.date >= watermarkStart
+      || (holeFloor != null && game.date >= holeFloor && !summaryGameIds.has(game.id))))
     .sort((a, b) => a.date.localeCompare(b.date) || a.id - b.id);
 
   return {
     mode: "incremental",
     seasonId,
     requestedGameType,
-    startDate,
+    startDate: selectedGames[0]?.date ?? watermarkStart,
     endDate,
     latestCoveredDate,
     gameIds: selectedGames.map((game) => game.id),

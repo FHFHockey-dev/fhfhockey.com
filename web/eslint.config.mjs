@@ -115,4 +115,44 @@ export default [
       },
     },
   },
+  {
+    // The raw card-evidence validator trusts whatever `retained` index it is given; only the
+    // trusted loader may call it. Everyone else uses validateAdmittedEvidence from evidenceLoader.
+    files: ["**/*.{js,jsx,mjs,cjs,ts,tsx}"],
+    ignores: [
+      "lib/player-cards/evidenceLoader.ts",
+      "lib/player-cards/evidenceBundle.test.ts",
+    ],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["**/evidenceBundle", "**/evidenceBundle.*"],
+              importNames: ["validateEvidenceBundle"],
+              message:
+                "Use validateAdmittedEvidence from player-cards/evidenceLoader; a caller-built index must never reach the raw validator.",
+            },
+          ],
+        },
+      ],
+      // no-restricted-imports misses dynamic import(), require() and test-runner loaders.
+      "no-restricted-syntax": [
+        "error",
+        ...[
+          "ImportExpression[source.value=/(^|[^\\w$])evidenceBundle(\\.\\w+)?$/]",
+          "ImportExpression[source.type='TemplateLiteral'] > TemplateLiteral > TemplateElement[value.raw=/evidenceBundle/]",
+          "CallExpression[callee.name='require'][arguments.0.value=/(^|[^\\w$])evidenceBundle(\\.\\w+)?$/]",
+          "CallExpression[callee.name='require'] > TemplateLiteral > TemplateElement[value.raw=/evidenceBundle/]",
+          "CallExpression[callee.property.name=/^(importActual|requireActual|importMock|requireMock)$/][arguments.0.value=/(^|[^\\w$])evidenceBundle(\\.\\w+)?$/]",
+          "TSExternalModuleReference[expression.value=/(^|[^\\w$])evidenceBundle(\\.\\w+)?$/]",
+        ].map(selector => ({
+          selector,
+          message:
+            "Load player-card evidence only through player-cards/evidenceLoader; dynamic or require() access to evidenceBundle bypasses the trusted loader.",
+        })),
+      ],
+    },
+  },
 ];

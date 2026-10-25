@@ -1,5 +1,6 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/router";
+import clsx from "clsx";
 
 import styles from "styles/wigoCharts.module.scss";
 import { TableAggregateData } from "components/WiGO/types";
@@ -12,8 +13,6 @@ import {
 } from "components/WiGO/WigoDashboardSections";
 import useWigoPlayerDashboard from "hooks/useWigoPlayerDashboard";
 import { computeDiffColumn } from "components/WiGO/tableUtils";
-import SurfaceWorkflowLinks from "components/SurfaceWorkflowLinks";
-import { getWigoSurfaceLinks } from "lib/navigation/siteSurfaceLinks";
 
 type TabKey = "overview" | "trends" | "percentiles" | "comparison";
 const VALID_TABS: TabKey[] = [
@@ -23,6 +22,11 @@ const VALID_TABS: TabKey[] = [
   "comparison",
 ];
 
+// One-page dashboard: every panel on one screen when the viewport has room; otherwise the same panels flow and scroll.
+const WIGO_FIT_MIN_WIDTH = 1200;
+const WIGO_FIT_MIN_HEIGHT = 700;
+const WIGO_BOTTOM_GUTTER = 6;
+
 const WigoCharts: React.FC = () => {
   const router = useRouter();
   const [leftTimeframe, setLeftTimeframe] =
@@ -31,13 +35,23 @@ const WigoCharts: React.FC = () => {
     useState<keyof TableAggregateData>("CA");
   const [minGp, setMinGp] = useState<number>(10);
   const [viewportWidth, setViewportWidth] = useState<number | null>(null);
+  const [availableHeight, setAvailableHeight] = useState(0);
+  const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const update = () => setViewportWidth(window.innerWidth);
+    const update = () => {
+      const top = (rootRef.current?.getBoundingClientRect().top ?? 0) + window.scrollY;
+      setViewportWidth(window.innerWidth);
+      setAvailableHeight(Math.floor(window.innerHeight - top - WIGO_BOTTOM_GUTTER));
+    };
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
-  const wideDesktop = (viewportWidth ?? 0) >= 1600;
+  const onePage = viewportWidth !== null && viewportWidth > 768;
+  const fitViewport =
+    onePage &&
+    viewportWidth >= WIGO_FIT_MIN_WIDTH &&
+    availableHeight >= WIGO_FIT_MIN_HEIGHT;
 
   const {
     selectedPlayer,
@@ -79,27 +93,6 @@ const WigoCharts: React.FC = () => {
     document.getElementById("wigo-player-search")?.focus();
   }, [updateUrlWith]);
 
-  // Team-scoped links appear only once the selected player's team resolves.
-  // WiGO keeps playerId/tab in the URL, so browser Back returns to this read.
-  const renderWorkflowLinks = () => (
-    <SurfaceWorkflowLinks
-      eyebrow="WiGO workflow"
-      title={
-        selectedPlayer
-          ? `Take the ${selectedPlayer.fullName} read further`
-          : "Keep exploring"
-      }
-      description={
-        teamAbbreviation
-          ? `Open ${teamAbbreviation} team context or a league-wide decision view. Back returns to this player.`
-          : selectedPlayer
-            ? "Team HQ and lines appear once this player's team is known; these league-wide views open now."
-            : "Select a player to add their team HQ and lines; these league-wide views open now."
-      }
-      links={getWigoSurfaceLinks(teamAbbreviation)}
-    />
-  );
-
   const renderTabs = () => (
     <div className={styles.mobileTabsBar}>
       {VALID_TABS.map((t) => (
@@ -120,13 +113,21 @@ const WigoCharts: React.FC = () => {
   );
 
   return (
-    <div className={styles.wigoDashHeader}>
+    <div
+      ref={rootRef}
+      className={clsx(
+        styles.wigoDashHeader,
+        onePage && "wigo-one-page",
+        onePage && (fitViewport ? "wigo-fit" : "wigo-flow")
+      )}
+    >
       <div className={styles.wigoDashboardContainer}>
         {playerDataError && <p role="alert">{playerDataError}</p>}
-        {viewportWidth !== null && viewportWidth > 768 && <div
+        {onePage && <div
           className={styles.wigoDashboardContent}
           style={
             {
+              "--wigo-fit-height": fitViewport ? `${availableHeight}px` : undefined,
               "--primary-color": teamColors.primaryColor,
               "--secondary-color": teamColors.secondaryColor,
               "--accent-color": teamColors.accentColor,
@@ -155,9 +156,9 @@ const WigoCharts: React.FC = () => {
               teamIdForLog={teamIdForLog}
               currentSeasonId={currentSeasonId}
               minGp={minGp}
-              desktop={wideDesktop}
+              desktop
             />
-            {wideDesktop && <WigoTrendsSection selectedPlayer={selectedPlayer} currentSeasonId={currentSeasonId} summaryOnly />}
+            <WigoTrendsSection selectedPlayer={selectedPlayer} currentSeasonId={currentSeasonId} summaryOnly />
           </div>
 
           <div className={styles.comparisonColumnWrapper}>
@@ -170,7 +171,7 @@ const WigoCharts: React.FC = () => {
               leftTimeframe={leftTimeframe}
               rightTimeframe={rightTimeframe}
               onCompare={handleTimeframeCompare}
-              desktop={wideDesktop}
+              desktop
             />
           </div>
 
@@ -178,11 +179,10 @@ const WigoCharts: React.FC = () => {
             <WigoTrendsSection
               selectedPlayer={selectedPlayer}
               currentSeasonId={currentSeasonId}
-              trendsOnly={wideDesktop}
+              trendsOnly
             />
-            {!wideDesktop && <WigoPercentilesSection playerId={selectedPlayer?.id} seasonId={currentSeasonId} minGp={minGp} onMinGpChange={setMinGp} />}
           </div>
-          {wideDesktop && <div className={styles.percentilesBand}>
+          <div className={styles.percentilesBand}>
             <WigoPercentilesSection
               playerId={selectedPlayer?.id}
               seasonId={currentSeasonId}
@@ -190,12 +190,8 @@ const WigoCharts: React.FC = () => {
               onMinGpChange={setMinGp}
               desktop
             />
-          </div>}
-
+          </div>
         </div>}
-        {viewportWidth !== null && viewportWidth > 768 && (
-          <div style={{ marginTop: 10 }}>{renderWorkflowLinks()}</div>
-        )}
 
         {viewportWidth !== null && viewportWidth <= 768 && <div
           className={styles.mobileContainer}
@@ -264,7 +260,6 @@ const WigoCharts: React.FC = () => {
               />
             )}
           </div>
-          <div className={styles.mobilePanel}>{renderWorkflowLinks()}</div>
         </div>}
       </div>
     </div>

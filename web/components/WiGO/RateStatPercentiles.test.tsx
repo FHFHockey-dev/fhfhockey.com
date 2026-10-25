@@ -326,7 +326,8 @@ describe("RateStatPercentiles", () => {
       <RateStatPercentiles playerId={1} seasonId={20252026} minGp={10} onMinGpChange={vi.fn()} desktop />
     );
     await waitFor(() => expect(screen.getAllByText("50%")).toHaveLength(2));
-    expect(screen.getAllByText("1st rank")).toHaveLength(2);
+    // The tile shows "1st" with a visually hidden " rank" suffix for screen readers.
+    expect(screen.getAllByText((_, element) => element?.tagName === "SMALL" && element.textContent === "1st rank")).toHaveLength(2);
   });
 
   it("recalculates the minimum-GP population without refetching", async () => {

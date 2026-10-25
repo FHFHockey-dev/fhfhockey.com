@@ -171,6 +171,23 @@ describe("buildPlayerAggregatedStats", () => {
     expect(rows.find((row) => row.label === "ixG")?.STD).toBeCloseTo(8.44);
   });
 
+  it("fills missing STD counts from totals only when the totals row is the dashboard season", () => {
+    const careerData = { player_id: 1, std_gp: 0, std_g: null } as unknown as WigoCareerRow;
+    const totals = (season: string) => ({
+      goals: 31, assists: 40, points: 71, shots: 250, hits: 20,
+      blocked_shots: 15, penalty_minutes: 12, pp_points: 25, season
+    });
+    const goalsStd = (totalsSeason: string, stdSeasonId?: number | null) =>
+      buildPlayerAggregatedStats({ careerData, recentData: null, ratesData: null,
+        totalsData: totals(totalsSeason), stdSeasonId }).find((row) => row.label === "Goals")?.STD;
+
+    // Last season's totals (the latest row for a player with no current-season games) never pose as STD.
+    expect(goalsStd("20242025", 20252026)).toBeNull();
+    // Season unknown: no fallback rather than a guess.
+    expect(goalsStd("20252026")).toBeNull();
+    expect(goalsStd("20252026", 20252026)).toBe(31);
+  });
+
   it("derives per-60 values from counts and ATOI when the rates table is missing", () => {
     const careerData = {
       player_id: 1,
@@ -249,8 +266,10 @@ describe("buildPlayerAggregatedStats", () => {
         hits: 50,
         blocked_shots: 25,
         penalty_minutes: 18,
-        pp_points: 10
-      }
+        pp_points: 10,
+        season: "20252026"
+      },
+      stdSeasonId: 20252026
     });
 
     expect(rows.find((row) => row.label === "Goals")?.STD).toBe(14);
@@ -302,6 +321,53 @@ describe("fetchPlayerGameLogForStat query contract", () => {
         ]
       }
     ]);
+  });
+});
+
+describe("fetchPlayerGameLogForStat units (selected-stat chart)", () => {
+  it("puts WGO fraction percentages on the 0–100 scale the matrix and reference lines use", async () => {
+    installGameLogQueryMock([
+      { date: "2026-01-01", shooting_percentage: 0.25 },
+      { date: "2026-01-02", shooting_percentage: null }
+    ]);
+    await expect(fetchPlayerGameLogForStat(1, 20252026, "S%")).resolves.toEqual([
+      { date: "2026-01-01", value: 25 },
+      { date: "2026-01-02", value: null }
+    ]);
+
+    installGameLogQueryMock([{ date: "2026-01-01", pp_toi_pct_per_game: 0.6 }]);
+    await expect(fetchPlayerGameLogForStat(1, 20252026, "PP%")).resolves.toEqual([
+      { date: "2026-01-01", value: 60 }
+    ]);
+  });
+
+  it("reports PTS1% per game as a percentage", async () => {
+    installGameLogQueryMock([{ date: "2026-01-01", goals: 1, total_primary_assists: 0, points: 2 }]);
+    await expect(fetchPlayerGameLogForStat(1, 20252026, "PTS1%")).resolves.toEqual([
+      { date: "2026-01-01", value: 50 }
+    ]);
+  });
+
+  it("derives PP per-60 rates from WGO PP counts and PP seconds, with no rate when there was no PP time", async () => {
+    installGameLogQueryMock([
+      { date: "2026-01-01", pp_points: 1, pp_toi_per_game: 240 },
+      { date: "2026-01-02", pp_points: 0, pp_toi_per_game: 0 },
+      { date: "2026-01-03", pp_points: 0, pp_toi_per_game: 180 }
+    ]);
+    await expect(fetchPlayerGameLogForStat(8478402, 20252026, "PPP/60")).resolves.toEqual([
+      { date: "2026-01-01", value: 15 },
+      { date: "2026-01-02", value: null },
+      { date: "2026-01-03", value: 0 }
+    ]);
+    expect(queryTraces.at(-1)).toEqual({
+      table: "wgo_skater_stats",
+      calls: [
+        ["select", "date, pp_points, pp_toi_per_game"],
+        ["eq", "player_id", 8478402],
+        ["eq", "season_id", 20252026],
+        ["order", "date", { ascending: true }]
+      ]
+    });
   });
 });
 

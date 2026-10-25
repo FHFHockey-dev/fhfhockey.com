@@ -60,13 +60,18 @@ function buildComparisonRows(
     );
 }
 
+// A percentile against only a handful of qualifying peers is noise (one peer or none collapses to 50.0),
+// so the page withholds a stat's percentile until this many other players qualify.
+export const WIGO_RATING_MIN_COHORT_PEERS = 20;
+
 // --- Main Calculation Function ---
 export function calculatePlayerRatings(
   playerId: number,
   rawStats: RawStatsCollection,
   weightsConfig: RatingWeightsConfig = RATING_WEIGHTS,
   regressionConfig: RegressionConfig = REGRESSION_CONFIG,
-  cohortMinGp = 0
+  cohortMinGp = 0,
+  minCohortPeers = 0
 ): CalculatedPlayerRatings | null {
   const strengths: Strength[] = ["as", "es", "pp", "pk"];
   const finalRatings: Partial<CalculatedPlayerRatings> & {
@@ -128,11 +133,13 @@ export function calculatePlayerRatings(
           cohortMinGp
         );
 
-        const targetRanking = calculateRankingResult(
-          comparisonRows,
-          playerId,
-          higherIsBetter
-        );
+        const peerCount = comparisonRows.filter(
+          (row) => row.player_id !== playerId
+        ).length;
+        const targetRanking =
+          peerCount >= minCohortPeers
+            ? calculateRankingResult(comparisonRows, playerId, higherIsBetter)
+            : null;
         const percentile =
           targetRanking !== null ? targetRanking.percentile * 100 : null;
         intermediatePercentiles[strength]![String(statKey)] = percentile;

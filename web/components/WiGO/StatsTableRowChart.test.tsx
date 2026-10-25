@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import StatsTableRowChart from "./StatsTableRowChart";
+import StatsTableRowChart, { formatGameMeanLabel } from "./StatsTableRowChart";
 
 describe("StatsTableRowChart", () => {
   beforeEach(() => {
@@ -47,5 +47,12 @@ describe("StatsTableRowChart", () => {
     );
 
     expect(screen.getByText("STD: 15:00")).toBeTruthy();
+  });
+
+  it("labels the dashed line as a game mean formatted like its stat", () => {
+    expect(formatGameMeanLabel("S%", 12.345)).toBe("Game mean: 12.3%");
+    expect(formatGameMeanLabel("ATOI", 1215)).toBe("Game mean: 20:15");
+    expect(formatGameMeanLabel("Goals", 0.4)).toBe("Game mean: 0.40");
+    expect(formatGameMeanLabel("SOG/60", 8.976)).toBe("Game mean: 8.98");
   });
 });

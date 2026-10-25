@@ -8,7 +8,11 @@ import styles from "./TeamPerformanceDrivers.module.scss";
 import {
   buildTeamPerformanceDrivers,
   formatPercentileOrdinal,
+  type TeamDriverCoverage,
 } from "./teamPerformanceDriverModel";
+
+const coverageLabel = ({ coveredGames, expectedGames }: TeamDriverCoverage) =>
+  `${coveredGames} of ${expectedGames} games`;
 
 interface TeamPerformanceDriversProps {
   teamId: number | null;
@@ -85,8 +89,17 @@ const TeamPerformanceDrivers: React.FC<TeamPerformanceDriversProps> = ({
             ))}
           </div>
           <p className={styles.sourceNote}>
-            Regular season · 5v5: {result.fiveOnFiveDate}<br />Special teams through: {result.specialTeamsDate}
+            {result.fiveOnFiveCoverage
+              ? <>Regular season · 5v5: {coverageLabel(result.fiveOnFiveCoverage)} to {result.fiveOnFiveDate}</>
+              : <>Regular season · 5v5: {result.fiveOnFiveDate}</>}
+            <br />
+            {result.specialTeamsCoverage
+              ? <>Special teams: {coverageLabel(result.specialTeamsCoverage)} to {result.specialTeamsDate}</>
+              : <>Special teams through: {result.specialTeamsDate}</>}
           </p>
+          {(result.fiveOnFiveCoverage || result.specialTeamsCoverage) && (
+            <p className={styles.sourceNote}>Partial coverage: rates use covered games only.</p>
+          )}
         </>
       )}
     </WigoSectionCard>

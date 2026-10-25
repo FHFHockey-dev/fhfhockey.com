@@ -2,10 +2,13 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-const mocks = vi.hoisted(() => ({ fetch: vi.fn() }));
+const mocks = vi.hoisted(() => ({ fetch: vi.fn(), options: null as any }));
 vi.mock("lib/cors-fetch", () => ({ default: mocks.fetch }));
 vi.mock("react-chartjs-2", () => ({
-  Doughnut: ({ data }: any) => <pre data-testid="chart">{JSON.stringify(data)}</pre>
+  Doughnut: ({ data, options }: any) => {
+    mocks.options = options;
+    return <pre data-testid="chart">{JSON.stringify(data)}</pre>;
+  }
 }));
 
 import GoalieShareChart, { type GoalieGameRow } from "./index";
@@ -111,6 +114,58 @@ describe("GoalieShareChart complete page sets", () => {
     await finishRequests();
     expect(screen.queryAllByTestId("chart")).toHaveLength(0);
     expect(screen.getByRole("alert")).toBeTruthy();
+  });
+
+  it("withholds equal-sized pages with duplicate appearance identities", async () => {
+    mockPages((start) => start === 100
+      ? response({ total: rows.length, data: rows.slice(0, 100) })
+      : completePage(start));
+    render(<GoalieShareChart />);
+    await finishRequests();
+    expect(screen.queryAllByTestId("chart")).toHaveLength(0);
+    expect(screen.getByRole("alert")).toBeTruthy();
+  });
+
+  it("labels appearance share and counts relief once in team GP", async () => {
+    mockPages(() => response({ total: 2, data: [rows[0], { ...rows[0], playerId: 2 }] }));
+    render(<GoalieShareChart />);
+    await finishRequests();
+    const chart = JSON.parse(screen.getByTestId("chart").textContent!);
+    expect(chart.labels).toEqual(["One (50.0%)", "One (50.0%)"]);
+    expect(screen.getByText("Team GP:").nextSibling?.textContent).toBe("1");
+    expect(screen.getByText(/Share of recorded goalie appearances, including relief/)).toBeTruthy();
+  });
+
+  it("gives every goalie a distinct slice colour when the team palette repeats one", async () => {
+    // PHI's palette lists white twice; four goalies used to share it on slices 2 and 4.
+    mockPages(() => response({ total: 4, data: [1, 2, 3, 4].map((playerId) =>
+      ({ ...rows[0], gameId: playerId, playerId })) }));
+    render(<GoalieShareChart />);
+    await finishRequests();
+    const { backgroundColor } = JSON.parse(screen.getByTestId("chart").textContent!).datasets[0];
+    expect(backgroundColor).toHaveLength(4);
+    expect(new Set(backgroundColor.map((color: string) => color.toLowerCase())).size).toBe(4);
+    expect(backgroundColor[0]).toBe("#cf3308");
+  });
+
+  it("adds official starts per team game to the tooltip, and withholds unlabeled starts", async () => {
+    const tooltipLines = (dataIndex: number) =>
+      mocks.options.plugins.tooltip.callbacks.label({ dataIndex, parsed: 1, label: "" });
+    mockPages(() => response({ total: 2, data: [
+      { ...rows[0], gamesStarted: 1 },
+      { ...rows[0], playerId: 2, goalieFullName: "Backup Two", gamesStarted: 0 }
+    ] }));
+    render(<GoalieShareChart />);
+    await finishRequests();
+    expect(tooltipLines(0)).toContain("Starts: 1 of 1 team games");
+    expect(tooltipLines(1)).toContain("Starts: 0 of 1 team games");
+    cleanup();
+
+    mockPages(() => response({ total: 2, data: [rows[0], { ...rows[0], playerId: 2 }] }));
+    render(<GoalieShareChart />);
+    await finishRequests();
+    expect(tooltipLines(0)).toContain("Starts: Unavailable");
+    expect(tooltipLines(0)).toContain("Starter One: 1 appearances");
   });
 
   it("recovers within the retry budget and re-slices complete data without fetching", async () => {

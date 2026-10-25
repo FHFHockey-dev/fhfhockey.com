@@ -1,5 +1,7 @@
 import { checkInputFieldHealth, type HealthCheckSpecification, type InputHealthRow } from "../dataHealth";
 import { type OperationalSnapshot, type WorkStage } from "../operationalProgress";
+import { type runProgressSchema } from "../runProjection";
+import type { z } from "zod";
 
 export const previewScenarios = [
   { id: "predicting", label: "Prediction in progress" },
@@ -76,4 +78,25 @@ export function createPreviewFixture(scenario: PreviewScenario): { snapshot: Ope
     { ...row(12), availableAt: "2026-09-01T13:00:00Z", capturedAt: "2026-09-01T13:05:00Z" },
   );
   return { snapshot, now: PREVIEW_NOW, health: checkInputFieldHealth(spec, rows) };
+}
+
+const at = (minute: number) => Date.UTC(2026, 8, 2, 12, minute);
+const listedRun = (n: number, run: Partial<z.input<typeof runProgressSchema>>): z.input<typeof runProgressSchema> => ({
+  runId: uuid(20 + n), planHash: String(n).repeat(64), storageMode: "memory_reference", state: "queued", revision: 1,
+  createdAtMs: at(n), finishedAtMs: null, heartbeatAtMs: null, notBeforeMs: at(n), lastEvent: "accepted",
+  stages: [{ phase: "prediction", total: 2, successful: 0, failed: 0, pending: 2, skipped: 0, percent: 0 },
+    { phase: "evaluation", total: 1, successful: 0, failed: 0, pending: 1, skipped: 0, percent: 0 }],
+  ...run,
+});
+/** Saved-run listing as the owner collection route returns it: projections only, newest first. */
+export function createHistoryFixture(): { runs: Array<z.input<typeof runProgressSchema>> } {
+  return { runs: [
+    listedRun(3, { state: "running", revision: 4, heartbeatAtMs: at(7), lastEvent: "step_claimed",
+      stages: [{ phase: "prediction", total: 2, successful: 1, failed: 0, pending: 1, skipped: 0, percent: 50 },
+        { phase: "evaluation", total: 1, successful: 0, failed: 0, pending: 1, skipped: 0, percent: 0 }] }),
+    listedRun(2, { state: "completed_awaiting_reveal", revision: 6, finishedAtMs: at(5), heartbeatAtMs: at(5), lastEvent: "completed_sealed",
+      stages: [{ phase: "prediction", total: 2, successful: 2, failed: 0, pending: 0, skipped: 0, percent: 100 },
+        { phase: "evaluation", total: 1, successful: 1, failed: 0, pending: 0, skipped: 0, percent: 100 }] }),
+    listedRun(1, { state: "cancelled", revision: 3, finishedAtMs: at(2), lastEvent: "cancelled" }),
+  ] };
 }

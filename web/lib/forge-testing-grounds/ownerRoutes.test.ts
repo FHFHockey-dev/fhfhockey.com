@@ -2,6 +2,10 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createTestingGroundsRoutes, type OwnerReadStore } from "./ownerRoutes";
+import { runBoundedStep } from "./boundedWorker";
+import { MemoryExperimentRunStore } from "./memoryRunStore";
+import { createRunStoreReadAdapter, type ExperimentRunStore, type RunProgress } from "./runStore";
+import type { ExperimentPlan } from "./runnerContracts";
 import accessRoute from "../../pages/api/v1/forge/testing-grounds/access";
 import collectionRoute from "../../pages/api/v1/forge/testing-grounds/runs";
 import runRoute from "../../pages/api/v1/forge/testing-grounds/runs/[runId]/[operation]";
@@ -123,5 +127,129 @@ describe("inactive owner routes and artifact boundaries", () => {
     store.findOwned.mockRejectedValueOnce(new Error("private-outcome-marker"));
     const res = response(); await createTestingGroundsRoutes({ authorize: granted, store }).run(request("progress"), res);
     expect(res.json).toHaveBeenCalledWith({ error: "testing_grounds_unavailable" });
+  });
+});
+
+describe("validated run-store read adapter over the synthetic memory reference", () => {
+  const OTHER = "11111111-1111-4111-8111-111111111112";
+  const WORKER = "20000000-0000-4000-8000-000000000001";
+  const ref = (letter: string) => ({ versionId: ownerId, contentHash: letter.repeat(64) });
+  const plan = (historyClass: "synthetic" | "reconstructed_history_diagnostic" = "synthetic"): ExperimentPlan => ({
+    version: "forge-testing-grounds-run-v1", baseline: ref("a"), candidate: ref("b"),
+    inputManifest: { ...ref("c"), historyClass, knowledgeCutoffMs: 500, snapshots: [{ ...ref("d"), availableAtMs: 400, capturedAtMs: 450 }] },
+    preflightReportHash: "e".repeat(64), chronologyContractHash: "f".repeat(64), evaluationContractHash: "0".repeat(64),
+    work: [{ phase: "prediction", key: "synthetic-predictions" }, { phase: "evaluation", key: "synthetic-paired" }],
+    reveal: { rule: "owner_after_completion_and_time", notBeforeMs: 2_000 },
+    limits: { maxUnits: 10, stepTimeoutMs: 20, leaseMs: 100, maxRunMs: 10_000, maxExecutionsPerUnit: 3, maxFailuresPerUnit: 2,
+      retryDelayMs: 5, maxOutputBytes: 1_000, maxCheckpointBytes: 1_000, maxStoredBytes: 100_000 },
+  });
+  async function accepted(historyClass?: "reconstructed_history_diagnostic") {
+    const memory = new MemoryExperimentRunStore({ maxQueuedRuns: 4, maxConcurrentLeases: 1 });
+    const { runId } = await memory.accept(ownerId, "request-1", plan(historyClass), 1_000);
+    return { memory, runId };
+  }
+  async function complete(memory: ExperimentRunStore, runId: string) {
+    for (const step of [0, 1]) {
+      const reply = await runBoundedStep({ store: memory, ownerUserId: ownerId, runId, workerId: WORKER, now: () => 1_000,
+        execute: async () => ({ kind: "completed", payload: { syntheticStep: step }, outcomeStatus: "settled" }) });
+      expect(reply.status).toBe("accepted");
+    }
+  }
+  async function call(store: ExperimentRunStore, runId: string | undefined, operation?: string, owner = ownerId, method = "GET") {
+    const routes = createTestingGroundsRoutes({ authorize: async () => ({ allowed: true as const, ownerUserId: owner }),
+      store: createRunStoreReadAdapter(store), trustedOrigin: origin });
+    const req = request(operation, method); req.query.runId = runId;
+    const res = response(); await (runId === undefined ? routes.collection : routes.run)(req, res);
+    // A failed awaited read follows an already-evaluated status(200); the last call is the response.
+    return { status: vi.mocked(res.status).mock.lastCall?.[0], body: vi.mocked(res.json).mock.lastCall?.[0] };
+  }
+  const unavailable = { status: 503, body: { error: "testing_grounds_unavailable" } };
+  const sealed = { status: 403, body: { error: "results_sealed" } };
+
+  it("lists and reads strict progress, keeps results sealed until synthetic reveal, and fabricates no other channel", async () => {
+    const { memory, runId } = await accepted();
+    const listed = await call(memory, undefined);
+    expect(listed).toEqual({ status: 200, body: { runs: [await memory.progress(ownerId, runId)] } });
+    expect(listed.body.runs[0]).toMatchObject({ state: "queued", storageMode: "memory_reference", lastEvent: "accepted" });
+    for (const operation of ["results", "logs", "export"]) expect(await call(memory, runId, operation)).toEqual(sealed);
+    await complete(memory, runId);
+    const progress = await call(memory, runId, "progress");
+    expect(progress.status).toBe(200);
+    expect(progress.body).toMatchObject({ state: "completed_awaiting_reveal", lastEvent: "completed_sealed" });
+    expect(progress.body.stages.map((stage: RunProgress["stages"][number]) => stage.percent)).toEqual([100, 100]);
+    expect(JSON.stringify(progress.body)).not.toContain("syntheticStep");
+    for (const operation of ["results", "logs", "export"]) expect(await call(memory, runId, operation)).toEqual(sealed);
+    for (const operation of ["health", "manifest"]) expect(await call(memory, runId, operation)).toEqual(unavailable);
+    expect(await memory.reveal(ownerId, runId, 2_000)).toBe(true);
+    const results = await call(memory, runId, "results");
+    expect(results.status).toBe(200);
+    expect(results.body.status).toBe("revealed");
+    expect(results.body.outputs.map((output: { payload: unknown }) => output.payload)).toEqual([{ syntheticStep: 0 }, { syntheticStep: 1 }]);
+    for (const operation of ["logs", "export"]) expect(await call(memory, runId, operation)).toEqual(unavailable);
+  });
+  it("hides other owners' and unknown runs, and lists only the verified owner's runs", async () => {
+    const { memory, runId } = await accepted();
+    await memory.accept(OTHER, "request-1", plan(), 1_000);
+    expect(await call(memory, runId, "progress", OTHER)).toEqual({ status: 404, body: { error: "not_found" } });
+    expect(await call(memory, "30000000-0000-4000-8000-000000000003", "progress")).toEqual({ status: 404, body: { error: "not_found" } });
+    const listed = await call(memory, undefined, undefined, OTHER);
+    expect(listed.body.runs).toHaveLength(1);
+    expect(listed.body.runs[0].runId).not.toBe(runId);
+  });
+  it("keeps completed real-history results sealed", async () => {
+    const { memory, runId } = await accepted("reconstructed_history_diagnostic");
+    await complete(memory, runId);
+    expect(await memory.reveal(ownerId, runId, 5_000)).toBe(false);
+    expect(await call(memory, runId, "results")).toEqual(sealed);
+  });
+  it.each<[string, (progress: RunProgress) => unknown]>([
+    ["an unknown field", progress => ({ ...progress, unsafeAdapterMarker: "SYNTHETIC_OUTCOME" })],
+    ["free-form event text", progress => ({ ...progress, lastEvent: "SYNTHETIC_OUTCOME" })],
+    ["inflated successful work", progress => ({ ...progress, stages: progress.stages.map(stage => ({ ...stage, successful: stage.total })) })],
+    ["a rounded-up percentage", progress => ({ ...progress, stages: progress.stages.map(stage => ({ ...stage, percent: 100 })) })],
+    ["a claimed durable mode", progress => ({ ...progress, storageMode: "durable" })],
+    ["an unfinished terminal state", progress => ({ ...progress, state: "completed_awaiting_reveal" })],
+    ["a repeated stage", progress => ({ ...progress, stages: progress.stages.slice(0, 1).concat(progress.stages) })],
+  ])("refuses a store projection with %s and reflects none of it", async (_label, poison) => {
+    const { memory, runId } = await accepted();
+    const store = Object.assign(Object.create(memory), {
+      progress: async (owner: string, id: string) => poison(await memory.progress(owner, id)),
+      list: async (owner: string) => Promise.all((await memory.list(owner)).map(poison)),
+    }) as ExperimentRunStore;
+    for (const reply of [await call(store, runId, "progress"), await call(store, undefined)]) {
+      expect(reply).toEqual(unavailable);
+      expect(JSON.stringify(reply)).not.toContain("SYNTHETIC_OUTCOME");
+    }
+  });
+  it("refuses a per-run projection for another run and a listing that repeats a run", async () => {
+    const { memory, runId } = await accepted();
+    const store = Object.assign(Object.create(memory), {
+      progress: async (owner: string, id: string) => ({ ...(await memory.progress(owner, id)), runId: "30000000-0000-4000-8000-000000000003" }),
+      list: async (owner: string) => [...await memory.list(owner), ...await memory.list(owner)],
+    }) as ExperimentRunStore;
+    expect(await call(store, runId, "progress")).toEqual(unavailable);
+    expect(await call(store, undefined)).toEqual(unavailable);
+  });
+  it("requires the results channel and the projection to agree before any sealed read", async () => {
+    const { memory, runId } = await accepted();
+    await complete(memory, runId);
+    const early = Object.assign(Object.create(memory), {
+      results: async () => ({ status: "revealed", outputs: [] }),
+    }) as ExperimentRunStore;
+    expect(await call(early, runId, "results")).toEqual(sealed);
+    await memory.reveal(ownerId, runId, 2_000);
+    const padded = Object.assign(Object.create(memory), {
+      results: async (owner: string, id: string) => ({ ...(await memory.results(owner, id)), leakedOutcome: "SYNTHETIC_OUTCOME" }),
+    }) as ExperimentRunStore;
+    expect(await call(padded, runId, "results")).toEqual(sealed);
+  });
+  it("installing the adapter activates no mutation", async () => {
+    const { memory, runId } = await accepted();
+    const spies = (["accept", "claim", "finish", "cancel", "reveal"] as const).map(name => vi.spyOn(memory, name));
+    for (const operation of ["cancel", "retry", "reveal"]) {
+      expect(await call(memory, runId, operation, ownerId, "POST")).toEqual({ status: 503, body: { error: "runner_not_connected" } });
+    }
+    expect(await call(memory, undefined, undefined, ownerId, "POST")).toEqual({ status: 503, body: { error: "runner_not_connected" } });
+    for (const spy of spies) expect(spy).not.toHaveBeenCalled();
   });
 });

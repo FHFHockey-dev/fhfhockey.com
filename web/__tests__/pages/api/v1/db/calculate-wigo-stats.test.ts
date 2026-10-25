@@ -52,12 +52,13 @@ function installRecentFrameMock(
   nhl: Record<string, any>[],
   individual: Record<string, any>[],
   onIce = individual,
-  failedTable?: string
+  failedTable?: string,
+  players = [{ id: 8476453, position: "R" }]
 ) {
   const writes: Record<string, any[]> = {};
   const traces: Array<{ table: string; calls: any[][] }> = [];
   const tables: Record<string, any[]> = {
-    players: [{ id: 8476453, position: "R" }],
+    players,
     wgo_skater_stats: nhl,
     nst_gamelog_as_counts: individual,
     nst_gamelog_as_counts_oi: onIce
@@ -205,7 +206,8 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     const res = createMockRes();
     await handler({ method: "GET", query: {}, headers: { host: "localhost", authorization: "Bearer unit-test-cron-secret" } } as any, res);
     if (coverage === "missing NHL season") {
-      expect(res.statusCode).toBe(500);
+      expect(res.statusCode).toBe(207);
+      expect(res.body).toMatchObject({ success: false, rejectedPlayerIds: [1] });
       expect(written).toEqual({});
       return;
     }
@@ -302,7 +304,72 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
       : problem === "playoff identity" ? { ...game, game_id: 2026030001 }
       : { ...game, date: "2026-10-22" };
     const { writes } = installRecentFrameMock(problem === "duplicate" ? [game, bad] : [bad], [game]);
-    expect((await runRecentFixture()).statusCode).toBe(500);
+    const res = await runRecentFixture();
+    expect(res.statusCode).toBe(207);
+    expect(res.body).toMatchObject({ success: false, rejectedPlayerIds: [8476453] });
+    expect(res.body.error).toBe("Invalid or duplicate regular-season NHL appearance for 1 player(s): 8476453.");
     expect(writes).toEqual({});
+  });
+
+  it.each(["wigo_career", "wigo_recent"])("fails the run instead of reporting success when the %s upsert is rejected", async (failedWrite) => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const game = recentGame("2026-10-23");
+    const { writes } = installRecentFrameMock([game], [game]);
+    const base = fromMock.getMockImplementation()!;
+    fromMock.mockImplementation((table: string) => {
+      const query = base(table);
+      if (table === failedWrite) query.upsert = () => Promise.resolve({ error: { message: "synthetic write failure" } });
+      return query;
+    });
+    const res = await runRecentFixture();
+    expect(res.statusCode).toBe(500);
+    expect(res.body).toMatchObject({ success: false, writeErrors: [`${failedWrite}: synthetic write failure`] });
+    expect(res.body.error).toContain(`${failedWrite}: synthetic write failure`);
+    expect(Object.keys(writes)).toEqual([failedWrite === "wigo_career" ? "wigo_recent" : "wigo_career"]);
+  });
+
+  it("withholds only the rejected player's rows and still writes every valid player", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const valid = { ...recentGame("2026-10-23"), player_id: 8478402 };
+    const bad = { ...recentGame("2026-10-23"), game_id: null };
+    const { writes } = installRecentFrameMock([bad, valid], [bad, valid], undefined, undefined,
+      [{ id: 8476453, position: "R" }, { id: 8478402, position: "C" }]);
+    const res = await runRecentFixture();
+    expect(res.statusCode).toBe(207);
+    expect(res.body).toMatchObject({ success: false, rejectedPlayerIds: [8476453] });
+    expect(writes.wigo_recent.map(row => row.player_id)).toEqual([8478402]);
+    expect(writes.wigo_career.map(row => row.player_id)).toEqual([8478402]);
+  });
+
+  it("pages the player list in a stable order so no skater is skipped across pages", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const ids = Array.from({ length: 1500 }, (_, index) => 8470001 + index);
+    const written = new Set<number>();
+    let unorderedPlayerReads = 0;
+    fromMock.mockImplementation((table: string) => {
+      let ordered = false, from = 0, to = Infinity, playerId: number | null = null;
+      const query: any = {
+        select: () => query, neq: () => query, in: () => query, limit: () => query,
+        eq: (key: string, value: any) => { if (key === "player_id") playerId = value; return query; },
+        order: () => { ordered = true; return query; },
+        range: (start: number, end: number) => { from = start; to = end; return query; },
+        upsert: (rows: any[]) => { if (table === "wigo_recent") rows.forEach(row => written.add(row.player_id)); return Promise.resolve({ error: null }); },
+        then: (resolve: (value: unknown) => unknown) => {
+          if (table === "wgo_skater_stats") {
+            return Promise.resolve({ data: [{ ...recentGame("2026-10-23"), player_id: playerId }], error: null }).then(resolve);
+          }
+          if (table !== "players") return Promise.resolve({ data: [], error: null }).then(resolve);
+          // Without ORDER BY, Postgres may return each page query in a different order.
+          const scan = ordered ? ids : unorderedPlayerReads++ % 2 ? [...ids].reverse() : ids;
+          const data = scan.slice(from, to + 1).map(id => ({ id }));
+          return Promise.resolve({ data, error: null, count: ids.length }).then(resolve);
+        },
+      };
+      return query;
+    });
+    const res = await runRecentFixture();
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toBe("Successfully processed 1500 of 1500 players.");
+    expect([...written].sort()).toEqual(ids);
   });
 });

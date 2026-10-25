@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element -- Native owned SVG is decoded and embedded by html-to-image for exact PNG exports. */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import { useAuth } from "contexts/AuthProviderContext";
 import { SCHEDULE_FORMATS, type SharePlayerLayer, type SharePlayerRecent, type SocialShareFormat, type SocialShareSnapshot, type ShareTeam, type ShareTeamRow } from "lib/socialShare/types";
 import { calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
@@ -15,6 +16,8 @@ import styles from "./SocialShare.module.scss";
 import { TeamBanner, teamBannerStyle } from "./TeamBanner";
 import { streamingTiers, tierPlayersAvailable, type TierMode } from "lib/socialShare/tiers";
 import { playerScore, SCORE_FORMULA, SPECIALIST_FORMULA } from "lib/socialShare/score";
+import { streakOf, type Streak, type StreakContext } from "lib/socialShare/streak";
+import { ROLE_LABELS, roleLabel, targetPicks } from "lib/socialShare/targets";
 
 const labels: Record<SocialShareFormat, string> = {
   "game-grid": "Weekly schedule", "remaining-week": "Remaining week",
@@ -44,8 +47,10 @@ const editionKey = (userId: string, format: SocialShareFormat, week: string) => 
 const queryText = (value: string | string[] | undefined) => (Array.isArray(value) ? value[0] : value) ?? "";
 /** A supported calendar date: years below 1000 cannot round-trip through the local calendar formatter. No rollover (C7 SS1-15-F1). */
 const isCalendarDate = (value: string) => /^[1-9]\d{3}-\d{2}-\d{2}$/.test(value) && Number.isFinite(Date.parse(`${value}T12:00:00Z`)) && new Date(`${value}T12:00:00Z`).toISOString().slice(0, 10) === value;
+/** Monday of a valid date's week, or null when the calendar can't represent it (REL-SS1-LOW-YEAR-R1). */
+const safeWeekStart = (date: string) => { try { return calendarWeekStart(`${date}T16:00:00Z`); } catch { return null; } };
 function initialSelection(format: SocialShareFormat, asOf: string, query: Record<string, string | string[] | undefined>) {
-  const week = isCalendarDate(queryText(query.week)) ? calendarWeekStart(`${queryText(query.week)}T16:00:00Z`) : calendarWeekStart(asOf);
+  const week = (isCalendarDate(queryText(query.week)) && safeWeekStart(queryText(query.week))) || calendarWeekStart(asOf);
   const days = weekDates(week), raw = query.dates === undefined ? null : queryText(query.dates).split(",").filter(Boolean);
   const dates = raw && raw.every(date => days.includes(date)) && new Set(raw).size === raw.length ? days.filter(date => raw.includes(date)) : undefined;
   return { week, dates, card: knownGraphic(format, query.card) ? queryText(query.card) : defaultGraphic(format) };
@@ -63,7 +68,7 @@ function coveredDays(snapshot: SocialShareSnapshot) {
   return !indexes.length ? "No days" : indexes.length === 1 ? label(indexes[0]) : contiguous ? `${label(indexes[0])}–${label(indexes[indexes.length - 1])}` : indexes.map(label).join(", ");
 }
 type MatchupKind = "easiest" | "stream";
-const matchupTitles: Record<MatchupKind, string> = { easiest: "EASIEST SCHEDULES", stream: "STREAMING MATCHUPS" };
+const matchupTitles: Record<MatchupKind, string> = { easiest: "EASIEST SCHEDULES", stream: "TARGETED MATCHUPS" };
 const softness = (def: number | null) => def === null ? null : def <= SOFT_DEFENSE_MAX ? "soft" : def >= 100 - SOFT_DEFENSE_MAX ? "strong" : "average";
 
 function futureItinerary(snapshot: SocialShareSnapshot, row: ShareTeamRow) {
@@ -147,7 +152,7 @@ function MondayGrid({ snapshot, trusted, logos, brandLogo }: { snapshot: SocialS
     </div>)}</div>
     <footer className={styles.gridFooter}>
       <div className={styles.legend}><span><i className={styles.legendAway}>@</i>Away</span><span><i className={styles.legendHome} />Home</span><span><i className={styles.legendOffColumn} />Off-night (≤8 games)</span>{cherryPicks.size > 0 && <span><i className={styles.legendCherry} />Streaming pick</span>}{trusted && <CountLegend />}<span className={styles.tierLegend}><b>SCORE</b><i className={styles.tierBest} /><i className={styles.tierGood} /><i className={styles.tierAverage} /><i className={styles.tierBelow} /><i className={styles.tierWorst} />best → worst</span></div>
-      <p><span>{trusted ? "Ranked by Game Grid Week Score (games, off-nights, slate density)" : "Ranking unavailable · alphabetical order"} · No odds or projections · NHL schedule checked {timeLabel(snapshot.source.fetchedAt)}</span><strong className={styles.gridWatermark}>{trusted ? "SCHEDULE ONLY" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
+      <p><span>{trusted ? "" : "Ranking unavailable · alphabetical order · "}No odds or projections · NHL schedule checked {timeLabel(snapshot.source.fetchedAt)}</span><strong className={styles.gridWatermark}>{trusted ? "SCHEDULE ONLY" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
     </footer>
   </>;
 }
@@ -181,7 +186,7 @@ function matchupAltText(kind: MatchupKind, snapshot: SocialShareSnapshot, truste
     return `${head} Ranked by Game Grid opponent defense rating, 0 to 100, lower is easier, among teams with ${floor} or more games left. ${rows.map(row => `${row.rank}. ${row.team.name}: opponent defense ${Math.round(row.def)}, ${row.remainingGames} games (${row.games.map(game => `${dayLabel(game.date)} ${game.home ? "vs" : "@"} ${game.opponent.abbreviation}`).join(", ")}), number ${row.weekRank} Week Score`).join("; ") || "No qualifying teams"}. ${tail}`;
   }
   const nights = streamingNights(snapshot, true);
-  return `${head} Top-${STREAM_TEAM_RANK_MAX} Week Score teams against a soft defense (opponent defense ${SOFT_DEFENSE_MAX} or lower) or a perfect-storm pairing, most signals first, one night per team. ${nights.map(night => `${dayLabel(night.date)} ${dateLabel(night.date)}: ${night.team.name} ${night.home ? "vs" : "@"} ${night.opponent.name}, tilted toward ${night.team.abbreviation}${night.evidence.flags.length ? ` (${night.evidence.flags.map(flag => flagLabels[flag].toLowerCase()).join(", ")})` : ""}, opponent defense ${night.oppDef === null ? "unknown" : Math.round(night.oppDef)}, ${night.offNight ? "off-night" : "busy night"} (${night.leagueGames} games), number ${night.weekRank} Week Score`).join("; ") || "No soft-defense nights on the selected dates"}. ${tail}`;
+  return `${head} Top-${STREAM_TEAM_RANK_MAX} Week Score teams against a soft defense (opponent defense ${SOFT_DEFENSE_MAX} or lower) or a perfect-storm pairing, most signals first, one night per team. ${nights.map(night => `${dayLabel(night.date)} ${dateLabel(night.date)}: ${night.team.name} ${night.home ? "vs" : "@"} ${night.opponent.name}, tilted toward ${night.team.abbreviation}${night.evidence.flags.length ? ` (${night.evidence.flags.map(flag => flagLabels[flag].toLowerCase()).join(", ")})` : ""}, opponent defense ${night.oppDef === null ? "unknown" : Math.round(night.oppDef)}, ${night.offNight ? "off-night" : "busy night"} (${night.leagueGames} games), number ${night.weekRank} Week Score${targetPicks(snapshot, night, true).length ? `; targets ${targetPicks(snapshot, night, true).map(pick => `${pick.player.name} (${pick.player.positions}, ${pick.roles.map(role => ROLE_LABELS[role].toLowerCase()).join(" and ")}, ${pick.stat})`).join(", ")}` : ""}`).join("; ") || "No soft-defense nights on the selected dates"}. ${tail}`;
 }
 
 function OpponentChip({ game, logos, snapshot }: { game: MatchupGame; logos: Record<string, string | null>; snapshot: SocialShareSnapshot }) {
@@ -194,10 +199,11 @@ function OpponentChip({ game, logos, snapshot }: { game: MatchupGame; logos: Rec
 
 const ordinal = (value: number) => `${value}${value % 100 >= 11 && value % 100 <= 13 ? "th" : ["th", "st", "nd", "rd"][value % 10] ?? "th"}`;
 const rateText = (rate: RankedRate | null, digits: number, ranking: string) => rate ? `${rate.perGame.toFixed(digits)} (${ordinal(rate.rank)} ${ranking})` : "—";
-const flagLabels = { goals: "GOAL STORM", shots: "SHOT STORM", tired: "TIRED OPPONENT" } as const;
+const flagLabels = { goals: "GOAL STORM", shots: "SHOT STORM", blocks: "SA STORM", tired: "TIRED OPPONENT" } as const;
 
 /** One cherry-picked team-night with the evidence that tilts it toward the streaming team. */
-function StreamTile({ night, snapshot, logos }: { night: StreamNight; snapshot: SocialShareSnapshot; logos: Record<string, string | null> }) {
+function StreamTile({ night, snapshot, logos, trusted }: { night: StreamNight; snapshot: SocialShareSnapshot; logos: Record<string, string | null>; trusted: boolean }) {
+  const picks = targetPicks(snapshot, night, trusted);
   const { goals, shots, rest, flags } = night.evidence, day = snapshot.days.find(item => item.date === night.date)!;
   const restText = rest.opponentSecondNight === null ? "Back-to-back unknown (week's first day)" : rest.opponentSecondNight && !rest.teamSecondNight ? `${night.opponent.abbreviation} on the 2nd night of a back-to-back; ${night.team.abbreviation} rested`
     : rest.opponentSecondNight && rest.teamSecondNight ? "Both teams on a back-to-back" : rest.teamSecondNight ? `${night.team.abbreviation} on a back-to-back` : "Both teams rested";
@@ -212,6 +218,12 @@ function StreamTile({ night, snapshot, logos }: { night: StreamNight; snapshot: 
         <dt>Rest</dt><dd className={cx(flags.includes("tired") && styles.storm)}>{restText}</dd>
         <dt>Defense</dt><dd>{night.opponent.abbreviation} OPP DEF {night.oppDef === null ? "—" : Math.round(night.oppDef)} (lower = softer) · #{night.weekRank} Week Score, <Count value={night.remainingGames} tier={countsFor(snapshot, true).gp(night.remainingGames)} /> GP</dd>
       </dl>
+      {picks.length > 0 && <div className={styles.targetRow}>{picks.map(pick => <fieldset key={pick.player.nhlId} className={styles.targetCard} data-target={pick.player.nhlId} data-roles={pick.roles.join("|")}>
+        {/* TJ (ticket 22): the role is a legend notched into the top border; the body holds name, position and value, never clipped. */}
+        <legend>{roleLabel(pick.roles)}</legend>
+        <strong>{pick.player.name}</strong>
+        <p><small>{pick.player.positions}</small><em>{pick.stat}</em></p>
+      </fieldset>)}</div>}
     </div>
   </div>;
 }
@@ -233,11 +245,11 @@ function MatchupCard({ kind, snapshot, trusted, logos, brandLogo }: { kind: Matc
           <span className={styles.defMeter}><strong>{Math.round(row.def)}</strong><i><b style={{ width: `${Math.max(4, Math.round(row.def))}%` }} /></i></span>
         </div>) : <p className={styles.matchupNone}>No teams with {easiest.floor}+ games on the selected dates</p>}
       </div>
-      : <div className={styles.streamGrid}>{nights.length ? nights.map(night => <StreamTile key={night.id} night={night} snapshot={snapshot} logos={logos} />) : <p className={styles.matchupNone}>No soft-defense or perfect-storm nights on the selected dates</p>}</div>}
+      : <div className={styles.streamGrid}>{nights.length ? nights.map(night => <StreamTile key={night.id} night={night} snapshot={snapshot} logos={logos} trusted={trusted} />) : <p className={styles.matchupNone}>No soft-defense or perfect-storm nights on the selected dates</p>}</div>}
     <footer className={styles.gridFooter}>
       {kind === "easiest" ? <div className={styles.legend}><span><i className={styles.legendSoft} />Soft defense (≤{SOFT_DEFENSE_MAX})</span><span><i className={styles.legendAverage} />Average</span><span><i className={styles.legendStrong} />Strong (≥{100 - SOFT_DEFENSE_MAX})</span><span><i className={styles.legendAway}>@</i>Away</span>{ready && <CountLegend />}</div>
-        : <div className={styles.legend}><span><b>Top-{STREAM_TEAM_RANK_MAX}</b> Week Score teams</span><span><b>Storm</b> = both sides in the league&apos;s top third</span><span><b>Tired</b> = opponent&apos;s 2nd night of a back-to-back</span><span>Most signals first · one night per team</span></div>}
-      <p><span>OPP DEF = Game Grid opponent defense: 100 − percentile of opponents’ xGA/GP (NST, all situations), lower = easier{easiest ? ` · ${easiest.floor}+ games left` : ""} · NST updated {timeLabel(snapshot.opponents?.updatedAt ?? null)} · Schedule checked {timeLabel(snapshot.source.fetchedAt)}</span><strong className={styles.gridWatermark}>{ready ? "SCHEDULE + TEAM RATES" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
+        : <div className={styles.legend}><span><b>Storm</b> = both sides in the league&apos;s top third</span><span><b>Picks</b> = rostered &lt;50% (Yahoo), season rates</span><span><b>Tired</b> = opponent&apos;s 2nd night of a back-to-back</span></div>}
+      <p><span>OPP DEF = Game Grid opponent defense: 100 − percentile of opponents’ xGA/GP (NST, all situations), lower = easier · NST updated {timeLabel(snapshot.opponents?.updatedAt ?? null)} · Schedule checked {timeLabel(snapshot.source.fetchedAt)}</span><strong className={styles.gridWatermark}>{ready ? "SCHEDULE + TEAM RATES" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
     </footer>
   </>;
 }
@@ -266,7 +278,7 @@ function playerAltText(card: PlayerCardKind, snapshot: SocialShareSnapshot, trus
   const head = `FHFH ${card.kind === "pickups" ? `Pickups ${bandLabel(card.max).toLowerCase()} rostered` : "Hits, shots and blocks specialists"}, ${yearDateLabel(snapshot.weekStart)} through ${yearDateLabel(snapshot.weekEnd)}.`;
   const tail = `Yahoo rostered percent as of ${dayDate(snapshot.players?.ownershipAsOf ?? null)}. NHL.com season totals updated ${timeLabel(snapshot.players?.statsUpdatedAt ?? null)}. Not projections.`;
   if (!trusted || !playersReady(snapshot)) return `${head} Unranked preview; ranking unavailable because ${playerUnreadyReason(snapshot, trusted)}. ${tail}`;
-  const describe = (player: RankedPlayer, stat: string) => `${player.name} (${player.team}, ${player.positions}), ${stat}, ${rosteredLabel(player.ownership)} rostered, number ${player.weekRank} Week Score team with ${player.remainingGames} games${player.widened ? ", wider pool" : ""}`;
+  const describe = (player: RankedPlayer, stat: string) => `${player.name} (${player.team}, ${player.positions}), ${stat}, ${rosteredLabel(player.ownership)} rostered, number ${player.weekRank} Week Score team with ${player.remainingGames} games${player.widened ? ", wider pool" : ""}${streakText(streakOf(player, card.kind === "pickups" ? "pickup" : "specialist"))}`;
   const pool = `Top-${PLAYER_TEAM_RANK_MAX} Week Score teams first; a list short of three fills from teams ranked ${PLAYER_TEAM_RANK_MAX + 1} and lower, marked wider pool`;
   if (card.kind === "pickups") {
     const tier = pickupTiers(snapshot, true).find(item => item.max === card.max)!;
@@ -277,6 +289,7 @@ function playerAltText(card: PlayerCardKind, snapshot: SocialShareSnapshot, trus
 }
 
 type RecentFocus = "pickup" | SpecialistCategory;
+const streakContext = (focus: RecentFocus): StreakContext => focus === "pickup" ? "pickup" : "specialist";
 /** The player's last five games, focused on the stat that justifies the pick. */
 const LINE_TONES: Record<string, string> = { L1: "green", L2: "yellow", L3: "orange", L4: "red", P1: "green", P2: "yellow", P3: "red" };
 /** Latest-game role chips (ticket 15): line or pair, and PP1 / PP2 / PP3. Nothing when deployment is unknown. */
@@ -292,10 +305,25 @@ function RoleChips({ player }: { player: RankedPlayer }) {
   return chips.length ? <span className={styles.roleChips}>{chips.map(chip => <i key={chip.role} data-role={chip.role} data-tone={chip.tone}>{chip.role}</i>)}</span> : null;
 }
 
-function recentLine(player: RankedPlayer, focus: RecentFocus, recentState: SharePlayerLayer["recentState"]) {
+/** Hot or cold streak next to the L5 line (TJ, ticket 18): neon icon, HOT/COLD and the criteria that fired. */
+function StreakBadge({ streak, max = 2 }: { streak: Streak | null; max?: number }) {
+  if (!streak) return null;
+  const shown = streak.reasons.slice(0, max), more = streak.reasons.length - shown.length;
+  return <span className={styles.streak} data-streak={streak.kind} data-reasons={streak.reasons.join("|")}>
+    {streak.kind === "hot"
+      ? <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12.5 2c.9 3.6-1.6 5.3-1.6 7.8a2.4 2.4 0 0 0 2.4 2.4c0-1.6 1-2.7 1-2.7 2.1 2.1 4.2 4.4 4.2 7.6A6.5 6.5 0 0 1 5.5 17c0-4.6 4.4-6.9 7-15Z" /></svg>
+      : <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" d="M12 2.5v19M3.8 7.25l16.4 9.5M3.8 16.75l16.4-9.5M9 4l3 2.2L15 4M9 20l3-2.2 3 2.2" /></svg>}
+    <em>{streak.kind === "hot" ? "HOT" : "COLD"}</em><span>{shown.join(" · ")}{more > 0 ? ` +${more}` : ""}</span>
+  </span>;
+}
+const streakText = (streak: Streak | null) => streak ? `, ${streak.kind} streak (${streak.reasons.join(", ")})` : "";
+
+function recentLine(player: RankedPlayer, focus: RecentFocus, layer: SharePlayerLayer | null | undefined) {
   const recent = player.recent;
   // Only claim "no recent game" when the recent-form source actually answered (C7 SS1-10-F1).
-  if (!recent) return recentState === "ready" ? "No game in the last two weeks" : "Recent form unavailable";
+  // A source that failed (all, or just skaters or goalies, SS1-17) never reads as "no recent game".
+  const failed = layer?.recentUnavailable?.includes(player.group === "G" ? "goalies" : "skaters");
+  if (!recent) return (layer?.recentState === "ready" || layer?.recentState === "partial") && !failed ? "No game in the last two weeks" : "Recent form unavailable";
   if (recent.kind === "goalie") {
     const pct = recent.shotsAgainst > 0 ? (recent.saves / recent.shotsAgainst).toFixed(3).replace(/^0/, "") : "—";
     return `${recent.wins}-${recent.games - recent.wins} · ${pct} SV% · ${recent.goalsAgainst} GA · ${recent.qualityStarts} QS`;
@@ -316,7 +344,8 @@ function PlayerTile({ player, stat, label, focus, snapshot, logos }: { player: R
       right={<span className={styles.playerOwn}><strong>{rosteredLabel(player.ownership)}</strong><small>ROSTERED</small></span>} />
     <div className={styles.playerBody}>
       <div className={styles.playerStat}><strong>{stat}</strong><small>{label}</small><RoleChips player={player} /></div>
-      <p className={styles.playerRecent}><b>L5 GP</b><span>{recentLine(player, focus, snapshot.players?.recentState)}</span></p>
+      <p className={styles.playerRecent}><b>L5 GP</b><span>{recentLine(player, focus, snapshot.players)}</span></p>
+      <StreakBadge streak={streakOf(player, streakContext(focus))} max={3} />
       <small className={styles.playerSchedule}>#{player.weekRank} Week Score · <Count value={player.remainingGames} tier={countsFor(snapshot, true).gp(player.remainingGames)} /> GP · <Count value={player.offNightGames} tier={countsFor(snapshot, true).off(player.offNightGames)} /> off-night{player.widened && <i className={styles.widened}>WIDER POOL</i>}</small>
     </div>
   </div>;
@@ -328,7 +357,7 @@ function PlayerCard({ card, snapshot, trusted, logos, brandLogo }: { card: Playe
     ? (["F", "D", "G"] as const).map(group => ({ key: group, title: groupTitles[group], players: pickupTiers(snapshot, true).find(tier => tier.max === card.max)!.groups[group].map(player => { const [stat, label] = pickupStat(player); return { player, stat, label, focus: "pickup" as const }; }) }))
     : (Object.entries(specialists(snapshot, true)) as [SpecialistCategory, ReturnType<typeof specialists>["hits"]][]).map(([category, list]) => ({ key: category, title: specialistTitles[category][0], players: list.map(player => ({ player, stat: (player.l5PerGame ?? player.perGame).toFixed(1), label: `${specialistTitles[category][1]} ${player.l5PerGame === null ? "SEASON" : "L5"}`, focus: category })) }));
   return <>
-    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `${editionDay(snapshot)} · ${card.kind === "pickups" ? `Pickups · top-${PLAYER_TEAM_RANK_MAX} schedules first` : "Under 50% rostered"}` : "Unranked preview"} title={card.kind === "pickups" ? `${bandLabel(card.max).toUpperCase()} ROSTERED` : "CATEGORY SPECIALISTS"} compact />
+    <CardHeader snapshot={snapshot} brandLogo={brandLogo} eyebrow={ready ? `${editionDay(snapshot)} · ${card.kind === "pickups" ? "Pickups" : "Under 50% rostered"}` : "Unranked preview"} title={card.kind === "pickups" ? `${bandLabel(card.max).toUpperCase()} ROSTERED` : "CATEGORY SPECIALISTS"} compact />
     {!ready ? <div className={styles.matchupEmpty}><strong>Ranking unavailable</strong><p>Player cards need a ready schedule and current Yahoo ownership plus NHL.com season totals; {playerUnreadyReason(snapshot, trusted)}.</p></div>
       : <div className={styles.playerColumns}>{columns.map(column => <div key={column.key} className={styles.playerColumn}>
         <h3>{column.title}</h3>
@@ -340,7 +369,7 @@ function PlayerCard({ card, snapshot, trusted, logos, brandLogo }: { card: Playe
         ? <><span><b>L5 SCORE</b> fantasy pts/GP × opportunity</span><span><b>L5 GP</b> last 5 games played</span><span><b>Wider pool</b> = team ranked 11+ filling a short list</span><span>Min {MIN_SKATER_GAMES} GP · goalies {MIN_GOALIE_STARTS} GS</span></>
         : <><span><b>L5</b> category per GP over the last 5 games</span><span><b>L5 GP</b> last 5 games played</span><span>Skaters under 50% rostered · min {MIN_SKATER_GAMES} GP</span></>}</div>
       <p className={styles.scoreFormula}>{card.kind === "pickups" ? SCORE_FORMULA : SPECIALIST_FORMULA}</p>
-      <p><span>Top-{PLAYER_TEAM_RANK_MAX} Week Score teams first, wider pool fills to three · {card.kind === "pickups" ? "bands 30–49% · 20–29% · under 20%, ranked by L5 score" : "ranked by L5 score"} · Not projections · Yahoo rostered % as of {dayDate(snapshot.players?.ownershipAsOf ?? null)} · NHL.com season totals updated {timeLabel(snapshot.players?.statsUpdatedAt ?? null)}</span><strong className={styles.gridWatermark}>{ready ? "SCHEDULE + PLAYER RATES" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
+      <p><span>{card.kind === "pickups" && "Bands 30–49% · 20–29% · under 20% · "}Not projections · Yahoo rostered % as of {dayDate(snapshot.players?.ownershipAsOf ?? null)} · NHL.com season totals updated {timeLabel(snapshot.players?.statsUpdatedAt ?? null)}</span><strong className={styles.gridWatermark}>{ready ? "SCHEDULE + PLAYER RATES" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
     </footer>
   </>;
 }
@@ -455,7 +484,7 @@ function tierAltText(mode: TierMode, snapshot: SocialShareSnapshot, trusted: boo
   const head = `FHFH Schedule-aware streaming options, ${mode === "widened" ? "widened " : ""}tier list, ${yearDateLabel(snapshot.weekStart)} through ${yearDateLabel(snapshot.weekEnd)}${snapshot.selectedDates.length === 7 ? "" : `, covering ${coveredDays(snapshot)}`}.`;
   if (!trusted || !tierPlayersAvailable(snapshot)) return `${head} Unavailable because ${tierUnreadyReason(snapshot, trusted)}.`;
   return `${head} Tiers group teams by exact games and off-nights, best Week Score first${mode === "widened" ? "; tiers 2 and 3 fold in the next pair" : ""}. Players under 50% rostered on tier teams only, ranked by points per game, goalies by quality-start percent. ${streamingTiers(snapshot, true, mode).map(tier =>
-    `Tier ${tier.index}, ${tier.pairs.map(pair => `${pair.gp} games and ${pair.off} off-nights`).join(" or ")}, ${tier.teams.map(team => team.abbreviation).join(", ")}: ${tier.shown.map(player => `${player.name} (${player.team}, ${player.positions}), ${Math.floor(player.ownership)}% rostered, ${tierRate(player)}`).join("; ") || "no players under 50% rostered"}${tier.more ? `; plus ${tier.more} more` : ""}`).join(". ")}. Ranked by last-five-games fantasy score times opportunity. Yahoo rostered percent as of ${dayDate(snapshot.players?.ownershipAsOf ?? null)}; not projections.`;
+    `Tier ${tier.index}, ${tier.pairs.map(pair => `${pair.gp} games and ${pair.off} off-nights`).join(" or ")}, ${tier.teams.map(team => team.abbreviation).join(", ")}: ${tier.shown.map(player => `${player.name} (${player.team}, ${player.positions}), ${Math.floor(player.ownership)}% rostered, ${tierRate(player)}${streakText(streakOf(player, "tier"))}`).join("; ") || "no players under 50% rostered"}${tier.more ? `; plus ${tier.more} more` : ""}`).join(". ")}. Ranked by last-five-games fantasy score times opportunity. Yahoo rostered percent as of ${dayDate(snapshot.players?.ownershipAsOf ?? null)}; not projections.`;
 }
 
 /** Schedule-aware streaming tier list (TJ, ticket 13): tier bars with team logos, then list rows. */
@@ -474,14 +503,14 @@ function TierListCard({ mode, snapshot, trusted, logos, brandLogo }: { mode: Tie
           <span className={styles.tierRank}>{index + 1}</span>
           <span className={styles.tierWho}><TeamMark team={{ id: 0, abbreviation: player.team, name: player.team }} logo={logos[player.team]} size={28} /><span><strong>{player.name}</strong><small>{player.team} · {player.positions}<RoleChips player={player} /></small></span></span>
           <span className={styles.tierOwn}><strong>{rosteredLabel(player.ownership)}</strong><small>{bandChip(player.ownership)}</small></span>
-          <span className={styles.tierRecent}><b>L5 GP</b>{recentLine(player, "pickup", snapshot.players?.recentState)}</span>
+          <span className={styles.tierRecent}><b>L5 GP</b><span>{recentLine(player, "pickup", snapshot.players)}</span><StreakBadge streak={streakOf(player, "tier")} /></span>
           <span className={styles.tierRate}>{tierRate(player)}</span>
         </div>) : <p className={styles.tierEmpty}>No players under 50% rostered on these teams</p>}
       </section>)}</div>}
     <footer className={styles.gridFooter}>
-      <div className={styles.legend}><span><b>Tier</b> = exact GP · off-night pair, best Week Score first</span>{mode === "widened" && <span>Widened: tiers 2–3 fold in the next pair</span>}<span><b>L5 GP</b> last 5 games played</span><span>Under 50% rostered · skaters, then goalies, each by L5 score</span></div>
+      <div className={styles.legend}><span><b>Tier</b> = exact GP · off-night pair</span><span><b>L5 GP</b> last 5 games played</span><span>Under 50% rostered</span></div>
       <p className={styles.scoreFormula}>{SCORE_FORMULA}</p>
-      <p><span>Strictly tier teams only · {TIER_ROWS_NOTE} · Yahoo rostered % as of {dayDate(snapshot.players?.ownershipAsOf ?? null)} · NHL.com season totals updated {timeLabel(snapshot.players?.statsUpdatedAt ?? null)}</span><strong className={styles.gridWatermark}>{ready ? "SCHEDULE + PLAYER RATES" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
+      <p><span>{TIER_ROWS_NOTE} · Yahoo rostered % as of {dayDate(snapshot.players?.ownershipAsOf ?? null)} · NHL.com season totals updated {timeLabel(snapshot.players?.statsUpdatedAt ?? null)}</span><strong className={styles.gridWatermark}>{ready ? "SCHEDULE + PLAYER RATES" : "PREVIEW ONLY · REFRESH / CHECK SOURCE"}</strong></p>
     </footer>
   </>;
 }
@@ -604,13 +633,14 @@ export default function SocialShare({ format, asOf }: { format: SocialShareForma
   const matchupHasRows = !matchupKind || !snapshot ? true : matchupKind === "easiest" ? easiestSchedules(snapshot, trusted).rows.length > 0 : streamingNights(snapshot, trusted).length > 0;
   const canExport = trusted && squareReady && !loading && !!snapshot?.selectedDates.length && rows.some(row => row.remainingGames > 0) && (!matchupKind || (opponentsReady(snapshot!) && matchupHasRows)) && (!playerCard || (playersReady(snapshot!) && playerHasRows)) && (!trendKind || trendHasRows) && (!tierMode || (tierPlayersAvailable(snapshot!) && streamingTiers(snapshot!, true, tierMode).some(tier => tier.shown.length > 0)));
   const changeWeek = (value: string) => {
-    if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return;
-    const monday = calendarWeekStart(`${value}T16:00:00Z`);
+    // A typed year 0000–0999 (or any date the calendar can't represent) keeps the current week (REL-SS1-LOW-YEAR-R1).
+    const monday = value && isCalendarDate(value) ? safeWeekStart(value) : null;
+    if (!monday) return;
     setWeekStart(monday); selectedRef.current = undefined; void load(monday);
   };
 
   return <div className={styles.page}>
-    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1></div><span className={styles.scope}>{!supported ? "Source qualification pending" : format === "tuesday-trends" ? "Rolling game metrics · Yahoo ownership · NHL schedule" : "Schedule only · NHL schedule source"}</span></header>
+    <header className={styles.heading}><div><p className={styles.eyebrow}>FHFH / Share studio</p><h1>{labels[format]}</h1><p><Link href="/social-share/player-cards" prefetch={false}>Player cards · visual preview</Link></p></div><span className={styles.scope}>{!supported ? "Source qualification pending" : format === "tuesday-trends" ? "Rolling game metrics · Yahoo ownership · NHL schedule" : "Schedule only · NHL schedule source"}</span></header>
     {!supported ? <section className={styles.panel}><h2>Source qualification required</h2><p>This format is blocked until current-season player data, dated ownership evidence, participation and provider rights qualify. No player rankings are available.</p><a href="/social-share/game-grid">Open the schedule studio</a></section> : <>
       <section className={styles.panel} aria-label="Schedule settings">
         <div className={styles.controls}>

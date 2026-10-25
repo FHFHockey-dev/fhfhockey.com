@@ -7,7 +7,7 @@ import {
   WigoStatLabel,
   isWigoCountChartStat
 } from "./statMetadata";
-import { formatCell } from "./tableUtils";
+import { formatCell, formatDiffPercent } from "./tableUtils";
 import TimeframeComparison from "./TimeframeComparison";
 import GameLogChart from "./StatsTableRowChart";
 import styles from "styles/wigoCharts.module.scss";
@@ -21,6 +21,21 @@ export const COMPARISON_PERIODS = [
   "L10",
   "L20"
 ] as const;
+
+// Transposed into two 18-metric halves so 36 metrics × 8 columns stay legible on one screen at 1280px.
+const MATRIX_SPLIT = WIGO_STAT_ORDER.indexOf("G/60");
+export const MATRIX_HALVES = [
+  {
+    title: "Totals and shares",
+    short: "Totals",
+    labels: [...WIGO_STAT_ORDER.slice(0, MATRIX_SPLIT), "IPP"] as WigoStatLabel[]
+  },
+  {
+    title: "Per 60 and on-ice",
+    short: "Rates",
+    labels: WIGO_STAT_ORDER.slice(MATRIX_SPLIT).filter((label) => label !== "IPP") as WigoStatLabel[]
+  }
+];
 
 interface Props {
   data: TableAggregateData[];
@@ -55,9 +70,7 @@ export default function WigoComparisonMatrix({
       fetchPlayerGameLogForStat(playerId!, currentSeasonId!, selectedMetric),
     enabled: !!playerId && !!currentSeasonId
   });
-  const metrics = WIGO_STAT_ORDER.map(
-    (label) => data.find((row) => row.label === label) ?? { label }
-  );
+  const metricsByLabel = new Map(data.map((row) => [row.label, row]));
   const selectedRow = data.find((row) => row.label === selectedMetric);
   const gp = data.find((row) => row.label === "GP");
   const averages = Object.fromEntries(
@@ -106,95 +119,91 @@ export default function WigoComparisonMatrix({
                   : "")}
           </span>
         </div>
-        <table className={styles.comparisonMatrix}>
-          <caption className={styles.visuallyHidden}>
-            Seven timeframes and relative difference across 36 metrics. L and R
-            mark the selected comparison periods.
-          </caption>
-          <colgroup>
-            <col style={{ width: 78 }} />
-            {WIGO_STAT_ORDER.map((label) => (
-              <col key={label} />
-            ))}
-          </colgroup>
-          <thead>
-            <tr>
-              <th scope="col">Period</th>
-              {WIGO_STAT_ORDER.map((label) => (
-                <th
-                  scope="col"
-                  key={label}
-                  data-selected={label === selectedMetric || undefined}
-                >
-                  {label === "GP" ? (
-                    label
-                  ) : (
-                    <button
-                      type="button"
-                      aria-label={`Show ${label} game log`}
-                      aria-pressed={label === selectedMetric}
-                      aria-controls="wigo-selected-stat"
-                      onClick={() => setSelectedMetric(label)}
-                    >
-                      {label.includes("/") ? (
-                        <>
-                          {label.split("/")[0]}
-                          <wbr />/{label.split("/")[1]}
-                        </>
-                      ) : (
-                        label
-                      )}
-                    </button>
-                  )}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {COMPARISON_PERIODS.map((period) => (
-              <tr
-                key={period}
-                data-left={period === leftTimeframe || undefined}
-                data-right={period === rightTimeframe || undefined}
-              >
-                <th scope="row">
-                  {period}{" "}
-                  <span className={styles.periodMarker}>
-                    {period === leftTimeframe ? "L" : ""}
-                    {period === rightTimeframe ? "R" : ""}
-                  </span>
-                </th>
-                {metrics.map((row) => (
-                  <td
-                    key={row.label}
-                    data-selected={row.label === selectedMetric || undefined}
-                  >
-                    {formatCell(row, period)}
-                  </td>
+        <div className={styles.matrixHalves}>
+          {MATRIX_HALVES.map((half) => (
+            <table key={half.title} className={styles.comparisonMatrix}>
+              <caption className={styles.visuallyHidden}>
+                {half.title}: seven timeframes and relative difference for{" "}
+                {half.labels.length} metrics. L and R mark the selected
+                comparison periods.
+              </caption>
+              <colgroup>
+                <col className={styles.matrixLabelColumn} />
+                {COMPARISON_PERIODS.map((period) => (
+                  <col key={period} />
                 ))}
-              </tr>
-            ))}
-            <tr className={styles.matrixDiff}>
-              <th scope="row">DIFF</th>
-              {metrics.map((row) => (
-                <td
-                  key={row.label}
-                  data-selected={row.label === selectedMetric || undefined}
-                  data-diff-sign={typeof row.DIFF === "number" && Number.isFinite(row.DIFF)
-                    ? row.DIFF < 0 ? "negative" : "positive"
-                    : undefined}
-                  style={typeof row.DIFF === "number" && Number.isFinite(row.DIFF)
-                    ? { "--diff-strength": `${Math.min(Math.abs(row.DIFF), 100)}%` } as React.CSSProperties
-                    : undefined}
-                >
-                  {typeof row.DIFF === "number" && Number.isFinite(row.DIFF)
-                    ? `${row.DIFF > 0 ? "+" : ""}${row.DIFF.toFixed(1)}%`
-                    : "-"}
-                </td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
+                <col />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th scope="col">{half.short}</th>
+                  {COMPARISON_PERIODS.map((period) => (
+                    <th
+                      scope="col"
+                      key={period}
+                      data-left={period === leftTimeframe || undefined}
+                      data-right={period === rightTimeframe || undefined}
+                    >
+                      {period}
+                      <span className={styles.periodMarker}>
+                        {period === leftTimeframe ? "L" : ""}
+                        {period === rightTimeframe ? "R" : ""}
+                      </span>
+                    </th>
+                  ))}
+                  <th scope="col">DIFF</th>
+                </tr>
+              </thead>
+              <tbody>
+                {half.labels.map((label) => {
+                  const row = metricsByLabel.get(label) ?? { label };
+                  return (
+                    <tr
+                      key={label}
+                      data-selected={label === selectedMetric || undefined}
+                    >
+                      <th scope="row">
+                        {label === "GP" ? (
+                          label
+                        ) : (
+                          <button
+                            type="button"
+                            aria-label={`Show ${label} game log`}
+                            aria-pressed={label === selectedMetric}
+                            aria-controls="wigo-selected-stat"
+                            onClick={() => setSelectedMetric(label)}
+                          >
+                            {label}
+                          </button>
+                        )}
+                      </th>
+                      {COMPARISON_PERIODS.map((period) => (
+                        <td
+                          key={period}
+                          data-left={period === leftTimeframe || undefined}
+                          data-right={period === rightTimeframe || undefined}
+                        >
+                          {formatCell(row, period)}
+                        </td>
+                      ))}
+                      <td
+                        className={styles.matrixDiffCell}
+                        data-diff-sign={typeof row.DIFF === "number" && Number.isFinite(row.DIFF) && row.DIFF !== 0
+                          ? row.DIFF < 0 ? "negative" : "positive"
+                          : undefined}
+                        style={typeof row.DIFF === "number" && Number.isFinite(row.DIFF)
+                          ? { "--diff-strength": `${Math.min(Math.abs(row.DIFF), 100)}%` } as React.CSSProperties
+                          : undefined}
+                      >
+                        {formatDiffPercent(row.DIFF)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ))}
+        </div>
       </section>
       <section
         id="wigo-selected-stat"
@@ -202,15 +211,17 @@ export default function WigoComparisonMatrix({
         aria-label="Selected-stat game log"
         data-coverage="C13"
       >
-        <h3>Selected stat game log · {selectedMetric}</h3>
-        <p>
-          {currentSeasonId
-            ? `${String(currentSeasonId).slice(0, 4)}–${String(currentSeasonId).slice(6)}`
-            : "Season unavailable"}{" "}
-          · current-season games
-        </p>
+        <h3>
+          {selectedMetric} game log{" "}
+          <span>
+            {currentSeasonId
+              ? `${String(currentSeasonId).slice(0, 4)}–${String(currentSeasonId).slice(6)}`
+              : "Season unavailable"}{" "}
+            games
+          </span>
+        </h3>
         <GameLogChart
-          height={300}
+          fill
           playerId={playerId ?? 0}
           seasonId={currentSeasonId ?? 0}
           statLabel={selectedMetric}

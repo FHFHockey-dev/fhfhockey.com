@@ -14,6 +14,15 @@ vi.mock("utils/fetchWigoRatingStats", () => ({
   fetchRawStatsForAllStrengths: mockFetchRawStatsForAllStrengths
 }));
 
+// The small fixtures below predate the minimum cohort; most tests switch it off and one turns it on.
+const cohortRule = vi.hoisted(() => ({ minPeers: 0 }));
+vi.mock("utils/calculateWigoRatings", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("utils/calculateWigoRatings")>()),
+  get WIGO_RATING_MIN_COHORT_PEERS() {
+    return cohortRule.minPeers;
+  }
+}));
+
 function renderWithClient(ui: React.ReactElement) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -31,6 +40,24 @@ function renderWithClient(ui: React.ReactElement) {
 describe("PlayerRatingsDisplay", () => {
   beforeEach(() => {
     mockFetchRawStatsForAllStrengths.mockReset();
+    cohortRule.minPeers = 0;
+  });
+
+  it("shows no rating rather than 50.0 when the cohort is only the selected player", async () => {
+    cohortRule.minPeers = 20;
+    const alone = [{ player_id: 91, season: 20252026, gp: 3, toi_seconds: 300, total_points_per_60: 4, xga_per_60: 1, gf_per_60: 3, ga_per_60: 2 }];
+    mockFetchRawStatsForAllStrengths.mockResolvedValue({
+      as: { offense: alone, defense: alone },
+      es: { offense: alone, defense: alone },
+      pp: { offense: alone, defense: [] },
+      pk: { offense: [], defense: alone }
+    });
+
+    renderWithClient(<PlayerRatingsDisplay playerId={91} seasonId={20252026} minGp={10} />);
+
+    await waitFor(() => expect(screen.getByText("Offense")).toBeTruthy());
+    expect(screen.queryByText("50.0")).toBeNull();
+    expect(screen.getAllByText("-")).toHaveLength(9);
   });
 
   it("renders ratings for a low-gp forward instead of dropping them from the cohort", async () => {

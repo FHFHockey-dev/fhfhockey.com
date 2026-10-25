@@ -221,7 +221,8 @@ const ToiLineChart: React.FC<ToiLineChartProps> = ({ playerId, seasonId }) => {
           display: chartView === "toi", // Only display if view is 'toi'
           beginAtZero: true,
           min: 0,
-          max: 60 * 30,
+          // A floor, not a cap: overtime-heavy games above 30:00 extend the axis instead of being clipped.
+          suggestedMax: 60 * 30,
           title: {
             display: false,
             text: "Time On Ice (Minutes)",

@@ -36,7 +36,8 @@ function rawRank(reading: MetricReading) {
 }
 
 /** First visual checkpoint only; consumes the accepted synthetic snapshot unchanged. */
-export default function EditorialPlayerCard({ snapshot, svgRef }: { snapshot: FlowSnapshot; svgRef?: React.Ref<SVGSVGElement> }) {
+export default function EditorialPlayerCard({ snapshot, svgRef, header, headerHeight = 218, artworkDescription }: { snapshot: FlowSnapshot; svgRef?: React.Ref<SVGSVGElement>; header?: React.ReactNode; headerHeight?: number; artworkDescription?: string }) {
+  const extraHeight = header ? headerHeight - 218 : 0;
   const reading = (id: MetricId) => snapshot.readings.find(row => row.id === id)!;
   const sample = snapshot.sample, period = snapshot.settings.period;
   const season = String(snapshot.settings.season);
@@ -48,13 +49,14 @@ export default function EditorialPlayerCard({ snapshot, svgRef }: { snapshot: Fl
   }).join(". ")}`;
   const names = snapshot.player.name.split(" ");
   const longName = snapshot.player.name.length > 24;
-  return <svg ref={svgRef} viewBox="0 0 1200 900" width="1200" height="900" xmlns="http://www.w3.org/2000/svg" role="img" aria-label={description} data-snapshot-id={snapshot.id} data-renderer="fhfh-editorial-checkpoint-01">
+  return <svg ref={svgRef} viewBox={`0 0 1200 ${900 + extraHeight}`} width="1200" height={900 + extraHeight} xmlns="http://www.w3.org/2000/svg" role="img" aria-label={description} data-snapshot-id={snapshot.id} data-renderer="fhfh-editorial-checkpoint-01">
     <title>FHFH player report · {snapshot.player.name} · synthetic fixture</title>
-    <desc>{description}. Bars and percentile numbers describe numeric magnitude, not quality or a forecast. Proposed competition ranks and midrank percentiles.</desc>
-    <rect width="1200" height="900" fill="#F2F1EB" />
+    <desc>{artworkDescription ? `${artworkDescription}. ` : ""}{description}. Bars and percentile numbers describe numeric magnitude, not quality or a forecast. Proposed competition ranks and midrank percentiles.</desc>
+    <rect width="1200" height={900 + extraHeight} fill="#F2F1EB" />
     <rect width="1200" height="218" fill="#1A1D21" />
     <rect width="9" height="218" fill="#07AAE2" />
     <g fontFamily="Arial, sans-serif" style={{ fontVariantNumeric: "tabular-nums" }}>
+      {header ?? <>
       <text x="40" y="45" fontSize="27" fontWeight="900" letterSpacing="2" fill="#07AAE2">FHFH</text>
       <text x="134" y="44" fontSize="17" letterSpacing="3" fill="#C6C9CA">/ PLAYER REPORT</text>
       <text x="1160" y="44" textAnchor="end" fontSize="18" fontWeight="700" letterSpacing="1.5" fill="#80DFFF">SYNTHETIC FIXTURE</text>
@@ -65,6 +67,8 @@ export default function EditorialPlayerCard({ snapshot, svgRef }: { snapshot: Fl
       {period.mode === "appearances" ? <text x="1160" y="149" textAnchor="end" fontSize="24" fontWeight="700" letterSpacing="1" fill="#F2F1EB">OWN LAST {period.count}</text> : <text x="1160" y="136" textAnchor="end" fontSize="19" fontWeight="700" fill="#F2F1EB"><tspan x="1160">{period.start} →</tspan><tspan x="1160" dy="25">{period.end} · UTC</tspan></text>}
       <text x="1160" y="190" textAnchor="end" fontSize="23" fill="#C6C9CA">{strengthLabel(snapshot)}</text>
 
+      </>}
+      <g transform={extraHeight ? `translate(0 ${extraHeight})` : undefined}>
       <g fill="#1A1D21">
         <text x="40" y="258" fontSize="18" fontWeight="700" letterSpacing="1.6">STATISTICAL PROFILE</text>
         <text x="620" y="258" textAnchor="end" fontSize="18" fontWeight="700">ACTUAL</text>
@@ -114,6 +118,7 @@ export default function EditorialPlayerCard({ snapshot, svgRef }: { snapshot: Fl
         <text x="40" y="838">Fabricated 18-player cohort · all valid same-definition values · no GP, TOI or position filter · N varies by metric</text>
         <text x="40" y="861" fontSize="17">Source: synthetic fixture · Updated {snapshot.capturedAt.slice(0, 16).replace("T", " ")} UTC · Cutoff {snapshot.settings.cutoff.slice(0, 16).replace("T", " ")} UTC</text>
         <text x="40" y="885" fontSize="16">Proposed: season-only, {snapshot.settings.shortSamplePolicy === "allow-known-short-proposed" ? "known-short allowed" : "full-N required"}, competition ties, midrank percentile · Numeric magnitude ≠ quality · fhfhockey.com</text>
+      </g>
       </g>
     </g>
   </svg>;

@@ -15,6 +15,8 @@ import { editionLabel } from "../lib/socialShare/edition";
 import { countTiers } from "../lib/socialShare/mondayGrid";
 import { streamingTiers, trimEditionPlayers } from "../lib/socialShare/tiers";
 import { SCORE_FORMULA, SPECIALIST_FORMULA } from "../lib/socialShare/score";
+import { streakOf, type StreakContext } from "../lib/socialShare/streak";
+import { roleLabel, targetKey, targetPicks } from "../lib/socialShare/targets";
 
 const evidence = process.env.SOCIAL_SHARE_EVIDENCE_DIR || "/tmp/fhf-social-card-readiness-evidence-20261008";
 const upcomingWeek = calendarWeekStart(new Date(Date.now() + 7 * 86400000).toISOString());
@@ -25,7 +27,7 @@ test.beforeEach(({ page }) => page.setDefaultTimeout(10000));
 type Rates = "ready" | "stale" | "missing";
 type PlayerMode = Rates | "thin";
 /** Last-five-games read outcome: rows, an answered-but-empty read, or a failed read. */
-type RecentRead = "ready" | "empty" | "failed";
+type RecentRead = "ready" | "empty" | "failed" | "goalies-failed";
 function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinnedAt?: string, rates: Rates = "ready", players: PlayerMode = "ready", trends: Rates = "ready", recentRead: RecentRead = "ready"): SocialShareSnapshot {
   const dates = weekDates(weekStart), generatedAt = pinnedAt ?? new Date().toISOString();
   const year = Number(weekStart.slice(0, 4)) - (Number(weekStart.slice(5, 7)) < 8 ? 1 : 0);
@@ -42,7 +44,7 @@ function fixture(format: SocialShareFormat, weekStart: string, mode: Mode, pinne
     snapshot.players = buildPlayerLayer(sources, { season, teams: snapshot.teams.map(team => team.abbreviation), fetchedAt: generatedAt, generatedAt });
     // Fictional last-five-games evidence for every joined player, as the live server attaches for shown ones.
     const recent = fictionalPlayerRecent(snapshot.players.players, season, localDate(generatedAt, "America/New_York"));
-    snapshot.players = attachRecent(snapshot.players, recentRead === "failed" ? null : recentRead === "empty" ? { rolling: [], goalieGames: [] } : { rolling: recent.rolling as ShareRecentRollingRow[], goalieGames: recent.goalieGames as ShareGoalieGameRow[] }, generatedAt);
+    snapshot.players = attachRecent(snapshot.players, recentRead === "failed" ? null : recentRead === "empty" ? { rolling: [], goalieGames: [] } : { rolling: recent.rolling as ShareRecentRollingRow[], goalieGames: recentRead === "goalies-failed" ? null : recent.goalieGames as ShareGoalieGameRow[] }, generatedAt);
     // Fictional rolling metrics (4 h old, or 80 h when stale) and seven-day ownership timelines.
     const trendSources = trends === "missing" ? null : fictionalTrendSources(season, localDate(generatedAt, "America/New_York"), new Date(Date.parse(generatedAt) - (trends === "stale" ? 80 : 4) * 3600000).toISOString());
     snapshot.trends = buildTrendLayer(trendSources, { season, teams: snapshot.teams, fetchedAt: generatedAt, generatedAt });
@@ -99,7 +101,7 @@ async function signIn(page: Page, access: Access) {
 
 async function install(page: Page, access: Access = { role: "social_editor", signedIn: true, roleReads: 0, writes: [] }) {
   await signIn(page, access);
-  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, liveTuesday: false, latest: null as SocialShareSnapshot | null };
+  const controller = { requests: 0, fail: false, mode: "ready" as Mode, longName: false, pinnedAt: undefined as string | undefined, rates: "ready" as Rates, players: "ready" as PlayerMode, trends: "ready" as Rates, recentRead: "ready" as RecentRead, liveTrim: false, longPlayer: false, widestLegend: false, liveTuesday: false, latest: null as SocialShareSnapshot | null };
   await page.context().route("**/*", route => ["127.0.0.1", "localhost"].includes(new URL(route.request().url()).hostname) ? route.continue() : route.abort());
   await page.route("**/api/v1/social-share/**", async route => {
     controller.requests++;
@@ -119,8 +121,18 @@ async function install(page: Page, access: Access = { role: "social_editor", sig
       for (const row of next.rows) if (row.team.id === 1) row.team.name = "New Jersey Extremely Long Fantasy Hockey Team Name";
       for (const team of next.teams) if (team.id === 1) team.name = "New Jersey Extremely Long Fantasy Hockey Team Name";
     }
+    // longPlayer: every night's first target gets a long real-world-style name (ticket 22 no-overflow check).
+    if (controller.longPlayer && next.players) {
+      const ids = new Set(streamingNights(next, true).flatMap(night => targetPicks(next, night, true).slice(0, 1).map(pick => pick.player.nhlId)));
+      next = { ...next, players: { ...next.players, players: next.players.players.map(player => ids.has(player.nhlId) ? { ...player, name: "Jean-Gabriel Ekman-Larsson" } : player) } };
+    }
     // liveTrim replays the live server's trim: only the cards' players leave, with tier counts.
     if (controller.liveTrim && next.players) next = { ...next, players: trimEditionPlayers(next, next.players) };
+    // widestLegend (C7 R24 S1): the first night's first recorded pick covers all three tilts, the widest real legend.
+    if (controller.widestLegend && next.players?.targets) {
+      const first = streamingNights(next, true)[0], key = first && targetKey(first), list = key ? next.players.targets[key] : undefined;
+      if (list?.length) next = { ...next, players: { ...next.players, targets: { ...next.players.targets, [key!]: [{ ...list[0], roles: ["scorer", "shooter", "blocker"] }, ...list.slice(1)] } } };
+    }
     controller.latest = next;
     return route.fulfill({ json: next, headers: { "Cache-Control": "no-store" } });
   });
@@ -478,15 +490,60 @@ test("Easiest schedules and streaming matchup cards rank by Game Grid opponent D
   await expect(square).toHaveAttribute("aria-label", new RegExp(`^FHFH Easiest schedules.*1\\. ${expected[0].team.name}: opponent defense ${Math.round(expected[0].def)}`));
   await downloadedPng(page, "monday-easiest-schedules");
   await page.getByRole("combobox", { name: /^Graphic/ }).selectOption("stream");
-  await expect(square).toContainText("STREAMING MATCHUPS");
+  await expect(square).toContainText("TARGETED MATCHUPS");
+  await expect(square).toContainText("Cherry-picked games");
+  await expect(square).not.toContainText("STREAMING MATCHUPS");
+  await expect(square).not.toContainText("Most signals first");
   const nights = streamingNights(source.latest!, true);
   expect(nights.length).toBeGreaterThan(0);
   const tiles = square.locator("[data-team]");
   await expect(tiles).toHaveCount(nights.length);
   expect(await tiles.evaluateAll(nodes => nodes.map(node => node.getAttribute("data-team")))).toEqual(nights.map(night => night.team.abbreviation));
+  // Ticket 22: up to 3 target mini-cards per night, from the tilt team only, exactly the library's picks and roles.
+  const targetView = () => tiles.evaluateAll(nodes => nodes.map(node => Array.from(node.querySelectorAll("[data-target]")).map(card => `${card.getAttribute("data-target")}:${card.getAttribute("data-roles")}`)));
+  const expectedTargets = nights.map(night => targetPicks(source.latest!, night, true).map(pick => `${pick.player.nhlId}:${pick.roles.join("|")}`));
+  expect(await targetView()).toEqual(expectedTargets);
+  expect(expectedTargets.flat().length).toBeGreaterThan(0);
+  // TJ: fieldset cards with the role as a notched legend; the full name, position and value fit, nothing clipped.
+  const cardText = () => square.locator("[data-target]").evaluateAll(nodes => nodes.map(node => {
+    const box = node.getBoundingClientRect(), parts = ["legend", "strong", "small", "em"].map(tag => node.querySelector(tag) as HTMLElement);
+    // The legend sits in the border line, so "inside" can't catch it: compare its layout width with the inner width.
+    const field = node as HTMLElement, style = getComputedStyle(field), inner = field.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+    return { tag: node.tagName, legend: parts[0].textContent, name: parts[1].textContent, pos: parts[2].textContent, value: parts[3].textContent, legendFits: parts[0].offsetWidth <= inner + 0.5,
+      inside: parts.every(part => { const r = part.getBoundingClientRect(); return r.left >= box.left - 1 && r.right <= box.right + 1 && r.top >= box.top - 1 && r.bottom <= box.bottom + 1; }),
+      unclipped: parts.every(part => part.scrollWidth <= part.clientWidth + 1) };
+  }));
+  const checkCards = async () => {
+    const cards = await cardText(), picks = nights.flatMap(night => targetPicks(source.latest!, night, true));
+    expect(cards.map(card => [card.tag, card.legend, card.name, card.pos, card.value])).toEqual(picks.map(pick => ["FIELDSET", roleLabel(pick.roles), pick.player.name, pick.player.positions, pick.stat]));
+    expect(cards.every(card => card.inside && card.unclipped && card.legendFits)).toBe(true);
+  };
+  await checkCards();
+  await expect(square).toContainText("Picks = rostered <50% (Yahoo), season rates");
+  for (const night of nights) for (const pick of targetPicks(source.latest!, night, true)) expect(pick.player.team).toBe(night.team.abbreviation);
   expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
   await expect(download).toBeEnabled();
   await downloadedPng(page, "monday-streaming-matchups");
+  // A long name wraps inside its card instead of clipping, and the tiles still fit the square.
+  source.longPlayer = true;
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  await expect(square).toContainText("Jean-Gabriel Ekman-Larsson");
+  await checkCards();
+  expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
+  source.longPlayer = false;
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  await expect(square).not.toContainText("Jean-Gabriel Ekman-Larsson");
+  // Live-shaped edition: the server trim keeps the picks, so the card shows the same targets.
+  source.liveTrim = true;
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  await expect(tiles).toHaveCount(nights.length);
+  await expect.poll(targetView).toEqual(expectedTargets);
+  // The widest real legend (all three tilts) still fits inside its fieldset (C7 R24 S1).
+  source.widestLegend = true;
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  await expect(square.locator("[data-roles='scorer|shooter|blocker']")).toHaveCount(1);
+  await checkCards();
+  await downloadedPng(page, "targeted-widest-legend");
   expect(errors).toEqual([]);
 });
 
@@ -533,7 +590,7 @@ test("Pickup tier and specialist cards list ranked players from top Week Score t
   for (const tier of tiers) {
     await graphic.selectOption(`pickups-${tier.max}`);
     await expect(square).toContainText(`${tier.label.toUpperCase()} ROSTERED`);
-    await expect(square).toContainText("bands 30–49% · 20–29% · under 20%");
+    await expect(square).toContainText("Bands 30–49% · 20–29% · under 20%");
     const expected = [...tier.groups.F, ...tier.groups.D, ...tier.groups.G].map(player => String(player.nhlId));
     expect(expected.length).toBeGreaterThanOrEqual(5);
     await expect(square.locator("[data-player]")).toHaveCount(expected.length);
@@ -771,7 +828,8 @@ test("the eyebrow names the real date context, not the format's posting day", as
   expect(label).toBe("Week ahead");
   await expect(square).toContainText(`${label} · Streamer grid`, { ignoreCase: true });
   await page.getByRole("combobox", { name: /^Graphic/ }).selectOption("pickups-20");
-  await expect(square).toContainText(`${label} · Pickups · top-10 schedules first`, { ignoreCase: true });
+  await expect(square).toContainText(`${label} · Pickups`, { ignoreCase: true });
+  await expect(square).not.toContainText("schedules first", { ignoreCase: true });
 });
 
 test("ticket 10 flair: striped player banners with L5 evidence, three per list, tiered grid scores and cherry picks", async ({ page }) => {
@@ -840,6 +898,12 @@ test("player tiles never claim 'no recent game' when the last-five-games read fa
   await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
   await expect(tiles.first()).toContainText("No game in the last two weeks");
   await expect(square).not.toContainText("Recent form unavailable");
+  // SS1-17: only the goalie source failed, so only goalie tiles say so; skaters keep their L5 lines.
+  source.recentRead = "goalies-failed";
+  await page.getByRole("button", { name: "Refresh schedule", exact: true }).click();
+  await expect(tiles).toHaveCount(9);
+  for (let i = 0; i < 6; i++) { await expect(tiles.nth(i)).not.toContainText("Recent form unavailable"); await expect(tiles.nth(i)).toContainText("SOG"); }
+  for (let i = 6; i < 9; i++) await expect(tiles.nth(i)).toContainText("Recent form unavailable");
 });
 
 test("GP and off-night counts are coloured per column on Monday and Wednesday editions", async ({ page }) => {
@@ -877,7 +941,7 @@ test("schedule-aware tier list shows only tier teams' players as list rows, stri
   for (const [card, mode] of [["tiers", "strict"], ["tiers-wide", "widened"]] as const) {
     await graphic.selectOption(card);
     await expect(square).toContainText("STREAMING OPTIONS");
-    await expect(square).toContainText("skaters, then goalies, each by L5 score");
+    await expect(square).toContainText("Under 50% rostered");
     const tiers = streamingTiers(source.latest!, true, mode);
     expect(tiers).toHaveLength(3);
     await expect(square.locator("[data-tier-index]")).toHaveCount(3);
@@ -949,5 +1013,60 @@ test("returning to the tab keeps the week, days and card: the gate's re-check re
   await expect(page.getByLabel("Week of (Monday)")).toHaveValue(upcomingWeek);
   expect(new URL(page.url()).searchParams.get("dates")).toBe(url.searchParams.get("dates"));
   expect(access.writes).toEqual([]);
+});
+
+test("cards carry no ordering or selection-rule captions (SS1-17, TJ)", async ({ page }) => {
+  const source = await install(page);
+  source.mode = "league";
+  await open(page);
+  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square");
+  await expect(square.locator("[data-team][data-tier]")).toHaveCount(32);
+  const removed = ["Ranked by Game Grid Week Score", "Most signals first", "one night per team", "Week Score teams first", "wider pool fills to three", "schedules first",
+    "ranked by L5 score", "each by L5 score", "best Week Score first", "fold in the next pair", "Strictly tier teams only", "games left ·"];
+  for (const card of ["grid", "leaders", "easiest", "stream", "pickups-50", "pickups-30", "pickups-20", "specialists", "tiers", "tiers-wide"]) {
+    await graphic.selectOption(card);
+    await expect(square.locator("footer")).toBeVisible();
+    const text = await square.innerText();
+    for (const caption of removed) expect(text, `${card}: ${caption}`).not.toContain(caption);
+  }
+  // Source and as-of lines, ownership bands and limitation disclosures stay.
+  await graphic.selectOption("pickups-50");
+  await expect(square).toContainText("Bands 30–49% · 20–29% · under 20%");
+  await expect(square).toContainText("Not projections");
+  await expect(square).toContainText("Yahoo rostered % as of");
+  await graphic.selectOption("grid");
+  await expect(square).toContainText("No odds or projections");
+});
+
+test("hot and cold streak badges sit beside the L5 line and match the streak rules (SS1-18)", async ({ page }) => {
+  const source = await install(page);
+  source.mode = "league";
+  await open(page);
+  const graphic = page.getByRole("combobox", { name: /^Graphic/ }), square = page.getByTestId("share-square");
+  await expect(square.locator("[data-team][data-tier]")).toHaveCount(32);
+  const counts = { hot: 0, cold: 0 };
+  for (const [card, context] of [["pickups-50", "pickup"], ["pickups-30", "pickup"], ["pickups-20", "pickup"], ["specialists", "specialist"], ["tiers", "tier"], ["tiers-wide", "tier"]] as [string, StreakContext][]) {
+    await graphic.selectOption(card);
+    await expect(square.locator("[data-player]").first()).toBeVisible();
+    const byId = new Map(source.latest!.players!.players.map(player => [String(player.nhlId), player]));
+    const rows = await square.locator("[data-player]").evaluateAll(nodes => nodes.map(node => ({ id: node.getAttribute("data-player")!, streak: node.querySelector("[data-streak]")?.getAttribute("data-streak") ?? null,
+      reasons: node.querySelector("[data-streak]")?.getAttribute("data-reasons") ?? null })));
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      const expected = streakOf(byId.get(row.id)!, context);
+      expect({ id: row.id, card, streak: row.streak, reasons: row.reasons }).toEqual({ id: row.id, card, streak: expected?.kind ?? null, reasons: expected ? expected.reasons.join("|") : null });
+      if (expected) counts[expected.kind]++;
+    }
+    expect(await matchupGeometry(page)).toEqual({ fits: true, rowsInside: true, brokenImages: 0 });
+  }
+  // The fixture exercises both kinds.
+  expect(counts.hot).toBeGreaterThan(0);
+  expect(counts.cold).toBeGreaterThan(0);
+  await graphic.selectOption("pickups-50");
+  await downloadedPng(page, "streaks-pickups-50");
+  await graphic.selectOption("specialists");
+  await downloadedPng(page, "streaks-specialists");
+  await graphic.selectOption("tiers-wide");
+  await downloadedPng(page, "streaks-tiers-wide");
 });
 

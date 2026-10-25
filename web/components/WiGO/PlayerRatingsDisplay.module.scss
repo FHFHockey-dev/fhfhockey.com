@@ -133,22 +133,18 @@
   color: #ff6b6b;
 }
 
-@media (min-width: 1600px) {
-  .ratingsRoot { flex-direction: column; overflow: visible; padding: 0; gap: 2px; }
-  .ratingSection { overflow: visible; border: 0; }
+// One-page dashboard: a 3×3 matrix (Offense / Defense / Overall × three strengths); each cell carries a filled bar.
+:global(.wigo-one-page) {
+  .ratingsRoot { display: flex; flex-direction: column; gap: 3px; height: 100%; min-height: 0; overflow: visible; padding: 0; }
+  .ratingSection { flex: 1; min-height: 0; display: grid; grid-template-columns: 54px repeat(3, minmax(0, 1fr)); gap: 3px; overflow: visible; border: 0; }
   .ratingSection:nth-child(2) { order: 3; }
-  .ratingTitle { text-align: left; font-size: 12px; padding: 1px 2px; }
-  .ratingsBoxes { padding: 0; gap: 1px; }
-  .ratingBox { flex-direction: row; justify-content: space-between; min-height: 18px; padding: 0 6px; border-width: 1px; }
-  .ratingLabel, .ratingValue, .finalRating .ratingValue { font-size: 12px; }
-}
-
-@media (min-width: 1600px) {
+  .ratingTitle { align-self: center; margin: 0; padding: 0; font-size: 11px; letter-spacing: .04em; text-align: left; text-transform: uppercase; }
+  .ratingsBoxes { display: contents; }
   .ratingBox {
-    position: relative;
-    border: 0 !important;
-    background: v.$background-dark;
-    &::before { content: ""; position: absolute; height: 5px; width: calc(var(--rating-width) * .55); max-width: 55%; left: 25%; bottom: 6px; background: var(--rating-color); border-radius: 2px; opacity: .7; }
-    .ratingLabel, .ratingValue { position: relative; z-index: 1; }
+    position: relative; display: flex; flex-direction: column; justify-content: center; align-items: center;
+    min-height: 0; padding: 0 2px 5px; border: 0 !important; border-radius: v.$radius-sm; background: v.$background-dark;
+    &::before { content: ""; position: absolute; left: 4px; bottom: 3px; height: 3px; width: calc(100% - 8px); background: linear-gradient(90deg, var(--rating-color) var(--rating-width), rgba(255, 255, 255, .08) var(--rating-width)); border-radius: 2px; }
   }
+  .ratingLabel { font-size: 11px; line-height: 1.1; color: v.$text-secondary; }
+  .ratingValue, .finalRating .ratingValue { font-size: var(--wigo-data-size, 11px); line-height: 1.15; font-weight: 700; }
 }
