@@ -154,6 +154,32 @@ function isPercentileSeasonIncomplete(args: {
 }
 
 /**
+ * NST per-strength GP can exceed what WGO says anyone played that season (seen live: GP 102 in an
+ * 82-game season). Such a GP is unusable: the selected player falls back to their canonical WGO GP,
+ * and other rows lose their GP, which keeps them out of min-GP filters, TOI/GP and the staleness check.
+ */
+export function sanitizePercentileCohortGp(
+  stats: PlayerRawStats[],
+  {
+    playerId,
+    canonicalPlayerGp,
+    canonicalSeasonMaxGp
+  }: { playerId: number; canonicalPlayerGp: number | null; canonicalSeasonMaxGp: number }
+): PlayerRawStats[] {
+  return stats.map((row) => {
+    const gp = row.gp;
+    if (gp == null) return row;
+    if (row.player_id === playerId && canonicalPlayerGp !== null && gp > canonicalPlayerGp) {
+      return { ...row, gp: canonicalPlayerGp };
+    }
+    if (canonicalSeasonMaxGp > 0 && gp > canonicalSeasonMaxGp) {
+      return { ...row, gp: null };
+    }
+    return row;
+  });
+}
+
+/**
  * Fetches the season-specific percentile cohort used by the WiGO percentile panel.
  */
 export async function fetchAllPlayerStatsForStrength(
@@ -224,7 +250,7 @@ export async function fetchPercentileCohortForPlayer(
           staleTime: 60_000
         })
       : fetchAllPlayerStatsForStrength(strength, requestedSeason);
-  const [requestedStats, canonicalPlayerGp, canonicalSeasonMaxGp] =
+  const [rawRequestedStats, canonicalPlayerGp, canonicalSeasonMaxGp] =
     await Promise.all([
       fetchSeasonStats(seasonId),
       queryClient
@@ -243,6 +269,11 @@ export async function fetchPercentileCohortForPlayer(
         : fetchCanonicalSeasonMaxGp(seasonId)
     ]);
 
+  const requestedStats = sanitizePercentileCohortGp(rawRequestedStats, {
+    playerId,
+    canonicalPlayerGp,
+    canonicalSeasonMaxGp
+  });
   const percentilePlayerGp =
     requestedStats.find((player) => player.player_id === playerId)?.gp ?? null;
   const percentileSeasonMaxGp = requestedStats.reduce(
