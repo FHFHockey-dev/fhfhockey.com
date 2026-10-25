@@ -15,7 +15,7 @@ describe("provider refresh reconciliation", () => {
   it("flags unavailable selected adds and leaves intent untouched", () => {
     const workspace = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
     const intent = { ...workspace.intent, revision: 1, steps: [{ id: "add-1", type: "add" as const, playerId: "fhfh:1", at: "2026-10-02T00:00:00Z", effectiveAt: "2026-10-02T00:00:00Z", conditional: false, dependsOn: [] }] };
-    const snapshot: PlanningSnapshot = { id: "new", context: workspace.context, players: [{ id: "fhfh:1", nhlId: 1, name: "Alpha", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater", availability: "rostered", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] }], roster: [], games: [], forecasts: [], rules: { ...workspace.rules, periods: [{ id: "week", start: "2026-10-01T00:00:00Z", end: "2026-10-08T00:00:00Z", remaining: 2, source: "provider" }], acquisitionCost: 1 }, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
+    const snapshot: PlanningSnapshot = { id: "new", context: workspace.context, players: [{ id: "fhfh:1", nhlId: 1, name: "Alpha", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater", availability: "rostered", ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] }], roster: [], games: [], forecasts: [], rules: { ...workspace.rules, acquisitionTiming: "same_day", periods: [{ id: "week", start: "2026-10-01T00:00:00Z", end: "2026-10-08T00:00:00Z", remaining: 2, source: "provider" }], acquisitionCost: 1 }, lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
     const proposal = reconcileIntent(snapshot, intent);
     expect(proposal.issues).toEqual([{ stepId: "add-1", message: "Alpha is no longer verified as available." }]);
     expect(proposal.suggestedSteps).toEqual([]);
@@ -37,7 +37,7 @@ describe("provider refresh reconciliation", () => {
       { id: "dependent", nhlId: 3, name: "Dependent", teamAbbreviation: "CAR", eligiblePositions: ["C"], playerClass: "skater" as const, availability: "free_agent" as const, ownership: null, canDrop: null, holdValue: null, reserveEligibility: [] },
     ];
     const snapshot: PlanningSnapshot = { id: "refresh", context: workspace.context, players, roster: [], games: [], forecasts: [],
-      rules: { ...workspace.rules, periods: [{ id: "week", start: "2026-10-01T00:00:00Z", end: "2026-10-08T00:00:00Z", remaining: 1, source: "provider" }], acquisitionCost: 1 },
+      rules: { ...workspace.rules, acquisitionTiming: "same_day", periods: [{ id: "week", start: "2026-10-01T00:00:00Z", end: "2026-10-08T00:00:00Z", remaining: 1, source: "provider" }], acquisitionCost: 1 },
       lockedAssignments: [], realized: {}, opponent: null, evidence: {} };
     const step = (id: string, playerId: string, at: string, dropPlayerId?: string) =>
       ({ id, type: "add" as const, playerId, at, effectiveAt: at, conditional: true, dependsOn: [], ...(dropPlayerId ? { dropPlayerId } : {}) });
@@ -135,9 +135,41 @@ describe("provider refresh reconciliation", () => {
     expect(timelineLegal(later, [claim])).toBe(false);
     expect(reconcileIntent(later, intent, snapshot)).toMatchObject({ suggestedSteps: [sameDay],
       issues: [{ stepId: "claim", message: "Waived cannot take effect at the selected time under current league timing or waiver clearance." }] });
-    // Unverified timing has no earliest time to compare; the timeline reports it instead of a repair here.
+    // Unknown timing or clearance cannot be verified: flagged explicitly, as the timeline rejects them (MANUAL R2).
     const unknown = { ...snapshot, rules: { ...snapshot.rules, acquisitionTiming: "unknown" as const } };
-    expect(reconcileIntent(unknown, intent).issues).toEqual([]);
+    expect(timelineLegal(unknown, intent.steps)).toBe(false);
+    expect(reconcileIntent(unknown, intent)).toMatchObject({ suggestedSteps: [], issues: [
+      { stepId: "same", message: "Acquisition timing is unknown; Free's effective time cannot be verified." },
+      { stepId: "claim", message: "Acquisition timing is unknown; Waived's effective time cannot be verified." }] });
+    const uncleared = { ...snapshot, players: snapshot.players.map(row => row.id === "wv" ? { ...row, waiverClearsAt: null } : row) };
+    expect(timelineLegal(uncleared, [claim])).toBe(false);
+    expect(reconcileIntent(uncleared, intent)).toMatchObject({ suggestedSteps: [sameDay],
+      issues: [{ stepId: "claim", message: "Cannot verify waiver clearance for Waived." }] });
+  });
+
+  it("follows the timeline's effective-time order for a next-day add that frees an IR slot (C7 X1/X2)", () => {
+    const workspace = defaultWorkspace(new Date("2026-10-01T00:00:00Z"));
+    const member = (id: string, extra: Partial<PlanningSnapshot["players"][number]> = {}) => ({ id, nhlId: id.length, name: id, teamAbbreviation: "CAR",
+      eligiblePositions: ["C"], playerClass: "skater" as const, availability: "rostered" as const, ownership: null, canDrop: true, holdValue: null, reserveEligibility: [], ...extra });
+    const snapshot = (acquisitionTiming: "same_day" | "next_day"): PlanningSnapshot => ({ id: "s", context: { ...workspace.context, timeZone: "UTC" },
+      players: [member("holder", { reserveEligibility: ["IR"] }), member("inj", { reserveEligibility: ["IR"] }), member("fa", { availability: "free_agent" })],
+      roster: [{ playerId: "holder", position: "IR" }, { playerId: "inj", position: "bench" }], games: [], forecasts: [],
+      rules: { ...workspace.rules, rosterSlots: { C: 1, BN: 2, IR: 1 }, acquisitionTiming, acquisitionCost: 1, waivers: { mode: "priority", remainingBudget: null },
+        periods: [{ id: "week", start: "2026-10-01T00:00:00Z", end: "2026-10-08T00:00:00Z", remaining: 3, source: "provider" }] },
+      lockedAssignments: [], realized: {}, opponent: null, evidence: {} });
+    const swap = (effectiveAt: string): PlanStep => ({ id: "swap", type: "add", playerId: "fa", dropPlayerId: "holder", at: "2026-10-02T06:00:00Z", effectiveAt, conditional: true, dependsOn: [] });
+    const reserve: PlanStep = { id: "res", type: "reserve", playerId: "inj", reservePosition: "IR", at: "2026-10-02T12:00:00Z", effectiveAt: "2026-10-02T12:00:00Z", conditional: false, dependsOn: [] };
+    // X1: the drop takes effect before the reserve move, so the slot is free.
+    const x1 = [swap("2026-10-02T06:00:00Z"), reserve];
+    expect(timelineLegal(snapshot("same_day"), x1)).toBe(true);
+    expect(reconcileIntent(snapshot("same_day"), { ...workspace.intent, steps: x1 })).toMatchObject({ issues: [], suggestedSteps: null });
+    // X2: submitted first but effective next day, so the IR slot is still held when the reserve move applies.
+    const x2 = [swap("2026-10-03T00:00:00Z"), reserve];
+    expect(timelineLegal(snapshot("next_day"), x2)).toBe(false);
+    const proposal = reconcileIntent(snapshot("next_day"), { ...workspace.intent, steps: x2 });
+    expect(proposal.issues).toEqual([{ stepId: "res", message: expect.stringContaining("IR capacity exceeded.") }]);
+    expect(proposal.suggestedSteps).toEqual([x2[0]]);
+    expect(timelineLegal(snapshot("next_day"), proposal.suggestedSteps!)).toBe(true);
   });
 
   it("keeps a later standalone drop of a player acquired by a retained selected add", () => {

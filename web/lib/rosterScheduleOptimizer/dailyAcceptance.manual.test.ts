@@ -10,7 +10,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as rsoPolicy from "../player-forecasts/rsoUsePolicy";
 import { fixtureRsoBindings, fixtureRsoPolicy } from "../player-forecasts/rsoUsePolicy.fixtures";
 import { canEligibilityOccupySlot, normalizeEligibility } from "./eligibility";
-import { acquisitionEffectiveAt } from "./planningTimeline";
+import { acquisitionEffectiveAt, buildTimeline } from "./planningTimeline";
 import { evaluatePlan, planRoster } from "./planning";
 import { nextLocalMidnight, zonedMidnight } from "./planningDates";
 import { reconcileIntent } from "./reconciliation";
@@ -517,6 +517,57 @@ describe("RSO daily beta: manual/free acceptance packet", () => {
       expect(sameDay.limitations).toContain("Drop conflicts with locked assignment for g2.");
       const tuesday = evaluatePlan(data, intent(), "agp", [addStep("x", "fa1", zonedMidnight(TUE, TZ), { dropPlayerId: "g2" })]);
       expect(tuesday.legal).toBe(true);
+    });
+  });
+
+  describe("invariant: reconciliation is never silent on moves the timeline rejects", () => {
+    it("holds across the acceptance scenarios, selected moves and refresh mutations, and its repair is legal", () => {
+      const timelineLegal = (data: PlanningSnapshot, plan: PlanIntent, steps: PlanStep[]) => {
+        const timeline = buildTimeline(data, plan, steps); timeline.at("9999-12-31T23:59:59Z"); return timeline.legal;
+      };
+      const roster = (players: PlanningPlayer[]) => dailySnapshot({ id: "invariant", startDate: MON, endDate: TUE, players });
+      const injuredLw2 = fullRoster().map(row => row.id === "lw2" ? { ...row, reserveEligibility: ["IR" as const], injury: { status: "IR", label: "Injured Reserve", note: null } } : row);
+      const scenarios = [roster([...fullRoster(), ...freeAgents()]), roster([...injuredLw2, ...freeAgents()]),
+        roster([...fullRoster(), ...freeAgents(), skater("wv", "PHI", ["C"], "waivers", { waiverClearsAt: "2026-10-20T08:00:00Z" })])];
+      const tue = zonedMidnight(TUE, TZ), reserve = (id: string, at = MON_ASOF): PlanStep =>
+        ({ id: `reserve-${id}`, type: "reserve", playerId: id, reservePosition: "IR", at, effectiveAt: at, conditional: false, dependsOn: [] });
+      const plans: PlanStep[][] = [
+        [addStep("stream", "fa1", MON_ASOF, { dropPlayerId: "lw3" })],
+        [addStep("stream", "fa1", MON_ASOF, { dropPlayerId: "lw3" }), addStep("second", "fa2", MON_ASOF, { dropPlayerId: "rw3", dependsOn: ["stream"] })],
+        [addStep("stream", "fa1", MON_ASOF, { dropPlayerId: "lw3" }), addStep("tuesday", "fa2", tue, { dropPlayerId: "fa1", dependsOn: ["stream"] })],
+        [addStep("late", "fa1", "2026-10-19T23:30:00Z", { dropPlayerId: "g2" })],
+        [reserve("lw2"), addStep("add", "fa1", MON_ASOF, { dependsOn: ["reserve-lw2"] })],
+        [addStep("swap", "fa1", MON_ASOF, { effectiveAt: tue, dropPlayerId: "lw3" }), reserve("lw2", "2026-10-19T18:00:00Z")],
+        [addStep("claim", "wv", MON_ASOF, { effectiveAt: "2026-10-20T08:00:00Z", conditional: true, dropPlayerId: "rw3" })],
+      ];
+      for (const scenario of scenarios) plans.push(...planRoster(scenario, intent(), { maxSteps: 1, maxCandidates: 2, maxEvaluations: 60 }).alternatives.map(plan => plan.steps).filter(steps => steps.length));
+      const mutations: Array<[string, (data: PlanningSnapshot) => PlanningSnapshot]> = [
+        ["unchanged", data => data],
+        ["next-day timing", data => ({ ...data, rules: { ...data.rules, acquisitionTiming: "next_day" } })],
+        ["unknown timing", data => ({ ...data, rules: { ...data.rules, acquisitionTiming: "unknown" } })],
+        ["daily limit spent", data => ({ ...data, rules: { ...data.rules, periods: data.rules.periods.map(period => ({ ...period, remaining: 0 })) } })],
+        ["IR removed", data => ({ ...data, rules: { ...data.rules, rosterSlots: { ...data.rules.rosterSlots, IR: 0 } } })],
+        ["IR eligibility lost", data => ({ ...data, players: data.players.map(row => ({ ...row, reserveEligibility: [] })) })],
+        ["streamers claimed", data => ({ ...data, players: data.players.map(row => row.availability === "free_agent" ? { ...row, availability: "unknown" as const } : row) })],
+        ["waiver clearance unknown", data => ({ ...data, players: data.players.map(row => row.availability === "waivers" ? { ...row, waiverClearsAt: null } : row) })],
+        ["waiver clearance later", data => ({ ...data, players: data.players.map(row => row.availability === "waivers" ? { ...row, waiverClearsAt: "2026-10-21T08:00:00Z" } : row) })],
+        ["drop locked", data => ({ ...data, lockedAssignments: [{ date: MON, playerId: "g2", slotId: "G#2", source: "manager" }, { date: TUE, playerId: "lw3", slotId: "LW#1", source: "manager" }] })],
+        ["drops protected", data => data],
+      ];
+      let rejected = 0, checked = 0;
+      for (const scenario of scenarios) for (const steps of plans) for (const [name, mutate] of mutations) {
+        const refreshed = mutate(scenario);
+        const plan = intent({ steps, protectedPlayerIds: name === "drops protected" ? ["lw3", "g2", "rw3", "fa1"] : [] });
+        const proposal = reconcileIntent(refreshed, plan, scenario);
+        checked++;
+        if (timelineLegal(refreshed, plan, steps)) continue;
+        rejected++;
+        expect(proposal.issues.length, `${name}: ${steps.map(step => step.id).join(",")}`).toBeGreaterThan(0);
+        expect(proposal.suggestedSteps, name).not.toBeNull();
+        expect(timelineLegal(refreshed, plan, proposal.suggestedSteps!), `${name} repair`).toBe(true);
+      }
+      expect(checked).toBeGreaterThan(200);
+      expect(rejected).toBeGreaterThan(50);
     });
   });
 
