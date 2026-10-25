@@ -624,8 +624,9 @@ export async function fetchPlayerAggregatedStats(
 ): Promise<TableAggregateData[]> {
   console.log(`Workspaceing pre-aggregated stats for Player ID: ${playerId}`);
 
-  // Fetch aggregates plus legacy historical rates; recent rates use wigo_recent.
-  const [careerRes, recentRes, ratesRes, totalsRes] = await Promise.all([
+  // wigo_career and wigo_recent are the aggregate sources. The legacy wigo_rates table has no writer
+  // (0 rows) and is not read: if anything refilled it, it would silently override these per-60 values.
+  const [careerRes, recentRes, totalsRes] = await Promise.all([
     supabase
       .from("wigo_career")
       .select("*")
@@ -633,11 +634,6 @@ export async function fetchPlayerAggregatedStats(
       .maybeSingle(),
     supabase
       .from("wigo_recent")
-      .select("*")
-      .eq("player_id", playerId)
-      .maybeSingle(),
-    supabase
-      .from("wigo_rates")
       .select("*")
       .eq("player_id", playerId)
       .maybeSingle(),
@@ -660,10 +656,6 @@ export async function fetchPlayerAggregatedStats(
     console.error("Error fetching wigo_recent data:", recentRes.error);
     throw new Error(`Failed to fetch recent stats: ${recentRes.error.message}`);
   }
-  if (ratesRes.error) {
-    console.error("Error fetching wigo_rates data:", ratesRes.error);
-    // Don't throw—some older players may not have rates populated; we'll fallback to career
-  }
   if (totalsRes.error) {
     // Non-fatal: totals are only used as an optional fallback for some STD counts
     console.warn("Totals fallback unavailable:", totalsRes.error.message);
@@ -671,9 +663,6 @@ export async function fetchPlayerAggregatedStats(
 
   const careerData = careerRes.data as WigoCareerRow | null;
   const recentData = recentRes.data as WigoRecentRow | null;
-  const ratesData = (
-    ratesRes && !ratesRes.error ? (ratesRes.data as any | null) : null
-  ) as any | null;
   const totalsData = (
     totalsRes && !totalsRes.error ? (totalsRes.data as any | null) : null
   ) as
@@ -699,7 +688,7 @@ export async function fetchPlayerAggregatedStats(
   return buildPlayerAggregatedStats({
     careerData,
     recentData,
-    ratesData,
+    ratesData: null,
     totalsData,
     stdSeasonId
   });
