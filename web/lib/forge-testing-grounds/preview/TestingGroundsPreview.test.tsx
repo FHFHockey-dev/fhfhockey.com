@@ -1,8 +1,9 @@
 import React from "react";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import TestingGroundsPreview, { OperationalProgressPanel } from "./TestingGroundsPreview";
-import { createPreviewFixture, previewScenarios, PREVIEW_NOW } from "./previewFixtures";
+import TestingGroundsPreview, { OperationalProgressPanel, RunHistoryPanel } from "./TestingGroundsPreview";
+import { createHistoryFixture, createPreviewFixture, previewScenarios, PREVIEW_NOW } from "./previewFixtures";
+import { MAX_LISTED_RUNS } from "../runProjection";
 import { projectOperationalProgress } from "../operationalProgress";
 
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -128,5 +129,38 @@ describe("Testing Grounds synthetic monitoring shell", () => {
     expect(bar.getAttribute("aria-valuetext")).toBe(`${processed.toLocaleString("en-US")} of ${eligible.toLocaleString("en-US")} player-games processed; ${(eligible - processed).toLocaleString("en-US")} pending. ${processed === eligible ? "All declared work processed." : "Work is incomplete."}`);
     if (processed < eligible) expect(screen.queryByText("100.0% complete")).toBeNull();
     expect(JSON.parse(screen.getByLabelText("Operational snapshot JSON").textContent!)).toEqual(expected);
+  });
+});
+
+describe("Testing Grounds saved-run listing", () => {
+  const panel = () => within(screen.getByRole("region", { name: "Saved runs" }));
+  it("shows validated saved runs with states, events, counts and sealing", () => {
+    render(<TestingGroundsPreview />);
+    const runs = panel().getAllByRole("listitem");
+    expect(runs.map(run => within(run).getByRole("heading").textContent)).toEqual(["Run 0023", "Run 0022", "Run 0021"]);
+    expect(within(runs[0]).getByText("Running")).toBeTruthy();
+    expect(within(runs[0]).getByText(/Step started · revision 4/)).toBeTruthy();
+    expect(within(runs[0]).getByText("1 / 2")).toBeTruthy();
+    expect(within(runs[1]).getByText("Completed · results sealed")).toBeTruthy();
+    expect(within(runs[2]).getByText(/Cancelled · revision 3/)).toBeTruthy();
+    for (const run of runs) expect(within(run).getByText(/not durable.*Results sealed\./)).toBeTruthy();
+    expect(panel().queryByRole("button")).toBeNull();
+  });
+  it("shows an empty state", () => {
+    render(<RunHistoryPanel listing={{ runs: [] }} />);
+    expect(screen.getByText("No saved runs yet.")).toBeTruthy();
+  });
+  it.each<[string, (listing: ReturnType<typeof createHistoryFixture>) => unknown]>([
+    ["an unknown run field", listing => ({ runs: [{ ...listing.runs[0], unsafeMarker: "SYNTHETIC_OUTCOME" }] })],
+    ["an unknown listing field", listing => ({ ...listing, unsafeMarker: "SYNTHETIC_OUTCOME" })],
+    ["free-form event text", listing => ({ runs: [{ ...listing.runs[0], lastEvent: "SYNTHETIC_OUTCOME" }] })],
+    ["unreconciled counts", listing => ({ runs: [{ ...listing.runs[0], stages: listing.runs[0].stages.map(stage => ({ ...stage, successful: stage.total })) }] })],
+    ["more runs than the listing cap", listing => ({ runs: Array.from({ length: MAX_LISTED_RUNS + 1 }, () => listing.runs[2]) })],
+    ["a non-object", () => "SYNTHETIC_OUTCOME"],
+  ])("refuses a listing with %s without reflecting it", (_label, poison) => {
+    render(<RunHistoryPanel listing={poison(createHistoryFixture())} />);
+    expect(screen.getByRole("alert").textContent).toBe("Saved runs are unavailable. The listing could not be validated.");
+    expect(document.body.textContent).not.toContain("SYNTHETIC_OUTCOME");
+    expect(screen.queryByRole("listitem")).toBeNull();
   });
 });

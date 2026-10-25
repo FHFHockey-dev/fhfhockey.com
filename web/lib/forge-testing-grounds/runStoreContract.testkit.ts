@@ -23,6 +23,7 @@ export function contractPlan(historyClass: ExperimentPlan["inputManifest"]["hist
 const done = (payload: JsonValue) => ({ kind: "completed" as const, payload, outcomeStatus: "settled" as const });
 
 /**
+ * Test-only kit (`.testkit.ts`: imports Vitest, so never import it from app code).
  * Behavior every ExperimentRunStore must share, asserted only through the
  * interface. A future durable adapter registers here with a fresh, isolated,
  * synthetic-only instance per test (never a shared or production database), and
@@ -35,11 +36,11 @@ export function describeRunStoreContract(name: string, createStore: () => Experi
     const reply = await store.accept(OWNER, "contract-1", contractPlan(historyClass), T);
     return { store, runId: reply.runId, reply };
   }
-  async function complete(store: ExperimentRunStore, runId: string, at = T) {
+  async function complete(store: ExperimentRunStore, runId: string, at = T, tag?: string) {
     for (const step of [0, 1]) {
       const work = await store.claim(OWNER, runId, WORKER, at);
       expect(work).not.toBeNull();
-      expect(await store.finish(work!.lease, done({ contractStep: step }), at)).toBe("accepted");
+      expect(await store.finish(work!.lease, done(tag === undefined ? { contractStep: step } : { contractStep: step, tag }), at)).toBe("accepted");
     }
   }
   const valid = async (store: ExperimentRunStore, runId: string) => {
@@ -116,6 +117,20 @@ export function describeRunStoreContract(name: string, createStore: () => Experi
       expect(await valid(store, runId)).toMatchObject({ state: "completed_revealed", lastEvent: "planned_reveal" });
       const results = await store.results(OWNER, runId);
       expect(results.status === "revealed" && results.outputs.map(output => output.payload)).toEqual([{ contractStep: 0 }, { contractStep: 1 }]);
+    });
+
+    it("binds revealed results to their own run, even for identical plans", async () => {
+      const store = await createStore();
+      const runs = await Promise.all(["contract-a", "contract-b"].map(key => store.accept(OWNER, key, contractPlan(), T)));
+      for (const [index, { runId }] of runs.entries()) {
+        await complete(store, runId, T, `run-${index}`);
+        expect(await store.reveal(OWNER, runId, 2_000)).toBe(true);
+      }
+      for (const [index, { runId }] of runs.entries()) {
+        const results = await store.results(OWNER, runId);
+        expect(results.status === "revealed" && results.outputs.map(output => output.payload))
+          .toEqual([{ contractStep: 0, tag: `run-${index}` }, { contractStep: 1, tag: `run-${index}` }]);
+      }
     });
 
     it("never reveals non-synthetic history from a date and completion alone", async () => {

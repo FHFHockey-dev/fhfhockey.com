@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { RUN_PHASES } from "./runProjection";
 
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 export const jsonValue: z.ZodType<JsonValue> = z.lazy(() => z.union([
@@ -9,7 +10,7 @@ const positive = z.number().int().positive().safe();
 const instant = z.number().int().nonnegative().safe(); // Explicit epoch milliseconds for this new contract.
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
 const reference = z.object({ versionId: z.string().uuid(), contentHash: hash }).strict();
-export const RUN_PHASES = ["history", "fitting", "prediction", "evaluation"] as const;
+export { RUN_PHASES };
 
 export class RunnerError extends Error {
   constructor(public readonly code: string) { super(code); this.name = "RunnerError"; }

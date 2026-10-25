@@ -1,6 +1,9 @@
 import { z } from "zod";
-import { jsonValue, RUN_PHASES, RunnerError, type ExperimentPlan, type JsonValue, type RunState, type StepResult } from "./runnerContracts";
+import { jsonValue, RunnerError, type ExperimentPlan, type JsonValue, type RunState, type StepResult } from "./runnerContracts";
+import { MAX_LISTED_RUNS, runProgressSchema, type RunEvent } from "./runProjection";
 import type { OwnerReadStore } from "./ownerRoutes";
+
+export { MAX_LISTED_RUNS, RUN_EVENTS, runProgressSchema, type RunEvent } from "./runProjection";
 
 export type WorkerLease = Readonly<{
   runId: string; ownerUserId: string; workerId: string; fence: number; expiresAtMs: number;
@@ -12,16 +15,6 @@ export type ClaimedWork = Readonly<{
 export type StepAcceptance = "accepted" | "checkpointed" | "pending_outcomes" | "retry_queued"
   | "failed" | "cancelled" | "stale" | "already_accepted";
 export type StoreMode = "memory_reference" | "durable";
-const RUN_STATES = ["queued", "running", "cancellation_requested", "cancelled", "failed",
-  "completed_awaiting_reveal", "completed_revealed"] as const satisfies ReadonlyArray<RunState>;
-const TERMINAL_STATES: ReadonlyArray<RunState> = ["cancelled", "failed", "completed_awaiting_reveal", "completed_revealed"];
-/** Closed vocabulary: a projection never carries free-form store or executor text. */
-export const RUN_EVENTS = ["accepted", "step_claimed", "unit_accepted", "checkpoint_saved", "awaiting_outcomes",
-  "retry_queued", "completed_sealed", "planned_reveal", "cancellation_requested", "cancelled", "cancelled_at_checkpoint",
-  "cancelled_after_lease_expiry", "run_deadline", "execution_budget", "outcome_check_budget", "retry_budget",
-  "storage_limit"] as const;
-export type RunEvent = typeof RUN_EVENTS[number];
-export const MAX_LISTED_RUNS = 50;
 
 /** No payloads, hashes of outcomes, checkpoints or arbitrary error text in this projection. */
 export type RunProgress = Readonly<{
@@ -54,21 +47,7 @@ export interface ExperimentRunStore {
   results(ownerUserId: string, runId: string): Promise<{ status: "sealed" } | { status: "revealed"; outputs: ReadonlyArray<{ unitId: string; payload: JsonValue }> }>;
 }
 
-const count = z.number().int().nonnegative().safe();
 const hash = z.string().regex(/^[a-f0-9]{64}$/);
-const stageSchema = z.object({
-  phase: z.enum(RUN_PHASES), total: count.positive(), successful: count, failed: count, pending: count,
-  skipped: z.literal(0), percent: z.number().nullable(),
-}).strict().refine(stage => stage.successful + stage.failed + stage.pending === stage.total
-  && stage.percent === (stage.phase === "fitting" ? null : (stage.successful + stage.failed) / stage.total * 100));
-export const runProgressSchema = z.object({
-  runId: z.string().uuid(), planHash: hash, storageMode: z.enum(["memory_reference", "durable"]),
-  state: z.enum(RUN_STATES), revision: count, createdAtMs: count, finishedAtMs: count.nullable(),
-  heartbeatAtMs: count.nullable(), notBeforeMs: count, lastEvent: z.enum(RUN_EVENTS),
-  stages: z.array(stageSchema).min(1).max(RUN_PHASES.length),
-}).strict().refine(run => TERMINAL_STATES.includes(run.state) === (run.finishedAtMs !== null)
-  && run.stages.every((stage, index) => index === 0
-    || RUN_PHASES.indexOf(stage.phase) > RUN_PHASES.indexOf(run.stages[index - 1].phase)));
 const revealedResultsSchema = z.object({
   status: z.literal("revealed"),
   outputs: z.array(z.object({ unitId: hash, payload: jsonValue }).strict()),
