@@ -390,6 +390,31 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
     [calculatedPercentiles, calculatedRanks]
   );
 
+  const strengthLabel = selectedStrength.toUpperCase();
+  const formatSeason = (season: number) => `${String(season).slice(0, 4)}–${String(season).slice(6)}`;
+  const thresholdMessages: Array<{ short: string; full: string }> = [];
+  if (allPlayersStats.length === 0) {
+    thresholdMessages.push({ short: `No ${strengthLabel} data`, full: `No player data available for ${strengthLabel}.` });
+  }
+  if (calculatedPercentiles !== null && percentileCohort?.fallbackReason) {
+    thresholdMessages.push({
+      short: `Showing ${formatSeason(percentileCohort.appliedSeasonId)} values and cohort, not ${formatSeason(seasonId as number)}`,
+      full: percentileCohort.fallbackReason
+    });
+  }
+  if (calculatedPercentiles !== null && !selectedPlayerMeetsGpThreshold && selectedPlayerGp !== null) {
+    thresholdMessages.push({
+      short: `GP ${selectedPlayerGp} below min ${minGp}`,
+      full: `Selected Player GP (${selectedPlayerGp}) below threshold (${minGp}). Comparing against ${minGp}+ GP players.`
+    });
+  }
+  if (selectedPlayerGp === 0) {
+    thresholdMessages.push({ short: `0 GP at ${strengthLabel}`, full: `Selected Player has 0 GP for ${strengthLabel}.` });
+  }
+  if (selectedPlayerGp === null && playerId && !isLoading) {
+    thresholdMessages.push({ short: `No ${strengthLabel} GP data`, full: `Selected Player has no GP data for ${strengthLabel}.` });
+  }
+
   return (
     <div className={`${styles.rateStatPercentilesComponent} ${desktop ? styles.percentileDesktop : ""}`}>
       {isLoading && (
@@ -465,37 +490,13 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
             </div>
 
             <div className={styles.percentileContext}>Player GP: {selectedPlayerGp ?? "—"} · Requested {seasonId} · Applied {percentileCohort?.appliedSeasonId ?? seasonId}</div>
-            <div className={styles.thresholdMessagesContainer}>
-              {allPlayersStats.length === 0 && (
-                <div className={styles.thresholdMessage}>
-                  No player data available for {selectedStrength.toUpperCase()}.
-                </div>
-              )}
-              {calculatedPercentiles !== null &&
-                percentileCohort?.fallbackReason && (
-                  <div className={styles.thresholdMessage}>
-                    {percentileCohort.fallbackReason}
+            <div className={desktop ? styles.thresholdChips : styles.thresholdMessagesContainer}>
+              {thresholdMessages.map(message => desktop
+                // One-page mode keeps each notice to a short chip; the full sentence stays for screen readers and hover.
+                ? <div key={message.full} className={styles.thresholdMessage} title={message.full}>
+                    {message.short}<span className={styles.visuallyHidden}>: {message.full}</span>
                   </div>
-                )}
-              {calculatedPercentiles !== null &&
-                !selectedPlayerMeetsGpThreshold &&
-                selectedPlayerGp !== null && (
-                  <div className={styles.thresholdMessage}>
-                    Selected Player GP ({selectedPlayerGp}) below threshold (
-                    {minGp}). Comparing against {minGp}+ GP players.
-                  </div>
-                )}
-              {selectedPlayerGp === 0 && (
-                <div className={styles.thresholdMessage}>
-                  Selected Player has 0 GP for {selectedStrength.toUpperCase()}.
-                </div>
-              )}
-              {selectedPlayerGp === null && playerId && !isLoading && (
-                <div className={styles.thresholdMessage}>
-                  Selected Player has no GP data for{" "}
-                  {selectedStrength.toUpperCase()}.
-                </div>
-              )}
+                : <div key={message.full} className={styles.thresholdMessage}>{message.full}</div>)}
             </div>
           </div>
           {desktop ? <div className={styles.percentileTileGrid}>
@@ -507,7 +508,7 @@ const RateStatPercentiles: React.FC<RateStatPercentilesProps> = ({
                 <span>{stat.label}</span>
                 <strong>{available ? `${Math.round(percentile * 100)}%` : "—"}</strong>
                 <meter aria-label={`${stat.label} percentile`} min={0} max={100} value={available ? percentile * 100 : 0} />
-                <small>{rank != null ? `${formatOrdinal(rank)} rank` : "Rank unavailable"}</small>
+                <small>{rank != null ? <>{formatOrdinal(rank)}<span className={styles.visuallyHidden}> rank</span></> : "Rank unavailable"}</small>
               </div>;
             })}
           </div> : <div className={styles.chartAndRanksArea}>

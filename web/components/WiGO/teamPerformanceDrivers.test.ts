@@ -203,6 +203,12 @@ describe("cumulative team special teams", () => {
   it("rejects conflicting observations for a game", () => {
     expect(() => aggregateTeamSpecialTeams([game, { ...game, power_play_goals_for: 0 }])).toThrow("Conflicting");
   });
+  it("keeps a season whose game had more PP goals than opportunities (a major penalty)", () => {
+    const major = { ...game, game_id: 2, date: "2026-01-02", pp_opportunities: 1, power_play_goals_for: 2, times_shorthanded: 1, pp_goals_against: 2 };
+    expect(aggregateTeamSpecialTeams([game, major])).toEqual([
+      { team_id: 1, date: "2026-01-02", power_play_pct: 150, penalty_kill_pct: 0 }
+    ]);
+  });
 });
 
 describe("cumulative five-on-five coverage", () => {

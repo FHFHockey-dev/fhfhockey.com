@@ -118,3 +118,23 @@
 .error {
   color: #ff6b6b; // Standard error color
 }
+
+:global(.wigo-one-page) {
+  .searchInput {
+    padding: 0 10px;
+    font-size: 14px;
+  }
+  // Status lines float under the 28px input like the results list instead of growing the toolbar.
+  .loadingIndicator,
+  .errorMessage {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 11;
+    padding: 2px 10px;
+    border: 1px solid v.$border-color-secondary;
+    background: v.$background-dark;
+    font-size: 11px;
+  }
+}

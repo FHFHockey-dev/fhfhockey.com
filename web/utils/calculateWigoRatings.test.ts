@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { RatingWeightsConfig, RawStatsCollection } from "components/WiGO/types";
-import { calculatePlayerRatings } from "./calculateWigoRatings";
+import { calculatePlayerRatings, WIGO_RATING_MIN_COHORT_PEERS } from "./calculateWigoRatings";
 
 const TEST_WEIGHTS: RatingWeightsConfig = {
   as: {
@@ -115,5 +115,31 @@ describe("calculatePlayerRatings", () => {
       ratings?._debug?.regressedPercentiles?.as?.total_points_per_60
     ).toBeCloseTo(57.5, 2);
     expect(ratings?.offense.as).toBeCloseTo(57.5, 2);
+  });
+
+  it("withholds ratings instead of reporting 50.0 when too few other players qualify", () => {
+    const cohort = (size: number) => Array.from({ length: size }, (_, index) => ({
+      player_id: index + 1, season: 20252026, gp: 12, toi_seconds: 900,
+      total_points_per_60: index + 1, xga_per_60: index + 1, gf_per_60: index + 1, ga_per_60: index + 1
+    }));
+    const stats = (size: number): RawStatsCollection => ({
+      as: { offense: cohort(size), defense: cohort(size) },
+      es: { offense: cohort(size), defense: cohort(size) },
+      pp: { offense: cohort(size), defense: [] },
+      pk: { offense: [], defense: cohort(size) }
+    });
+
+    // Target alone: the old behaviour reported 50.0 for every rating.
+    const alone = calculatePlayerRatings(1, stats(1), TEST_WEIGHTS, undefined, 10, WIGO_RATING_MIN_COHORT_PEERS);
+    expect(alone?.offense.as).toBeNull();
+    expect(alone?.defense.pk).toBeNull();
+    expect(alone?.overall.final).toBeNull();
+    expect(calculatePlayerRatings(1, stats(1), TEST_WEIGHTS, undefined, 10)?.offense.as).toBe(50);
+
+    // One peer short of the minimum still withholds; at the minimum the percentile is real.
+    expect(calculatePlayerRatings(1, stats(WIGO_RATING_MIN_COHORT_PEERS), TEST_WEIGHTS, undefined, 10, WIGO_RATING_MIN_COHORT_PEERS)?.offense.as).toBeNull();
+    const enough = calculatePlayerRatings(1, stats(WIGO_RATING_MIN_COHORT_PEERS + 1), TEST_WEIGHTS, undefined, 10, WIGO_RATING_MIN_COHORT_PEERS);
+    expect(enough?.offense.as).toBeLessThan(10);
+    expect(enough?.defense.as).toBeGreaterThan(90);
   });
 });

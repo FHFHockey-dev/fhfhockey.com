@@ -71,10 +71,10 @@ export function aggregateTeamSpecialTeams(rows: TeamSpecialTeamsGame[]): TeamSpe
   }
   return [...teams.entries()].map(([team_id, games]) => {
     const values = [...games.values()];
+    // A major can yield several PP goals from one opportunity, so goals may exceed opportunities in a game.
     const valid = values.every(row =>
       [row.pp_opportunities, row.power_play_goals_for, row.times_shorthanded, row.pp_goals_against]
-        .every(value => value != null && Number.isInteger(value) && value >= 0) &&
-      row.power_play_goals_for! <= row.pp_opportunities! && row.pp_goals_against! <= row.times_shorthanded!
+        .every(value => value != null && Number.isInteger(value) && value >= 0)
     );
     const ppOpp = values.reduce((sum, row) => sum + (row.pp_opportunities ?? 0), 0);
     const pkOpp = values.reduce((sum, row) => sum + (row.times_shorthanded ?? 0), 0);

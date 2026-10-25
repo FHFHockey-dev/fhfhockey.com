@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import type { TableAggregateData } from "./types";
-import { computeDiffColumn, formatCell } from "./tableUtils";
+import { computeDiffColumn, formatCell, formatDiffPercent } from "./tableUtils";
 
 describe("computeDiffColumn", () => {
   it("computes per-game diffs for count stats using GP context", () => {
@@ -61,5 +61,17 @@ describe("DIFF boundary cases", () => {
     expect(data[3].DIFF).toBeUndefined();
     expect(formatCell({ label: "Goals", STD: 0 }, "STD")).toBe("0");
     expect(formatCell({ label: "Goals", STD: null }, "STD")).toBe("-");
+  });
+});
+
+describe("formatDiffPercent", () => {
+  it("keeps one decimal below 1000% and drops it above so the DIFF cell stays narrow", () => {
+    expect(formatDiffPercent(272.66)).toBe("+272.7%");
+    expect(formatDiffPercent(-8.14)).toBe("-8.1%");
+    expect(formatDiffPercent(0)).toBe("0.0%");
+    expect(formatDiffPercent(3584.8)).toBe("+3585%");
+    expect(formatDiffPercent(-1021.7)).toBe("-1022%");
+    expect(formatDiffPercent(null)).toBe("-");
+    expect(formatDiffPercent(Number.POSITIVE_INFINITY)).toBe("-");
   });
 });

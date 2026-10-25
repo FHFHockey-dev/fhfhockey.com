@@ -162,10 +162,13 @@ const PerGameStatsTable: React.FC<PerGameStatsTableProps> = ({
           <summary><h3>Per-game / 84-game pace</h3></summary>
           <p>Observed counting rate × 84, rounded to a whole count. Constant-rate pace, not a remaining-game, availability or health prediction.</p>
         </details>
-        <table className={styles.verticalStatsTable}>
-          <thead><tr><th className={styles.metricHeader}>Metric</th><th className={styles.valueHeader}>Per/GP</th><th className={styles.valueHeader}>Pace/84</th></tr></thead>
-          <tbody>{visibleRows.map(row => <tr key={row.stat}><th scope="row" className={styles.metricCell}>{row.stat}</th><td className={styles.valueCell}>{row.perGame}</td><td className={styles.valueCell}>{row.per84}</td></tr>)}</tbody>
-        </table>
+        {/* The one-page dashboard shows the ten rows as two five-row halves side by side. */}
+        <div className={styles.paceTables}>
+          {(desktop ? [visibleRows.slice(0, 5), visibleRows.slice(5)] : [visibleRows]).map(rows => <table key={rows[0]?.stat} className={styles.verticalStatsTable}>
+            <thead><tr><th className={styles.metricHeader}>Metric</th><th className={styles.valueHeader}>Per/GP</th><th className={styles.valueHeader}>Pace/84</th></tr></thead>
+            <tbody>{rows.map(row => <tr key={row.stat}><th scope="row" className={styles.metricCell}>{row.stat}</th><td className={styles.valueCell}>{row.perGame}</td><td className={styles.valueCell}>{row.per84}</td></tr>)}</tbody>
+          </table>)}
+        </div>
       </section>
     </div>
   );

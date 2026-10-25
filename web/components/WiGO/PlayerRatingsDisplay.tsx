@@ -2,7 +2,10 @@ import React, { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import { fetchRawStatsForAllStrengths } from "utils/fetchWigoRatingStats";
-import { calculatePlayerRatings } from "utils/calculateWigoRatings";
+import {
+  calculatePlayerRatings,
+  WIGO_RATING_MIN_COHORT_PEERS
+} from "utils/calculateWigoRatings";
 
 import styles from "./PlayerRatingsDisplay.module.scss";
 import { WIGO_ERROR_MESSAGES } from "./errorMessages";
@@ -66,7 +69,7 @@ const PlayerRatingsDisplay: React.FC<PlayerRatingsProps> = ({
   });
   const ratings = useMemo(
     () => playerId && rawStats
-      ? calculatePlayerRatings(playerId, rawStats, undefined, undefined, minGp)
+      ? calculatePlayerRatings(playerId, rawStats, undefined, undefined, minGp, WIGO_RATING_MIN_COHORT_PEERS)
       : null,
     [playerId, rawStats, minGp]
   );

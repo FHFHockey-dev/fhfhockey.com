@@ -39,6 +39,8 @@ interface GameLogChartProps {
   error: string | null;
   tableType: "COUNTS" | "RATES";
   height?: number;
+  // Fill the parent's height with tighter axes (one-page dashboard panel).
+  fill?: boolean;
 }
 
 type AverageKey = keyof GameLogChartProps["averages"];
@@ -70,7 +72,8 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
   isLoading,
   error,
   tableType,
-  height = 230
+  height = 230,
+  fill = false
 }) => {
   const [visibleAverages, setVisibleAverages] = useState<
     Record<AverageKey, boolean>
@@ -156,7 +159,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
   };
 
   // Adjust chart height if needed for row layout, REMOVE fixed width
-  const chartHeight = height; // Increased height slightly for better visibility in a row
+  const chartHeight = fill ? "100%" : height; // Increased height slightly for better visibility in a row
 
   const status = isLoading ? "Loading game log..." : error || (gameLogData.length === 0 ? "No game log data available for this season." : null);
 
@@ -215,10 +218,10 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
           }
         })}
       </div>
-      {status ? <div className={styles.chartStatus} role="status">{status}</div> : <ResponsiveContainer width="100%" height={chartHeight}>
+      {status ? <div className={styles.chartStatus} role="status">{status}</div> : <div className={fill ? styles.gameLogChartPlot : undefined}><ResponsiveContainer width="100%" height={chartHeight}>
         <LineChart
           data={chartData}
-          margin={{ top: 5, right: 10, left: 0, bottom: 16 }}
+          margin={fill ? { top: 4, right: 6, left: 0, bottom: 0 } : { top: 5, right: 10, left: 0, bottom: 16 }}
         >
           {" "}
           {/* Adjusted margins */}
@@ -227,7 +230,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             dataKey="game"
             minTickGap={40}
             tickFormatter={(game) => chartData[Number(game) - 1]?.date.slice(5) ?? String(game)}
-            label={{
+            label={fill ? undefined : {
               value: "Game date",
               position: "insideBottom",
               offset: -15,
@@ -240,8 +243,8 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 textTransform: "uppercase"
               }
             }}
-            tick={{ fontSize: 12, fill: "#aaa" }}
-            height={40} // Increased height for label
+            tick={{ fontSize: fill ? 11 : 12, fill: "#aaa" }}
+            height={fill ? 18 : 40} // Increased height for label
           />
           <YAxis
             tickFormatter={(tick) =>
@@ -250,8 +253,8 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
                 isTOIStat ? "TOI" : isPercentStat ? "Percent" : "Other"
               )
             }
-            tick={{ fontSize: 12, fill: "#aaa" }}
-            width={65} // Slightly increased width
+            tick={{ fontSize: fill ? 11 : 12, fill: "#aaa" }}
+            width={fill ? 42 : 65} // Slightly increased width
 
           />
           <Tooltip content={<CustomTooltip />} />
@@ -329,7 +332,7 @@ const GameLogChart: React.FC<GameLogChartProps> = ({
             return null;
           })}
         </LineChart>
-      </ResponsiveContainer>}
+      </ResponsiveContainer></div>}
     </div>
   );
 };

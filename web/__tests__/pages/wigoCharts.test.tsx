@@ -1,6 +1,5 @@
 import React from "react";
-import { act, cleanup, render, screen, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const routerState = vi.hoisted(() => ({ query: {} as Record<string, string> }));
@@ -51,15 +50,6 @@ const setViewport = (width: number) => {
   Object.defineProperty(window, "innerWidth", { configurable: true, value: width });
 };
 
-// The shared section is unnamed, so locate it from its heading.
-const workflowSections = (name: RegExp) =>
-  screen.getAllByRole("heading", { name }).map((heading) => heading.closest("section")!);
-
-const workflowHrefs = () =>
-  within(workflowSections(/keep exploring|read further/i)[0])
-    .getAllByRole("link")
-    .map((link) => link.getAttribute("href"));
-
 beforeEach(() => {
   routerState.query = {};
   dashboardState.selectedPlayer = null;
@@ -69,92 +59,39 @@ beforeEach(() => {
 
 afterEach(cleanup);
 
-describe("WiGO workflow links", () => {
-  it("offers only league-wide destinations before a player is selected", () => {
+// TJ removed the WiGO workflow link block (2026-10-25); the dashboard ends at its own panels.
+describe("WiGO page without workflow links", () => {
+  const expectNoWorkflowLinks = () => {
+    expect(screen.queryByText("WiGO workflow")).toBeNull();
+    expect(screen.queryByRole("heading", { name: /keep exploring|read further/i })).toBeNull();
+    expect(screen.queryAllByRole("link")).toHaveLength(0);
+  };
+
+  it("renders no workflow links on desktop, with or without a selected player", () => {
     render(<WigoCharts />);
+    expectNoWorkflowLinks();
+    cleanup();
 
-    expect(screen.getByRole("heading", { name: "Keep exploring" })).toBeTruthy();
-    expect(screen.getByText(/^Select a player to add their team HQ and lines/)).toBeTruthy();
-    expect(workflowHrefs()).toEqual([
-      "/trends",
-      "/game-grid/7-Day-Forecast",
-      "/start-chart",
-    ]);
-    expect(screen.queryByRole("link", { name: /team hq/i })).toBeNull();
-  });
-
-  it("keeps team links hidden while the selected player's team is unresolved", () => {
-    dashboardState.selectedPlayer = { id: 8478402, fullName: "Connor McDavid" };
-
-    render(<WigoCharts />);
-
-    expect(workflowHrefs()).not.toContain("/stats/team/null");
-    expect(screen.queryByRole("link", { name: /team lines/i })).toBeNull();
-    expect(screen.getByRole("heading", { name: "Take the Connor McDavid read further" })).toBeTruthy();
-    expect(screen.getByText(/appear once this player's team is known/)).toBeTruthy();
-    expect(screen.queryByText(/Select a player/)).toBeNull();
-  });
-
-  it("carries the resolved team into Team HQ and Team Lines without nesting anchors", () => {
-    dashboardState.selectedPlayer = {
-      id: 8480012,
-      fullName: "Jean-Sébastien Dea-Longname-Hyphenated-Placeholder",
-    };
-    dashboardState.teamAbbreviation = "UTA";
-
-    const { container } = render(<WigoCharts />);
-
-    expect(
-      screen.getByRole("heading", {
-        name: "Take the Jean-Sébastien Dea-Longname-Hyphenated-Placeholder read further",
-      }),
-    ).toBeTruthy();
-    expect(workflowHrefs()).toEqual([
-      "/stats/team/UTA",
-      "/lines/UTA",
-      "/trends",
-      "/game-grid/7-Day-Forecast",
-      "/start-chart",
-    ]);
-    expect(container.querySelector("a a")).toBeNull();
-    expect(workflowSections(/read further/i)).toHaveLength(1);
-  });
-
-  it("reaches the links by keyboard from the desktop layout", async () => {
     dashboardState.selectedPlayer = { id: 8479318, fullName: "Auston Matthews" };
     dashboardState.teamAbbreviation = "TOR";
-    const user = userEvent.setup();
-
     render(<WigoCharts />);
-    await user.tab();
-
-    expect(document.activeElement).toBe(screen.getByRole("link", { name: /team hq/i }));
-    await user.tab();
-    expect(document.activeElement).toBe(screen.getByRole("link", { name: /team lines/i }));
+    expect(screen.getByTestId("wigo-comparison")).toBeTruthy();
+    expectNoWorkflowLinks();
   });
 
-  it("shows one set of links on narrow screens beneath every mobile tab", () => {
+  it("renders no workflow links beneath the mobile tabs or after a resize", () => {
     setViewport(375);
     routerState.query = { tab: "comparison" };
     dashboardState.selectedPlayer = { id: 8479318, fullName: "Auston Matthews" };
     dashboardState.teamAbbreviation = "TOR";
-
     render(<WigoCharts />);
-
     expect(screen.getByTestId("wigo-comparison")).toBeTruthy();
-    expect(workflowSections(/read further/i)).toHaveLength(1);
-    expect(workflowHrefs()[0]).toBe("/stats/team/TOR");
-  });
-
-  it("switches layouts on resize without duplicating the links", () => {
-    render(<WigoCharts />);
-    expect(workflowSections(/keep exploring/i)).toHaveLength(1);
+    expectNoWorkflowLinks();
 
     act(() => {
-      setViewport(375);
+      setViewport(1280);
       window.dispatchEvent(new Event("resize"));
     });
-
-    expect(workflowSections(/keep exploring/i)).toHaveLength(1);
+    expectNoWorkflowLinks();
   });
 });

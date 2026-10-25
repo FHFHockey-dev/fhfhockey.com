@@ -82,6 +82,13 @@ const statToGameLogColumnMap: Record<
       table: "nst_gamelog_as_rates";
       requiredColumns: string[];
     } // **** ADDED PTS1/60 Calculation Type ****
+  | {
+      // PP count per 60 PP minutes from the per-game WGO row, matching the aggregate writer's
+      // calculatePer60FromSeconds(wgo_pp*, wgo_pp_toi).
+      calculation: "PP_PER_60";
+      table: "wgo_skater_stats";
+      countColumn: "pp_goals" | "pp_assists" | "pp_points";
+    }
 > = {
   // --- From wgo_skater_stats (Likely best source for direct game stats) ---
   GP: { table: "wgo_skater_stats", column: "games_played" }, // Value is usually 1 per game row
@@ -135,9 +142,10 @@ const statToGameLogColumnMap: Record<
   "iCF/60": { table: "nst_gamelog_as_rates", column: "icf_per_60" },
   "iHDCF/60": { table: "nst_gamelog_as_rates", column: "hdcf_per_60" }, // NST uses hdcf_per_60
   "iSCF/60": { table: "nst_gamelog_as_rates", column: "iscfs_per_60" }, // NST uses iscfs_per_60
-  "PPG/60": { table: "nst_gamelog_as_rates", column: "ppg_per_60" }, // Need powerplay specific table/columns
-  "PPA/60": { table: "nst_gamelog_as_rates", column: "ppa_per_60" }, // Need powerplay specific table/columns
-  "PPP/60": { table: "nst_gamelog_as_rates", column: "ppp_per_60" }, // Need powerplay specific table/columns
+  // nst_gamelog_as_rates has no PP columns; these per-PP-minute rates come from the WGO game row.
+  "PPG/60": { calculation: "PP_PER_60", table: "wgo_skater_stats", countColumn: "pp_goals" },
+  "PPA/60": { calculation: "PP_PER_60", table: "wgo_skater_stats", countColumn: "pp_assists" },
+  "PPP/60": { calculation: "PP_PER_60", table: "wgo_skater_stats", countColumn: "pp_points" },
   "HIT/60": { table: "nst_gamelog_as_rates", column: "hits_per_60" },
   "BLK/60": { table: "nst_gamelog_as_rates", column: "shots_blocked_per_60" }, // NST uses shots_blocked_per_60
   "PIM/60": { table: "nst_gamelog_as_rates", column: "pim_per_60" },
@@ -450,7 +458,8 @@ export async function fetchPlayerGameLogForStat(
             typeof points === "number" &&
             points > 0
           ) {
-            value = (goals + primaryAssists) / points;
+            // Aggregates show PTS1% on a 0–100 scale; the chart's reference lines use the same scale.
+            value = ((goals + primaryAssists) / points) * 100;
           } else if (points === 0 && (goals > 0 || primaryAssists > 0)) {
             value = null;
           } else if (points === 0 && goals === 0 && primaryAssists === 0) {
@@ -510,6 +519,28 @@ export async function fetchPlayerGameLogForStat(
         "rows"
       );
       return calculatedData;
+    } else if ("calculation" in mapping && mapping.calculation === "PP_PER_60") {
+      const { countColumn } = mapping;
+      const { data, error } = await supabase
+        .from("wgo_skater_stats")
+        .select(`date, ${countColumn}, pp_toi_per_game`)
+        .eq("player_id", playerId)
+        .eq("season_id", seasonId)
+        .order("date", { ascending: true });
+      if (error) throw error;
+
+      return (data ?? []).map((item: any) => {
+        const count = item[countColumn];
+        const ppSeconds = item.pp_toi_per_game;
+        return {
+          date: item.date,
+          // No PP time means no PP rate for that game, not a zero rate.
+          value:
+            typeof count === "number" && typeof ppSeconds === "number" && ppSeconds > 0
+              ? (count * 3600) / ppSeconds
+              : null
+        };
+      });
     } else if ("column" in mapping) {
       // **** Handle Standard Column Fetching ****
       const { table, column: statColumn, unit } = mapping;
@@ -543,10 +574,11 @@ export async function fetchPlayerGameLogForStat(
         data?.map((item: any) => {
           let value = item[statColumn];
 
-          // Unit handling remains the same (commented out unless needed)
-          // if (unit === "percent_decimal" && typeof value === 'number' && value > 1) {
-          //    value = value / 100;
-          // }
+          // WGO stores S% and PP% as 0–1 fractions while the matrix and reference lines use 0–100.
+          // NST percentage columns are left as stored (their scale is unverified).
+          if (table === "wgo_skater_stats" && unit === "percent_decimal") {
+            value = normalizeWigoAggregateValue(statLabel, value);
+          }
 
           return {
             date: item[dateColumn], // Use the fetched date column
