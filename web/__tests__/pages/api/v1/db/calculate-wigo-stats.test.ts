@@ -52,12 +52,13 @@ function installRecentFrameMock(
   nhl: Record<string, any>[],
   individual: Record<string, any>[],
   onIce = individual,
-  failedTable?: string
+  failedTable?: string,
+  players = [{ id: 8476453, position: "R" }]
 ) {
   const writes: Record<string, any[]> = {};
   const traces: Array<{ table: string; calls: any[][] }> = [];
   const tables: Record<string, any[]> = {
-    players: [{ id: 8476453, position: "R" }],
+    players,
     wgo_skater_stats: nhl,
     nst_gamelog_as_counts: individual,
     nst_gamelog_as_counts_oi: onIce
@@ -205,7 +206,8 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
     const res = createMockRes();
     await handler({ method: "GET", query: {}, headers: { host: "localhost", authorization: "Bearer unit-test-cron-secret" } } as any, res);
     if (coverage === "missing NHL season") {
-      expect(res.statusCode).toBe(500);
+      expect(res.statusCode).toBe(207);
+      expect(res.body).toMatchObject({ success: false, rejectedPlayerIds: [1] });
       expect(written).toEqual({});
       return;
     }
@@ -302,7 +304,23 @@ describe("/api/v1/db/calculate-wigo-stats route", () => {
       : problem === "playoff identity" ? { ...game, game_id: 2026030001 }
       : { ...game, date: "2026-10-22" };
     const { writes } = installRecentFrameMock(problem === "duplicate" ? [game, bad] : [bad], [game]);
-    expect((await runRecentFixture()).statusCode).toBe(500);
+    const res = await runRecentFixture();
+    expect(res.statusCode).toBe(207);
+    expect(res.body).toMatchObject({ success: false, rejectedPlayerIds: [8476453] });
+    expect(res.body.error).toBe("Invalid or duplicate regular-season NHL appearance for 1 player(s): 8476453.");
     expect(writes).toEqual({});
+  });
+
+  it("withholds only the rejected player's rows and still writes every valid player", async () => {
+    getCurrentSeasonMock.mockResolvedValue({ seasonId: 20262027, lastSeasonId: 20252026 });
+    const valid = { ...recentGame("2026-10-23"), player_id: 8478402 };
+    const bad = { ...recentGame("2026-10-23"), game_id: null };
+    const { writes } = installRecentFrameMock([bad, valid], [bad, valid], undefined, undefined,
+      [{ id: 8476453, position: "R" }, { id: 8478402, position: "C" }]);
+    const res = await runRecentFixture();
+    expect(res.statusCode).toBe(207);
+    expect(res.body).toMatchObject({ success: false, rejectedPlayerIds: [8476453] });
+    expect(writes.wigo_recent.map(row => row.player_id)).toEqual([8478402]);
+    expect(writes.wigo_career.map(row => row.player_id)).toEqual([8478402]);
   });
 });
