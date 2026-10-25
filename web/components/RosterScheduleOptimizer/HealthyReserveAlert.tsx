@@ -15,13 +15,15 @@ function gainText({ projectedPoints, activeGames }: NonNullable<HealthyReserve["
 }
 
 /** "Only k can be activated" when the open spots and swap partners run out before the flagged players do; the helper
- * already ranks them by projected gain, unknown gains last. */
+ * already ranks them by projected gain, unknown gains last, ties in roster order. */
 function contestText(reserves: HealthyReserve[], nameOf: (id: string) => string) {
   const activated = reserves.filter(reserve => reserve.activation);
   if (!activated.length || activated.length === reserves.length) return null;
   const best = activated.map(({ playerId, activation }) => `${nameOf(playerId)}${activation!.projectedPoints !== null ? ` (${signed(activation!.projectedPoints)} pts)`
     : activation!.activeGames !== null ? ` (${signed(activation!.activeGames)} active games)` : ""}`);
   const list = best.length === 1 ? best[0] : `${best.slice(0, -1).join(", ")} and ${best[best.length - 1]}`;
+  // An unknown gain can't be called "best" (C7 H3).
+  if (activated.some(({ activation }) => activation!.projectedPoints === null && activation!.activeGames === null)) return `Can be activated: ${list}.`;
   return `Only ${best.length === 1 ? "one" : best.length} can be activated: best ${best.length === 1 ? "is" : "are"} ${list}.`;
 }
 

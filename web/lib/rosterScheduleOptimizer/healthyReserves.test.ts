@@ -39,12 +39,12 @@ function snapshot(): PlanningSnapshot {
     allowedUses: { assignment: true, totals: true, comparison: true, conditionalTieBreak: false }, startProbability: null, confirmedStart: false, limitations: [] })));
   return data;
 }
-// A second healthy D-man, f (5 per game), on d's team.
-const withF = (data: PlanningSnapshot, position: "IR" | "IR+") => {
+// A second healthy D-man, f (5 per game unless given), on d's team.
+const withF = (data: PlanningSnapshot, position: "IR" | "IR+", pts = 5) => {
   const f = member("f", "D", ["D"]);
   data.players = [...data.players, f];
   data.roster = [...data.roster, { playerId: "f", position }];
-  data.forecasts = [...data.forecasts, ...data.forecasts.filter(row => row.playerId === "d").map(row => ({ ...row, playerId: "f", stats: { pts: 5 },
+  data.forecasts = [...data.forecasts, ...data.forecasts.filter(row => row.playerId === "d").map(row => ({ ...row, playerId: "f", stats: { pts },
     issuedContext: { ...row.issuedContext!, playerId: "f", nhlPlayerId: f.nhlId!, rosterRevision: f.rosterRevision! } }))];
 };
 const injured = (data: PlanningSnapshot, id: string, status: string, reserve: PlanningPlayer["reserveEligibility"]) => {
@@ -180,5 +180,26 @@ describe("healthy reserve players", () => {
     final.roster = final.roster.map(row => row.playerId === "d" ? { ...row, position: "IR+" } : row);
     expect(dtdReserves({ ...final, context: { ...final.context, provider: "manual" } })).toEqual([]);
     expect(dtdReserves(final)).toEqual(["d"]);
+  });
+
+  // C7 H1: greedy by direct-spot gain gave f the spot and left d nothing, though f could swap with e and d take the spot.
+  it("activates as many players as the spots and swap partners allow before maximising gain", () => {
+    const data = snapshot();
+    data.rules = { ...data.rules, rosterSlots: { ...data.rules.rosterSlots, BN: 2 } };
+    data.roster = [...data.roster, { playerId: "e", position: "active" }];
+    withF(data, "IR+");
+    injured(data, "e", "O", ["IR+"]);
+    expect(healthyReserves(data, intent)).toEqual([
+      { playerId: "f", position: "IR+", slotEligible: false, activation: { swapPlayerId: "e", projectedPoints: 10, activeGames: 2 } },
+      { playerId: "d", position: "IR", slotEligible: false, activation: { swapPlayerId: null, projectedPoints: 6, activeGames: 2 } }]);
+  });
+
+  // C7 H2: equal gains keep roster order, for both the spot and the listing.
+  it("breaks ties by roster order", () => {
+    const data = snapshot();
+    withF(data, "IR+", 3);
+    expect(healthyReserves(data, intent).map(row => [row.playerId, row.activation?.projectedPoints ?? null])).toEqual([["d", 6], ["f", null]]);
+    data.roster = [...data.roster.filter(row => row.playerId !== "d"), { playerId: "d", position: "IR" }];
+    expect(healthyReserves(data, intent).map(row => [row.playerId, row.activation?.projectedPoints ?? null])).toEqual([["f", 6], ["d", null]]);
   });
 });
