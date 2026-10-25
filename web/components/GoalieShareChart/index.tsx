@@ -305,6 +305,7 @@ const GoalieShareChart: React.FC = () => {
                 goalie.goalieFullName || "Unknown Goalie";
               return [
                 `${goalieDisplayName}: ${context.parsed} appearances`,
+                `Starts: ${goalie.gamesStarted === null ? "Unavailable" : `${goalie.gamesStarted} of ${teamStats.totalGames} team games`}`,
                 `Save %: ${goalie.savePct === null ? "Unavailable" : `${(goalie.savePct * 100).toFixed(1)}%`}`,
                 `GAA: ${goalie.goalsAgainstAverage === null ? "Unavailable" : goalie.goalsAgainstAverage.toFixed(2)}`
               ];
@@ -476,7 +477,7 @@ const GoalieShareChart: React.FC = () => {
 
   return (
     <div className={styles.goalieShareChart}>
-      <p>Share of recorded goalie appearances, including relief. L10, L20 and L30 use team games. These are past workload shares, not future start probabilities.</p>
+      <p>Share of recorded goalie appearances, including relief. L10, L20 and L30 use team games. Tooltips add official starts when every team game has one recorded starter. These are past workload shares, not future start probabilities.</p>
       <div className={styles.buttonContainer}>
         <button
           className={`${styles.spanButton} ${selectedSpan === "L10" ? styles.active : ""}`}

@@ -2,10 +2,13 @@ import React from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 
-const mocks = vi.hoisted(() => ({ fetch: vi.fn() }));
+const mocks = vi.hoisted(() => ({ fetch: vi.fn(), options: null as any }));
 vi.mock("lib/cors-fetch", () => ({ default: mocks.fetch }));
 vi.mock("react-chartjs-2", () => ({
-  Doughnut: ({ data }: any) => <pre data-testid="chart">{JSON.stringify(data)}</pre>
+  Doughnut: ({ data, options }: any) => {
+    mocks.options = options;
+    return <pre data-testid="chart">{JSON.stringify(data)}</pre>;
+  }
 }));
 
 import GoalieShareChart, { type GoalieGameRow } from "./index";
@@ -131,6 +134,26 @@ describe("GoalieShareChart complete page sets", () => {
     expect(chart.labels).toEqual(["One (50.0%)", "One (50.0%)"]);
     expect(screen.getByText("Team GP:").nextSibling?.textContent).toBe("1");
     expect(screen.getByText(/Share of recorded goalie appearances, including relief/)).toBeTruthy();
+  });
+
+  it("adds official starts per team game to the tooltip, and withholds unlabeled starts", async () => {
+    const tooltipLines = (dataIndex: number) =>
+      mocks.options.plugins.tooltip.callbacks.label({ dataIndex, parsed: 1, label: "" });
+    mockPages(() => response({ total: 2, data: [
+      { ...rows[0], gamesStarted: 1 },
+      { ...rows[0], playerId: 2, goalieFullName: "Backup Two", gamesStarted: 0 }
+    ] }));
+    render(<GoalieShareChart />);
+    await finishRequests();
+    expect(tooltipLines(0)).toContain("Starts: 1 of 1 team games");
+    expect(tooltipLines(1)).toContain("Starts: 0 of 1 team games");
+    cleanup();
+
+    mockPages(() => response({ total: 2, data: [rows[0], { ...rows[0], playerId: 2 }] }));
+    render(<GoalieShareChart />);
+    await finishRequests();
+    expect(tooltipLines(0)).toContain("Starts: Unavailable");
+    expect(tooltipLines(0)).toContain("Starter One: 1 appearances");
   });
 
   it("recovers within the retry budget and re-slices complete data without fetching", async () => {

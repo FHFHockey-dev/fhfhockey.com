@@ -95,4 +95,52 @@ describe("buildGoalieShareByTeam", () => {
     expect(noExposure.savePct).toBeNull();
     expect(noExposure.goalsAgainstAverage).toBeNull();
   });
+
+  it("counts official starts per team game and keeps relief as a measured zero", () => {
+    const stats = buildGoalieShareByTeam([
+      row({ gameId: 1, gamesStarted: 1 }),
+      row({ gameId: 1, playerId: 2, goalieFullName: "Backup Two", gamesStarted: 0 }),
+      row({ gameId: 2, gamesStarted: 1 })
+    ], "Season").PHI;
+    expect(stats.totalGames).toBe(2);
+    expect(stats.totalAppearances).toBe(3);
+    expect(stats.goalies.map(goalie => [goalie.goalieFullName, goalie.gamesPlayed, goalie.gamesStarted])).toEqual([
+      ["Starter One", 2, 2],
+      ["Backup Two", 1, 0]
+    ]);
+  });
+
+  it("counts starts only inside the selected team-game window", () => {
+    const labeled: GoalieGameRow[] = phiGames.map(game => ({ ...game, gamesStarted: 1 }));
+    labeled[0] = { ...labeled[0], gamesStarted: null }; // outside L10
+    expect(buildGoalieShareByTeam(labeled, "L10").PHI.goalies.map(goalie => goalie.gamesStarted)).toEqual([6, 4]);
+    expect(buildGoalieShareByTeam(labeled, "Season").PHI.goalies.map(goalie => goalie.gamesStarted)).toEqual([null, null]);
+  });
+
+  it("keeps a traded goalie's starts with each club", () => {
+    const stats = buildGoalieShareByTeam([
+      row({ gameId: 1, teamAbbrev: "PHI", playerId: 7, gamesStarted: 1 }),
+      row({ gameId: 2, teamAbbrev: "BOS", playerId: 7, gamesStarted: 0 }),
+      row({ gameId: 2, teamAbbrev: "BOS", playerId: 8, gamesStarted: 1 })
+    ], "Season");
+    expect(stats.PHI.goalies[0].gamesStarted).toBe(1);
+    expect(stats.BOS.goalies.find(goalie => goalie.playerId === 7)?.gamesStarted).toBe(0);
+    expect(stats.BOS.goalies.find(goalie => goalie.playerId === 8)?.gamesStarted).toBe(1);
+  });
+
+  it.each([
+    ["a missing label", [{ gamesStarted: 1 }, { gamesStarted: undefined }]],
+    ["a null label", [{ gamesStarted: 1 }, { gamesStarted: null }]],
+    ["a non-binary label", [{ gamesStarted: 1 }, { gamesStarted: 2 }]],
+    ["a fractional label", [{ gamesStarted: 1 }, { gamesStarted: 0.5 }]],
+    ["two starters in one game", [{ gamesStarted: 1 }, { gamesStarted: 1 }]],
+    ["no starter in one game", [{ gamesStarted: 0 }, { gamesStarted: 0 }]]
+  ] as const)("withholds every goalie's starts for %s", (_, labels) => {
+    const stats = buildGoalieShareByTeam([
+      row({ gameId: 1, gamesStarted: 1 }),
+      ...labels.map((label, index) => row({ gameId: 2, playerId: index + 1, ...label }))
+    ], "Season").PHI;
+    expect(stats.goalies.map(goalie => goalie.gamesStarted)).toEqual([null, null]);
+    expect(stats.goalies.map(goalie => goalie.gamesPlayed)).toEqual([2, 1]);
+  });
 });

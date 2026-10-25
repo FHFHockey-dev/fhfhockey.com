@@ -9,6 +9,8 @@ export interface GoalieGameRow {
   playerId: number;
   goalieFullName: string;
   gamesPlayed: number;
+  /** NHL's official starter label (1 or 0); a relief appearance is 0. */
+  gamesStarted?: number | null;
   wins: number;
   losses: number;
   otLosses: number;
@@ -23,6 +25,9 @@ export interface GoalieData {
   playerId: number;
   goalieFullName: string;
   gamesPlayed: number;
+  /** Official starts over the window's team games; null unless every team
+   * game in the window has exactly one labeled starter. */
+  gamesStarted: number | null;
   timeOnIce: number | null;
   wins: number;
   losses: number;
@@ -69,12 +74,18 @@ export function buildGoalieShareByTeam(rows: readonly GoalieGameRow[], span: Spa
     const limit = SPAN_GAMES[span];
     const windowGames = new Set((limit === null ? games : games.slice(-limit)).map(([gameId]) => gameId));
     const byGoalie = new Map<number, GoalieGameRow[]>();
+    const startersByGame = new Map<number, number>();
+    let startsLabeled = true;
     for (const row of teamRows) {
       if (!windowGames.has(row.gameId)) continue;
       const goalieRows = byGoalie.get(row.playerId) ?? [];
       goalieRows.push(row);
       byGoalie.set(row.playerId, goalieRows);
+      if (row.gamesStarted !== 0 && row.gamesStarted !== 1) startsLabeled = false;
+      else startersByGame.set(row.gameId, (startersByGame.get(row.gameId) ?? 0) + row.gamesStarted);
     }
+    // A missing or doubled starter would misplace a start, so the whole window withholds.
+    const startsComplete = startsLabeled && Array.from(windowGames).every(gameId => startersByGame.get(gameId) === 1);
     const goalies: GoalieData[] = Array.from(byGoalie, ([playerId, goalieRows]) => {
       const sum = (read: (row: GoalieGameRow) => number) => goalieRows.reduce((total, row) => total + (read(row) || 0), 0);
       const completeSum = (read: (row: GoalieGameRow) => number | null) => {
@@ -92,7 +103,8 @@ export function buildGoalieShareByTeam(rows: readonly GoalieGameRow[], span: Spa
       const timeOnIce = completeSum(row => row.timeOnIce);
       return {
         playerId, goalieFullName: goalieRows[goalieRows.length - 1].goalieFullName,
-        gamesPlayed: sum(row => row.gamesPlayed), timeOnIce,
+        gamesPlayed: sum(row => row.gamesPlayed),
+        gamesStarted: startsComplete ? sum(row => row.gamesStarted ?? 0) : null, timeOnIce,
         wins: sum(row => row.wins), losses: sum(row => row.losses), otLosses: sum(row => row.otLosses),
         savePct: shotsAgainst !== null && shotsAgainst > 0 && saves !== null && saves <= shotsAgainst ? saves / shotsAgainst : null,
         goalsAgainstAverage: timeOnIce !== null && timeOnIce > 0 && goalsAgainst !== null ? (goalsAgainst * 3600) / timeOnIce : null
