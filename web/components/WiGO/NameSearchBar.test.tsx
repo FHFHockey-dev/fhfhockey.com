@@ -13,10 +13,13 @@ import Fetch from "lib/cors-fetch";
 import NameSearchBar from "./NameSearchBar";
 afterEach(cleanup);
 
-const { fromMock, selectMock, ilikeMock, limitMock } = vi.hoisted(() => {
+const { fromMock, selectMock, ilikeMock, orMock, limitMock } = vi.hoisted(() => {
   const limitMock = vi.fn();
-  const ilikeMock = vi.fn(() => ({
+  const orMock = vi.fn(() => ({
     limit: limitMock
+  }));
+  const ilikeMock = vi.fn(() => ({
+    or: orMock
   }));
   const selectMock = vi.fn(() => ({
     ilike: ilikeMock
@@ -29,6 +32,7 @@ const { fromMock, selectMock, ilikeMock, limitMock } = vi.hoisted(() => {
     fromMock,
     selectMock,
     ilikeMock,
+    orMock,
     limitMock
   };
 });
@@ -62,6 +66,7 @@ describe("NameSearchBar", () => {
     fromMock.mockClear();
     selectMock.mockClear();
     ilikeMock.mockClear();
+    orMock.mockClear();
     limitMock.mockReset();
     Element.prototype.scrollIntoView = vi.fn();
   });
@@ -109,6 +114,8 @@ describe("NameSearchBar", () => {
     });
 
     expect(screen.queryByText("Jack Hughes")).toBeNull();
+    // Goalies are excluded at the source (A-05); unknown positions stay searchable.
+    expect(orMock).toHaveBeenCalledWith("position.is.null,position.neq.G");
   });
 
   it("selects immediately without an image request or database update", async () => {

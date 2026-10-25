@@ -70,6 +70,10 @@ const originalCronSecret = process.env.CRON_SECRET;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // makeJob() fixtures expire at 2026-10-25T09:00Z; pin the fixture clock
+  // (as tick.test.ts and store.test.ts do) so the routes never see real time.
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-22T10:00:00.000Z"));
   vi.stubEnv("NODE_ENV", "production");
   process.env.CRON_SECRET = "configured-test-secret";
   mocks.memory = createMemoryRouteRunnerStore();
@@ -79,6 +83,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllEnvs();
   if (originalCronSecret === undefined) delete process.env.CRON_SECRET;
   else process.env.CRON_SECRET = originalCronSecret;

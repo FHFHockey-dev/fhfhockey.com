@@ -193,15 +193,22 @@ describe("cumulative team special teams", () => {
   it("uses ratio of summed counts, not mean game percentages, and deduplicates games", () => {
     const other = { ...game, game_id: 2, date: "2026-01-02", pp_opportunities: 9, power_play_goals_for: 0, times_shorthanded: 9, pp_goals_against: 2 };
     expect(aggregateTeamSpecialTeams([game, other, game])).toEqual([
-      { team_id: 1, date: "2026-01-02", power_play_pct: 10, penalty_kill_pct: 80 }
+      { team_id: 1, date: "2026-01-02", power_play_pct: 10, penalty_kill_pct: 80, coveredGames: 2, expectedGames: 2 }
     ]);
   });
   it("does not use partial or zero-opportunity data as a percentage", () => {
-    expect(aggregateTeamSpecialTeams([{ ...game, pp_opportunities: null }])[0].power_play_pct).toBeNull();
+    // An unusable row is a missing game, so a one-game sample with it is below coverage and omitted.
+    expect(aggregateTeamSpecialTeams([{ ...game, pp_opportunities: null }])).toEqual([]);
     expect(aggregateTeamSpecialTeams([{ ...game, pp_opportunities: 0, power_play_goals_for: 0 }])[0].power_play_pct).toBeNull();
   });
   it("rejects conflicting observations for a game", () => {
     expect(() => aggregateTeamSpecialTeams([game, { ...game, power_play_goals_for: 0 }])).toThrow("Conflicting");
+  });
+  it("keeps a season whose game had more PP goals than opportunities (a major penalty)", () => {
+    const major = { ...game, game_id: 2, date: "2026-01-02", pp_opportunities: 1, power_play_goals_for: 2, times_shorthanded: 1, pp_goals_against: 2 };
+    expect(aggregateTeamSpecialTeams([game, major])).toEqual([
+      { team_id: 1, date: "2026-01-02", power_play_pct: 150, penalty_kill_pct: 0, coveredGames: 2, expectedGames: 2 }
+    ]);
   });
 });
 
@@ -210,7 +217,7 @@ describe("cumulative five-on-five coverage", () => {
   const expected = new Map([["T0", new Map([["2026-01-01", 1], ["2026-01-02", 1]])]]);
   it("sums daily totals over unique expected dates", () => {
     expect(aggregateTeamFiveOnFive([game, game, { ...game, date: "2026-01-02", xgf: 4 }], expected))
-      .toEqual([{ team_abbreviation: "T0", date: "2026-01-02", gp: 2, xgf: 6, xga: 2, gf: 6 }]);
+      .toEqual([{ team_abbreviation: "T0", date: "2026-01-02", gp: 2, xgf: 6, xga: 2, gf: 6, coveredGames: 2, expectedGames: 2 }]);
   });
   it("rejects incomplete calendar coverage and partial metric data", () => {
     expect(aggregateTeamFiveOnFive([game], expected)).toEqual([]);
@@ -218,5 +225,48 @@ describe("cumulative five-on-five coverage", () => {
   });
   it("rejects cumulative rows masquerading as daily observations", () => {
     expect(aggregateTeamFiveOnFive([game, { ...game, date: "2026-01-02", gp: 2 }], expected)).toEqual([]);
+  });
+});
+
+// TJ 2026-10-25: ≥90% of games before the cutoff is shown with an "N of M games" label; below stays incomplete.
+describe("team-driver coverage threshold", () => {
+  const dates = Array.from({ length: 10 }, (_, index) => `2026-01-${String(index + 1).padStart(2, "0")}`);
+  const expected = new Map([["T0", new Map(dates.map(date => [date, 1]))]]);
+  const day = (date: string) => ({ team_abbreviation: "T0", date, gp: 1, xgf: 2, xga: 1, gf: 1 });
+  const stGame = (game_id: number) => ({ team_id: 1, game_id, date: dates[game_id - 1], pp_opportunities: 2, power_play_goals_for: 1, times_shorthanded: 2, pp_goals_against: 1 });
+
+  it("keeps 9 of 10 games and computes rates over the covered games only", () => {
+    expect(aggregateTeamFiveOnFive(dates.slice(0, 9).map(day), expected)).toEqual([
+      { team_abbreviation: "T0", date: "2026-01-09", gp: 9, xgf: 18, xga: 9, gf: 9, coveredGames: 9, expectedGames: 10 }
+    ]);
+  });
+
+  it("treats an unusable row as a missing game, not a zero", () => {
+    const rows = dates.map((date, index) => index === 4 ? { ...day(date), gf: null, xgf: 999 } : day(date));
+    expect(aggregateTeamFiveOnFive(rows, expected)).toEqual([
+      { team_abbreviation: "T0", date: "2026-01-10", gp: 9, xgf: 18, xga: 9, gf: 9, coveredGames: 9, expectedGames: 10 }
+    ]);
+  });
+
+  it("keeps 8 of 10 games incomplete", () => {
+    expect(aggregateTeamFiveOnFive(dates.slice(0, 8).map(day), expected)).toEqual([]);
+    expect(aggregateTeamSpecialTeams([1, 2, 3, 4, 5, 6, 7, 8].map(stGame), new Map([[1, 10]]))).toEqual([]);
+  });
+
+  it("applies the same rule to special teams against the expected game count", () => {
+    expect(aggregateTeamSpecialTeams([1, 2, 3, 4, 5, 6, 7, 8, 9].map(stGame), new Map([[1, 10]]))).toEqual([
+      { team_id: 1, date: "2026-01-09", power_play_pct: 50, penalty_kill_pct: 50, coveredGames: 9, expectedGames: 10 }
+    ]);
+  });
+
+  it("reports partial coverage for the selected team only when it is below 100%", () => {
+    const partial = buildTeamPerformanceDrivers({
+      teamAbbreviation: "T0", teamId: 1,
+      fiveOnFiveRows: fiveOnFiveRows.map((row, index) => index === 0 ? { ...row, gp: 9, coveredGames: 9, expectedGames: 10 } : row),
+      specialTeamsRows: specialTeamsRows.map((row, index) => index === 0 ? { ...row, coveredGames: 10, expectedGames: 10 } : row)
+    });
+    expect(partial?.fiveOnFiveCoverage).toEqual({ coveredGames: 9, expectedGames: 10 });
+    expect(partial?.specialTeamsCoverage).toBeNull();
+    expect(buildTeamPerformanceDrivers({ teamAbbreviation: "T0", teamId: 1, fiveOnFiveRows, specialTeamsRows })?.fiveOnFiveCoverage).toBeNull();
   });
 });

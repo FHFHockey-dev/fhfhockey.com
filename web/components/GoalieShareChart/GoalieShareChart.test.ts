@@ -1,8 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-
-vi.mock("react-chartjs-2", () => ({ Doughnut: () => null }));
-
-import { buildGoalieShareByTeam, type GoalieGameRow } from "./index";
+import { describe, expect, it } from "vitest";
+import { buildGoalieShareByTeam, type GoalieGameRow } from "../../lib/goalieWorkload";
 
 function row(overrides: Partial<GoalieGameRow>): GoalieGameRow {
   return {
@@ -70,5 +67,95 @@ describe("buildGoalieShareByTeam", () => {
     const stats = buildGoalieShareByTeam(rows, "Season");
     expect(stats.PHI.goalies[0].gamesPlayed).toBe(1);
     expect(stats.BOS.goalies[0].gamesPlayed).toBe(1);
+  });
+
+  it("counts one team game and two appearances when a goalie relieves", () => {
+    const stats = buildGoalieShareByTeam([row({}), row({ playerId: 2 })], "L10").PHI;
+    expect(stats.totalGames).toBe(1);
+    expect(stats.totalAppearances).toBe(2);
+    expect(stats.goalies.map(goalie => goalie.gamesPlayed / stats.totalAppearances)).toEqual([0.5, 0.5]);
+  });
+
+  it("windows by distinct team games even when one game has relief", () => {
+    const stats = buildGoalieShareByTeam([...phiGames, row({ ...phiGames[11], playerId: 3 })], "L10").PHI;
+    expect(stats.totalGames).toBe(10);
+    expect(stats.totalAppearances).toBe(11);
+  });
+
+  it("preserves missing exposure and distinguishes undefined rates from measured zero", () => {
+    const missing = buildGoalieShareByTeam([row({ timeOnIce: null }), row({ gameId: 2, saves: null })], "Season").PHI.goalies[0];
+    expect(missing.timeOnIce).toBeNull();
+    expect(missing.goalsAgainstAverage).toBeNull();
+    expect(missing.savePct).toBeNull();
+    const noSaves = buildGoalieShareByTeam([row({ saves: 0, goalsAgainst: 30 })], "Season").PHI.goalies[0];
+    expect(noSaves.savePct).toBe(0);
+    const noGoals = buildGoalieShareByTeam([row({ saves: 30, goalsAgainst: 0 })], "Season").PHI.goalies[0];
+    expect(noGoals.goalsAgainstAverage).toBe(0);
+    const noExposure = buildGoalieShareByTeam([row({ shotsAgainst: 0, saves: 0, timeOnIce: 0 })], "Season").PHI.goalies[0];
+    expect(noExposure.savePct).toBeNull();
+    expect(noExposure.goalsAgainstAverage).toBeNull();
+  });
+
+  it("counts official starts per team game and keeps relief as a measured zero", () => {
+    const stats = buildGoalieShareByTeam([
+      row({ gameId: 1, gamesStarted: 1 }),
+      row({ gameId: 1, playerId: 2, goalieFullName: "Backup Two", gamesStarted: 0 }),
+      row({ gameId: 2, gamesStarted: 1 })
+    ], "Season").PHI;
+    expect(stats.totalGames).toBe(2);
+    expect(stats.totalAppearances).toBe(3);
+    expect(stats.goalies.map(goalie => [goalie.goalieFullName, goalie.gamesPlayed, goalie.gamesStarted])).toEqual([
+      ["Starter One", 2, 2],
+      ["Backup Two", 1, 0]
+    ]);
+  });
+
+  it("counts starts only inside the selected team-game window", () => {
+    const labeled: GoalieGameRow[] = phiGames.map(game => ({ ...game, gamesStarted: 1 }));
+    labeled[0] = { ...labeled[0], gamesStarted: null }; // outside L10
+    expect(buildGoalieShareByTeam(labeled, "L10").PHI.goalies.map(goalie => goalie.gamesStarted)).toEqual([6, 4]);
+    expect(buildGoalieShareByTeam(labeled, "Season").PHI.goalies.map(goalie => goalie.gamesStarted)).toEqual([null, null]);
+  });
+
+  it("keeps a traded goalie's starts with each club", () => {
+    const stats = buildGoalieShareByTeam([
+      row({ gameId: 1, teamAbbrev: "PHI", playerId: 7, gamesStarted: 1 }),
+      row({ gameId: 2, teamAbbrev: "BOS", playerId: 7, gamesStarted: 0 }),
+      row({ gameId: 2, teamAbbrev: "BOS", playerId: 8, gamesStarted: 1 })
+    ], "Season");
+    expect(stats.PHI.goalies[0].gamesStarted).toBe(1);
+    expect(stats.BOS.goalies.find(goalie => goalie.playerId === 7)?.gamesStarted).toBe(0);
+    expect(stats.BOS.goalies.find(goalie => goalie.playerId === 8)?.gamesStarted).toBe(1);
+  });
+
+  it.each([
+    ["a missing label", [{ gamesStarted: 1 }, { gamesStarted: undefined }]],
+    ["a null label", [{ gamesStarted: 1 }, { gamesStarted: null }]],
+    ["a non-binary label", [{ gamesStarted: 1 }, { gamesStarted: 2 }]],
+    ["a fractional label", [{ gamesStarted: 1 }, { gamesStarted: 0.5 }]],
+    ["two starters in one game", [{ gamesStarted: 1 }, { gamesStarted: 1 }]],
+    ["no starter in one game", [{ gamesStarted: 0 }, { gamesStarted: 0 }]]
+  ] as const)("withholds every goalie's starts for %s", (_, labels) => {
+    const stats = buildGoalieShareByTeam([
+      row({ gameId: 1, gamesStarted: 1 }),
+      ...labels.map((label, index) => row({ gameId: 2, playerId: index + 1, ...label }))
+    ], "Season").PHI;
+    expect(stats.goalies.map(goalie => goalie.gamesStarted)).toEqual([null, null]);
+    expect(stats.goalies.map(goalie => goalie.gamesPlayed)).toEqual([2, 1]);
+  });
+
+  it("counts each per-game row as one appearance when gamesPlayed is missing or malformed", () => {
+    const stats = buildGoalieShareByTeam([
+      row({ gameId: 1, gamesPlayed: null as unknown as number }),
+      row({ gameId: 2 }),
+      row({ gameId: 3, gamesPlayed: 3 }),
+      row({ gameId: 3, playerId: 2, goalieFullName: "Backup Two", gamesPlayed: 0 })
+    ], "Season").PHI;
+    expect(stats.totalGames).toBe(3);
+    expect(stats.goalies.map(goalie => [goalie.goalieFullName, goalie.gamesPlayed])).toEqual([
+      ["Starter One", 3],
+      ["Backup Two", 0]
+    ]);
+    expect(stats.totalAppearances).toBe(3);
   });
 });

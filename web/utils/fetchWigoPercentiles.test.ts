@@ -101,7 +101,8 @@ vi.mock("lib/supabase", () => ({
 
 import {
   fetchAllPlayerStatsForStrength,
-  fetchPercentileCohortForPlayer
+  fetchPercentileCohortForPlayer,
+  sanitizePercentileCohortGp
 } from "./fetchWigoPercentiles";
 
 describe("fetchWigoPercentiles", () => {
@@ -220,6 +221,47 @@ describe("fetchWigoPercentiles", () => {
       })
     );
   });
+  it("treats NST GP above the canonical WGO GP as invalid", () => {
+    const rows = [
+      { player_id: 1, gp: 102, toi: 9000 },
+      { player_id: 2, gp: 95, toi: 8000 },
+      { player_id: 3, gp: 60, toi: 7000 },
+      { player_id: 4, gp: null, toi: 10 }
+    ] as any;
+    expect(
+      sanitizePercentileCohortGp(rows, { playerId: 1, canonicalPlayerGp: 70, canonicalSeasonMaxGp: 82 }).map((row) => row.gp)
+    ).toEqual([70, null, 60, null]);
+    // Without canonical coverage nothing can be judged, so rows pass through untouched.
+    expect(
+      sanitizePercentileCohortGp(rows, { playerId: 1, canonicalPlayerGp: null, canonicalSeasonMaxGp: 0 }).map((row) => row.gp)
+    ).toEqual([102, 95, 60, null]);
+  });
+
+  it("detects a stale cohort even when one contaminated row reports an impossible GP", async () => {
+    const current = [
+      { player_id: 7, season: 20252026, gp: 102, toi_seconds: 5000, goals_per_60: 1 },
+      { player_id: 8476453, season: 20252026, gp: 8, toi_seconds: 3000, goals_per_60: 2 },
+      { player_id: 9, season: 20252026, gp: 5, toi_seconds: 2000, goals_per_60: 0.5 }
+    ];
+    const previous = [{ player_id: 8476453, season: 20242025, gp: 78, toi_seconds: 7000, goals_per_60: 1.9 }];
+    offenseRangeMock
+      .mockResolvedValueOnce({ data: current, error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: previous, error: null } satisfies QueryResponse);
+    defenseRangeMock
+      .mockResolvedValueOnce({ data: [], error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: [], error: null } satisfies QueryResponse);
+    totalsMaybeSingleMock
+      .mockResolvedValueOnce({ data: { games_played: 8 }, error: null } satisfies QueryResponse)
+      .mockResolvedValueOnce({ data: { games_played: 30 }, error: null } satisfies QueryResponse);
+
+    // Player GP 8 matches WGO, so only the cohort rule (max NST GP vs WGO max 30) can flag staleness.
+    const result = await fetchPercentileCohortForPlayer("es", 20252026, 8476453);
+
+    // Before the fix the 102 inflated the cohort maximum and the incomplete season passed as complete.
+    expect(result.appliedSeasonId).toBe(20242025);
+    expect(result.fallbackReason).toContain("Showing 20242025 player values");
+  });
+
   it("propagates source failures instead of interpreting them as an incomplete season", async () => {
     const error = { message: "source unavailable" };
     offenseRangeMock.mockResolvedValue({ data: null, error });

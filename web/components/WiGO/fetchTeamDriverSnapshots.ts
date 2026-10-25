@@ -14,11 +14,19 @@ export async function fetchTeamDriverSnapshots(seasonId: number) {
   const start = dates[0];
   const today = new Date().toISOString().slice(0, 10);
   const end = dates[dates.length - 1] < today ? dates[dates.length - 1] : today;
-  const latest = await supabase.from("nst_team_5v5").select("date")
-    .gte("date", start).lte("date", end).order("date", { ascending: false }).limit(1).maybeSingle();
+  // Both sources must have reached the cutoff: a one-night lag in either writer would otherwise
+  // make every team that played that night look incomplete and blank the cards league-wide.
+  const [latest, latestTeamGame] = await Promise.all([
+    supabase.from("nst_team_5v5").select("date")
+      .gte("date", start).lte("date", end).order("date", { ascending: false }).limit(1).maybeSingle(),
+    supabase.from("wgo_team_stats").select("date")
+      .eq("season_id", seasonId).gte("date", start).lte("date", end)
+      .order("date", { ascending: false }).limit(1).maybeSingle()
+  ]);
   if (latest.error) throw latest.error;
-  if (!latest.data) return { fiveOnFiveRows: [], specialTeamsRows: [] };
-  const cutoff = latest.data.date;
+  if (latestTeamGame.error) throw latestTeamGame.error;
+  if (!latest.data || !latestTeamGame.data) return { fiveOnFiveRows: [], specialTeamsRows: [] };
+  const cutoff = latest.data.date < latestTeamGame.data.date ? latest.data.date : latestTeamGame.data.date;
   const [fiveOnFiveDailyRows, teamGames] = await Promise.all([
     fetchAllSupabasePages(({ from, to }) => supabase.from("nst_team_5v5")
       .select("team_abbreviation,date,gp,xgf,xga,gf")
@@ -46,16 +54,11 @@ export async function fetchTeamDriverSnapshots(seasonId: number) {
   }
   const regularRows = teamGames.filter(row => row.team_id != null && row.game_id != null &&
     expected.get(row.team_id)?.has(row.game_id)) as TeamSpecialTeamsGame[];
-  const observed = new Map<number, Set<number>>();
-  for (const row of regularRows) {
-    const ids = observed.get(row.team_id) ?? new Set<number>();
-    ids.add(row.game_id);
-    observed.set(row.team_id, ids);
-  }
-  // Partial seasons must not masquerade as complete team percentages.
-  const completeRows = regularRows.filter(row => observed.get(row.team_id)?.size === expected.get(row.team_id)?.size);
+  // Partial seasons below the coverage threshold stay incomplete; above it the snapshot carries
+  // covered/expected games so the card can say so.
+  const expectedGameCounts = new Map([...expected.entries()].map(([team, ids]) => [team, ids.size]));
   return {
     fiveOnFiveRows: aggregateTeamFiveOnFive(fiveOnFiveDailyRows, expectedDates),
-    specialTeamsRows: aggregateTeamSpecialTeams(completeRows)
+    specialTeamsRows: aggregateTeamSpecialTeams(regularRows, expectedGameCounts)
   };
 }

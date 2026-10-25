@@ -59,7 +59,7 @@ export function fictionalPlayerSources(season: number, observedOn: string, stats
   const random = () => ((state = Math.imul(state ^ (state >>> 15), 2246822519) + 0x7f4a7c15 >>> 0) / 4294967296);
   const yahooSeason = Math.floor(season / 10000), round = (value: number, places = 2) => Math.round(value * 10 ** places) / 10 ** places;
   const yahoo: PickupOwnershipRow[] = [], map: { yahoo_player_id: string | null; nhl_player_id: string | null }[] = [];
-  const skaters: { player_id: number; player_name: string | null; season: string; games_played: number | null; points_per_game: number | null; shots: number | null; hits: number | null; blocked_shots: number | null; current_team_abbreviation: string | null; updated_at: string | null }[] = [];
+  const skaters: { player_id: number; player_name: string | null; season: string; games_played: number | null; points_per_game: number | null; goals: number | null; shots: number | null; hits: number | null; blocked_shots: number | null; current_team_abbreviation: string | null; updated_at: string | null }[] = [];
   const goalies: { goalie_id: number; goalie_name: string | null; season_id: number; games_played: number | null; games_started: number | null; quality_starts_pct: number | null; save_pct: number | null; current_team_abbreviation: string | null; updated_at: string | null }[] = [];
   [...activeTeamAbbreviations].forEach((abbrev, teamIndex) => {
     const team = String(abbrev);
@@ -84,10 +84,11 @@ export function fictionalPlayerSources(season: number, observedOn: string, stats
           quality_starts_pct: round(0.3 + random() * 0.4, 3), save_pct: round(0.88 + random() * 0.045, 3), current_team_abbreviation: team, updated_at: statsUpdatedAt });
       } else {
         const defense = positions[0] === "D", games = 6 + Math.floor(random() * 6);
-        skaters.push({ player_id: nhlId, player_name: name, season: String(season), games_played: games,
-          points_per_game: round((defense ? 0.15 : 0.25) + random() * (defense ? 0.6 : 0.9)), shots: Math.round(games * (1 + random() * 3)),
-          hits: Math.round(games * (0.3 + random() * (defense ? 2.5 : 3.2))), blocked_shots: Math.round(games * (defense ? 0.8 + random() * 2.2 : 0.1 + random() * 0.8)),
-          current_team_abbreviation: team, updated_at: statsUpdatedAt });
+        // Same random() order as before ticket 22; goals derive from points without drawing (fixture values stay put).
+        const ppg = round((defense ? 0.15 : 0.25) + random() * (defense ? 0.6 : 0.9)), shots = Math.round(games * (1 + random() * 3));
+        const hits = Math.round(games * (0.3 + random() * (defense ? 2.5 : 3.2))), blocked = Math.round(games * (defense ? 0.8 + random() * 2.2 : 0.1 + random() * 0.8));
+        skaters.push({ player_id: nhlId, player_name: name, season: String(season), games_played: games, points_per_game: ppg, goals: Math.round(games * ppg * (defense ? 0.25 : 0.45)), shots,
+          hits, blocked_shots: blocked, current_team_abbreviation: team, updated_at: statsUpdatedAt });
       }
     });
   });
@@ -109,10 +110,19 @@ export function fictionalPlayerRecent(players: { nhlId: number; group: "F" | "D"
         goalieGames.push({ goalie_id: player.nhlId, date: day(1 + game * 2), season_id: season, games_played: 1, wins: goals <= 2 ? 1 : 0, saves: shots - goals, shots_against: shots, goals_against: goals, quality_start: goals <= 2 ? 1 : 0, shutouts: goals === 0 ? 1 : 0 });
       }
     } else {
-      const goals = seed % 4, assists = (seed * 3) % 5;
-      rolling.push({ player_id: player.nhlId, season, game_date: day(1), strength_state: "all", season_games_played: 10, goals_total_last5: goals, assists_total_last5: assists, points_total_last5: goals + assists,
+      const goals = seed % 4, assists = (seed * 3) % 5, points = goals + assists;
+      // Six consecutive game rows (SS1-18 streaks): the L5 points spread over the five latest games, cumulative
+      // season points on each row, and fictional TOI / PP TOI totals around the season averages.
+      const perGame = [0, 0, 0, 0, 0];
+      for (let point = 0; point < points; point++) perGame[(seed + point * 2) % 5]++;
+      const toiL5 = player.group === "D" ? 1200 + seed * 4 : 900 + seed * 5, ppSeason = 40 + (seed % 5) * 30, ppL5 = Math.round(ppSeason * (0.5 + (seed % 8) * 0.17));
+      const cumulative = 20 + seed % 7, split = (total: number) => ({ goals_total_all: Math.floor(total / 2), assists_total_all: total - Math.floor(total / 2) });
+      for (let game = 5; game >= 1; game--) rolling.push({ player_id: player.nhlId, season, game_date: day(1 + game * 2), strength_state: "all", season_games_played: 10 - game,
+        ...split(cumulative - perGame.slice(0, game).reduce((sum, value) => sum + value, 0)) });
+      rolling.push({ player_id: player.nhlId, season, game_date: day(1), strength_state: "all", season_games_played: 10, goals_total_last5: goals, assists_total_last5: assists, points_total_last5: points,
+        ...split(cumulative), toi_seconds_total_last5: toiL5 * 5, pp_toi_seconds_total_last5: ppL5 * 5, pp_toi_seconds_avg_season: ppSeason,
         shots_total_last5: 6 + (seed % 12), hits_avg_last5: Math.round((0.4 + (seed % 9) * 0.45) * 10) / 10, blocks_avg_last5: Math.round((0.2 + (seed % 7) * 0.35) * 10) / 10,
-        toi_seconds_avg_last5: player.group === "D" ? 1200 + seed * 4 : 900 + seed * 5, pp_points_total_last5: seed % 3,
+        toi_seconds_avg_last5: toiL5, pp_points_total_last5: seed % 3,
         // Fictional deployment (ticket 15): line or pair, PP unit (some none), season TOI near the L5 value.
         toi_seconds_avg_season: player.group === "D" ? 1180 + ((seed * 7) % 160) : 880 + ((seed * 11) % 260), line_combo_group: player.group === "D" ? "defense" : "forward",
         line_combo_slot: 1 + (seed % (player.group === "D" ? 3 : 4)), pp_unit: seed % 5 === 0 ? null : 1 + (seed % 2) });

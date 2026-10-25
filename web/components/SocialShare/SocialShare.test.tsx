@@ -1,5 +1,5 @@
 import { StrictMode } from "react";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import SocialShare, { roleChipList } from "./SocialShare";
 import { TUESDAY_NOT_CONNECTED, buildBlockedSnapshot, buildScheduleSnapshot, calendarWeekStart, selectScheduleDates, weekDates } from "lib/socialShare/schedule";
@@ -69,7 +69,7 @@ describe("SocialShare edition loading", () => {
     expect(options).toMatchObject({ shallow: true, scroll: false });
   });
 
-  it.each(["2026-13-01", "2026-00-10", "2026-10-32", "2026-02-30", "2026-1-05", "not-a-date", "0000-01-03", "0001-01-01", "0099-01-05", "0999-01-07"])("falls back to the default week for an impossible ?week=%s instead of crashing (C7 SS1-15-F1)", async week => {
+  it.each(["2026-13-01", "2026-00-10", "2026-10-32", "2026-02-30", "2026-1-05", "not-a-date", "0000-01-03", "0001-01-01", "0099-01-05", "0999-01-07", "0999-12-31"])("falls back to the default week for an impossible ?week=%s instead of crashing (C7 SS1-15-F1)", async week => {
     router.query = { format: "tuesday-trends", week, dates: "2026-02-30,2026-10-99", card: "bogus" };
     expect(() => render(<SocialShare format="tuesday-trends" asOf="2026-10-24T19:00:00Z" />)).not.toThrow();
     await waitFor(() => expect(fetchMock).toHaveBeenCalled());
@@ -90,6 +90,38 @@ describe("SocialShare edition loading", () => {
     expect(String(apiCalls[0][0])).toBe(`/api/v1/social-share/tuesday-trends?weekStart=${monday}&selectedDates=${selected}`);
     expect((screen.getByLabelText(/^Week of/) as HTMLInputElement).value).toBe(monday);
     expect((screen.getByRole("combobox", { name: /^Graphic/ }) as HTMLSelectElement).value).toBe("rates");
+  });
+});
+
+describe("week input (REL-SS1-LOW-YEAR-R1)", () => {
+  const fetchMock = vi.fn();
+  beforeEach(() => {
+    fetchMock.mockReset();
+    fetchMock.mockImplementation(async (url: string) => {
+      const query = new URL(url, "http://localhost").searchParams;
+      const body = buildBlockedSnapshot({ format: "tuesday-trends", weekStart: query.get("weekStart")!, generatedAt: "2026-10-24T19:00:00Z", ...TUESDAY_NOT_CONNECTED });
+      return { ok: true, status: 200, json: async () => body } as unknown as Response;
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+    Object.defineProperty(document, "fonts", { configurable: true, value: { load: async () => [], check: () => false } });
+    router.query = { format: "tuesday-trends" }; router.replace = vi.fn(async () => true);
+  });
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+
+  it("ignores a typed year 0000–0999 (keeps the current week, no request), and still accepts the year-1000 boundary", async () => {
+    render(<SocialShare format="tuesday-trends" asOf="2026-10-24T19:00:00Z" />);
+    const input = screen.getByLabelText(/^Week of/) as HTMLInputElement;
+    await waitFor(() => expect(input.disabled).toBe(false));
+    const calls = () => fetchMock.mock.calls.filter(([url]) => String(url).startsWith("/api/v1/social-share/")).length, before = calls();
+    for (const low of ["0000-01-03", "0999-12-31", "0099-02-30"]) {
+      expect(() => fireEvent.change(input, { target: { value: low } })).not.toThrow();
+      expect(input.value).toBe("2026-10-19");
+    }
+    expect(calls()).toBe(before);
+    fireEvent.change(input, { target: { value: "1000-01-07" } });
+    await waitFor(() => expect(input.value).toBe("1000-01-06"));
+    expect(calls()).toBe(before + 1);
   });
 });
 

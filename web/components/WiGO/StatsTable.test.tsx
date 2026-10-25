@@ -67,9 +67,9 @@ describe("StatsTable", () => {
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { within } from "@testing-library/react";
-import WigoComparisonMatrix, { COMPARISON_PERIODS } from "./WigoComparisonMatrix";
+import WigoComparisonMatrix, { COMPARISON_PERIODS, MATRIX_HALVES } from "./WigoComparisonMatrix";
 import { WIGO_STAT_ORDER } from "./statMetadata";
-import { formatCell, computeDiffColumn } from "./tableUtils";
+import { formatCell, computeDiffColumn, formatDiffPercent } from "./tableUtils";
 
 function createLogQueryWrapper() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -156,8 +156,8 @@ describe("standard table log request identity", () => {
   });
 });
 
-describe("horizontal comparison matrix", () => {
-  it("preserves all 252 values and 36 differences in canonical order and selects one reserved chart", async () => {
+describe("transposed comparison matrix", () => {
+  it("preserves all 252 values and 36 differences across two halves and selects one reserved chart", async () => {
     mockFetchPlayerGameLogForStat.mockReset().mockResolvedValue([]);
     const onCompare = vi.fn();
     const data = computeDiffColumn(WIGO_STAT_ORDER.map((label, metric) => ({
@@ -168,18 +168,34 @@ describe("horizontal comparison matrix", () => {
       data={data} isLoadingAggData={false} aggDataError={null} playerId={1} currentSeasonId={20252026}
       leftTimeframe="STD" rightTimeframe="CA" onCompare={onCompare}
     /></QueryClientProvider>);
-    const table = screen.getByRole("table");
-    expect(within(table).getAllByRole("columnheader")).toHaveLength(37);
-    expect(within(table).getAllByRole("columnheader").slice(1).map(cell => cell.textContent)).toEqual([...WIGO_STAT_ORDER]);
-    const rows = within(table).getAllByRole("row").slice(1);
-    expect(rows).toHaveLength(8);
-    COMPARISON_PERIODS.forEach((period, index) => {
-      const cells = within(rows[index]).getAllByRole("cell");
-      expect(cells).toHaveLength(36);
-      expect(cells.map(cell => cell.textContent)).toEqual(data.map(row => formatCell(row, period)));
+    const tables = screen.getAllByRole("table");
+    expect(tables).toHaveLength(2);
+    expect(tables.flatMap(table => within(table).getAllByRole("rowheader").map(cell => cell.textContent)))
+      .toEqual(MATRIX_HALVES.flatMap(half => half.labels));
+    expect([...MATRIX_HALVES.flatMap(half => half.labels)].sort()).toEqual([...WIGO_STAT_ORDER].sort());
+    tables.forEach((table, half) => {
+      expect(within(table).getAllByRole("columnheader").map(cell => cell.textContent))
+        .toEqual([MATRIX_HALVES[half].short, "STDL", "LY", "CAR", "3YA", "L5", "L10", "L20", "DIFF"]);
+      const rows = within(table).getAllByRole("row").slice(1);
+      expect(rows).toHaveLength(18);
+      rows.forEach((row, index) => {
+        const source = data.find(entry => entry.label === MATRIX_HALVES[half].labels[index])!;
+        const cells = within(row).getAllByRole("cell").map(cell => cell.textContent);
+        expect(cells).toEqual([...COMPARISON_PERIODS.map(period => formatCell(source, period)), formatDiffPercent(source.DIFF)]);
+      });
     });
-    expect(within(rows[7]).getAllByRole("cell")).toHaveLength(36);
-    expect(within(table).queryByRole("button", { name: "Show GP game log" })).toBeNull();
+    // A zero difference is neither an increase nor a decrease (B-21); other finite DIFFs carry their sign.
+    tables.forEach((table, half) => within(table).getAllByRole("row").slice(1).forEach((row, index) => {
+      const diff = data.find(entry => entry.label === MATRIX_HALVES[half].labels[index])!.DIFF;
+      const sign = within(row).getAllByRole("cell").at(-1)!.getAttribute("data-diff-sign");
+      expect(sign).toBe(typeof diff === "number" && Number.isFinite(diff) && diff !== 0 ? (diff < 0 ? "negative" : "positive") : null);
+    }));
+    // Both selectors list periods in the matrix's column order (B-22).
+    for (const name of ["Select left timeframe for comparison", "Select right timeframe for comparison"]) {
+      expect(Array.from((screen.getByLabelText(name) as HTMLSelectElement).options).map(option => option.value))
+        .toEqual([...COMPARISON_PERIODS]);
+    }
+    expect(screen.queryByRole("button", { name: "Show GP game log" })).toBeNull();
     expect(screen.getByRole("button", { name: "Show SOG/60 game log" }).getAttribute("aria-pressed")).toBe("true");
     await waitFor(() => expect(mockFetchPlayerGameLogForStat).toHaveBeenCalledWith(1, 20252026, "SOG/60"));
     fireEvent.change(screen.getByLabelText("Select right timeframe for comparison"), { target: { value: "STD" } });
@@ -187,7 +203,26 @@ describe("horizontal comparison matrix", () => {
     fireEvent.click(screen.getByRole("button", { name: "Show Goals game log" }));
     await waitFor(() => expect(mockFetchPlayerGameLogForStat).toHaveBeenCalledWith(1, 20252026, "Goals"));
     expect(container.querySelectorAll("#wigo-selected-stat")).toHaveLength(1);
-    expect(within(table).getAllByRole("row")).toHaveLength(9);
     expect(screen.getAllByRole("button", { name: /^Toggle .* reference$/ })).toHaveLength(7);
   });
+
+  it("leaves a zero difference uncoloured while signed differences keep their colour", () => {
+    mockFetchPlayerGameLogForStat.mockReset().mockResolvedValue([]);
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const data = [
+      { label: "Goals", STD: 10, CA: 10, DIFF: 0 },
+      { label: "Assists", STD: 12, CA: 10, DIFF: 20 },
+      { label: "Points", STD: 8, CA: 10, DIFF: -20 }
+    ];
+    render(<QueryClientProvider client={client}><WigoComparisonMatrix
+      data={data as any} isLoadingAggData={false} aggDataError={null} playerId={1} currentSeasonId={20252026}
+      leftTimeframe="STD" rightTimeframe="CA" onCompare={vi.fn()}
+    /></QueryClientProvider>);
+    const diffCell = (label: string) => within(screen.getByRole("rowheader", { name: label }).closest("tr")!).getAllByRole("cell").at(-1)!;
+    expect(diffCell("Goals").getAttribute("data-diff-sign")).toBeNull();
+    expect(diffCell("Goals").textContent).toBe("0.0%");
+    expect(diffCell("Assists").getAttribute("data-diff-sign")).toBe("positive");
+    expect(diffCell("Points").getAttribute("data-diff-sign")).toBe("negative");
+  });
 });
+

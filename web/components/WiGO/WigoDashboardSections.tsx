@@ -11,6 +11,7 @@ import PlayerRatingsDisplay from "components/WiGO/PlayerRatingsDisplay";
 import NameSearchBar from "components/WiGO/NameSearchBar";
 import RateStatPercentiles from "components/WiGO/RateStatPercentiles";
 import WigoSectionCard from "./WigoSectionCard";
+import { WIGO_RATING_MIN_COHORT_PEERS } from "utils/calculateWigoRatings";
 import WigoComparisonMatrix from "./WigoComparisonMatrix";
 import StatsTable from "components/WiGO/StatsTable";
 import TimeframeComparison from "components/WiGO/TimeframeComparison";
@@ -126,7 +127,10 @@ function WigoPlayerIdentity({
         {selectedPlayer ? (
           <div className={styles.playerIdentityCopy}>
             <span className={styles.playerTeam}>{teamName}</span>
-            <h2 className={styles.playerName}>
+            <h2
+              className={styles.playerName}
+              data-name-length={selectedPlayer.fullName.length > 22 ? "long" : undefined}
+            >
               <span>{selectedPlayer.firstName}</span>
               {selectedPlayer.lastName}
             </h2>
@@ -256,7 +260,7 @@ export function WigoOverviewSection({
         />
       </div>
       <div className={styles.ratingsContainer} data-coverage="C07">
-        {desktop ? <WigoSectionCard title="Player ratings" toolbar={<details className="wigo-chart-help"><summary aria-label="Player rating methodology and cohort">ⓘ</summary><p>Weighted percentile composites, using the existing {currentSeasonId} cohorts and minimum {minGp} GP. Overall All/Even combines offense and defense. Special combines PP offense and PK defense with ice-time weighting. Adjust the rate panel’s minimum GP to change the cohort.</p></details>}>
+        {desktop ? <WigoSectionCard title="Player ratings" toolbar={<details className="wigo-chart-help"><summary aria-label="Player rating methodology and cohort">ⓘ</summary><p>Weighted percentile composites, using the existing {currentSeasonId} cohorts and minimum {minGp} GP. Overall All/Even combines offense and defense. Special combines PP offense and PK defense with ice-time weighting. Adjust the rate panel’s minimum GP to change the cohort. A stat needs at least {WIGO_RATING_MIN_COHORT_PEERS} other qualifying players; with fewer, its rating shows “-”.</p></details>}>
           <PlayerRatingsDisplay playerId={selectedPlayer?.id} seasonId={currentSeasonId} minGp={minGp} />
         </WigoSectionCard> : <>
         {selectedPlayer ? (

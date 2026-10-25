@@ -95,6 +95,14 @@ export function computeDiffColumn(
  * Assumes time values (ATOI, PPTOI) are consistently in average seconds per game.
  * Assumes percentage values (S%, PP%, etc.) are consistently scaled 0-100.
  */
+// Signed relative difference. Four-digit and larger magnitudes drop the decimal so the
+// one-page matrix's DIFF column never needs more than seven characters ("+3585%").
+export const formatDiffPercent = (diff: unknown): string => {
+  if (typeof diff !== "number" || !Number.isFinite(diff)) return "-";
+  const magnitude = Math.abs(diff) >= 1000 ? diff.toFixed(0) : diff.toFixed(1);
+  return `${diff > 0 ? "+" : ""}${magnitude}%`;
+};
+
 export const formatCell = (
   row: TableAggregateData,
   columnKey: keyof Omit<TableAggregateData, "label" | "GP" | "DIFF">

@@ -29,8 +29,10 @@ interface WigoBranding {
 export const getWigoPlayerDetailsQueryKey = (playerId: number | null) =>
   ["wigoPlayerDetails", playerId] as const;
 
-export const getWigoAggregatedStatsQueryKey = (playerId: number | null) =>
-  ["wigoPlayerAggregatedStats", playerId] as const;
+export const getWigoAggregatedStatsQueryKey = (
+  playerId: number | null,
+  seasonId: number | null = null
+) => ["wigoPlayerAggregatedStats", playerId, seasonId] as const;
 
 export const getPlayerIdFromQueryValue = (
   value: string | string[] | undefined
@@ -160,9 +162,10 @@ export default function useWigoPlayerDashboard(): UseWigoPlayerDashboardResult {
   });
 
   const aggregatedStatsQuery = useQuery<TableAggregateData[]>({
-    queryKey: getWigoAggregatedStatsQueryKey(selectedPlayerId),
-    queryFn: () => fetchPlayerAggregatedStats(selectedPlayerId as number),
-    enabled: typeof selectedPlayerId === "number"
+    queryKey: getWigoAggregatedStatsQueryKey(selectedPlayerId, currentSeasonId),
+    queryFn: () => fetchPlayerAggregatedStats(selectedPlayerId as number, currentSeasonId),
+    // Wait for the season so STD's totals fallback is season-checked and the read happens once.
+    enabled: typeof selectedPlayerId === "number" && currentSeasonId !== null
   });
 
   const updateUrlWith = useCallback(

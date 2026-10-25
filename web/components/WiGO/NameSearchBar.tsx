@@ -68,6 +68,8 @@ const NameSearchBar: React.FC<NameSearchBarProps> = ({
         .from("players")
         .select("*")
         .ilike("fullName", `%${debouncedSearchTerm}%`)
+        // WiGO is skater-only (its aggregates exclude goalies); keep players whose position is unknown.
+        .or("position.is.null,position.neq.G")
         .limit(10);
 
       if (error) {

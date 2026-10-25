@@ -9,10 +9,16 @@ import type { ShareGoalieGameRow, ShareGoalieRow, ShareMapRow, SharePlayerSource
  * Exceeding one fails closed.
  */
 export const PLAYER_SOURCE_LIMITS = { yahoo: 2000, mapChunk: 150, skaters: 1500, goalies: 200 } as const;
-/** Recent-form reads cover only the players a card shows; rows per player within the lookback window. */
-export const RECENT_LIMITS = { lookbackDays: 21, skaterRowsPerPlayer: 14, goalieRowsPerPlayer: 14 } as const;
+/**
+ * Recent-form reads cover only the ranking pool. Rows per player come from the true row grain (SS1-17): both
+ * sources hold at most one row per player per date (rolling_player_game_metrics primary key
+ * (player_id, game_date, strength_state), read for strength "all"; wgo_goalie_stats primary key (goalie_id, date)),
+ * so a lookback of N days can never return more than N + 1 rows per player.
+ */
+const RECENT_LOOKBACK_DAYS = 21;
+export const RECENT_LIMITS = { lookbackDays: RECENT_LOOKBACK_DAYS, skaterRowsPerPlayer: RECENT_LOOKBACK_DAYS + 1, goalieRowsPerPlayer: RECENT_LOOKBACK_DAYS + 1 } as const;
 const YAHOO_COLUMNS = "player_key,player_id,editorial_team_abbreviation,display_position,eligible_positions,percent_ownership,status,season,last_updated";
-const SKATER_COLUMNS = "player_id,player_name,season,games_played,points_per_game,shots,hits,blocked_shots,current_team_abbreviation,updated_at";
+const SKATER_COLUMNS = "player_id,player_name,season,games_played,points_per_game,goals,shots,hits,blocked_shots,current_team_abbreviation,updated_at";
 const GOALIE_COLUMNS = "goalie_id,goalie_name,season_id,games_played,games_started,quality_starts_pct,save_pct,current_team_abbreviation,updated_at";
 const NHL_TO_YAHOO = Object.fromEntries(Object.entries(PICKUP_YAHOO_TEAM_ALIASES).map(([yahoo, nhl]) => [nhl, yahoo]));
 
@@ -21,6 +27,9 @@ type CountedPage<T> = PromiseLike<{ data: T[] | null; error: unknown; count: num
 async function bounded<T>(what: string, limit: number, page: (from: number, to: number) => CountedPage<T>): Promise<T[]> {
   let expected: number | null = null;
   const rows = await fetchAllSupabasePages<T>(async ({ from, to }) => {
+    // A result that is an exact multiple of the page size would otherwise request a page past the end, which
+    // PostgREST answers with 416 (PGRST103) and the read would fail closed (SS1-20). The exact count is known.
+    if (expected != null && from >= expected) return { data: [], error: null };
     const { data, error, count } = await page(from, to);
     if (!error) {
       if (count == null || !Number.isFinite(count) || count < 0 || (expected != null && count !== expected)) throw new Error(`${what} completeness changed or is unavailable.`);
@@ -39,11 +48,13 @@ async function bounded<T>(what: string, limit: number, page: (from: number, to: 
  * ownership timelines; the existing yahoo_nhl_player_map_read view maps Yahoo ids to NHL ids.
  */
 /**
- * Last-five-games evidence for the shown players only: strength-all rolling rows (skaters) and per-game
- * WGO goalie rows (goalies) within the lookback window, each with an explicit, fail-closed limit.
+ * Last-five-games evidence for the ranking pool: strength-all rolling rows (skaters) and per-game WGO goalie
+ * rows (goalies) within the lookback window, each with an explicit, fail-closed limit. The two sources are
+ * isolated (SS1-17): a failed source comes back null on its own, so goalie trouble can never blank the
+ * skaters' recent form or the reverse. The failure reason is logged server-side (no ids or values).
  */
-export async function loadSharePlayerRecent(season: number, skaterIds: number[], goalieIds: number[], since: string): Promise<{ rolling: ShareRecentRollingRow[]; goalieGames: ShareGoalieGameRow[] }> {
-  const [rolling, goalieGames] = await Promise.all([
+export async function loadSharePlayerRecent(season: number, skaterIds: number[], goalieIds: number[], since: string): Promise<{ rolling: ShareRecentRollingRow[] | null; goalieGames: ShareGoalieGameRow[] | null }> {
+  const [rolling, goalieGames] = await Promise.allSettled([
     skaterIds.length ? bounded<ShareRecentRollingRow>("Skater recent games", skaterIds.length * RECENT_LIMITS.skaterRowsPerPlayer, (from, to) => publicSupabase.from("rolling_player_game_metrics")
       .select(RECENT_SKATER_COLUMNS, { count: "exact" }).eq("season", season).eq("strength_state", "all").in("player_id", skaterIds).gte("game_date", since)
       // Unique tiebreak after the date (C7 SS1-15-F2): OFFSET pages must not duplicate or skip rows.
@@ -52,9 +63,22 @@ export async function loadSharePlayerRecent(season: number, skaterIds: number[],
       .select(RECENT_GOALIE_COLUMNS, { count: "exact" }).eq("season_id", season).in("goalie_id", goalieIds).gte("date", since)
       .order("date", { ascending: false }).order("goalie_id", { ascending: true }).range(from, to) as unknown as CountedPage<ShareGoalieGameRow>) : Promise.resolve([]),
   ]);
-  return { rolling, goalieGames };
+  const settled = <T>(what: string, result: PromiseSettledResult<T[]>) => {
+    if (result.status === "fulfilled") return result.value;
+    console.warn(`[social-share] ${what} unavailable: ${failureReason(result.reason)}`);
+    return null;
+  };
+  return { rolling: settled("Skater recent games", rolling), goalieGames: settled("Goalie recent games", goalieGames) };
 }
-const RECENT_SKATER_COLUMNS = "player_id,season,game_date,strength_state,season_games_played,goals_total_last5,assists_total_last5,points_total_last5,shots_total_last5,hits_avg_last5,blocks_avg_last5,toi_seconds_avg_last5,pp_points_total_last5,toi_seconds_avg_season,line_combo_slot,line_combo_group,pp_unit";
+/** A loggable reason for a failed read: the message and PostgREST code only, never rows or ids. */
+function failureReason(reason: unknown) {
+  if (reason && typeof reason === "object") {
+    const { message, code } = reason as { message?: unknown; code?: unknown };
+    return [typeof code === "string" ? code : null, typeof message === "string" ? message.slice(0, 200) : null].filter(Boolean).join(" ") || "unknown error";
+  }
+  return String(reason).slice(0, 200);
+}
+const RECENT_SKATER_COLUMNS = "player_id,season,game_date,strength_state,season_games_played,goals_total_last5,assists_total_last5,points_total_last5,shots_total_last5,hits_avg_last5,blocks_avg_last5,toi_seconds_avg_last5,pp_points_total_last5,toi_seconds_avg_season,line_combo_slot,line_combo_group,pp_unit,goals_total_all,assists_total_all,toi_seconds_total_last5,pp_toi_seconds_total_last5,pp_toi_seconds_avg_season";
 const RECENT_GOALIE_COLUMNS = "goalie_id,date,season_id,games_played,wins,saves,shots_against,goals_against,quality_start,shutouts";
 
 export async function loadSharePlayerSources(season: number, teams: string[]): Promise<SharePlayerSources> {

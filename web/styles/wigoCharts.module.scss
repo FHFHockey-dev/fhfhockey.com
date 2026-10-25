@@ -139,41 +139,6 @@
 
 }
 
-@media (min-width: 769px) and (max-width: 1420px) {
-  .wigoDashboardContent {
-    grid-template-columns:
-      minmax(245px, 0.7fr)
-      minmax(600px, 1.65fr)
-      minmax(330px, 0.95fr);
-    grid-template-rows: auto minmax(760px, calc(100vh - 150px));
-    grid-template-areas:
-      "context context context"
-      "dossier comparison evidence";
-  }
-}
-
-@media (min-width: 769px) and (max-width: 1180px) {
-  .wigoDashboardContent {
-    grid-template-columns: minmax(260px, 0.72fr) minmax(660px, 1.65fr);
-    grid-template-rows: auto minmax(760px, calc(100vh - 150px)) auto;
-    grid-template-areas:
-      "context context"
-      "dossier comparison"
-      "evidence evidence";
-  }
-}
-
-@media (min-width: 769px) and (max-width: 980px) {
-  .wigoDashboardContent {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto minmax(760px, calc(100vh - 150px)) auto;
-    grid-template-areas:
-      "context"
-      "dossier"
-      "comparison"
-      "evidence";
-  }
-}
 
 /* Base Styles for Grid Items */
 
@@ -1551,19 +1516,17 @@
   overflow: hidden;
 }
 
-@media (min-width: 1600px) {
-  .wigoDashHeader {
+:global(.wigo-one-page) {
+  &.wigoDashHeader {
     margin: 0;
   }
   .wigoDashboardContainer {
-    max-width: none;
-    padding: 8px 12px 12px;
+    max-width: v.$page-max-width;
+    padding: 6px 0 0;
   }
   .wigoDashboardContent {
-    grid-template-columns: minmax(0, 708fr) minmax(0, 528fr) minmax(0, 640fr);
-    grid-template-rows: 46px 260px 280px 376px;
-    grid-template-areas: "context context context" "summary summary summary" "comparison comparison comparison" "selected trends percentiles";
-    gap: 10px;
+    grid-template-columns: repeat(24, minmax(0, 1fr));
+    gap: 6px;
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -1574,24 +1537,17 @@
     min-height: 0;
     padding: 0 8px;
   }
-  .leftColumnWrapper {
-    grid-area: summary;
-    display: grid;
-    grid-template-columns: 252fr 196fr 212fr 224fr 226fr 236fr 246fr 248fr;
-    gap: 8px;
-    overflow: visible;
-    border: 0;
-    background: none;
-    > * {
-      min-width: 0;
-      min-height: 0;
-    }
+  .leftColumnWrapper,
+  .trendsColumnWrapper,
+  .percentilesBand {
+    display: contents;
   }
   .summaryProduction,
   .consistencyAndCategoryWrapper,
   .comparisonColumnWrapper {
     display: contents;
   }
+  .rateStatBarPercentilesContainer,
   .identitySummary,
   .opponentLogContainer,
   .ratingsContainer,
@@ -1661,32 +1617,46 @@
       letter-spacing: 0;
     }
   }
-  .trendsColumnWrapper {
-    grid-area: trends;
-    display: grid;
-    grid-template-rows: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-    border: 0;
-    overflow: visible;
-  }
-  .percentilesBand {
-    grid-area: percentiles;
-  }
-  .comparisonMatrixPanel {
-    grid-area: comparison;
-  }
+  .headerRowWrapper { grid-area: context; }
+  .identitySummary { grid-area: identity; }
+  .opponentLogContainer { grid-area: sched; }
+  .ratingsContainer { grid-area: ratings; }
+  .teamDriversSummary { grid-area: drivers; }
+  .consistencyRatingContainer { grid-area: consist; }
+  .percentileChartContainer { grid-area: radar; }
+  .comparisonMatrixPanel { grid-area: matrix; }
+  .selectedStatPanel { grid-area: selected; }
+  .toiChartContainer { grid-area: toi; }
+  .ppgChartContainer { grid-area: ppg; }
+  .gameScoreContainer { grid-area: gs; }
+  .rateStatBarPercentilesContainer { grid-area: pct; }
   .selectedStatPanel {
-    grid-area: selected;
-    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    padding: 4px 6px;
   }
   .selectedStatPanel h3 {
-    font-size: 14px;
-    margin: 0;
-    color: v.$primary-color;
-  }
-  .selectedStatPanel p {
     font-size: 12px;
-    margin: 2px 0 4px;
+    margin: 0 0 2px;
+    color: v.$primary-color;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    span {
+      color: v.$text-secondary;
+      font-size: 11px;
+      letter-spacing: 0;
+      text-transform: none;
+    }
+  }
+  .selectedStatPanel .gameLogChartContainer {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .gameLogChartPlot {
+    flex: 1;
+    min-height: 0;
   }
   .chartContainer,
   .chartCanvasContainer {
@@ -1724,95 +1694,102 @@
       width: 410px;
     }
   }
+  .matrixHalves {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    padding: 0 6px 4px;
+  }
   .comparisonMatrix {
     width: 100%;
+    height: 100%;
     table-layout: fixed;
     border-collapse: collapse;
-    font-size: 12px;
+    font-size: var(--wigo-data-size);
+    line-height: 1.15;
     font-family: v.$font-family-primary;
     font-variant-numeric: tabular-nums;
     th,
     td {
-      padding: 0 2px;
-      text-align: center;
+      padding: 0 3px;
+      text-align: right;
       border-bottom: v.$border-subtle;
-      height: 25px;
       white-space: nowrap;
     }
     thead th {
-      height: 38px;
+      height: 18px;
       background: v.$background-header;
-      white-space: normal;
+      color: v.$text-secondary;
+      font-weight: 700;
+      text-align: right;
+    }
+    thead th:first-child,
+    tbody th {
+      text-align: left;
     }
     th button {
       width: 100%;
-      padding: 4px 0;
+      padding: 0;
       background: none;
       border: 0;
-      color: inherit;
+      color: v.$text-primary;
       font: inherit;
       font-weight: 700;
+      text-align: left;
       cursor: pointer;
+    }
+    th button:hover,
+    th button[aria-pressed="true"] {
+      color: v.$primary-color;
     }
     th button:focus-visible {
       outline: 2px solid v.$focus-color;
       outline-offset: -2px;
     }
-    tbody th {
-      text-align: left;
-      padding-left: 8px;
+    [data-left] {
+      background: rgba(v.$primary-color, 0.16);
     }
-    tr[data-left] {
-      background: rgba(v.$primary-color, 0.18);
-      outline: 1px solid v.$primary-color;
-      outline-offset: -1px;
+    [data-right] {
+      background: rgba(v.$warning-color, 0.13);
     }
-    tr[data-right] {
-      background: rgba(v.$warning-color, 0.15);
-      outline: 1px solid v.$warning-color;
-      outline-offset: -1px;
+    thead [data-left] {
+      color: v.$primary-color;
+      box-shadow: inset 0 -2px v.$primary-color;
     }
-    tr[data-left][data-right] {
-      outline: 2px double v.$primary-color;
+    thead [data-right] {
+      color: v.$warning-color;
+      box-shadow: inset 0 -2px v.$warning-color;
     }
-    [data-selected] {
-      background: rgba(v.$primary-color, 0.12);
-      border-inline: 1px solid v.$primary-color;
+    tr[data-selected] > * {
+      background-color: rgba(v.$primary-color, 0.22);
     }
-    // Transpose the legacy metric-row hover treatment across the full column.
-    @for $column from 2 through 37 {
-      &:has(tr > :nth-child(#{$column}):hover) {
-        tr > :nth-child(#{$column}) {
-          background-color: color.change(
-            color.adjust(v.$focus-color, $lightness: -5%),
-            $alpha: 0.2
-          );
-          border-inline-color: v.$focus-color;
-          box-shadow: inset 1px 0 v.$focus-color, inset -1px 0 v.$focus-color;
-        }
-        thead tr > :nth-child(#{$column}) {
-          box-shadow: inset 1px 0 v.$focus-color, inset -1px 0 v.$focus-color,
-            inset 0 1px v.$focus-color;
-        }
-        tbody tr:last-child > :nth-child(#{$column}) {
-          box-shadow: inset 1px 0 v.$focus-color, inset -1px 0 v.$focus-color,
-            inset 0 -1px v.$focus-color;
-        }
-      }
+    tr[data-selected] > th {
+      box-shadow: inset 3px 0 v.$primary-color;
     }
+    tbody tr:hover > * {
+      background-color: color.change(
+        color.adjust(v.$focus-color, $lightness: -5%),
+        $alpha: 0.2
+      );
+    }
+  }
+  .matrixLabelColumn {
+    width: 17%;
   }
   .periodMarker {
-    font-size: 12px;
-    color: v.$text-secondary;
+    margin-left: 3px;
+    font-size: inherit;
   }
-  .matrixDiff {
-    border-top: 2px solid v.$primary-color;
+  .matrixDiffCell {
+    border-left: 2px solid v.$primary-color;
     // Fixed scale: white at 0%, full red/green at -100%/+100% and beyond.
-    [data-diff-sign] {
+    &[data-diff-sign] {
       color: color-mix(in srgb, var(--diff-color) var(--diff-strength), white);
     }
-    [data-diff-sign="negative"] { --diff-color: #{v.$danger-color}; }
-    [data-diff-sign="positive"] { --diff-color: #{v.$success-color}; }
+    &[data-diff-sign="negative"] { --diff-color: #{v.$danger-color}; }
+    &[data-diff-sign="positive"] { --diff-color: #{v.$success-color}; }
   }
   .selectedStatPanel .gameLogChartContainer {
     padding: 0;
@@ -1828,13 +1805,9 @@
     font-size: 12px;
     padding: 2px 4px;
   }
-  .rateStatBarPercentilesContainer {
-    height: 100%;
-    border: 0;
-  }
 }
 
-@media (min-width: 1600px) {
+:global(.wigo-one-page) {
   .trendsColumnWrapper > div {
     height: 100%;
     flex-shrink: 1;
@@ -1924,7 +1897,7 @@
   }
 }
 
-@media (min-width: 1600px) {
+:global(.wigo-one-page) {
   .consistencyRatingContainer {
     .chartContainer,
     .consistencyContent,
@@ -1985,7 +1958,7 @@
   }
 }
 
-@media (min-width: 1600px) {
+:global(.wigo-one-page) {
   .playerName {
     line-height: 1.1;
   }
@@ -2039,12 +2012,12 @@
     display: flex;
     flex-direction: column;
   }
-  .wigoDashHeader :global(.wigo-trend-legend) {
+  &.wigoDashHeader :global(.wigo-trend-legend) {
     font-size: 12px;
     text-transform: none;
     white-space: nowrap;
   }
-  .wigoDashHeader :global(.wigo-chart-help) {
+  &.wigoDashHeader :global(.wigo-chart-help) {
     position: relative;
     font-size: 12px;
     summary {
@@ -2083,7 +2056,7 @@
   display: block;
 }
 
-@media (min-width: 1600px) {
+:global(.wigo-one-page) {
   .noSelectedPlayer,
   .wigoHeader .headerText {
     font-size: 12px;
@@ -2100,9 +2073,376 @@
   }
 }
 
-@media (min-width: 1600px) {
+:global(.wigo-one-page) {
   .ratingsContainer :global(.wigo-chart-help) p {
     bottom: auto;
     top: 20px;
+  }
+}
+
+// One-page dashboard (TJ, 2026-10-25): every panel visible together. "wigo-fit" pins the 24-column grid to the
+// measured viewport height (≥1200px wide with enough height); "wigo-flow" keeps the same panels at natural height and
+// lets the page scroll (769–1199px, or short viewports). Nothing scrolls or clips inside a panel in either mode.
+@function wigo-areas($spans...) {
+  $row: "";
+  @each $name, $count in $spans {
+    @for $i from 1 through $count {
+      $row: $row + $name + " ";
+    }
+  }
+  @return $row;
+}
+
+:global(.wigo-one-page) {
+  &.wigoDashHeader {
+    --wigo-data-size: 11px;
+    --wigo-emphasis-size: 15px;
+  }
+  .wigoDashboardContent {
+    grid-template-areas:
+      "#{wigo-areas(context 24)}"
+      "#{wigo-areas(identity 5, pace 5, sched 4, ratings 4, drivers 6)}"
+      "#{wigo-areas(prod 5, pace 5, sched 4, ratings 4, drivers 6)}"
+      "#{wigo-areas(matrix 18, consist 6)}"
+      "#{wigo-areas(matrix 18, radar 6)}"
+      "#{wigo-areas(selected 5, toi 4, ppg 4, gs 4, pct 7)}";
+  }
+  .identitySummary,
+  .opponentLogContainer,
+  .ratingsContainer,
+  .teamDriversSummary,
+  .consistencyRatingContainer,
+  .percentileChartContainer,
+  .comparisonMatrixPanel,
+  .selectedStatPanel,
+  .rateStatBarPercentilesContainer,
+  .toiChartContainer,
+  .ppgChartContainer,
+  .gameScoreContainer {
+    overflow: hidden;
+  }
+  .comparisonMatrixPanel {
+    display: flex;
+    flex-direction: column;
+    container-type: inline-size;
+  }
+  .matrixToolbar {
+    height: auto;
+    min-height: 28px;
+    gap: 10px;
+    padding: 2px 8px;
+    font-size: 11px;
+    > div {
+      width: 300px;
+    }
+  }
+  // The identity card carries the page's one team-colour accent: a filled top rail, never a border fragment.
+  .identitySummary {
+    position: relative;
+    &::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto;
+      height: 3px;
+      border-radius: v.$radius-sm v.$radius-sm 0 0;
+      background: var(--primary-color, #{v.$primary-color});
+      pointer-events: none;
+    }
+  }
+}
+
+:global(.wigo-one-page.wigo-fit) {
+  .wigoDashboardContent {
+    height: calc(var(--wigo-fit-height) - 4px);
+    grid-template-rows:
+      auto
+      minmax(80px, 13fr)
+      minmax(56px, 9fr)
+      minmax(158px, 24fr)
+      minmax(158px, 24fr)
+      minmax(175px, 27fr);
+  }
+}
+
+@media (min-width: 1400px) and (min-height: 860px) {
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) {
+    --wigo-data-size: 12px;
+    --wigo-emphasis-size: 17px;
+  }
+}
+
+:global(.wigo-one-page.wigo-flow) {
+  .wigoDashboardContent {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: none;
+    grid-auto-rows: auto;
+    align-items: start;
+    grid-template-areas:
+      "context context"
+      "identity sched"
+      "prod sched"
+      "pace ratings"
+      "drivers drivers"
+      "matrix matrix"
+      "selected selected"
+      "consist radar"
+      "toi ppg"
+      "gs pct";
+  }
+  .selectedStatPanel,
+  .toiChartContainer,
+  .ppgChartContainer,
+  .gameScoreContainer {
+    height: 240px;
+  }
+  .identitySummary,
+  .productionSnapshot,
+  .ratingsContainer,
+  .teamDriversSummary {
+    align-self: stretch;
+  }
+  .consistencyRatingContainer,
+  .percentileChartContainer {
+    height: 220px;
+  }
+  @container (max-width: 700px) {
+    .matrixHalves {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+}
+
+// One-page identity: headshot on the left; team, name, role and the biography (inline label/value pairs) beside it.
+:global(.wigo-one-page) {
+  .identitySummary {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    column-gap: 8px;
+    align-content: center;
+    padding: 4px 6px 2px;
+    background: linear-gradient(
+      105deg,
+      color-mix(in srgb, var(--primary-color) 24%, transparent),
+      v.$background-medium 70%
+    );
+  }
+  .playerIdentityCard {
+    display: contents;
+  }
+  .playerHeaderContainer {
+    grid-row: 1 / span 2;
+    align-self: center;
+    width: 52px;
+    min-width: 0;
+    height: 64px;
+  }
+  .playerIdentityCopy {
+    padding: 0;
+  }
+  .playerName {
+    display: block;
+    margin: 1px 0;
+    font-size: var(--wigo-emphasis-size);
+    line-height: 1.1;
+    span {
+      display: inline;
+      margin-right: 0.3em;
+      font-size: inherit;
+    }
+    // Long names wrap to two lines at a smaller size instead of pushing the biography out of the card.
+    &[data-name-length="long"] {
+      font-size: 11px;
+      letter-spacing: 0;
+      overflow-wrap: anywhere;
+    }
+  }
+  .playerTeam,
+  .playerRole {
+    font-size: 11px;
+    line-height: 1.2;
+    letter-spacing: 0.02em;
+  }
+  .playerMetaGrid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 8px;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    > span {
+      flex-direction: row;
+      align-items: baseline;
+      gap: 3px;
+      padding: 0;
+      border: 0;
+      font-family: v.$font-family-primary;
+      font-size: var(--wigo-data-size);
+      line-height: 1.15;
+    }
+    small {
+      font-size: 11px;
+      letter-spacing: 0;
+      color: v.$text-secondary;
+    }
+  }
+}
+
+// One-page panel chrome: compact headers whose controls wrap under the title instead of squeezing it.
+:global(.wigo-one-page) {
+  .chartHeader {
+    flex-wrap: wrap;
+    gap: 0 6px;
+    padding: 2px 6px;
+    border-bottom-width: 1px;
+    h3 {
+      padding: 0;
+      font-size: 11px;
+      letter-spacing: 0.06em;
+      white-space: nowrap;
+    }
+  }
+  .chartToolbar {
+    flex-wrap: wrap;
+    gap: 2px 4px;
+    font-size: 11px;
+  }
+  .chartToolbar button,
+  .chartHeader .toggleButtons button {
+    font-size: 11px;
+    padding: 0 4px;
+    line-height: 1.4;
+  }
+  .chartCanvasContainer {
+    padding: 2px 4px;
+  }
+}
+
+// One-page consistency legend: tighter rows so the full point distribution fits beside the doughnut.
+:global(.wigo-one-page) {
+  .consistencyRatingContainer {
+    .consistencyContent { padding: 0 4px; }
+    .consistencyChartArea { min-height: 0; height: 100%; padding: 2px; overflow: hidden; }
+    .consistencyListArea ul { height: auto; }
+    .consistencyItem { margin: 0; padding: 0; line-height: 1.1; }
+  }
+}
+
+// One-page rate percentiles: title and strength toggles share a line; 16 single-line tiles in 3 columns.
+:global(.wigo-one-page) {
+  .percentileDesktop {
+    display: flex;
+    flex-direction: column;
+    .mainContentWrapper { flex: 1; min-height: 0; }
+    .percentileFiltersContainer { padding: 2px 6px 0; gap: 1px; }
+    .filtersTitle { font-size: 11px; letter-spacing: 0.06em; }
+    .filterControlsWrapper { flex-wrap: wrap; gap: 2px 10px; }
+    .strengthSelector { flex: 0 0 auto; }
+    .gpSliderContainer { flex: 1 1 120px; min-width: 0; }
+    .gpSlider { min-width: 0; flex: 1; }
+    .strengthSelector button { font-size: 11px; padding: 0 8px; line-height: 1.5; }
+    .gpSliderContainer, .gpSliderContainer label, .gpSliderMaxLabel, .gpSliderMinLabel { font-size: 11px; }
+    .thresholdMessage { font-size: 11px; padding: 1px 4px; line-height: 1.2; }
+  }
+  .percentileContext { font-size: 11px; line-height: 1.2; }
+  .percentileTileGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(8, minmax(0, 1fr));
+    grid-auto-flow: column;
+    gap: 1px 8px;
+    padding: 1px 6px 3px;
+  }
+  .percentileTile {
+    position: relative;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    column-gap: 5px;
+    padding: 0 2px 2px;
+    border: 0;
+    border-radius: 0;
+    font-size: 11px;
+    line-height: 1.2;
+    strong { font-size: var(--wigo-data-size); }
+    small { grid-column: auto; font-size: 11px; color: v.$text-secondary; }
+    meter { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; }
+  }
+}
+
+:global(.wigo-one-page) {
+  .thresholdChips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 4px;
+    margin: 1px 0;
+    .thresholdMessage {
+      width: auto;
+      margin: 0;
+      padding: 0 5px;
+      border-radius: v.$radius-sm;
+      font-size: 11px;
+      line-height: 1.35;
+    }
+  }
+  .selectedStatPanel .averageToggleButtons {
+    gap: 2px 3px;
+    margin-bottom: 2px;
+  }
+  .selectedStatPanel .avgButton {
+    font-size: 11px;
+    padding: 0 3px;
+    line-height: 1.45;
+  }
+}
+
+// One-page toolbar row: one 30px strip (wordmark, search, selected player) so the panels keep the height.
+:global(.wigo-one-page) {
+  .headerRowWrapper {
+    min-height: 0;
+    height: 32px;
+    padding: 1px 6px;
+  }
+  .wigoContextIdentity {
+    align-items: center;
+    height: 30px;
+  }
+  .spanColorBlue {
+    font-size: 20px;
+    line-height: 30px;
+  }
+  .nameSearchBarContainer,
+  .selectedPlayerControl {
+    height: 28px;
+  }
+  .selectedPlayerThumb {
+    width: 28px;
+    flex-basis: 28px;
+  }
+  .selectedPlayerText strong {
+    font-size: 12px;
+  }
+  .selectedPlayerText span,
+  .selectedPlayerControl button {
+    font-size: 11px;
+  }
+}
+
+:global(.wigo-one-page.wigo-fit) {
+  .wigoDashboardContent {
+    gap: 4px;
+  }
+  .wigoDashboardContainer {
+    padding-top: 4px;
+  }
+}
+
+:global(.wigo-one-page) {
+  .percentileChartContainer .chartTitle {
+    gap: 8px;
+  }
+}
+
+@media (min-width: 1800px) and (min-height: 1000px) {
+  .wigoDashHeader:global(.wigo-one-page.wigo-fit) {
+    --wigo-data-size: 13px;
+    --wigo-emphasis-size: 19px;
   }
 }

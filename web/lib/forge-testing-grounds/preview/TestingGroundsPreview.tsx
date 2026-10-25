@@ -1,7 +1,9 @@
 import { useId, useMemo, useState } from "react";
+import { z } from "zod";
 import { projectOperationalProgress } from "../operationalProgress";
 import { type HealthIssueCode } from "../dataHealth";
-import { createPreviewFixture, previewScenarios, type PreviewScenario } from "./previewFixtures";
+import { MAX_LISTED_RUNS, RUN_PHASES, runProgressSchema, type RunEvent } from "../runProjection";
+import { createHistoryFixture, createPreviewFixture, previewScenarios, type PreviewScenario } from "./previewFixtures";
 import styles from "./TestingGroundsPreview.module.scss";
 
 const runLabels = {
@@ -16,6 +18,16 @@ const issueLabels: Record<HealthIssueCode, string> = {
   identity: "Invalid identity", units: "Unit mismatch", strength: "Strength mismatch", source_mismatch: "Source mismatch", invalid_clock: "Invalid source clocks",
   missing_revision: "Missing revision", historically_unavailable: "Historically unavailable", availability_unknown: "Availability unknown", later_capture: "Later capture",
 };
+const phaseLabels: Record<typeof RUN_PHASES[number], string> = { history: "Historical inputs", fitting: "Model fitting", prediction: "Predictions", evaluation: "Evaluation" };
+const eventLabels: Record<RunEvent, string> = {
+  accepted: "Accepted", step_claimed: "Step started", unit_accepted: "Work unit saved", checkpoint_saved: "Checkpoint saved",
+  awaiting_outcomes: "Waiting for outcomes", retry_queued: "Retry queued", completed_sealed: "Completed, results sealed",
+  planned_reveal: "Revealed by plan", cancellation_requested: "Cancellation requested", cancelled: "Cancelled",
+  cancelled_at_checkpoint: "Cancelled at checkpoint", cancelled_after_lease_expiry: "Cancelled after worker lease expired",
+  run_deadline: "Run deadline reached", execution_budget: "Execution budget used", outcome_check_budget: "Outcome-check budget used",
+  retry_budget: "Retry budget used", storage_limit: "Storage limit reached",
+};
+const historySchema = z.object({ runs: z.array(runProgressSchema).max(MAX_LISTED_RUNS) }).strict();
 const number = (value: number) => value.toLocaleString("en-US");
 function completionLabel(percent: number | null, processed: number | null, eligible: number): string {
   if (percent === null) return "No eligible units";
@@ -59,6 +71,26 @@ export function OperationalProgressPanel({ snapshot, now }: { snapshot: unknown;
   </section>;
 }
 
+/** Saved-run listing from the owner collection route. Unvalidated listings are never reflected. */
+export function RunHistoryPanel({ listing }: { listing: unknown }) {
+  const headingId = useId();
+  const parsed = historySchema.safeParse(listing);
+  const heading = <div className={styles.panelHeading}><div><p className={styles.eyebrow}>Reconnect</p><h2 id={headingId}>Saved runs</h2></div></div>;
+  if (!parsed.success) return <section className={styles.panel} aria-labelledby={headingId}>{heading}<p role="alert">Saved runs are unavailable. The listing could not be validated.</p></section>;
+  const runs = parsed.data.runs;
+  return <section className={styles.panel} aria-labelledby={headingId}>
+    {heading}
+    <p className={styles.muted}>Reopening on any device reads this saved state from the server. Nothing runs in this browser tab.</p>
+    {runs.length === 0 ? <p>No saved runs yet.</p> : <ol className={styles.stages}>{runs.map(run => <li key={run.runId} className={styles.stage}>
+      <div className={styles.stageHeading}><h3>Run {run.runId.slice(-4)}</h3><span className={styles.stageStatus}>{runLabels[run.state]}</span></div>
+      <p className={styles.small}>Created {new Date(run.createdAtMs).toISOString()} · {eventLabels[run.lastEvent]} · revision {run.revision}</p>
+      <dl className={styles.counters}>{run.stages.map(stage => <div key={stage.phase}><dt>{phaseLabels[stage.phase]}</dt>
+        <dd>{stage.percent === null ? "No percentage" : `${number(stage.successful + stage.failed)} / ${number(stage.total)}`}</dd></div>)}</dl>
+      <p className={styles.small}>{run.storageMode === "memory_reference" ? "Memory reference: not durable, lost if the server restarts." : "Durable store."} {run.state === "completed_revealed" ? "Results revealed by plan." : "Results sealed."}</p>
+    </li>)}</ol>}
+  </section>;
+}
+
 function DataHealthPanel({ report }: { report: NonNullable<ReturnType<typeof createPreviewFixture>["health"]> }) {
   const headingId = useId();
   const rows = report.counts;
@@ -82,6 +114,7 @@ function DataHealthPanel({ report }: { report: NonNullable<ReturnType<typeof cre
 export default function TestingGroundsPreview() {
   const [scenario, setScenario] = useState<PreviewScenario>("predicting");
   const fixture = useMemo(() => createPreviewFixture(scenario), [scenario]);
+  const history = useMemo(() => createHistoryFixture(), []);
   const selectorId = useId(), launchReasonId = useId();
   return <main className={styles.preview}>
     <div className={styles.container}>
@@ -89,6 +122,7 @@ export default function TestingGroundsPreview() {
       <section className={styles.previewBar} aria-label="Preview controls"><div><label htmlFor={selectorId}>Preview state</label><select id={selectorId} value={scenario} onChange={event => { const next = previewScenarios.find(item => item.id === event.target.value); if (next) setScenario(next.id); }}>{previewScenarios.map(item => <option key={item.id} value={item.id}>{item.label}</option>)}</select></div><p>These fixed September fixtures stay in this tab. Changing the view runs no job and saves no data.</p></section>
       <section className={styles.runSummary} aria-label="Experiment summary"><div><p className={styles.eyebrow}>Display fixture / September 2026</p><h2>{scenario === "empty" ? "No run selected" : "Baseline + candidate · operational preview"}</h2><p>Immutable version references and real model settings will appear after the approved model adapters are connected.</p></div><div className={styles.launch}><button type="button" disabled aria-describedby={launchReasonId}>Launch unavailable</button><p id={launchReasonId}>Hosted execution and owner access are not connected. Nothing continues after this preview closes.</p></div></section>
       {fixture.snapshot && fixture.health ? <div className={styles.grid}><OperationalProgressPanel snapshot={fixture.snapshot} now={fixture.now} /><DataHealthPanel report={fixture.health} /></div> : <section className={styles.panel}><h2>Start with a saved configuration</h2><p>Choose a preview state above to inspect the monitoring and data-health views. No experiment or health report has been created.</p></section>}
+      <RunHistoryPanel listing={history} />
       <section className={`${styles.panel} ${styles.sealed}`} aria-label="Sealed results"><div><p className={styles.eyebrow}>Review boundary</p><h2>Results stay sealed</h2></div><p>{scenario === "sealed" ? "All fixture work is complete. Completion alone does not authorize reveal." : "Quality scores, outcome plots and result exports are unavailable in this preview."} A real run must satisfy its frozen reveal policy and independent outcome-availability checks.</p></section>
       <footer className={styles.footer}>Local synthetic UI only · no real inputs, repairs, captures or hosted jobs · Release C remains protected</footer>
     </div>

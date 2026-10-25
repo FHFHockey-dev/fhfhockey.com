@@ -176,6 +176,8 @@ async function fetchAllPlayerIds(
       .from("players")
       .select("id", { count: "exact", head: false })
       .neq("position", "G")
+      // Range pages are only disjoint and complete under a stable order.
+      .order("id", { ascending: true })
       .range(from, to);
     if (error) {
       console.error(`Error fetching player IDs page ${page}:`, error.message);
@@ -243,6 +245,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
     );
 
     let processedCount = 0;
+    const rejectedPlayerIds: number[] = [];
+    const writeErrors: string[] = [];
     // Define batch arrays with non-partial types
     const allCareerUpsertData: WigoCareerData[] = [];
     const allRecentUpsertData: WigoRecentData[] = [];
@@ -304,7 +308,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
       const wgoLogs = (wgoGamelogRes.data || []) as SelectedWgoGamelog[];
       const gameIds = new Set<number>();
       const recentSeasons = new Set<number>();
-      for (const game of wgoLogs) {
+      const invalidFrame = wgoLogs.some(game => {
         const seasonStart = Math.floor((game.season_id ?? 0) / 10000);
         if (
           game.game_id == null || game.season_id == null ||
@@ -314,11 +318,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
           game.season_id !== seasonStart * 10000 + seasonStart + 1 ||
           game.games_played !== 1 ||
           gameIds.has(game.game_id)
-        ) {
-          throw new Error(`Invalid or duplicate regular-season NHL appearance for player ${playerId}.`);
-        }
+        ) return true;
         gameIds.add(game.game_id);
         recentSeasons.add(game.season_id);
+        return false;
+      });
+      // Withhold every write for this player only; the run still reports failure.
+      if (invalidFrame) {
+        rejectedPlayerIds.push(playerId);
+        continue;
       }
 
       // Keep the existing cross-season NHL window; NST must match its exact dates
@@ -1287,6 +1295,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
               console.error(
                 `Error upserting ${tableName} batch: ${result.error.message}`
               );
+              writeErrors.push(`${tableName}: ${result.error.message}`);
             }
           });
         }
@@ -1331,6 +1340,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
             console.error(
               `Error upserting final ${tableName} batch: ${result.error.message}`
             );
+            writeErrors.push(`${tableName}: ${result.error.message}`);
           } else {
             const tableName =
               index === 0 && finalCareerBatch.length > 0
@@ -1345,6 +1355,26 @@ async function handler(req: NextApiRequest, res: NextApiResponse) {
 
     const durationSec = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(`Finished player stats update in ${durationSec}s.`);
+    // A rejected upsert must fail the run; earlier batches may already be written.
+    if (writeErrors.length > 0) {
+      return res.status(500).json({
+        success: false,
+        error: `WiGO upsert failed for ${writeErrors.length} batch(es): ${writeErrors.slice(0, 5).join("; ")}`,
+        writeErrors,
+        rejectedPlayerIds,
+        message: `Processed ${processedCount} of ${uniquePlayerIds.length} players; some rows may not have been written.`,
+        duration: `${durationSec} s`
+      });
+    }
+    if (rejectedPlayerIds.length > 0) {
+      return res.status(207).json({
+        success: false,
+        error: `Invalid or duplicate regular-season NHL appearance for ${rejectedPlayerIds.length} player(s): ${rejectedPlayerIds.slice(0, 10).join(", ")}.`,
+        rejectedPlayerIds,
+        message: `Processed ${processedCount} of ${uniquePlayerIds.length} players; rejected players were not written.`,
+        duration: `${durationSec} s`
+      });
+    }
     return res.status(200).json({
       success: true,
       message: `Successfully processed ${processedCount} of ${uniquePlayerIds.length} players.`,

@@ -219,6 +219,9 @@ describe("useWigoPlayerDashboard", () => {
         { label: "Goals", STD: 31 }
       ]);
     });
+    // One aggregate read per player, made with the resolved dashboard season (never a season-less read).
+    expect(mockFetchPlayerAggregatedStats).toHaveBeenCalledTimes(1);
+    expect(mockFetchPlayerAggregatedStats).toHaveBeenCalledWith(firstPlayer.id, expect.any(Number));
 
     mockRouter.query = { playerId: String(secondPlayer.id) };
     rerender();
